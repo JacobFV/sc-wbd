@@ -346,14 +346,138 @@ G5_CONFOUND_EFFECTIVE_CAPACITY_PCT = 190.6
 #: not invalidate the comparison, but it changes what a win would mean, and the
 #: report must say so rather than let "individualization" carry the older sense.
 #:
-#: WHY IT HAPPENED IS NOT RECORDED, deliberately. Agent Turing declined to
-#: diagnose a mechanism they had not measured and offered one observation instead:
-#: _person_seen_sessions (a buffer, not a parameter) DID move, so sessions are
-#: observed while z_session is not learned, which makes a gradient-path problem
-#: more likely than dead code. THAT IS A HYPOTHESIS, NOT A FINDING, and bench
-#: records it as one. Whether it earns its own control is a separate decision.
+#: RESOLVED -- MECHANISM, NOT HYPOTHESIS (g5_individualizer_inert.md @ 42e4fb7,
+#: gradient table verified by bench at lines 20-22). Agent Neyman supplied the
+#: discriminator: "one frozen tensor is a gradient path; two on different paths is
+#: a wiring question." It is a wiring question, with TWO DISTINCT FAULTS:
+#:
+#:   FAULT 1 -- train.py:600 calls individualizer(participant=pid, base=th) and
+#:   NEVER PASSES `session`. The session term is never indexed, so z_session gets
+#:   exactly zero gradient (0.000e+00) through the prior penalty and none from
+#:   data. Supplying `session` restores a real gradient (3.706e-01). The session
+#:   id is available at realdata.py:420,577 and simply not passed.
+#:
+#:   FAULT 2 -- _alpha_raw's gradient is None EVEN WITH session and group
+#:   supplied: the parameter does not participate in the reachable graph. A
+#:   different fault needing a different fix.
+#:
+#: WHAT MAKES IT A RESOLUTION RATHER THAN A FIT: every row matches checkpoint
+#: evidence that existed BEFORE the hypothesis was formed, including the one
+#: anomaly the hypothesis was not built to explain -- log_sd_session MOVED despite
+#: being a session parameter, because it draws gradient from prior_penalty()
+#: rather than the data path. A mechanism that also accounts for the observation
+#: that would otherwise contradict it is a different object from one that merely
+#: fits its own evidence.
+#:
+#: THE SESSION LEVEL OF THE HIERARCHY WAS NEVER WIRED. That is an ESTABLISHED
+#: DEFECT, not an open question, and 79% of the mechanism's parameters are in it.
 G5_SESSION_LEVEL_INERT = True
 G5_LICENSED_CLAIM = "person-level adaptation, within this recording setup"
+
+#: BENCH'S RULING ON A FIXED-WIRING RERUN: **DO NOT RUN IT YET**, and agent
+#: Turing was right to ask rather than produce it. Their reasoning is the same as
+#: the source_proj control's: a third artifact produced after the confound is
+#: known, by the party being graded, is what that control existed to avoid.
+#:
+#: THE DECIDING REASON IS ORDERING, NOT PROPRIETY. G5 is unmeasurable on this
+#: artifact for THREE ESTABLISHED reasons found by three parties on three
+#: different artifacts, and a wiring rerun fixes exactly ONE of them:
+#:   P5 (agent Neyman) -- evaluate.py never loads or applies the individualizer;
+#:   source_proj (agent Turing) -- an undeclared projection with 190.6% of the
+#:     individualizer's EFFECTIVE capacity adapting alongside it;
+#:   session wiring (this) -- 79% of the mechanism never received a gradient.
+#: A possible FOURTH is being checked rather than asserted: the holdout is
+#: participant-disjoint, so a test participant's z_person was never fit and sits
+#: at initialisation, which would make individualization A NO-OP AT EVALUATION BY
+#: CONSTRUCTION -- and NO TRAINING RERUN FIXES THAT. It is an evaluation-design
+#: problem wearing a training problem's clothes.
+#:
+#: So a rerun now would produce a better artifact whose G5 still cannot be
+#: scored, and would spend the one clean shot at a fixed-wiring candidate before
+#: knowing whether the target is measurable at all. SEQUENCE: (a) Neyman clears
+#: the evaluation path including P5; (b) agent Turing reports the
+#: participant-disjoint measurement; (c) IF G5 is measurable in principle, bench
+#: then specifies the fixed-wiring run and its control, as it specified the
+#: source_proj control.
+#:
+#: FOR SC-WBD-001-beta THE VERDICT IS SETTLED AND IS NOT PENDING A RERUN: G5 is
+#: COULD_NOT_RUN with three established reasons. Reporting it as "awaiting a
+#: rerun" would imply the rerun could deliver a pass, and on this evaluation path
+#: it cannot.
+#: FOURTH BLOCKER, PROVEN NOT INFERRED (agent Turing, 9847fd2): exactly the 71
+#: TRAINING participants' z_person rows moved off init (median max|d| 2.285e-03);
+#: 0 of 27 TEST participants moved (median 0.000e+00). Fresh z_person is all
+#: zeros and an untrained row returns `base` exactly. SO INDIVIDUALIZATION ON
+#: THIS HOLDOUT IS THE IDENTITY FUNCTION, PROVABLY, FOR EVERY TEST PARTICIPANT --
+#: and fixing Neyman's P5 does not move it, because there is nothing to apply.
+#:
+#: BENCH ACCEPTS THE RECOMMENDATION: G5 is COULD_NOT_RUN on this artifact, not
+#: FAIL. Four independent reasons, each sufficient, from three parties across
+#: four kinds of evidence. Recording a failure would overstate what we know
+#: exactly as much as recording a pass: the experiment was never in a position to
+#: produce evidence in either direction.
+#:
+#: AND THE FOURTH IS A SPECIFICATION DEFECT, WHICH MAKES IT MINE. The
+#: participant-disjoint split is the CORRECT instrument for R10 and for any
+#: generalisation claim, and the WRONG instrument for G5 -- a participant held
+#: out entirely offers no opportunity to individualise them. My own run_g5
+#: disables the group-overlap refusal precisely because "the holdout is a new
+#: session, not a new person", so the gate was specified correctly and was handed
+#: a split that cannot serve it. Nobody noticed because the split is right for
+#: everything else it is used for. That is its own register shape: an instrument
+#: that is correct for one purpose, reused for another, where it is silently
+#: inert rather than wrong.
+G5_HOLDOUT_IS_IDENTITY_FOR_TEST_PARTICIPANTS = True
+
+#: THE RESPECIFIED G5 EXPERIMENT. Agent Turing correctly declined to design this
+#: -- producing a split after the confound is known, by the party being graded, is
+#: what the source_proj control discipline exists to prevent -- so bench specifies
+#: it, now, before any candidate exists.
+#:
+#:   SPLIT: nested, and both levels are load-bearing.
+#:     OUTER  participant-disjoint, unchanged: 27 held-out participants. R10 is
+#:            preserved and no generalisation claim is weakened.
+#:     INNER  within EACH held-out participant, a TEMPORAL split: calibrate on
+#:            that participant's earliest windows, score on their later ones,
+#:            with a gap between the two large enough to clear the autocorrelation
+#:            length of the signal. "Future prediction" must mean later in time,
+#:            not merely a different row.
+#:
+#:   CALIBRATION BUDGET, declared per arm and matched -- the lesson source_proj
+#:   taught, applied in advance rather than discovered afterwards:
+#:     * only the held-out participant's own z_person and z_session may adapt
+#:       during calibration; EVERYTHING ELSE FROZEN, verified BY DELTA and not by
+#:       permission (all other tensors max|delta| == 0.000e+00), because the
+#:       control that caught source_proj is the one that would catch its successor;
+#:     * every baseline receives the SAME calibration windows and the SAME
+#:       optimiser budget. A baseline denied the calibration data is not a
+#:       baseline, it is a handicap.
+#:
+#:   BASELINES, unchanged from G5's manifest: population, anatomy-only,
+#:   session-adapted. Note that session-adapted only becomes a meaningful
+#:   comparator once the session wiring fault is fixed; until then the candidate
+#:   and that baseline differ in a mechanism neither of them runs.
+#:
+#:   METRIC: the preregistered one -- incremental calibrated log score, paired
+#:   PER PARTICIPANT, with the paired bootstrap over participants rather than over
+#:   windows, since windows within a participant are not independent.
+#:
+#:   PRECONDITIONS, all three, before this is worth building: Neyman clears the
+#:   evaluation path including P5; the session wiring faults are fixed; and the
+#:   fixed-wiring Stage V run happens ONCE, to this spec, rather than being
+#:   iterated toward a number.
+G5_RESPECIFICATION = (
+    "nested split: participant-disjoint OUTER preserving R10, temporal INNER "
+    "within each held-out participant with a gap; per-participant calibration "
+    "budget matched across arms and verified by delta; paired bootstrap over "
+    "participants"
+)
+
+G5_RERUN_RULING = (
+    "DO_NOT_RERUN_YET; THREE_ESTABLISHED_BLOCKERS_ONE_FIXED_BY_RERUN; "
+    "SEQUENCE_EVALUATION_PATH_THEN_PARTICIPANT_DISJOINT_THEN_SPECIFY; "
+    "G5_IS_COULD_NOT_RUN_NOT_PENDING"
+)
 
 #: What agent Turing's first reading got wrong, recorded because it PROTECTS a
 #: result rather than damaging one: they initially read 31,193 params

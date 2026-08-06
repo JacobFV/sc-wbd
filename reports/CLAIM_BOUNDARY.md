@@ -440,6 +440,43 @@ declined to name a mechanism they had not measured, offering one observation:
 `z_session` is not learned — making a gradient-path problem likelier than dead
 code. **That is a hypothesis, not a finding.**
 
+### 3.2e G5 is `COULD_NOT_RUN` on this artifact — four independent reasons
+
+Each is sufficient on its own. Found by three parties across four kinds of
+evidence.
+
+| # | blocker | found by | kind |
+|---|---|---|---|
+| 1 | `evaluate.py` never loads or applies the individualizer at all (P5) | agent Neyman | code path |
+| 2 | undeclared `eeg.source_proj.*` adapted alongside it, at **190.6 %** of the individualizer's *effective* capacity | agent Turing | freeze control |
+| 3 | 79 % of the mechanism (`z_session`, 2,616 params) never received gradient — `train.py:600` never passes `session` | agent Turing | gradient inspection |
+| 4 | **held-out participants were never individualised**: exactly the 71 training participants' `z_person` moved, **0 of 27** test participants; an untrained row returns `base` exactly | agent Turing | checkpoint diff |
+
+**Reason 4 is provable rather than statistical: individualization on this holdout
+is the identity function for every test participant.** Fixing reason 1 does not
+move it — there would be nothing to apply.
+
+**G5 is recorded as `COULD_NOT_RUN`, not `FAIL`.** The experiment was never in a
+position to produce evidence in either direction, and recording a failure would
+overstate what we know exactly as much as recording a pass.
+
+**Reason 4 is a specification defect, and it is bench's.** The
+participant-disjoint split is the **correct** instrument for R10 and for any
+generalisation claim, and the **wrong** instrument for G5 — a participant held
+out entirely offers no opportunity to individualise them. `run_g5` deliberately
+disables its group-overlap refusal because *"the holdout is a new session, not a
+new person"*, so the gate was specified correctly and handed a split that cannot
+serve it. Nobody noticed because the split is right for everything else it is
+used for.
+
+**The respecified experiment is now fixed in
+`scwbd.bench.gates.G5_RESPECIFICATION`**, written before any candidate exists: a
+**nested** split — participant-disjoint outer, preserving R10, with a **temporal**
+inner split within each held-out participant and a gap clearing the signal's
+autocorrelation length — plus a per-participant calibration budget matched across
+all arms and **verified by delta rather than by permission**, and a paired
+bootstrap over participants rather than windows.
+
 ### 3.3 Simply not yet run
 G1, G2, G3 (no candidate model or datasets supplied), N2, N5 (no solver or
 boundary observables), and all ten §11.4 ablations.
