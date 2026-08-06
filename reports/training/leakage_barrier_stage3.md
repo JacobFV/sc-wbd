@@ -172,3 +172,52 @@ and the audit JSON as authoritative.
 
 Recorded because "I fixed the hard-coded `True`" would be a true statement that
 implies more than was achieved.
+
+## Confirmed in production
+
+The gate fired on the resumed run, **before the real-EEG datasets were assigned**
+and long before any Stage III batch:
+
+```
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=71/11/27 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot
+          falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 290673 windows, train/val/test = 189765/29238/71670
+```
+
+The ordering is the point: the audit line precedes the dataset line, so no
+measured window could have reached a loss ahead of the check. And the site
+warning is now emitted **on every run**, so the limitation travels with the log
+rather than depending on someone having read this file.
+
+## The lesson, which is not the near-miss
+
+It would be easy to file this as "a defect was caught in time". The more useful
+statement is about **why it was catchable at all**:
+
+> **The leakage defect was found only because Stage III was gated by
+> instruction.** Nothing in the pipeline would have surfaced it. The audit
+> routine existed and was never called; the training log said nothing about
+> splits; and the compiled schema asserted `leakage_checked=True` regardless. Had
+> nobody thought to ask at that particular boundary, **every downstream held-out
+> claim would have rested on an unverified barrier plus a provenance field
+> asserting the opposite** — and it would all have looked clean.
+
+The barrier turned out to be sound. **That is luck about the state of the world,
+not evidence about the process.** A process that produces a correct result
+without being able to detect an incorrect one has not been tested.
+
+**The durable outcome is the transition itself:**
+
+| before | after |
+|---|---|
+| the coordinator happened to ask | the trainer refuses |
+| an audit that existed and was not called | a gate that runs before the first measured window |
+| `leakage_checked=True` asserted unconditionally | asserted only by an audit that ran |
+| a hash fallback that degraded silently | a refusal that raises |
+
+That is standing recommendation 7 in its clearest form — **a mechanism where
+there was a person remembering** — and it is the part that survives this run,
+this artifact and this team. The near-miss is an anecdote; the gate is the
+result.
