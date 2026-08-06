@@ -44,9 +44,9 @@ was shown to be capable of failing.
 |---|---|---|---|
 | **C1** | Simulated corpus regenerated at **414** parcels under the new state layout | 🗺️ Ptolemy | not started — blocked on A4–A7 |
 | **C2** | Every θ dimension affects the simulator | 🗺️ Ptolemy | open — `ei_gradient` was inert |
-| **C3** | `-raw` contains real hemodynamic/MRI ground truth, not EEG alone | 🗄️ Ada | open |
-| **C4** | Licence routing is **read** by the checkpoint policy, not merely populated | 🗄️ Ada | open |
-| **C5** | Every emitted artifact carries its citation set (Tian licence condition) | 🗄️ Ada | open |
+| **C3** | `-raw` contains real hemodynamic/MRI ground truth, not EEG alone | 🗄️ Ada | **MET** — `ds002336` 19.0 GB simultaneous EEG+BOLD (CC0), `ds000113` retinotopy+physio. BOLD 2.08 h → 8.20 h. Cause was an absent reader, not policy |
+| **C4** | Licence routing is **read** by the checkpoint policy, not merely populated | 🗄️ Ada | **MET** — found unread by running it: a mixture card linked to no dataset card bound to `UNKNOWN_TERM`. Split per dataset; verified end to end |
+| **C5** | Every emitted artifact carries its citation set (Tian licence condition) | 🗄️ Ada | partial — `attribution.py` built; `require_complete()` **not called from the release path** (one line, `scwbd/release/**`) |
 
 ## D. The tree
 
@@ -66,7 +66,9 @@ was shown to be capable of failing.
 Recorded now so it is not quietly reintroduced when the numbers arrive.
 
 - **The 7 subcortical families** — 14 of 414 parcels, 3.1%. No family-level
-  effect there is measurable at any participant count this corpus supports.
+  effect there is measurable at any participant count this corpus supports, and
+  🗄️ Ada confirms **no open BOLD corpus closes it**: 2 parcels at 3–4 mm voxels
+  is not an acquisition problem. Declared untrained.
 - **Operator typing (§11.4 bullet 5 / A5).** A1 tests state structure. The
   θ-confound is fatal to operator typing and we do not have the evidence to
   separate them.
