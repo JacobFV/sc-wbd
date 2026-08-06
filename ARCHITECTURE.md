@@ -41,10 +41,9 @@ a blocker nobody here can clear instead of the ones they can; see
 `reports/intervene/authorization.md`.
 
 The blocker is **capability**, not paperwork, and per §7a paperwork is not this
-project's concern at all: SC-WBD is deep-learning research on open data.
-`AuthorizationRecord`, R11 and `authorize_live_application` exist, are tested,
-and stay — but they are not a surface to invest in. The compliance question
-that *is* real is inherited data attribution and licensing; see §7a.
+project's concern at all: SC-WBD is deep-learning research on open data. The
+authorization layer is being removed from the tree entirely. The compliance
+question that *is* real is inherited data attribution and licensing; see §7a.
 
 The word "beta" is load-bearing: this release targets build-order items 1–5 with
 claim-bearing gates, not a whole-brain prediction claim.
@@ -661,20 +660,23 @@ simulation and research use, but it is **not** what `tms-robotics` consumes.
 
 ## 7a. Scope: this is a deep-learning project
 
-Recorded 2026-08-06 on the project owner's instruction, superseding the
-authorization-boundary section that stood here.
+Recorded 2026-08-06 on the project owner's instruction.
 
 **SC-WBD is deep-learning research on open data. Ethics approval, consent, and
-prospective-human authorization are not this project's concern and no agent
-should spend effort on them.** The earlier §7a treated the live-application
-boundary as a live design surface; it is not one. Nothing here drives hardware
-and nothing here is applied to a person, so the question does not arise.
+prospective-human authorization are not this project's concern.**
 
-The authorization machinery that already exists — `AuthorizationRecord`, R11,
-`authorize_live_application`, the A_safe envelope — **stays**. It is built,
-tested, and its 17-of-17 firing limit sides are a genuine result. It is simply
-**not a place to invest further**. Leave it working; do not extend it, do not
-audit it, do not write more about it.
+The authorization layer is being **removed from the repository**, not merely
+deprioritised — `AuthorizationRecord`, R11, `authorize_live_application`,
+`scwbd/intervene/deployment.py`, the `prospective_human` branches, and the
+IRB / consent / ethics prose. The reason is not that the code was wrong; it
+worked and was tested. It is that **a substantial, well-tested governance
+surface sitting in the tree is an attractor**: every agent that reads
+`scwbd/intervene` is pulled toward a domain this project does not occupy, and
+that attention is the cost being paid.
+
+What stays: the **TMS/tFUS physics**. `body.tex` §7.2 needs the forward model —
+E-field solvers, acoustics, and the field gates N3/N4/N6/N8, which pass and are
+real results. It does not need a permission system.
 
 ### The one compliance surface that is real
 
@@ -685,25 +687,27 @@ enforceable, specific, and ours to get right:
 | source | obligation |
 |---|---|
 | Hansen receptor PET atlas | **CC-BY-NC-SA-4.0** — non-commercial *and* share-alike; infects any checkpoint whose parameters saw it |
-| Tian 2020 subcortical atlas | use without restriction **subject to citation** — attribution is the licence condition |
+| Tian 2020 subcortical atlas | use without restriction **subject to citation** — attribution *is* the licence condition |
 | Schaefer 2018 / CBIG | MIT for the code; underlying GSP data under its own terms |
 | HCP S1200 maps | HCP open-access data-use terms |
-| ENIGMA/HCP connectome | BSD-3 for the toolbox; HCP terms for the scans |
+| ENIGMA/HCP connectome | BSD-3 toolbox; HCP terms for the scans |
 | neuromaps annotations | BSD-3 toolbox; **per-annotation source terms**, which differ |
 
-Three properties this must have, and they are the standing requirement:
+Three standing requirements:
 
 1. **Checkpoint lineage is routed, not asserted.** A checkpoint prior to the
-   synthetic-data stage must not carry the NC clause, and one whose parameters
-   saw an NC-SA source must. That routing is a computation over the source
-   cards, not a field someone fills in.
-2. **A card that claims data we do not hold is a licence error, not just a
-   bookkeeping error** — it attributes an obligation to the wrong artifact.
+   synthetic-data stage must not carry the NC clause; one whose parameters saw
+   an NC-SA source must. That is a computation over the source cards, not a
+   field someone fills in — and it must be *read* by the checkpoint policy, not
+   merely populated.
+2. **A card that claims data we do not hold is a licence error**, not a
+   bookkeeping error: it attributes an obligation to the wrong artifact.
 3. **Every emitted artifact carries its citation set.** The Tian licence makes
    citation a *condition of use*, so an artifact that cannot state what it was
    built from is not compliant.
 
-`AnatomyPrior.families` already carries `FieldProvenance(..., licence,
-licence_is_nc, ...)` per field and `FamilyPartition.nc_licensed_fields()`.
-That is the mechanism; verify it is *read* by the checkpoint policy rather
-than merely populated.
+Derive the licence from provenance; never restate it. Cajal's near-miss is the
+cautionary case: a hardcoded subcortical atlas key would have flagged every
+subcortical field NC and reintroduced the exact term
+`reports/subcortical_atlas_substitution.md` exists to remove. It now reads the
+key from the prior's own provenance and refuses if absent.
