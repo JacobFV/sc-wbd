@@ -1033,3 +1033,45 @@ as explaining one of my six bad SBC parameters. It explains none — this run us
 the synthetic fallback, whose gradient is a genuine z-scored map (std 1.000). An
 exculpation that does not apply is not a smaller comfort than one that does; it is
 a false one, and it is harder to refuse because refusing costs you something.
+
+---
+
+## Entry: `strict=False` plus a discarded load report is the binding blocker again
+
+`scwbd/foundation/evaluate.py:405`, found while statically checking the harness
+that will produce this run's final numbers.
+
+`main()` loads the checkpoint with `strict=False` and **throws away the return
+value.** `load_checkpoint` does populate `payload["load_report"]["missing"]` and
+`["unexpected"]` when `strict=False` — the information exists and nothing reads it.
+
+The mismatch is not hypothetical. **29 of 85 model keys carry a `_orig_mod.`
+prefix** from `torch.compile` (`local._orig_mod.embed`, …), and `FoundationTrainer`
+compiles only when `cfg.model.compile and device.type == "cuda"`. So evaluating on
+**CPU** — the obvious thing to do to avoid contending with a running job, and
+exactly what I did for the SBC diagnostic — drops all 29 silently and scores the
+`local` operator at **random initialisation**, while printing `loaded {ckpt}`.
+
+**This is the same defect class I was brought in to fix.** The original brief:
+*"the compiler is the authority on which source may touch which parameter; if the
+binding is incomplete the gradient masks are decorative."* Here: if the load is
+incomplete, **the evaluation is decorative.** Same shape, different file — a
+permissive interface plus an unread diagnostic, reporting success either way.
+
+`train.py:765` (resume) has the identical pattern. This run was never exposed —
+every resume ran on CUDA with `compile: true`, so the keys matched — but the guard
+is absent there too.
+
+**What made it findable:** not suspicion of that line, but asking "what would make
+the final numbers wrong while looking normal?" The `_orig_mod` prefix was already
+known to me — I wrote `logical_param_name()` to strip it for the binding fix. **I
+had the fact and did not connect it to the loader**, because I had filed it under
+"parameter naming" rather than "state-dict identity."
+
+**A fact you already know does not protect you until you ask the question it
+answers.**
+
+**Not exposed by luck:** the SBC diagnostic loads with the default `strict=True`,
+so a posterior key mismatch would have raised rather than passed. That was not
+foresight — it was the default — which is the argument for defaults that fail
+closed.
