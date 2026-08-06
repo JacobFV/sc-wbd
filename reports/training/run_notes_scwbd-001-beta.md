@@ -764,6 +764,31 @@ however good the replacement is.
    > `sim_forecast_nll` at matched steps across the two LR configurations; if the
    > rescaled run's spikes are systematically larger, that is instability.
 
+> #### ⚠ Condition 3b cannot fire either — the successor inherited the defect
+>
+> Found by checking which triggers are actually live rather than assuming.
+> **The artifact is currently running with no operational spike-detection clause.**
+>
+> 3b says a spike counts as learning-rate instability *only if its magnitude
+> differs between runs at matched steps*. The only runs available for that
+> comparison — runs 1 and 2, the two LR configurations — are **both
+> pre-normaliser-fix**. Comparing run 3 against them conflates LR with the
+> normaliser change; comparing runs 1 and 2 with each other judges a pipeline
+> that no longer exists.
+>
+> **So 3b requires two things on a common scale, and the normaliser fix removed
+> the common scale** — the identical defect that killed the a-fortiori argument
+> above, in a clause written to replace a guard that had already failed the same
+> way once.
+>
+> **I am not writing a third version.** I authored both previous attempts and
+> both were structurally incapable of doing their job; a third from the same
+> source is not the fix. Referred to `main` and 🛡️ Popper, who is already
+> designing the Stage II bar as a matched control and may find this adjacent.
+>
+> Reported, not repaired, and the gap is stated plainly: **no live spike trigger
+> on this run.**
+
 **Standard for any future amendment**, from `main`'s ruling and worth keeping:
 an argument for superseding a fired trigger is admissible only if it is
 **checkable by someone else against data the author did not choose.** "It fired
