@@ -460,6 +460,15 @@ class LoadedModel:
         if th.shape[0] != context.shape[0]:
             th = th.expand(context.shape[0], -1)
 
+        # Bind theta-conditioned ParamPacks before rolling out, exactly as the
+        # trainer does.  Without this a family-state checkpoint raises
+        # SpanViolation on its first mechanistic family -- and this path was
+        # built and tested against run 1, whose control arm has no mechanistic
+        # families, so it never exercised the branch it declares support for.
+        bind = getattr(self._model, "set_mechanistic_theta", None)
+        if bind is not None and getattr(self._model, "family_layout", None) is not None:
+            bind(th, self._anat)
+
         with torch.no_grad():
             out = self._model.rollout(
                 y_context=context,
