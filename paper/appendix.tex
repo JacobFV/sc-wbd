@@ -1,0 +1,1539 @@
+\clearpage
+\onecolumn
+\section{Appendix A. Candidate Dataset and Simulation Register}
+\newcommand{\sourceurl}[2]{\href{#1}{#2}}
+
+\begin{center}
+\begin{minipage}{.82\textwidth}
+The resources below define a candidate development corpus, not a claim that
+every named dataset has already been downloaded, licensed, harmonized, or
+accepted into a released training mixture. Admission is versioned and
+query-specific. Every snapshot receives a source card containing a persistent
+identifier, version and checksums, license or data-use agreement, consent and
+redistribution constraints, participant and session structure, inclusion
+criteria, preprocessing lineage, native coordinate frames, clock and event
+alignment, spatial and temporal support, observation or intervention model,
+known missingness, demographic and acquisition coverage, and separate bias
+and variance estimates. BIDS or NWB representations are retained where
+available, but conversion does not erase the native format or provenance.
+
+Dataset size does not determine gradient weight. A source is allowed to
+update only the modules and ports it observes or defensibly constrains;
+incompatible sources may retain separate parameters or be rejected by a
+negative-transfer gate. Participant-level splits precede session and trial
+splits, repeated measures remain grouped, and site or device leakage is
+tested explicitly. Public archives are discovery and governance surfaces,
+not homogeneous datasets. Controlled and clinical sources remain subject to
+their own approvals. Synthetic sources are always labeled as
+simulator-conditioned evidence and are evaluated against empirical data
+before they influence an individualized posterior.
+\end{minipage}
+\end{center}
+
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Resource} & \textbf{Native evidence and support} &
+\textbf{Planned SC-WBD role} & \textbf{Access/governance} &
+\textbf{Dominant bias, variance, and exclusion tests}\\
+\midrule
+Human Connectome Project (Young Adult; Development; Aging)
+\citep{vanessen2013} &
+Structural, diffusion, resting/task fMRI; selected MEG and behavioral
+phenotypes; cross-sectional population geometry &
+Population surface and tract priors, multimodal observation calibration,
+task and lifespan conditioning &
+ConnectomeDB; open and restricted tiers; release-specific terms &
+Healthy-cohort selection, family structure, scanner/protocol concentration,
+tractography ambiguity; split by family and release\\
+
+UK Biobank Imaging &
+Large-cohort structural, diffusion and functional MRI with health, genotype
+and longitudinal subsets &
+Population variation, anatomy--phenotype associations, aging and
+disease-aware priors; not individual causal ground truth &
+Application, data-use agreement and secure handling &
+Volunteer and survivorship bias, population structure, incidental disease,
+protocol drift; ancestry/site/age calibration required\\
+
+Cambridge Centre for Ageing and Neuroscience (Cam-CAN)
+\citep{taylor2017camcan} &
+Adult-lifespan MRI, MEG, cognition, physiology and demographic measures &
+Cross-modal clocks, age-conditioned priors, variance decomposition across
+the adult lifespan &
+Managed research access and citation conditions &
+Cross-sectional aging is not longitudinal change; task and recruitment
+effects; age-stratified residual checks\\
+
+BigBrain \citep{amunts2013bigbrain} &
+Microscopic three-dimensional histological reconstruction of one post-mortem
+human brain &
+High-resolution laminar and cytoarchitectonic geometry; scale bridges to MRI
+surfaces &
+Public atlas under stated use terms &
+One brain, fixation and sectioning deformation, incomplete correspondence to
+in-vivo physiology; never a population mean\\
+
+Julich-Brain \citep{amunts2020julich} &
+Probabilistic cytoarchitectonic maps assembled across post-mortem brains &
+Uncertain areal boundaries, regional phenotype priors and atlas crosswalks &
+Public atlas/data portal; versioned maps &
+Sampling and histological boundary uncertainty, atlas warp and
+inter-individual variation; retain probabilities rather than labels\\
+
+Allen Human Brain Atlas \citep{hawrylycz2012} &
+Spatial transcriptomic microarray/RNA evidence with MRI and histology from a
+small donor series &
+Regional molecular and receptor-related priors, gene-gradient hypotheses and
+uncertainty maps &
+Allen Institute terms and attribution &
+Sparse sampling, donor/hemisphere imbalance, post-mortem effects and batch
+correction; no voxelwise subject-specific expression claim\\
+
+OASIS-3 and ADNI &
+Longitudinal multimodal aging and neurodegeneration imaging with
+cognitive/clinical measures &
+Disease- and aging-aware validation after a healthy adult base model;
+progression and scanner-shift stress tests &
+Registration, data-use agreements and diagnosis-sensitive governance &
+Clinical ascertainment, medication, missing-not-at-random visits, diagnostic
+circularity and site drift; never pooled silently with healthy cohorts\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Candidate anatomical, molecular, and population-imaging
+sources.} Each source constrains a declared scale and validity domain.
+Histological and transcriptomic atlases inform population priors but do not
+supply an individual living brain's microscopic state.}
+\label{tab:appendix-anatomy}
+\end{table*}
+
+\clearpage
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Resource} & \textbf{Native evidence and support} &
+\textbf{Planned SC-WBD role} & \textbf{Access/governance} &
+\textbf{Dominant bias, variance, and exclusion tests}\\
+\midrule
+HCP task/rest fMRI and multimodal subsets \citep{vanessen2013} &
+Population task and rest fMRI aligned with anatomy, diffusion, behavior and
+selected MEG &
+Hemodynamic heads, task-conditioned regional trajectories and cross-modal
+population baselines &
+ConnectomeDB release snapshots &
+Shared preprocessing, family leakage, task compliance and neurovascular
+variability; retain acquisition and family IDs\\
+
+Midnight Scan Club \citep{gordon2017msc} &
+Dense repeated resting/task fMRI and anatomy in a small set of individuals &
+Within-person functional topography, session variance and personalization
+benchmarks &
+Public research release &
+Very small and nonrepresentative cohort; precision within these individuals
+is not population generality\\
+
+MyConnectome \citep{poldrack2015myconnectome} &
+Dense longitudinal single-participant MRI, physiology, behavior and molecular
+measurements over more than one year &
+Slow-state, session-drift and person-specific adaptation tests &
+Public project artifacts under source terms &
+Single-subject and self-experiment selection, changing context and protocol;
+used as a longitudinal case, not a universal subject\\
+
+Natural Scenes Dataset \citep{allen2022nsd} and BOLD5000
+\citep{chang2019bold5000} &
+Natural-image fMRI with repeated or large stimulus sets and image identities &
+Retinotopic and ventral-stream encoding, visual-memory interfaces,
+fine-to-coarse observation mappings &
+Public datasets with stimulus-license constraints &
+Small cohorts, repeated-image adaptation, 7T/site specificity and stimulus
+sampling; image identity may not be redistributed uniformly\\
+
+StudyForrest \citep{hanke2014studyforrest} &
+Naturalistic movie-centered fMRI with multimodal extensions, annotations and
+behavior &
+Long-horizon audiovisual dynamics, event boundaries and cross-study
+naturalistic validation &
+Public/OpenNeuro components; version-specific licenses &
+One film and cultural/language context, annotation dependence, inter-run
+alignment and scanner effects\\
+
+Narratives \citep{nastase2021narratives} and Le Petit Prince fMRI
+\citep{li2022lpp} &
+Story-listening fMRI with stimulus timing; multilingual naturalistic speech
+in the latter &
+Auditory--language dynamics, temporal receptive fields and
+language-generalization tests &
+Public repositories; stimulus terms retained &
+Story, language and comprehension heterogeneity; shared semantic timing does
+not imply identical latent dynamics\\
+
+Wakeman--Henson \citep{wakeman2015} and MOUS
+\citep{schoffelen2019mous} &
+Paired MRI, EEG/MEG and/or fMRI around face or language tasks &
+Cross-method observation operators, clock alignment and source-localization
+benchmarks &
+Public datasets with repository-specific terms &
+Task-restricted effects, modality sessions may not be simultaneous,
+source-model dependence and small effects\\
+
+OpenNeuro &
+BIDS-indexed studies spanning MRI, EEG, MEG, iEEG and perturbation paradigms &
+Versioned discovery layer and external-validation bank; individual studies
+receive separate source cards &
+Study-specific consent and licenses; snapshots pinned by dataset/version &
+Archive membership is not harmonization; metadata quality, duplicate
+subjects, preprocessing and redistribution vary by study\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Candidate functional, naturalistic, multimodal, and
+longitudinal sources.} Dense individual studies test personalization; large
+cohorts constrain population variation; naturalistic studies exercise longer
+causal context. None supplies a complete latent trajectory.}
+\label{tab:appendix-functional}
+\end{table*}
+
+\clearpage
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Resource} & \textbf{Native evidence and support} &
+\textbf{Planned SC-WBD role} & \textbf{Access/governance} &
+\textbf{Dominant bias, variance, and exclusion tests}\\
+\midrule
+HCP and Cam-CAN MEG \citep{vanessen2013,taylor2017camcan} &
+Task/rest MEG with subject anatomy and population phenotypes &
+Millisecond latent dynamics, spectral/cross-frequency losses and MRI-informed
+forward models &
+Release- and project-specific access &
+Head position, environmental noise, inverse non-identifiability and
+cohort/protocol differences\\
+
+Wakeman--Henson and MOUS \citep{wakeman2015,schoffelen2019mous} &
+EEG/MEG with MRI and controlled face or language events &
+Sensor-to-source calibration, modality-consistency losses and language/vision
+motifs &
+Public research releases &
+Event-locked task narrowness, session separation, trial rejection and
+analysis flexibility\\
+
+PhysioNet EEG Motor Movement/Imagery &
+Scalp EEG during executed and imagined motor tasks with event markers &
+Motor-imagery BCI baselines, cortical motor readout and session-transfer
+tests &
+Public PhysioNet terms and attribution &
+Coarse montage, cue and movement artifacts, variable imagery strategy; not a
+direct motor-cortical source label\\
+
+ZuCo \citep{hollenstein2018zuco} &
+Simultaneous high-density EEG and eye tracking during natural reading &
+Gaze-conditioned language slices, oculomotor interfaces and word/event
+alignment &
+Research access and corpus terms &
+Small sample, fixation-related overlap, ocular contamination and
+text-specific effects; gaze and EEG clocks retained\\
+
+THINGS-EEG and THINGS-EEG2
+\citep{grootswagers2022things,gifford2022things2} &
+Large image/concept sets with rapid visual EEG repetitions &
+Rapid visual dynamics, representation and recurrence tests,
+stimulus-aligned pretraining &
+Public dataset/stimulus terms &
+Rapid-presentation and repetition effects, sensor-space mixing, image-set
+semantics and subject imbalance\\
+
+Temple University Hospital EEG Corpus \citep{obeid2016tuh} &
+Large de-identified clinical EEG with reports and heterogeneous montages &
+Artifact, abnormality and device-robustness pretraining; clinical
+out-of-domain evaluation &
+Registration/data-use agreement; clinical governance &
+Care-path selection, label/report noise, medication, age and montage
+heterogeneity; never treated as healthy resting physiology\\
+
+RAM and other consented intracranial memory studies &
+iEEG and stimulation events in clinical participants performing memory tasks &
+Local temporal dynamics, hippocampal/cortical interfaces and perturbational
+validation &
+Controlled access; highly sensitive clinical data &
+Epilepsy, electrode placement by clinical need, medication, sparse sampling
+and stimulation carryover; no whole-brain coverage claim\\
+
+DANDI and NEMAR/OpenNeuro archives &
+NWB- and BIDS-centered electrophysiology repositories, including EEG, MEG and
+iEEG studies &
+Study discovery, format validation and held-out external tests &
+Dataset-specific licenses, consent and versions &
+Archive-level pooling prohibited; species, preparation, task, coordinate and
+preprocessing semantics must match declared ports\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Candidate electrophysiology and BCI sources.} Sensor
+coordinates, references, head models, event clocks, artifact decisions, and
+inverse assumptions remain in the episode record. Intracranial recordings
+offer local precision but not unbiased or whole-brain sampling.}
+\label{tab:appendix-electrophysiology}
+\end{table*}
+
+\clearpage
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Resource} & \textbf{Native evidence and support} &
+\textbf{Planned SC-WBD role} & \textbf{Access/governance} &
+\textbf{Dominant bias, variance, and exclusion tests}\\
+\midrule
+OpenNeuro ds004024 &
+TMS--EEG with MRI, fMRI and diffusion data in a
+paired-associative-stimulation/connectivity paradigm &
+Electric-field registration, immediate response, propagation and multimodal
+perturbation benchmarks &
+Version-pinned OpenNeuro dataset &
+Protocol-specific excitability, coil pose/field uncertainty, artifacts and
+modest sample size; subject-level splits\\
+
+OpenNeuro ds003037 (SUDMEX\_TMS) &
+Longitudinal clinical MRI/TMS study in cocaine-use disorder &
+Clinical longitudinal shift and response-prediction stress test after core
+validation &
+Version-pinned OpenNeuro dataset &
+Diagnosis, treatment, attrition, medication/substance history and site
+specificity; not a healthy-population prior\\
+
+FieldTrip TMS--EEG tutorial data &
+Motor-cortex TMS--EEG example recordings and analysis conventions &
+Pipeline fixture, artifact-removal sensitivity and reproducible integration
+test &
+Tutorial terms; not a population corpus &
+Pedagogical selection and preprocessing dependence; never used to estimate
+clinical efficacy\\
+
+tFUS mVEP speller dataset &
+EEG during transcranial-ultrasound modulation in a visual evoked-potential
+BCI paradigm, reported for 25 healthy participants &
+Acoustic-write/EEG-read interface, BCI response and sham/condition modeling &
+Figshare record 25583334; license and metadata pinned &
+Device/protocol specificity, acoustic registration, EEG artifacts, blinding
+and replication; effect direction validated independently\\
+
+tFUS--ESI resting EEG dataset &
+Resting EEG around transcranial focused ultrasound and transcranial
+electrical stimulation &
+State-dependent perturbation trajectory and cross-intervention comparison &
+\href{https://doi.org/10.6084/m9.figshare.31029691}{Figshare record 31029691};
+version pinned &
+New-dataset maturity, device and montage effects, intervention order, focal
+exposure uncertainty and multiple comparisons\\
+
+AMASS \citep{mahmood2019amass}, Ego4D, and EPIC-KITCHENS &
+Human motion capture and egocentric audiovisual action streams &
+Embodied visual--motor priors, action/event segmentation and synthetic
+sensorimotor boundary generation &
+Dataset-specific noncommercial or research terms; media licenses retained &
+No neural measurement, capture/actor/camera bias, action taxonomy and
+cultural coverage; supervision stops at body/environment ports\\
+
+WESAD, BioVid, Ninapro \citep{atzori2014ninapro}, Sleep-EDF and selected
+PhysioNet physiology &
+Wearable autonomic signals, pain/affect protocols, EMG hand actions, sleep
+EEG/EOG/EMG, cardiac and respiratory streams &
+Interoceptive, nociceptive, autonomic, peripheral motor and sleep-state
+interfaces &
+Source-specific licenses; pain/clinical data receive enhanced governance &
+Construct labels, acted/elicited affect, peripheral-to-central ambiguity,
+demographic coverage, missing sensors and protocol confounds\\
+
+TRIBE v2 \citep{dascoli2026tribe} &
+Population multimodal-to-fMRI encoder producing fsaverage5 cortical
+predictions from video, audio or text &
+Quarantined optional distillation factor at perceptual, language, or
+hemodynamic interfaces; disabled by default and never a subject likelihood &
+Official weights/code under CC BY-NC 4.0; model version pinned &
+Not new data: perception--imagery, population--individual, teacher-domain,
+rendered-proxy, hemodynamic, report and registration discrepancy; retain only
+after matched empirical ablations\\
+
+TVB \citep{sanz2013}, SimNIBS, ROAST, k-Wave, BabelBrain and known-source
+electromagnetic simulations &
+Neural-mass trajectories; electromagnetic and acoustic fields; synthetic
+EEG/MEG with known latent sources &
+Solver tests, intervention operators, rare regimes, identifiability and
+recovery benchmarks &
+Software licenses, versions, meshes and solver settings archived &
+Model discrepancy and numerical error dominate; validate field and
+neural-response components separately and never count synthetic replications
+as participants\\
+
+Embodied simulators and SuperCognition prospective study &
+Physics-based humanoid sensory/motor/body trajectories; planned 23-adult,
+89-session calibrated multimodal protocol &
+Boundary pretraining followed by repeated individual inference, synchronized
+read/write calibration and prospective validation &
+Simulator licenses; human study pending ethics, consent, privacy review and
+actual enrollment &
+Simulation-to-human gap; planned counts are targets, not collected evidence;
+preregister endpoints and retain device/pose/clock calibration\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Candidate perturbational, embodied, physiological,
+prospective, and model-based sources.} Perturbation data receive privileged
+causal status only for the intervention and outcomes actually randomized or
+measured. Distillation models and physics engines shape priors or test
+recovery; they neither add empirical participants nor validate biology.}
+\label{tab:appendix-perturbation}
+\end{table*}
+
+\clearpage
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Resource} & \textbf{Native evidence and support} &
+\textbf{Planned SC-WBD role} & \textbf{Access/governance} &
+\textbf{Dominant bias, variance, and exclusion tests}\\
+\midrule
+ABCD and HBCD
+(\sourceurl{https://abcdstudy.org/}{ABCD};
+\sourceurl{https://hbcdstudy.org/data-sharing/}{HBCD}) &
+Longitudinal development, MRI/dMRI/fMRI, EEG in HBCD, biospecimens,
+wearables, cognition, language, caregiver interaction and environment &
+Age-conditioned anatomy and dynamics; developmental boundary conditions;
+multimodal and longitudinal missingness models &
+Controlled research access; child data, family structure and heightened
+consent/privacy obligations &
+Development is not adult stationarity; scanner/site, socioeconomic,
+caregiver and attrition bias; never initialize an adult model without age
+conditioning\\
+
+Healthy Brain Network
+(\sourceurl{https://fcon_1000.projects.nitrc.org/indi/cmi_healthy_brain_network/}{portal};
+\sourceurl{https://openneuro.org/datasets/ds005505/}{EEG}) &
+Pediatric multimodal MRI, EEG, eye tracking, actigraphy, genetics, voice,
+video, cognition and clinical/behavioral phenotypes &
+Cross-modal source cards, developmental BCI and naturalistic observation
+ports, voice--face--gaze synchronization &
+Open and managed components; pediatric and clinical sensitivity &
+Community recruitment enriched for concerns, age and diagnosis
+heterogeneity, device/version drift; participant and family grouping\\
+
+NKI--Rockland Sample
+(\sourceurl{https://fcon_1000.projects.nitrc.org/indi/enhanced/}{NKI-RS}) &
+Lifespan MRI, diffusion, resting fMRI, phenotypes and selected repeated
+measures &
+Population variance, lifespan generalization and site-transfer tests &
+INDI/NITRC access with release-specific terms &
+Regional recruitment, protocol waves and uneven repeated measures; do not
+treat cross-sectional age effects as trajectories\\
+
+Individual Brain Charting
+(\sourceurl{https://openneuro.org/datasets/ds000244/}{OpenNeuro ds000244}) &
+Repeated high-resolution task fMRI across many cognitive paradigms in a fixed
+cohort &
+Task-to-region routing, within-person cognitive topography and cross-task
+latent reuse &
+Versioned OpenNeuro/EBRAINS releases &
+Small cohort, task ontology and session practice effects; contrast labels are
+not primitive mental-state labels\\
+
+Courtois NeuroMod
+(\sourceurl{https://www.cneuromod.ca/}{project};
+\sourceurl{https://hub.datalad.org/naturalistic-imaging/cneuromod-opendata}{DataLad}) &
+Deeply sampled individual fMRI with movies, games, images, tasks, behavior
+and stimulus annotations &
+Long-horizon individualized dynamics, context switching, memory and
+naturalistic prediction heads &
+Open components with dataset-specific stimulus licenses &
+Very few extensively scanned participants, stimulus copyright and repeated
+exposure; excellent within-person evidence but weak population coverage\\
+
+TractoInferno
+(\sourceurl{https://www.nature.com/articles/s41597-022-01833-1}{dataset paper})
+and Fiber Data Hub
+(\sourceurl{https://brain.labsolver.org/}{portal}) &
+Multi-site diffusion MRI, bundles and large collections of processed
+tractograms from HCP, ABCD, INDI and OpenNeuro &
+Tract endpoint distributions, bundle-recognition priors, tractometry feature
+heads and site-robust structural uncertainty &
+Open or source-governed snapshots; preserve parent scan and processing recipe &
+Algorithmic tractograms are derived evidence; false paths, bundle-definition
+leakage and duplicate parent scans require lineage-aware splits\\
+
+ISMRM 2015 Tractography Challenge
+(\sourceurl{https://tractometer.org/ismrm2015/}{Tractometer};
+\sourceurl{https://doi.org/10.5281/zenodo.572345}{data}) &
+Brain-like diffusion phantom with known long-range bundles and challenge
+tractograms &
+Recovery tests for tractography/tractometry operators and synthetic
+structural-connectivity uncertainty calibration &
+Open challenge data and Zenodo versions &
+Known simulated truth is valuable for algorithm error, not biological
+prevalence; test domain shift to in-vivo data\\
+
+Hansen neurotransmitter maps and neuromaps
+(\sourceurl{https://github.com/netneurolab/hansen_receptors}{receptor atlas};
+\sourceurl{https://netneurolab.github.io/neuromaps/}{neuromaps}) &
+PET-derived group maps for receptors, transporters and other cortical
+features, plus registered cross-atlas transformations &
+Regional gain, neuromodulatory phenotype and prior-covariance hypotheses;
+map-to-surface calibration &
+Open code/maps under source terms; map-specific citations retained &
+Group averages, tracer/selectivity, spatial autocorrelation and donor
+differences; never infer a subject's receptor density from atlas value alone\\
+
+EBRAINS Julich receptor-density data
+(\sourceurl{https://julich-brain-atlas.de/atlas/neurotransmitter-receptors}{portal}) &
+Post-mortem receptor-density measurements by area, layer and receptor class &
+Laminar/regional parameter priors and model-class comparisons for
+neuromodulatory operators &
+EBRAINS knowledge-graph terms and versioned records &
+Post-mortem preparation, small donor sets and parcellation correspondence;
+retain measurement units and sampling locations\\
+
+ENIGMA, BrainMap, NeuroSynth and NeuroQuery &
+Consortium summary statistics and coordinate/text-derived meta-analytic maps
+across disorders, tasks and cognitive terms &
+External population regularizers, hypothesis generation and evaluation-only
+maps for regional coverage &
+Resource-specific terms; summary data do not erase cohort governance &
+Publication and coordinate-reporting bias, term circularity and study
+dependence; meta-analytic labels cannot supervise instantaneous latent state\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Additional developmental, dense-individual, tractometric,
+connectomic, molecular, and meta-analytic sources.} Structural derivatives
+retain their parent scan, algorithm and parameters. Atlas and meta-analytic
+maps constrain priors or evaluations; they do not become subject-level
+measurements by registration.}
+\label{tab:appendix-connectome-expanded}
+\end{table*}
+
+\clearpage
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Resource} & \textbf{Native evidence and support} &
+\textbf{Planned SC-WBD role} & \textbf{Access/governance} &
+\textbf{Dominant bias, variance, and exclusion tests}\\
+\midrule
+GazeBase
+(\sourceurl{https://doi.org/10.6084/m9.figshare.12912257}{repository}) &
+Longitudinal monocular eye movements across oculomotor tasks and repeated
+rounds &
+Oculomotor state, subject/session variability, identity leakage tests and
+calibration-drift models &
+Figshare dataset terms &
+College-age concentration, one apparatus and task battery; biometric
+identifiability requires sensitive governance\\
+
+OpenEDS, OpenEDS2020 and TEyeD &
+High-rate eye-camera sequences, pupil/iris/eyelid segmentation and gaze
+targets, including head-mounted configurations &
+Instrument observation model from eye image to gaze/pupil state; blink and
+tracking-failure likelihoods &
+Dataset-specific research licenses &
+Camera geometry and illumination dominate; trains the sensor head, not visual
+attention or cortical intent\\
+
+COCO-Search18
+(\sourceurl{https://sites.google.com/view/cocosearch/}{project}) &
+Goal-directed gaze trajectories over natural scenes during 18 object-search
+tasks &
+Task-conditioned fixation/saccade policies, visual search and
+world-centered salience interfaces &
+Research release plus COCO image terms &
+Small participant set, laboratory search and target-category restriction;
+mouse-free gaze but no neural measurement\\
+
+SALICON and MIT/Tuebingen Saliency Benchmark
+(\sourceurl{https://salicon.net/}{SALICON};
+\sourceurl{https://saliency.tuebingen.ai/}{benchmark}) &
+Large free-viewing/saliency annotations, including mouse-contingent proxy
+measurements and laboratory eye tracking &
+Population visual-attention proposal prior and negative control for
+task-free gaze prediction &
+Image and benchmark licenses vary &
+Crowdsourced mouse traces are not eye movements; central bias and image-set
+semantics; never train subject-specific oculomotor dynamics as truth\\
+
+ZuCo, OneStop, GECO, Provo and Dundee reading corpora &
+Eye movements over natural text; ZuCo adds synchronized EEG; some corpora add
+comprehension and bilingual conditions &
+Gaze--word alignment, reading policy, lexical prediction, regressions and
+language/oculomotor boundary states &
+Corpus-specific access and text copyright &
+Language, typography, comprehension, population and eye-tracker differences;
+fixation duration is multiply determined\\
+
+Ego4D gaze/social subsets and Project Aria
+(\sourceurl{https://ego4d-data.org/}{Ego4D}) &
+Egocentric video/audio with eye tracking in subsets, social interaction,
+hands, activities and synchronized sensors &
+Head--eye--world coordinate transforms, active vision, social orienting and
+naturalistic audiovisual boundary trajectories &
+License, privacy and face/voice restrictions; subset-specific metadata &
+Wearable camera viewpoint, missing gaze, privacy-driven redaction and weak
+neural linkage; preserve camera intrinsics and time bases\\
+
+EPIC-KITCHENS and HD-EPIC
+(\sourceurl{https://epic-kitchens.github.io/}{project}) &
+Unscripted egocentric kitchen video, audio, narrations, actions, hands,
+objects and 3-D/digital-twin annotations in HD-EPIC &
+Long-horizon visuomotor episodes, object permanence, hand--object contact,
+action hierarchies and digestive-input event proposals &
+Research licenses; participant and household privacy; food/media metadata &
+Kitchen/task domain, cultural and nutritional coverage, narration timing and
+no direct neural signal\\
+
+AMASS, Human3.6M, CMU MoCap and Motion-X &
+Unified or source-specific body kinematics, meshes, actions and
+text/audio-conditioned motion &
+Biomechanical pose priors, efference/proprioception trajectories, motor
+decoder pretraining and simulator boundary conditions &
+Dataset-specific licenses; some noncommercial &
+Marker-to-body fitting, actor/activity coverage and non-neural control
+signals; enforce anthropometry and dynamics consistency\\
+
+Ninapro
+(\sourceurl{https://ninapro.hevs.ch/}{portal}) &
+Surface EMG with hand kinematics, inertial and clinical variables across
+intact participants and amputees &
+Peripheral motor observation, intended-action interfaces, muscle synergy and
+prosthetic-control benchmarks &
+Public research datasets with source-specific terms &
+Electrode shift, fatigue, anatomy, amputation and session variability; EMG
+does not uniquely identify descending motor command\\
+
+Touch and Go
+(\sourceurl{https://touch-and-go.github.io/}{project}) &
+Paired egocentric video and tactile-sensor recordings from human exploration
+of real objects &
+Visual--tactile association, contact-event prediction and haptic boundary
+pretraining for embodied simulation &
+Research dataset and media terms &
+Instrumented touch differs from skin afferents; collector policy and object
+coverage; supervision terminates at tactile boundary ports\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Candidate gaze, active-vision, movement, proprioceptive, and
+tactile sources.} These corpora can train sensor, action and body-boundary
+modules even without brain recordings. Their gradients must stop at the
+boundary unless paired neural evidence supplies an identifiable continuation.}
+\label{tab:appendix-sensory-motor}
+\end{table*}
+
+\clearpage
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Resource} & \textbf{Native evidence and support} &
+\textbf{Planned SC-WBD role} & \textbf{Access/governance} &
+\textbf{Dominant bias, variance, and exclusion tests}\\
+\midrule
+Switchboard and Fisher English
+(\sourceurl{https://catalog.ldc.upenn.edu/LDC97S62}{Switchboard}) &
+Two-channel telephone conversations with transcripts, speakers, topics,
+turns and dialogue-act annotations in derived releases &
+Turn taking, interruption, repair, pragmatic transition and person-specific
+speech/language boundary priors &
+LDC licensing and redistribution restrictions &
+Telephone band limit, prompted topics, era/dialect coverage and no visual or
+physiological context; cannot supervise neural language state directly\\
+
+AMI Meeting Corpus
+(\sourceurl{https://groups.inf.ed.ac.uk/ami/corpus/}{portal}) &
+Synchronized close/far-field audio, multi-camera video, slides, pens,
+whiteboard, transcripts, dialogue acts, head movement and meeting roles &
+Multi-party self/other tracking, speaker attention, conversational memory,
+room acoustics and collaborative-action dynamics &
+Public CC components plus registration and signal-specific terms &
+Mostly staged design meetings, dropped-frame repairs, role and room
+regularities; retain channel maps and synchronization corrections\\
+
+IEMOCAP
+(\sourceurl{https://sail.usc.edu/iemocap/}{portal}) &
+Dyadic speech, video, facial/head/hand motion capture, transcripts and
+categorical/dimensional affect annotations &
+Audio--facial--gesture alignment, expressive action, prosody and
+affect-readout pretraining &
+USC research release; identity and voice sensitivity &
+Actors, scripted/improvised elicitation, annotator disagreement and
+stereotyped labels; train expression/readout, not latent feeling as ground
+truth\\
+
+RECOLA
+(\sourceurl{https://recola.human-ist.ch/}{portal}) &
+Synchronized French dyadic collaboration with audio, video, ECG, EDA and
+continuous affect annotations &
+Social interaction, autonomic--expressive coupling, delayed annotator
+observation models and multimodal clock alignment &
+Academic/nonprofit access conditions &
+Small cultural/language context, remote task and annotation lag; valence and
+arousal are observer variables, not sufficient affective state\\
+
+MSP-Podcast, MELD and CMU-MOSEI &
+Naturalistic or media-derived speech/video/text with emotion, sentiment,
+speaker and dialogue context annotations &
+Prosody, discourse-conditioned expression and robust multimodal readout heads;
+hard negatives for generic context-conditioned language &
+Resource-specific research terms and media copyright &
+Podcast/television editing, label ontology, demographic imbalance and acted
+or public persona; do not use labels as limbic targets\\
+
+LibriSpeech, Common Voice, VoxCeleb and Bridge2AI Voice &
+Read speech, crowdsourced speech, identity-rich interview audio and
+clinically linked voice features/raw audio under controlled access &
+Acoustic/phonetic front ends, speaker/session nuisance separation and
+voice-to-respiratory/articulatory boundary models &
+Open, community or controlled tiers; voice is identifiable biometric data &
+Read versus spontaneous speech, internet/media noise, identity leakage,
+health-label confounding and language imbalance\\
+
+AudioSet, VGGSound, FSD50K and AudioCaps &
+Large environmental audio or audiovisual event corpora with weak/strong
+labels and captions &
+Auditory scene decomposition, event-object proposals and source-separation
+priors before neural fine-tuning &
+Media links and licenses may change; source snapshots and hashes retained &
+Web selection, label noise, clip context loss and copyright; event class is
+not auditory-cortical representation\\
+
+SpokenCOCO, HowTo100M and YouCook2 audio--language subsets &
+Spoken image captions or instructional audiovisual speech aligned to objects,
+steps and actions &
+Audio--vision--language grounding, temporal event alignment and action
+prediction at environmental ports &
+Dataset and underlying media licenses &
+Caption/task bias, narration describes rather than causes action, automatic
+transcription error and instructional-domain concentration\\
+
+MUSAN, DEMAND, AIR and BUT ReverbDB &
+Speech/music/noise mixtures, ambient noise and measured/simulated room impulse
+responses &
+Microphone channel, reverberation, noise and source-separation calibration;
+augmentation with known nuisance factors &
+Research licenses; room/device metadata retained &
+Acoustic nuisance corpora improve robustness but contain no cognitive labels;
+simulation-to-room mismatch and convolution artifacts\\
+
+Ego4D social interaction, AVA-AVD and VoxConverse &
+Naturalistic audiovisual multi-speaker scenes with diarization, gaze/social
+or active-speaker annotations &
+Speaker persistence, face--voice binding, conversational scene memory and
+self/other assignment &
+Face/voice privacy, media and benchmark-specific terms &
+Public/performed settings, annotation ambiguity, missing participants and
+camera selection; test cross-corpus generalization\\
+
+SuperCognition longitudinal conversation protocol &
+Planned consented participant conversations, self-reports, tasks, voice,
+video/gaze, physiology and synchronized EEG where feasible &
+Individual lexical/prosodic dynamics, memory and preference updates, report
+observation model and session-to-session person-state inference &
+Prospective ethics, explicit voice/language reuse consent, withdrawal and
+private/public release tiers &
+Interviewer prompting, demand characteristics, privacy, rehearsal and model
+feedback loops; preregister held-out situations and never scrape private
+conversation\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Candidate speech, audio, conversation, and social-interaction
+sources.} Unpaired corpora train environmental, linguistic, articulatory,
+expressive and self--other boundary dynamics. They become evidence about brain
+dynamics only through measured paired modalities or prospectively validated
+transfer.}
+\label{tab:appendix-conversation}
+\end{table*}
+
+\clearpage
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Resource} & \textbf{Native evidence and support} &
+\textbf{Planned SC-WBD role} & \textbf{Access/governance} &
+\textbf{Dominant bias, variance, and exclusion tests}\\
+\midrule
+PhysioNet MIMIC-III/IV Waveforms
+(\sourceurl{https://physionet.org/content/mimic4wdb/}{MIMIC-IV Waveforms}) &
+ICU ECG, PPG, respiration, invasive/non-invasive pressure and numerics linked
+to clinical context in subsets &
+Cardiorespiratory boundary dynamics, artifact/device models and
+pathophysiological stress tests &
+Credentialed PhysioNet access, training and data-use agreement &
+Critically ill single-system cohorts, interventions, missingness, device and
+alarm artifacts; never a healthy autonomic prior without domain conditioning\\
+
+BIDMC, CapnoBase, Fantasia and PPG benchmark collections &
+ECG/PPG, respiration, capnography and reference intervals under resting or
+clinical conditions &
+Pulse transit, respiratory sinus arrhythmia, cardiorespiratory coupling and
+wearable observation calibration &
+Public or research-specific dataset terms &
+Small cohorts and differing sensors/sampling; alignment and reference quality
+vary; separate physiology from monitor preprocessing\\
+
+Sleep-EDF, MASS, SHHS, MESA Sleep and ISRUC &
+Overnight PSG: EEG, EOG, EMG, ECG, respiration, oxygenation, stages and
+clinical/lifestyle variables in selected cohorts &
+Sleep-state transitions, autonomic--cortical coupling, circadian context and
+long-horizon missingness/noise models &
+Open to controlled access; health and sleep data are sensitive &
+Scoring-version and technologist disagreement, apnea/medication, montage and
+cohort differences; stage labels are coarse observations\\
+
+WESAD, DEAP and MAHNOB-HCI &
+Wearable ECG, EDA, EMG, temperature and respiration or EEG/peripheral physiology
+during stress and affective media protocols &
+Autonomic observation heads, arousal/readiness proposals and
+subject-normalization benchmarks &
+Dataset-specific research licenses &
+Elicited/acted states, small homogeneous samples, sensor placement and label
+circularity; no direct limbic-state labels\\
+
+UK Biobank accelerometry/biomarkers and NHANES &
+Population blood/urine biomarkers, anthropometry, nutrition, activity,
+wearables and health context; imaging linkage in UK Biobank subsets &
+Slow systemic state, metabolic/endocrine covariates and population priors for
+body-to-brain boundary conditions &
+UKB application/DUA; NHANES public-use and restricted components &
+Cross-sectional confounding, assay batch, self-report, selection and causal
+ambiguity; slow covariates cannot supervise fast neural trajectories\\
+
+Three-channel surface EGG dataset
+(\sourceurl{https://zenodo.org/records/3878435}{Zenodo 3878435}) &
+Raw and preprocessed cutaneous electrogastrograms from 20 healthy adults &
+Gastric electrical observation head, preprocessing audit and fasting/fed or
+rhythm feature calibration where metadata support it &
+Zenodo version/license and participant metadata &
+Small sample, three channels, electrode geometry, motion and abdominal volume
+conduction; retain raw data and preprocessing parameters\\
+
+Body-surface gastric mapping normative studies
+(\sourceurl{https://pubmed.ncbi.nlm.nih.gov/36534985/}{normative reference}) &
+High-resolution abdominal electrical maps, standardized meal response,
+spectral/rhythm/amplitude reference intervals and symptom profiles &
+Population priors and calibration coefficients for gastric slow-wave
+frequency, rhythm stability, meal response and sensor noise &
+Published aggregate coefficients; individual data only under study/device
+governance &
+Device/protocol specificity, BMI adjustment, meal composition and proprietary
+processing; coefficients are calibration priors, not universal truths\\
+
+CellML/Physiome model repository
+(\sourceurl{https://www.cellml.org/}{CellML}) and gastrointestinal slow-wave
+models &
+Unit-annotated reusable cellular, electrophysiological, endocrine,
+cardiovascular and gastrointestinal mathematical models &
+Candidate transfer functions and priors for stomach, cardiac, respiratory,
+endocrine and homeostatic modules; dimensional-consistency tests &
+Model-specific licenses, versions and original validation papers &
+Published mechanisms vary in species, preparation and identifiability; use as
+competing model classes with discrepancy, never as data\\
+
+Gastrointestinal cine-MRI and pan-alimentary MRI studies &
+Dynamic stomach volume, contractions, emptying and bowel motility with meal
+timing; paired EGG in some protocols &
+Mechanical gastric-state observation heads, electrical--mechanical delay and
+meal-conditioned body dynamics &
+Often study-controlled rather than fully open; negotiate data and protocol
+access &
+Sequence/segmentation dependence, supine scanner context, sparse cohorts and
+no direct enteric neural recording\\
+
+GTEx, Human Protein Atlas, Human Cell Atlas and HuBMAP &
+Tissue/cell expression, histology, proteomics and spatial molecular maps
+across organs and donors &
+Slow organ phenotype, receptor/transport and cell-class priors for peripheral
+and autonomic interfaces &
+Portal-specific consent, controlled genotypes and redistribution terms &
+Post-mortem or surgical tissue, batch and donor effects, organ sampling and
+healthy/disease mixture; never infer a living subject's expression directly\\
+
+Human Microbiome Project and curated metabolomics resources &
+Microbial community, functional, metabolite and host metadata across body
+sites and cohorts &
+Very slow gut/environment boundary covariates and hypothesis generation for
+immune/metabolic state coupling &
+Controlled individual-level data and resource-specific terms &
+Diet, geography, medications, batch and compositionality dominate; no direct
+neural causal edges without intervention or longitudinal mediation evidence\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Candidate autonomic, sleep, gastrointestinal, endocrine,
+metabolic, and peripheral physiological sources.} These signals constrain the
+body with which the brain is coupled. Aggregate clinical coefficients and
+mechanistic repositories are calibration or model-class sources, not
+participant observations.}
+\label{tab:appendix-physiology-expanded}
+\end{table*}
+
+\clearpage
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.06}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Resource} & \textbf{Native evidence and support} &
+\textbf{Planned SC-WBD role} & \textbf{Access/governance} &
+\textbf{Dominant bias, variance, and exclusion tests}\\
+\midrule
+Pyrfume and DREAM Olfaction Prediction Challenge
+(\sourceurl{https://pyrfume.org/}{Pyrfume};
+\sourceurl{https://www.synapse.org/Synapse:syn2811262}{DREAM}) &
+Curated odorant chemistry, receptor/biology and psychophysical archives;
+DREAM links 476 molecules to ratings from 49 people &
+Chemical-to-olfactory-boundary priors, concentration and person variability,
+odor-object representations and tests of learned olfactory geometry &
+Archive-specific source licenses; DREAM/Synapse registration and challenge
+terms &
+Sparse chemical space, descriptor ontology, concentration, anosmia, culture
+and small repeated cohorts; ratings supervise reports, not olfactory-cortical
+state\\
+
+BioVid Heat Pain and X-ITE Pain
+(\sourceurl{https://www.nit.ovgu.de/nit/en/BioVid-p-1358.html}{BioVid}) &
+Individually calibrated thermal/electrical nociceptive stimuli with facial
+video, ECG, EDA, EMG and self-report in controlled protocols &
+Dose-to-peripheral-response and expressive-readout operators; pain-report
+likelihoods; hard tests for nociception, autonomic response and expression &
+Application or research agreement; biometric video and health data &
+Healthy volunteers, repeated laboratory pain, expectation, habituation and
+sex/age/site effects; stimulus, report and experienced pain remain distinct\\
+
+BP4D+ multimodal emotion corpus
+(\sourceurl{https://cove.thecvf.com/datasets/523}{portal}) &
+RGB/thermal video, 2-D/3-D landmarks, facial action units and peripheral
+physiology from 140 adults during elicitation tasks &
+Facial-muscle and autonomic observation heads, expression dynamics and
+cross-channel timing; never a direct target for an affective latent &
+Controlled academic access; identifiable face and physiology &
+Elicitation/task regularities, selective frame coding, demographic coverage
+and annotator ontology; validate actions and signals separately from labels\\
+
+Sea Hero Quest
+(\sourceurl{https://doi.org/10.1038/s41598-023-30937-w}{study}) &
+Large-scale virtual wayfinding and path-integration trajectories with device
+and optional demographic/context variables &
+Population navigation-policy priors, path-integration errors, hippocampal
+interface stress tests and age/culture-conditioned behavioral likelihoods &
+Research approval and data-access statement; use only consented releases &
+Self-selection, touchscreen/game literacy, device, country, missing
+demographics and virtual-world policy; behavior does not localize its neural
+implementation\\
+
+ExtraSensory and PAMAP2
+(\sourceurl{https://extrasensory.ucsd.edu/}{ExtraSensory};
+\sourceurl{https://archive.ics.uci.edu/dataset/231/pamap2+physical+activity+monitoring}{PAMAP2}) &
+Phone/watch context streams in everyday life; laboratory IMU, temperature
+and heart-rate trajectories over 18 activities in PAMAP2 &
+Body/environment/activity boundary states, wearable observation models,
+multirate missingness and locomotor/metabolic context for longer episodes &
+Public research releases and source terms &
+ExtraSensory has 60 largely student/research users; PAMAP2 has nine subjects;
+self-report, device placement and protocol effects prohibit population truth\\
+
+StudentLife
+(\sourceurl{https://www.cs.dartmouth.edu/~xia/publication/mobilehealth17/}{study}) &
+Ten-week smartphone sensing, activity, sleep, location, conversation proxies,
+self-report and academic context from a class cohort &
+Slow contextual state, routine change, missing-not-at-random sensing and
+longitudinal boundary episodes for person-adaptation experiments &
+Public research data under study terms; mobility and mental-health sensitivity &
+Forty-eight mostly computer-science students, one term and one institution;
+correlations and phone-derived proxies cannot supervise causal mood dynamics\\
+
+Open Humans and OpenAPS Data Commons
+(\sourceurl{https://www.openhumans.org/create/}{Open Humans}) &
+Participant-directed combinations of genomes, wearables, GPS, HealthKit,
+glucose, insulin and other voluntarily shared longitudinal streams &
+Source-card and consent infrastructure; rare dense-person time series;
+glucose--meal--activity--sleep boundary dynamics and personalization tests &
+Project- and member-specific permissions; consent is granular and revocable &
+Extreme self-selection, heterogeneous preprocessing, missingness and
+intervention feedback; never treat community donation as blanket reuse consent\\
+
+Food-101 and USDA FoodData Central
+(\sourceurl{https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/}{Food-101};
+\sourceurl{https://fdc.nal.usda.gov/}{FoodData Central}) &
+Food images and labels; versioned composition, nutrient, portion and branded
+food records rather than participant physiology &
+Visual meal-object proposals and uncertain nutrient boundary conditions for
+gastric, metabolic and endocrine simulations when an observed meal is paired &
+Food-101 media terms; USDA data are public-domain/CC0 with version tracking &
+Image label and cuisine bias, recipe/portion ambiguity and branded-product
+drift; nutrient lookup is a noisy covariate, not ingested dose or absorption\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Additional chemical-sensory, nociceptive, expressive,
+navigation, ecological-context, and nutrition sources.} These resources widen
+the admissible boundary conditions and behavioral tests without pretending
+that an odor rating, facial label, phone context, game trajectory or food name
+is a measured neural latent. Each source receives an explicit gradient-stop
+boundary and an observation model appropriate to its native support.}
+\label{tab:appendix-additional-boundaries}
+\end{table*}
+
+\clearpage
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.21\textwidth}p{.24\textwidth}p{.15\textwidth}X@{}}
+\toprule
+\textbf{Calibration / reference source} &
+\textbf{Parameters or artifacts supplied} &
+\textbf{Planned SC-WBD use} &
+\textbf{Version/governance requirement} &
+\textbf{Uncertainty and validation requirement}\\
+\midrule
+BIDS coordinate-system specification
+(\sourceurl{https://bids-specification.readthedocs.io/en/stable/appendices/coordinate-systems.html}{coordinates}),
+NWB and DICOM metadata &
+Origins, orientations, units, fiducials, sensor/electrode frames, image
+affines, channel and clock metadata &
+Typed coordinate and acquisition manifests; import validation before any
+spatial loss or cross-dataset alignment &
+Pin specification/version and retain unmapped native fields &
+Standards document metadata but do not verify it; compare landmarks,
+determinants, units and round-trip transforms against raw headers\\
+
+TemplateFlow, FreeSurfer, fsaverage, fsLR and standard atlases &
+Versioned templates, surfaces, parcellations, transforms and density variants &
+Explicit atlas/view projections and multiresolution surface crosswalks &
+Record template identifier, resolution, software and transform chain &
+Registration residual, topology mismatch and interpolation smoothing; atlas
+coordinates never replace subject coordinates\\
+
+IT'IS Tissue Properties Database
+(\sourceurl{https://itis.swiss/virtual-population/tissue-properties/database}{portal}),
+Gabriel/IFAC and NICT dielectric tables &
+Frequency-dependent conductivity/permittivity, density, thermal, acoustic,
+viscosity, relaxation and water-content parameters &
+Priors for EEG/MEG lead fields, TMS/tES electric fields, tFUS propagation,
+thermal exposure and MRI contrasts &
+Archive database version, frequency, temperature, tissue definition and
+citation; commercial terms checked &
+Literature aggregation, ex-vivo/in-vivo and age variation; propagate
+parameter distributions and compare alternate databases\\
+
+SimNIBS head, coil and electrode examples and coil library
+(\sourceurl{https://simnibs.github.io/simnibs/build/html/dataset.html}{datasets}) &
+Segmented head meshes, standard electrode placement, TMS coil geometries and
+finite-element reference outputs &
+Unit/solver fixtures, pose-to-field operator tests and subject-head-model
+pipeline initialization &
+Pin SimNIBS, mesh, coil file, conductivities and solver tolerances &
+Example outputs validate implementation consistency, not biological response;
+compare mesh convergence and independent solvers\\
+
+MNE-Python, FieldTrip and OpenMEEG reference datasets &
+Forward/inverse examples, sensor geometries, spherical/BEM/FEM models,
+filtering and event pipelines &
+EEG/MEG lead-field, reference, source-localization and artifact regression
+fixtures &
+Version code, montage, head model, filters and rank decisions &
+Inverse solution is non-unique and toolbox defaults differ; require
+simulation recovery and cross-tool comparison\\
+
+NIST/ADNI MRI phantoms, MRIQC and fMRIPrep reference outputs &
+Geometry, signal uniformity, SNR, distortion, temporal stability, motion and
+preprocessing quality metrics &
+Scanner/session nuisance priors, QA rejection and uncertainty inflation for
+MRI/fMRI observation heads &
+Retain phantom serial/protocol, scanner software and pipeline/container hash &
+Phantom stability does not calibrate neurovascular coupling; site thresholds
+must be empirically related to downstream error\\
+
+Breath-hold/hypercapnia CVR, arterial-spin-labeling and calibrated-fMRI data &
+Vascular reactivity, perfusion, delay and oxygenation responses under known
+gas or respiratory tasks &
+Subject/session hemodynamic parameters and uncertainty for neural-to-BOLD
+observation models &
+Protocol, gas delivery, end-tidal traces, task compliance and physiological
+monitoring retained &
+Vascular and behavioral compliance effects; use to calibrate observation
+heads, not neural state\\
+
+Tractometer, TractSeg, pyAFQ, DIPY/RecoBundles and MRtrix fixtures &
+Bundle definitions, streamline metrics, tract profiles, synthetic truth and
+reference implementations &
+Tractometry feature extraction, algorithm-disagreement ensembles and
+connectome prior uncertainty &
+Pin atlas/bundle definitions, seeding, thresholds, software and parent DWI &
+Bundles are pipeline-dependent; compare algorithms and known-truth phantoms,
+and prevent derivative duplication in splits\\
+
+k-Wave, BabelBrain, acoustic phantoms and hydrophone measurements &
+Acoustic propagation, transducer geometry, phase/steering, pressure and
+thermal predictions or measurements &
+tFUS drive-to-in-situ-field operator, solver discrepancy and device-specific
+calibration &
+Archive transducer, waveform, CT conversion, grid, boundary conditions and
+hydrophone calibration &
+Skull conversion, attenuation, coupling and cavitation uncertainty; validate
+pressure fields before fitting neural effects\\
+
+TMS--EEG artifact phantoms, coil probes and manufacturer waveform data &
+Pulse waveform, coil current, induced-field measurements, amplifier recovery,
+auditory/somatosensory artifact templates &
+Separate physical dose, instrument saturation and peripheral co-stimulation
+from candidate cortical response &
+Device, coil, amplifier, ear masking and pose calibration versioned &
+Vendor and laboratory specificity; sham rarely matches all sensory effects;
+require artifact-injection recovery and negative controls\\
+
+Gaze target grids, camera intrinsics and synchronization flashes &
+Per-session eye-tracker mapping, pupil geometry, head pose, drift, latency and
+clock offsets &
+Calibrate eye-image/gaze observation operators and world/head/eye transform
+chains before using fixation losses &
+Raw calibration points and quality flags retained, not only vendor summary &
+Calibration may be task- and gaze-range dependent; propagate spatially varying
+error and detect recalibration breaks\\
+
+Microphone calibration, room impulse responses and time-code/TTL tests &
+Channel gain/phase, impulse response, array geometry, dropped frames, latency
+and clock drift &
+Acoustic observation model, diarization uncertainty and audiovisual event
+alignment &
+Retain hardware, sample-rate conversion, synchronization repairs and room
+geometry &
+Codec and automatic alignment can create apparent neural delays; validate with
+physical sync events and known-source playbacks\\
+
+Gastric electrode geometry, standardized meal and normative BSGM coefficients &
+Electrode positions, channel transfer, slow-wave frequency/rhythm/amplitude,
+meal timing and symptom-report alignment &
+Gastroelectric observation model and slow body-state priors; initialize
+individual calibration before longitudinal inference &
+Record device, preprocessing, BMI/body geometry, meal composition and
+reference-study version &
+Device- and protocol-specific norms, volume conduction and proprietary
+coefficients; measured raw signals override aggregate priors\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Candidate calibration, coordinate, physical-property, phantom,
+and reference-implementation sources.} Calibration sources can train nuisance
+parameters, observation/intervention operators and uncertainty. They do not
+increase the number of biological observations and must not be mixed into
+accuracy denominators as participant data.}
+\label{tab:appendix-calibration-sources}
+\end{table*}
+
+\clearpage
+\section{Appendix B. Machine-Readable Source Card and Gradient Contract}
+
+A named dataset is not a training instruction. SC-WBD therefore ingests a
+versioned \emph{source card} \(D_k\) that declares what a source measures, what
+transformations were applied, and where its gradients are permitted to flow:
+
+\[
+D_k=\bigl(I_k,G_k,P_k,S_k,T_k,C_k,\mathcal O_k,\mathcal U_k,
+M_k,B_k,V_k,\Delta_k,A_k,R_k\bigr).
+\]
+
+Here \(I_k\) is identity/version/provenance; \(G_k\) is governance;
+\(P_k\) is the population and repeated-measures structure; \(S_k\) and \(T_k\)
+are spatial and temporal support; \(C_k\) is the coordinate/calibration
+manifest; \(\mathcal O_k\) and \(\mathcal U_k\) are observation and
+intervention operators; \(M_k\) is missingness; \(B_k,V_k,\Delta_k\) are
+systematic bias, sampling variance and model discrepancy; \(A_k\) is the
+admissible parameter/module set; and \(R_k\) is the split and role policy. A
+source that cannot populate a required field is not coerced into a common
+raster. The field remains unknown, and the corresponding loss or gradient
+path is disabled.
+
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\textwidth}{@{}p{.15\textwidth}p{.23\textwidth}p{.28\textwidth}X@{}}
+\toprule
+\textbf{Source-card field} & \textbf{Required content} &
+\textbf{Compiler consequence} & \textbf{Rejection or warning condition}\\
+\midrule
+Identity and lineage &
+Persistent ID, release, file hashes, parent/derived relation, software and
+container hashes &
+Makes the exact training mixture reproducible and prevents a derivative from
+crossing a parent-level split &
+Unversioned mutable download, unknown parent, duplicate participant or
+irreproducible preprocessing\\
+
+Governance and consent &
+License, DUA, purpose limits, consent scope, redistribution, withdrawal,
+privacy and retention rules &
+Controls storage, user visibility, allowed objectives and whether weights or
+examples may be released &
+Use outside consent/DUA, biometric data without safeguards, incompatible
+license or unresolved withdrawal\\
+
+Population and hierarchy &
+Participant, family, site, device, session, run, trial, demographics and
+selection mechanism &
+Builds hierarchical effects and leakage-safe group splits &
+Participant/family duplicated across folds, unknown selection or subgroup
+too small for claimed calibration\\
+
+Native signal and units &
+Raw channels/voxels/events, units, reference, dynamic range, saturation and
+quantization &
+Instantiates typed ports and unit checks before resampling or normalization &
+Unit ambiguity, undocumented reference, clipping or irreversible aggregation
+that removes the target signal\\
+
+Spatial support and point-spread &
+Sensor/voxel/mesh/field support, resolution, kernel/lead field and sampling
+geometry &
+Attaches losses only at supported scales and creates projection uncertainty &
+Nominal coordinate substituted for physical support or unjustified
+fine-resolution label\\
+
+Temporal support and clocks &
+Sampling clock, exposure/integration window, filter group delay, event clock,
+offset/drift and uncertainty &
+Builds multirate frame maps, lag priors and synchronization factors &
+Unknown clock relation, nonstationary dropped samples or alignment inferred
+from the target effect without cross-validation\\
+
+Coordinates and calibration &
+Frame names, fiducials, transforms, calibration points, residuals, device
+pose and raw metadata &
+Creates a transform graph with propagated covariance rather than one baked
+coordinate &
+Missing units/origin/handedness, noninvertible transform or calibration
+residual beyond query tolerance\\
+
+Observation / intervention model &
+Forward physics, preprocessing, dose, stimulus and which variables are
+observed versus manipulated &
+Separates read heads from write operators and permits causal losses only for
+actual interventions &
+Functional correlation mislabeled as intervention, unknown dose or
+preprocessing that leaks labels\\
+
+Missingness and censoring &
+Planned/unplanned missing channels, artifact rejection, dropout, clinical
+sampling and attrition &
+Chooses marginalization, masks, inverse-probability/design factors or
+missingness models &
+Missing-as-zero labels, post-outcome selection or censoring correlated with
+unmodeled state\\
+
+Bias, variance and discrepancy &
+Random noise, site/session variance, known systematic offsets, simulator or
+teacher error and validity domain &
+Determines uncertainty inflation, hierarchical weighting and whether a
+source can update shared parameters &
+Sample count used as reliability, zero teacher variance or pooled estimates
+that erase site/subgroup bias\\
+
+Gradient permission \(A_k\) &
+Named modules, ports, scales and parameter groups the source may update;
+frozen and evaluation-only objects &
+Compiles an explicit gradient mask and audit log &
+Loss reaches an unobserved module through an undeclared adapter or uses a
+calibration source as biological supervision\\
+
+Role and split policy \(R_k\) &
+Prior, likelihood, boundary target, distillation, calibration, negative
+control or evaluation-only; grouping and temporal holdout &
+Selects the loss family and leakage barrier before model fitting &
+Role changed after viewing test results, stimuli repeated across held-out
+identity tests or synthetic replicas counted as independent subjects\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Minimum machine-readable source card.} The compiler converts
+data governance and measurement semantics into executable gradient masks,
+transform graphs, loss roles and leakage barriers. A source is rejected when
+its semantics cannot support the intended claim.}
+\label{tab:source-card}
+\end{table*}
+
+The permitted roles are deliberately non-equivalent. A \emph{likelihood}
+factor contributes measured evidence about a latent variable through an
+observation model. A \emph{boundary target} supervises a sensor, body or
+environment port without licensing gradients through the unobserved brain.
+A \emph{prior} shapes population parameters before individual evidence. A
+\emph{distillation} factor transfers representational organization from a
+teacher and carries teacher discrepancy. A \emph{calibration} factor estimates
+coordinates, gains, tissue properties or nuisance parameters. A
+\emph{negative control} should not predict the target under the claimed
+mechanism. An \emph{evaluation-only} source never receives training gradients.
+These roles are fixed in the run manifest before final evaluation.
+
+\clearpage
+\section{Appendix C. Coordinate, Clock, and Calibration Manifest}
+
+Every sample and intervention is located in a graph of reference frames rather
+than assigned one free-text coordinate. A manifest node declares a frame,
+units, handedness, epoch and physical object; an edge declares a rigid,
+affine, deformable, temporal or amplitude transform plus parameters,
+calibration observations and uncertainty. A path is valid only if its
+composed units and semantics agree. For a derived quantity \(z=f(x,c)\), where
+\(c\) contains calibration coefficients, the ledger keeps first-order random
+uncertainty and systematic offset separate:
+
+\[
+\Sigma_z \approx J_x\Sigma_xJ_x^\top+J_c\Sigma_cJ_c^\top
++J_x\Sigma_{xc}J_c^\top+J_c\Sigma_{cx}J_x^\top,
+\qquad
+b_z \approx J_xb_x+J_cb_c+\delta_f ,
+\]
+
+where \(\delta_f\) is model discrepancy. The cross terms are mandatory when
+calibration error is shared across samples in a session; omitting them asserts
+independence and can understate aggregate uncertainty. Monte Carlo or interval propagation
+replaces this approximation for nonlinear registration, thresholded
+tractography, acoustic focusing and other non-Gaussian maps.
+
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.24\textwidth}p{.27\textwidth}X@{}}
+\toprule
+\textbf{Manifest layer} & \textbf{Stored quantities} &
+\textbf{Examples} & \textbf{Required check before training/readout}\\
+\midrule
+Physical reference frame &
+Object, origin, axes, handedness, units, validity interval &
+Scanner RAS, voxel indices, subject surface RAS, fiducial head frame, tracker,
+coil/transducer, cap, camera, eye and world frames &
+Landmark and round-trip error; explicit distinction between continuous mm,
+indices, normalized image coordinates and angular gaze\\
+
+Deformation and projection &
+Affine/nonlinear warp, surface registration, resampling kernel, Jacobian,
+inverse availability and residual map &
+Functional-to-anatomical, anatomical-to-MNI, fsnative-to-fsaverage/fsLR,
+voxel-to-parcel, fine-to-coarse scale view &
+No inverse assumed where absent; propagate local support and smoothing;
+validate on held-out landmarks or correspondences\\
+
+Sensor/device geometry &
+Element centers/orientations, dimensions, camera intrinsics/extrinsics,
+electrode/coil/transducer geometry and calibration date &
+EEG contacts, MEG coils, TMS windings, tFUS elements, microphones,
+eye cameras, gastric arrays and wearables &
+Compare raw digitization/geometry to declared frame; reject swapped labels,
+reflections and device files from another hardware revision\\
+
+Clock graph &
+Clock identity, sample rate, epoch, trigger path, offset, drift, jitter,
+dropped samples and integration/filter delay &
+Scanner volume/slice triggers, EEG amplifier, stimulus computer, eye tracker,
+audio/video, neuronavigation and wearable clocks &
+Physical synchronization event or independent cross-correlation target;
+piecewise drift when one affine clock map is insufficient\\
+
+Amplitude and unit calibration &
+Gain, offset, frequency response, reference, impedance, quantization,
+saturation and uncertainty &
+EEG microvolts, MEG tesla, microphone pascals, EGG microvolts, PPG arbitrary
+units, coil current, acoustic pressure and MRI intensity &
+Dimensional check, calibration-range coverage and clipping detection; do not
+standardize away physiologically meaningful amplitude without retaining map\\
+
+Material/field parameters &
+Tissue label, conductivity/permittivity, acoustic speed/attenuation, density,
+thermal constants, anisotropy and source database &
+EEG/TMS/tES FEM, tFUS propagation, thermal exposure and MRI relaxation &
+Version/frequency/temperature match; sensitivity analysis across alternate
+parameter tables and segmentation uncertainty\\
+
+Stimulus and environment &
+Display/audio calibration, luminance/color, sound level/impulse response,
+camera pose, object/world geometry and event provenance &
+Visual images, naturalistic video, speech, room conversation, VR, tactile
+probe, standardized meal and embodied simulator &
+Confirm delivered rather than requested stimulus; preserve media clock,
+cropping/resampling, device response and environmental context\\
+
+Intervention dose &
+Waveform, timing, pose, field solution, target support, state, sham/control,
+safety limits and operator uncertainty &
+TMS pulses/trains, tFUS bursts, tES, sensory/cognitive task, neurofeedback and
+drug/meal/body-state perturbations &
+Dose and pose independently calibrated; randomized condition and sham
+adequacy; separate field prediction from neural-response model\\
+
+Calibration validity &
+Calibration observations, fitting method, residuals, validity interval,
+extrapolation distance and recalibration triggers &
+Eye target grid, coil tracker, scanner phantom, hydrophone field,
+body-surface gastric norms and microphone array geometry &
+Do not reuse past validity interval silently; inflate uncertainty or require
+recalibration when device, participant geometry or environment changes\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Coordinate, clock, and calibration manifest.} Cross-method
+integration occurs through auditable transform paths with separate random
+uncertainty, systematic bias and model discrepancy. The manifest prevents a
+nominal atlas coordinate, sensor label or requested device setting from being
+treated as the physical location or dose.}
+\label{tab:calibration-manifest}
+\end{table*}
+
+\clearpage
+\section{Appendix D. Heterogeneous Mixture, Leakage, and Evaluation Protocol}
+
+For episode \(e\) from source \(k(e)\), SC-WBD composes only the loss factors
+authorized by its source card:
+
+\[
+\mathcal L
+=\sum_e w_e\!\left[
+\lambda_{\rm like}\mathcal L^{(e)}_{\mathrm{likelihood}}
++\lambda_{\rm boundary}\mathcal L^{(e)}_{\mathrm{boundary}}
++\lambda_{\rm distill}\mathcal L^{(e)}_{\mathrm{distill}}
++\lambda_{\rm cal}\mathcal L^{(e)}_{\mathrm{cal}}
++\lambda_{\rm mechanism}\mathcal R^{(e)}_{\mathrm{mechanism}}
++\lambda_{\rm scale}\mathcal R^{(e)}_{\mathrm{scale}}
+\right].
+\]
+
+The weight \(w_e\) is a learned or preregistered reliability term constrained
+by effective sample size, participant/site hierarchy, estimated measurement
+variance, systematic bias bounds, simulator/teacher discrepancy and overlap
+with the target validity domain. It is not proportional to row count alone.
+Losses are normalized within participant and source before cross-source
+weighting so that a long recording or heavily oversampled simulator cannot
+silently dominate. Gradient conflict is measured by module and source;
+incompatible gradients trigger source-specific adapters, partial pooling,
+freezing or rejection rather than forced consensus.
+
+\begin{table*}[!h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\textwidth}{@{}p{.15\textwidth}p{.22\textwidth}p{.29\textwidth}X@{}}
+\toprule
+\textbf{Failure mode or claim} & \textbf{Mandatory split/control} &
+\textbf{Primary metric} & \textbf{Minimum interpretation}\\
+\midrule
+Participant or family leakage &
+Group all sessions, derivatives, relatives and duplicate archive records
+before splitting &
+Held-out-person likelihood, calibration and retrieval/leakage audit &
+Within-session prediction cannot support individual generalization\\
+
+Stimulus memorization &
+Hold out stimuli, semantic families and temporal continuations separately
+from participant holdout &
+Cross-stimulus neural/behavioral forecast and matched-feature baseline &
+Image/audio recognition gain is not evidence for brain dynamics unless it
+predicts new measured responses\\
+
+Site/device shortcuts &
+Leave-site/device/protocol-out evaluation; nuisance-only classifier and label
+permutation within site &
+Domain calibration, worst-site error and residual site predictability &
+High pooled accuracy with poor new-device calibration is failure\\
+
+Derived-data duplication &
+Keep raw scan and every tractogram, parcellation, preprocessing derivative or
+augmentation in one split &
+Hash/lineage audit and performance after deduplication &
+Different algorithms over one scan are not independent participants\\
+
+Scale hallucination &
+Withhold fine-scale evidence while retaining coarse data; compare uncertainty
+and reconstruction to a coarse-only model &
+Coverage and error at each native scale; high-frequency energy calibration &
+Fine detail is valid only where source support or tested prior justifies it\\
+
+Teacher/simulator domination &
+No-teacher/no-simulator, generic-feature, shuffled, parameter-perturbed and
+empirical-only ablations &
+Measured held-out data likelihood and calibration, never teacher agreement
+alone &
+Distillation is retained only when it improves empirical prediction beyond
+matched computation\\
+
+Connectome prior value &
+Randomized, distance-matched, dense, graph-only, local-only and soft-edge
+controls at matched parameter/compute budgets &
+Data efficiency, causal forecast, calibration and out-of-domain behavior &
+Sparsity or plausibility alone is not evidence for the declared topology\\
+
+Operator / mechanism claim &
+Equal-capacity generic operator, alternate mechanism and learned-residual
+controls; hold out discriminating perturbations &
+Timing, direction, dose/state dependence and unique intervention forecast &
+A mechanistic label is earned only by predictions a generic surrogate misses\\
+
+Individualization claim &
+Population, session-adapted, anatomy-only and longitudinal-person models; new
+session and novel task/intervention holdouts &
+Incremental log score, calibration, decision utility and drift &
+Including a person's scan is not personalization unless it improves their
+future predictions beyond population and session baselines\\
+
+TMS/tFUS decision claim &
+Prospective randomized or otherwise causally identified target/protocol
+comparison with field, pose, state and sham records &
+Directional response, dose--response, benefit/risk and decision regret &
+Offline reconstruction supports target hypotheses, not wellness or treatment
+efficacy\\
+
+Language/person-model claim &
+Hold out unfamiliar situations, future time windows and private facts;
+compare generic LLM, language-history-only and multimodal person models &
+Prospective choice/report/action calibration and counterfactual consistency &
+Stylistic imitation or fact recall is not causal fidelity, consciousness or
+personal identity\\
+
+Dataset-family breadth &
+Report performance by empirical, boundary-only, calibration, synthetic and
+evaluation-only source roles; remove each family in turn &
+Per-family contribution, negative transfer, subgroup worst case and
+uncertainty coverage &
+A longer source list is useful only when each family improves a specified
+port or exposes a failure\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Minimum leakage controls, ablations, and interpretations for
+heterogeneous training.} Every ambitious claim is paired with a split or
+control capable of falsifying a shortcut explanation. The dataset register is
+therefore an executable evaluation plan, not an assertion that more sources
+automatically produce a better whole-brain model.}
+\label{tab:mixture-evaluation}
+\end{table*}
+
+\twocolumn

@@ -1,0 +1,52 @@
+\documentclass[9pt,a4paper]{article}
+\ifdefined\pdfinfoomitdate\pdfinfoomitdate=1\fi
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,top=16mm,bottom=16mm,left=16mm,right=16mm]{geometry}
+\usepackage{mathpazo}
+\usepackage[scaled=.93]{helvet}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{xcolor}
+\usepackage{booktabs,array,tabularx,enumitem,caption,fancyhdr,natbib,hyperref}
+\definecolor{frontpurple}{HTML}{756BFF}
+\definecolor{ink}{HTML}{27262B}
+\definecolor{muted}{HTML}{6D6B73}
+\hypersetup{colorlinks=true,linkcolor=frontpurple,citecolor=frontpurple,urlcolor=frontpurple,
+pdftitle={SC-WBD V6 Implementation Supplement: Candidate Data and Calibration Register},
+pdfauthor={Jacob Valdez},pdfsubject={Dataset, source-card, transform, and evaluation supplement}}
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{1.5em}
+\setlist{leftmargin=*,nosep,topsep=3pt}
+\captionsetup{font={small},labelfont={sf,bf,color=frontpurple},textfont={sf,color=ink},singlelinecheck=false}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\sffamily\scriptsize\color{muted}SuperCognition Labs \textperiodcentered\ SC-WBD Implementation Supplement}
+\fancyhead[R]{\sffamily\scriptsize\color{muted}V6 \textperiodcentered\ Draft. Pending Development}
+\fancyfoot[C]{\sffamily\scriptsize\thepage}
+\fancyfoot[R]{\sffamily\scriptsize\color{frontpurple}supercognitionlabs.com}
+\renewcommand{\headrulewidth}{0pt}\renewcommand{\footrulewidth}{0pt}
+\begin{document}
+\begin{center}
+{\sffamily\bfseries\fontsize{19}{22}\selectfont\color{ink}
+SC-WBD Implementation Supplement\par}
+\vspace{2mm}
+{\sffamily\fontsize{11}{13}\selectfont\color{muted}
+Candidate Data, Calibration, Source-Card, and Evaluation Register\par}
+\vspace{3mm}
+{\sffamily\bfseries Jacob Valdez}\quad\textperiodcentered\quad
+{\sffamily Founding Architect, SuperCognition Labs}\quad\textperiodcentered\quad
+{\sffamily\href{mailto:jacob@supercognitionlabs.com}{jacob@supercognitionlabs.com}}\par
+\vspace{2mm}
+{\sffamily\small\color{frontpurple}V6 \textperiodcentered\ Draft. Pending Development}
+\end{center}
+\vspace{2mm}\hrule\vspace{3mm}
+\noindent This companion preserves the comprehensive candidate-source register
+outside the main technical thesis. A listing is not evidence of access,
+admissibility, compatibility, or scientific value. Every admitted snapshot
+must pass the source-card, transform, leakage, and claim-specific gates in the
+main document.
+\input{appendix}
+\bibliographystyle{Frontiers-Harvard}
+\bibliography{references}
+\end{document}

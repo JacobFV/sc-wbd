@@ -1,0 +1,423 @@
+\section{0. Program Thesis, Claim Boundary, and Implementation Contract}
+
+This document is not a report that SC-WBD has already achieved whole-brain
+prediction. It is the technical thesis that governs what SuperCognition Labs
+will build, what evidence may update it, which configurations the compiler
+must reject, and which experiments are capable of changing the program's
+scientific commitments. Its first audience is therefore dual: researchers
+should be able to locate the assumptions that require evidence, while
+implementation agents should be able to translate each contract into schemas,
+validators, tests, and acceptance gates.
+
+The thesis has four load-bearing commitments. First, heterogeneous methods are
+related through a latent generative process and method-specific read/write
+operators, not through naive resampling into a common tensor. Second, adult
+human anatomy supplies strong probabilistic topology and phenotype priors,
+while effective coupling, local computation, state, and slow plasticity remain
+learnable. Third, resolution is an indexed property of state and evidence:
+several non-equivalent spatial and temporal supports may coexist without a
+single materialized truth. Fourth, mechanistic language is earned only by
+predictions that an equal-capacity surrogate misses, especially under held-out
+perturbation. These commitments are compatible with useful predictive models
+that remain agnostic about many biological details; they do not license a
+claim that every admitted operator is neurally realized.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\textwidth}{@{}p{.19\textwidth}p{.27\textwidth}p{.27\textwidth}X@{}}
+\toprule
+\textbf{Program claim} & \textbf{Evidence that can support it} &
+\textbf{Result that weakens or falsifies it} & \textbf{Implementation consequence}\\
+\midrule
+Typed, source-native fusion is preferable to naive resampling &
+Better held-out likelihood, calibration, delay recovery, and intervention
+forecast at matched compute and parameter count &
+No reproducible gain over single-modality or carefully tuned resampling
+baselines; increased overconfidence or negative transfer &
+Retain only the provenance/type system; narrow or remove the shared latent
+fusion claim\\
+
+Anatomical topology improves inference &
+Data efficiency, out-of-distribution calibration, and causal forecast beyond
+dense, randomized, and distance-matched graphs &
+Equal-capacity controls match or exceed performance, or topology errors are
+absorbed by residuals &
+Demote anatomy from compiled constraint to weak prior for the affected scale\\
+
+Multiresolution state adds information rather than decoration &
+Native-scale prediction, calibrated refinement, boundary agreement, and
+compute savings without hidden high-frequency hallucination &
+Fine views cannot improve supported observables, fail round-trip tests, or
+become overconfident outside measured tiles &
+Disable the scale relation or use source-specific views without gluing\\
+
+Perturbation reduces non-identifiability &
+Rank/eigenvalue improvement in Fisher information and prospective recovery of
+direction, delay, gain, dose, and state dependence &
+Intervention fails to distinguish posterior models or adds only field-model
+uncertainty &
+Narrow the identifiable parameter set and redesign the perturbation rather
+than reporting a causal estimate\\
+
+Individualization improves future prediction &
+Incremental calibrated log score and decision utility on new sessions and
+unseen tasks or interventions &
+Anatomy-only, population, or session-adapted baselines perform equivalently &
+Do not label the model an individual twin; retain only the supported level of
+adaptation\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Claims with consequences.} Each central commitment has a
+measurement capable of making it smaller. Engineering breadth, parameter
+count, plausible diagrams, and in-sample fit are not substitutes for these
+tests.}
+\label{tab:claim-gates}
+\end{table*}
+
+\subsection{0.1 What SC-WBD Forbids}
+
+A type system earns credibility by rejecting programs. SC-WBD therefore
+distinguishes an operator family that can be represented from a model instance
+that is admissible for a particular scientific claim. The compiler must fail
+closed on the following conditions unless the schema explicitly changes the
+claim class and records the override.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.09}
+\begin{tabularx}{\textwidth}{@{}p{.22\textwidth}p{.31\textwidth}X@{}}
+\toprule
+\textbf{Rejected configuration} & \textbf{Why it is scientifically invalid} &
+\textbf{Required remedy}\\
+\midrule
+Unknown units, clock, physical support, frame, handedness, or transform lineage &
+Numerical compatibility would be mistaken for measurement compatibility &
+Supply a calibrated manifest with validity interval and uncertainty, or keep
+the source disconnected from the requested path\\
+
+Prolongation without a declared restriction partner and tested coverage &
+A coarse observation would be converted into unsupported fine structure &
+Provide paired maps, round-trip and held-out landmark tests, and an
+out-of-support uncertainty policy; otherwise return a distribution or refuse\\
+
+Global cross-scale state when overlap/cocycle residual exceeds tolerance &
+Conflicting local views would be hidden by one raster &
+Preserve separate sections, branch or marginalize the posterior, and emit an
+obstruction certificate identifying the failed path\\
+
+Effective or causal operator estimated from passive correlation alone &
+Common input, observation mixing, and omitted state remain alternatives &
+Label the object functional/statistical, or add an identified intervention or
+assumption set sufficient for the causal claim\\
+
+Learned residual allowed to dominate a mechanistic term silently &
+The named mechanism becomes unfalsifiable &
+Enforce a preregistered energy/gain ratio
+\(\|\mathcal R_\theta\|/\|\mathcal F_{\rm mech}\|\leq\rho_{\max}\) on the
+declared validity set, report violations, or reclassify the entire module as a
+surrogate\\
+
+Adaptive step sizes for a learned propagator without semigroup testing &
+Coarse and composed fine transitions need not describe the same dynamics &
+Measure the semigroup residual at every permitted step pair; restrict the
+scheduler or include the discrepancy in prediction intervals\\
+
+Population, subject, and session effects without centering or shrinkage &
+The additive decomposition is not identified &
+Use centered/sum-to-zero constraints or proper hierarchical priors and test
+recovery in simulation\\
+
+Bias assigned a point estimate without an estimator or external bound &
+Calibration and model discrepancy can trade off non-identifiably &
+Classify the term as design-estimable, externally bounded, or
+prior-specified sensitivity; propagate the last category as a range\\
+
+Pseudo-likelihood compatibility treated as a calibrated posterior likelihood &
+Agreement penalties do not define a generative noise model &
+Report a generalized/pseudo-posterior and calibrate it empirically, or validate
+and promote the factor to a generative likelihood\\
+
+Derived scans, sessions, relatives, stimuli, or simulator replicas crossing a
+parent-level holdout &
+Duplicated evidence produces invalid confidence and shortcut prediction &
+Group by immutable lineage identifiers before splitting and fail the run when
+parentage is unresolved\\
+
+Intervention optimization outside an independently validated feasible set &
+A learned objective cannot guarantee device, exposure, or protocol safety &
+Require \(u\in\mathcal A_{\rm safe}\), independent safety checks, deferral,
+and the applicable ethics and regulatory review\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Mandatory modeling refusals.} These are compiler and runtime
+errors, not optional governance prose. An override changes the claim carried
+by the resulting artifact and remains visible in its provenance.}
+\label{tab:compiler-refusals}
+\end{table*}
+
+\subsection{0.2 Position Relative to Existing Model Families}
+
+The latent-state/observation-operator decomposition is not new. Dynamic causal
+modeling (DCM) already formalizes Bayesian inference over hidden neuronal
+dynamics, effective connectivity, experimental inputs, and modality-specific
+forward models \citep{friston2003dcm}. The Virtual Brain provides an
+individualizable connectome-coupled simulation environment
+\citep{sanz2013,sanz2015}; neurolib and BrainPy provide extensible machinery
+for whole-brain neural-mass and general brain-dynamics programming
+\citep{cakan2023neurolib,wang2023brainpy}. NeuroML/LEMS and PyNN establish
+substantial prior art for declarative, unit-aware, simulator-independent model
+specification \citep{cannon2014lems,davison2009pynn}. SC-WBD should interoperate
+with these ecosystems rather than redescribe them as absent.
+
+The proposed differentiator is the joint compilation of (i) heterogeneous
+operator-valued regional state; (ii) non-nested, source-native spatial and
+temporal resolutions; (iii) uncertain coordinate/clock/field transforms;
+(iv) data-use provenance into gradient permissions and leakage barriers; and
+(v) explicit claim-dependent refusal rules. DCM remains the clearest
+statistical ancestor for generative inversion; declarative neuroscience
+languages are the clearest software ancestor for typed execution. SC-WBD's
+burden is to demonstrate that extending those ideas to multirate,
+multiresolution, intervention-aware fusion yields identifiable and calibrated
+predictions unavailable to simpler constructions.
+
+Patient-specific cardiac modeling is a useful neighboring discipline because
+it has had to separate code verification, physical validation, parameter
+calibration, model-form uncertainty, and context-of-use credibility before a
+digital-twin claim can influence a decision \citep{galappaththige2022}. SC-WBD
+adopts the same ladder: numerical correctness is necessary; agreement with
+recorded signals is stronger; held-out perturbation is stronger still; and
+prospective decision improvement is a distinct claim.
+
+\subsection{0.3 Identifiability Before Scale}
+
+The first scientific artifact is intentionally small. Consider three latent
+regional states with directed coupling, one unknown conduction delay, and a
+controlled input:
+
+\[
+\begin{aligned}
+\mathrm d x(t)={}&A(\vartheta)x(t)\,\mathrm dt
++B\,u(t-\tau_u)\,\mathrm dt\\
+&+Q^{1/2}\mathrm dW_t,
+\qquad x(t)\in\mathbb R^3 .
+\end{aligned}
+\tag{T1}
+\]
+
+An EEG-like instrument observes rapid instantaneous mixing,
+
+\[
+y_E[k]=L(\ell)x(k\Delta_E)+\epsilon_E[k],
+\qquad \Delta_E=1~\mathrm{ms},
+\tag{T2}
+\]
+
+whereas an fMRI-like instrument observes a slow hemodynamic convolution,
+
+\[
+y_B[n]=M\!\int_0^{T_h}h(s;\rho)x(n\Delta_B-s)\,\mathrm ds
++\epsilon_B[n],
+\qquad \Delta_B=1~\mathrm{s}.
+\tag{T3}
+\]
+
+The unknown vector \(\vartheta\) contains selected coupling gains and the
+network delay, while \(\ell\) and \(\rho\) contain observation nuisance
+parameters. For a linear--Gaussian discretization the expected Fisher
+information for design \(d\) is
+
+\[
+\mathcal I_d(\eta)=
+\sum_{m\in d}J_m(\eta)^\top R_m^{-1}J_m(\eta)
++\mathcal I_{\rm prior},
+\quad
+J_m=\frac{\partial\mu_m}{\partial\eta},
+\tag{T4}
+\]
+
+with \(\eta=(\vartheta,\ell,\rho)\). The benchmark compares EEG alone, fMRI
+alone, joint native-clock inference, joint inference after naive resampling,
+and joint inference plus one calibrated impulse. It reports rank, condition
+number, minimum non-prior eigenvalue, parameter-profile likelihoods, posterior
+correlations, interval coverage, and delay error. Prior contribution is shown
+separately so a full-rank posterior cannot disguise a prior-dominated
+likelihood.
+
+This is a planned calculation, not a favorable result assumed in advance. The
+central premise is supported only if native-clock fusion or intervention
+increases likelihood information for a preregistered parameter subset and
+improves calibrated recovery across held-out simulation regimes. If it does
+not, the compiler may still be useful as a provenance system, but the claim
+that cross-method integration resolves those dynamics must be narrowed.
+
+The second artifact compiles the same system from a source schema and performs
+end-to-end recovery. It introduces known transform bias, shared session
+calibration error, missing windows, unequal supports, and a deliberately
+misspecified residual. Success requires: no leakage across simulated parent
+subjects; recovery intervals with nominal coverage; lower held-out log loss
+than single-method and naive-resampling baselines; detection of the
+misspecified module; and refusal of at least one invalid schema. This synthetic
+case is the minimum integration test for all later human experiments.
+
+\subsection{0.4 Executable Evidence, Transform, and Gradient Contracts}
+
+Every dataset snapshot is compiled from a source card rather than passed to a
+global dataloader. A source card declares identity and hashes, participant and
+derivative lineage, governance, native signal and units, spatial support,
+point-spread function, clock, coordinate/calibration graph, observation or
+intervention model, missingness, validity domain, bias/variance/discrepancy
+ledger, permitted module and scale targets, and a fixed role: prior,
+likelihood, boundary target, distillation, calibration, negative control, or
+evaluation only. The compiler converts those declarations into dataloaders,
+transform paths, loss factors, gradient masks, and group-aware splits. An
+unknown field remains unknown; it is not supplied as zero or as an average
+brain label.
+
+The uncertainty ledger uses three different statuses. A quantity is
+\textbf{design-estimable} only when the acquisition contains the replication,
+randomization, intervention, anchor, or hierarchy necessary to estimate it.
+Repeated sessions, for example, can estimate within- and between-session
+variance but do not by themselves identify absolute model bias. A term is
+\textbf{externally bounded} when a phantom, calibration target, independent
+instrument, or negative control supplies a defensible interval. A term is
+\textbf{prior-specified sensitivity} when neither is available; it is swept
+over a declared range and cannot be advertised as empirically estimated.
+Model discrepancy and calibration parameters are generally confounded without
+informative assumptions, a known failure mode in computer-model calibration
+\citep{kennedy2001,brynjarsdottir2014}.
+
+For a derived quantity \(z=f(x,c)\), calibration uncertainty may be shared
+across every observation in a session. First-order propagation therefore
+retains cross-covariance:
+
+\[
+\begin{aligned}
+\Sigma_z\approx{}&J_x\Sigma_xJ_x^\top+J_c\Sigma_cJ_c^\top\\
+&+J_x\Sigma_{xc}J_c^\top+J_c\Sigma_{cx}J_x^\top,\\
+b_z\approx{}&J_xb_x+J_cb_c+\delta_f .
+\end{aligned}
+\tag{T5}
+\]
+
+The transform graph stores each edge separately. Paths are checked for units,
+handedness, epoch, support, round-trip residual, and calibration validity;
+their composed result never replaces the original edges. Figure
+\ref{fig:framegraph} gives the frame path used by the running example.
+
+\FrameGraphFigure
+
+For episode \(e\), only authorized additive factors are active:
+
+\[
+\begin{aligned}
+\mathcal L=\sum_e w_e\bigl[&
+\lambda_{\rm like}\mathcal L_{\rm like}^{(e)}
++\lambda_{\rm boundary}\mathcal L_{\rm boundary}^{(e)}\\
+&+\lambda_{\rm distill}\mathcal L_{\rm distill}^{(e)}
++\lambda_{\rm cal}\mathcal L_{\rm cal}^{(e)}\\
+&+\lambda_{\rm mech}\mathcal R_{\rm mech}^{(e)}
++\lambda_{\rm scale}\mathcal R_{\rm scale}^{(e)}\bigr].
+\end{aligned}
+\tag{T6}
+\]
+
+Weights depend on effective independent evidence and declared reliability, not
+row count. Gradient conflict is logged by source and module. A conflict may
+produce partial pooling, a source-specific adapter, a frozen path, a branched
+posterior, or rejection; consensus is not mandatory.
+
+\subsection{0.5 Running Case: Individual DLPFC TMS Targeting}
+
+The running case asks a bounded question: for one consented adult in a
+specified session and cognitive state, which of a small preregistered set of
+left-DLPFC coil poses is predicted to produce the desired short-horizon change
+in a measured network response while remaining inside independent exposure
+and protocol limits? It does not ask whether the model treats depression, nor
+does it infer a latent clinical construct from one signal.
+
+\begin{enumerate}
+\item \textbf{Declare.} The schema selects the subject's cortical surface,
+  uncertain tract topology, local DLPFC field, coarse distributed network,
+  EEG and fMRI observation heads, coil geometry, neuronavigation frames,
+  stimulation waveform, session state, and \(\mathcal A_{\rm safe}\).
+\item \textbf{Compile.} The compiler checks source cards and transform paths,
+  instantiates a fine DLPFC tile plus coarse surrounding regions, registers
+  restriction/prolongation maps, and emits native EEG and fMRI clocks. A pose
+  expressed only as ``5 cm anterior'' is rejected.
+\item \textbf{Calibrate.} MRI constrains geometry; digitized electrodes and
+  head model constrain the EEG lead field; tracker-to-coil and head-to-MRI
+  observations constrain pose; motor-threshold or other approved calibration
+  informs device gain without being equated to DLPFC target engagement.
+\item \textbf{Infer.} Baseline recordings produce a posterior over neural
+  state, coupling, observation nuisance, tissue parameters, and model class.
+  Session calibration errors remain correlated rather than being averaged
+  away. Models that fit passive data but disagree about propagation are
+  retained.
+\item \textbf{Counterfactually compare.} Each admissible pose is passed through
+  the electromagnetic field solver and candidate neural response operators.
+  The system predicts a distribution over rapid EEG propagation, later
+  hemodynamic consequences, burden, and explicit harm endpoints. Field
+  accuracy, target engagement, network effect, and clinical utility remain
+  separate quantities.
+\item \textbf{Decide or defer.} The optimizer acts only within
+  \(\mathcal A_{\rm safe}\). If model disagreement or transform uncertainty
+  dominates the estimated benefit difference, the output is another
+  calibration measurement, a reversible probe, or no recommendation.
+\item \textbf{Test.} A prospective, blinded or otherwise causally identified
+  comparison evaluates predicted direction, latency, spatial propagation,
+  dose response, state dependence, calibration, and decision regret. The
+  result updates only the parameters and claims authorized by the protocol.
+\end{enumerate}
+
+Prospective human TMS or tFUS work requires ethics, safety, consent, and device
+review appropriate to the actual protocol. In the United States the sponsor
+and IRB must document significant-risk versus nonsignificant-risk status; a
+significant-risk device investigation requires FDA and IRB approval, while an
+NSR study follows the abbreviated IDE requirements after IRB concurrence
+\citep{fdaide}. IRB approval alone is therefore not treated as a universal
+regulatory description.
+
+\subsection{0.6 Agent-Facing Build Order and Definition of Done}
+
+Implementation proceeds through claim-bearing vertical slices rather than a
+simultaneous attempt at every brain system.
+
+\begin{enumerate}
+\item \textbf{Schema kernel.} Implement typed regions, ports, operators,
+  clocks, supports, frames, authority policies, uncertainty status, source
+  roles, and immutable lineage. Definition of done: valid examples compile;
+  every refusal in Table~\ref{tab:compiler-refusals} has a failing fixture.
+\item \textbf{Linear identifiability laboratory.} Implement Equations
+  (T1)--(T4), analytic/numerical Fisher information, simulation, posterior
+  recovery, and five design comparisons. Definition of done: deterministic
+  seeds, parameter sweeps, coverage tests, and a machine-readable claim report.
+\item \textbf{Transform and clock runtime.} Implement frame-graph composition,
+  cross-covariance, multirate events, validity intervals, and obstruction
+  certificates. Definition of done: unit/handedness/clock errors are caught;
+  round trips and shared calibration error are tested.
+\item \textbf{End-to-end synthetic slice.} Compile three regions, EEG/fMRI
+  reads, one impulse write, missing windows, and model discrepancy. Definition
+  of done: the preregistered baselines and acceptance criteria in Section 0.3
+  run from one manifest.
+\item \textbf{Empirical subsystem.} Add one anatomically bounded human
+  subsystem with public data, source-native likelihoods, and held-out
+  cross-modal prediction. Definition of done: provenance, leakage, bias status,
+  and negative-transfer ablations ship with the result.
+\item \textbf{Prospective perturbation pilot.} Only after solver, field,
+  calibration, and causal recovery gates pass, instantiate the running TMS or
+  tFUS case under an approved protocol. Definition of done: preregistered
+  prospective predictions and an explicit no-benefit/no-identification outcome
+  path.
+\end{enumerate}
+
+Every implementation agent receives the thesis version, schema version,
+target claim, allowed source cards, acceptance tests, and non-goals. A merged
+component must add tests, units and frame declarations, uncertainty behavior,
+provenance fields, baseline comparisons, and a statement of what empirical
+finding would disable it. Code that only expands the operator registry is not
+scientific progress until it passes a claim-bearing gate.

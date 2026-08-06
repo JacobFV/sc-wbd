@@ -1,0 +1,377 @@
+% Native vector figures for the SC-WBD development manuscript.
+
+\newcommand{\ArchitectureFigure}{%
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  x=1cm,y=1cm,
+  line cap=butt,line join=miter,
+  font=\sffamily\scriptsize,
+  box/.style={draw=ink!62,line width=.55pt,align=center,
+              text width=3.25cm,minimum height=1.12cm,inner sep=3pt,fill=white},
+  wide/.style={draw=ink!62,line width=.65pt,align=center,
+               text width=15.15cm,minimum height=.86cm,inner sep=3pt},
+  arrow/.style={->,>=Stealth,line width=.62pt,draw=ink!72},
+  biarrow/.style={<->,>=Stealth,line width=.62pt,draw=ink!72}
+]
+% Evidence layer
+\node[box,fill=frontpurple!8,draw=frontpurple!72] (adult) at (1.9,6.25)
+  {Adult anatomical priors\\surfaces, layers, tracts, receptors};
+\node[box,fill=frontpurple!8,draw=frontpurple!72] (phenotype) at (5.85,6.25)
+  {Regional phenotypes\\cell classes, gradients, intrinsic clocks};
+\node[box,fill=frontpurple!8,draw=frontpurple!72] (subject) at (9.80,6.25)
+  {Individual observations\\EEG/MEG, MRI, physiology, behavior};
+\node[box,fill=frontpurple!8,draw=frontpurple!72] (context) at (13.75,6.25)
+  {Task and environment\\language, image, sound, action};
+
+% Compiler
+\node[wide,fill=papergray,draw=frontpurple!78] (compiler) at (7.825,4.75)
+  {\textbf{Schema compiler:} allocates heterogeneous state blocks; emits local neighborhoods, sparse operator masks, resolution contracts, delays, clocks, losses, empirical ports, provenance, and bias--variance ledgers};
+
+% Runtime modules
+\node[box,fill=frontblue!8,draw=frontblue!75] (cortex) at (1.9,3.10)
+  {Cortical sheets\\fields, convolutions, local attention, laminar recurrence};
+\node[box,fill=frontteal!9,draw=frontteal!78] (hippo) at (5.85,3.10)
+  {Hippocampal--entorhinal system\\associative vectors, sequences, replay};
+\node[box,fill=frontorange!10,draw=frontorange!82] (subcortex) at (9.80,3.10)
+  {Subcortical specialists\\gating, regulation, salience, forward models};
+\node[box,fill=frontred!7,draw=frontred!72] (body) at (13.75,3.10)
+  {Body and environment\\sensors, autonomic state, effectors, social context};
+
+% State bus
+\node[wide,fill=frontblue!5,draw=frontblue!72] (posterior) at (7.825,1.62)
+  {\textbf{Multirate individualized latent process:} structured regional states coupled by typed operators, assimilated as a posterior over trajectories, parameters, topology, and model class};
+
+% Empirical interfaces
+\node[box,fill=frontblue!7,draw=frontblue!72] (observe) at (1.9,.05)
+  {Observation operators\\electrical, magnetic, vascular, behavioral};
+\node[box,fill=frontteal!8,draw=frontteal!75] (plasticity) at (5.85,.05)
+  {Adaptation operators\\fast state, synaptic learning, slow graph edits};
+\node[box,fill=frontorange!10,draw=frontorange!82] (intervene) at (9.80,.05)
+  {Intervention operators\\TMS, tFUS, stimuli, task, neurofeedback};
+\node[box,fill=frontpurple!7,draw=frontpurple!72] (eval) at (13.75,.05)
+  {Validation and control\\held-out perturbations, calibration, deferral};
+
+\foreach \n in {adult,phenotype,subject,context}{\draw[arrow] (\n.south)--(\n.south |- compiler.north);}
+\foreach \n in {cortex,hippo,subcortex,body}{\draw[arrow] (compiler.south -| \n.north)--(\n.north);}
+\foreach \n in {cortex,hippo,subcortex,body}{\draw[biarrow] (\n.south)--(\n.south |- posterior.north);}
+\foreach \n in {observe,plasticity,intervene,eval}{\draw[biarrow] (posterior.south -| \n.north)--(\n.north);}
+\draw[biarrow,frontteal!80] (cortex.east)--(hippo.west);
+\draw[biarrow,frontorange!85] (hippo.east)--(subcortex.west);
+\draw[biarrow,frontred!75] (subcortex.east)--(body.west);
+
+\node[font=\sffamily\bfseries\scriptsize,text=muted] at (7.825,6.94) {EVIDENCE AND PRIORS};
+\node[font=\sffamily\bfseries\scriptsize,text=muted] at (7.825,3.80) {STRUCTURED DYNAMICS};
+\node[font=\sffamily\bfseries\scriptsize,text=muted] at (7.825,.75) {EMPIRICAL INTERFACES};
+\end{tikzpicture}}
+\caption{\textbf{Compiled whole-brain modeling framework.} Anatomical and phenotypic evidence defines a probabilistic adult-brain schema; individual observations and task context constrain its subject-specific state. A compiler maps the schema into heterogeneous memory regions, local cortical neighborhoods, sparse long-range operators, update clocks, and empirical interfaces. Runtime modules need not share a representation or resolution. Their contract is an explicit state type, operator family, spatial and temporal support, uncertainty semantics, and a validated boundary map.}
+\label{fig:architecture}
+\end{figure*}%
+}
+
+\newcommand{\StructuredStateFigure}{%
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  x=1cm,y=1cm,
+  line cap=butt,line join=miter,
+  font=\sffamily\scriptsize,
+  region/.style={draw=ink!62,line width=.65pt,align=center,fill=white},
+  cell/.style={draw=ink!45,minimum width=.62cm,minimum height=.40cm,
+               inner sep=1.5pt,fill=white},
+  port/.style={draw=ink!55,minimum height=.64cm,align=center,inner sep=2.5pt},
+  arrow/.style={->,>=Stealth,line width=.72pt,draw=ink!76},
+  biarrow/.style={<->,>=Stealth,line width=.72pt,draw=ink!76}
+]
+\node[region,minimum width=4.5cm,minimum height=3.25cm,
+      fill=frontblue!5,draw=frontblue!74] (cortex) at (2.45,2.55) {};
+\node[anchor=north,font=\sffamily\bfseries\small,text=ink] at (2.45,4.05)
+  {CORTICAL FIELD \(\mathcal X_c\)};
+\begin{scope}[shift={(.58,1.83)}]
+  \fill[frontblue!14] (0,0) rectangle (1.62,1.36);
+  \draw[frontblue!78,line width=.48pt] (0,0) grid[xstep=.405,ystep=.34] (1.62,1.36);
+\end{scope}
+\node[align=center,text=muted] at (1.39,1.50) {surface mesh\\or local grid};
+\node[cell,fill=frontpurple!9] at (2.93,3.17) {L2/3};
+\node[cell,fill=frontpurple!9] at (3.62,3.17) {L4};
+\node[cell,fill=frontpurple!9] at (2.93,2.68) {L5};
+\node[cell,fill=frontpurple!9] at (3.62,2.68) {L6};
+\node[cell,minimum width=1.33cm,fill=frontteal!9] at (3.28,2.05) {phase / gain};
+\node[align=center,text=muted] at (3.28,1.48) {tensor + field\\\(\Delta t_c=1\) ms};
+
+\node[region,minimum width=2.75cm,minimum height=3.25cm,
+      fill=frontpurple!5,draw=frontpurple!74] (hippo) at (7.90,2.55) {};
+\node[anchor=north,font=\sffamily\bfseries\small,text=ink] at (7.90,4.05)
+  {ASSOCIATIVE CODE \(\mathcal X_h\)};
+\foreach \x/\h in {6.92/.58,7.20/1.10,7.48/.78,7.76/1.36,8.04/.88,8.32/1.18,8.60/.68,8.88/1.28}{
+  \fill[frontpurple!28] (\x,1.79) rectangle ++(.18,\h);
+  \draw[frontpurple!74,line width=.35pt] (\x,1.79) rectangle ++(.18,\h);
+}
+\node[align=center,text=muted] at (7.90,1.48) {sparse vectors, events\\\(\Delta t_h=8\) ms};
+
+\node[region,minimum width=4.4cm,minimum height=3.25cm,
+      fill=frontteal!5,draw=frontteal!76] (control) at (13.20,2.55) {};
+\node[anchor=north,font=\sffamily\bfseries\small,text=ink] at (13.20,4.05)
+  {SUBCORTICAL CONTROL \(\mathcal X_s\)};
+\node[cell,minimum width=1.15cm,fill=frontteal!11] at (12.05,2.86) {gating};
+\node[cell,minimum width=1.15cm,fill=frontteal!11] at (13.20,2.86) {salience};
+\node[cell,minimum width=1.15cm,fill=frontteal!11] at (14.35,2.86) {homeostasis};
+\node[cell,minimum width=1.15cm,fill=frontorange!10] at (12.05,2.22) {arousal};
+\node[cell,minimum width=1.15cm,fill=frontorange!10] at (13.20,2.22) {policy};
+\node[cell,minimum width=1.15cm,fill=frontorange!10] at (14.35,2.22) {uncertainty};
+\node[align=center,text=muted] at (13.20,1.58) {reduced state + events; multirate};
+
+\draw[biarrow] (cortex.east)--node[above,text=ink,align=center]
+  {\(\mathcal K_{ch},\mathcal K_{hc}\)\\topographic / delayed} (hippo.west);
+\draw[biarrow] (hippo.east)--node[above,text=ink,align=center]
+  {\(\mathcal K_{hs},\mathcal K_{sh}\)\\gated / state dependent} (control.west);
+
+\draw[arrow,frontblue!78] ([xshift=-.68cm]cortex.north)
+  -- ([xshift=-.68cm,yshift=.55cm]cortex.north)
+  -- node[above,text=frontblue!82]
+  {\(\mathcal K_{cc}\): field / convolution / flow}
+  ([xshift=.68cm,yshift=.55cm]cortex.north)
+  -- ([xshift=.68cm]cortex.north);
+\draw[arrow,frontpurple!78] ([xshift=-.44cm]hippo.north)
+  -- ([xshift=-.44cm,yshift=.55cm]hippo.north)
+  -- node[above,text=frontpurple!82]
+  {\(\mathcal K_{hh}\): recurrence / retrieval}
+  ([xshift=.44cm,yshift=.55cm]hippo.north)
+  -- ([xshift=.44cm]hippo.north);
+\draw[arrow,frontteal!80] ([xshift=-.70cm]control.north)
+  -- ([xshift=-.70cm,yshift=.55cm]control.north)
+  -- node[above,text=frontteal!84]
+  {\(\mathcal K_{ss}\): controller / point process}
+  ([xshift=.70cm,yshift=.55cm]control.north)
+  -- ([xshift=.70cm]control.north);
+
+\node[port,minimum width=3.15cm,fill=frontblue!7,draw=frontblue!70] (eeg) at (2.45,.35)
+  {EEG read / TMS write\\sensor and device clocks};
+\node[port,minimum width=3.15cm,fill=frontpurple!7,draw=frontpurple!70] (fmri) at (7.90,.35)
+  {hemodynamic read\\voxel support, slow clock};
+\node[port,minimum width=3.15cm,fill=frontorange!9,draw=frontorange!78] (tfus) at (13.20,.35)
+  {body read / tFUS write\\distinct coordinate chains};
+\draw[biarrow] (eeg.north)--(cortex.south);
+\draw[arrow] (cortex.south east) -- ++(.45,-.35) -- (fmri.north west);
+\draw[biarrow] (tfus.north)--(control.south);
+
+\node[draw=ink!45,fill=papergray,align=center,
+      minimum width=15.70cm,minimum height=.62cm] at (7.90,-.65)
+  {Every state block and self/cross operator declares shape, support, clock, units, coordinates, evidence, plasticity, mechanistic status, bias, variance, and provenance.};
+\end{tikzpicture}}
+\caption{\textbf{Heterogeneous structured regions and operator-valued
+connections.} Allocated regions need not have the same shape, dimensionality,
+clock, or internal topology. Each self-connection and cross-region connection
+selects its own transfer family and maps a documented boundary representation
+into a compatible destination port. Observation and intervention ports attach
+at their physical supports and clocks. The drawing shows three regions and
+three empirical ports for clarity; the compiled graph may contain arbitrarily
+sized and nested blocks at many resolutions.}
+\label{fig:structuredstate}
+\end{figure*}%
+}
+
+\newcommand{\ResolutionFigure}{%
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  x=1cm,y=1cm,
+  line cap=butt,line join=miter,
+  font=\sffamily\scriptsize,
+  panel/.style={draw=ink!58,line width=.6pt,minimum width=4.9cm,
+                minimum height=4.05cm,fill=white},
+  source/.style={draw=ink!50,align=center,minimum width=2.8cm,
+                 minimum height=.55cm,inner sep=2pt},
+  arrow/.style={->,>=Stealth,line width=.68pt,draw=ink!72},
+  biarrow/.style={<->,>=Stealth,line width=.68pt,draw=ink!72}
+]
+\node[panel,fill=frontblue!4,draw=frontblue!70] (pa) at (2.55,2.65) {};
+\node[panel,fill=frontteal!4,draw=frontteal!72] (pb) at (7.95,2.65) {};
+\node[panel,fill=frontorange!5,draw=frontorange!78] (pc) at (13.35,2.65) {};
+
+\node[font=\sffamily\bfseries\small,text=ink] at (2.55,4.42) {A. FINE-AUTHORITATIVE};
+\node[font=\sffamily\bfseries\small,text=ink] at (7.95,4.42) {B. CONSENSUS MULTILEVEL};
+\node[font=\sffamily\bfseries\small,text=ink] at (13.35,4.42) {C. COARSE + SPARSE REFINEMENT};
+
+% Panel A grids
+\begin{scope}[shift={(1.05,2.00)}]
+  \fill[frontblue!16] (0,0) rectangle (1.55,1.55);
+  \draw[frontblue!80,line width=.6pt] (0,0) grid[xstep=.3875,ystep=.3875] (1.55,1.55);
+\end{scope}
+\node[align=center,text=ink] at (1.825,1.72) {fine $N\times M$};
+\begin{scope}[shift={(3.25,2.25)}]
+  \fill[papergray] (0,0) rectangle (.90,.90);
+  \draw[ink!65,line width=.6pt] (0,0) grid[xstep=.45,ystep=.45] (.90,.90);
+\end{scope}
+\node[align=center,text=ink] at (3.70,1.72) {view $N/a\times M/b$};
+\draw[arrow] (2.67,2.72)--node[above,text=muted] {$\mathcal R$} (3.20,2.72);
+\node[align=center,text=muted] at (2.55,1.08) {losses descend through $\mathcal R^{\!*}$};
+
+% Panel B grids
+\begin{scope}[shift={(6.38,2.00)}]
+  \fill[frontteal!16] (0,0) rectangle (1.55,1.55);
+  \draw[frontteal!80,line width=.6pt] (0,0) grid[xstep=.3875,ystep=.3875] (1.55,1.55);
+\end{scope}
+\node[align=center,text=ink] at (7.155,1.68) {fine state};
+\begin{scope}[shift={(8.90,2.25)}]
+  \fill[frontteal!12] (0,0) rectangle (.90,.90);
+  \draw[frontteal!80,line width=.6pt] (0,0) grid[xstep=.45,ystep=.45] (.90,.90);
+\end{scope}
+\node[align=center,text=ink] at (9.35,1.68) {coarse state};
+\draw[biarrow] (8.00,2.72)--node[above,text=muted] {$\mathcal R,\mathcal P$} (8.85,2.72);
+\node[draw=frontteal!72,fill=white,align=center,minimum width=3.45cm,
+      minimum height=.52cm] at (7.95,1.00) {both learned; calibrated compatibility pressure};
+
+% Panel C grids
+\begin{scope}[shift={(11.30,2.25)}]
+  \fill[frontorange!16] (0,0) rectangle (.90,.90);
+  \draw[frontorange!88,line width=.6pt] (0,0) grid[xstep=.45,ystep=.45] (.90,.90);
+\end{scope}
+\node[align=center,text=ink] at (11.75,1.86) {coarse state};
+\draw[arrow] (12.27,2.72)--node[above,text=muted] {refine} (12.89,2.72);
+\begin{scope}[shift={(12.95,1.95)}]
+  \draw[ink!30,densely dashed] (0,0) grid[xstep=.4125,ystep=.4125] (1.65,1.65);
+  \fill[frontorange!22] (0,.825) rectangle (.825,1.65);
+  \draw[frontorange!88,line width=.6pt] (0,.825) grid[xstep=.4125,ystep=.4125] (.825,1.65);
+  \fill[frontred!14] (1.2375,0) rectangle (1.65,.825);
+  \draw[frontred!72,line width=.6pt] (1.2375,0) grid[xstep=.4125,ystep=.4125] (1.65,.825);
+\end{scope}
+\node[align=center,text=ink] at (13.78,1.62) {selected fine tiles};
+\node[align=center,text=muted] at (13.35,1.02) {sparse refinement where supported};
+
+% Heterogeneous evidence bar
+\node[font=\sffamily\bfseries\scriptsize,text=muted] at (8.00,.27)
+  {NATIVE EVIDENCE AT SUPPORTED SCALES};
+\node[source,fill=frontpurple!7,draw=frontpurple!70] (eeg) at (2.45,-.30)
+  {focal electrical evidence};
+\node[source,fill=frontblue!7,draw=frontblue!70] (fmri) at (5.75,-.30)
+  {coarse vascular evidence};
+\node[source,fill=frontteal!8,draw=frontteal!72] (tract) at (9.05,-.30)
+  {tract endpoint distributions};
+\node[source,fill=frontorange!9,draw=frontorange!78] (stim) at (12.35,-.30)
+  {local stimulation physics};
+\node[source,fill=papergray,draw=ink!55] (task) at (15.35,-.30)
+  {regional task losses};
+\end{tikzpicture}}
+\caption{\textbf{Three multiresolution state semantics.} “Resolution” is not
+limited to preprocessing. A fine-authoritative field materializes derived
+coarse views; a consensus model gives multiple levels their own degrees of
+freedom under continuous agreement pressure; a coarse-authoritative model
+instantiates only selected high-resolution tiles. The schema declares the
+authority policy, projection operators, gradient routes, uncertainty, and
+refinement triggers. Every view and map carries separate bias and variance
+terms. Heterogeneous observations attach at the levels their
+physical point-spread functions justify. Two dyadic grids are drawn for
+clarity; actual views may use any number of non-dyadic, non-grid, and
+source-specific scales, and need not admit one consistent global field.}
+\label{fig:resolution}
+\end{figure*}%
+}
+
+\newcommand{\TimescaleFigure}{%
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[font=\sffamily\scriptsize,x=1cm,y=.72cm,line cap=butt,line join=miter]
+  \draw[->,>=Stealth,line width=.6pt,draw=ink!75] (0,0)--(7.1,0);
+  \foreach \x/\lab in {0/ms,1.65/s,3.3/min--h,4.95/days,6.65/months}{
+    \draw[ink!45] (\x,.09)--(\x,-.09) node[below=1pt,text=ink!80]{\lab};
+  }
+  \draw[line width=4.8pt,frontpurple] (.05,.62)--(1.78,.62);
+  \node[anchor=west,text=ink] at (.05,.94) {state inference / oscillation};
+  \draw[line width=4.8pt,frontblue] (.92,1.54)--(3.95,1.54);
+  \node[anchor=west,text=ink] at (.92,1.86) {gain and synaptic adaptation};
+  \draw[line width=4.8pt,frontteal] (2.72,2.46)--(5.58,2.46);
+  \node[anchor=west,text=ink] at (2.72,2.78) {replay and systems consolidation};
+  \draw[line width=4.8pt,frontorange] (4.43,3.38)--(7.0,3.38);
+  \node[anchor=west,text=ink] at (4.43,3.70) {meso/micro structural revision};
+  \draw[densely dashed,ink!35] (0,-.14) grid[xstep=1.65,ystep=.92] (6.6,3.75);
+\end{tikzpicture}}
+\caption{\textbf{Nested adaptive timescales.} The architecture distinguishes fast latent dynamics, intermediate gain and synaptic changes, consolidation, and conservative structural revision. Ranges overlap and depend on subsystem and task; the bars are scheduler classes rather than universal biological constants.}
+\label{fig:timescales}
+\end{figure}%
+}
+
+\newcommand{\FrameGraphFigure}{%
+\begin{figure*}[t]
+\centering
+\resizebox{.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily\scriptsize,
+  line cap=butt,line join=miter,
+  node distance=8mm,
+  frame/.style={draw=ink!62,line width=.6pt,minimum width=2.65cm,
+                minimum height=1.12cm,align=center,inner sep=3pt,fill=white},
+  edge/.style={->,>=Stealth,line width=.7pt,draw=ink!75}
+]
+\node[frame,fill=frontorange!9,draw=frontorange!80] (device)
+  {coil / transducer frame\\pose, waveform, geometry};
+\node[frame,fill=frontteal!8,draw=frontteal!78,right=of device] (tracker)
+  {tracker frame\\extrinsics, clock, drift};
+\node[frame,fill=frontblue!7,draw=frontblue!75,right=of tracker] (head)
+  {session head frame\\fiducials, motion, epoch};
+\node[frame,fill=frontpurple!7,draw=frontpurple!74,right=of head] (image)
+  {subject image / surface\\voxel, RAS, deformation};
+\node[frame,fill=papergray,draw=ink!62,right=of image] (atlas)
+  {query frame\\parcel, MNI, native target};
+\draw[edge] (device)--node[above,align=center,text=muted]
+  {calibration\\\(T_1,b_1,\Sigma_1\)} (tracker);
+\draw[edge] (tracker)--node[above,align=center,text=muted]
+  {tracking\\\(T_2,b_2,\Sigma_2\)} (head);
+\draw[edge] (head)--node[above,align=center,text=muted]
+  {coregistration\\\(T_3,b_3,\Sigma_3\)} (image);
+\draw[edge] (image)--node[above,align=center,text=muted]
+  {registration\\\(T_4,b_4,\Sigma_4\)} (atlas);
+\draw[frontred!75,line width=.72pt,densely dashed,->,>=Stealth]
+  (atlas.south) -- ++(0,-.65) -| node[below,pos=.48,text=frontred!82]
+  {round-trip, landmark, support, and validity checks; failure preserves native frames}
+  (device.south);
+\end{tikzpicture}}
+\caption{\textbf{Coordinate and calibration frame graph.} Device commands,
+tracked pose, head coordinates, subject images, and atlas or query coordinates
+remain distinct nodes connected by versioned transforms. Each edge retains
+calibration observations, epoch, systematic offset, random covariance, and
+model discrepancy. Composition is query-specific; raw transforms are never
+multiplied away, and a failed cycle prevents a global coordinate claim.}
+\label{fig:framegraph}
+\end{figure*}%
+}
+
+\newcommand{\ClosedLoopFigure}{%
+\begin{figure*}[t]
+\centering
+\resizebox{.97\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily\scriptsize,
+  line cap=butt,line join=miter,
+  node distance=6mm and 7mm,
+  stage/.style={draw=ink!60,line width=.55pt,minimum width=2.85cm,
+                minimum height=1.15cm,align=center,inner sep=3pt,fill=white},
+  arrow/.style={->,>=Stealth,line width=.7pt,draw=ink!75}
+]
+\node[stage,fill=frontpurple!8,draw=frontpurple!70] (data) {Subject evidence\\anatomy, recordings, behavior};
+\node[stage,fill=frontblue!8,draw=frontblue!70,right=of data] (infer) {Assimilate state\\parameters, topology, model class};
+\node[stage,fill=frontteal!9,draw=frontteal!75,right=of infer] (simulate) {Counterfactual ensemble\\targets, protocols, uncertainty};
+\node[stage,fill=frontorange!11,draw=frontorange!80,right=of simulate] (act) {Bounded intervention\\TMS, tFUS, task, stimulus};
+\node[stage,fill=frontpurple!6,draw=frontpurple!70,below=11mm of act] (response) {Multimodal response\\neural, physiological, behavioral};
+\node[stage,fill=frontblue!7,draw=frontblue!70,left=of response] (check) {Predictive check\\benefit, risk, calibration};
+\node[stage,fill=frontteal!7,draw=frontteal!75,left=of check] (update) {Model revision\\state, parameters, operators};
+\draw[arrow] (data)--(infer);
+\draw[arrow] (infer)--(simulate);
+\draw[arrow] (simulate)--(act);
+\draw[arrow] (act)--(response);
+\draw[arrow] (response)--(check);
+\draw[arrow] (check)--(update);
+\draw[arrow] (update.west)-|([xshift=-4mm]data.west)|-(data.west);
+\draw[frontorange!90,line width=.8pt,densely dashed,->,>=Stealth]
+  (check.north) -- ++(0,7mm)
+  -- node[above,text=frontorange!90]{defer, measure, or choose a safer probe}
+  ([yshift=7mm]simulate.south) -- (simulate.south);
+\end{tikzpicture}}
+\caption{\textbf{Closed-loop individualization.} Measurements constrain a posterior over latent state, parameters, topology, and model class. Candidate actions are evaluated across posterior models, applied only through bounded protocols, measured multimodally, and used to revise the model. Clinical or wellness claims require prospective decision-level validation beyond successful signal reconstruction.}
+\label{fig:closedloop}
+\end{figure*}%
+}

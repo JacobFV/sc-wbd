@@ -1,0 +1,120 @@
+\clearpage
+\section{Appendix. Candidate Evidence Program by Source Role}
+
+The development corpus is heterogeneous by design. The table below summarizes
+the source roles required to rough out SC-WBD before individual fine-tuning.
+The full dataset-and-calibration register is distributed as the companion
+implementation supplement; that register is a discovery and planning surface,
+not a claim that every resource is accessible, licensed, harmonized, or useful.
+Each admitted snapshot requires a source card, version and hashes, parent
+lineage, governance decision, native support, transform/clock manifest,
+bias--variance--discrepancy status, gradient permissions, and fixed split role.
+
+\begin{table*}[!h]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}p{.14\textwidth}p{.23\textwidth}p{.30\textwidth}X@{}}
+\toprule
+\textbf{Evidence role} & \textbf{Representative source families} &
+\textbf{Permitted training or calibration use} & \textbf{Non-claim / dominant failure}\\
+\midrule
+Adult anatomy and phenotype &
+HCP, UK Biobank, BigBrain, Julich-Brain, Allen Human Brain Atlas, receptor and
+myelin atlases &
+Population priors over surfaces, parcels, laminae, tracts, tissue fields,
+regional cell/transcript/receptor phenotypes, and their covariance &
+Atlas frequency is not subject truth; postmortem, registration, age,
+ancestry, acquisition, and tractography biases remain explicit\\
+
+Fast neural dynamics &
+OpenNeuro/BIDS EEG and MEG, MOABB, Temple EEG, Cam-CAN, OMEGA, intracranial
+clinical archives, Allen/CRCNS electrophysiology &
+Native-clock spectral, transient, propagation, state-transition, and regional
+interface likelihoods; local micro/mesoscale priors where species and
+preparation permit &
+Sensor mixing, artifacts, clinical sampling, medication, species, and
+electrode-placement bias prevent direct whole-brain labels\\
+
+Hemodynamic and metabolic dynamics &
+HCP fMRI, Midnight Scan Club, MyConnectome, Natural Scenes Dataset, StudyForrest,
+Narratives, BOLD5000, fNIRS and calibrated-physiology studies &
+Slow distributed observation heads, neurovascular parameter priors,
+naturalistic task trajectories, and repeated-person calibration &
+BOLD is not neural ground truth; timing, vascular, motion, task, and
+preprocessing discrepancies are modeled\\
+
+Structural connectivity and material calibration &
+HCP diffusion, TractoInferno, ISMRM tractography challenge, histological tract
+atlases, IT'IS tissue properties, conductivity, dielectric, acoustic, thermal,
+and MRI-relaxometry references &
+Topology priors, tract endpoint/delay distributions, uncertainty benchmarks,
+and coefficients for EEG/MEG, TMS, tES, MRI, tFUS, and thermal forward models &
+Streamlines are not axons or effective weights; ex-vivo tables and solver
+agreement do not establish in-vivo target engagement\\
+
+Perturbation and intervention &
+TMS--EEG/TMS--fMRI studies, motor and cognitive perturbations, tES, DBS/iEEG
+stimulation, tFUS EEG/evoked-response datasets, sensory and pharmacological
+challenges &
+Direction, latency, dose, state dependence, field-to-neural response, and
+causal model discrimination under explicit device and sham models &
+Requested dose is not delivered field; confounding, blinding, pose, artifact,
+carryover, and mechanism uncertainty can invalidate causal labels\\
+
+Embodied boundary dynamics &
+Eye tracking with visual content, motion capture, speech/audio conversation,
+touch and pain, vestibular/proprioceptive tasks, ECG/PPG/EDA/respiration,
+electrogastrography, endocrine/metabolic studies, wearables, simulated humanoids &
+Train sensorimotor, spinal/brainstem, oculomotor, autonomic, interoceptive,
+homeostatic, social, language, and environmental ports without requiring a
+simultaneous brain recording &
+Boundary supervision does not identify unobserved neural implementation;
+construct labels, simulator gap, synchronization, and demographic bias remain\\
+
+Behavior, report, and longitudinal person evidence &
+Navigation, learning, sleep, decision, affect, language, interaction, daily-life
+sampling, repeated deep-phenotyping, and prospectively designed SC-WBD sessions &
+Policy/readout likelihoods, session-versus-trait hierarchy, stable preference
+and skill dynamics, uncertainty-aware report models, and future-session tests &
+Behavioral fit is not neural localization, consciousness, identity, or clinical
+utility; selection, self-report, and language priors may dominate\\
+
+Simulation, teacher, and negative controls &
+Electromagnetic, acoustic, hemodynamic, and body simulators; embodied agents; null
+generators, perturbed mechanisms, and optional population encoders &
+Exercise interfaces, rare regimes, identifiability, missingness, and
+distillation at authorized observation boundaries; create falsification
+controls before empirical training &
+Synthetic rows are never independent people. Teacher agreement is not
+evidence; imagery/perception and population/individual domain shifts require
+quarantine and empirical ablation\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Evidence program summarized by epistemic role.} Sources are
+admitted to update named modules, ports, scales, and nuisance parameters rather
+than a monolithic whole-brain target. A long source list is valuable only when
+each family has a defined gradient path, exclusion test, and held-out claim.}
+\label{tab:source-role-summary}
+\end{table*}
+
+The prospective 23-adult, 89-session design is intended as longitudinal
+precision neuroscience in the lineage of MyConnectome and the Midnight Scan
+Club, where repeated within-person measurement supports individual inference
+rather than population-level clinical efficacy \citep{poldrack2015myconnectome,gordon2017msc}.
+Session allocation should be chosen by prospective information gain and
+reliability analysis, not defended by the nominal totals alone. Early sessions
+prioritize geometry, clock, lead-field, field, baseline-state, and repeatability
+calibration; later sessions hold out tasks and bounded perturbations for
+prospective validation.
+
+An optional population teacher such as TRIBE v2 may be tested only as a weak
+distillation prior at visual, auditory, language, or hemodynamic observation
+interfaces \citep{dascoli2026tribe}. Retrospective report, rendered proxy,
+perception-trained teacher, average cortical response, and subject registration
+form a lossy domain-shift chain; imagery and perception must not be assumed to
+share response amplitude or hierarchy. The teacher receives no authority over
+subject-specific latent dynamics, subcortical state, bodily state, or
+mechanistic parameters and is removed unless it improves held-out empirical
+prediction beyond matched generic-feature and smoothing controls.
