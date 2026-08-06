@@ -67,6 +67,19 @@ def surrogate_checkpoint(tmp_path_factory, prior):
     return path
 
 
+@pytest.fixture(scope="module")
+def pilot_run(surrogate_checkpoint):
+    """One `run_pilot`, shared by every slow assertion below.
+
+    Each slow test used to call it independently, rebuilding both models and
+    re-running three arms at ~24 s each -- about seven times the necessary work
+    in a suite meant to run repeatedly on a shared, CPU-starved box. Every seed
+    in the path is fixed, so the result is deterministic and sharing it asserts
+    exactly the same thing.
+    """
+    return P.run_pilot(surrogate_checkpoint, permutations=False)
+
+
 # ---------------------------------------------------------------------------
 # 1. the code has not drifted from the preregistration
 # ---------------------------------------------------------------------------
@@ -241,36 +254,36 @@ class TestTheStagedStates:
         assert payload["preregistration_sha"] == P.PREREG_SHA
 
     @pytest.mark.slow
-    def test_a_checkpoint_makes_it_run(self, surrogate_checkpoint):
-        res = P.run_pilot(surrogate_checkpoint, permutations=False)
+    def test_a_checkpoint_makes_it_run(self, pilot_run):
+        res = pilot_run
         assert res.status == "ran"
         assert res.reading in ("collapsed", "attenuated", "survived")
         assert res.crr["trained"] >= 0.0
         assert res.crr["untrained"] >= 0.0
 
     @pytest.mark.slow
-    def test_the_control_holds_on_the_surrogate(self, surrogate_checkpoint):
+    def test_the_control_holds_on_the_surrogate(self, pilot_run):
         """Same pose twice must be exactly zero, or nothing else means anything."""
-        res = P.run_pilot(surrogate_checkpoint, permutations=False)
+        res = pilot_run
         assert res.control["same_pose_crr"] == 0.0
         assert res.control["ok"] is True
 
     @pytest.mark.slow
-    def test_the_trained_arm_differs_from_the_untrained_one(self, surrogate_checkpoint):
+    def test_the_trained_arm_differs_from_the_untrained_one(self, pilot_run):
         """Otherwise the dry run proves nothing about the trained branch."""
-        res = P.run_pilot(surrogate_checkpoint, permutations=False)
+        res = pilot_run
         assert res.crr["trained"] != res.crr["untrained"]
 
     @pytest.mark.slow
-    def test_the_label_survives_a_successful_run(self, surrogate_checkpoint):
-        res = P.run_pilot(surrogate_checkpoint, permutations=False)
+    def test_the_label_survives_a_successful_run(self, pilot_run):
+        res = pilot_run
         assert res.provenance["trained_on_perturbation_data"] is False
         assert res.provenance["response_mapping_validated"] is False
         assert "not correctly" in res.provenance["claim"]
 
     @pytest.mark.slow
-    def test_the_checkpoint_is_identified_in_provenance(self, surrogate_checkpoint):
-        res = P.run_pilot(surrogate_checkpoint, permutations=False)
+    def test_the_checkpoint_is_identified_in_provenance(self, pilot_run):
+        res = pilot_run
         c = res.provenance["checkpoint"]
         assert c["found"] is True
         assert c["step"] == 1234
@@ -320,8 +333,8 @@ class TestArrivedAndUnreadableIsNotAwaiting:
         assert P.run_pilot(bad, permutations=False).status == "checkpoint_unreadable"
 
     @pytest.mark.slow
-    def test_a_real_load_records_how_many_tensors_moved(self, surrogate_checkpoint):
-        res = P.run_pilot(surrogate_checkpoint, permutations=False)
+    def test_a_real_load_records_how_many_tensors_moved(self, pilot_run):
+        res = pilot_run
         c = res.provenance["checkpoint"]
         assert c["tensors_changed_by_load"] > 0
         assert c["tensors_changed_by_load"] <= c["tensors_total"]
