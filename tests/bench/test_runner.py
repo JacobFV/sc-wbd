@@ -76,3 +76,21 @@ def test_every_gate_declares_the_out_of_scope_non_goals(bare):
         joined = " ".join(r.manifest.non_goals)
         assert "digital twin" in joined
         assert "no IRB" in joined
+
+
+def test_summary_names_the_modality_additivity_tautology(bare):
+    md = build_summary(bare["gates"], bare["ablations"], bare["leakage"], bare["numerics"])
+    assert "A tautology this scoreboard refuses to report as a result" in md
+    assert "I_{EEG+BOLD} = I_EEG + I_BOLD" in md
+    assert "cannot fail" in md
+    # and it must say where the falsifiable content actually lives
+    assert "joint_whitening=True" in md
+    assert "native-clock versus naively resampled" in md
+    assert "prior_standardised" in md
+
+
+def test_summary_does_not_quote_g4_numbers_before_the_preregistered_run(bare):
+    """G4 has no subject yet; the scoreboard must not carry smoke numbers."""
+    g4 = next(r for r in bare["gates"] if r.manifest.claim_id == "G4")
+    assert g4.status == "COULD_NOT_RUN"
+    assert not g4.artifacts.get("fisher"), "G4 reported information numbers with no run"

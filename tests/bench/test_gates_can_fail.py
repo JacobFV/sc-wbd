@@ -216,3 +216,84 @@ def test_g5_fails_when_the_scan_is_doing_the_work():
     scan = next(s for s in rep.subchecks if s.name == "scan_is_not_personalization")
     assert scan.status == "FAIL"
     assert "not itself individualization" in scan.falsified_by
+
+
+# --------------------------------------------------------------------------
+# G4 must name the modality-additivity identity rather than exploit it
+# --------------------------------------------------------------------------
+def test_g4_declares_the_modality_additivity_identity():
+    """`I_{EEG+BOLD} = I_EEG + I_BOLD` is arithmetic, not a result."""
+    f = SyntheticFisher()
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=RECOVERY_OK, model_evidence=EVIDENCE_OK,
+                 single_modality_designs=("eeg", "fmri"), seed=0)
+    decl = next(s for s in rep.subchecks if s.name == "modality_additivity_declaration")
+    assert decl.mandatory is False, "an identity must never gate a claim"
+    resid = next(m for m in decl.metrics
+                 if m.name == "additivity.block_diagonal_residual")
+    assert resid.value < 1e-9, "the fixture is block-diagonal by construction"
+    assert "IDENTITY" in resid.note
+    assert "NOT reported by this gate as evidence" in resid.note
+    # and the gate's own verdict does not depend on it
+    assert rep.status == "PASS"
+
+
+def test_g4_reports_zero_non_additive_joint_information_as_zero():
+    """A whitened map with no cross-covariance content must show excess = 0."""
+    f = SyntheticFisher()
+    rep = run_g4(fisher=f, fisher_whitened=f,           # identical -> no excess
+                 theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=RECOVERY_OK, model_evidence=EVIDENCE_OK, seed=0)
+    excess = next(m for s in rep.subchecks for m in s.metrics
+                  if m.name == "additivity.joint_content_beyond_sum")
+    assert excess.value == pytest.approx(0.0, abs=1e-12)
+    assert excess.passed is False, \
+        "zero non-additive information means typed fusion added nothing here"
+    assert "falsifiable part of the fusion claim" in excess.note
+
+
+def test_g4_records_non_additive_joint_information_when_it_exists():
+    class _Whitened(SyntheticFisher):
+        def __call__(self, design: str) -> np.ndarray:
+            M = SyntheticFisher.__call__(self, design)
+            if design.startswith("joint"):
+                M = M.copy()
+                M[0, 1] = M[1, 0] = 0.25    # cross-covariance content
+            return M
+
+    f = SyntheticFisher()
+    w = _Whitened()
+    rep = run_g4(fisher=f, fisher_whitened=w, theta_index=f.theta_index,
+                 nuisance_index=f.nuisance_index, recovery=RECOVERY_OK,
+                 model_evidence=EVIDENCE_OK, seed=0)
+    excess = next(m for s in rep.subchecks for m in s.metrics
+                  if m.name == "additivity.joint_content_beyond_sum")
+    assert excess.value > 0.0 and excess.passed is True
+
+
+def test_g4_states_its_basis_on_every_eigenvalue_metric():
+    f = SyntheticFisher()
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=RECOVERY_OK, model_evidence=EVIDENCE_OK,
+                 basis="prior_standardised", seed=0)
+    assert rep.manifest.acceptance_thresholds["basis"] == "prior_standardised"
+    assert rep.artifacts["fisher"]["basis"] == "prior_standardised"
+    for name in ("fisher.theta_min_eigenvalue_gain",
+                 "fisher.theta_condition_number_ratio"):
+        m = next(mm for s in rep.subchecks for mm in s.metrics if mm.name == name)
+        assert "basis=prior_standardised" in m.note
+    md = rep.to_markdown()
+    assert "prior_standardised" in md
+    assert "IDENTITY, NOT RESULT" in md
+
+
+def test_g4_falsifiable_comparison_is_the_design_contrast_not_the_modality_sum():
+    """The gate fails on a null intervention even though joint>=single still holds."""
+    f = SyntheticFisher(nuisance_only_gain=True)
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=RECOVERY_OK, model_evidence=EVIDENCE_OK, seed=0)
+    assert rep.status == "FAIL"
+    decl = next(s for s in rep.subchecks if s.name == "modality_additivity_declaration")
+    assert decl.status == "PASS"      # the identity still holds...
+    fisher_sub = next(s for s in rep.subchecks if s.name == "fisher_rank_and_eigenvalue")
+    assert fisher_sub.status == "FAIL"   # ...and the gate still fails

@@ -1,6 +1,6 @@
 # SC-WBD-001-beta — claim gate scoreboard
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git 1e11e49 · 2026-08-06T06:11:53+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git a8221f6 · 2026-08-06T06:22:53+00:00*
 
 **1 PASS · 0 FAIL · 31 COULD_NOT_RUN** out of 32 claim-bearing checks.
 
@@ -78,6 +78,18 @@ Positive controls (worlds where the effect is present, and the gate must `PASS`)
 - **G5** — Individualization improves future prediction.
   - falsified by: *Anatomy-only, population, or session-adapted baselines perform equivalently.*
   - if it fails: Do not label the model an individual twin; retain only the supported level of adaptation.
+
+### A tautology this scoreboard refuses to report as a result
+
+Under the modality-block-diagonal form of T4, the joint expected Fisher information is the sum of the per-modality informations **identically**: `I_{EEG+BOLD} = I_EEG + I_BOLD`. "Joint fusion beats single-modality" is therefore *arithmetic* in that form — it cannot fail, so it is not evidence for claim G1 and no gate here reports it as such. G4 measures the additivity residual explicitly (`modality_additivity_declaration`) so that the identity is named rather than exploited.
+
+The comparisons that **can** fail, and which therefore carry the claims:
+
+- **G4** — intervention design versus baseline design, on the theta block with the observation nuisances profiled out. This is what G4 tests.
+- **G1** — native-clock versus naively resampled inference (agent H's design benchmark), and held-out *predictive* log score between fitted models, where a fusion model with more inputs can and does lose out of sample.
+- **G1 (information side)** — the non-additive joint information that appears only under `joint_whitening=True`, carried by the EEG/BOLD cross-covariance from shared process noise. That excess over the modality sum is the honest information-theoretic content of the typed-fusion claim, and it can be zero.
+
+Every eigenvalue and condition number in a G4 report travels with its basis (default `prior_standardised`, in which `I_prior` is the identity). A condition number without a declared basis is not interpretable.
 
 ## 2. Required ablations (`body.tex` §11.4)
 

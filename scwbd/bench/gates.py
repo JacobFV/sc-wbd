@@ -607,6 +607,14 @@ def run_g1(
             "Matching is mandatory: an unmatched win is not a win.",
             "Held-out likelihood is a calibrated log score, so accuracy cannot be bought "
             "with overconfidence.",
+            "This gate compares models by HELD-OUT PREDICTION, which is falsifiable: a "
+            "fusion model with more inputs can and does lose out of sample (see the "
+            "negative control in tests/bench). It must not be confused with the expected "
+            "Fisher information comparison, where under the modality-block-diagonal form "
+            "of T4 joint = sum of modalities identically. The falsifiable information-side "
+            "comparisons for this claim are native-versus-naively-resampled and the "
+            "non-additive joint information under joint_whitening=True; see G4's "
+            "modality_additivity_declaration.",
         ],
     ).finalize()
 
@@ -1237,20 +1245,37 @@ def run_g3(
 # G4 -- perturbation reduces non-identifiability
 # ==========================================================================
 def _fisher_pair(obj: Any) -> tuple[np.ndarray, np.ndarray | None]:
-    """Accept a bare information matrix or agent H's ``FisherReport``.
+    """Accept a bare information matrix, a ``FisherReport``, or a ``DesignInformation``.
 
-    When the backend already separates likelihood from prior (``I_likelihood`` /
-    ``I_prior``) the prior is returned separately so it is never silently
-    counted as evidence — thesis §0.3 requires the prior contribution to be
-    shown apart from the likelihood.
+    When the backend already separates likelihood from prior the prior is
+    returned separately so it is never silently counted as evidence — thesis
+    §0.3 requires the prior contribution to be shown apart from the likelihood.
     """
-    like = getattr(obj, "I_likelihood", None)
-    if like is not None:
-        prior = getattr(obj, "I_prior", None)
+    for like_attr, prior_attr in (("I_likelihood", "I_prior"),
+                                  ("information_likelihood", "information_prior")):
+        like = getattr(obj, like_attr, None)
+        if like is None:
+            continue
+        prior = getattr(obj, prior_attr, None)
+        like_arr = np.asarray(like, dtype=float)
         prior_arr = (np.asarray(prior, dtype=float) if prior is not None
-                     else np.zeros_like(np.asarray(like, dtype=float)))
-        return np.asarray(like, dtype=float), prior_arr
+                     else np.zeros_like(like_arr))
+        return like_arr, prior_arr
     return np.asarray(obj, dtype=float), None
+
+
+def _modality_information(obj: Any) -> dict[str, np.ndarray]:
+    """Per-modality information blocks, when the backend exposes them."""
+    for attr in ("information_by_modality", "I_by_modality"):
+        blocks = getattr(obj, attr, None)
+        if blocks:
+            return {k: np.asarray(v, dtype=float) for k, v in dict(blocks).items()}
+    return {}
+
+
+def _rel_frobenius(a: np.ndarray, b: np.ndarray) -> float:
+    denom = float(np.linalg.norm(b)) or 1.0
+    return float(np.linalg.norm(a - b) / denom)
 
 
 def _schur_theta(I: np.ndarray, theta_idx: np.ndarray, nuis_idx: np.ndarray) -> np.ndarray:
@@ -1279,6 +1304,9 @@ def run_g4(
     prior_design: str | None = "prior",
     recovery: Mapping[str, Mapping[str, float]] | None = None,
     model_evidence: Mapping[str, Mapping[str, float]] | None = None,
+    fisher_whitened: Callable[[str], Any] | None = None,
+    single_modality_designs: Sequence[str] = ("eeg", "fmri"),
+    basis: str = "prior_standardised",
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     source_cards: Sequence[str] = (),
@@ -1291,6 +1319,22 @@ def run_g4(
     from a **prospective** held-out perturbation.  ``model_evidence`` maps
     design -> {model_name: log evidence per observation} and is used to test
     the first falsifier ("intervention fails to distinguish posterior models").
+
+    **What this gate does and does not test.**  Under the modality-block-
+    diagonal form of T4, ``I_{EEG+BOLD} = I_EEG + I_BOLD`` *identically*.
+    "Joint beats single-modality" is therefore an algebraic identity in that
+    form, not a hypothesis, and this gate refuses to report it as a result.
+    The comparison G4 actually tests is **intervention versus baseline design**
+    (in the theta block, with the observation nuisances profiled out).  The
+    falsifiable part of the *fusion* claim lives elsewhere: native versus
+    naively resampled (agent H's benchmark, feeding G1), and the non-additive
+    joint information that only appears under ``joint_whitening=True``, which
+    this gate reports when ``fisher_whitened`` is supplied.
+
+    ``basis`` is recorded in the manifest and on every eigenvalue metric.  A
+    condition number is meaningless without it, so it is stated rather than
+    assumed: the default ``"prior_standardised"`` basis makes ``I_prior`` the
+    identity and makes parameters with different units comparable.
     """
     thr = thresholds
     man = _manifest(
@@ -1299,6 +1343,9 @@ def run_g4(
         source_cards=source_cards,
         refusal_fixtures=["R04 (causal operator from passive correlation alone)"],
     )
+    man.acceptance_thresholds["basis"] = basis
+    man.acceptance_thresholds["baseline_design"] = baseline_design
+    man.acceptance_thresholds["intervention_design"] = intervention_design
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {}
 
@@ -1407,8 +1454,10 @@ def run_g4(
                 SubCheck(
                     name="fisher_rank_and_eigenvalue",
                     description=(
-                        "Likelihood-only (prior removed) rank and minimum eigenvalue of the "
-                        "theta block with nuisance profiled out."
+                        f"Likelihood-only (prior removed) rank and minimum eigenvalue of the "
+                        f"theta block with nuisance profiled out, in the {basis} basis. "
+                        f"The comparison is {intervention_design} versus {baseline_design} "
+                        "— a design contrast that can fail, not a modality identity."
                     ),
                     metrics=[
                         Metric(
@@ -1423,10 +1472,10 @@ def run_g4(
                             threshold=thr.min_fisher_eig_gain,
                             direction="greater_is_better",
                             note=(
-                                f"min eig of the theta Schur complement {min_base:.4g} -> "
-                                f"{min_int:.4g}; nuisance block gained {nuis_gain:.4g} "
-                                "(reported separately so 'adds only field-model information' "
-                                "is visible)"
+                                f"basis={basis}; min eig of the theta Schur complement "
+                                f"{min_base:.4g} -> {min_int:.4g}; nuisance block gained "
+                                f"{nuis_gain:.4g} (reported separately so 'adds only "
+                                "field-model information' is visible)"
                             ),
                         ),
                         Metric(
@@ -1434,6 +1483,8 @@ def run_g4(
                             value=float(cond_int / max(cond_base, 1e-12)),
                             kind="identifiability", exact=True, threshold=1.0,
                             direction="less_is_better",
+                            note=f"basis={basis}; a condition number without a declared "
+                                 "basis is meaningless, so the basis travels with the number",
                         ),
                     ],
                     mandatory=True,
@@ -1444,12 +1495,144 @@ def run_g4(
                 )
             )
             artifacts["fisher"] = {
+                "basis": basis,
+                "baseline_design": baseline_design,
+                "intervention_design": intervention_design,
                 "rank_base": r_base, "rank_intervention": r_int,
                 "theta_min_eig_base": min_base, "theta_min_eig_intervention": min_int,
                 "theta_eigs_base": ev_base.tolist(), "theta_eigs_int": ev_int.tolist(),
                 "nuisance_min_eig_gain": nuis_gain,
                 "prior_removed": bool(prior_separated),
             }
+
+    # ------------------------------------------------------------------
+    # Modality additivity: a declaration, not a claim.
+    #
+    # Under T4's modality-block-diagonal form the joint information is the sum
+    # of the per-modality informations *identically*.  A gate that reported
+    # "joint >= single-modality" from this would be reporting arithmetic.  We
+    # therefore measure the residual (to confirm the backend really is in that
+    # form) and, when a whitened map is supplied, measure the part of the joint
+    # information that is NOT additive — which is the only part of the fusion
+    # story that can fail.
+    # ------------------------------------------------------------------
+    if fisher is not None:
+        add_metrics: list[Metric] = []
+        add_art: dict[str, Any] = {"basis": basis}
+        try:
+            joint_obj = fisher(baseline_design)
+            joint_mat = _fisher_pair(joint_obj)[0]
+            blocks = _modality_information(joint_obj)
+            if not blocks:
+                parts = []
+                for d in single_modality_designs:
+                    try:
+                        parts.append(_fisher_pair(fisher(d))[0])
+                    except Exception:
+                        parts = []
+                        break
+                blocks = {d: m for d, m in zip(single_modality_designs, parts)}
+            if blocks and len(blocks) >= 2:
+                summed = sum(blocks.values())
+                resid = _rel_frobenius(joint_mat, summed)
+                add_art["block_diagonal_residual"] = resid
+                add_art["modalities"] = sorted(blocks)
+                add_metrics.append(
+                    Metric(
+                        name="additivity.block_diagonal_residual",
+                        value=resid, kind="identifiability", exact=True,
+                        threshold=1e-6, direction="less_is_better",
+                        note=(
+                            "||I_joint - sum_m I_m|| / ||I_joint|| under the "
+                            "modality-block-diagonal form of T4. Near zero confirms the "
+                            "IDENTITY I_{EEG+BOLD} = I_EEG + I_BOLD. 'Joint beats "
+                            "single-modality' is therefore arithmetic in this form and is "
+                            "NOT reported by this gate as evidence for anything."
+                        ),
+                    )
+                )
+        except Exception as exc:  # pragma: no cover - backend-specific
+            add_art["error"] = f"{type(exc).__name__}: {exc}"
+
+        if fisher_whitened is not None and theta_index is not None \
+                and nuisance_index is not None:
+            try:
+                wj = fisher_whitened(baseline_design)
+                w_mat = _fisher_pair(wj)[0]
+                bd_mat = _fisher_pair(fisher(baseline_design))[0]
+                ti2 = np.asarray(list(theta_index), dtype=int)
+                ni2 = np.asarray(list(nuisance_index), dtype=int)
+                excess = _rel_frobenius(w_mat, bd_mat)
+                ev_bd = float(max(np.min(np.linalg.eigvalsh(
+                    _schur_theta(bd_mat, ti2, ni2))), 0.0))
+                ev_w = float(max(np.min(np.linalg.eigvalsh(
+                    _schur_theta(w_mat, ti2, ni2))), 0.0))
+                add_art["whitened_excess_frobenius"] = excess
+                add_art["theta_min_eig_block_diagonal"] = ev_bd
+                add_art["theta_min_eig_whitened"] = ev_w
+                add_metrics.append(
+                    Metric(
+                        name="additivity.joint_content_beyond_sum",
+                        value=excess, kind="identifiability", exact=True,
+                        threshold=0.0, direction="greater_is_better",
+                        note=(
+                            "||I_joint^whitened - I_joint^block-diagonal|| / ||I_joint||: "
+                            "the information carried by the EEG/BOLD cross-covariance from "
+                            "shared process noise. THIS is the falsifiable part of the "
+                            "fusion claim; zero here means typed fusion adds nothing beyond "
+                            "adding up the modalities."
+                        ),
+                    )
+                )
+                add_metrics.append(
+                    Metric(
+                        name="additivity.theta_min_eig_whitened_over_block_diagonal",
+                        value=float(ev_w / ev_bd) if ev_bd > 1e-12 else float("nan"),
+                        kind="identifiability", exact=True,
+                        note=f"basis={basis}; {ev_bd:.6g} -> {ev_w:.6g} on the theta "
+                             "Schur complement",
+                    )
+                )
+            except Exception as exc:  # pragma: no cover - backend-specific
+                add_art["whitened_error"] = f"{type(exc).__name__}: {exc}"
+
+        artifacts["additivity"] = add_art
+        if add_metrics:
+            subs.append(
+                SubCheck(
+                    name="modality_additivity_declaration",
+                    description=(
+                        "Declares which comparisons in this report are identities and which "
+                        "can fail. Under block-diagonal T4, joint = sum of modalities "
+                        "identically; only the whitened excess and the design contrasts are "
+                        "falsifiable."
+                    ),
+                    metrics=add_metrics,
+                    mandatory=False,
+                    reason=(
+                        "reported so that no reader mistakes I_joint >= I_single for a "
+                        "result; it is arithmetic"
+                    ),
+                    falsified_by=(
+                        "the backend is not in the declared form, or whitened joint "
+                        "information adds nothing beyond the modality sum"
+                    ),
+                )
+            )
+        else:
+            subs.append(
+                SubCheck(
+                    name="modality_additivity_declaration",
+                    description="Identity-versus-hypothesis declaration for this report.",
+                    metrics=[], mandatory=False, forced_status="COULD_NOT_RUN",
+                    reason=(
+                        "single-modality designs were not available, so the additivity "
+                        "identity could not be confirmed numerically. It still holds "
+                        "algebraically under block-diagonal T4: no joint-versus-single "
+                        "comparison in this report is evidence for fusion."
+                    ),
+                )
+            )
 
     # prospective recovery of direction / delay / gain / dose / state dependence
     needed = ("direction", "delay", "gain", "dose", "state_dependence")
@@ -1549,10 +1732,20 @@ def run_g4(
     return ClaimReport(
         manifest=man, subchecks=subs, baselines_run=rows, artifacts=artifacts, kind="gate",
         notes=[
+            f"All information matrices are reported in the {basis} basis. A condition number "
+            "or an eigenvalue without a declared basis is not interpretable, so the basis is "
+            "stated on every such metric.",
             "Prior contribution is removed before rank/eigenvalue comparison so a full-rank "
             "posterior cannot disguise a prior-dominated likelihood (thesis §0.3).",
             "The theta block is evaluated with the nuisance/field parameters profiled out, "
             "which is how 'adds only field-model uncertainty' is detected rather than assumed.",
+            "IDENTITY, NOT RESULT: under the modality-block-diagonal form of T4, "
+            "I_{EEG+BOLD} = I_EEG + I_BOLD exactly. Any 'joint beats single-modality' "
+            "statement in that form is arithmetic and is not evidence for typed fusion. "
+            "This gate's falsifiable comparison is "
+            f"{intervention_design} versus {baseline_design}; the fusion claim's falsifiable "
+            "comparisons are native-versus-resampled (G1) and the non-additive joint "
+            "information that appears only under joint_whitening=True.",
             "No human stimulation protocol is implemented; prospective recovery inputs must "
             "come from an approved protocol or from simulation, and are labelled as such.",
         ],
