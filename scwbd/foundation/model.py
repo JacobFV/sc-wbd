@@ -817,7 +817,22 @@ class SCWBD(nn.Module):
 
     # -- regularisers -----------------------------------------------------
     def residual_penalty(self) -> Tensor:
-        return self.residual.log_scale.exp() ** 2
+        """``R_residual``: the learned residual may not grow without bound.
+
+        Dispatches on the arm.  The control arm holds one ``LearnedResidual``;
+        the family arm holds a ``FamilyResidual`` with its own ``log_scale``.
+        Reading ``self.residual`` unconditionally silently penalised nothing in
+        the family arm -- the regulariser that keeps the learned term from
+        replacing the mechanistic one would have been absent from exactly the
+        arm whose mechanistic backends it exists to protect.
+        """
+        res = self.family_residual if self.family_residual is not None else self.residual
+        if res is None:
+            raise RuntimeError(
+                "residual_penalty() called on a model with neither a family nor a control "
+                "residual; nothing would regularise the learned term."
+            )
+        return res.log_scale.exp() ** 2
 
     def stability_penalty(self, X: Tensor) -> Tensor:
         """``R_stability``: homeostatic -- the state may not drift without bound."""
