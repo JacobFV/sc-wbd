@@ -22,6 +22,7 @@ Every instance below was green, plausible, and load-bearing.
 | 4 | `git_sha()`'s `-dirty` suffix | whether the artifact came from modified source | the run writes to *tracked* files (`reports/training/train_main.log`, `…_train.jsonl`), so it is **always** dirty. Every checkpoint this project has produced is stamped `-dirty`. | asking what a provenance field would look like if it were working |
 | 5 | a backend's **0 % timescale clamp rate** | that the anatomy prior fit inside that backend's support | `theta_from_prior` resolves `key = None` when a backend spells its timescale differently (`StuartLandau` uses `f`, `JansenRit` uses `a`/`b`), then **skips the block silently, writing no provenance entry**. 0 % meant the prior never arrived. 21.62 % of the corpus. | re-deriving a percentage post-merge and asking why two backends scored a perfect zero |
 | 6 | `git diff 7f18528 HEAD -- scwbd configs` reported as a **verification claim** | that training source was unmodified during the run | `HEAD` is a **moving, worktree-local symbol**. The claim was true in `wt/turing` when written and false in 🛡️ Popper's worktree, where `7f18528` is not an ancestor of `master` (merge base `4d617af`) so the diff is dominated by unmerged work on both sides. | Popper trying to reproduce it and getting the opposite answer |
+| 7 | the **composite training loss** as the comparison metric | whether a change improved the model | it is a weighted sum whose terms move for unrelated reasons. It reported a large step-80 difference between two runs (3.717 vs 2.447) where `sim_forecast_nll` said **20.943 vs 20.980** — indistinguishable — and an early advantage that reversed by step 160. | comparing the same two runs on the interpretable metric instead |
 
 Number 4 is the sharpest: it sits *inside the mechanism built to catch stale
 artifacts*, and it was about to be handed to a brand-new provenance enforcement
@@ -74,6 +75,70 @@ Rules of thumb, all learned the hard way here:
 
 *A claim that only holds where it was written is not evidence. It is a memory.*
 
+### The measurement-choice variant (7)
+
+Rows 1–6 are instruments that lie. Row 7 is an instrument that is *fine* and was
+**asked the wrong question**. The composite training loss is a weighted sum; its
+terms move for unrelated reasons. Comparing two runs on it conflates "the model
+forecasts better" with "a different term happens to dominate right now".
+
+It misled twice in one hour, in opposite directions, where `sim_forecast_nll` did
+not:
+
+- step 80: composite **3.717 vs 2.447** (looks like a large effect) against
+  forecast NLL **20.943 vs 20.980** (no effect at all);
+- steps 40–140: composite showed a consistent advantage that **reversed** by 160,
+  while forecast NLL showed the two runs tracking within 2 % throughout.
+
+Rule: **for a comparison, choose the narrowest metric that answers the actual
+question**, and choose it *before* seeing which one is favourable. An aggregate is
+for monitoring, not for adjudicating.
+
+### The invested-conclusion variant — the human one
+
+Every row above is a mechanism that cannot discriminate. This one is a *process*
+that cannot discriminate, and it is the one this project actually ran into.
+
+**A conclusion that survives only because everyone involved has become invested
+in it** reads exactly like a conclusion that survives because it is true. Same
+confidence, same articulacy, same absence of dissent. The failure is not that
+someone lied; it is that the mechanism which would have produced disagreement
+quietly stopped running — which is the absence variant again, in people.
+
+Both directions of it appeared here within one hour, on the same decision:
+
+- **the author's version** — reaching for the reading that makes the most recent
+  action look correct. It happened twice, both times in the same direction, and
+  it was operating on the party who would also be generating the evaluation
+  numbers.
+- **the reviewer's version** — under-auditing evidence *because it arrives
+  well-argued*. A partial series was accepted without asking how long it was; a
+  `HEAD`-relative provenance claim was relayed onward as verified without being
+  run. Neither was a failure of rigour applied; both were rigour not applied,
+  because the source had been reliable.
+
+The second is the more dangerous, because it is what converts one party's error
+into everyone's, and it gets stronger the better the collaboration is going.
+
+Countermeasures, in order of how much they are worth:
+
+1. **Separate who measures from who adjudicates.** Self-binding is not enough when
+   the same party produces the numbers and decides what they mean. The rescale
+   question here was handed to 🛡️ Popper for exactly this reason.
+2. **Fix the comparison metric while it does not favour you** — before the data
+   exists, in writing, in the repository.
+3. **Audit well-argued evidence at the same rate as poorly-argued evidence.** The
+   check that gets skipped is never the one that looks doubtful.
+4. **Record the decision's support, not just its outcome**, so that when half the
+   support later fails the record says so instead of reading as fully justified.
+
+*A conclusion nobody is trying to break is not a finding. It is a consensus.*
+
+And the operating principle behind all four:
+
+> I would rather hand you a decision whose support I have just falsified than let
+> it stand because we both now prefer it.
+
 ## The tell
 
 In each case the instrument returned **the same value under both branches** of
@@ -84,6 +149,8 @@ the question:
 - batch 64 and batch 192 (3)
 - clean source and modified source (4)
 - prior fit the support, and prior never arrived (5)
+- the worktree it was written in, and any other (6)
+- a real change in forecast quality, and a reweighting of unrelated terms (7)
 
 If you cannot name a state of the world that would make the reading come out
 differently, you do not have a measurement.

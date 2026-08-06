@@ -117,6 +117,33 @@ the hard batch was also wrong; it was read off the composite `loss` (3.717 vs
 2.447), while the forecast NLL says the throw is *the same size at both rates*.
 Whatever the composite-loss difference at step 80 is, it is not forecast quality.
 
+### A finding in its own right: this model is nearly LR-insensitive in this regime
+
+Buried in the retraction above is a result that is more interesting than the
+decision that produced it.
+
+**A 1.73× change in learning rate moved `sim_forecast_nll` by under 2 %** at every
+matched step through 200 steps of Stage I — and by 0.2 % at step 80, the point
+where the composite loss suggested a large difference.
+
+Two runs differing only in learning rate, sharing a seed and therefore a data
+order, tracked each other to within noise. In this regime the trajectory is
+dominated by **the data order and the warmup schedule, not the step size.**
+
+Consequences worth carrying forward:
+
+- **It bounds what the rescale could ever have bought.** The cost-asymmetry
+  argument for doing it was sound in form — ten minutes to remove a confound —
+  but the expected benefit was smaller than either of us implied. The decision
+  was cheap and defensible rather than clearly beneficial.
+- **It suggests where the real levers are.** If LR is nearly inert here, tuning
+  it further is not where Stage I quality comes from; batch size (data per step),
+  corpus composition, and the warmup schedule are the candidates.
+- **It should be re-tested at a wider ratio and later in training.** 1.73× over
+  200 warmup steps is a narrow probe. Insensitivity may not hold into Stage III/IV
+  where the loss surface differs, and a 10× sweep would say much more. Logged as a
+  question for the next run, not a settled property.
+
 ### Where that leaves the decision
 
 - The **a-priori scaling argument** is still the only surviving justification:
