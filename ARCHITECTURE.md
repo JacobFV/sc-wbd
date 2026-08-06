@@ -232,14 +232,26 @@ passes; do not delete it.
 
 `SC-WBD-001-beta` is a **conditional multirate whole-brain neural operator**:
 
-- **State:** per-parcel structured state over `N_regions` (Schaefer-400 cortex +
-  subcortex + cerebellum), each with E/I rates, adaptation, spectral modes,
-  hemodynamic compartments, uncertainty channel.
+- **State:** **heterogeneous, region-indexed** structured state. `body.tex` §2.1
+  writes `X_i ∈ 𝒳_i` — the state *space* carries the index, not just the value.
+  Regions are partitioned into **families** by the anatomy prior, and each
+  family declares its own component list and its own dimension. A `(B,T,N,D)`
+  tensor with one `D` for every parcel is **not** conformant; see N-1 in §5b for
+  the one narrowing permitted here.
+- **Operator assignment:** each family declares its own backend. A single global
+  `local_core` string is **not** conformant — that is the equal-capacity generic
+  control of `body.tex` §11.4, not the model. Refusal **R12** enforces this at
+  checkpoint emission.
 - **Coupling:** delayed, connectome-masked block-sparse operators typed by
-  evidence class; delays from tract length / conduction velocity.
+  evidence class; delays from tract length / conduction velocity. Coupling
+  crosses families through **declared ports**, never through raw state slices.
 - **Backends (interchangeable, compared, not assumed):** Wilson–Cowan,
   Jansen–Rit, Wong–Wang reduced, Stuart–Landau, + learned neural-operator
-  surrogate. Model comparison over backends is a first-class output.
+  surrogate, assigned per family. Model comparison over backends is a
+  first-class output.
+- **Subsystems:** hippocampal `H_t = {k,v,g,c,ρ}` (§5.1), subcortical and
+  cerebellar controllers are **families**, not optional extras. A model that
+  does not instantiate them does not implement §5.
 - **Heads:** EEG/MEG lead field, Balloon–Windkessel BOLD, behavior.
 - **Training mixture:** (i) large-scale simulated whole-brain trajectories
   across parameter regimes generated on-device, (ii) real open EEG corpora,
@@ -250,6 +262,32 @@ passes; do not delete it.
   the "characterize a general human brain" capability.
 
 Checkpoints: `checkpoints/scwbd-001-beta/` with a `ClaimManifest` alongside.
+
+---
+
+## 5b. Declared Narrowings
+
+**Every divergence between this document and `paper/body.tex` is listed here.
+A divergence that is not listed is a defect, not a decision.**
+
+This section exists because it did not. `ARCHITECTURE.md` §5 previously said
+per-parcel state "each with E/I rates, adaptation, …" — a silent narrowing of
+§2.1 from operator-valued heterogeneous state to a uniform feature vector. It
+was implemented faithfully, and because it was never stated, no agent had cause
+to attack it and no gate could fire on it. A stated narrowing is a decision the
+fleet can attack. An unstated one is invisible to a process built entirely out
+of attacking stated things. See `reports/scope_gap.md`.
+
+Any agent may add a row. No agent may remove one. Adding a row is not approval —
+it makes the narrowing visible so it can be challenged.
+
+| id | narrows | narrowing | why | status |
+|---|---|---|---|---|
+| **N-1** | §2.1 ("need not be ordinary dense tensors") | Family state is stored **padded to the max family dimension** with per-family spans, not as a ragged/segment layout. | Ragged state breaks the batched trainer. Padding is observationally equivalent **only if** out-of-span reads are impossible, so the span mask is **enforced** — a family reading outside its span raises, it does not silently return zeros. That guard is what makes this a narrowing rather than a defect. | permanent unless the guard proves unenforceable |
+| **N-2** | §2.1 (nine registered operator types) | Run 2 assigns operators at **family** granularity, not per region. | A per-region assignment over 454 parcels has no evidence to fit it. Families are the finest granularity the anatomy prior actually distinguishes. | scheduled — revisit when a prior supports finer typing |
+| **N-3** | §4.2 (arbitrary source-native resolution lattices) | Run 2 declares **one** validated fine/coarse pair with restriction/prolongation, not a general lattice. | One pair tested properly beats a lattice declared and untested. It is also the minimum that gives R02 something to check. | scheduled |
+| **N-4** | §6.1 (per-regional-family phenotype pretraining across all listed modalities) | Stage I pretrains only the families for which we hold data. | We do not have retinotopic, interoceptive, or nociceptive corpora. Families without data are initialised from the prior and **declared untrained** in the manifest. | permanent for run 2 |
+| **N-5** | §5 (competing neuromodulator hypotheses) | Neuromodulation enters as θ-conditioned gain only; no receptor-, target-, and timescale-resolved control fields. | The Hansen receptor maps give spatial density, not dynamics. Modelling the dynamics would be unearned. | permanent for run 2 |
 
 ---
 
