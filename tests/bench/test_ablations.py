@@ -235,10 +235,10 @@ def test_A1_registry_carries_the_run2_preregistration():
     assert spec.note == A1_RUN2_PREREGISTRATION
     # Both capacity-matching definitions are named; picking one after the fact
     # is the defect the two-control design exists to prevent.
-    assert "pooled_vector_per_region@param_matched" in spec.optional_arms
-    assert "pooled_vector_per_region@state_matched" in spec.optional_arms
+    assert "pooled_vector_per_region@param_matched" in spec.required_arms
+    assert "pooled_vector_per_region@state_matched" in spec.required_arms
     # Attribution: heterogeneity without the anatomical assignment.
-    assert "permuted_family_state" in spec.optional_arms
+    assert "permuted_family_state" in spec.required_arms
     for token in (
         "BOTH_MUST_BE_BEATEN",
         "NLL_WIN_WITHOUT_MSE_WIN_GRANTS_NO_MECHANISTIC_CLAIM",
@@ -343,3 +343,31 @@ def test_A1_path_parity_fires_on_a_narrowed_observation_interface():
         thresholds=FIXTURE_THRESHOLDS,
     )
     assert next(s for s in ok.subchecks if s.name == "path_parity").status == "PASS"
+
+
+def test_A1s_preregistered_arms_are_REQUIRED_not_optional():
+    """"Mandatory" in a report is prose; `required_arms` is the mechanism.
+
+    Leaving the run-2 arms in `optional_arms` would have let A1 be scored with
+    the two capacity-matched controls, the stage-2 conditioning control and the
+    attribution control all absent -- while PREREG_A1_run2 §1 called them
+    mandatory. That is decorative_guards row 11's failure inside my own registry.
+    """
+    spec = ABLATIONS["A1_structured_state"]
+    for arm in (
+        "pooled_vector_per_region@param_matched",
+        "pooled_vector_per_region@state_matched",
+        "theta_conditioned_pooled",
+        "permuted_family_state",
+    ):
+        assert arm in spec.required_arms, f"{arm} is preregistered mandatory"
+        assert arm not in spec.optional_arms
+
+    # and a run missing one of them names it rather than proceeding
+    d = make_graph_dataset(seed=3, n_train=80, n_test=80)
+    partial = {a: RidgeGaussian() for a in spec.required_arms
+               if a != "theta_conditioned_pooled"}
+    rep = run_ablation("A1_structured_state", train=d["train"], test=d["test"],
+                       arms=partial, thresholds=FIXTURE_THRESHOLDS)
+    assert rep.status == "COULD_NOT_RUN"
+    assert any("theta_conditioned_pooled" in r for r in rep.blocking_reasons)

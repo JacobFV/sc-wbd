@@ -186,7 +186,19 @@ ABLATIONS: dict[str, AblationSpec] = {
         id="A1_structured_state",
         thesis_clause="structured regional state versus one scalar or pooled vector per region",
         question="Does structured regional state predict anything a pooled scalar cannot?",
-        required_arms=("structured_state", "scalar_per_region", "pooled_vector_per_region"),
+        # The first three are §11.4's own words. The rest are preregistered in
+        # reports/ablations/PREREG_A1_run2.md and are REQUIRED, not optional:
+        # leaving them in `optional_arms` would have made "mandatory" in that
+        # document unenforced prose -- the row-11 failure, in my own registry.
+        required_arms=(
+            "structured_state",
+            "scalar_per_region",
+            "pooled_vector_per_region",
+            "pooled_vector_per_region@param_matched",   # B1 match  (§3.2)
+            "pooled_vector_per_region@state_matched",   # B2 match  (§3.2)
+            "theta_conditioned_pooled",                 # stage-2 control (§3.6.2)
+            "permuted_family_state",                    # attribution (§1.1)
+        ),
         candidate_arm="structured_state",
         consequence=(
             "Collapse regional state to the supported dimensionality and stop describing "
@@ -198,18 +210,6 @@ ABLATIONS: dict[str, AblationSpec] = {
         # required and the choice is not made after the fact) plus a
         # permuted-family arm that holds heterogeneity fixed and destroys the
         # anatomical assignment.  See reports/ablations/PREREG_A1_run2.md §1, §3.
-        optional_arms=(
-            "pooled_vector_per_region@param_matched",
-            "pooled_vector_per_region@state_matched",
-            # PREREG_A1_run2 §3.6.2, on Cajal's N-7: one operator, uniform
-            # state, theta carrying exactly the receptor / myelin+thickness /
-            # timescale features the spin test used to separate the families.
-            # Without it a win is unattributable between STATE STRUCTURE and
-            # rich CONDITIONING -- an unmatched stage 2 under RL-6, the mirror
-            # of the stage-4 interface defect.
-            "theta_conditioned_pooled",
-            "permuted_family_state",
-        ),
         required_effect=A1_EFFECT,
         # PREREG_A1_run2 §3.1: B2 (total state width), B3 (optimiser steps) and
         # B4 (configurations trained per arm) are BINDING.  The two arms have
