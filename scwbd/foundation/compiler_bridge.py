@@ -248,7 +248,7 @@ FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
     # subject's own cortex, and P is its indicator partner. Neither is learned,
     # and neither is a buffer on this module either -- SC-WBD-001-beta holds no
     # source-space object at all, so there is no tensor here to freeze. That is
-    # narrowing N-6, and it is recorded in ARCHITECTURE.md §5b rather than
+    # narrowing N-12, and it is recorded in ARCHITECTURE.md §5b rather than
     # disguised as a binding. If the model ever grows fine-scale state, these
     # two entries must move to FOUNDATION_FROZEN_BINDING and name it.
     SCALE_MAP_RESTRICTION_KEY: (),

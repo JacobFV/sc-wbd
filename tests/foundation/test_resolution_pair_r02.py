@@ -231,6 +231,71 @@ def test_breaking_the_pair_refuses_the_production_compile(production_schema):
     assert "no restriction partner" in exc.value.detail
 
 
+# --------------------------------------------------------------------------
+# the seam with R12 (📜 Noether's refusal)
+# --------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "path", ["configs/scwbd_001_beta.yaml", "configs/run2/scwbd-001.yaml"]
+)
+def test_the_config_field_is_empty_and_that_is_load_bearing(path, poset):
+    """``model.scale_prolongations`` must stay empty until R12 is ruled on.
+
+    Filling it in is the obvious move and it was tried. Measured consequence:
+    R12's control test is ``assignment.is_constant AND not
+    declares_prolongation`` -- both conditions required, by design
+    (``designation.py``) -- so a populated field stops
+    ``test_r12_fires_on_the_released_run1_config`` and
+    ``test_r12_fires_on_every_undeclared_single_backend_config_in_the_repo``
+    from firing. A config key that switches a refusal off is not a declaration,
+    it is an exemption.
+
+    So the pair lives in the compiled poset, where **R02** validates it, and out
+    of the field only R12 reads. This test fails the moment someone fills it in
+    without settling that, which is the point.
+    """
+    import yaml
+
+    from scwbd.schema import designation as dg
+
+    cfg = yaml.safe_load((REPO / path).read_text())
+    declared = dg.read_prolongations(cfg.get("model"))
+    assert declared.pairs == (), (
+        "model.scale_prolongations was populated; check R12 still fires on "
+        "undeclared single-backend configs before keeping this"
+    )
+    # ...while the poset does carry it, which is what R02 acts on.
+    assert dg.read_prolongations(cfg.get("model"), poset=poset).pairs == (
+        (rp.SCALE_FINE, rp.SCALE_COARSE),
+    )
+
+
+@pytest.mark.parametrize(
+    "path", ["configs/scwbd_001_beta.yaml", "configs/run2/scwbd-001.yaml"]
+)
+def test_declaring_the_pair_does_not_relabel_a_control_arm(path):
+    """Declaring a prolongation must not turn a control run into the model.
+
+    The compiled poset now carries a prolongation, and R12 reads the poset in
+    preference to the config when one is supplied. So any caller that hands
+    R12 the compiled poset sees ``declares_prolongation=True`` and R12's
+    control test goes quiet on these configs -- 📜 Noether's to rule on.
+
+    What this test guarantees meanwhile is the part that reaches a checkpoint:
+    the arm is declared, so the designation is still the control's, and
+    ``ArmDeclaration.designation()`` does not consult the poset at all.
+    """
+    import yaml
+
+    from scwbd.schema import designation as dg
+
+    cfg = yaml.safe_load((REPO / path).read_text())
+    arm = dg.read_arm(cfg)
+    assert arm.is_control, f"{path} lost its control declaration"
+    assert arm.controls_for == "11.4:structured_regional_state"
+    assert arm.designation().endswith("-CONTROL[11.4:structured_regional_state]")
+    assert not list(dg.check_r12(config=cfg, poset=cb._poset(), claims=[]))
+
+
 def test_the_binding_table_still_names_the_declared_scale_map():
     """A rename in ``resolution_pair`` must not leave the binding vacuous."""
     for slot, key in (
