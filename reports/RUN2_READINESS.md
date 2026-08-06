@@ -58,6 +58,8 @@ was shown to be capable of failing.
 | **D4** | One validated restriction/prolongation pair so R02 has something to check | 🧭 Gauss | **no report yet** |
 | **D5** | Full `tests/runtime/` run to completion | 🤖 Asimov | open |
 | **D6** | `test_fallback_anatomy_is_labelled_as_not_biological` fixed — subject drift, fix is `force_fallback=True` | 🌊 Hodgkin | open |
+| **D7** | **R12 is bypassable by naming.** `evaluate.py:444` and `:784` write `"SC-WBD-001-beta"` as a string literal, and `runtime/serving.discover_checkpoint` takes the *directory name* as the designation without reading `model_id`. A refusal on the designation cannot bind if the designation is set by a path. | 🔥 Turing · 💎 Lovelace · 🤖 Asimov | open |
+| **D8** | `refuse_r12` receives `config`, so the prolongation half of the predicate runs at the checkpoint call site | 🌊 Hodgkin | open — one-line change, 📜 Noether specified it |
 
 ---
 
