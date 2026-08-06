@@ -53,6 +53,9 @@ __all__ = [
     "ChargeBEMEField",
     "FieldResolutionUnresolved",
     "ImpossiblePlacement",
+    "DiscrepancyBoundNotEstablished",
+    "GEOMETRY_DISCREPANCY_FRACTION",
+    "combine_discrepancy",
     "resolve_efield_backend",
     "ResponseOperator",
     "MagnitudeThresholdResponse",
@@ -243,8 +246,79 @@ def _fallback_figure_eight(
 
 
 # ---------------------------------------------------------------------------
-# E-field
+# E-field: two discrepancy terms, never one
 # ---------------------------------------------------------------------------
+
+#: Sphere-vs-real-head model discrepancy, as a fraction of the field.
+#:
+#: This is a **declared prior**, not a measurement: nobody here has compared a
+#: spherical solve against a subject-specific mesh.  It applies identically to
+#: every backend in this module, because they all model a sphere -- an exact
+#: solution of the wrong geometry is still the wrong geometry.
+GEOMETRY_DISCREPANCY_FRACTION: tuple[float, float] = (-0.4, 0.4)
+
+#: Smallest head radius over which the fallback approximation's own error has
+#: been measured, metres.  Not a biological claim -- adult head radii are more
+#: like 80-100 mm -- but the bound has to cover what the *code* admits, and
+#: nothing in :class:`~scwbd.runtime.head.HeadModel` enforces an adult radius.
+FALLBACK_MIN_HEAD_RADIUS_M = 0.060
+
+#: Largest coil standoff over which it has been measured, metres.  This is not
+#: chosen: it is ``A_safe``'s own ``tms.coil_scalp_distance_mm`` maximum, so the
+#: envelope ends exactly where admissible geometry does.
+FALLBACK_MAX_STANDOFF_M = 0.040
+
+#: How the fallback's ``solution_discrepancy_fraction`` was arrived at.  Quoted
+#: into the ledger so the number travels with its derivation.
+FALLBACK_SOLUTION_DISCREPANCY_BASIS = (
+    "Measured against scwbd.intervene.spectral_reference.AxialInductionReference "
+    "(degree 250) on a figure-eight coil over head radii 60-100 mm and standoffs "
+    "0-40 mm, the latter being A_safe's tms.coil_scalp_distance_mm maximum. The "
+    "peak ratio is monotone in both variables and worst at the small-head, "
+    "large-standoff corner: 1.3204 at 60 mm / 40 mm. It reproduces gate N9's "
+    "1.06289 at that gate's own 70 mm corner. The declared 1.35 adds ~2% over "
+    "the measured worst case for grid coarseness. "
+    "The lower bound is exactly 0 and is attained, not assumed: for an "
+    "axisymmetric coil the primary vector potential is purely azimuthal, the "
+    "Neumann data vanishes identically, there is no secondary field, and the "
+    "approximation is exact -- measured 0.0 and 3.6e-15. The error is therefore "
+    "a function of source SYMMETRY, not of any resolution parameter, so no "
+    "refinement reveals it and a validation suite built on a circular coil "
+    "would have certified the approximation as perfect."
+)
+
+
+def combine_discrepancy(
+    solution: tuple[float, float], geometry: tuple[float, float]
+) -> tuple[float, float]:
+    """Compose two *relative* discrepancies. Multiplicative, not additive.
+
+    Writing ``E_backend = E_exact_sphere (1 + a)`` and
+    ``E_exact_sphere = E_real_head (1 + g)``, the backend's error against the
+    real head is ``(1 + a)(1 + g) - 1 = a + g + ag``.  The cross term is not
+    negligible when either is large: at ``a = 1.06`` and ``g = 0.4`` it is 0.42,
+    which is most of the geometry prior over again.
+
+    This exists as a function rather than a typed constant because a typed
+    constant is exactly how the two terms got conflated in the first place.  The
+    combination is derived on every read, so widening either input cannot leave
+    a stale total behind.
+    """
+    for name, (lo, hi) in (("solution", solution), ("geometry", geometry)):
+        if hi < lo:
+            raise ValueError(f"{name} discrepancy interval is inverted: ({lo}, {hi})")
+        if lo <= -1.0:
+            raise ValueError(
+                f"{name} discrepancy lower bound {lo} implies the field can vanish "
+                "or change sign, which is not a discrepancy but a different model"
+            )
+    # a + g + a*g, algebraically identical to (1+a)(1+g)-1 but *exact* when
+    # either term is zero -- and one of them usually is. The product form leaves
+    # 0.3999999999999999 where the declared prior says 0.4, and a declared bound
+    # that does not compare equal to the number somebody wrote is its own small
+    # trap.
+    corners = [a + g + a * g for a in solution for g in geometry]
+    return (min(corners), max(corners))
 
 
 class FieldResolutionUnresolved(RuntimeError):
@@ -262,6 +336,24 @@ class FieldResolutionUnresolved(RuntimeError):
         super().__init__(message)
         self.remedy = remedy
         self.resolution = dict(resolution or {})
+
+
+class DiscrepancyBoundNotEstablished(RuntimeError):
+    """The backend has no measured error bound for *this* geometry.
+
+    Distinct from both other refusals: the geometry is physical and the
+    discretisation is fine, but it sits outside the envelope over which this
+    backend's own discrepancy was measured, so the interval it would attach is
+    not one anybody established.  Reporting a number with a bound that does not
+    cover it is precisely what gate ``N9_fallback_field_approximation`` caught,
+    and a declared envelope that nothing checks would be the same defect one
+    level up.  The runtime answers ``Defer``.
+    """
+
+    def __init__(self, message: str, *, remedy: str = "", detail: Any = None) -> None:
+        super().__init__(message)
+        self.remedy = remedy
+        self.detail = dict(detail or {})
 
 
 class ImpossiblePlacement(RuntimeError):
@@ -383,21 +475,86 @@ class AnalyticSphericalEField:
     #: cheap enough that CPU float64 is the right answer, and reporting "cuda"
     #: because CUDA happened to be available would be a false provenance.
     device: str = "cpu"
-    #: Wider than the gated backends', because it carries the sphere-vs-head
-    #: geometry prior *and* this approximation's own measured overestimate.
-    discrepancy_fraction: tuple[float, float] = (-0.8, 0.8)
-    #: No gate has been run against this. Empty is the honest value.
-    gate_evidence: tuple[str, ...] = ()
+
+    #: This approximation against the **exact solution of the same geometry**.
+    #: Measured, and *one-sided*: dropping the secondary field's tangential part
+    #: can only inflate the answer, so the lower bound is exactly zero and is
+    #: attained.  See :data:`FALLBACK_SOLUTION_DISCREPANCY_BASIS` for how the
+    #: upper bound was measured and over what envelope.
+    solution_discrepancy_fraction: tuple[float, float] = (0.0, 1.35)
+    #: The envelope that bound was measured over.  Declared as data, and
+    #: *checked*: a declared-but-unchecked domain is the same defect gate N9
+    #: caught one level up -- a number that looks like a bound and is not one.
+    min_head_radius_m: float = FALLBACK_MIN_HEAD_RADIUS_M
+    max_standoff_m: float = FALLBACK_MAX_STANDOFF_M
+    #: Sphere against a real head.  A declared prior, identical to every other
+    #: backend here, and untouched by any numerical gate.
+    geometry_discrepancy_fraction: tuple[float, float] = GEOMETRY_DISCREPANCY_FRACTION
+    #: The error is almost purely in *magnitude*: gate N9 measures a peak
+    #: direction cosine >= 0.999988 over the whole envelope, i.e. 0.28 degrees.
+    #: A consumer that uses only field direction inherits this instead of the
+    #: magnitude interval, which would overstate its uncertainty by two orders
+    #: of magnitude.
+    direction_discrepancy_rad: float = 0.005
+    gate_evidence: tuple[str, ...] = ("N9_fallback_field_approximation",)
     citation: str = (
         "approximation; the reference solution is Heller & van Hulsteyn 1992, "
-        "Biophys J 63:129-138, implemented in scwbd.intervene.tms.efield"
+        "Biophys J 63:129-138, implemented in scwbd.intervene.tms.efield. "
+        "Bounded by reports/intervene/N9_fallback_field_approximation.md"
     )
+
+    @property
+    def discrepancy_fraction(self) -> tuple[float, float]:
+        """Derived, never typed: the two terms composed multiplicatively.
+
+        Reading this is what most callers want; declaring it is what produced
+        the defect gate N9 caught, because a single interval said to carry two
+        things can be consumed entirely by one of them without anybody noticing.
+        """
+        return combine_discrepancy(
+            self.solution_discrepancy_fraction, self.geometry_discrepancy_fraction
+        )
 
     def solve(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> Tensor:
         return self.solve_field(head, pose, coil).e
 
+    def assert_bound_covers(self, head: HeadModel, pose: Pose) -> dict[str, float]:
+        """Refuse a geometry this backend has no measured error bound for."""
+        standoff = head.scalp_distance(pose.t)
+        measured = {
+            "head_radius_m": float(head.scalp_radius),
+            "standoff_m": float(standoff),
+        }
+        if head.scalp_radius < self.min_head_radius_m - 1e-9:
+            raise DiscrepancyBoundNotEstablished(
+                f"{self.name}: head radius {head.scalp_radius * 1e3:.1f} mm is below "
+                f"{self.min_head_radius_m * 1e3:.0f} mm, the smallest radius this "
+                "approximation's error has been measured at. The error grows "
+                "monotonically as the head shrinks (1.32 at 60 mm against 0.74 at "
+                "92 mm), so the declared interval is not known to cover it here.",
+                remedy=(
+                    "use the gated solver (scwbd.intervene.tms.efield is the "
+                    "default when importable), or extend gate "
+                    "N9_fallback_field_approximation's envelope and widen the "
+                    "declared bound to match"
+                ),
+                detail=measured,
+            )
+        if standoff > self.max_standoff_m + 1e-9:
+            raise DiscrepancyBoundNotEstablished(
+                f"{self.name}: coil standoff {standoff * 1e3:.1f} mm exceeds "
+                f"{self.max_standoff_m * 1e3:.0f} mm, the largest this "
+                "approximation's error has been measured at -- which is also "
+                "A_safe's tms.coil_scalp_distance_mm maximum, so a pose out here "
+                "leaves the feasible set as well.",
+                remedy="bring the coil inside A_safe, or use the gated solver",
+                detail=measured,
+            )
+        return measured
+
     def solve_field(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> FieldSolve:
         _check_frames(head, pose, coil)
+        domain = self.assert_bound_covers(head, pose)
         p, mdot = _dipoles_in_head_frame(pose, coil)
 
         r = head.cortex_vertices  # [N,3]
@@ -419,7 +576,13 @@ class AnalyticSphericalEField:
             validity_domain={
                 "solver": self.name,
                 "geometry": "spherically_symmetric",
-                "gate_evidence": (),
+                "gate_evidence": list(self.gate_evidence),
+                "solution_discrepancy_basis": FALLBACK_SOLUTION_DISCREPANCY_BASIS,
+                "solution_discrepancy_domain": {
+                    **domain,
+                    "min_head_radius_m": self.min_head_radius_m,
+                    "max_standoff_m": self.max_standoff_m,
+                },
             },
         )
 
@@ -495,14 +658,27 @@ class GatedAnalyticSphereEField:
     backend_class: str = "analytic"
     is_trained_artifact: bool = False
     device: str = "cpu"
-    #: Fractional model-discrepancy range vs a solve on a real head mesh.  This
-    #: is the *geometry* prior and is untouched by a numerical gate.
-    discrepancy_fraction: tuple[float, float] = (-0.4, 0.4)
+    #: Zero, and that is the point: this *is* the exact interior solution for
+    #: the geometry it models. Its residual against N6's independent reference
+    #: is a numerical term, not a bias, and belongs in variance.
+    solution_discrepancy_fraction: tuple[float, float] = (0.0, 0.0)
+    #: Sphere against a real head. The same declared prior every backend here
+    #: carries, and untouched by a numerical gate: N6 validates the computation,
+    #: not the choice of a sphere.
+    geometry_discrepancy_fraction: tuple[float, float] = GEOMETRY_DISCREPANCY_FRACTION
+    direction_discrepancy_rad: float = 0.0
     gate_evidence: tuple[str, ...] = ("N6_induced_efield",)
     citation: str = (
         "Heller & van Hulsteyn 1992, Biophys J 63:129-138; "
         "reports/intervene/N6_induced_efield.md"
     )
+
+    @property
+    def discrepancy_fraction(self) -> tuple[float, float]:
+        """Derived from the two terms; here it reduces to the geometry prior."""
+        return combine_discrepancy(
+            self.solution_discrepancy_fraction, self.geometry_discrepancy_fraction
+        )
 
     def solve(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> Tensor:
         return self.solve_field(head, pose, coil).e
@@ -574,8 +750,14 @@ class ChargeBEMEField:
     backend_class = "numerical_bem"
     is_trained_artifact = False
     device = "cpu"
+    #: Zero as a *bias*: this backend's own error is a discretisation error,
+    #: which is random-ish in sign across the surface and is already carried as
+    #: ``variance["numerical"]`` from the solver's calibrated envelope. Writing
+    #: it here as well would double-count it, and in the wrong column.
+    solution_discrepancy_fraction: tuple[float, float] = (0.0, 0.0)
     #: The sphere-vs-real-head geometry prior. A numerical gate does not move it.
-    discrepancy_fraction: tuple[float, float] = (-0.4, 0.4)
+    geometry_discrepancy_fraction: tuple[float, float] = GEOMETRY_DISCREPANCY_FRACTION
+    direction_discrepancy_rad: float = 0.0
     gate_evidence: tuple[str, ...] = (
         "N6_induced_efield",
         "N8_induced_efield_contact",
@@ -584,6 +766,13 @@ class ChargeBEMEField:
         "Makarov et al. 2018 (surface-charge BEM); "
         "reports/intervene/N8_induced_efield_contact.md"
     )
+
+    @property
+    def discrepancy_fraction(self) -> tuple[float, float]:
+        """Derived from the two terms; here it reduces to the geometry prior."""
+        return combine_discrepancy(
+            self.solution_discrepancy_fraction, self.geometry_discrepancy_fraction
+        )
 
     def __init__(
         self,

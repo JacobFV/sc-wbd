@@ -105,6 +105,7 @@ suite is unaffected: 3230 passed, 51 skipped.
 | **`UnresolvedCausalAmbiguity`** | three preregistered poses 12 mm apart under three disagreeing operators; the ranking groups them and names the discriminating measurement instead of tie-breaking | `tests/runtime/test_compare.py::TestAmbiguityIsPreservedNotBrokenArbitrarily` |
 | **Whole-study `Refuse(R11)`** | every preregistered candidate outside `A_safe` | `TestUnsafeCandidatesNeverEnterTheOrdering` |
 | **`Defer` -- the field solver's discretisation does not resolve the source** | a deliberately coarse BEM mesh (80 panels over a 92 mm sphere), where gate N8_induced_efield_contact measured 106 % error and *non-monotonic* refinement; `suggested_action="no_action"`, all four quantities `Unresolved` | `tests/runtime/test_field_backends.py::TestTheResolutionRefusalBecomesDefer` |
+| **`Defer` -- no measured error bound exists for this geometry** | the fallback approximation outside its measured envelope: a 50 mm head radius, or a standoff past `A_safe`'s 40 mm limit. All four quantities `Unresolved`; never a number under a bound nobody established | `test_field_backends.py::TestTheFallbacksEnvelopeIsCheckedNotJustDeclared` |
 | **`Refuse(code="R06")`** | a coil element inside the scalp -- the inverted coil-frame convention, or a placement that intersects the head | `TestTheCoilFrameConvention`, `TestTheResolutionRefusalBecomesDefer` |
 | **An unresolved candidate is excluded from a ranking** | a preregistered set evaluated with a mesh too coarse to resolve the source: the candidates are reported under `CandidateRanking.unresolved`, not ranked at zero, and the study defers | `test_compare.py::TestAnUnresolvedCandidateIsNeverRankedAtZero` |
 | **Provenance mismatch** | wrong schema / runtime-API / designation / checkpoint hash; demanding `weights_status=("trained",)` against the analytic fallback; too few response models; `require_efield_gates=("N8_induced_efield_contact",)` against a backend that has not passed it | `tests/runtime/test_provenance_handshake.py`, `test_field_backends.py::TestAConsumerCanDemandTheGates` |
@@ -225,7 +226,9 @@ now translates that refusal into `Refuse(code="R06")`.
 field*, `E_p - (E_p . n) n`. That is not the Sarvas / Heller--van Hulsteyn
 interior solution: the secondary field carries a tangential component too, and
 dropping it overestimates the magnitude by a measured factor of ~1.54 at the
-peak on the shipped phantom, with the direction unchanged. The gated
+peak on the shipped phantom, with the direction unchanged. Gate N9 has since
+bounded it properly over an envelope — up to 2.32x at the small-head, maximum-
+standoff corner — and the declared interval now covers that; see §6b. The gated
 implementation is now preferred and the fallback is renamed, relabelled as an
 approximation, given a wider declared discrepancy, and carries no gate evidence.
 It exists only so the runtime's structure -- ledgers, covariance propagation,
@@ -235,6 +238,88 @@ refusals -- stays exercisable when `scwbd.intervene.tms.efield` is absent.
 `spectral_reference.py`, which already covers that geometry. When that gate
 lands the fallback becomes validated rather than merely labelled, and the last
 unvalidated physics leaves the runtime path. Until then it stays labelled.
+
+### Gate N9: the fallback's declared bound was too narrow, and the fix was structural
+
+`N9_fallback_field_approximation` **failed** against
+`AnalyticSphericalEField.discrepancy_fraction = (-0.8, +0.8)`: the
+approximation's own overestimate reaches +1.063 over the gate's envelope, at
+70 mm head radius and 40 mm standoff — and 40 mm is not exotic, it is `A_safe`'s
+own `tms.coil_scalp_distance_mm` maximum.
+
+The sharp form of the failure is not `1.063 > 0.8`. That one interval was
+declared to carry **two** things — the sphere-vs-head geometry prior *and* the
+approximation's overestimate — and the approximation alone consumed all of it,
+leaving nothing for the prior it was also supposed to hold. Widening one number
+would have preserved the defect with more headroom. So the terms are now split:
+
+| term | value | kind |
+|---|---|---|
+| `solution_discrepancy_fraction` | `(0.0, 1.35)` | **measured**: this backend vs the exact solution of the *same* geometry |
+| `geometry_discrepancy_fraction` | `(-0.4, 0.4)` | **declared prior**: that geometry vs a real head |
+| `discrepancy_fraction` | `(-0.4, +2.29)` | **derived**, never typed: `a + g + a·g` |
+
+`discrepancy_fraction` is a property, so it cannot be set independently and
+widening either input cannot leave a stale total behind. The composition is
+multiplicative — at `a = 1.06` and `g = 0.4` the cross term alone is 0.42, most
+of the geometry prior over again — but written as `a + g + a·g`, which is exact
+when either term is zero, and one of them usually is. The gated analytic and
+charge-BEM backends carry `solution = (0, 0)`, so their combined interval
+reduces to exactly the geometry prior and nothing about them changed.
+
+**Why 1.35 and not Faraday's suggested 1.10.** I re-ran their sweep and extended
+it below their smallest head radius. The harness reproduces their 70 mm corner
+exactly (1.0629 against their 1.06289), so this is the same measurement rather
+than a competing one:
+
+| R (mm) | standoff 0 | 10 mm | 20 mm | 40 mm |
+|---|---|---|---|---|
+| 60 | 1.9357 | 2.0284 | 2.1218 | **2.3204** |
+| 65 | 1.8326 | 1.9157 | 1.9996 | 2.1785 |
+| 70 | 1.7488 | 1.8240 | 1.9003 | 2.0629 |
+| 85 | 1.5716 | 1.6300 | 1.6896 | 1.8173 |
+| 92 | 1.5134 | 1.5663 | 1.6203 | 1.7362 |
+| 100 | 1.4592 | 1.5068 | 1.5556 | 1.6604 |
+
+Monotone in both variables and worst at the small-head, large-standoff corner.
+1.10 covers to ~72 mm, 1.15 to ~65 mm; **1.35** covers the measured 1.3204 at
+60 mm / 40 mm with ~2 % for grid coarseness. I deliberately did *not* justify a
+smaller number by arguing that 60 mm is sub-adult — it is, adult radii are
+~80–100 mm where the error is 0.74–0.89 — because nothing in `HeadModel`
+enforces an adult radius. **The bound has to cover what the code admits, not
+what biology suggests.**
+
+**The lower bound is 0.0 and is attained, not assumed.** Faraday's structural
+argument checks out numerically: for a circular coil the measured error is 0.0
+and 3.6e-15. The minimum over the whole figure-eight sweep is +0.459 — the
+approximation never underestimates, so the interval is genuinely one-sided.
+Their trap is worth restating: the error is a function of source **symmetry**,
+not of any resolution parameter, so nothing converges to reveal it and **a
+validation suite built on a circular coil would have certified the
+approximation as perfect.**
+
+**The envelope is now checked, not merely declared** — head radius ≥ 60 mm,
+standoff ≤ 40 mm. Outside it the fallback raises
+`DiscrepancyBoundNotEstablished` and the runtime answers `Defer` with all four
+reported quantities `Unresolved`, rather than a number under a bound nobody
+established. A declared-but-unchecked envelope would have been the same defect
+N9 caught, one level up again.
+
+**Direction is carried separately.** Gate N9 measures a peak direction cosine
+≥ 0.999988 — 0.28° — against a magnitude interval of order 100 %. A consumer
+reading only the field's direction (its orientation relative to a cortical
+normal, say) inherits `direction_discrepancy_rad = 0.005` instead, because
+giving it the magnitude interval would overstate its uncertainty by two orders
+of magnitude.
+
+**For 🛡️ Popper.** The tighter subject for this gate is
+`solution_discrepancy_fraction`, not `discrepancy_fraction`: comparing the
+approximation's own error against an interval that also carries the geometry
+prior is the very conflation the gate exists to catch. Against the combined
+`(-0.4, +2.29)` the gate passes trivially; against `(0, 1.35)` it is a real test
+of a real claim, and the attribute is stable to read. Gate id cited here is
+`N9_fallback_field_approximation`; rename freely and I will follow in
+`gate_evidence`, the citation string and this report in one pass.
 
 ### The general lesson, from Faraday, worth recording
 

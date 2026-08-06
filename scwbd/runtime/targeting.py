@@ -77,6 +77,7 @@ from .backends import (
     DEFAULT_RESPONSE_OPERATORS,
     CoilSpec,
     EFieldBackend,
+    DiscrepancyBoundNotEstablished,
     FieldResolutionUnresolved,
     FieldSolve,
     ImpossiblePlacement,
@@ -313,7 +314,11 @@ class TargetingService:
 
         try:
             bundle = self._field_bundle(head, pose_head)
-        except (FieldResolutionUnresolved, ImpossiblePlacement) as exc:
+        except (
+            FieldResolutionUnresolved,
+            DiscrepancyBoundNotEstablished,
+            ImpossiblePlacement,
+        ) as exc:
             # The field solver refused. Two different refusals, two different
             # answers, and neither is a number (ARCHITECTURE.md Sec. 6).
             return self._unresolved_evaluation(
@@ -579,6 +584,17 @@ class TargetingService:
                 "coil_discretisation_numerical_sd_v_per_m": coil_numerical,
                 "solver_relative_error_bound": bundle.solver_relative_bound,
                 "solver_numerical_variance": float(bundle.solver_variance),
+                # the bias interval below is a COMPOSITION of two terms; both
+                # are recorded so a reader can see which one dominates
+                "solution_discrepancy_fraction": list(
+                    getattr(self.efield_backend, "solution_discrepancy_fraction", (0.0, 0.0))
+                ),
+                "geometry_discrepancy_fraction": list(
+                    getattr(self.efield_backend, "geometry_discrepancy_fraction", (0.0, 0.0))
+                ),
+                "direction_discrepancy_rad": float(
+                    getattr(self.efield_backend, "direction_discrepancy_rad", 0.0)
+                ),
                 "note": (
                     "the numerical term is measured, not asserted: the coil "
                     "sheet by an explicit refinement here, and the conductor "
@@ -627,6 +643,15 @@ class TargetingService:
             validation_status="cross_solver" if gates else "solver_refinement_only",
             solver_relative_error_bound=bundle.solver_relative_bound,
             near_source_resolution=dict(bundle.solver_resolution or {}),
+            solution_discrepancy_fraction=tuple(
+                getattr(self.efield_backend, "solution_discrepancy_fraction", (0.0, 0.0))
+            ),
+            geometry_discrepancy_fraction=tuple(
+                getattr(self.efield_backend, "geometry_discrepancy_fraction", (0.0, 0.0))
+            ),
+            direction_discrepancy_rad=float(
+                getattr(self.efield_backend, "direction_discrepancy_rad", 0.0)
+            ),
         )
 
     # -- when the solver refuses --------------------------------------------
@@ -656,7 +681,11 @@ class TargetingService:
         * ``Refuse(code="R06")`` when the coil is not outside the head, because
           that is not a placement at all.
         """
-        resolved = isinstance(exc, FieldResolutionUnresolved)
+        # Two of the three are modelling gaps the caller can close, so they
+        # Defer; only "the coil is not outside the head" is a Refuse.
+        deferrable = isinstance(
+            exc, (FieldResolutionUnresolved, DiscrepancyBoundNotEstablished)
+        )
         reason = str(exc)
         remedy = str(getattr(exc, "remedy", ""))
         detail = dict(
@@ -667,14 +696,12 @@ class TargetingService:
             missing=("induced_efield",),
         )
 
-        if resolved:
+        if deferrable:
             decision: Decision = Defer(
                 reason=(
-                    "the induced-field solver refused: its discretisation does "
-                    "not resolve the near-source field at this pose, and gate "
-                    "N8_induced_efield_contact measured non-monotonic refinement beyond that "
-                    "envelope, so no error bound can be attached to a number "
-                    f"computed here. {reason}"
+                    "the induced-field solver refused, so no number here would "
+                    "carry an error bound anybody established. "
+                    + reason
                 ),
                 # Refining a mesh is a modelling step, not a measurement on a
                 # subject and not a probe. Saying "reversible_probe" here would

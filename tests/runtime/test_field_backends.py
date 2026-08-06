@@ -79,6 +79,17 @@ def bem_pose(small_head):
 
 
 @pytest.fixture(scope="module")
+def gated_evaluation(head, small_head):
+    """One evaluation through the default (gated) backend."""
+    pose = PoseRequest(
+        pose=coil_pose_over_region(head, method="gated_fixture"),
+        frame=head.frame,
+        uncertainty=PoseUncertainty.isotropic(1.5e-3, 1.5e-2),
+    )
+    return TargetingService().evaluate_pose(head, pose)
+
+
+@pytest.fixture(scope="module")
 def bem_evaluation(small_head, bem_pose):
     service = TargetingService(efield_backend=ChargeBEMEField())
     return service.evaluate_pose(small_head, bem_pose)
@@ -117,10 +128,11 @@ class TestTheGatedSolverIsWhatRuns:
         assert cosine > 0.999, "the approximation is parallel to the reference"
         ratio = float(local_mag.max() / gated_mag.max())
         assert 1.4 < ratio < 1.7, f"measured overestimate {ratio:.3f}"
-        # and the fallback declares a discrepancy prior wide enough to contain it
-        lo, hi = AnalyticSphericalEField().discrepancy_fraction
+        # and the fallback's declared *solution* term contains it
+        lo, hi = AnalyticSphericalEField().solution_discrepancy_fraction
+        assert lo == 0.0
         assert hi >= ratio - 1.0
-        assert AnalyticSphericalEField().gate_evidence == ()
+        assert "N9_fallback_field_approximation" in AnalyticSphericalEField().gate_evidence
 
     def test_a_non_spherical_head_is_refused_not_approximated(self, head):
         dented = replace(
@@ -270,7 +282,7 @@ class TestTheResolutionRefusalBecomesDefer:
         decision = coarse_evaluation.decision
         assert decision.suggested_action == "no_action"
         assert "does not resolve the near-source field" in decision.reason
-        assert "non-monotonic" in decision.reason
+        assert "not monotonic" in decision.reason, "the solver's own words"
 
     def test_the_defer_carries_the_measured_resolution(self, coarse_evaluation):
         detail = coarse_evaluation.decision.detail
@@ -438,3 +450,162 @@ class TestGateNamesAreTheOnesPopperAssigned:
             if "N7" in path.read_text()
         ]
         assert not offenders, f"stale gate id N7 in {offenders}"
+
+
+class TestTheTwoDiscrepancyTermsAreSeparate:
+    """Gate N9 failed because one interval was declared to carry two things.
+
+    ``discrepancy_fraction = (-0.8, +0.8)`` was said to hold both the
+    sphere-vs-head geometry prior and the fallback approximation's own
+    overestimate. The approximation alone measured +1.063, consuming the whole
+    interval and leaving nothing for the prior. The fix is not a bigger number:
+    it is two named numbers and a derived combination, so neither can quietly
+    eat the other and widening one cannot leave a stale total behind.
+    """
+
+    def test_the_combination_is_derived_not_typed(self):
+        from scwbd.runtime.backends import combine_discrepancy
+
+        for backend in (
+            AnalyticSphericalEField(),
+            GatedAnalyticSphereEField(),
+            ChargeBEMEField(),
+        ):
+            assert backend.discrepancy_fraction == combine_discrepancy(
+                backend.solution_discrepancy_fraction,
+                backend.geometry_discrepancy_fraction,
+            )
+            # a property, not a field: it cannot be set independently
+            assert "discrepancy_fraction" not in getattr(
+                backend, "__dataclass_fields__", {}
+            )
+
+    def test_the_composition_is_multiplicative(self):
+        """(1+a)(1+g)-1, not a+g. The cross term is not negligible when a is 1."""
+        from scwbd.runtime.backends import combine_discrepancy
+
+        lo, hi = combine_discrepancy((0.0, 1.0), (-0.4, 0.4))
+        assert hi == pytest.approx(2.0 * 1.4 - 1.0)
+        assert hi > 1.0 + 0.4, "additive composition would understate this"
+        assert lo == pytest.approx(-0.4)
+
+    def test_the_fallbacks_solution_term_covers_the_gated_measurement(self):
+        """N9 measured +1.06289 over its envelope; ours extends below it."""
+        _, hi = AnalyticSphericalEField().solution_discrepancy_fraction
+        assert hi >= 1.06289, "must cover gate N9's own worst case"
+        assert hi >= 1.32039, (
+            "and the extension below N9's smallest head radius, measured at "
+            "60 mm / 40 mm"
+        )
+
+    def test_the_solution_term_is_one_sided_and_attained_at_zero(self):
+        """Dropping the secondary tangential field can only inflate the answer.
+
+        Zero is not an assumption: for an axisymmetric coil the Neumann data
+        vanishes identically and the approximation is exact.
+        """
+        lo, hi = AnalyticSphericalEField().solution_discrepancy_fraction
+        assert lo == 0.0
+        assert hi > 0.0
+
+    def test_the_exact_backends_carry_no_solution_term(self):
+        for backend in (GatedAnalyticSphereEField(), ChargeBEMEField()):
+            assert backend.solution_discrepancy_fraction == (0.0, 0.0)
+            assert backend.discrepancy_fraction == backend.geometry_discrepancy_fraction
+
+    def test_every_backend_carries_the_same_geometry_prior(self):
+        """A sphere is a sphere. An exact solution of it is still not a head."""
+        from scwbd.runtime.backends import GEOMETRY_DISCREPANCY_FRACTION
+
+        for backend in (
+            AnalyticSphericalEField(),
+            GatedAnalyticSphereEField(),
+            ChargeBEMEField(),
+        ):
+            assert backend.geometry_discrepancy_fraction == GEOMETRY_DISCREPANCY_FRACTION
+
+    def test_a_degenerate_interval_is_refused(self):
+        from scwbd.runtime.backends import combine_discrepancy
+
+        with pytest.raises(ValueError):
+            combine_discrepancy((0.5, 0.1), (-0.4, 0.4))
+        with pytest.raises(ValueError) as exc:
+            combine_discrepancy((0.0, 1.0), (-1.0, 0.4))
+        assert "not a discrepancy but a different model" in str(exc.value)
+
+    def test_direction_is_bounded_far_more_tightly_than_magnitude(self):
+        """N9: peak direction cosine >= 0.999988, i.e. 0.28 degrees."""
+        import math
+
+        fallback = AnalyticSphericalEField()
+        assert fallback.direction_discrepancy_rad > 0.0
+        assert math.degrees(fallback.direction_discrepancy_rad) < 1.0
+        magnitude_hi = fallback.discrepancy_fraction[1]
+        assert fallback.direction_discrepancy_rad < magnitude_hi / 100.0
+
+    def test_the_evaluation_reports_both_terms_apart(self, gated_evaluation):
+        accuracy = gated_evaluation.field_accuracy
+        assert accuracy.solution_discrepancy_fraction == (0.0, 0.0)
+        assert accuracy.geometry_discrepancy_fraction == (-0.4, 0.4)
+        domain = gated_evaluation.efield.ledger.validity_domain
+        assert domain["solution_discrepancy_fraction"] == [0.0, 0.0]
+        assert domain["geometry_discrepancy_fraction"] == [-0.4, 0.4]
+
+
+class TestTheFallbacksEnvelopeIsCheckedNotJustDeclared:
+    """A declared-but-unchecked envelope is the same defect N9 caught.
+
+    The bound is measured over head radii 60-100 mm and standoffs 0-40 mm. It
+    is not a biological claim -- adult radii are more like 80-100 mm -- but
+    nothing in ``HeadModel`` enforces an adult radius, so the *code's* envelope
+    is what has to be guarded.
+    """
+
+    def _fallback_service(self):
+        return TargetingService(efield_backend=AnalyticSphericalEField())
+
+    def test_a_head_smaller_than_the_measured_envelope_defers(self, nominal_pose):
+        tiny = spherical_phantom(
+            subject_id="tiny", scalp_radius=0.050, cortex_radius=0.040
+        )
+        pose = PoseRequest(
+            pose=coil_pose_over_region(tiny, method="tiny_head"),
+            frame=tiny.frame,
+            uncertainty=PoseUncertainty.isotropic(1e-3, 1e-2),
+        )
+        evaluation = self._fallback_service().evaluate_pose(tiny, pose)
+        assert isinstance(evaluation.decision, Defer)
+        assert "has been measured at" in evaluation.decision.reason
+        assert evaluation.unresolved_quantities()
+
+    def test_a_standoff_beyond_the_measured_envelope_defers(self, head):
+        far = PoseRequest(
+            pose=coil_pose_over_region(head, standoff_m=0.060, method="far"),
+            frame=head.frame,
+            uncertainty=PoseUncertainty.isotropic(1e-3, 1e-2),
+        )
+        evaluation = self._fallback_service().evaluate_pose(head, far)
+        assert isinstance(evaluation.decision, Defer)
+        assert "A_safe" in evaluation.decision.reason
+
+    def test_inside_the_envelope_it_still_answers(self, head, nominal_pose):
+        evaluation = self._fallback_service().evaluate_pose(head, nominal_pose)
+        assert evaluation.field_resolved
+        domain = evaluation.efield.ledger.validity_domain
+        assert domain["solution_discrepancy_domain"]["max_standoff_m"] == 0.040
+        assert "axisymmetric" in domain["solution_discrepancy_basis"]
+
+    def test_the_gated_backend_has_no_such_restriction(self, head):
+        """It is exact for any sphere, so its envelope is not a limitation."""
+        tiny = spherical_phantom(
+            subject_id="tiny2", scalp_radius=0.050, cortex_radius=0.040
+        )
+        pose = PoseRequest(
+            pose=coil_pose_over_region(tiny, method="tiny_head"),
+            frame=tiny.frame,
+            uncertainty=PoseUncertainty.isotropic(1e-3, 1e-2),
+        )
+        evaluation = TargetingService(
+            efield_backend=GatedAnalyticSphereEField()
+        ).evaluate_pose(tiny, pose)
+        assert evaluation.field_resolved

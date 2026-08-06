@@ -483,6 +483,22 @@ class FieldAccuracy:
     #: ``standoff_m``, ``panel_edge_m``, ``panel_to_standoff``.  Empty for a
     #: closed-form backend, which discretises no conductor.
     near_source_resolution: Mapping[str, float] = field(default_factory=dict)
+
+    #: The backend's model discrepancy, **split**, because one interval said to
+    #: carry two things can be consumed entirely by one of them without anybody
+    #: noticing -- which is what gate N9 caught.
+    #: ``solution`` is this backend against the exact solution of the *same*
+    #: geometry; ``geometry`` is that geometry against a real head.
+    solution_discrepancy_fraction: tuple[float, float] = (0.0, 0.0)
+    geometry_discrepancy_fraction: tuple[float, float] = (0.0, 0.0)
+    #: Angular discrepancy, radians.  Kept apart from the magnitude interval
+    #: because for the fallback approximation the error is almost *purely* in
+    #: magnitude: 0.28 degrees of direction against a magnitude bound of order
+    #: 100%.  A consumer that reads only the field's direction -- its
+    #: orientation relative to a cortical normal, say -- inherits this, and
+    #: giving it the magnitude interval would overstate its uncertainty by two
+    #: orders of magnitude.
+    direction_discrepancy_rad: float = 0.0
     notice: str = SIMULATION_ONLY_NOTICE
 
     @property
