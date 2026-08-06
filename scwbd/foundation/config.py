@@ -82,7 +82,12 @@ class DataConfig:
     context: int = 24  # assimilation window, model steps
     fs_hz: float = 125.0
     batch: int = 192
-    num_workers: int = 8
+    num_workers: int = 4
+    #: Pin the loader's host buffers.  Default **off**: the GB10 has one unified
+    #: LPDDR5X pool, so there is no host->device copy for pinning to overlap --
+    #: it just makes pages unevictable in the same budget CUDA allocates from.
+    #: On a discrete GPU this is worth turning back on.
+    pin_memory: bool = False
     val_fraction: float = 0.05
     real_test_fraction: float = 0.25
     seed: int = 20260805
@@ -128,6 +133,17 @@ class TrainConfig:
     seed: int = 20260805
     device: str = "cuda"
     amp_dtype: str = "bfloat16"
+    #: Hard ceiling, in GB, on what the CUDA caching allocator may reserve.
+    #:
+    #: This is **not** redundant with ``systemd-run -p MemoryMax``.  On the GB10
+    #: the GPU allocates from the same physical pool as the host, but those
+    #: allocations are not charged to the systemd cgroup: on 2026-08-06 a run
+    #: held 97.9 GB of device memory while its cgroup reported
+    #: ``memory.current = 8.17 GB`` against a 40 GB cap that never fired.  The
+    #: cgroup bounds host-side allocation only.  Without this ceiling the
+    #: caching allocator grows unopposed -- it reserves freed blocks rather than
+    #: returning them -- until the machine dies.  ``0`` disables the cap.
+    cuda_reserve_gb: float = 40.0
     max_wall_seconds: float = 6 * 3600.0
     resume: bool = True
     stages: list[StageConfig] = field(

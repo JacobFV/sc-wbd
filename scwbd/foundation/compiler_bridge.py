@@ -25,10 +25,18 @@ the vocabulary the foundation trainer speaks: glob patterns over
 Why a translation table at all?  Because the two namespaces are genuinely
 different and neither can be derived from the other.  The compiler names
 *things in the world* (``operator:long_range:delay``); torch names *tensors in
-an implementation* (``coupling.bin_length_mm``).  :data:`FOUNDATION_BINDING` is
-the explicit, auditable map between them, and :func:`audit_binding` exists so
-that any torch parameter the map fails to claim is **visible** rather than
-quietly ungoverned.  An unclaimed parameter is a hole in the permission system.
+an implementation* (``coupling.bin_length_mm``).  :data:`FOUNDATION_BINDING` and
+:data:`FOUNDATION_FROZEN_BINDING` are the explicit, auditable map between them,
+and :func:`audit_binding` exists so that any torch parameter the map fails to
+claim is **visible** rather than quietly ungoverned.  An unclaimed parameter is a
+hole in the permission system.
+
+The map is checked in both directions, and that is the point.  A declared
+binding whose pattern matches no tensor on the model is reported as a problem,
+not tolerated: it means someone renamed a tensor and the permission it expressed
+became decorative while continuing to look enforced.  "Implemented but frozen"
+(a buffer) and "no implementation state at all" are both sayable, but each has
+to be *said* -- neither is what you get by writing a pattern that misses.
 
 Failure policy: fail closed and loudly.  If ``scwbd.compiler`` or
 ``scwbd.schema`` cannot be imported, or the schema fails to build, every
@@ -48,9 +56,13 @@ from .anatomy import AnatomyPrior
 from .mixture import GradientGate, SourceSpec
 from .state import StateLayout as FoundationStateLayout
 from .state import default_layout
+from .util import logical_param_name
 
 __all__ = [
     "FOUNDATION_BINDING",
+    "FOUNDATION_FROZEN_BINDING",
+    "FRAME_EDGE_KEY",
+    "REGION_STATE_KEY",
     "OBSERVATION_HEADS",
     "CompilerBridgeError",
     "CompilerUnavailable",
@@ -64,6 +76,7 @@ __all__ = [
     "audit_binding",
     "schedule_plan",
     "patterns_for_group",
+    "frozen_patterns_for_group",
     "observation_head_for",
 ]
 
@@ -153,6 +166,13 @@ def _require_compiler() -> None:
 #: *activations*, not weights).
 REGION_STATE_KEY = "region:<id>:state:<component>"
 
+#: Template key for the frame-graph calibration groups.  ``parameter_groups_of``
+#: emits one ``frame_edge:<src>-><dst>:calibration`` per frame edge that carries
+#: transform parameters; this model has exactly one such edge (anatomical RAS ->
+#: EEG cap), and it is realised as *frozen geometry* -- see
+#: :data:`FOUNDATION_FROZEN_BINDING`.
+FRAME_EDGE_KEY = "frame_edge:<src>-><dst>:calibration"
+
 #: Canonical exemplar region id used for the port keys.  Port groups are emitted
 #: as ``port:<region_id>.<port_name>``; the foundation model's port machinery is
 #: weight-shared across every region, so the binding is keyed on the port *name*
@@ -166,12 +186,17 @@ _PORT_EXEMPLAR = "cortex"
 OBSERVATION_HEADS: tuple[str, ...] = ("parcel_activity", "eeg", "bold", "behaviour")
 
 #: Compiler parameter-group name (or template) -> glob patterns over
-#: ``SCWBD.named_parameters()``.  Read this as the answer to "which tensors does
-#: this declared thing actually consist of?".  A pattern that matches nothing is
-#: not an error -- ``coupling.bin_length_mm`` is a registered *buffer*, so the
-#: delay group has no trainable tensor at all -- but it is always reported,
-#: because "granted a permission over nothing" and "granted a permission" must
-#: never look the same in an audit.
+#: ``SCWBD.named_parameters()``.  Read this as the answer to "which *trainable*
+#: tensors does this declared thing consist of?".
+#:
+#: Every pattern here **must** match at least one trainable parameter.  A pattern
+#: that matches nothing is a bug, not a curiosity: it means the declaration and
+#: the implementation have drifted (a tensor was renamed, a module restructured)
+#: and the permission it expresses has silently become decorative.  A group whose
+#: implementation is genuinely *not* trainable does not belong in this table --
+#: it belongs in :data:`FOUNDATION_FROZEN_BINDING` (frozen buffer) or is mapped
+#: to ``()`` here (no tensor at all).  Those three statements are different and
+#: the audit keeps them apart; see :class:`_Binding`.
 FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
     # F_local: the weight-shared regional vector field, its per-region timestep
     # scaling and the conditioning encoder that modulates it.
@@ -184,10 +209,14 @@ FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
         "coupling.gain_proposed",
         "coupling.global_scale",
     ),
-    # The delay geometry is a *buffer* cut from tract length: declared, frozen
-    # by construction, and deliberately not trainable.  Bound anyway so the
-    # audit says "no trainable tensor" instead of "unknown group".
-    "operator:long_range:delay": ("coupling.bin_length_mm",),
+    # The delay geometry is a *buffer* cut from tract length: declared, frozen by
+    # construction, deliberately not trainable.  Its tensor is named in
+    # FOUNDATION_FROZEN_BINDING, which is where "implemented, but not by a
+    # gradient" is said.
+    "operator:long_range:delay": (),
+    # The anat->EEG-cap co-registration is likewise frozen geometry, baked into
+    # the lead field at build time; same story, see FOUNDATION_FROZEN_BINDING.
+    FRAME_EDGE_KEY: (),
     # Typed ports: the export projection and the read-in of arriving messages.
     f"port:{_PORT_EXEMPLAR}.message_out": ("msg_proj.*",),
     f"port:{_PORT_EXEMPLAR}.message_in": ("msg_readin.*",),
@@ -219,6 +248,33 @@ FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
         "assimilate.embed",
     ),
 }
+
+#: Compiler parameter-group name (or template) -> glob patterns over
+#: ``SCWBD.named_buffers()``.
+#:
+#: Some declared things are real, are implemented, and are still not trainable:
+#: they are fixed geometry the model *derives* rather than learns.  Saying that
+#: with an empty entry in :data:`FOUNDATION_BINDING` would be a strictly weaker
+#: claim -- "no tensor" rather than "this tensor, frozen" -- and would leave the
+#: rename undetectable.  So the buffer is named here and **must exist**: every
+#: pattern must match at least one registered buffer, or the audit reports a
+#: problem exactly as it would for a missing parameter.
+#:
+#: Nothing in this table is ever handed to a source as a trainable glob.  A
+#: source may be *granted* such a group by the compiler (the schema models the
+#: delay as part of the long-range operator) without that grant reaching a
+#: gradient -- which is the honest outcome, and is recorded as ``frozen_groups``
+#: in :func:`audit_binding` rather than being rounded off to a permission.
+FOUNDATION_FROZEN_BINDING: dict[str, tuple[str, ...]] = {
+    # Conduction-delay bin edges, cut from tract length by the anatomy prior.
+    "operator:long_range:delay": ("coupling.bin_length_mm",),
+    # The rigid anat->cap transform is applied when the lead field is built, so
+    # the co-registration lives inside L and there is no separate tx/ty/tz
+    # tensor.  Binding to the lead field states where the calibration went; a
+    # per-participant digitization would rebuild L, not train it.
+    FRAME_EDGE_KEY: ("eeg.L",),
+}
+
 
 #: Port-name -> patterns, derived from the exemplar keys above so the two can
 #: never drift apart.
@@ -261,8 +317,15 @@ def patterns_for_group(group: str, *, schema: Any | None = None) -> tuple[str, .
     parts = group.split(":")
     kind = parts[0]
 
+    # Template lookups use ``.get``: a missing template is "nobody wrote this
+    # binding", which is the unbound path the caller must report.  Raising here
+    # instead would turn a reportable hole into a crash inside the audit that is
+    # supposed to describe it.
     if kind == "region" and len(parts) == 4 and parts[2] == "state":
-        return FOUNDATION_BINDING[REGION_STATE_KEY]
+        return FOUNDATION_BINDING.get(REGION_STATE_KEY)
+
+    if kind == "frame_edge" and len(parts) == 3 and parts[2] == "calibration":
+        return FOUNDATION_BINDING.get(FRAME_EDGE_KEY)
 
     if kind == "port" and len(parts) == 2:
         _, _, port_name = parts[1].partition(".")
@@ -284,6 +347,23 @@ def patterns_for_group(group: str, *, schema: Any | None = None) -> tuple[str, .
         if any(ch in key for ch in "*?[") and fnmatchcase(group, key):
             return pats
     return None
+
+
+def frozen_patterns_for_group(group: str) -> tuple[str, ...]:
+    """Buffer globs implied by one compiler parameter group.
+
+    Empty means "this group is not implemented by frozen state" -- which, for a
+    group whose :func:`patterns_for_group` is also empty, is the genuine
+    "declared, corresponds to no tensor at all" case.
+    """
+    if group in FOUNDATION_FROZEN_BINDING:
+        return FOUNDATION_FROZEN_BINDING[group]
+    parts = group.split(":")
+    if parts[0] == "frame_edge" and len(parts) == 3 and parts[2] == "calibration":
+        return FOUNDATION_FROZEN_BINDING.get(FRAME_EDGE_KEY, ())
+    if parts[0] == "region" and len(parts) == 4 and parts[2] == "state":
+        return FOUNDATION_FROZEN_BINDING.get(REGION_STATE_KEY, ())
+    return ()
 
 
 def _head_of_source(source_id: str, schema: Any | None) -> str | None:
@@ -1268,7 +1348,18 @@ def _source_card(
         calibration_status=(
             "uncalibrated" if spec.is_simulated else "calibrated_empirically"
         ),
-        leakage_checked=True,
+        # NOT hard-coded.  This field asserts to every downstream gate that a
+        # participant-level leakage audit ran and passed; it must therefore be
+        # backed by one.  ``False`` is the schema default and means "not
+        # established", which is the honest reading when nothing has run.
+        #
+        # It was previously ``True`` unconditionally.  That was not carelessness
+        # but **staleness**: it was written when the only observation sources
+        # were ones whose splits had been audited by hand, and nothing forced
+        # re-examination when the trainer later began building splits that were
+        # never audited at all.  A default that was true when written, in a
+        # pipeline that stopped guaranteeing it.
+        leakage_checked=bool(getattr(spec, "leakage_audited", False)),
         target_ports=tuple(f"{rid}.{port}" for rid in region_ids),
         ledger=_sensitivity(units, bias=(-halfwidth, halfwidth), measurement=variance),
     )
@@ -1540,7 +1631,15 @@ def compile_foundation(
 # binding the compiler's answers back onto torch parameters
 # ======================================================================
 def _named_parameters(model: Any) -> list[str]:
-    return [n for n, p in model.named_parameters() if p.requires_grad]
+    # Logical names throughout: the binding table names things in the
+    # architecture, and torch.compile's ``_orig_mod`` segments are not part of
+    # it.  Matching raw names here is what made every per-region binding vacuous
+    # on 2026-08-05 -- see :func:`~scwbd.foundation.util.logical_param_name`.
+    return [logical_param_name(n) for n, p in model.named_parameters() if p.requires_grad]
+
+
+def _named_buffers(model: Any) -> list[str]:
+    return [logical_param_name(n) for n, _ in model.named_buffers()]
 
 
 def _matching(patterns: Iterable[str], names: Sequence[str]) -> tuple[str, ...]:
@@ -1554,39 +1653,69 @@ def _matching(patterns: Iterable[str], names: Sequence[str]) -> tuple[str, ...]:
 class _Binding:
     """Resolved binding of one compiled model onto one torch module.
 
-    Three failure modes are kept apart because they mean different things:
+    Every compiled parameter group lands in exactly one of five states, kept
+    apart because they are five different claims about the implementation:
 
-    ``unbound``         the group has no entry at all -- the schema declares
-                        something nobody wrote a binding for;
-    ``declared_empty``  the group is deliberately bound to no tensor (an
+    ``groups``          bound to >=1 trainable tensor -- a live permission;
+    ``frozen``          implemented by named, existing *buffers* -- real, but no
+                        gradient reaches it (delay-bin geometry; the anat->cap
+                        co-registration baked into the lead field);
+    ``declared_empty``  deliberately bound to no tensor whatsoever, because the
+                        thing has no implementation state at all (an
                         instantaneous operator's delay group);
-    ``empty_patterns``  a bound pattern matches zero *trainable* tensors -- the
-                        permission exists but is vacuous, e.g.
-                        ``operator:long_range:delay`` whose delay geometry is a
-                        buffer cut from tract length.
+    ``unbound``         no entry in either table -- the schema declares
+                        something nobody wrote a binding for;
+    ``empty_patterns``  a pattern was written and matches *nothing* on the
+                        model, neither parameter nor buffer.
+
+    The last two are the ones that matter.  Both are reported as problems,
+    because both mean a declaration has quietly stopped describing the model --
+    the rename-and-nobody-noticed failure.  ``frozen`` and ``declared_empty``
+    are *positive* statements someone had to write down, and are not problems.
     """
 
-    __slots__ = ("groups", "unbound", "declared_empty", "empty_patterns", "sources", "problems")
+    __slots__ = (
+        "groups",
+        "frozen",
+        "unbound",
+        "declared_empty",
+        "empty_patterns",
+        "sources",
+        "problems",
+    )
 
-    def __init__(self, model: Any, compiled: "CompiledModel", names: Sequence[str]) -> None:
+    def __init__(
+        self,
+        model: Any,
+        compiled: "CompiledModel",
+        names: Sequence[str],
+        buffers: Sequence[str] = (),
+    ) -> None:
         self.groups: dict[str, tuple[str, ...]] = {}
+        self.frozen: dict[str, tuple[str, ...]] = {}
         self.unbound: list[str] = []
         self.declared_empty: list[str] = []
-        self.empty_patterns: list[tuple[str, str]] = []
+        self.empty_patterns: list[tuple[str, str, str]] = []
         problems: list[str] = []
 
         for group in compiled.gradient_masks.group_names:
             pats = patterns_for_group(group, schema=compiled.schema)
-            if pats is None:
+            frozen_pats = frozen_patterns_for_group(group)
+            if pats is None and not frozen_pats:
                 self.unbound.append(group)
                 continue
-            self.groups[group] = tuple(pats)
-            if not pats:
-                self.declared_empty.append(group)
-                continue
+            pats = tuple(pats or ())
+            self.groups[group] = pats
             for pat in pats:
                 if not _matching((pat,), names):
-                    self.empty_patterns.append((group, pat))
+                    self.empty_patterns.append((group, pat, "parameter"))
+            if frozen_pats:
+                self.frozen[group] = tuple(frozen_pats)
+                for pat in frozen_pats:
+                    if not _matching((pat,), buffers):
+                        self.empty_patterns.append((group, pat, "buffer"))
+            elif not pats:
+                self.declared_empty.append(group)
 
         self.sources: dict[str, tuple[str, ...]] = {}
         for sid in compiled.gradient_masks.keys():
@@ -1599,20 +1728,24 @@ class _Binding:
                         "any torch parameter name; the permission cannot be executed"
                     )
                     continue
+                # Frozen groups contribute no trainable glob: the grant is real
+                # but terminates in a buffer, and handing the source a pattern
+                # that can never match would misreport its reach.
                 for pat in pats:
                     if pat not in patterns:
                         patterns.append(pat)
             self.sources[sid] = tuple(patterns)
 
-        for group, pat in self.empty_patterns:
+        for group, pat, kind in self.empty_patterns:
             problems.append(
-                f"binding {group!r} -> {pat!r} matches no trainable parameter of "
-                f"{type(model).__name__}"
+                f"binding {group!r} -> {pat!r} matches no {kind} of "
+                f"{type(model).__name__}; the declaration and the implementation have "
+                "drifted, so this permission is decorative"
             )
         for group in self.unbound:
             problems.append(
-                f"parameter group {group!r} has no entry in FOUNDATION_BINDING; no torch "
-                "parameter is governed by it"
+                f"parameter group {group!r} has no entry in FOUNDATION_BINDING or "
+                "FOUNDATION_FROZEN_BINDING; no torch tensor is governed by it"
             )
         self.problems: tuple[str, ...] = tuple(problems)
 
@@ -1636,7 +1769,7 @@ def bind_masks(
     machine-readably without logging it a second time.
     """
     _require_compiler()
-    binding = _Binding(model, compiled, _named_parameters(model))
+    binding = _Binding(model, compiled, _named_parameters(model), _named_buffers(model))
     if binding.problems:
         if strict:
             raise CompilerBridgeError(binding.message())
@@ -1654,11 +1787,15 @@ def audit_binding(model: Any, compiled: "CompiledModel") -> dict[str, Any]:
     in a diff.
     """
     _require_compiler()
-    named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
+    named = [
+        (logical_param_name(n), p) for n, p in model.named_parameters() if p.requires_grad
+    ]
     names = [n for n, _ in named]
     numel = {n: int(p.numel()) for n, p in named}
+    buf = {logical_param_name(n): int(b.numel()) for n, b in model.named_buffers()}
+    buf_names = list(buf)
 
-    binding = _Binding(model, compiled, names)
+    binding = _Binding(model, compiled, names, buf_names)
 
     claims: dict[str, list[str]] = {n: [] for n in names}
     group_report: dict[str, dict[str, Any]] = {}
@@ -1666,11 +1803,16 @@ def audit_binding(model: Any, compiled: "CompiledModel") -> dict[str, Any]:
         matched = _matching(pats, names)
         for n in matched:
             claims[n].append(group)
+        frozen_pats = binding.frozen.get(group, ())
+        frozen_matched = _matching(frozen_pats, buf_names) if frozen_pats else ()
         group_report[group] = {
             "patterns": list(pats),
             "n_parameters": len(matched),
             "n_elements": sum(numel[n] for n in matched),
             "parameters": list(matched),
+            "frozen_patterns": list(frozen_pats),
+            "frozen_buffers": list(frozen_matched),
+            "n_frozen_elements": sum(buf[n] for n in frozen_matched),
             "sources_allowed": list(compiled.gradient_masks.sources_updating(group)),
         }
 
@@ -1705,7 +1847,10 @@ def audit_binding(model: Any, compiled: "CompiledModel") -> dict[str, Any]:
         "groups": group_report,
         "unbound_groups": sorted(binding.unbound),
         "declared_empty_groups": sorted(binding.declared_empty),
-        "empty_bindings": [{"group": g, "pattern": p} for g, p in binding.empty_patterns],
+        "frozen_groups": {g: list(p) for g, p in sorted(binding.frozen.items())},
+        "empty_bindings": [
+            {"group": g, "pattern": p, "namespace": k} for g, p, k in binding.empty_patterns
+        ],
         "unreachable_groups": list(compiled.gradient_masks.unreachable_groups()),
         "problems": list(binding.problems),
         "sources": source_report,

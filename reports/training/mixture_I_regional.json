@@ -64,19 +64,14 @@
     "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
   },
   "per_source_contribution": {
-    "anatomical_prior": 0.02696273226368943,
-    "eegmmidb_real": 0.7941687558587517,
-    "sim_wholebrain": 0.1788685118775588
+    "anatomical_prior": 0.13097522910770082,
+    "sim_wholebrain": 0.8690247708922992
   },
   "gradient_permission_audit": {
     "anatomical_prior": {
-      "n_permitted": 10,
-      "n_blocked": 94,
-      "patterns": [
-        "coupling.gain_*",
-        "coupling.global_scale",
-        "bold.*"
-      ],
+      "n_permitted": 0,
+      "n_blocked": 146,
+      "patterns": [],
       "frozen": [
         "eeg.*",
         "individualizer.*",
@@ -84,6 +79,9 @@
       ],
       "blocked_sample": [
         "log_dt_scale",
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
         "msg_proj.weight",
         "msg_proj.bias",
         "msg_readin.0.weight",
@@ -91,54 +89,41 @@
         "context.0.weight",
         "context.0.bias",
         "context.2.weight",
-        "context.2.bias",
-        "local.embed",
-        "local.inp.weight",
-        "local.inp.bias"
+        "context.2.bias"
       ]
     },
     "eegmmidb_real": {
-      "n_permitted": 54,
-      "n_blocked": 50,
+      "n_permitted": 45,
+      "n_blocked": 101,
       "patterns": [
         "local.*",
         "residual.*",
-        "coupling.*",
-        "msg_proj.*",
-        "msg_readin.*",
         "assimilate.*",
         "context.*",
-        "eeg.*",
-        "log_dt_scale",
-        "individualizer.*"
+        "log_dt_scale"
       ],
       "frozen": [
         "bold.*"
       ],
       "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_proj.weight",
+        "msg_proj.bias",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
         "readout.0.weight",
         "readout.0.bias",
         "readout.2.weight",
         "readout.2.bias",
-        "bold.log_kappa",
-        "bold.log_gamma",
-        "bold.log_tau",
-        "bold.alpha",
-        "bold.rho",
-        "bold.neural_gain",
-        "bold.log_noise",
-        "behaviour.pool"
+        "eeg.log_gain"
       ]
     },
     "montage_calibration": {
-      "n_permitted": 6,
-      "n_blocked": 98,
-      "patterns": [
-        "eeg.log_gain",
-        "eeg.offset",
-        "eeg.log_noise",
-        "eeg.nuisance*"
-      ],
+      "n_permitted": 0,
+      "n_blocked": 146,
+      "patterns": [],
       "frozen": [
         "local.*",
         "coupling.*",
@@ -164,7 +149,7 @@
     },
     "negative_control_shuffled": {
       "n_permitted": 0,
-      "n_blocked": 104,
+      "n_blocked": 146,
       "patterns": [],
       "frozen": [
         "*"
@@ -185,47 +170,42 @@
       ]
     },
     "sim_wholebrain": {
-      "n_permitted": 89,
-      "n_blocked": 15,
+      "n_permitted": 49,
+      "n_blocked": 97,
       "patterns": [
         "local.*",
         "residual.*",
-        "coupling.*",
-        "msg_proj.*",
-        "msg_readin.*",
         "assimilate.*",
         "context.*",
         "readout.*",
-        "log_dt_scale",
-        "bold.*",
-        "posterior.*"
+        "log_dt_scale"
       ],
       "frozen": [
         "eeg.*",
         "individualizer.*"
       ],
       "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_proj.weight",
+        "msg_proj.bias",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
         "eeg.log_gain",
         "eeg.offset",
         "eeg.log_noise",
         "eeg.nuisance",
-        "eeg.source_proj.0.weight",
-        "eeg.source_proj.0.bias",
-        "eeg.source_proj.2.weight",
-        "eeg.source_proj.2.bias",
-        "eeg.nuisance_drive.weight",
-        "eeg.nuisance_drive.bias",
-        "behaviour.pool",
-        "behaviour.net.0.weight"
+        "eeg.source_proj.0.weight"
       ]
     }
   },
   "gradient_conflict": {
-    "steps": 0,
+    "steps": 90,
     "pairs": []
   },
   "conflict_decisions": [],
   "adapters_enabled": [],
   "skipped_nonfinite_steps": {},
-  "stage": "IV_assembly"
+  "stage": "I_regional"
 }

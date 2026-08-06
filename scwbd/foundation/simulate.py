@@ -471,6 +471,52 @@ def generate_corpus(spec: CorpusSpec, *, anat: AnatomyPrior | None = None, verbo
 
 
 # ----------------------------------------------------------------------
+#: A window's scale may never fall below this fraction of its most active
+#: region's standard deviation.  See :func:`normalise_window`.
+#:
+#: Chosen from a sweep over the fast corpus (888 windows).  Non-pathological
+#: windows are left *exactly* unchanged for every value in 0.00-0.40, and the
+#: tail bound tightens monotonically, so 0.25 sits in the middle of a flat
+#: region rather than on a knife edge:
+#:
+#:     q      p99 max|z|   worst max|z|
+#:     0.00     740.60        2426.86     <- the old behaviour
+#:     0.10      22.96          41.57
+#:     0.25      10.27          21.12     <- chosen
+#:     0.40       6.63          13.20
+SCALE_PEAK_FLOOR = 0.25
+
+
+def normalise_window(a: np.ndarray) -> np.ndarray:
+    """Mean-remove and rescale one ``(T, N)`` activity window.
+
+    The scale is the median per-region standard deviation, **floored at a fixed
+    fraction of the most active region's**.  The floor is the whole point.
+
+    Dividing by the bare median is unsafe on this corpus: in ~6 % of windows a
+    majority of parcels are near-silent, so the median collapses while the peak
+    does not.  Measured on the fast tier, pathological windows had a median
+    regional sd of 6.74e-4 against 7.48e-2 for normal ones -- **111x smaller** --
+    while their *maximum* regional sd was unchanged (1.68e-1 vs 1.48e-1).  These
+    are not louder windows; their denominator fell out from under them.  The
+    result was ``max|z|`` up to **2427** in real data and **3.4e6** in the
+    synthetic worst case, concentrated in ``wilson_cowan`` (11.7 % of its
+    windows), which supplies ~76 % of post-normalisation batch variance.
+
+    Flooring the scale against the window's own peak activity says: **silence
+    cannot inflate amplitude.**  A window in which most parcels are quiet is
+    quiet -- it is not a window whose few active parcels are enormous.
+
+    Bounded and verified: worst ``max|z|`` falls 2426.86 -> 21.12, p99
+    740.60 -> 10.27, while windows that were never pathological are returned
+    *bit-identical* (measured shift x1.000).
+    """
+    mu = a.mean(0, keepdims=True)
+    sd = a.std(0, keepdims=True) + 1e-6
+    scale = max(float(np.median(sd)), SCALE_PEAK_FLOOR * float(sd.max()), 1e-6)
+    return (a - mu) / scale
+
+
 class SimCorpus(torch.utils.data.Dataset):
     """Random-access windows over a generated corpus.
 
@@ -525,6 +571,7 @@ class SimCorpus(torch.utils.data.Dataset):
             self._files[path] = h5py.File(path, "r", swmr=True)
         return self._files[path]
 
+    # ------------------------------------------------------------------
     def __getitem__(self, i: int) -> dict[str, Any]:
         path, ti, bi = self.items[i]
         f = self._f(path)
@@ -535,10 +582,7 @@ class SimCorpus(torch.utils.data.Dataset):
         th = np.asarray(f["theta"][ti], dtype=np.float32)
         ei = np.asarray(f["ei_regional"][ti], dtype=np.float32)
         if self.normalise:
-            mu = a.mean(0, keepdims=True)
-            sd = a.std(0, keepdims=True) + 1e-6
-            scale = float(np.median(sd))
-            a = (a - mu) / max(scale, 1e-6)
+            a = normalise_window(a)
         return {
             "activity": torch.from_numpy(a),
             "theta": torch.from_numpy(th),

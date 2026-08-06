@@ -1,198 +1,4 @@
-compiler->torch binding is incomplete:
-  binding 'operator:long_range:delay' -> 'coupling.bin_length_mm' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_000:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_050:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:Schaefer400_LH_100:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_00:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:cerebellum_L_01:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_00:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_02:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
-  binding 'region:subcortex_L_04:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
-  parameter group 'frame_edge:scwbd_anat_RAS->scwbd_eeg_cap:calibration' has no entry in FOUNDATION_BINDING; no torch parameter is governed by it
+[mem] CUDA reserve capped at 40.0 GB (fraction=0.329 of 121.6 GB unified pool)
 {
   "parameters": {
     "log_dt_scale": 454,
@@ -212,4 +18,123 @@ compiler->torch binding is incomplete:
   "posterior": 1694976
 }
 
-=== Stage I_regional: 900 steps, lr=0.0006 ===
+=== Stage I_regional: 900 steps, lr=0.000346 ===
+real EEG: 290673 windows, train/val/test = 189765/29238/71670
+stage=I_regional  step=1  global_step=1  loss=1  lr=1.392e-05  wall_s=6.2  traj_s_per_s=3.9  gpu_reserved_gb=17.92  sim_forecast_nll=1.692  npe_loss=10  kl=-2.565  rho=0
+stage=I_regional  step=20  global_step=20  loss=0.9843  lr=4.618e-05  wall_s=66.8  traj_s_per_s=7.4  gpu_reserved_gb=33.3  sim_forecast_nll=1.571  npe_loss=9.726  kl=-2.615  rho=0.01132
+stage=I_regional  step=40  global_step=40  loss=0.9721  lr=0.0001306  wall_s=144.4  traj_s_per_s=6.8  gpu_reserved_gb=33.3  sim_forecast_nll=1.55  npe_loss=9.734  kl=-2.808  rho=0.008005
+stage=I_regional  step=60  global_step=60  loss=0.9835  lr=0.0002342  wall_s=218.5  traj_s_per_s=6.7  gpu_reserved_gb=33.31  sim_forecast_nll=1.539  npe_loss=9.705  kl=-2.788  rho=0.009311
+stage=I_regional  step=80  global_step=80  loss=0.9693  lr=0.0003167  wall_s=299.2  traj_s_per_s=6.6  gpu_reserved_gb=33.31  sim_forecast_nll=1.453  npe_loss=9.603  kl=-2.727  rho=0.008746
+stage=I_regional  step=100  global_step=100  loss=0.9723  lr=0.000346  wall_s=363.7  traj_s_per_s=6.8  gpu_reserved_gb=33.31  sim_forecast_nll=1.396  npe_loss=9.556  kl=-2.628  rho=0.007305
+stage=I_regional  step=120  global_step=120  loss=0.9574  lr=0.0003454  wall_s=432.6  traj_s_per_s=6.8  gpu_reserved_gb=33.31  sim_forecast_nll=1.319  npe_loss=9.661  kl=-2.713  rho=0.006085
+stage=I_regional  step=140  global_step=140  loss=1.002  lr=0.0003438  wall_s=493.9  traj_s_per_s=7  gpu_reserved_gb=33.31  sim_forecast_nll=1.355  npe_loss=9.484  kl=-2.51  rho=0.006274
+stage=I_regional  step=160  global_step=160  loss=1.019  lr=0.0003411  wall_s=542.8  traj_s_per_s=7.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.363  npe_loss=9.976  kl=-2.706  rho=0.006323
+stage=I_regional  step=180  global_step=180  loss=1.03  lr=0.0003373  wall_s=602.5  traj_s_per_s=7.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.346  npe_loss=9.384  kl=-2.743  rho=0.005688
+stage=I_regional  step=200  global_step=200  loss=1.002  lr=0.0003326  wall_s=672.9  traj_s_per_s=7.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.296  npe_loss=9.415  kl=-2.761  rho=0.005777
+stage=I_regional  step=220  global_step=220  loss=0.9435  lr=0.0003268  wall_s=743.7  traj_s_per_s=7.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.195  npe_loss=9.887  kl=-2.666  rho=0.006081
+stage=I_regional  step=240  global_step=240  loss=1.018  lr=0.0003202  wall_s=797.3  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.297  npe_loss=9.765  kl=-2.536  rho=0.005319
+stage=I_regional  step=260  global_step=260  loss=1.009  lr=0.0003126  wall_s=838.9  traj_s_per_s=7.6  gpu_reserved_gb=33.31  sim_forecast_nll=1.278  npe_loss=9.631  kl=-2.604  rho=0.006177
+stage=I_regional  step=280  global_step=280  loss=1.024  lr=0.0003041  wall_s=884.8  traj_s_per_s=7.8  gpu_reserved_gb=33.31  sim_forecast_nll=1.313  npe_loss=9.565  kl=-2.825  rho=0.007035
+stage=I_regional  step=300  global_step=300  loss=1.019  lr=0.0002948  wall_s=927.1  traj_s_per_s=8  gpu_reserved_gb=33.31  sim_forecast_nll=1.286  npe_loss=9.517  kl=-2.634  rho=0.006579
+stage=I_regional  step=320  global_step=320  loss=1.041  lr=0.0002848  wall_s=973.6  traj_s_per_s=8.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.307  npe_loss=9.925  kl=-2.56  rho=0.007395
+stage=I_regional  step=340  global_step=340  loss=0.9804  lr=0.0002741  wall_s=1060  traj_s_per_s=7.9  gpu_reserved_gb=33.31  sim_forecast_nll=1.224  npe_loss=9.683  kl=-2.527  rho=0.007056
+stage=I_regional  step=360  global_step=360  loss=1.002  lr=0.0002628  wall_s=1149  traj_s_per_s=7.7  gpu_reserved_gb=33.31  sim_forecast_nll=1.27  npe_loss=9.817  kl=-2.839  rho=0.007779
+stage=I_regional  step=380  global_step=380  loss=0.9998  lr=0.0002509  wall_s=1243  traj_s_per_s=7.5  gpu_reserved_gb=33.31  sim_forecast_nll=1.257  npe_loss=9.705  kl=-2.934  rho=0.008461
+stage=I_regional  step=400  global_step=400  loss=0.9962  lr=0.0002386  wall_s=1324  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.254  npe_loss=9.657  kl=-2.577  rho=0.008021
+stage=I_regional  step=420  global_step=420  loss=0.964  lr=0.0002258  wall_s=1395  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.207  npe_loss=9.976  kl=-2.594  rho=0.008064
+stage=I_regional  step=440  global_step=440  loss=1.011  lr=0.0002127  wall_s=1466  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.259  npe_loss=9.61  kl=-2.624  rho=0.007894
+stage=I_regional  step=460  global_step=460  loss=0.9979  lr=0.0001994  wall_s=1517  traj_s_per_s=7.5  gpu_reserved_gb=33.31  sim_forecast_nll=1.246  npe_loss=9.764  kl=-2.775  rho=0.008046
+stage=I_regional  step=480  global_step=480  loss=0.9965  lr=0.0001859  wall_s=1585  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.238  npe_loss=9.71  kl=-2.626  rho=0.007528
+stage=I_regional  step=500  global_step=500  loss=0.9616  lr=0.0001723  wall_s=1666  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.182  npe_loss=9.589  kl=-3.146  rho=0.007461
+stage=I_regional  step=520  global_step=520  loss=1.042  lr=0.0001588  wall_s=1725  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.286  npe_loss=9.269  kl=-2.679  rho=0.007668
+stage=I_regional  step=540  global_step=540  loss=0.9806  lr=0.0001453  wall_s=1790  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.196  npe_loss=9.989  kl=-2.803  rho=0.007074
+stage=I_regional  step=560  global_step=560  loss=1.04  lr=0.000132  wall_s=1852  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.28  npe_loss=9.666  kl=-2.771  rho=0.007629
+stage=I_regional  step=580  global_step=580  loss=1.009  lr=0.0001189  wall_s=1925  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.24  npe_loss=9.968  kl=-2.564  rho=0.006441
+stage=I_regional  step=600  global_step=600  loss=0.9989  lr=0.0001062  wall_s=2017  traj_s_per_s=7.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.225  npe_loss=9.539  kl=-2.546  rho=0.006379
+stage=I_regional  step=620  global_step=620  loss=1.026  lr=9.386e-05  wall_s=2069  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.267  npe_loss=9.619  kl=-2.615  rho=0.006348
+stage=I_regional  step=640  global_step=640  loss=0.9742  lr=8.203e-05  wall_s=2147  traj_s_per_s=7.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.186  npe_loss=9.635  kl=-2.885  rho=0.006129
+stage=I_regional  step=660  global_step=660  loss=0.9738  lr=7.077e-05  wall_s=2238  traj_s_per_s=7.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.182  npe_loss=9.512  kl=-2.721  rho=0.006163
+stage=I_regional  step=680  global_step=680  loss=1.038  lr=6.013e-05  wall_s=2316  traj_s_per_s=7.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.28  npe_loss=9.512  kl=-2.613  rho=0.006288
+stage=I_regional  step=700  global_step=700  loss=1.027  lr=5.019e-05  wall_s=2407  traj_s_per_s=7.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.251  npe_loss=9.546  kl=-2.744  rho=0.005674
+stage=I_regional  step=720  global_step=720  loss=1.039  lr=4.101e-05  wall_s=2481  traj_s_per_s=7.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.278  npe_loss=9.346  kl=-2.59  rho=0.005696
+stage=I_regional  step=740  global_step=740  loss=1.019  lr=3.264e-05  wall_s=2556  traj_s_per_s=7.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.249  npe_loss=9.564  kl=-2.715  rho=0.006036
+stage=I_regional  step=760  global_step=760  loss=0.9311  lr=2.514e-05  wall_s=2627  traj_s_per_s=7.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.12  npe_loss=9.807  kl=-2.614  rho=0.005478
+stage=I_regional  step=780  global_step=780  loss=1.032  lr=1.855e-05  wall_s=2686  traj_s_per_s=7.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.264  npe_loss=9.452  kl=-2.718  rho=0.005466
+stage=I_regional  step=800  global_step=800  loss=1.004  lr=1.291e-05  wall_s=2743  traj_s_per_s=7.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.235  npe_loss=9.787  kl=-2.737  rho=0.005796
+stage=I_regional  step=820  global_step=820  loss=0.9905  lr=8.26e-06  wall_s=2775  traj_s_per_s=7.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.211  npe_loss=9.908  kl=-2.647  rho=0.005846
+stage=I_regional  step=840  global_step=840  loss=1.039  lr=4.624e-06  wall_s=2818  traj_s_per_s=7.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.292  npe_loss=9.384  kl=-2.841  rho=0.005804
+stage=I_regional  step=860  global_step=860  loss=1.013  lr=2.026e-06  wall_s=2874  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.257  npe_loss=9.982  kl=-2.619  rho=0.005781
+stage=I_regional  step=880  global_step=880  loss=0.947  lr=4.827e-07  wall_s=2906  traj_s_per_s=7.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.16  npe_loss=9.539  kl=-2.785  rho=0.005985
+stage=I_regional  step=900  global_step=900  loss=0.9548  lr=2.718e-09  wall_s=2941  traj_s_per_s=7.5  gpu_reserved_gb=33.31  sim_forecast_nll=1.162  npe_loss=9.463  kl=-2.685  rho=0.005707
+
+=== Stage II_interface: 700 steps, lr=0.000231 ===
+stage=II_interface  step=1  global_step=901  loss=1  lr=9.296e-06  wall_s=1.2  traj_s_per_s=21.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.281  npe_loss=9.756  kl=-2.738  rho=0.005858
+stage=II_interface  step=20  global_step=920  loss=0.9766  lr=3.083e-05  wall_s=50.9  traj_s_per_s=9.7  gpu_reserved_gb=33.31  sim_forecast_nll=1.183  npe_loss=9.52  kl=-2.702  rho=0.005717
+stage=II_interface  step=40  global_step=940  loss=1.011  lr=8.72e-05  wall_s=111  traj_s_per_s=8.9  gpu_reserved_gb=33.31  sim_forecast_nll=1.237  npe_loss=9.322  kl=-2.654  rho=0.005657
+stage=II_interface  step=60  global_step=960  loss=0.9719  lr=0.0001564  wall_s=165.7  traj_s_per_s=8.9  gpu_reserved_gb=33.31  sim_forecast_nll=1.178  npe_loss=9.61  kl=-2.857  rho=0.005518
+stage=II_interface  step=80  global_step=980  loss=1.002  lr=0.0002114  wall_s=243  traj_s_per_s=8.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.222  npe_loss=9.758  kl=-2.592  rho=0.005957
+stage=II_interface  step=100  global_step=1000  loss=0.9115  lr=0.000231  wall_s=314.3  traj_s_per_s=7.8  gpu_reserved_gb=33.31  sim_forecast_nll=1.092  npe_loss=9.578  kl=-2.626  rho=0.005399
+stage=II_interface  step=120  global_step=1020  loss=1.014  lr=0.0002303  wall_s=376.9  traj_s_per_s=7.8  gpu_reserved_gb=33.31  sim_forecast_nll=1.231  npe_loss=9.532  kl=-2.709  rho=0.006342
+stage=II_interface  step=140  global_step=1040  loss=0.9368  lr=0.0002283  wall_s=439  traj_s_per_s=7.8  gpu_reserved_gb=33.31  sim_forecast_nll=1.13  npe_loss=10.17  kl=-2.862  rho=0.005836
+stage=II_interface  step=160  global_step=1060  loss=1.025  lr=0.0002252  wall_s=482.2  traj_s_per_s=8.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.246  npe_loss=9.717  kl=-2.822  rho=0.005798
+stage=II_interface  step=180  global_step=1080  loss=0.9993  lr=0.0002208  wall_s=537  traj_s_per_s=8.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.202  npe_loss=9.994  kl=-2.618  rho=0.005691
+stage=II_interface  step=200  global_step=1100  loss=0.9869  lr=0.0002152  wall_s=579.1  traj_s_per_s=8.5  gpu_reserved_gb=33.31  sim_forecast_nll=1.202  npe_loss=9.607  kl=-2.707  rho=0.005526
+stage=II_interface  step=220  global_step=1120  loss=1.003  lr=0.0002086  wall_s=632.3  traj_s_per_s=8.6  gpu_reserved_gb=33.31  sim_forecast_nll=1.218  npe_loss=9.637  kl=-3.041  rho=0.005943
+stage=II_interface  step=240  global_step=1140  loss=1.01  lr=0.0002009  wall_s=713.4  traj_s_per_s=8.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.243  npe_loss=9.368  kl=-2.749  rho=0.005799
+stage=II_interface  step=260  global_step=1160  loss=1.011  lr=0.0001923  wall_s=769.9  traj_s_per_s=8.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.233  npe_loss=9.251  kl=-2.752  rho=0.005885
+stage=II_interface  step=280  global_step=1180  loss=1.008  lr=0.0001829  wall_s=831.1  traj_s_per_s=8.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.227  npe_loss=9.631  kl=-2.543  rho=0.005606
+stage=II_interface  step=300  global_step=1200  loss=1.001  lr=0.0001727  wall_s=885.1  traj_s_per_s=8.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.218  npe_loss=9.557  kl=-2.751  rho=0.005629
+stage=II_interface  step=320  global_step=1220  loss=0.9914  lr=0.0001619  wall_s=936.3  traj_s_per_s=8.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.204  npe_loss=9.685  kl=-2.723  rho=0.005755
+stage=II_interface  step=340  global_step=1240  loss=0.9975  lr=0.0001506  wall_s=1016  traj_s_per_s=8.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.216  npe_loss=10.05  kl=-2.697  rho=0.005815
+stage=II_interface  step=360  global_step=1260  loss=1.053  lr=0.0001389  wall_s=1084  traj_s_per_s=8.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.306  npe_loss=9.439  kl=-2.823  rho=0.006252
+stage=II_interface  step=380  global_step=1280  loss=0.9853  lr=0.000127  wall_s=1164  traj_s_per_s=8  gpu_reserved_gb=33.31  sim_forecast_nll=1.205  npe_loss=9.427  kl=-2.781  rho=0.005573
+stage=II_interface  step=400  global_step=1300  loss=0.9898  lr=0.0001149  wall_s=1236  traj_s_per_s=8  gpu_reserved_gb=33.31  sim_forecast_nll=1.208  npe_loss=9.358  kl=-2.65  rho=0.005797
+stage=II_interface  step=420  global_step=1320  loss=1.014  lr=0.0001028  wall_s=1279  traj_s_per_s=8.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.231  npe_loss=9.481  kl=-2.659  rho=0.006195
+stage=II_interface  step=440  global_step=1340  loss=1.011  lr=9.09e-05  wall_s=1337  traj_s_per_s=8.1  gpu_reserved_gb=33.31  sim_forecast_nll=1.235  npe_loss=9.505  kl=-2.582  rho=0.005851
+stage=II_interface  step=460  global_step=1360  loss=0.9936  lr=7.923e-05  wall_s=1376  traj_s_per_s=8.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.22  npe_loss=9.609  kl=-2.688  rho=0.005713
+stage=II_interface  step=480  global_step=1380  loss=1.041  lr=6.797e-05  wall_s=1414  traj_s_per_s=8.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.274  npe_loss=9.265  kl=-2.524  rho=0.00589
+stage=II_interface  step=500  global_step=1400  loss=1.007  lr=5.723e-05  wall_s=1457  traj_s_per_s=8.4  gpu_reserved_gb=33.31  sim_forecast_nll=1.231  npe_loss=9.739  kl=-2.841  rho=0.005668
+stage=II_interface  step=520  global_step=1420  loss=1.008  lr=4.712e-05  wall_s=1496  traj_s_per_s=8.5  gpu_reserved_gb=33.31  sim_forecast_nll=1.237  npe_loss=10.01  kl=-2.888  rho=0.005886
+stage=II_interface  step=540  global_step=1440  loss=1.017  lr=3.777e-05  wall_s=1542  traj_s_per_s=8.6  gpu_reserved_gb=33.31  sim_forecast_nll=1.242  npe_loss=9.719  kl=-2.734  rho=0.005676
+stage=II_interface  step=560  global_step=1460  loss=1.025  lr=2.926e-05  wall_s=1580  traj_s_per_s=8.7  gpu_reserved_gb=33.31  sim_forecast_nll=1.248  npe_loss=9.718  kl=-2.477  rho=0.005835
+stage=II_interface  step=580  global_step=1480  loss=0.9985  lr=2.171e-05  wall_s=1618  traj_s_per_s=8.8  gpu_reserved_gb=33.31  sim_forecast_nll=1.213  npe_loss=9.438  kl=-2.667  rho=0.00549
+stage=II_interface  step=600  global_step=1500  loss=0.9591  lr=1.517e-05  wall_s=1660  traj_s_per_s=8.9  gpu_reserved_gb=33.31  sim_forecast_nll=1.157  npe_loss=9.719  kl=-2.626  rho=0.005495
+stage=II_interface  step=620  global_step=1520  loss=0.9988  lr=9.742e-06  wall_s=1714  traj_s_per_s=8.9  gpu_reserved_gb=33.31  sim_forecast_nll=1.218  npe_loss=9.699  kl=-2.589  rho=0.005317
+[mem] CUDA reserve capped at 40.0 GB (fraction=0.329 of 121.6 GB unified pool)
+{
+  "parameters": {
+    "log_dt_scale": 454,
+    "coupling": 3,
+    "msg_proj": 228,
+    "msg_readin": 1872,
+    "context": 17792,
+    "local": 1303036,
+    "residual": 107261,
+    "assimilate": 229468,
+    "readout": 3026,
+    "eeg": 2137,
+    "bold": 3178,
+    "behaviour": 89158,
+    "TOTAL": 1757613
+  },
+  "posterior": 1694976
+}
+resumed from checkpoints/scwbd-001-beta/last.pt at step 1500; completed stages: ['I_regional']
+skipping completed stage I_regional
+
+=== Stage II_interface: 700 steps, lr=0.000231 ===
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=71/11/27 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 290673 windows, train/val/test = 189765/29238/71670
+stage=II_interface  step=1  global_step=1501  loss=1  lr=9.296e-06  wall_s=5  traj_s_per_s=5  gpu_reserved_gb=17.56  sim_forecast_nll=1.178  npe_loss=9.814  kl=-2.611  rho=0.005733
+stage=II_interface  step=20  global_step=1520  loss=0.9679  lr=3.083e-05  wall_s=52.9  traj_s_per_s=9.3  gpu_reserved_gb=32.77  sim_forecast_nll=1.139  npe_loss=9.828  kl=-2.589  rho=0.00554
+stage=II_interface  step=40  global_step=1540  loss=1.022  lr=8.72e-05  wall_s=114.3  traj_s_per_s=8.6  gpu_reserved_gb=32.78  sim_forecast_nll=1.237  npe_loss=9.586  kl=-2.769  rho=0.005972
+stage=II_interface  step=60  global_step=1560  loss=0.9552  lr=0.0001564  wall_s=156.6  traj_s_per_s=9.4  gpu_reserved_gb=32.78  sim_forecast_nll=1.153  npe_loss=9.649  kl=-2.891  rho=0.00564
+stage=II_interface  step=80  global_step=1580  loss=0.988  lr=0.0002114  wall_s=206.6  traj_s_per_s=9.5  gpu_reserved_gb=32.78  sim_forecast_nll=1.193  npe_loss=9.954  kl=-2.928  rho=0.005402
+stage=II_interface  step=100  global_step=1600  loss=1.032  lr=0.000231  wall_s=285  traj_s_per_s=8.6  gpu_reserved_gb=32.78  sim_forecast_nll=1.241  npe_loss=9.974  kl=-2.771  rho=0.005714
+stage=II_interface  step=120  global_step=1620  loss=0.9919  lr=0.0002303  wall_s=315.3  traj_s_per_s=9.4  gpu_reserved_gb=32.78  sim_forecast_nll=1.196  npe_loss=10.17  kl=-3.011  rho=0.005352
+stage=II_interface  step=140  global_step=1640  loss=1.007  lr=0.0002283  wall_s=344.4  traj_s_per_s=10  gpu_reserved_gb=32.78  sim_forecast_nll=1.221  npe_loss=9.527  kl=-2.551  rho=0.005543
+stage=II_interface  step=160  global_step=1660  loss=1.003  lr=0.0002252  wall_s=374.5  traj_s_per_s=10.5  gpu_reserved_gb=32.78  sim_forecast_nll=1.224  npe_loss=10.01  kl=-2.819  rho=0.005644
+stage=II_interface  step=180  global_step=1680  loss=0.9466  lr=0.0002208  wall_s=435.9  traj_s_per_s=10.1  gpu_reserved_gb=32.78  sim_forecast_nll=1.148  npe_loss=9.589  kl=-2.598  rho=0.005368
+stage=II_interface  step=200  global_step=1700  loss=0.975  lr=0.0002152  wall_s=500.4  traj_s_per_s=9.8  gpu_reserved_gb=32.78  sim_forecast_nll=1.193  npe_loss=9.782  kl=-2.599  rho=0.005842
