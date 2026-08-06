@@ -114,7 +114,7 @@ def test_perturbing_a_non_uncertainty_component_changes_the_innovation(anat, arm
     m, res = _rollout(anat, _cfg(**kw))
     x = res.state[:, 0]
     if m.family_layout is not None:
-        name = "cortex_vis"
+        name = "cortex_unimodal"
         prop = m.family_local.uncertainty[name]
         idx = m.family_layout.index(name)
         f = m.family_layout.family(name)
@@ -189,9 +189,9 @@ def test_family_arm_source_features_are_not_narrower_than_the_control(anat):
     )
     # and they must carry each family's own out-ports, not a shared slice
     ports = treat.observation.describe()["out_ports"]
-    assert "oscillatory" in ports["cortex_vis"]
-    assert "recall" in ports["hippocampus"]
-    assert "gate_out" in ports["basal_ganglia"]
+    assert "oscillatory" in ports["cortex_unimodal"]
+    assert "recall" in ports["subcortex_hippo"]
+    assert "gate_out" in ports["subcortex_put"]
 
 
 @pytest.mark.parametrize("arm,kw", ARMS)
@@ -202,8 +202,8 @@ def test_source_features_actually_depend_on_the_private_state(anat, arm, kw):
         f0 = m.observation.source_features(x)
         x2 = x.clone()
         if m.family_layout is not None:
-            sl = m.family_layout.family("cortex_vis").layout.slice("spectral")
-            idx = m.family_layout.index("cortex_vis")
+            sl = m.family_layout.family("cortex_unimodal").layout.slice("spectral")
+            idx = m.family_layout.index("cortex_unimodal")
             x2[:, idx, sl] = x2[:, idx, sl] + 1.0
         else:
             sl = m.layout.slice("spectral")

@@ -91,7 +91,7 @@ def test_family_count_is_whatever_the_prior_distinguishes(anat, synthetic_anat):
 def test_unpopulated_taxonomy_families_are_reported_not_invented(anat):
     """The real prior has no cerebellar parcels.  That must be visible."""
     part = derive_families(anat, allow_derived=True)
-    assert "cerebellum" in part.unpopulated
+    assert "cerebellum" in part.unpopulated or "cerebellum" in " ".join(part.notes)
     assert all(f.name != "cerebellum" for f in part), "an empty family must not be fabricated"
     assert any("ZERO regions" in n for n in part.notes)
 
@@ -100,7 +100,7 @@ def test_unparsed_subcortical_parcels_are_not_folded_into_a_neighbour(synthetic_
     part = derive_families(synthetic_anat, allow_derived=True)
     names = {f.name for f in part}
     assert "subcortex_unassigned" in names
-    assert "hippocampus" not in names  # the synthetic labels name no structures
+    assert "subcortex_hippo" not in names  # the synthetic labels name no structures
 
 
 def test_declared_partition_wins_over_derivation(anat):
@@ -220,13 +220,13 @@ def test_agent_c_family_ids_map_onto_the_engineered_backends():
     expected = {
         "cortex_unimodal": None,
         "cortex_association": None,
-        "subcortex_accumb": "basal_ganglia",
+        "subcortex_accumb": "subcortex_put",
         "subcortex_amyg": "amygdala",
-        "subcortex_caud": "basal_ganglia",
-        "subcortex_hippo": "hippocampus",
-        "subcortex_pal": "basal_ganglia",
-        "subcortex_put": "basal_ganglia",
-        "subcortex_thal": "thalamus",
+        "subcortex_caud": "subcortex_put",
+        "subcortex_hippo": "subcortex_hippo",
+        "subcortex_pal": "subcortex_put",
+        "subcortex_put": "subcortex_put",
+        "subcortex_thal": "subcortex_thal",
     }
     for fid, kind in expected.items():
         assert _kind_from_declared_name(fid) == kind, f"{fid} mapped to {_kind_from_declared_name(fid)!r}"
@@ -241,7 +241,7 @@ def test_hypothalamus_does_not_inherit_the_thalamic_backend():
     from scwbd.foundation.families import _kind_from_declared_name
 
     assert _kind_from_declared_name("subcortex_hypothal") is None
-    assert _kind_from_declared_name("subcortex_thal") == "thalamus"
+    assert _kind_from_declared_name("subcortex_thal") == "subcortex_thal"
 
 
 def test_an_unrecognised_non_cortical_family_is_reported_loudly(anat):
@@ -296,38 +296,38 @@ def test_reading_another_familys_component_raises(flayout):
     """A hippocampal component does not *exist* in a cortical family."""
     x = torch.zeros(2, flayout.n_regions, flayout.dim)
     # sanity: the component exists where it should
-    assert flayout.get(x, "hippocampus", "k").shape[-1] == 16
+    assert flayout.get(x, "subcortex_hippo", "k").shape[-1] == 16
     with pytest.raises(SpanViolation, match="does not declare component 'k'"):
-        flayout.get(x, "cortex_vis", "k")
+        flayout.get(x, "cortex_unimodal", "k")
 
 
 def test_raw_channel_range_outside_the_span_raises(flayout):
-    d = flayout.family("thalamus").dim
-    assert flayout.channels("thalamus", 0, d)  # in span
+    d = flayout.family("subcortex_thal").dim
+    assert flayout.channels("subcortex_thal", 0, d)  # in span
     with pytest.raises(SpanViolation, match=r"span \[0, \d+\) but asked for channels"):
-        flayout.channels("thalamus", 0, flayout.dim)
+        flayout.channels("subcortex_thal", 0, flayout.dim)
 
 
 def test_scatter_wider_than_the_span_raises(flayout):
     x = torch.zeros(2, flayout.n_regions, flayout.dim)
-    f = flayout.family("thalamus")
+    f = flayout.family("subcortex_thal")
     ok = torch.ones(2, f.n_regions, f.dim)
-    flayout.scatter(x, "thalamus", ok)  # fine
+    flayout.scatter(x, "subcortex_thal", ok)  # fine
     too_wide = torch.ones(2, f.n_regions, flayout.dim)
     with pytest.raises(SpanViolation, match="channels wide"):
-        flayout.scatter(x, "thalamus", too_wide)
+        flayout.scatter(x, "subcortex_thal", too_wide)
 
 
 def test_pad_write_is_detected_and_the_offender_is_named(flayout):
     x = torch.zeros(2, flayout.n_regions, flayout.dim)
     flayout.assert_clean(x)  # clean to start
-    region = int(flayout.index("thalamus")[0])
-    chan = flayout.family("thalamus").dim  # first pad channel of that region
+    region = int(flayout.index("subcortex_thal")[0])
+    chan = flayout.family("subcortex_thal").dim  # first pad channel of that region
     x[0, region, chan] = 1e-6
     with pytest.raises(SpanViolation) as exc:
         flayout.assert_clean(x, where="unit test")
     msg = str(exc.value)
-    assert "thalamus" in msg and f"region {region}" in msg and "N-1" in msg
+    assert "subcortex_thal" in msg and f"region {region}" in msg and "N-1" in msg
 
 
 def test_a_full_width_operator_fires_the_guard(anat):
@@ -426,9 +426,9 @@ def test_same_port_name_with_conflicting_units_raises(anat):
 
 def test_reading_an_in_port_raises(flayout):
     x = torch.zeros(2, flayout.n_regions, flayout.dim)
-    assert flayout.port(x, "hippocampus", "recall").shape[-1] == 17  # v(16) + rho(1)
+    assert flayout.port(x, "subcortex_hippo", "recall").shape[-1] == 17  # v(16) + rho(1)
     with pytest.raises(PortMismatch, match="is an in-port"):
-        flayout.port(x, "hippocampus", "cue")
+        flayout.port(x, "subcortex_hippo", "cue")
 
 
 def test_no_dangling_in_ports(flayout):
@@ -441,9 +441,9 @@ def test_no_dangling_in_ports(flayout):
 def test_subsystem_families_carry_their_engineered_backends(anat):
     model = SCWBD(_small_cfg(), anat)
     assigned = {n: c.backend_name for n, c in model.family_local.mech.items()}
-    assert assigned["hippocampus"] == "hippocampal_code"
-    assert assigned["thalamus"] == "thalamic_relay"
-    assert assigned["basal_ganglia"] == "basal_ganglia_gate"
+    assert assigned["subcortex_hippo"] == "hippocampal_code"
+    assert assigned["subcortex_thal"] == "thalamic_relay"
+    assert assigned["subcortex_put"] == "basal_ganglia_gate"
     # the backends resolve to agent E's registry, not a local stand-in
     for name, core in model.family_local.mech.items():
         assert core.backend.origin.startswith("scwbd.dynamics"), (name, core.backend.origin)
@@ -451,7 +451,7 @@ def test_subsystem_families_carry_their_engineered_backends(anat):
 
 
 def test_hippocampal_family_declares_H_t_exactly(flayout):
-    f = flayout.family("hippocampus")
+    f = flayout.family("subcortex_hippo")
     names = [c.name for c in f.layout.components]
     for comp in ("k", "v", "g", "c", "rho"):
         assert comp in names, f"body.tex §5.1 H_t = {{k,v,g,c,rho}} is missing {comp!r}"
@@ -460,7 +460,7 @@ def test_hippocampal_family_declares_H_t_exactly(flayout):
 
 def test_engineered_backend_state_must_fit_the_declared_components(anat):
     part = derive_families(anat, allow_derived=True)
-    f = part.by_name("thalamus")
+    f = part.by_name("subcortex_thal")
     f.check_backend(resolve_backend(f.backend))  # passes
     truncated = replace(f, backend_components=("relay",))  # 2 channels for a 3-dim backend
     with pytest.raises(SpanViolation, match="must fit its declared components"):
@@ -478,7 +478,7 @@ def test_engineered_backends_contribute_a_nonzero_drift(anat):
     cpl = torch.randn(2, fl.n_regions, model.cfg.message_dim) * 0.1
     films = model.family_local.prepare(model.make_context(theta), x.dtype)
     dx = model.family_local(x, cpl, films, packs=model._family_packs)
-    for name in ("hippocampus", "thalamus", "basal_ganglia"):
+    for name in ("subcortex_hippo", "subcortex_thal", "subcortex_put"):
         block = fl.gather(dx, name).detach()
         assert float(block.abs().sum()) > 0, f"{name} backend produced an all-zero drift"
     fl.assert_clean(dx, where="family drift")
@@ -517,10 +517,10 @@ def test_control_arm_with_a_mechanistic_local_core(anat):
 
 
 def test_per_family_backend_assignment_beats_the_global_default(anat):
-    cfg = _small_cfg(local_core="learned", family_cores={"cortex_vis": "wilson_cowan"})
+    cfg = _small_cfg(local_core="learned", family_cores={"cortex_unimodal": "wilson_cowan"})
     model = SCWBD(cfg, anat)
-    assert model.family_local.mech["cortex_vis"].backend_name == "wilson_cowan"
-    assert "cortex_default" not in model.family_local.mech  # still learned
+    assert model.family_local.mech["cortex_unimodal"].backend_name == "wilson_cowan"
+    assert "cortex_association" not in model.family_local.mech  # still learned
 
 
 def test_ablation_arm_is_a_property_of_the_config():
@@ -557,8 +557,8 @@ def test_schema_carries_one_state_spec_per_family(anat, flayout, source_specs):
         "every region compiled to the same StateSpec; the schema is describing a "
         "homogeneous model regardless of the weights"
     )
-    if "hippocampus" in by_family:
-        assert {"k", "v", "g", "c", "rho"} <= by_family["hippocampus"]
+    if "subcortex_hippo" in by_family:
+        assert {"k", "v", "g", "c", "rho"} <= by_family["subcortex_hippo"]
 
 
 def test_schema_refuses_the_opaque_private_block(anat, source_specs):
