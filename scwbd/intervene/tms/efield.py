@@ -61,6 +61,7 @@ __all__ = [
     "assert_sources_exterior",
     "analytic_sphere_efield",
     "primary_efield_dipoles",
+    "primary_tangential_projection",
     "primary_efield_segments",
     "uniform_dbdt_efield",
     "triangle_field_integral",
@@ -277,6 +278,50 @@ def primary_efield_segments(r: Tensor, mid: Tensor, dl: Tensor, didt: float) -> 
     d = r[:, None, :] - mid[None, :, :]
     dist = d.norm(dim=-1, keepdim=True).clamp_min(1e-12)
     return -(MU0 / (4 * math.pi)) * didt * (dl[None, :, :] / dist).sum(dim=1)
+
+
+def primary_tangential_projection(
+    points: Tensor,
+    normals: Tensor,
+    dipole_pos: Tensor,
+    dipole_mdot: Tensor,
+) -> Tensor:
+    """The tangential part of the **primary** field: :math:`E_p-(E_p\\cdot n)n`.
+
+    **This is an approximation, not a solution.**  It is named and implemented
+    here so it can be gated rather than left as a comment in whoever's fallback
+    path happens to use it (``scwbd.runtime.backends.AnalyticSphericalEField``
+    is one).  An approximation with a measured bound is a different object from
+    an approximation with a label.
+
+    It is not the Sarvas / Heller--van Hulsteyn solution.  The true interior
+    field also has zero radial component, but the secondary field is not merely
+    minus the radial part of the primary: it carries a tangential component too,
+    and dropping that overestimates the answer.
+
+    **When it is exact, and why.**  If the source's windings are circular loops
+    coaxial with the head radius through the contact point, the primary vector
+    potential is purely azimuthal, :math:`A = A_\\varphi\\hat\\varphi`.  Since
+    :math:`\\hat\\varphi\\cdot\\hat r = 0` everywhere, the Neumann data
+    :math:`\\hat r\\cdot E_p|_a` vanishes identically, so there is **no secondary
+    field at all** and this expression is the exact answer.  A circular coil
+    therefore agrees with the closed form to round-off.
+
+    That is a trap for anyone validating this approximation, and gate
+    N9 exists partly to spring it: checked on a circular coil the
+    approximation looks perfect, and a figure-eight -- whose opposed wings sit
+    off the radial axis, so the Neumann data does *not* vanish -- is high by
+    ~1.5-1.8x at the peak.  The error is a function of source **symmetry**, not
+    of a resolution parameter, so it cannot be found by refining anything.
+
+    ``normals`` are the outward surface normals at ``points`` (radial on a
+    sphere); they are what "tangential" is measured against.
+    """
+    r = points.to(_DT).reshape(-1, 3)
+    n = normals.to(_DT).reshape(-1, 3)
+    n = n / n.norm(dim=-1, keepdim=True).clamp_min(1e-30)
+    e_p = primary_efield_dipoles(r, dipole_pos, dipole_mdot)
+    return e_p - (e_p * n).sum(-1, keepdim=True) * n
 
 
 def uniform_dbdt_efield(r: Tensor, dbdt: Tensor) -> Tensor:

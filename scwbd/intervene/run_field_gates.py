@@ -42,7 +42,7 @@ from .numerics import (
 
 __all__ = ["em_gate_points", "acoustic_gate_points", "n6_points",
            "n8_points", "n8_dipole_pos",
-           "run_n3", "run_n4", "run_n6", "run_n8", "main"]
+           "run_n3", "run_n4", "run_n6", "run_n8", "run_n9", "main"]
 
 #: the gate's preregistered tolerances, restated here so a drift is visible
 RELATIVE_TOL = 0.05
@@ -577,6 +577,253 @@ def run_n8(*, self_convergence: bool = True, audits: bool = True) -> Any:
     return rep.finalize()
 
 
+# ---------------------------------------------------------------------------
+# N9: the runtime's fallback approximation, gated rather than labelled
+# ---------------------------------------------------------------------------
+
+#: geometry envelope for N9. Head radii spanning adult heads, and standoffs up
+#: to A_safe's own ``tms.coil_scalp_distance_mm`` maximum of 40 mm -- so the
+#: envelope is the one the system already declares, not one chosen to flatter.
+N9_HEAD_RADII_M = (0.070, 0.075, 0.085, 0.092)
+N9_STANDOFFS_M = (0.000, 0.005, 0.010, 0.020, 0.030, 0.040)
+N9_REFERENCE_DEGREE = 250
+
+
+def _n9_sweep(coil_kind: str = "figure8") -> list[dict[str, float]]:
+    """Measure the approximation against the independent reference, geometry by geometry."""
+    from .spectral_reference import AxialInductionReference
+    from .tms.coil import CircularCoil, FigureEightCoil, biphasic
+    from .tms.efield import (
+        SphericalHeadModel,
+        coil_dipoles_in_head_frame,
+        primary_tangential_projection,
+    )
+    from .tms.pose import coil_pose_on_sphere
+
+    rows: list[dict[str, float]] = []
+    for radius in N9_HEAD_RADII_M:
+        for standoff in N9_STANDOFFS_M:
+            head = SphericalHeadModel(radius=radius, cortex_radius=radius - 0.015)
+            coil = (
+                FigureEightCoil(n_azimuth=32, n_radial=4)
+                if coil_kind == "figure8"
+                else CircularCoil(n_azimuth=32, n_radial=4)
+            )
+            pose = coil_pose_on_sphere(
+                head, [-0.55, 0.68, 0.48], standoff_m=standoff
+            )
+            pos, mdot = coil_dipoles_in_head_frame(
+                coil, pose.matrix(), float(biphasic().peak_didt)
+            )
+            pts, normals = head.cortical_shell(642)
+            reference = AxialInductionReference(
+                radius=radius, degree=N9_REFERENCE_DEGREE
+            ).induced_field(pts, pos, mdot)
+            approx = primary_tangential_projection(pts, normals, pos, mdot)
+            peak_ratio = float(
+                approx.norm(dim=-1).max() / reference.norm(dim=-1).max()
+            )
+            peak = int(reference.norm(dim=-1).argmax())
+            cosine = float(
+                (approx[peak] @ reference[peak])
+                / (approx[peak].norm() * reference[peak].norm()).clamp_min(1e-30)
+            )
+            rows.append({
+                "head_radius_m": radius,
+                "standoff_m": standoff,
+                "peak_ratio": peak_ratio,
+                "relative_overestimate": peak_ratio - 1.0,
+                "mean_relative_error": float(
+                    (approx - reference).norm(dim=-1).mean()
+                    / reference.norm(dim=-1).mean()
+                ),
+                "peak_direction_cosine": cosine,
+            })
+    return rows
+
+
+def run_n9(*, include_axisymmetric: bool = True) -> Any:
+    """N9: does the fallback's declared discrepancy interval cover its real error?"""
+    from scwbd.bench.report import ClaimManifest, ClaimReport, Metric, SubCheck, could_not_run
+
+    rows = _n9_sweep("figure8")
+    worst = max(rows, key=lambda r: r["relative_overestimate"])
+    best = min(rows, key=lambda r: r["relative_overestimate"])
+    worst_mean_rel = max(r["mean_relative_error"] for r in rows)
+    min_cos = min(r["peak_direction_cosine"] for r in rows)
+
+    # the declared interval is read from the runtime rather than copied here, so
+    # this gate tracks the real value instead of a snapshot that goes stale --
+    # which is this repository's recurring failure mode
+    declared: float | None = None
+    declared_reason = ""
+    try:
+        from scwbd.runtime.backends import AnalyticSphericalEField
+
+        interval = AnalyticSphericalEField().discrepancy_fraction
+        declared = float(max(abs(interval[0]), abs(interval[1])))
+    except Exception as exc:  # pragma: no cover - depends on sibling module
+        declared_reason = f"{type(exc).__name__}: {exc}"
+
+    subs: list[SubCheck] = []
+
+    if declared is None:
+        subs.append(could_not_run(
+            "declared_bound_covers_error",
+            "Does the consumer's declared discrepancy interval cover the measured error?",
+            "scwbd.runtime.backends.AnalyticSphericalEField could not be read, so the "
+            f"declared interval is unknown and cannot be checked: {declared_reason}",
+            falsified_by="the declared interval does not cover the measured error",
+        ))
+    else:
+        subs.append(SubCheck(
+            name="declared_bound_covers_error",
+            description=(
+                "The fallback declares a discrepancy_fraction that is supposed to carry "
+                "BOTH the sphere-vs-head geometry prior AND this approximation's own "
+                "overestimate. The approximation alone must fit inside it with room left."
+            ),
+            metrics=[Metric(
+                name="fallback.max_relative_overestimate",
+                value=float(worst["relative_overestimate"]),
+                kind="numerical", exact=True,
+                threshold=declared, direction="less_is_better",
+                note=(f"worst over the declared envelope, at head radius "
+                      f"{worst['head_radius_m'] * 1e3:.0f} mm and standoff "
+                      f"{worst['standoff_m'] * 1e3:.0f} mm; declared interval "
+                      f"+-{declared}"),
+            )],
+            mandatory=True,
+            falsified_by="the declared discrepancy interval does not cover the "
+                         "approximation's own measured error over its declared envelope",
+        ))
+
+    subs.append(SubCheck(
+        name="error_is_characterised",
+        description="Is the error bounded and orderly over the envelope, or wild?",
+        metrics=[
+            Metric(name="fallback.min_relative_overestimate",
+                   value=float(best["relative_overestimate"]),
+                   kind="numerical", exact=True,
+                   note=f"at head radius {best['head_radius_m'] * 1e3:.0f} mm, standoff "
+                        f"{best['standoff_m'] * 1e3:.0f} mm"),
+            Metric(name="fallback.peak_direction_cosine_min", value=min_cos,
+                   kind="numerical", exact=True, threshold=0.99,
+                   direction="greater_is_better",
+                   note="the approximation gets the direction right and the magnitude "
+                        "wrong; that is worth stating precisely, because a direction-only "
+                        "consumer is affected differently from a magnitude consumer"),
+        ],
+        mandatory=True,
+        falsified_by="the approximation's error is not characterised over its envelope",
+    ))
+
+    subs.append(SubCheck(
+        name="not_the_induced_field",
+        description="Recorded so nobody reads a bounded approximation as a solver.",
+        metrics=[Metric(
+            name="fallback.max_mean_relative_error", value=float(worst_mean_rel),
+            kind="audit", exact=True,
+            note="elementwise error against the closed form, of order 100 % of the mean "
+                 "field magnitude. This is an approximation with a bound, not a field "
+                 "solver, and no gate here makes it one.",
+        )],
+        mandatory=False,
+    ))
+
+    axisym: list[dict[str, float]] = []
+    if include_axisymmetric:
+        axisym = _n9_sweep("circular")
+        subs.append(SubCheck(
+            name="exact_for_axisymmetric_sources",
+            description=(
+                "A circular coil coaxial with the head radius has a purely azimuthal "
+                "primary vector potential, so r.E_p vanishes, the Neumann data is zero, "
+                "and there is no secondary field: the approximation is EXACT."
+            ),
+            metrics=[Metric(
+                name="fallback.axisymmetric_max_relative_error",
+                value=float(max(r["mean_relative_error"] for r in axisym)),
+                kind="audit", exact=True,
+                note="round-off. This is the trap: validated on a circular coil the "
+                     "approximation looks perfect. The error is a function of source "
+                     "SYMMETRY, not of any resolution parameter, so refining nothing "
+                     "finds it -- only changing the coil does.",
+            )],
+            mandatory=False,
+        ))
+
+    man = ClaimManifest(
+        claim_id="N9_fallback_field_approximation",
+        claim_text=(
+            "The runtime's fallback field model (tangential projection of the primary "
+            "field) has a measured error over its declared geometry envelope, and the "
+            "discrepancy interval it declares covers that error."
+        ),
+        falsified_by=(
+            "the declared discrepancy interval does not cover the approximation's own "
+            "measured error over the declared envelope"
+        ),
+        consequence_if_failed=(
+            "The fallback backend's ledger understates its own model discrepancy. Any "
+            "dose, engagement or ranking obtained through it carries an uncertainty "
+            "interval narrower than the physics justifies, and scwbd.runtime must widen "
+            "the declared interval or refuse to use the backend for claim-bearing output."
+        ),
+        thesis_reference="body.tex §11.1",
+        acceptance_thresholds={
+            "declared_discrepancy_fraction": declared,
+            "envelope_head_radii_m": list(N9_HEAD_RADII_M),
+            "envelope_standoffs_m": list(N9_STANDOFFS_M),
+        },
+        non_goals=[
+            "This gate bounds an approximation. It does not make it a field solver, and "
+            "a PASS would license no claim about target engagement or clinical utility.",
+        ],
+        seed=SEED,
+    )
+
+    rep = ClaimReport(
+        manifest=man, subchecks=subs, kind="numerics",
+        artifacts={
+            "subject": "scwbd.intervene.tms.efield.primary_tangential_projection",
+            "reference": "scwbd.intervene.spectral_reference.AxialInductionReference "
+                         f"(degree {N9_REFERENCE_DEGREE})",
+            "solver_provenance": {
+                "consumer": "scwbd.runtime.backends.AnalyticSphericalEField",
+                "declared_discrepancy_fraction": declared,
+                "equivalence_pinned_by":
+                    "tests/intervene/test_fallback_approximation.py -- asserts the runtime "
+                    "backend computes this same expression, so the gate's subject is the "
+                    "object actually in the runtime path",
+            },
+            "figure_eight_sweep": rows,
+            "axisymmetric_sweep": axisym,
+        },
+        notes=[
+            "The approximation is EXACT for a coil whose windings are circular loops "
+            "coaxial with the head radius: the primary vector potential is then purely "
+            "azimuthal, so r.E_p = 0, the Neumann data vanishes and there is no secondary "
+            "field. Measured error for a circular coil is round-off. A gate that tested "
+            "only that case would report a perfect PASS and be worthless.",
+            "For a figure-eight the wings are opposed and sit off the radial axis, the "
+            "Neumann data does not vanish, and the approximation is high by "
+            f"{best['relative_overestimate'] + 1:.2f}x to "
+            f"{worst['relative_overestimate'] + 1:.2f}x at the peak across the envelope. "
+            "The overestimate grows monotonically as the head gets smaller and the "
+            "standoff larger.",
+            "Direction is essentially unaffected (peak cosine >= "
+            f"{min_cos:.4f}); the error is almost purely in magnitude. A consumer that "
+            "uses only the field DIRECTION is affected far less than one that uses its "
+            "magnitude, and the two should not inherit the same bound.",
+            "The declared interval is read from scwbd.runtime at run time rather than "
+            "copied into this gate, so it tracks the real value instead of a snapshot "
+            "that silently goes stale.",
+        ],
+    )
+    return rep.finalize()
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default="reports/intervene",
@@ -585,7 +832,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--ppw", type=int, default=20)
     ap.add_argument("--device", default=None)
     ap.add_argument("--no-convergence", action="store_true")
-    ap.add_argument("--only", choices=("n3", "n4", "n6", "n8"), default=None)
+    ap.add_argument("--only", choices=("n3", "n4", "n6", "n8", "n9"), default=None)
     args = ap.parse_args(argv)
 
     out = Path(args.out)
@@ -603,6 +850,8 @@ def main(argv: list[str] | None = None) -> int:
         reports.append(run_n6(convergence=conv))
     if args.only in (None, "n8"):
         reports.append(run_n8(self_convergence=conv, audits=conv))
+    if args.only in (None, "n9"):
+        reports.append(run_n9(include_axisymmetric=conv))
 
     for rep in reports:
         jp, mp = rep.write(out)
