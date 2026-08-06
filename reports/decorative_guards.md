@@ -238,6 +238,60 @@ This is recommendation 7 again — prefer a mechanism to an instruction. A proto
 aimed at claims ("what would falsify this?") cannot catch a defect one level
 below the claim.
 
+#### Sub-case: a true explanation that does not exhaust the cause
+
+Distinct from the rows above. Those are true propositions that do not establish
+the claim. This is a **true explanation that does not account for everything it
+was invoked to explain** — and its correctness is precisely what ends the
+investigation.
+
+Stage II replayed after a resume. Diagnosis: *resume granularity is stage-level,
+so an interrupted stage replays from step 1 with a fresh schedule.* **True, and
+it is a real design property.** It was recorded, reported, and accepted.
+
+It was also **incomplete**. A completed stage was replaying too, because
+`completed_stages.append()` ran *after* the stage-end checkpoints, so no stage
+ever recorded itself as finished. Stage II ran 700/700, wrote its checkpoint, and
+resumed as unfinished. Caught only because a third replay was observed starting.
+
+> *I stopped analysing once I had an explanation that fit the evidence I had —
+> and the explanation was true, which is why it survived.*
+
+A wrong explanation gets falsified by the next observation. A **right but partial**
+one absorbs it, because the observation is consistent with it. The correctness is
+load-bearing for the error.
+
+**The operative check:**
+
+> **Does this explanation account for the full *magnitude* of what I observed, or
+> only for its *existence*?**
+
+Stage-level granularity explained *that* a replay happened. It did not explain
+that a **completed** stage replayed — an observation the explanation permits but
+does not predict. That gap was visible at the time and went unexamined because
+the question had already been answered.
+
+Related: prefer explanations that make a **quantitative** commitment. "Interrupted
+stages replay" predicts *which* stages replay, and is therefore checkable against
+the ones that did.
+
+#### Sub-case: verifying through a different path than production uses
+
+Three instances in one night, all of the same shape — **the check exercised a
+path the production code does not take, so it passed while production failed.**
+
+| check | production | outcome |
+|---|---|---|
+| `import torch._functorch.config as c` — knob exists | bare attribute access after `import torch` | check passed, production raised `AttributeError` |
+| full test suite green | the real-data branch may never execute | had to verify the CI fixture *actually* loads 4497 windows |
+| `leakage_check` exists and raises | never called by the trainer | an audit that existed and could not fire |
+
+A verification is only evidence about the path it exercises. The remedy is
+mechanical: **run the check through the exact call the production code makes**,
+not an equivalent one. Where that is impractical, verify the *observable
+consequence* in production output — which is why the `[leakage]` line in the
+training log matters more than the passing test.
+
 #### Sub-case: establishing a constraint and then violating it yourself
 
 The fact that refutes that claim was established **by its own author, two
@@ -250,6 +304,26 @@ than never having found it**, because the record shows you knew. A newly-derived
 constraint does not automatically attach itself to subsequent reasoning; it has
 to be applied deliberately, and the moment of greatest risk is the very next
 argument, while the finding still feels like context rather than a rule.
+
+**The sharpest instance of this is not in the table**, because it happened three
+times to two different parties in one night: **`pgrep -f <pattern>` matches its
+own command line.** The shell wrapper running the check contains the pattern, so
+the guard reports the process it is checking for.
+
+| # | who | consequence |
+|---|---|---|
+| 1 | agent | a launch guard aborted its own relaunch with "ALREADY RUNNING" |
+| 2 | coordinator | a `pgrep` guard handed to 🗄️ Ada aborted *their* relaunch |
+| 3 | coordinator | "a live process while the log shows a traceback" — sent the agent hunting a zombie that never existed, mid-crash |
+
+Instance 2 was written into a brief for someone else **after** instance 1 was
+known. Instance 3 was made by the same party that wrote instance 2. **Knowing a
+failure, and having documented it for others, did not prevent making it** — which
+is the row's claim stated as strongly as it can be.
+
+The fix is mechanical and should simply be adopted: match on the interpreter and
+the module together, and exclude the shell (`ps -eo comm,args | awk '$1 ~ /^python/ && /module.name/'`),
+or write the pattern so it cannot describe the checking process.
 
 **Operational remedy — do this at the moment of derivation, not later:**
 
