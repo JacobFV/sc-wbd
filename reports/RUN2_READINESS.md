@@ -19,10 +19,10 @@ was shown to be capable of failing.
 | **A1** | Heterogeneous per-family state, enforced span guard with firing tests | 🌊 Hodgkin | **MET** — merged `c663e9b`; 5 firing tests |
 | **A2** | Anatomy prior declares families, derived not assumed | 🧠 Cajal | **MET** — 9 families on 414 parcels; guards verified by mutation |
 | **A3** | R12 defined with R01–R11, enforced at checkpoint emission | 📜 Noether | **MET** — 28 tests; fires on populated-families-only construction |
-| **A4** | `eeg.log_noise` is a function of state and horizon step | 🔥 Turing | open |
-| **A5** | `bold.log_noise` likewise, via `signal(..., logvar=)` filled by `rollout` at the matching slow-clock step | 🔥 Turing + 🌊 Hodgkin | open — off-by-`hemo_ratio` must be named in a test |
-| **A6** | The scale defect is fixed at its root: `log_noise` initialised at its closed form, trainable outside stage V | 🔥 Turing | open — run 1 left a closed-form parameter to SGD for 134 s |
-| **A7** | `bold.log_noise` receives a gradient at all | 🔥 Turing | open — currently −4.0000 across all regions, `unique=1` |
+| **A4** | `eeg.log_noise` is a function of state and horizon step | 🔥 Turing | **MET** — `lv = log_noise + einsum(softplus(logvar_mix), predictive_logvar(x))`; RL-2 pinned by test |
+| **A5** | `bold.log_noise` likewise, via `signal(..., logvar=)` filled by `rollout` at the matching slow-clock step | 🔥 Turing + 🌊 Hodgkin | **MET** — `BOLDHead.signal(..., state=)`; diagonal analogue |
+| **A6** | The scale defect is fixed at its root: `log_noise` initialised at its closed form, trainable outside stage V | 🔥 Turing | **MET** — `calibrate_noise_floor()`; test asserts within 8% *and* that ±0.1 makes NLL worse |
+| **A7** | `bold.log_noise` receives a gradient at all | 🔥 Turing | **MET** — `noise_floor_report()` returns `at_initialisation: True` when sd is exactly 0 |
 
 ## B. The comparison
 
@@ -35,7 +35,7 @@ was shown to be capable of failing.
 | **B5** | `check_variance_convergence` (P10) — equally unconverged arms refused too | 🛡️ Popper | implemented |
 | **B6** | `n_parameters_effective` binding (P11) | 🛡️ Popper | implemented |
 | **B7** | `L4` recomputed per arm; `2.0205` is an **upper bound only** | 🔥 Turing / 🛡️ Popper | disagreement open — Popper's band is `[1.9834, 2.0058]` |
-| **B8** | `evaluate.py` retains `per_window_mse` | 🔥 Turing | open |
+| **B8** | `evaluate.py` retains `per_window_mse` | 🔥 Turing | **MET** — `per_window_mse` restored; intervals stated |
 | **B9** | `subject_specific_ar` actually differs from `ar16`, or is withdrawn | 🛡️ Popper | open — participant-disjoint split sends every test window to `ar16` |
 
 ## C. The corpus
