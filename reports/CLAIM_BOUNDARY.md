@@ -703,13 +703,33 @@ have to be `exp(2·2.5552)/(2πe) = 9.7031` — **2.44× the measured value, and
 persistence's own MSE.** No plausible error in the MSE column reaches that. The
 conclusion survives the missing interval.
 
-**Direction of the mis-specification — inference, labelled as such.** Solving
-`½(log 2πv + MSE/v) = 2.5552` at `MSE = 3.9697` gives two roots: `v = 1.328`
-(over-confident by 3.0×) and `v = 22.03` (under-confident by 5.5×). Summary
-statistics cannot distinguish them. The over-confident root is the one consistent
-with independently measured evidence — Stage III `z_sd` up to 1.40 with edge mass
-0.278, Stage V `z_sd` to 2.41 (§3.2b, §3.4) — but **selecting it is inference from
-a coherent pattern, not a measurement**, and it is recorded that way.
+**Direction of the mis-specification — inference when written, since resolved by
+measurement.** Solving `½(log 2πv + MSE/v) = 2.5552` at `MSE = 3.9697` gives two
+roots: `v = 1.328` (over-confident by 3.0×) and `v = 22.03` (under-confident by
+5.5×). Summary statistics cannot distinguish them, so I selected the
+over-confident root as *inference from a coherent pattern, not a measurement*.
+
+> **Resolved, and the inference was right for a reason I did not have.** Read
+> directly out of `stage_V_individual.pt` by bench: **`eeg.log_noise` has mean
+> +0.2732 over 64 channels, sd 0.0302** — flat to ~3 %. That asserts a predictive
+> variance of `exp(0.2732) = 1.3142` against a held-out residual variance of
+> 3.9697: **over-confident by 3.02×**, which is the `v = 1.328` root recovered to
+> within 1 %. 🔥 Turing found the cause under P0 and it is neither architectural
+> nor subtle: `train.py:78` makes the parameter trainable in **stage V only**,
+> stage V ran **900 steps in 134 seconds**, and the optimum is closed-form at
+> `log(3.9697) = 1.3787` — SGD reached **19.8 %** of it.
+>
+> **A second dead parameter, verified in the same read: `bold.log_noise` is
+> exactly −4.0000 for all 454 regions, `unique = 1` — bit-identical to its
+> initialiser. It never received a gradient at all.** That is the **third**
+> dead-parameter finding in this project, after `z_session` (2,616 params, §3.2d)
+> and `eeg.source_proj` under the freeze control. Dead parameters are not only a
+> model defect: §3.2d already showed them making a capacity confound **5× worse
+> than reported**, so they corrupt the matched-capacity budget too. Now a binding
+> budget field (`matching.BINDING_FIELDS`: `n_parameters_effective`).
+
+**The ceiling I derived from this was too lenient, and was falsified — see
+§3.5.9.**
 
 ### 3.5.5 NEW FINDING — the §11.2 comparison is not variance-calibration-matched
 
@@ -726,11 +746,26 @@ per-channel per-horizon residual variance on the held-out remainder**, recording
 calibration step at all.
 
 **So the five arms that beat SC-WBD each received a free held-out variance
-calibration; SC-WBD did not.** And the two arms that received no such calibration
-— SC-WBD and `dense_neural` (`baselines.py:1209`, "heteroscedastic head trained
-in-sample") — are **exactly** the two with positive excess in §3.5.4. That is
-n = 2 and therefore suggestive rather than probative, but it is a
-mechanism-matched pattern, not a coincidence of ranking.
+calibration; SC-WBD did not.**
+
+> **Correction, on 🔥 Turing's independent re-derivation under P0. Their version
+> is sharper and is adopted.** I wrote that the two arms receiving "no such
+> calibration" were SC-WBD and `dense_neural`, and were **exactly** the two with
+> positive excess. **`dense_neural` does carry a `variance_calibration` entry** —
+> `baselines.py:1209`, *"heteroscedastic head trained in-sample on free-running
+> rollouts"* — and it has the **largest** positive excess of all, **+2.1534**. My
+> sentence leaned on "such" to carry "held-out", and would have inverted for any
+> reader who did not carry that qualifier forward — in the document that records
+> this project being burned by exactly that, one section after I named two more
+> decorative guards. **The accurate statement:** the two arms with no
+> ***held-out*** calibration are exactly the two with positive excess. Turing's
+> conclusion is stronger than mine and is the one to quote: **in-sample
+> calibration does not protect you; held-out calibration does.**
+
+That is n = 2 and therefore suggestive rather than probative, but it is a
+mechanism-matched pattern rather than a coincidence of ranking — and
+`dense_neural` *strengthens* it, since the arm that calibrated in-sample lands
+furthest from its own ceiling of all seven.
 
 **How far this goes, stated in both directions so neither half can be quoted
 alone:**
@@ -841,14 +876,86 @@ one. **Every figure in §3.4 and §3.5 inherits this.**
 | **What may be said of the control** | That it lost, that the loss sits in the variance channel, and that the loss is not explained. |
 | **A1_structured_state** | `COULD_NOT_RUN`, unchanged — all three arms missing. The pre-registration for run 2 is `reports/ablations/PREREG_A1_run2.md`, filed **before** any heterogeneous model exists. |
 
+### 3.5.9 MY handicap-removal ceiling was too lenient, and 🔥 Turing falsified it
+
+**Filed against myself. The rule was promoted to `ARCHITECTURE.md` §5c RL-7 on my
+work and then had to be corrected there; the correction is Turing's.**
+
+I ruled: `NLL* = ½·log(2πe·MSE)` is the best achievable by fixing predictive
+variance alone, so **improvement beyond it is new predictive content.** That is
+false. `NLL*` is the ceiling for a variance fix that is flat in horizon, channel
+**and** state. Calibrating variance per (horizon, channel) on held-out data
+involves no new predictive content whatsoever — it is exactly what the baselines
+already do — and passes `NLL*` routinely.
+
+**Re-derived here from `evaluation.json` rather than accepted.** Every one of the
+five statistical baselines sits **below** its own flat ceiling:
+
+| arm | NLL | `NLL*` | `NLL − NLL*` |
+|---|---:|---:|---:|
+| `persistence` | 2.2787 | 2.4036 | **−0.1249** |
+| `ar16` / `subject_specific_ar` | 2.0132 | 2.1288 | **−0.1155** |
+| `population_gaussian` | 2.0484 | 2.1551 | **−0.1068** |
+| `var4` | 2.0185 | 2.1210 | **−0.1025** |
+
+**Under my rule, persistence would be credited with new predictive content for
+calibrating its residual variance per horizon.** It has none. The rule was
+**too permissive**, which is the dangerous direction for a claim gate: it sets
+the bar where a null arm clears it.
+
+**What survives.** The flat ceiling is not wrong, it is the wrong *bar*. It
+remains valid as a **necessary** condition, and the honest structure is a ladder:
+
+| band | reading |
+|---|---|
+| `NLL ≥ 2.1083` | cannot beat a single global variance — definitely no content |
+| `2.0205 ≤ NLL < 2.1083` | explicable by matched calibration alone — **no content demonstrated** |
+| `NLL < 2.0205` | content, subject to the caveat below |
+
+**One disagreement, stated rather than smoothed.** I **could not reproduce
+L4 = 2.0205**: it needs per-(horizon, channel) held-out residuals, and computing
+them requires the model forward pass. What I *can* derive independently is a
+bound — matched calibration is worth **0.1025–0.1249** nats to the baselines, so
+applying that band to SC-WBD's flat ceiling gives **L4 ∈ [1.9834, 2.0058]**.
+**2.0205 lies above that band**, and since content requires `NLL < L4`, a higher
+L4 is the **more permissive** value by 0.015–0.037 nats. So:
+
+> **Ruling: 2.0205 is adopted as an *upper bound* on the bar, not as the bar.
+> L4 is a property of an arm's own residual structure and is not transportable —
+> run 2 recomputes it per arm from that arm's own held-out residuals.**
+
+Turing's own caveat is carried and is the more important one: **L4 is in-sample
+for SC-WBD and genuinely held out for the baselines, so it flatters us** — and
+even flattered, `L4 − ar16 = +0.0073`, so **the bar does not reach the best
+baseline.**
+
+### 3.5.10 The MSE interval I declined to state has been restored
+
+§3.5.4 recorded SC-WBD's lowest-MSE point estimate and **refused to call it a
+claim**, because `evaluate.py:398-418` discarded the `per_window_mse` the harness
+already held. Turing restored it. Participant-clustered and paired, on the
+conditional mean **SC-WBD beats every baseline including persistence** —
+−3.1962 [−3.9428, −2.5099] against persistence, down to −0.1030 [−0.2142,
+−0.0034] against `var4`, every interval excluding zero.
+
+**The run-1 FAIL was entirely in the variance channel.** Recorded with both
+halves intact: declining to claim it without an interval was correct, and so was
+saying the interval was recoverable from data the harness already had.
+
+**This does not rehabilitate the artifact.** §2.1 contracts `X_i^uncertainty` as
+regional state; the artifact emits a constant. A model that predicts well and
+cannot say how well it predicts has failed a contracted capability, and G1–G5
+remain `COULD_NOT_RUN` regardless.
+
 ### 3.5.8 Three of the findings above are one class, and it now has a name
 
 §3.5.5 (the candidate scored without the variance calibration its baselines
 received) and §3.5.6a (`subject_specific_ar` reduced to `ar16` by the split) were
 filed above as separate defects. They are not. Together with two found since —
-🌊 Hodgkin's A1 treatment arm exporting 2 dims to its EEG head against the
-control's 18, and `heads.py:238`'s `log_noise`, one learned scalar per channel
-with no path from state — they are **four instances of one failure**:
+🌊 Hodgkin's A1 treatment arm, whose EEG **mean path** was narrowed to 2 exported
+dims against the control's 18, and `heads.py:238`'s `log_noise`, one learned
+scalar per channel with no path from state — they are **four instances of one
+failure**:
 
 > **Capacity matching guards the model. Nothing guarded the path from the model
 > to the number.**
@@ -861,8 +968,11 @@ hypothesis, differing between arms, at a place nobody was looking because it is
 not "the model".
 
 Worked out in `reports/ablations/PREREG_A1_run2.md` §3.5.2, enforced as a second
-matching axis (`scwbd.bench.matching.check_path_parity`), and filed as rows 11
-and 12 of `reports/decorative_guards.md`. **The bearing on this document is that
+matching axis (`scwbd.bench.matching.check_path_parity`), filed as rows 11 and 12
+of `reports/decorative_guards.md`, and now binding fleet-wide as
+`ARCHITECTURE.md` §5c **RL-6** — with 🧭 Fisher's corollary that the stage-5
+defect was **unrepresentable** in the linear-Gaussian surrogate C1/C2/C3 run on,
+so every check there was green *and correct*. **The bearing on this document is that
 §3.5's re-scoping is now the weaker of two conclusions about run 1:** the artifact
 was not only the wrong arm, it was scored through a path that was never checked
 for parity against the baselines it was compared to.

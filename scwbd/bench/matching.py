@@ -53,6 +53,8 @@ is a scoping decision rather than a divergence from the thesis.
 
 from __future__ import annotations
 
+import math
+
 from dataclasses import dataclass, field
 from dataclasses import fields as _fields
 from typing import Any, Mapping, Sequence
@@ -71,6 +73,8 @@ __all__ = [
     "ParityVerdict",
     "check_path_parity",
     "parity_subcheck",
+    "VarianceConvergenceVerdict",
+    "check_variance_convergence",
 ]
 
 #: Budget fields that BIND a comparison: a mismatch on any one makes the
@@ -82,6 +86,7 @@ __all__ = [
 #: whatever the parameter counts say.
 BINDING_FIELDS: tuple[str, ...] = (
     "n_parameters",
+    "n_parameters_effective",
     "flops",
     "train_steps",
     "state_width",
@@ -109,6 +114,15 @@ class Budget:
     #: distinct hyperparameter configurations trained and val-scored for this
     #: arm (PREREG_A1_run2 §3.1 B4).
     n_configs_trained: int | None = None
+    #: trainable parameters that actually MOVED between initialisation and the
+    #: scored checkpoint (PREREG_A1_run2 §3.1 B1e).  A parameter that never
+    #: received a gradient is not capacity, and this project has now found three
+    #: of them: `z_session` (2,616 params bit-identical to init),
+    #: `eeg.source_proj` under the freeze control, and `bold.log_noise` (454
+    #: values all exactly -4.0, its initialiser).  §3.2d of CLAIM_BOUNDARY
+    #: already showed dead parameters making a capacity confound 5x worse than
+    #: reported, so they corrupt the BUDGET, not only the model.
+    n_parameters_effective: int | None = None
 
     @property
     def known(self) -> bool:
@@ -171,7 +185,7 @@ def budget_of(model: Any) -> Budget:
         except Exception:
             return None
 
-    def _int(attr: str) -> int | None:
+    def _int(attr: str) -> int | None:  # noqa: D401
         v = _num(attr)
         return None if v is None else int(v)
 
@@ -182,6 +196,7 @@ def budget_of(model: Any) -> Budget:
         wall_seconds=_num("wall_seconds"),
         state_width=_int("state_width"),
         n_configs_trained=_int("n_configs_trained"),
+        n_parameters_effective=_int("n_parameters_effective"),
         source=src,
     )
 
@@ -626,3 +641,103 @@ def parity_subcheck(verdict: ParityVerdict, *, name: str = "path_parity") -> Sub
     if verdict.matched:
         return SubCheck(**common, reason=verdict.reason)
     return SubCheck(**common, forced_status="COULD_NOT_RUN", reason=verdict.reason)
+
+
+# ---------------------------------------------------------------------------
+# VARIANCE-SCALE CONVERGENCE: a stage-5 parity failure that ArmPath cannot see.
+#
+# 🔥 Turing's P0 result, 2026-08-06: run 1's variance defect is NOT structural.
+# `eeg.log_noise` is trainable in stage V only (`train.py:78`), stage V ran 900
+# steps in 134 seconds, and SGD reached 19.8% of a CLOSED-FORM optimum -- the
+# fitted scalar asserts variance exp(0.2732)=1.3142 against a held-out residual
+# variance of 3.9697, uniformly overconfident by 3.02x.
+#
+# The consequence for A1 is the part that is easy to miss.  `ArmPath` compares
+# DECLARED configuration, so two arms can both declare `state_dependent_logvar`
+# -- passing path parity -- while one arm's variance scale is 20% converged and
+# the other's is 90%.  That is an unmatched **stage 5** hiding inside a matched
+# stage 5, and the difference would be attributed to the hypothesis.
+#
+# It is cheap to close precisely because the optimum is closed-form: for a
+# Gaussian score the best global log-variance is `log(MSE)` on the same held-out
+# data.  So convergence is VERIFIABLE, not hoped for.
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class VarianceConvergenceVerdict:
+    tol: float
+    matched: bool
+    #: ``{arm: fitted_mean_log_variance - log(mse)}``; 0 is converged, negative
+    #: is overconfident, positive is underconfident.
+    gaps: dict[str, float] = field(default_factory=dict)
+    unconverged: list[str] = field(default_factory=list)
+    #: worst pairwise difference between arms' gaps
+    spread: float = 0.0
+
+    @property
+    def reason(self) -> str:
+        if self.unconverged:
+            worst = max(self.gaps.items(), key=lambda kv: abs(kv[1]))
+            return (
+                f"variance scale not converged for {', '.join(self.unconverged)} "
+                f"(worst {worst[0]}: log-variance off its closed-form optimum by "
+                f"{worst[1]:+.4f}, i.e. {math.exp(-worst[1]):.2f}x mis-scaled; tolerance "
+                f"{self.tol}). An arm whose variance scale did not converge is not "
+                "reporting a measurement of its predictive quality"
+            )
+        if self.spread > self.tol:
+            return (
+                f"arms' variance scales converged to DIFFERENT degrees (spread "
+                f"{self.spread:.4f} > {self.tol}); the difference would be attributed to "
+                "the hypothesis"
+            )
+        return f"every arm's variance scale is within {self.tol} of its closed-form optimum"
+
+    def metrics(self) -> list[Metric]:
+        out = [
+            Metric(
+                name=f"variance_convergence.gap.{arm}",
+                value=float(g),
+                units="log-variance",
+                kind="calibration",
+                exact=True,
+                threshold=self.tol,
+                direction="two_sided",
+                note="fitted mean log-variance minus log(held-out MSE); 0 is converged",
+            )
+            for arm, g in sorted(self.gaps.items())
+        ]
+        out.append(
+            Metric(
+                name="variance_convergence.between_arm_spread",
+                value=float(self.spread),
+                units="log-variance",
+                kind="calibration",
+                exact=True,
+                threshold=self.tol,
+                direction="two_sided",
+            )
+        )
+        return out
+
+
+def check_variance_convergence(
+    arms: Mapping[str, tuple[float, float]], *, tol: float = 0.1
+) -> VarianceConvergenceVerdict:
+    """``arms`` maps arm name to ``(fitted_mean_log_variance, heldout_mse)``.
+
+    The closed-form optimum for a single global predictive variance is
+    ``log(MSE)``.  An arm far from it has a fitting failure, not a modelling
+    result, and its NLL is not a measurement of its predictive quality.
+    """
+    gaps = {a: float(lv) - math.log(float(mse)) for a, (lv, mse) in arms.items()}
+    unconverged = sorted(a for a, g in gaps.items() if abs(g) > tol)
+    spread = (max(gaps.values()) - min(gaps.values())) if len(gaps) > 1 else 0.0
+    return VarianceConvergenceVerdict(
+        tol=float(tol),
+        matched=not unconverged and spread <= tol,
+        gaps=gaps,
+        unconverged=unconverged,
+        spread=float(spread),
+    )

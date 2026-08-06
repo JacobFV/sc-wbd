@@ -136,7 +136,12 @@ A1_RUN2_PREREGISTRATION = (
     "SCORED_AS_EMITTED_AND_CALIBRATION_MATCHED_DISAGREEMENT_CLAIMS_NEITHER; "
     "SYSTEMATIC_ENVELOPE_GE_DELTA_OR_SEED_RANGE_GE_DELTA_IS_INCONCLUSIVE; "
     "V_ABLATION_AND_V_CLAIM_ARE_SEPARATE_11_2_FLOOR_BOUNDS_ONLY_V_CLAIM; "
-    "RUN1_IS_A_CONTROL_CLASS_ARTIFACT_NOT_RUN2S_CONTROL_ARM"
+    "RUN1_IS_A_CONTROL_CLASS_ARTIFACT_NOT_RUN2S_CONTROL_ARM; "
+    "THETA_CONDITIONED_POOLED_ARM_MANDATORY_STAGE2_CONDITIONING_CONTROL; "
+    "A1_VARIES_STATE_ONLY_OPERATOR_ASSIGNMENT_HELD_IDENTICAL_A5_IS_THE_OTHER_ONE; "
+    "LICENCE_IS_TWO_FAMILY_CORTICAL_PARTITION_NOT_OPERATOR_VALUED_HETEROGENEITY; "
+    "SUBCORTICAL_FAMILIES_N2_ARE_OUT_OF_CLAIM; "
+    "MDE_AT_27_PARTICIPANTS_IS_0.1404_NATS"
 )
 
 
@@ -196,6 +201,13 @@ ABLATIONS: dict[str, AblationSpec] = {
         optional_arms=(
             "pooled_vector_per_region@param_matched",
             "pooled_vector_per_region@state_matched",
+            # PREREG_A1_run2 §3.6.2, on Cajal's N-7: one operator, uniform
+            # state, theta carrying exactly the receptor / myelin+thickness /
+            # timescale features the spin test used to separate the families.
+            # Without it a win is unattributable between STATE STRUCTURE and
+            # rich CONDITIONING -- an unmatched stage 2 under RL-6, the mirror
+            # of the stage-4 interface defect.
+            "theta_conditioned_pooled",
             "permuted_family_state",
         ),
         required_effect=A1_EFFECT,

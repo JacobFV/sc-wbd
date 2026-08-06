@@ -56,6 +56,7 @@ comparison cannot be attributed.
 | `pooled_vector_per_region@param_matched` | control | one global `local_core`, uniform `(B,T,N,D)`; **`D` chosen so trainable parameters match** the candidate |
 | `pooled_vector_per_region@state_matched` | control | same, but **`D` chosen so total state width matches** the candidate (§3) |
 | `scalar_per_region` | control | `D = 1`. §11.4 names "one scalar" explicitly and it is the cheapest possible floor; it is *not* capacity-matched and is reported as a floor, never as evidence of a win |
+| `theta_conditioned_pooled` | **conditioning control** (§3.6.2) | one operator, uniform state, θ carrying exactly the receptor / myelin+thickness / timescale features that Cajal's spin test used to separate the families. Closes the stage-2 gap; without it a win is unattributable between state structure and rich conditioning |
 | `permuted_family_state` | **attribution control** | byte-identical architecture to the candidate — same family sizes, same per-family dimensions, same operator assignment — with the **region → family map permuted** under a fixed seed |
 
 ### 1.1 Why `permuted_family_state` is mandatory
@@ -218,9 +219,16 @@ pretending to enforce it.
 ### 3.5 PATH PARITY — the second matching axis, and the answer to "does this generalise?"
 
 **Added 2026-08-06 (amendment A-1, §9) after 🌊 Hodgkin self-reported, on his own
-branch and before shipping, that the A1 treatment arm's `EEGHead` received a
-shared interface view exporting `("rate_e","rate_i")` = 2 dims against the
-control arm's `("rate_e","rate_i","spectral")` = 18.**
+branch and before shipping, that a shared state-slice view silently narrowed the
+A1 treatment arm's EEG **mean path** to `("rate_e","rate_i")` = 2 exported dims
+against the control arm's `("rate_e","rate_i","spectral")` = 18.**
+
+**Now binding fleet-wide as `ARCHITECTURE.md` §5c RL-6**, with 🧭 Fisher's
+corollary attached: ask of a guard not only whether it can fire, but whether the
+failure it targets is **representable** in the model it runs against. C1/C2/C3
+run on a linear-Gaussian surrogate where state-independent innovation covariance
+is a *theorem*, so the stage-5 defect below was not merely undetected — it was
+unrepresentable. Every check was green and every check was correct.
 
 **Every field `Budget` declares could have matched exactly.** A1 would have
 concluded that heterogeneous regional state does not help — and it would have
@@ -259,7 +267,7 @@ to the scalar:
 | 1 | inputs — corpus, shards, windows, context, normalisation | no | not yet |
 | 2 | conditioning — anatomy artifact, connectome, priors | partly (§7/P2) | yes: run 1's `synthetic_fallback` |
 | 3 | **state — the manipulated variable** | this *is* the hypothesis | — |
-| 4 | observation interface: state → head | **no** | **yes — Hodgkin, 2 vs 18 dims** |
+| 4 | observation interface: state → head | **no** | **yes — Hodgkin: the treatment arm's EEG *mean path* narrowed to 2 exported dims against the control's 18** |
 | 5 | head parameterisation, mean **and variance** | **no** | **yes — P0: `log_noise` is one learned scalar per channel, no path from state (`heads.py:238`/`:258`)** |
 | 6 | score: metric, units, calibration protocol | no | **yes — §3.5.5 of CLAIM_BOUNDARY: five baselines calibrated, candidate not** |
 | 7 | split: which windows, which participants | partly | **yes — `subject_specific_ar` ≡ `ar16` under a participant-disjoint split** |
@@ -284,6 +292,19 @@ sets**. Fields compared, each with a test that fires
 `variance_model`, `calibration_protocol`, `score_metric`, `split_fingerprint`,
 `context_length`, `input_normalisation`, `anatomy_provenance`.
 
+**`variance_model` is the executable form of RL-4 as amended.** The amended
+ruling — Hodgkin's, against the architect's original — is that **both arms build
+the observation interface**, because disabling it on the control would make the
+state-dependent variance path a property of *which arm you are in*: an unmatched
+**stage 5**, inside the ruling that exists to prevent unmatched stages. Last time
+the interface silently narrowed one arm; that would have silently widened the
+other. `ModelConfig.state_dependent_variance` is therefore a **declared config
+choice, not an arm property** — both arms may sit at either setting, and what
+`check_path_parity` refuses is the **split**. RL-4's closing sentence, *"an A1
+run with the control on the broadcast constant may not be reported as a test of
+structured state,"* is asserted in
+`tests/bench/test_matching.py::test_RL4_amendment_a_broadcast_control_against_a_state_dependent_candidate_fires`.
+
 Two deliberate differences from `check_matched`, both stated so neither is
 mistaken for an oversight:
 
@@ -306,20 +327,137 @@ with no path from state; `BOLDHead` is identical. Both are being fixed before ru
 had, not evidence of improvement.** So the ceiling is preregistered **now**, per
 arm, before any post-fix number exists:
 
-> **Handicap-removal ceiling.** For any arm, `NLL* = ½·log(2πe·MSE)` computed
-> from that arm's **own** held-out MSE is the best score achievable by fixing the
-> variance alone, holding the conditional mean fixed. **Improvement up to `NLL*`
-> is handicap removal. Only improvement beyond `NLL*` is new predictive
-> content** — and even that must clear the §4.2 floor.
+> **Handicap-removal ceiling — SUPERSEDED as written; see amendment A-2 (§9).**
+> `NLL* = ½·log(2πe·MSE)` is the ceiling for a variance fix that is flat in
+> horizon, channel **and** state. 🔥 Turing falsified my rule with a
+> measurement: per-(horizon, channel) held-out calibration adds no predictive
+> content — it is what every baseline already does — and passes `NLL*`
+> routinely. Re-derived independently by bench from `evaluation.json`: **all
+> five statistical baselines sit below their own `NLL*`**, by −0.1025 to
+> −0.1249. Under my rule persistence would be credited with new predictive
+> content. **The bar is now L4, matched-calibration; the ladder and the
+> disagreement over its value are in `CLAIM_BOUNDARY.md` §3.5.9 and §7/P9.**
 
-Every arm therefore reports **NLL, MSE, and the excess `NLL − NLL*`**. For run
-1's artifact the ceiling is already computed and filed before the fix:
-**`NLL* = 2.1083`** from `MSE = 3.9697` (`CLAIM_BOUNDARY.md` §3.5.4). A post-fix
-number at or above 2.1083 is the handicap coming off and nothing else; at 2.1083
-the artifact passes persistence (2.2787) and still loses to `ar16` (2.0132),
-`var4` (2.0185) and `population_gaussian` (2.0484). **That bound was written
-before the fix was applied and is not to be restated afterwards as a prediction
-that came true.**
+### 3.6 CAJAL'S N-7 — what A1 may and may not conclude from a two-family partition
+
+**Ruling requested by the architect on 🧠 Cajal's own N-7, which they filed asking
+to be attacked. Added as amendment A-3 (§9), before run 2 is configured.**
+
+The shipped partition is **9 families**: `cortex_unimodal` n=138,
+`cortex_association` n=262, and **7 subcortical families at n=2 each**
+(138 + 262 + 14 = 414 ✓). It was established by a pre-fixed rule — ship the
+finest candidate where every pair separates — under a Váša spin null, 1000
+spins, BH-FDR, with Yeo-7, C4 and C3 all rejected. **The method is not in
+question here. What A1 may conclude from it is.**
+
+#### 3.6.1 The endpoint survives. The LICENCE narrows, and A1 must be separated from A5
+
+**§11.4 bullet 1 and bullet 5 are different ablations and have been running
+together in this discussion:**
+
+| | claim | can θ conditioning replicate it? |
+|---|---|---|
+| **A1** (bullet 1) | *structured regional state* versus one scalar or pooled vector — a claim about the state **space** `𝒳_i`: which components, what dimension | **No.** θ parameterises an operator; it cannot change a state's dimension or component list. A 28-dim uniform state conditioned on θ is still 28 uniform dims. |
+| **A5** (bullet 5) | *anatomically typed operators* versus an equal-parameter generic operator | **Yes, largely** — which is exactly the §2.1-versus-θ problem, and it is A5's hypothesis. |
+
+So the θ-confound the architect identifies is **fatal to A5 as usually posed and
+only partial for A1** — *provided the arms are built so that it stays partial*.
+
+> **Binding design ruling. A1's arms differ ONLY in state structure, holding the
+> operator assignment identical across every arm. A5's arms differ only in
+> operator typing, holding the state identical.**
+>
+> If run 2's treatment arm varies *both* — per-family state **and** per-family
+> operators — then A1 and A5 are confounded in one comparison and **neither is
+> testable**. Cajal's evidence is on receptor profile, intrinsic timescale and
+> myelin/thickness, which are properties an operator's *parameters* can carry;
+> letting the treatment arm also change operator families imports precisely the
+> ambiguity into the arm that is supposed to resolve it.
+
+**And the licence narrows, which must be stated in the report and not left to a
+reader.** With two cortical families, A1 tests:
+
+> *Does a **two-family cortical state partition**, at matched capacity, beat a
+> uniform one?*
+
+It does **not** test "operator-valued heterogeneous regional state" (`body.tex`
+§0.2 differentiator (i)). A binary partition over 400 parcels is a long way from
+`𝒳_i` indexed by region, and **Cajal is right to say so in N-7.** A positive A1
+licenses the narrow sentence, and the narrow sentence only.
+
+#### 3.6.2 Yes, a third control arm is required — and it is a stage-2 fix
+
+The architect's diagnosis is correct and is the mirror image of the stage-4
+interface defect: a control denied the family-defining information is
+**handicapped at stage 2 (conditioning)** under RL-6.
+
+> **New mandatory arm: `theta_conditioned_pooled`** — one operator, uniform
+> state, with the per-region θ conditioning vector carrying **exactly the
+> features Cajal's spin test used to separate the families**: the 20 Hansen
+> receptor/transporter maps, myelin + cortical thickness, and intrinsic
+> timescale. Not a summary of them, and not the family label — the features.
+
+This is the strongest available null: it gives the control **everything the
+family assignment encodes**, in the form the thesis says is *not* the
+differentiator. If the candidate cannot beat it, the claim was about conditioning
+all along.
+
+Note it is **not** a fourth capacity-matched control in the §3.2 sense: it is
+matched on B1–B4 like the others, and it differs from
+`pooled_vector_per_region@param_matched` **only** in what θ carries. The pair
+`(pooled@param_matched, theta_conditioned_pooled)` therefore also measures, as a
+by-product, what the conditioning features are worth on their own.
+
+#### 3.6.3 Power — the answer is a number, and it is uncomfortable
+
+**Minimum detectable effect at 27 test participants: 0.1404 nats.** Derived by
+bench from run 1's own six paired participant-clustered comparisons — the median
+CI half-width, which is what an effect must exceed for the interval to exclude
+zero at this design (range 0.1373 to 0.2711; the wide one is `dense_neural`).
+
+Placed against effects actually measured in this project:
+
+| effect | size | detectable at n=27? |
+|---|---:|---|
+| horizon term of the variance excess | 0.0096 | **no** — 15× below MDE |
+| matched-calibration gain (all baselines) | 0.1025–0.1249 | **no** — below MDE |
+| **MDE** | **0.1404** | — |
+| state term of the variance excess | 0.19–0.26 | yes |
+| SC-WBD's gap to persistence | 0.2765 | yes, ≈2× MDE |
+
+> **So A1 at this design can only see effects larger than the entire
+> matched-calibration gain.** A two-family cortical partition must produce an
+> effect comparable to the *state* term of the variance defect to be visible at
+> all. That is a demanding bar for a binary distinction, and it is stated now
+> rather than discovered in the INCONCLUSIVE band (§8b).
+
+**MDE scales as ≈1/√(participants)**, and the corpus holds 109:
+
+| test participants | MDE |
+|---:|---:|
+| 27 (current) | 0.1404 |
+| 54 | 0.0993 |
+| 109 | 0.0699 |
+
+**Recommendation, not a requirement, because it trades against training data:**
+27 of 109 in test is a choice, not a constraint. Enlarging the test fold is the
+only lever here that does not require new recording, and it must be fixed
+**before** any arm is scored, not after an inconclusive result.
+
+#### 3.6.4 The seven subcortical families cannot support a family-level claim
+
+**Not asked, and it follows from the same power analysis.** Seven families at
+n=2 parcels each is **14 of 414 parcels — 3.1 %**. No family-level effect there
+is measurable at any participant count this corpus supports, and seven per-family
+operators and dimensions is capacity spent on 3 % of the brain, which also
+degrades the B1/B2 match against a uniform control.
+
+> **Ruling: for A1, the subcortical families are declared **out of claim**.** They
+> may exist in the model; A1's licence covers the cortical partition only, and
+> the report says so. This follows narrowing **N-4**'s precedent — families
+> without data are initialised from the prior and declared untrained rather than
+> silently counted.
+
 
 ---
 
@@ -539,7 +677,7 @@ Scoring before these hold produces a number that will have to be withdrawn.
 
 | # | precondition | why | state at filing |
 |---|---|---|---|
-| **P0** | **Run 1's loss to persistence is diagnosed, or declared undiagnosed in writing.** | If the cause is in shared infrastructure it damages the candidate identically and A1 measures it, not state structure. `CLAIM_BOUNDARY.md` §3.5.4 narrows it to the predictive-variance channel; that is a location, not a cause. A written "we do not know why" is acceptable and is *not* a blocker; silence is. | not met |
+| **P0** | **Run 1's loss to persistence is diagnosed, or declared undiagnosed in writing.** | If the cause is in shared infrastructure it damages the candidate identically and A1 measures it, not state structure. | **MET 2026-08-06.** 🔥 Turing: `eeg.log_noise` mean +0.2732 / sd 0.0302 over 64 channels asserts variance 1.3142 against held-out 3.9697 — **3.02× over-confident**; trainable in stage V only (`train.py:78`), stage V ran 900 steps / 134 s, closed-form optimum `log(3.9697) = 1.3787`, SGD reached **19.8 %**. Verified independently by bench from the checkpoint. Decomposition: scale **0.4467** (100 % of the gap to the flat ceiling), channel 0.1113, horizon 0.0096 (2.1 %), state 0.19–0.26. |
 | **P1** | `real_split` fingerprint present in every run-2 checkpoint and **verified** against the evaluation split. | S1. Run 1's is `false`. | not met |
 | **P2** | Both arms consume the same anatomy artifact, `provenance` and `is_biological` recorded for each. | S4. `run2_plan.md` P1: the anatomy fix is on `wt/turing`, not `master`. | not met |
 | **P3** | ≥ 3 training seeds per arm. | S2, and R-SYS runs off it. | not met |
@@ -548,7 +686,9 @@ Scoring before these hold produces a number that will have to be withdrawn.
 | **P6** | `per_window_mse` collected and paired-bootstrapped for every arm. | the two-column rule (§2); `evaluate.py:398-418` currently discards it. | not met |
 | **P7** | R12 exists and fires. `ARCHITECTURE.md:243` names it; `grep -rn "R12" scwbd/ --include=*.py` returns nothing in this checkout. | a control arm that can be emitted under the SC-WBD name is how run 1 happened. 📜 Noether owns this. | not met |
 | **P8** | **Path parity (§3.5): every arm declares an `ArmPath` and they are identical.** Mismatch or undeclared → `COULD_NOT_RUN`, never a discounted number. | 🌊 Hodgkin's 2-vs-18 interface would have inverted A1's conclusion with every budget matching. Four of this project's between-arm defects live on this path and none in the budgets. | **enforced on `wt/popper`** — `AblationSpec.require_path_parity=True` for A1; arms are still to be built |
-| **P9** | **The variance head is state-dependent in every arm, and each arm reports its handicap-removal ceiling `NLL* = ½·log(2πe·MSE)` (§3.5.4).** | P0 returned **yes**: run 2 inherits the defect. Fixing it lowers NLL by removing a handicap, and without the ceiling that is indistinguishable from the model getting better. | fix in progress on `wt/hodgkin`; ceiling for run 1 already filed at **2.1083** |
+| **P9** | **REPLACED (A-2). Each arm reports its own recomputed `L4` matched-calibration bar, and only `NLL < L4` counts as new predictive content.** The flat `NLL*` is retained as a *necessary* condition, not the bar. **`L4` is recomputed per arm from that arm's own held-out residuals; run 1's 2.0205 is not transportable and is adopted only as an upper bound** (bench's independent band from the baselines' calibration gain is [1.9834, 2.0058] — *stricter*). | my original rule was **too permissive**: every statistical baseline clears its own `NLL*`, so persistence would have been credited with predictive content. | bar corrected; per-arm recomputation still to be run |
+| **P10** | **Variance-scale convergence, verified against the closed form, for every arm and matched between arms.** Each arm reports `fitted mean log-variance − log(held-out MSE)`; every arm within tolerance, and the between-arm spread within tolerance. | **NEW, and it is the precondition P0's answer creates.** The defect is a *fitting* failure, so the fitted scale is a function of how long and how well each arm trained — **arm-specific, and not the hypothesis**. Two arms can both declare `state_dependent_logvar`, passing §3.5 path parity, while one is 19.8 % converged and the other 90 %: an unmatched **stage 5 hiding inside a matched stage 5**. Cheap to close *because* the optimum is closed-form. **Matched handicaps are not a licence** — equally unconverged arms are also refused, since neither arm's NLL is then a measurement of its predictive quality. | **enforced on `wt/popper`** — `matching.check_variance_convergence`, four firing tests |
+| **P11** | **No dead parameters: every tensor the manifest declares trainable moved between initialisation and the scored checkpoint, per arm; any that did not are listed and excluded from the capacity budget.** | `bold.log_noise` is **exactly −4.0000 for all 454 regions, `unique = 1`** — bit-identical to its initialiser, never gradient-touched (verified by bench from `stage_V_individual.pt`). That is the **third** instance here, after `z_session` (2,616 params) and `eeg.source_proj`. §3.2d already showed dead parameters making a capacity confound **5× worse than reported**, so they corrupt **B1** — a parameter that never moved is not capacity. | **enforced on `wt/popper`** — `n_parameters_effective` is a binding budget field |
 
 ---
 
@@ -561,6 +701,7 @@ Stated in the thesis's own discipline: name the disabling result before running.
 | **F1** | Candidate does **not** beat both capacity-matched pooled controls — interval includes zero, or favours a control — under **either** matching definition. | **The §11.4 bullet is not supported on this corpus and protocol.** Per the registry's `consequence`: collapse regional state to the supported dimensionality and stop describing regions as structured state spaces for the affected systems. |
 | **F2** | `permuted_family_state` matches the candidate (interval includes zero). | **The anatomical typing claim is falsified.** Heterogeneity may still stand; anatomy-derived families do not. `body.tex` §0.2 differentiator (i) narrows to "heterogeneous", losing "anatomically typed". |
 | **F3** | Candidate wins NLL, does not win MSE (R-2C), **or** its `A1_EFFECT` is further from the data's than the pooled control's. | **No mechanistic claim.** The win is in the variance channel or is smoothing. Reportable as calibration; not as §11.4 evidence. |
+| **F8** | `theta_conditioned_pooled` matches the candidate (interval includes zero). | **The state-structure claim reduces to a conditioning claim.** The families' separating features, handed to one operator as θ, bought the same thing. A1 is then evidence about the anatomy prior's features, not about `𝒳_i`, and `body.tex` §0.2 differentiator (i) is unsupported by it. |
 | **F4** | Smoothing check fires: candidate top-scoring with retention < 0.5. | **`FAIL` and the preference is refused**, per `run_ablation`. |
 | **F5** | `E ≥ \|Δ\|` (R-SYS), or the S2 between-seed range ≥ the between-arm delta. | **INCONCLUSIVE.** Not a falsification and not a win — a non-result, reported as one. |
 | **F6** | (a) as-emitted and (b) calibration-matched scoring disagree on the direction of V-ABLATION. | **Both reported, neither claimed.** |
@@ -660,6 +801,61 @@ threshold moved, no arm was dropped, no systematic-error term was removed, and
 fix was applied. A post-fix score at or above it is the handicap coming off and
 nothing more. It is filed here so it cannot later be produced as a prediction
 that came true.
+
+---
+
+### A-2 — 2026-08-06 — the handicap-removal ceiling was falsified; two new preconditions
+
+**Admissible:** no run-2 arm exists; no run-2 number produced or observed.
+Primary endpoint **unchanged**. Every change tightens.
+
+- **RL-7 as I wrote it is falsified**, by 🔥 Turing, with a measurement.
+  Re-derived independently by bench: all five statistical baselines sit **below**
+  their own flat ceiling (−0.1025 to −0.1249), so the rule would have credited
+  persistence with new predictive content. The bar is now **L4**
+  matched-calibration. **I could not reproduce L4 = 2.0205** without the
+  checkpoint eval; my independent band from the baselines' calibration gain is
+  **[1.9834, 2.0058]**, which is *stricter*, so 2.0205 is adopted as an **upper
+  bound** and L4 is **recomputed per arm** (P9).
+- **P0 is MET** — diagnosed, and verified independently by bench from
+  `stage_V_individual.pt`: `eeg.log_noise` mean +0.2732 / sd 0.0302, 3.02×
+  over-confident, 19.8 % of a closed-form optimum.
+- **P10 (new)** — variance-scale convergence, because a *fitting* defect makes
+  the fitted scale arm-specific: two arms can both declare
+  `state_dependent_logvar` and pass path parity while converging to different
+  degrees. Matched handicaps are refused too.
+- **P11 (new)** — no dead parameters. `bold.log_noise` is exactly −4.0000 for
+  all 454 regions, `unique = 1`. Third instance in this project; they corrupt
+  **B1** as well as the model.
+
+### A-3 — 2026-08-06 — Cajal's N-7: the licence narrows and a third control is added
+
+**Admissible:** no run-2 arm exists; no run-2 number produced or observed.
+Primary endpoint **unchanged** — see below, including why I am *not* changing it.
+
+- **§3.6.1** — A1's licence narrows to *a two-family cortical state partition*,
+  and **A1's arms may vary state structure only, with the operator assignment
+  held identical**; varying both confounds A1 with A5 and tests neither.
+- **§3.6.2** — new mandatory arm `theta_conditioned_pooled`, plus falsifier
+  **F8**. Closes an unmatched **stage 2** under RL-6.
+- **§3.6.3** — **MDE = 0.1404 nats** at 27 participants, below which A1 cannot
+  see anything; the matched-calibration gain itself is below it.
+- **§3.6.4** — the seven n=2 subcortical families are **out of claim**.
+
+> **What I did NOT change, and it costs us.** 🔥 Turing's restored MSE intervals
+> show SC-WBD beating **every** baseline on the conditional mean, persistence
+> included (−3.1962 [−3.9428, −2.5099]). Promoting MSE to the primary endpoint
+> would be defensible on the merits — it is the channel where the hypothesis
+> lives, and it is uncontaminated by the variance-fitting pathology. **I am not
+> doing it.** §8b rule 4 forbids promoting a secondary endpoint, and although
+> run 2 has produced no numbers, *run 1 has*, and they show MSE favours us. That
+> is endpoint selection on an outcome I have seen. The commitment was written
+> for exactly this temptation and it arrived faster than I expected.
+>
+> The primary also remains correct on the merits: §2.1 contracts
+> `X_i^uncertainty` as regional state, and a model that predicts well while
+> unable to say how well has failed a contracted capability. Scoring on MSE
+> alone would define that failure out of existence.
 
 ---
 

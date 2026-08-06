@@ -54,7 +54,8 @@ Every instance below was green, plausible, and load-bearing.
 | 9 | **window z-std** as the metric for choosing a normaliser | which candidate bounds the tail | for the `rms` candidate `std(z) = std(x)/rms(sd) ≡ 1` **by construction**. It scored a perfect 1.00 at p50/p90/p95/p99/max — a number it could not have failed to produce. | the perfect score itself looking wrong, and re-validating on `max|z|` |
 | 10 | the §11.4 **smoothing check** on ablation A1, reading `default_effect` | that the winning arm did not win by smoothing away the effect of interest | `default_effect` is **global dynamic range**, and A1's failure mode — every region collapsed onto one shared dynamic — **preserves global dynamic range exactly**. The one failure the check exists to catch is the one input it cannot see. | asking, of a check that had never run, *what would its own failure mode do to its reading?* |
 | 11 | `matched_capacity`, on **every** §11.4 ablation | arms compared "at matched capacity **and compute**" (module docstring) | `check_matched` compared `n_parameters` and nothing else, while `Budget` declared `flops`, `train_steps` and `wall_seconds`. A comparison could be compute-unmatched by any factor and still read green. | reading `Budget`'s fields against the loop that consumes them |
-| 12 | `matched_capacity` again, on ablation A1 | that the two arms differed only in the hypothesis | budgets guard the **model**; nothing guarded the path from the model to the number. The A1 treatment arm's `EEGHead` received a shared interface view exporting `("rate_e","rate_i")` = **2 dims** against the control's `("rate_e","rate_i","spectral")` = **18** — every field `Budget` declares could match exactly. A1 would have concluded heterogeneity does not help. | 🌊 Hodgkin, tracing what his own head actually received rather than what the layout declared — self-reported before shipping |
+| 13 | `test_fallback_anatomy_is_labelled_as_not_biological` (Hodgkin's path) | that a synthetic connectome cannot masquerade as anatomy | **subject drift, not blindness — see below.** `load_anatomy` now *refuses* to substitute the synthetic prior silently: it raises unless `force_fallback=True`. The fixture does not pass it, so the fallback path the guard polices is **never entered**. Verified by running the fixture: it does not return a mislabelled prior, it raises `RuntimeError` (missing `Tian_Subcortex_S1_3T_1mm.nii.gz`); where the assets are present it would load the **real** prior and the assert would fail. | 🛡️ Popper, on the architect's report, by executing the fixture rather than reading it |
+| 12 | `matched_capacity` again, on ablation A1 | that the two arms differed only in the hypothesis | budgets guard the **model**; nothing guarded the path from the model to the number. a shared state-slice view silently narrowed the A1 treatment arm's EEG **mean path** to `("rate_e","rate_i")` = **2 exported dims** against the control's `("rate_e","rate_i","spectral")` = **18** — every field `Budget` declares could match exactly. A1 would have concluded heterogeneity does not help. | 🌊 Hodgkin, tracing what his own head actually received rather than what the layout declared — self-reported before shipping |
 
 Number 4 is the sharpest: it sits *inside the mechanism built to catch stale
 artifacts*, and it was about to be handed to a brand-new provenance enforcement
@@ -68,7 +69,8 @@ self-reported by 🌊 Hodgkin against his own branch before it shipped. That bri
 the count of decorative guards found **inside the machinery built to catch them**
 to seven.
 
-Row 12 is the one that generalises furthest, and `reports/ablations/PREREG_A1_run2.md`
+Row 12 is the one that generalises furthest. It is now `ARCHITECTURE.md` §5c
+**RL-6**, binding the whole fleet, and `reports/ablations/PREREG_A1_run2.md`
 §3.5.2 works it out: **capacity matching guards the model, and nothing guarded
 the path from the model to the number.** Trace that path — inputs, conditioning,
 state, observation interface, head parameterisation, score, split, optimiser —
@@ -79,6 +81,61 @@ calibrated and the candidate was not, and `subject_specific_ar` reduced to `ar16
 by a participant-disjoint split. All four have the same shape: *a thing that is
 not the hypothesis, differing between arms, at a place nobody was looking because
 it is not "the model".*
+
+**Row 13 is deliberately filed as a NEAR MISS of this register's pattern, because
+miscategorising it would be the same sloppiness the register exists to name.** A
+decorative guard is **green and unable to go red**. Row 13 is the adjacent
+failure: the guard is intact and its **subject moved out from under it**. It does
+not pass blindly — it errors where the anatomy assets are absent and would fail
+loudly where they are present. That is *loud*, and loud is recoverable. It earns
+a row because the effect is the same — **the fallback-labelling path has no live
+test** — but the diagnosis and the fix differ: not "replace the instrument" but
+"restore the subject", one argument, `force_fallback=True` in the fixture. It is
+the same shape as N9's *"my row was not stale relative to the runner that
+produced it — the runner moved under it"* (`CLAIM_BOUNDARY.md` §1.7). **Reported
+to 🌊 Hodgkin rather than fixed here: it is their path.**
+
+---
+
+## The positive example: 🧠 Cajal's mutation testing, and a raised bar
+
+Every row above is a guard that failed. This is the standard that would have
+caught most of them, and it is **stronger than the one this register has been
+recommending**.
+
+This document has said: *write a negative control; show the guard can fire.* My
+own tests do that — they construct a failing **input** and assert the guard goes
+red. Cajal did something stricter. They mutated the **implementation**:
+
+- stub `validate()` to a no-op → **all 14 guards fail**;
+- replace `CORTICAL_FAMILY_DEFINITION` with an anatomy-free regrouping → the
+  separation test fails (**F = 7.45, p = 0.29**), against a **size- and
+  smoothness-matched spun control**, so it cannot pass for *any* contiguous
+  split.
+
+> **A firing test proves the guard responds to a bad input you thought of.
+> A mutation test proves the guard is load-bearing on the code it protects.**
+
+The second is strictly stronger, and the size-and-smoothness-matched null is the
+part that makes it decisive: without it, "a regrouping fails" could just mean
+"any regrouping fails", which would prove the test discriminates nothing.
+
+**Adopted as the standard, and it raises the bar on my own work.** The firing
+tests behind `check_matched`, `check_path_parity` and
+`check_variance_convergence` are the weaker form. They should be re-done as
+mutations — delete the field from `BINDING_FIELDS`, stub the comparison loop —
+and are recorded here as **not yet at this standard** rather than described as if
+they were.
+
+**🧭 Fisher's corollary, filed with RL-6 and the sharpest extension of this
+register.** Ask of a guard not only *can it fire* but **is the failure it targets
+representable in the model it runs against**. C1/C2/C3 run on a linear-Gaussian
+surrogate in which state-independent innovation covariance is a **theorem** — so
+the stage-5 defect (`log_noise` with no path from state) was not merely
+undetected, it was **unrepresentable**. Every check was green and every check was
+correct. That is a fourth variant, distinct from absence, wrong-question and
+preserved-quantity: **the guard is sound, the question is right, the quantity is
+right, and the surrogate the guard runs on cannot express the failure at all.**
 
 ### The absence variant (4 and 5)
 

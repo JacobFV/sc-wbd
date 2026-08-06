@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 import numpy as np
 import pytest
@@ -363,3 +364,135 @@ def test_every_budget_field_is_classified_binding_or_advisory():
         "this module was fixed for"
     )
     assert not (set(BINDING_FIELDS) & set(ADVISORY_FIELDS))
+
+
+def test_RL4_amendment_a_broadcast_control_against_a_state_dependent_candidate_fires():
+    """ARCHITECTURE.md §5c RL-4, as amended on 🌊 Hodgkin's disagreement.
+
+    The original ruling disabled the observation interface on the CONTROL arm to
+    leave the §11.4 control untouched, which would have made the state-dependent
+    variance path a property of *which arm you are in* -- an unmatched stage 5,
+    in the ruling that exists to prevent unmatched stages. Last time the
+    interface silently narrowed one arm; that would have silently widened the
+    other.
+
+    RL-4 now says: "An A1 run with the control on the broadcast constant may not
+    be reported as a test of structured state." This is that sentence, executable.
+    `ModelConfig.state_dependent_variance` is a declared config choice, so the
+    two arms CAN legitimately both be False -- what may not happen is a split.
+    """
+    cand = dict(_FULL, variance_model="state_dependent_logvar")
+    ctrl = dict(_FULL, variance_model="per_channel_scalar_broadcast")
+
+    split = check_path_parity(
+        {"structured_state": ArmPath(**cand), "pooled": ArmPath(**ctrl)},
+        candidate="structured_state",
+    )
+    assert not split.matched
+    assert any(m.startswith("variance_model:") for m in split.mismatches)
+    assert parity_subcheck(split).status == "COULD_NOT_RUN"
+
+    # Both arms on the SAME setting is a declared config choice, not a defect --
+    # in either direction. The ruling forbids the split, not the setting.
+    for shared in ("state_dependent_logvar", "per_channel_scalar_broadcast"):
+        both = dict(_FULL, variance_model=shared)
+        v = check_path_parity(
+            {"structured_state": ArmPath(**both), "pooled": ArmPath(**both)},
+            candidate="structured_state",
+        )
+        assert v.matched, f"both arms at {shared} must be matched"
+
+
+# ---------------------------------------------------------------------------
+# 🔥 Turing's P0 result: the run-1 variance defect is a FITTING failure, not
+# architecture -- which creates a stage-5 parity failure ArmPath cannot see.
+# ---------------------------------------------------------------------------
+
+
+def test_run1s_actual_variance_scale_is_flagged_unconverged():
+    """Regenerated from the checkpoint and evaluation.json, not quoted.
+
+    `eeg.log_noise` mean +0.2732 (64 channels, verified directly from
+    stage_V_individual.pt) against held-out MSE 3.9697, whose closed-form
+    optimum is log(3.9697) = 1.3787.  The fitted scalar reached 19.8% of it.
+    """
+    from scwbd.bench.matching import check_variance_convergence
+
+    v = check_variance_convergence({"scwbd_001_beta": (0.2732, 3.9697)}, tol=0.1)
+    assert not v.matched
+    assert "scwbd_001_beta" in v.unconverged
+    # overconfident: fitted log-variance BELOW the optimum
+    assert v.gaps["scwbd_001_beta"] == pytest.approx(0.2732 - math.log(3.9697), abs=1e-9)
+    assert v.gaps["scwbd_001_beta"] < 0
+    assert math.exp(-v.gaps["scwbd_001_beta"]) == pytest.approx(3.02, abs=0.02)
+    assert "not converged" in v.reason
+
+
+def test_two_arms_both_declaring_state_dependence_can_still_be_unmatched():
+    """The gap ArmPath cannot close: same DECLARED config, different CONVERGENCE."""
+    from scwbd.bench.matching import check_variance_convergence
+
+    same = dict(_FULL, variance_model="state_dependent_logvar")
+    parity = check_path_parity(
+        {"cand": ArmPath(**same), "ctrl": ArmPath(**same)}, candidate="cand"
+    )
+    assert parity.matched, "path parity sees only the declared configuration"
+
+    # one arm 20% converged, the other essentially converged -- same declaration
+    v = check_variance_convergence(
+        {"cand": (0.2732, 3.9697), "ctrl": (math.log(4.0), 4.0)}, tol=0.1
+    )
+    assert not v.matched
+    assert v.spread > 1.0
+    assert "cand" in v.unconverged and "ctrl" not in v.unconverged
+
+
+def test_variance_convergence_passes_when_both_arms_reached_their_optimum():
+    from scwbd.bench.matching import check_variance_convergence
+
+    v = check_variance_convergence(
+        {"cand": (math.log(3.9697), 3.9697), "ctrl": (math.log(4.07), 4.07)}, tol=0.1
+    )
+    assert v.matched and not v.unconverged
+    assert v.spread == pytest.approx(0.0, abs=1e-9)
+
+
+def test_equally_unconverged_arms_are_still_refused():
+    """Matched handicaps are not a licence: both arms mis-scaled by 3x is still
+    a fitting failure, and neither arm's NLL measures its predictive quality."""
+    from scwbd.bench.matching import check_variance_convergence
+
+    v = check_variance_convergence(
+        {"cand": (0.2732, 3.9697), "ctrl": (0.2732, 3.9697)}, tol=0.1
+    )
+    assert v.spread == pytest.approx(0.0, abs=1e-12)  # perfectly matched...
+    assert not v.matched                               # ...and still refused
+    assert set(v.unconverged) == {"cand", "ctrl"}
+
+
+def test_dead_parameters_are_a_capacity_fact_and_bind():
+    """`bold.log_noise`: 454 values ALL exactly -4.0, its initialiser -- verified
+    from the checkpoint.  A parameter that never received a gradient is not
+    capacity, and CLAIM_BOUNDARY §3.2d already showed dead parameters making a
+    capacity confound 5x worse than reported."""
+    cand = _Budgeted(n=100_000)
+    cand.__dict__["_eff"] = None
+    v = check_matched(
+        _Budgeted(n=100_000, **{"width": 1}),
+        {"a": _Budgeted(n=100_000, **{"width": 1})},
+        tol=0.10,
+    )
+    assert v.matched  # nominal parity
+    assert "n_parameters_effective" in v.unchecked_fields  # ...but unverified, and named
+
+    # declared: nominal parity, 3x EFFECTIVE disparity -> not matched
+    class _Eff(_Budgeted):
+        @property
+        def n_parameters_effective(self):
+            return self._eff
+
+    a = _Eff(n=100_000); a._eff = 90_000
+    b = _Eff(n=100_000); b._eff = 30_000
+    v2 = check_matched(a, {"ctrl": b}, tol=0.10)
+    assert not v2.matched
+    assert "ctrl.n_parameters_effective" in v2.over_budget_fields
