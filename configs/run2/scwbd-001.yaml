@@ -62,6 +62,27 @@
 #     mid-stage stop replays that stage from step 1 with a fresh cycle
 #     (reports/decorative_guards.md). Stop only at stage boundaries.
 
+# ---------------------------------------------------------------------------
+# WHICH ARM THIS IS (refusal R12)
+# ---------------------------------------------------------------------------
+# Run 2 changes the anatomy, the corpus and the curriculum ordering. It does
+# NOT change the two things body.tex sec. 0.2 names as the differentiators:
+# `model.local_core` below is still one operator for all regions, and
+# `model.scale_prolongations` is still empty. So run 2 is another instance of
+# the same control arm, and must be declared as one or R12 refuses its
+# checkpoints. Making run 2 the treatment arm needs `model.local_cores`
+# (per-family backends) and a declared restriction/prolongation pair -- see
+# ARCHITECTURE.md sec. 5 and sec. 5b N-2/N-3.
+arm:
+  role: control
+  controls_for: "11.4:structured_regional_state"
+  justification: >
+    Run 2 changes anatomy, corpus and curriculum ordering but keeps one learned
+    operator for all regions and a single-scale poset with no prolongation, so
+    it is a second instance of the equal-capacity generic control rather than
+    the model. Stated here so no run-2 measurement is read as a measurement of
+    the thesis.
+
 model:
   # DECORATIVE FIELD -- read this before trusting it.
   #

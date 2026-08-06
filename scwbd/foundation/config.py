@@ -15,6 +15,7 @@ from typing import Any
 import yaml
 
 __all__ = [
+    "ArmConfig",
     "ModelConfig",
     "PosteriorConfig",
     "DataConfig",
@@ -26,10 +27,47 @@ __all__ = [
 
 
 @dataclass
+class ArmConfig:
+    """Which arm of a comparison this run is (refusal R12).
+
+    ``role="model"`` is the default and the fail-closed direction: a run that
+    says nothing claims to be the model and is held to the model's structure.
+    A control run must say ``role="control"``, name the comparison, and write
+    down why -- and its checkpoints are then emitted under a *control*
+    designation instead of the model's.  See
+    :mod:`scwbd.schema.designation` and ``reports/scope_gap.md``.
+
+    This is *declared intent*, and it is deliberately separate from
+    ``FoundationConfig.ablation_arm()`` / ``SCWBD.family_report()``, which are
+    *derived structure*.  R12 is the rule that the two must agree, or the
+    artifact does not get the model's name.  Run 1 had the structure and no
+    declaration, so nothing could notice they disagreed.
+    """
+
+    role: str = "model"
+    controls_for: str = ""
+    justification: str = ""
+
+
+@dataclass
 class ModelConfig:
     n_regions: int = 454
-    #: which operator supplies F_local: "learned" or a mechanistic backend name
+    #: which operator supplies F_local: "learned" or a mechanistic backend name.
+    #:
+    #: A single string is **one operator for all regions**, which is the
+    #: equal-capacity generic control of body.tex §11.4 and not the model
+    #: (ARCHITECTURE.md §5).  The per-family assignment that supersedes it
+    #: (``family_state`` / ``family_cores``) is 🌊 Hodgkin's on `wt/hodgkin`;
+    #: refusal R12 reads whichever of the two a config carries.
     local_core: str = "learned"
+    #: Declared cross-scale prolongations, written ``"fine<=coarse"``.  Empty
+    #: means this run declares no cross-scale prolongation -- the second of the
+    #: two conditions R12 refuses on (body.tex §0.2's second differentiator).
+    #: Whatever is named here must appear in the compiled resolution poset,
+    #: where **R02** refuses a prolongation lacking a restriction partner and
+    #: tested coverage: R12 asks whether one was declared, R02 asks whether it
+    #: is any good.
+    scale_prolongations: list[str] = field(default_factory=list)
     hidden: int = 320
     n_local_layers: int = 3
     region_embed: int = 96
@@ -176,6 +214,8 @@ class FoundationConfig:
     posterior: PosteriorConfig = field(default_factory=PosteriorConfig)
     data: DataConfig = field(default_factory=DataConfig)
     train: TrainConfig = field(default_factory=TrainConfig)
+    #: R12: which arm of §11.4's comparisons this run is.  Default "model".
+    arm: ArmConfig = field(default_factory=ArmConfig)
     mixture_cards: str = "configs/source_cards"
     notes: str = ""
 
@@ -215,6 +255,7 @@ def _build(cls, d: Any):
 
 
 _NAMES = {
+    "ArmConfig": ArmConfig,
     "ModelConfig": ModelConfig,
     "PosteriorConfig": PosteriorConfig,
     "DataConfig": DataConfig,

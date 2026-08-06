@@ -1,6 +1,36 @@
 # SC-WBD-001-beta -- the released configuration.
 # This file is copied verbatim into checkpoints/scwbd-001-beta/config.yaml
 # together with the git SHA. If they disagree, the checkpoint is not the artifact.
+
+# ---------------------------------------------------------------------------
+# WHICH ARM THIS IS (refusal R12)
+# ---------------------------------------------------------------------------
+# This run has ONE operator for all regions (`model.local_core` below is a
+# single string) and declares NO cross-scale prolongation
+# (`model.scale_prolongations` is empty; compiler_bridge._poset() emits one
+# node and no maps). body.tex sec. 0.2 names exactly two differentiators --
+# heterogeneous operator-valued regional state, and non-nested source-native
+# resolutions -- and this configuration has neither.
+#
+# It is therefore the equal-capacity generic CONTROL arm of sec. 11.4's first
+# required ablation, not the model. It was previously emitted under the model's
+# name because nothing could tell the difference; reports/scope_gap.md is the
+# full account. R12 now refuses that emission, and this block is how this run
+# stays runnable -- as what it is.
+#
+# Consequence: checkpoints from this config carry model_id
+#   SC-WBD-001-beta-CONTROL[11.4:structured_regional_state]
+# in the payload, provenance.json and the ClaimManifest.
+arm:
+  role: control
+  controls_for: "11.4:structured_regional_state"
+  justification: >
+    One learned operator for all regions and a single-scale poset with no
+    prolongation: the equal-capacity generic control against which structured
+    heterogeneous regional state (body.tex 2.1) and non-nested source-native
+    resolutions (4.2) must be measured. Everything else -- corpus, curriculum,
+    parameter budget, seed, clocks -- is held at the treatment arm's values.
+
 model:
   # 454 = the SYNTHETIC prior's region count, not a real parcellation.
   #

@@ -186,6 +186,157 @@ provenance** (`simulation_only` → `protocol:<id>@<version>`) and pins the
 record's content hash; an *overridden* R11 never grants a protocol scope.
 Validation checks a declaration; it does not verify that an approval exists.
 
+### Local refusals (not in the thesis table)
+
+`R01`–`R11` are thesis rows and quote the thesis remedy verbatim. **Local**
+refusals are ones this repository added because it made a specific mistake and
+does not intend to repeat it. They carry `RefusalSpec.origin == "local"`, are
+excluded from `REFUSAL_CODES` (the compiler's table-order check list) and appear
+in `ALL_REFUSAL_CODES`, so no report can quote one as a thesis requirement.
+
+| code | rejected configuration | enforced at |
+|---|---|---|
+| R12 | a checkpoint emitted under the SC-WBD designation whose regional operator assignment is constant across all regions **and** whose resolution poset declares no prolongation | checkpoint emission |
+
+#### R12 — the designation is a structural claim, not a filename
+
+**Ownership.** The refusal *definition* is in `scwbd/schema/designation.py`, with
+R01–R11, and is reached through `scwbd.schema.refusals.r12_predicate`. The
+*enforcement point* is checkpoint emission in `scwbd.foundation`, where
+`ClaimManifest.refuse_r12` looks that name up and delegates. **One definition,
+one call site.** A refusal defined inside the module it polices is a
+self-assessment, and self-assessment is exactly what let run 1 emit the control
+arm under the model's name.
+
+**What it checks.** `body.tex` §0.2's two differentiators absent at once:
+
+1. the regional operator assignment is **constant across all regions**, and
+2. the resolution poset **declares no prolongation**.
+
+Each condition alone is a partial implementation, not the control, and R12 stays
+silent on it. Two further things are refused because each is the same defect in
+disguise:
+
+3. a claim whose **prose** asserts the §2.1 differentiator on a control-arm
+   artifact — the scope gap was not a wrong number, it was a correct artifact
+   described in the words of a different one;
+4. an artifact whose own `family_report()` says `ablation_arm="treatment"` while
+   every **populated** family runs the same backend.
+
+**Populated families only, and why that is the whole game.** A partition can
+declare eleven families and still be one operator for every parcel — either
+because they all resolved to the same backend, or because the only
+differently-typed family holds no regions. On the real 414-parcel prior
+`cerebellum` is *declared and empty*. Counting declared backends rather than
+backends that reach a region is precisely how a guard becomes decorative
+(`reports/decorative_guards.md`), so R12 counts only families with
+`n_regions > 0`. `FoundationConfig.ablation_arm()` and
+`family_report()["ablation_arm"]` are derived from the `family_state` boolean
+alone and cannot see this; R12 is what checks them against their own partition.
+`OperatorAssignment.dominant_share()` additionally reports the fraction of
+parcels on the single most-used backend (402/414 on the real partition) as
+evidence — R12 never refuses on it, but a reader should see it.
+
+**What it reads.** Whichever of these the caller has: the **config**
+(`model.family_state`, `model.family_cores`, `model.local_core`,
+`model.scale_prolongations`, and the top-level `arm` block); the **artifact's**
+`regional_state`, i.e. `SCWBD.family_report()` as recorded in the checkpoint and
+the manifest; and the compiled `ResolutionPoset` when one exists.
+
+The config alone settles the **control** direction — `family_state: false` is one
+operator for every parcel by construction. It cannot settle the **conformant**
+direction, because only the partition knows which declared families actually
+received regions, so a config claiming `family_state: true` with no artifact
+report to corroborate it is **refused rather than believed**.
+
+**How a control declares itself.** Top-level `arm:` block in the config:
+
+```yaml
+arm:
+  role: control                                  # default is "model"
+  controls_for: "11.4:structured_regional_state" # required for a control
+  justification: >                               # required, and must be a sentence
+    one learned operator for all regions and a single-scale poset with no
+    prolongation; everything else held at the treatment arm's values.
+```
+
+A declared control runs, trains, checkpoints and is measured exactly as before.
+It loses only the model's name: its artifacts carry
+`SC-WBD-001-beta-CONTROL[11.4:structured_regional_state]`. The default is
+`role: model`, so a run that says nothing is held to the model's structure —
+which is what makes it **impossible to be the control by accident**, the failure
+recorded in `reports/scope_gap.md`. A half-made declaration (control with no
+ablation named, or `role: model` with the control fields still filled in) is
+itself refused.
+
+`arm` is *declared intent*; `ablation_arm()` and `family_report()` are *derived
+structure*. R12 is the rule that the two must agree, or the artifact does not get
+the name. Run 1 had the structure and no declaration, so nothing could notice
+they disagreed.
+
+**R12 is not overridable.** `ClaimManifest.overrides` buys visibility by
+demoting the claim class, and a demoted claim class does not rename anything.
+`NON_OVERRIDABLE_CODES` enforces this at `ClaimOverride` construction.
+
+**R02 is the interlock.** `model.scale_prolongations` is a declaration and could
+be a lie, but whatever it names must appear in the compiled poset, and a
+prolongation in the poset without a declared restriction partner and tested
+coverage is refused by R02. R12 asks whether one was declared; R02 asks whether
+it is any good.
+
+**Tests that prove it fires, and that it does not over-fire.**
+`tests/schema/test_r12_designation.py`. The family fixtures are the measured
+output of `derive_families(load_anatomy())` on `wt/hodgkin`@c896d16, not
+invented: 11 families, 414 regions, `unpopulated == ['cerebellum']`.
+
+- fires on `configs/scwbd_001_beta.yaml` with its `arm:` block removed — the
+  released run-1 shape, read from the real file, not a stub;
+- fires on every run config in `configs/**` with a `local_core` and no
+  declaration (a sweep, so a new undeclared config cannot slip in);
+- **fires when the only second backend sits on the unpopulated `cerebellum`
+  family**, where a naive count over declared backends sees two and permits it;
+- fires when eleven populated families all collapse to one backend;
+- fires on `family_state: true` with no artifact report to corroborate it, on an
+  unreadable assignment, on a config declaring a prolongation the poset lacks,
+  on a half-made arm declaration, and on control-arm prose asserting the
+  differentiator (four phrasings plus `requires_family_state=True`);
+- does **not** fire on the real 11-family conformant partition;
+- does **not** fire on a conformant artifact making the same prose claim;
+- does **not** fire on a properly declared control;
+- does **not** fire when only one of the two conditions holds;
+- does **not** fire on a bare manifest with no arm and no offending claim, so
+  manifests not yet attached to a checkpoint keep validating;
+- asserts the seam itself: `scwbd.schema.refusals.r12_predicate` exists, takes
+  `manifest` first with every later parameter optional, and is callable as
+  `canonical(self)` — if that ever drifts, `refuse_r12` silently falls back to a
+  second predicate, which is the thing the ownership ruling forbids.
+
+**What R12 does not cover, stated so it is not mistaken for coverage.**
+
+1. `refuse_r12` currently calls `canonical(self)` with the manifest alone, and
+   nothing in a manifest records the resolution poset — so at that call site only
+   the operator half and the prose half run. `r12_predicate(manifest, config)`
+   accepts the config; `save_checkpoint` has one and should pass it.
+2. The **checkpoint directory name** is a further naming site R12 does not reach.
+   `runtime/serving.discover_checkpoint` takes the directory name as the
+   designation and never reads `model_id` from the manifest beside it, so a
+   control checkpoint left in `checkpoints/scwbd-001-beta/` is still *served*
+   under that name. `release.build_manifest` and `evaluate.evaluate_model`
+   likewise write `"SC-WBD-001-beta"` as a literal rather than deriving it.
+3. A run that is structurally **conformant** but declares `role: control` is
+   permitted. It only loses its own name, and refusing it would over-fire on
+   every *other* §11.4 control (dense coupling, randomized graph, …), which is
+   conformant on R12's two axes and legitimately a control.
+4. R12 checks that a prolongation is *declared*, never that it is *good*. That
+   is R02's question, and R02 only sees it once the schema is compiled.
+
+**Consequence for the existing configs.** `configs/scwbd_001_beta.yaml`,
+`configs/scwbd_001_beta_g5control.yaml` and `configs/run2/scwbd-001.yaml` all
+have one operator for all regions and no declared prolongation, and all three now
+declare `arm.role: control`. Run 2 changes anatomy, corpus and curriculum
+ordering but neither differentiator, so it is a second instance of the same
+control arm.
+
 ---
 
 ## 3. Numerical contracts

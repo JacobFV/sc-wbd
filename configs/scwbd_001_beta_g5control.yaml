@@ -1,6 +1,23 @@
 # SC-WBD-001-beta -- the released configuration.
 # This file is copied verbatim into checkpoints/scwbd-001-beta/config.yaml
 # together with the git SHA. If they disagree, the checkpoint is not the artifact.
+
+# Refusal R12: one operator for all regions (`model.local_core`, a single
+# string) and no declared cross-scale prolongation. Structurally the
+# equal-capacity generic control of body.tex sec. 11.4, exactly as
+# configs/scwbd_001_beta.yaml is -- this file differs from it only in run name
+# and output paths. Declared so it stays runnable under a control designation
+# rather than the model's. See reports/scope_gap.md.
+arm:
+  role: control
+  controls_for: "11.4:structured_regional_state"
+  justification: >
+    One learned operator for all regions and a single-scale poset with no
+    prolongation: the equal-capacity generic control against which structured
+    heterogeneous regional state (body.tex 2.1) and non-nested source-native
+    resolutions (4.2) must be measured. Used as the population-level reference
+    arm for the G5 individualization comparison.
+
 model:
   # 454 = the SYNTHETIC prior's region count, not a real parcellation.
   #
