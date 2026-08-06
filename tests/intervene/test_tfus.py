@@ -15,7 +15,6 @@ import torch
 from scwbd.intervene.base import PhysicalDose, TargetEngagement, ThermalHistory
 from scwbd.intervene.tfus.acoustics import (
     BRAIN,
-    WATER,
     AcousticMedium,
     SkullLayer,
     SplitStepPropagator,
@@ -39,9 +38,7 @@ from scwbd.intervene.tfus.response import (
     AuditoryConfoundNullResponse,
     IntramembraneCavitationResponse,
     MechanosensitiveChannelResponse,
-    RadiationForceResponse,
     TFUSResponseModelSet,
-    ThermalResponse,
     TissueContext,
     default_tfus_candidate_set,
 )

@@ -8,7 +8,6 @@ the limits cannot be learned, and that the controller can answer ``Defer`` or
 
 from __future__ import annotations
 
-import math
 
 import pytest
 import torch

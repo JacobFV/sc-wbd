@@ -25,7 +25,11 @@ import torch
 
 from scwbd.intervene.tms.coil import MU0, CircularCoil, FigureEightCoil, biphasic
 from scwbd.intervene.tms.efield import (
+    MAX_PANEL_TO_STANDOFF,
     ChargeBEM,
+    ImpossibleGeometry,
+    bem_error_envelope,
+    graded_icosphere,
     LayeredSphereBEM,
     SphericalHeadModel,
     TriMesh,
@@ -163,6 +167,7 @@ def test_flat_panel_has_zero_normal_field_at_its_own_centroid():
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.slow
 def test_bem_converges_to_the_analytic_solution_with_measured_order():
     pts = _interior(120, 0.05)
     rc = torch.tensor([[0.0, 0.0, 0.11]], dtype=_DT)
@@ -252,6 +257,7 @@ def test_field_from_coil_returns_a_physical_dose_of_plausible_magnitude(
     assert dose.ledger.validity_domain["geometry"] == "spherically_symmetric"
 
 
+@pytest.mark.slow
 def test_bem_and_analytic_agree_on_the_full_coil(coil, pulse, pose, head):
     pts, _ = head.cortical_shell(162)
     a = efield_from_coil(coil, pulse, pose.matrix(), pts, head=head, solver="analytic")
@@ -282,3 +288,193 @@ def test_simnibs_status_is_honest_about_availability():
     assert s["available"] is simnibs_available()
     assert s["equivalent_to_fem"] is False
     assert "aarch64" in str(s["platform_note"])
+
+
+# ---------------------------------------------------------------------------
+# impossible geometry: a refusal, never a number
+# ---------------------------------------------------------------------------
+
+
+def _pose_at_scalp_distance(head: SphericalHeadModel, distance_m: float):
+    from scwbd.intervene.tms.pose import coil_pose_on_sphere
+
+    return coil_pose_on_sphere(
+        head, [-0.55, 0.68, 0.48], standoff_m=distance_m,
+        handle_azimuth_rad=math.radians(45.0),
+    )
+
+
+def test_the_recorded_edge_case_now_refuses_instead_of_reporting_218_kv_per_m():
+    """The historical failure, pinned.
+
+    An edge-case probe of this module once returned ``peak |E| = 218681.8 V/m``
+    at a scalp distance of ``-25.97 mm`` -- a coil 26 mm inside the head.  That
+    is not a strong field, it is the pole of the interior solution's denominator.
+    """
+    head = SphericalHeadModel()
+    coil, pulse = FigureEightCoil(), biphasic()
+    pts, _ = head.cortical_shell(162)
+    pose = _pose_at_scalp_distance(head, -0.02597)
+    assert pose.scalp_distance(head) == pytest.approx(-0.02597, abs=1e-9)
+
+    with pytest.raises(ImpossibleGeometry) as exc:
+        efield_from_coil(coil, pulse, pose.matrix(), pts, head=head)
+    assert exc.value.code == "R06"
+    assert "inside" in str(exc.value)
+    assert exc.value.remedy
+
+
+@pytest.mark.parametrize("standoff_m", [-0.0001, -0.005, -0.02597, -0.05])
+def test_every_negative_standoff_is_refused_not_extrapolated(standoff_m):
+    head = SphericalHeadModel()
+    coil, pulse = FigureEightCoil(), biphasic()
+    pts, _ = head.cortical_shell(42)
+    with pytest.raises(ImpossibleGeometry):
+        efield_from_coil(
+            coil, pulse, _pose_at_scalp_distance(head, standoff_m).matrix(),
+            pts, head=head,
+        )
+
+
+@pytest.mark.slow
+def test_a_valid_placement_still_returns_a_dose_of_the_recorded_magnitude():
+    """Positive control: the guard refuses impossible geometry, not all geometry."""
+    head = SphericalHeadModel()
+    coil, pulse = FigureEightCoil(), biphasic()
+    pts, _ = head.cortical_shell(2562)
+    dose = efield_from_coil(
+        coil, pulse, _pose_at_scalp_distance(head, 0.004).matrix(), pts, head=head
+    )
+    assert 100.0 < dose.peak() < 200.0  # recorded baseline 134.5 V/m
+
+
+def test_analytic_solution_refuses_a_source_inside_the_field_point_shell():
+    """No head model needed: it is the derivation's own precondition."""
+    pts = _interior(20, 0.07)
+    rc = torch.tensor([[0.0, 0.0, 0.05]], dtype=_DT)  # closer in than the points
+    md = torch.tensor([[0.0, 1.0, 0.0]], dtype=_DT) * 1e6
+    with pytest.raises(ImpossibleGeometry) as exc:
+        analytic_sphere_efield(pts, rc, md)
+    assert "no conductor boundary separates them" in str(exc.value)
+
+
+def test_field_points_outside_the_scalp_are_refused():
+    head = SphericalHeadModel()
+    pts = _interior(20, head.radius + 0.01)
+    rc = torch.tensor([[0.0, 0.0, 0.15]], dtype=_DT)
+    md = torch.tensor([[0.0, 1.0, 0.0]], dtype=_DT) * 1e6
+    with pytest.raises(ImpossibleGeometry):
+        analytic_sphere_efield(pts, rc, md, head=head)
+
+
+def test_the_refused_number_would_have_been_absurd():
+    """Show the guard is load-bearing: without it the formula returns a pole."""
+    head = SphericalHeadModel()
+    coil, pulse = FigureEightCoil(), biphasic()
+    pts, _ = head.cortical_shell(2562)
+    pose = _pose_at_scalp_distance(head, -0.02597)
+    pos, mdot = coil_dipoles_in_head_frame(
+        coil, pose.matrix(), float(pulse.peak_didt)
+    )
+    unguarded = analytic_sphere_efield(pts, pos, mdot, validate_geometry=False)
+    peak = float(unguarded.norm(dim=-1).max())
+    # the recorded probe saw 218681.8 V/m; the exact value depends on how close
+    # a mesh vertex lands to the pole, which is the point -- it is unbounded
+    assert peak > 1e3, peak  # vs a 134.5 V/m baseline: not a field, a pole
+
+
+def test_containment_uses_the_surface_not_a_bounding_radius():
+    v, f = icosphere(3)
+    mesh = TriMesh(v * 0.085, f)
+    inside = torch.tensor([[0.0, 0.0, 0.0], [0.02, -0.03, 0.01]], dtype=_DT)
+    outside = torch.tensor([[0.0, 0.0, 0.12], [0.2, 0.0, 0.0]], dtype=_DT)
+    assert bool(mesh.contains(inside).all())
+    assert not bool(mesh.contains(outside).any())
+    # the solid angle is the mechanism, and it is 4*pi / 0
+    assert float(mesh.solid_angle(inside[:1]).abs()) == pytest.approx(
+        4 * math.pi, rel=1e-3
+    )
+    assert abs(float(mesh.solid_angle(outside[1:]))) < 1e-6
+
+
+def test_bem_refuses_sources_inside_the_conductor():
+    v, f = icosphere(2)
+    bem = ChargeBEM([TriMesh(v * 0.085, f)], [0.33], [0.0])
+    bem.assert_sources_outside(torch.tensor([[0.0, 0.0, 0.11]], dtype=_DT))  # fine
+    with pytest.raises(ImpossibleGeometry) as exc:
+        bem.assert_sources_outside(torch.tensor([[0.0, 0.0, 0.01]], dtype=_DT))
+    assert exc.value.code == "R06"
+
+
+# ---------------------------------------------------------------------------
+# contact geometry: graded meshing and the resolution guard (gate N8)
+# ---------------------------------------------------------------------------
+
+
+def _contact_source():
+    p = torch.tensor([[0.03, -0.04, 0.0715]], dtype=_DT)
+    return p / p.norm() * 0.089  # 4 mm off an 85 mm scalp
+
+
+def test_graded_icosphere_is_a_closed_surface_refined_only_where_asked():
+    head = SphericalHeadModel()
+    u = _contact_source()[0] / _contact_source()[0].norm()
+    coarse = graded_icosphere(head.radius, 3, u, 0)
+    graded = graded_icosphere(head.radius, 3, u, 2)
+    assert graded.n_faces > coarse.n_faces
+    # still closed: enclosed volume within the flat-panel error of the sphere
+    exact = 4 / 3 * math.pi * head.radius**3
+    assert abs(graded.enclosed_volume() - exact) / exact < 0.01
+    # refinement is local: panels far from u keep the base size
+    cen = graded.centroids()
+    cen = cen / cen.norm(dim=-1, keepdim=True)
+    _, area = graded.normals_areas()
+    near = (cen @ u) > math.cos(0.2)
+    far = (cen @ u) < math.cos(1.2)
+    assert float(area[near].mean()) < 0.1 * float(area[far].mean())
+
+
+def test_the_resolution_guard_refuses_a_mesh_that_cannot_resolve_the_source():
+    head = SphericalHeadModel()
+    pos = _contact_source()
+    v, f = icosphere(3)
+    coarse = ChargeBEM([TriMesh(v * head.radius, f)], [0.33], [0.0])
+    res = coarse.near_source_resolution(pos)
+    assert res["panel_to_standoff"] > MAX_PANEL_TO_STANDOFF
+    with pytest.raises(ImpossibleGeometry, match="does not resolve"):
+        coarse.assert_resolves_sources(pos)
+
+    u = pos[0] / pos[0].norm()
+    graded = ChargeBEM([graded_icosphere(head.radius, 4, u, 2)], [0.33], [0.0])
+    ok = graded.assert_resolves_sources(pos)
+    assert ok["panel_to_standoff"] < 0.3
+
+
+def test_the_error_envelope_is_a_measured_step_not_a_guess():
+    assert bem_error_envelope(0.2) == 0.01
+    assert bem_error_envelope(0.5) == 0.02
+    assert bem_error_envelope(0.95) == 0.04
+    assert math.isnan(bem_error_envelope(1.5))  # outside: no bound is claimed
+    # monotone in the resolution ratio
+    vals = [bem_error_envelope(r) for r in (0.1, 0.4, 0.8)]
+    assert vals == sorted(vals)
+
+
+@pytest.mark.slow
+def test_the_bem_ledger_carries_the_resolution_that_governs_its_error():
+    """A ledger saying only 'charge_bem_5120_faces' cannot tell validated from not."""
+    head = SphericalHeadModel()
+    coil, pulse = FigureEightCoil(), biphasic()
+    pts, _ = head.cortical_shell(162)
+    pose = _pose_at_scalp_distance(head, 0.004)
+    v, f = icosphere(4)
+    bem = ChargeBEM([TriMesh(v * head.radius, f)], [0.33], [0.0])
+    dose = efield_from_coil(
+        coil, pulse, pose.matrix(), pts, head=head, solver="bem", bem=bem
+    )
+    vd = dose.ledger.validity_domain
+    assert "near_source_resolution" in vd
+    assert vd["near_source_resolution"]["panel_to_standoff"] <= MAX_PANEL_TO_STANDOFF
+    assert vd["near_source_resolution"]["relative_error_bound"] > 0.0
+    # the declared numerical variance follows the measured envelope, not a constant
+    assert dose.ledger.variance["numerical"] > 0.0

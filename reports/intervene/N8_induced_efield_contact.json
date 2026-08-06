@@ -1,0 +1,232 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N8_induced_efield_contact",
+  "status": "PASS",
+  "manifest": {
+    "claim_id": "N8_induced_efield_contact",
+    "claim_text": "The induced-field solver is validated in the CONTACT regime (a coil element at clinical standoff from the scalp, a/R_c >= 0.95) to a preregistered tolerance \u2014 the geometry the downstream targeting consumer actually uses.",
+    "falsified_by": "no reference or self-convergence study achieves a defensible tolerance at contact geometry, or the solver's error there exceeds the preregistered tolerance",
+    "consequence_if_failed": "Targeting in the contact regime is UNVALIDATED. scwbd.runtime must surface that as Unresolved/Defer rather than returning a confident E-field or engagement number, and no pose ranking may be reported as validated at contact geometry.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "min_contact_ratio": 0.95,
+      "relative_tol": 0.05,
+      "expected_order": 1.5
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [],
+  "subchecks": [
+    {
+      "name": "is_contact_geometry",
+      "description": "Confirm the gate was handed contact geometry, not standoff relabelled.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the geometry is not in the contact regime this gate exists for",
+      "metrics": [
+        {
+          "name": "contact.a_over_Rc",
+          "value": 0.9550561797752809,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.95,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a standoff geometry belongs in N6, not here",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "contact_efield",
+      "description": "Relative error against a closed-form solution, with no neural model in the loop.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "relative error above tolerance against the analytic solution",
+      "metrics": [
+        {
+          "name": "contact_efield.mean_relative_error",
+          "value": 0.007337496759001941,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": {
+            "lo": 0.005292894735421402,
+            "hi": 0.00964695587435216,
+            "level": 0.95,
+            "method": "bootstrap-percentile"
+          },
+          "threshold": 0.05,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": true,
+          "exact": false,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "contact_efield.max_relative_error",
+          "value": 0.42243880050677046,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": null,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "self_convergence",
+      "description": "Richardson refinement of the solver against itself at contact.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the solver does not converge under refinement at contact geometry",
+      "metrics": [
+        {
+          "name": "contact.self_convergence_order",
+          "value": 2.263473184976157,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 1.5,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "self-consistency only: converging is not converging to the right answer",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "Contact geometry is what tms-robotics uses. A PASS here still licenses no claim about target engagement, network effect or clinical utility.",
+    "AUDIT -- why grading is required, not merely preferable. On UNIFORM meshes at this geometry the errors are 1.0610 (80 panels, ratio 4.04), 1.5061 (320 panels, ratio 3.26), 0.1709 (1280 panels, ratio 1.90), 0.0418 (5120 panels, ratio 1.01). Monotone under refinement: False. Refining one level makes the answer WORSE at the coarse end, so a user watching the error would have no way to distinguish that from convergence. scwbd.intervene.tms.efield refuses beyond panel_to_standoff = 1.0 for this reason.",
+    "The N8 contract says the N6 spectral reference does not extend to contact, since its bound at a/R_c = 0.955 exceeds the solver error. That is correct for the GENERAL reference (degree 48, O(L^2) basis): its bound there is 1.10e-1. It is not correct for the reference used here. Rotating a single source onto the axis makes the Neumann data exactly azimuthal order one, so the basis is O(L) instead of O(L^2) and degree 400 is cheap; the bound becomes 1.03e-08 and the measured agreement with the closed form 1.2e-14. The contact regime is therefore validatable against an INDEPENDENT reference, not only by self-consistency. Suggest amending the N8 docstring.",
+    "Both branches of the contract are supplied: an independent contact reference AND a Richardson self-convergence study. The self-convergence subcheck proves the discretisation converges to something; the reference subcheck is what says it converges to the right thing.",
+    "Tolerance provenance: 0.05 is the repo's standing numerics tolerance, identical to N3/N4/N6. Disclosure, since this gate asks for preregistration: the graded refinement study was measured while scoping whether contact was reachable at all, before N8's contract was written. The tolerance was not adjusted afterwards.",
+    "A PASS here licenses no claim about target engagement, network effect or clinical utility, and no claim-bearing run has been made."
+  ],
+  "artifacts": {
+    "subject": "scwbd.intervene.tms.efield.contact_bem_induced_efield",
+    "a_over_Rc": 0.9550561797752809,
+    "reference_validity_domain": {
+      "a_over_Rc": 0.9550561797752809,
+      "reference_degree": 400,
+      "a_priori_bound_ratio_pow_degree": 1.0269933412376462e-08,
+      "measured_vs_closed_form": 1.2429494352022439e-14,
+      "solver_error": 0.007337496759001941,
+      "bound_over_solver_error": 1.3996508277536052e-06,
+      "requirement": "bound/solver_error <= 0.1"
+    },
+    "solver_provenance": {
+      "solver": "scwbd.intervene.tms.efield.contact_bem_induced_efield (graded icosphere, base subdiv 4 + 2 levels under the source)",
+      "reference": "scwbd.intervene.spectral_reference.AxialInductionReference (m = +-1 multipole, degree 400, per-element rotation)",
+      "geometry": {
+        "sphere_radius_m": 0.085,
+        "standoff_m": 0.004,
+        "a_over_Rc": 0.9550561797752809,
+        "field_points": "256 on the 0.07 m cortical shell"
+      }
+    },
+    "self_convergence_family": [
+      {
+        "h": 0.033688282029651094,
+        "n_elements": 1748.0,
+        "error": 0.36997734831690654
+      },
+      {
+        "h": 0.016844141014825547,
+        "n_elements": 2384.0,
+        "error": 0.07197240801405316
+      },
+      {
+        "h": 0.008422070507412774,
+        "n_elements": 3569.0,
+        "error": 0.016048279861923177
+      }
+    ],
+    "uniform_mesh_audit": [
+      {
+        "subdivision": 1.0,
+        "n_elements": 80.0,
+        "panel_to_standoff": 4.041505607116862,
+        "error": 1.0609940358344612
+      },
+      {
+        "subdivision": 2.0,
+        "n_elements": 320.0,
+        "panel_to_standoff": 3.260498801019694,
+        "error": 1.5061472099770374
+      },
+      {
+        "subdivision": 3.0,
+        "n_elements": 1280.0,
+        "panel_to_standoff": 1.8981144546034827,
+        "error": 0.17088687860327262
+      },
+      {
+        "subdivision": 4.0,
+        "n_elements": 5120.0,
+        "panel_to_standoff": 1.0103216865815448,
+        "error": 0.04178561536667247
+      }
+    ],
+    "uniform_mesh_refinement_is_monotone": false
+  },
+  "provenance": {
+    "timestamp_utc": "2026-08-06T08:53:08+00:00",
+    "git_rev": "f233f77",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/intervene/run_field_gates.py",
+      "scwbd/intervene/spectral_reference.py",
+      "scwbd/intervene/tms/efield.py",
+      "tests/intervene/test_spectral_reference.py",
+      "tests/intervene/test_tms_efield.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
+  }
+}
