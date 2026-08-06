@@ -8,9 +8,19 @@
 # MEASURED, not asserted -- built both models against the real 414-parcel prior
 # and counted `SCWBD.parameter_report()`:
 #
-#   treatment (scwbd-001-families.yaml)   1,858,597
-#   this file  (hidden: 314)              1,863,600     +0.27%
-#   base file  (hidden: 288)              1,715,040     -7.72%
+#   treatment (scwbd-001-families.yaml)   2,512,492
+#   this file  (hidden: 418)              2,500,444     -0.48%
+#   base file  (hidden: 288)              1,688,130    -32.8%
+#
+# RE-MEASURED 2026-08-06 on the MERGED tree. The previous values in this header
+# (1,858,597 / 1,863,600 at hidden=314, "+0.27%") were measured on a branch 34
+# commits behind master and are wrong by 26%: at hidden=314 the control is
+# -25.83% against the current treatment arm, not +0.27%. X_i^uncertainty and the
+# per-family propagator landed in between and grew the treatment arm by ~35%.
+#
+# The lesson is the header, not the number: a capacity match is a measurement
+# against a specific tree and does not survive a merge. Re-derive it whenever
+# either arm moves, and never inherit it across one.
 #
 # +0.27% is inside `scwbd.dynamics.assert_equal_capacity`'s 10% tolerance with
 # three orders of margin. The base file at 288 is not: it hands the treatment arm
@@ -54,15 +64,17 @@ arm:
   # registry that cannot tell them apart cannot enforce that both were run.
   justification: >
     Equal-parameter (B1) pooled-vector control for A1. One operator and one pooled
-    state vector for all 414 parcels at hidden=314, giving 1,863,600 parameters
-    against the treatment arm's 1,858,597 (+0.27%, measured, not asserted).
+    state vector for all 414 parcels at hidden=418, giving 2,500,444 parameters
+    against the treatment arm's 2,512,492 (-0.48%, re-measured on the merged
+    tree; the earlier +0.27% at hidden=314 was measured 34 commits behind and
+    is off by 26%).
     Operator assignment is identical to the treatment arm, so the only thing
     that varies is state structure. This is the B1 match only; the B2
     state-width match is a separate arm and A1 needs both.
 
 model:
   family_state: false
-  hidden: 314
+  hidden: 418
 
 train:
   run_name: scwbd-001-pooled-param-matched
