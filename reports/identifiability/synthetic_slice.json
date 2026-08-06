@@ -49,6 +49,8 @@
   },
   "recovery_intervals_nominal_coverage": {
    "pass": false,
+   "evaluable": false,
+   "median_newton_decrement": 12237.632839973307,
    "per_parameter": {
     "a21": {
      "name": "a21",
@@ -244,7 +246,38 @@
   },
   "heldout_log_loss_beats_baselines": {
    "pass": false,
-   "per_observation_negative_log_posterior": {
+   "evaluable": false,
+   "convergence": {
+    "joint_native_median_newton_decrement": 12237.632839973307,
+    "eeg_only_median_newton_decrement": 409.26139110586007,
+    "gate_posterior_sd": 2.0,
+    "note": "a held-out comparison between two fits measures the designs only if both fits reached their optima; otherwise it measures the optimiser"
+   },
+   "decisive_test": {
+    "question": "restricted to the SAME observations, does adding the second modality make the shared inference better or worse?",
+    "eeg_observations_only": {
+     "joint_native": 25.966165477285607,
+     "eeg_only": 16.81600399533434,
+     "n_observations": 844800.0
+    },
+    "joint_minus_eeg_only_nats_per_observation": 9.150161481951265,
+    "bold_observations_only": {
+     "joint_native": 155.236821299518,
+     "fmri_only": 20221.66952884705,
+     "n_observations": 480.0
+    },
+    "joint_minus_fmri_only_nats_per_observation": -20066.432707547534,
+    "interpretation": "negative => fusion improves prediction of the shared rows; positive => fusion degrades them (negative transfer)"
+   },
+   "all_observation_pooling_artefact": {
+    "joint_native_all_obs": 26.039573004725835,
+    "eeg_only_all_obs": 16.81600399533434,
+    "apparent_degradation": 9.223569009391493,
+    "predicted_if_fusion_inert": 11.473511371295693,
+    "residual_after_removing_pooling": -2.2499423619042,
+    "warning": "these all-observation means are NOT comparable across designs: they average over different observation populations. Reported only to show the pooling artefact explicitly; the criterion uses the common-population test."
+   },
+   "per_observation_negative_log_likelihood_all_observations": {
     "joint_native": 26.039573004725835,
     "eeg_only": 16.81600399533434,
     "fmri_only": 20221.669528847055,
@@ -255,28 +288,66 @@
      "total_negative_log_likelihood": 22010730.269434653,
      "per_observation": 26.039573004725835,
      "se_per_observation": 0.0025909396781287246,
-     "n_observations": 845280.0
+     "n_observations": 845280.0,
+     "per_channel": {
+      "eeg": {
+       "total_negative_log_likelihood": 21936216.59521088,
+       "n_observations": 844800.0,
+       "per_observation": 25.966165477285607
+      },
+      "bold": {
+       "total_negative_log_likelihood": 74513.67422376864,
+       "n_observations": 480.0,
+       "per_observation": 155.236821299518
+      }
+     }
     },
     "eeg_only": {
      "total_negative_log_likelihood": 14206160.175258452,
      "per_observation": 16.81600399533434,
      "se_per_observation": 0.002581854659718464,
-     "n_observations": 844800.0
+     "n_observations": 844800.0,
+     "per_channel": {
+      "eeg": {
+       "total_negative_log_likelihood": 14206160.175258452,
+       "n_observations": 844800.0,
+       "per_observation": 16.81600399533434
+      }
+     }
     },
     "fmri_only": {
      "total_negative_log_likelihood": 9706401.373846587,
      "per_observation": 20221.669528847055,
      "se_per_observation": 138.45266136547386,
-     "n_observations": 480.0
+     "n_observations": 480.0,
+     "per_channel": {
+      "bold": {
+       "total_negative_log_likelihood": 9706401.373846585,
+       "n_observations": 480.0,
+       "per_observation": 20221.66952884705
+      }
+     }
     },
     "joint_resampled": {
      "total_negative_log_likelihood": 501886.79306741594,
      "per_observation": 369.0344066672176,
      "se_per_observation": 5.3393047780313445,
-     "n_observations": 1360.0
+     "n_observations": 1360.0,
+     "per_channel": {
+      "eeg": {
+       "total_negative_log_likelihood": 27085.194340871043,
+       "n_observations": 880.0,
+       "per_observation": 30.778629932808002
+      },
+      "bold": {
+       "total_negative_log_likelihood": 474801.5987265449,
+       "n_observations": 480.0,
+       "per_observation": 989.1699973469684
+      }
+     }
     }
    },
-   "note": "log loss is per *used* observation, so designs consuming different numbers of samples remain comparable; lower is better"
+   "note": "criterion evaluated on the common EEG observation population; lower is better"
   },
   "misspecified_module_detected": {
    "pass": true,
@@ -479,7 +550,22 @@
      0.13910645056583376,
      0.570929558159104,
      0.2773608133004163
-    ]
+    ],
+    "median_newton_decrement": 12237.632839973307,
+    "max_newton_decrement": 139103.71706844735,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 1162.820374877442,
+    "drift_by_parameter_prior_sd": [
+     7.686884200713021,
+     21.143549958457648,
+     53.85811645831454,
+     8.776100299046721,
+     29.793291858227505,
+     12.376707149034084,
+     312.80133510162585,
+     31.947361796495304,
+     1162.820374877442
+    ],
+    "positive_definite_hessian_fraction": 0.1875
    },
    "eeg_only": {
     "estimate_mean": [
@@ -503,7 +589,22 @@
      0.1999999999959999,
      0.599999999892,
      0.29999999998650023
-    ]
+    ],
+    "median_newton_decrement": 409.26139110586007,
+    "max_newton_decrement": 467.1872520682815,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 21.41538365123053,
+    "drift_by_parameter_prior_sd": [
+     6.226457095826369,
+     3.086135437698146,
+     10.148312499971691,
+     16.13524168048508,
+     11.96891937090602,
+     21.41538365123053,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "positive_definite_hessian_fraction": 0.0
    },
    "fmri_only": {
     "estimate_mean": [
@@ -527,7 +628,22 @@
      0.1417040140922117,
      0.5999998348459777,
      0.27255949082742364
-    ]
+    ],
+    "median_newton_decrement": 100477.9199493702,
+    "max_newton_decrement": 146676.88240546282,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 0.0,
+    "drift_by_parameter_prior_sd": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "positive_definite_hessian_fraction": 0.0
    },
    "joint_resampled": {
     "estimate_mean": [
@@ -551,7 +667,22 @@
      0.1999999999961988,
      0.5994198656649392,
      0.2997738854539343
-    ]
+    ],
+    "median_newton_decrement": 53675.19931118483,
+    "max_newton_decrement": 135718.56674404224,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 21.053944540550756,
+    "drift_by_parameter_prior_sd": [
+     1.5454725852684326,
+     1.2609159504372243,
+     0.9904303796428877,
+     0.0,
+     5.656599958843684,
+     6.214103073625947,
+     21.053944540550756,
+     0.561612219356988,
+     13.901599000191588
+    ],
+    "positive_definite_hessian_fraction": 0.03125
    }
   },
   "parameter_names": [

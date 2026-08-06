@@ -1,11 +1,11 @@
-  fitted joint_native: mean nlp 2278025.4
-  fitted eeg_only: mean nlp 890833.0
-  fitted fmri_only: mean nlp 594096.2
-  fitted joint_resampled: mean nlp 88930.9
-  PASS  refusal_of_invalid_schema
-  PASS  no_leakage_across_parents
-  FAIL  recovery_intervals_nominal_coverage
-  PASS  subgroup_calibration
-  FAIL  heldout_log_loss_beats_baselines
-  PASS  misspecified_module_detected
+  fitted joint_native: mean nlp 2278025.4 decr(med) 12237.63 max drift 1162.8 prior sd
+  fitted eeg_only: mean nlp 890833.0 decr(med) 409.26 max drift 21.4 prior sd
+  fitted fmri_only: mean nlp 594096.2 decr(med) 100477.92 max drift 0.0 prior sd
+  fitted joint_resampled: mean nlp 88930.9 decr(med) 53675.20 max drift 21.1 prior sd
+  PASS    refusal_of_invalid_schema
+  PASS    no_leakage_across_parents
+  N/EVAL  recovery_intervals_nominal_coverage
+  PASS    subgroup_calibration
+  N/EVAL  heldout_log_loss_beats_baselines
+  PASS    misspecified_module_detected
 [written] reports/identifiability/synthetic_slice.json

@@ -84,7 +84,11 @@ def cmd_slice(args) -> int:
     out.mkdir(parents=True, exist_ok=True)
     (out / "synthetic_slice.json").write_text(json.dumps(rep.to_dict(), indent=1))
     for k, v in rep.criteria.items():
-        print(f"  {'PASS' if v['pass'] else 'FAIL'}  {k}")
+        if v.get("evaluable") is False:
+            tag = "N/EVAL"
+        else:
+            tag = "PASS" if v["pass"] else "FAIL"
+        print(f"  {tag:6s}  {k}")
     print(f"[written] {out/'synthetic_slice.json'}")
     return 0
 
