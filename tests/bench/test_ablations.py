@@ -130,3 +130,119 @@ def test_ablation_consequences_are_concrete():
     for spec in ABLATIONS.values():
         assert len(spec.consequence) > 40
         assert spec.consequence.strip().endswith(".")
+
+
+# ---------------------------------------------------------------------------
+# A1 run-2 preregistration (reports/ablations/PREREG_A1_run2.md, 2026-08-06).
+# Filed while A1_structured_state is COULD_NOT_RUN and no heterogeneous arm
+# exists.  These tests exist because a preregistration that lives only in prose
+# is a document, and documents get edited.
+# ---------------------------------------------------------------------------
+
+
+def _regionally_differentiated(n=64, t=40, c=8, seed=0):
+    """Channels with genuinely different temporal dynamics (amplitudes 1..c)."""
+    rng = np.random.default_rng(seed)
+    amp = np.linspace(1.0, float(c), c)
+    return rng.standard_normal((n, t, c)) * amp
+
+
+def _collapsed_to_shared_dynamic(y):
+    """A1's failure mode: every channel gets the SAME temporal std.
+
+    Global dynamic range is preserved exactly -- each channel is rescaled to the
+    pooled temporal std -- while between-channel differentiation is destroyed.
+    """
+    per_ch = y.std(axis=1, keepdims=True)  # (n, 1, c)
+    shared = per_ch.mean(axis=2, keepdims=True)  # (n, 1, 1)
+    return y / np.maximum(per_ch, 1e-12) * shared
+
+
+def test_A1_EFFECT_reads_the_failure_that_default_effect_cannot():
+    """The reason A1 declares its own effect, demonstrated rather than asserted."""
+    from scwbd.bench.ablations import A1_EFFECT, default_effect
+
+    truth = _regionally_differentiated()
+    collapsed = _collapsed_to_shared_dynamic(truth)
+
+    # default_effect is BLIND: the collapse preserves global dynamic range.
+    assert default_effect(collapsed) == pytest.approx(default_effect(truth), rel=0.05)
+
+    # A1_EFFECT SEES it: between-region dispersion is destroyed.
+    assert A1_EFFECT(truth) > 0.0
+    assert A1_EFFECT(collapsed) < 0.05 * A1_EFFECT(truth)
+
+
+def test_A1_EFFECT_is_not_trivially_zero_or_constant():
+    """An effect that returns the same number for everything cannot discriminate."""
+    from scwbd.bench.ablations import A1_EFFECT
+
+    a = A1_EFFECT(_regionally_differentiated(seed=0))
+    b = A1_EFFECT(_regionally_differentiated(c=8, seed=1) * 0.0 + 1.0)  # flat
+    assert a > 0.0
+    assert b == pytest.approx(0.0, abs=1e-9)
+    assert a != b
+
+
+def test_A1_refuses_to_run_with_the_default_effect():
+    """The guard fires: A1 with default_effect is COULD_NOT_RUN, not a green check."""
+    from scwbd.bench.ablations import A1_EFFECT, default_effect
+
+    d = make_graph_dataset(seed=0, n_train=120, n_test=200)
+    rep = run_ablation(
+        "A1_structured_state",
+        train=d["train"],
+        test=d["test"],
+        arms={a: RidgeGaussian() for a in ABLATIONS["A1_structured_state"].required_arms},
+        effect=default_effect,
+        thresholds=FIXTURE_THRESHOLDS,
+    )
+    assert rep.status == "COULD_NOT_RUN"
+    reasons = " ".join(rep.blocking_reasons).lower()
+    assert "effect" in reasons and "a1_effect" in reasons
+    # the effect refusal must not HIDE the missing arms; both are reported
+    assert any(s.name.startswith("arms[") for s in rep.subchecks) or "structured_state" in reasons
+
+    # ...and the refusal is specific to the wrong effect, not a blanket block:
+    # with A1_EFFECT supplied -- or with nothing supplied, since the registry
+    # then provides its own -- the run never blocks on `effect_of_interest`.
+    rep2 = run_ablation(
+        "A1_structured_state",
+        train=d["train"],
+        test=d["test"],
+        arms={a: RidgeGaussian() for a in ABLATIONS["A1_structured_state"].required_arms},
+        effect=A1_EFFECT,
+        thresholds=FIXTURE_THRESHOLDS,
+    )
+    assert not any(s.name == "effect_of_interest" for s in rep2.subchecks)
+
+    rep3 = run_ablation(
+        "A1_structured_state",
+        train=d["train"],
+        test=d["test"],
+        arms={a: RidgeGaussian() for a in ABLATIONS["A1_structured_state"].required_arms},
+        thresholds=FIXTURE_THRESHOLDS,
+    )
+    assert not any(s.name == "effect_of_interest" for s in rep3.subchecks)
+
+
+def test_A1_registry_carries_the_run2_preregistration():
+    """The prereg is imported by the scoring path, not only filed in reports/."""
+    from scwbd.bench.ablations import A1_EFFECT, A1_RUN2_PREREGISTRATION
+
+    spec = ABLATIONS["A1_structured_state"]
+    assert spec.required_effect is A1_EFFECT
+    assert spec.note == A1_RUN2_PREREGISTRATION
+    # Both capacity-matching definitions are named; picking one after the fact
+    # is the defect the two-control design exists to prevent.
+    assert "pooled_vector_per_region@param_matched" in spec.optional_arms
+    assert "pooled_vector_per_region@state_matched" in spec.optional_arms
+    # Attribution: heterogeneity without the anatomical assignment.
+    assert "permuted_family_state" in spec.optional_arms
+    for token in (
+        "BOTH_MUST_BE_BEATEN",
+        "NLL_WIN_WITHOUT_MSE_WIN_GRANTS_NO_MECHANISTIC_CLAIM",
+        "V_ABLATION_AND_V_CLAIM_ARE_SEPARATE",
+        "RUN1_IS_A_CONTROL_CLASS_ARTIFACT_NOT_RUN2S_CONTROL_ARM",
+    ):
+        assert token in A1_RUN2_PREREGISTRATION

@@ -60,6 +60,8 @@ __all__ = [
     "run_ablation",
     "run_all_ablations",
     "default_effect",
+    "A1_EFFECT",
+    "A1_RUN2_PREREGISTRATION",
 ]
 
 
@@ -73,6 +75,55 @@ def default_effect(y: np.ndarray) -> float:
     """
     y = np.asarray(y, dtype=float)
     return float(np.std(y.reshape(y.shape[0], -1), axis=0).mean())
+
+
+def A1_EFFECT(y: np.ndarray) -> float:
+    """A1's effect of interest: **between-region differentiation of dynamics**.
+
+    Preregistered in ``reports/ablations/PREREG_A1_run2.md`` §5.2 *before* any
+    heterogeneous model existed.
+
+    :func:`default_effect` measures *global dynamic range*, and a model that
+    collapses every region onto one shared dynamic **preserves global dynamic
+    range exactly** while destroying precisely the effect A1 is about
+    ("structured regional state versus one scalar or pooled vector per region").
+    Running A1 on the default therefore yields a smoothing check that is green
+    and structurally incapable of reading A1's own failure mode -- the
+    decorative-guard pattern, inside the machinery built to catch it.
+
+    For ``y`` of shape ``(windows, T, channels)`` (or any ``(n, T, C)``):
+
+    1. temporal std over ``T``, per window and per channel;
+    2. std of that **across channels** -- how differentiated regions are;
+    3. mean over windows.
+
+    Scale-equivariant, label-free, and computed from arrays the harness already
+    holds, so it cannot be dropped for cost.
+    """
+    y = np.asarray(y, dtype=float)
+    if y.ndim == 2:  # (n, T) -- a single channel cannot express differentiation
+        return 0.0
+    if y.ndim > 3:
+        y = y.reshape(y.shape[0], y.shape[1], -1)
+    per_channel = y.std(axis=1)  # (n, C): temporal std per channel
+    return float(per_channel.std(axis=1).mean())
+
+
+#: Machine-readable summary of ``reports/ablations/PREREG_A1_run2.md``, fixed on
+#: ``wt/popper`` while ``A1_structured_state`` is COULD_NOT_RUN and no
+#: heterogeneous arm exists.  Prose in a report can be edited; this is imported
+#: by the scoring path and asserted by ``tests/bench``.
+A1_RUN2_PREREGISTRATION = (
+    "TWO_CAPACITY_MATCHED_POOLED_CONTROLS_param_matched_AND_state_matched_"
+    "BOTH_MUST_BE_BEATEN; PERMUTED_FAMILY_ARM_MANDATORY_FOR_ATTRIBUTION; "
+    "PRIMARY_PAIRED_PARTICIPANT_CLUSTERED_NLL_PLUS_COPRIMARY_MSE_BOTH_INTERVALLED; "
+    "NLL_WIN_WITHOUT_MSE_WIN_GRANTS_NO_MECHANISTIC_CLAIM; "
+    "EFFECT_IS_A1_EFFECT_BETWEEN_REGION_DISPERSION_NOT_default_effect; "
+    "SCORED_AS_EMITTED_AND_CALIBRATION_MATCHED_DISAGREEMENT_CLAIMS_NEITHER; "
+    "SYSTEMATIC_ENVELOPE_GE_DELTA_OR_SEED_RANGE_GE_DELTA_IS_INCONCLUSIVE; "
+    "V_ABLATION_AND_V_CLAIM_ARE_SEPARATE_11_2_FLOOR_BOUNDS_ONLY_V_CLAIM; "
+    "RUN1_IS_A_CONTROL_CLASS_ARTIFACT_NOT_RUN2S_CONTROL_ARM"
+)
 
 
 @dataclass(frozen=True)
@@ -94,6 +145,11 @@ class AblationSpec:
     #: quarantined ablations are off by default (ARCHITECTURE.md rule 5)
     quarantined: bool = False
     note: str = ""
+    #: An ablation whose failure mode is invisible to :func:`default_effect`
+    #: names its own effect here.  :func:`run_ablation` then REFUSES to run with
+    #: any other callable rather than reporting a smoothing check that cannot
+    #: read the failure it exists to catch.
+    required_effect: Callable[[np.ndarray], float] | None = None
 
 
 ABLATIONS: dict[str, AblationSpec] = {
@@ -108,6 +164,18 @@ ABLATIONS: dict[str, AblationSpec] = {
             "regions as structured state spaces (body.tex §2.1) for the affected systems."
         ),
         mechanistic_claim=True,
+        # Run 2 adds two capacity-matched pooled controls (parameter-matched and
+        # state-matched -- they cannot both be satisfied at once, so BOTH are
+        # required and the choice is not made after the fact) plus a
+        # permuted-family arm that holds heterogeneity fixed and destroys the
+        # anatomical assignment.  See reports/ablations/PREREG_A1_run2.md §1, §3.
+        optional_arms=(
+            "pooled_vector_per_region@param_matched",
+            "pooled_vector_per_region@state_matched",
+            "permuted_family_state",
+        ),
+        required_effect=A1_EFFECT,
+        note=A1_RUN2_PREREGISTRATION,
     ),
     "A2_coupling_family": AblationSpec(
         id="A2_coupling_family",
@@ -256,7 +324,7 @@ def run_ablation(
     train: Dataset | None = None,
     test: Dataset | None = None,
     arms: Mapping[str, Any] | None = None,
-    effect: Callable[[np.ndarray], float] = default_effect,
+    effect: Callable[[np.ndarray], float] | None = None,
     mechanism_holdout: Mapping[str, Dataset] | None = None,
     external_bias_bounds: Mapping[str, tuple[float, float]] | None = None,
     retention_floor: float = 0.5,
@@ -309,10 +377,27 @@ def run_ablation(
         return ClaimReport(manifest=man, subchecks=subs, kind="ablation",
                            notes=[spec.note]).finalize()
 
+    # -- the effect of interest must be the one this ablation names -----
+    # A smoothing check reading the WRONG effect is worse than none: it is
+    # green by construction.  A1's failure mode -- every region collapsed onto
+    # one shared dynamic -- preserves `default_effect` EXACTLY, so A1 declares
+    # `required_effect` and an explicitly-supplied different callable is
+    # refused.  Supplying nothing takes the spec's own effect, so the wrong one
+    # cannot be reached by omission either.
+    wrong_effect = (
+        spec.required_effect is not None
+        and effect is not None
+        and effect is not spec.required_effect
+    )
+    if effect is None:
+        effect = spec.required_effect or default_effect
+
     missing = [a for a in spec.required_arms if a not in arms]
     if train is None or test is None:
         missing.append("train/test datasets")
-    if missing:
+    if missing or wrong_effect:
+        # BOTH are reported.  Returning on the effect alone would hide which
+        # arms are absent, which is the more actionable fact while A1 has none.
         for i, m in enumerate(missing):
             subs.append(
                 could_not_run(
@@ -320,6 +405,20 @@ def run_ablation(
                     f"missing: {m}; §11.4 names it explicitly, so the comparison cannot be "
                     "declared complete without it",
                     falsified_by=man.falsified_by,
+                )
+            )
+        if wrong_effect:
+            assert spec.required_effect is not None
+            subs.append(
+                could_not_run(
+                    "effect_of_interest",
+                    "The §11.4 smoothing check must read THIS ablation's effect.",
+                    f"{spec.id} requires effect={spec.required_effect.__name__}; got "
+                    f"{getattr(effect, '__name__', repr(effect))}. "
+                    f"{spec.required_effect.__name__} measures the quantity whose loss IS "
+                    "the failure mode; default_effect is preserved exactly by that failure, "
+                    "so the smoothing check would be structurally incapable of firing",
+                    falsified_by="the winning arm won by attenuating the effect of interest",
                 )
             )
         return ClaimReport(manifest=man, subchecks=subs, kind="ablation",
