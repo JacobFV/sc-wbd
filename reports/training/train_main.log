@@ -578,3 +578,65 @@ stage=IV_assembly  step=3260  global_step=8060  loss=0.6973  lr=2.642e-06  wall_
 stage=IV_assembly  step=3280  global_step=8080  loss=0.4342  lr=2.342e-06  wall_s=4839  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.277  npe_loss=-14.79  kl=21.07  rho=0.006838
 stage=IV_assembly  step=3300  global_step=8100  loss=0.6343  lr=2.059e-06  wall_s=4866  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.245  npe_loss=-14.59  kl=21.22  rho=0.006923
 stage=IV_assembly  step=3320  global_step=8120  loss=0.7746  lr=1.794e-06  wall_s=4894  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.193  npe_loss=-14.65  kl=21.56  rho=0.007073
+stage=IV_assembly  step=3340  global_step=8140  loss=0.8259  lr=1.547e-06  wall_s=4921  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.219  npe_loss=-14.8  kl=21.75  rho=0.007057
+stage=IV_assembly  step=3360  global_step=8160  loss=0.4001  lr=1.319e-06  wall_s=4949  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.269  npe_loss=-14.84  kl=21.53  rho=0.007103
+stage=IV_assembly  step=3380  global_step=8180  loss=0.7634  lr=1.108e-06  wall_s=4976  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.31  npe_loss=-14.77  kl=21.31  rho=0.00699
+stage=IV_assembly  step=3400  global_step=8200  loss=0.656  lr=9.153e-07  wall_s=5004  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.299  npe_loss=-14.7  kl=21.38  rho=0.006706
+stage=IV_assembly  step=3420  global_step=8220  loss=0.4543  lr=7.41e-07  wall_s=5031  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.224  npe_loss=-14.6  kl=20.99  rho=0.007035
+stage=IV_assembly  step=3440  global_step=8240  loss=0.5268  lr=5.851e-07  wall_s=5058  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.252  npe_loss=-14.55  kl=21.48  rho=0.007055
+stage=IV_assembly  step=3460  global_step=8260  loss=0.4732  lr=4.474e-07  wall_s=5086  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.197  npe_loss=-14.56  kl=21.41  rho=0.006867
+stage=IV_assembly  step=3480  global_step=8280  loss=0.5611  lr=3.282e-07  wall_s=5113  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.217  npe_loss=-15.39  kl=21.43  rho=0.007034
+stage=IV_assembly  step=3500  global_step=8300  loss=0.5371  lr=2.273e-07  wall_s=5141  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.204  npe_loss=-14.43  kl=22  rho=0.006792
+stage=IV_assembly  step=3520  global_step=8320  loss=0.5459  lr=1.45e-07  wall_s=5168  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.246  npe_loss=-15.11  kl=21.23  rho=0.006819
+stage=IV_assembly  step=3540  global_step=8340  loss=0.4748  lr=8.107e-08  wall_s=5196  traj_s_per_s=16.7  gpu_reserved_gb=36.45  sim_forecast_nll=1.229  npe_loss=-14.06  kl=21.11  rho=0.007143
+stage=IV_assembly  step=3560  global_step=8360  loss=0.6388  lr=3.569e-08  wall_s=5223  traj_s_per_s=16.8  gpu_reserved_gb=36.45  sim_forecast_nll=1.216  npe_loss=-14.61  kl=21.51  rho=0.007101
+stage=IV_assembly  step=3580  global_step=8380  loss=0.6286  lr=8.822e-09  wall_s=5250  traj_s_per_s=16.8  gpu_reserved_gb=36.45  sim_forecast_nll=1.213  npe_loss=-13.88  kl=21.41  rho=0.007169
+stage=IV_assembly  step=3600  global_step=8400  loss=0.4354  lr=4.832e-10  wall_s=5278  traj_s_per_s=16.8  gpu_reserved_gb=36.45  sim_forecast_nll=1.238  npe_loss=-14.71  kl=20.93  rho=0.007015
+
+=== Stage V_individual: 900 steps, lr=5.77e-05 ===
+stage=V_individual  step=1  global_step=8401  loss=1  lr=2.322e-06  wall_s=0.2  traj_s_per_s=148.4  gpu_reserved_gb=36.45  real_eeg_nll=1.622
+stage=V_individual  step=20  global_step=8420  loss=1.021  lr=7.701e-06  wall_s=3  traj_s_per_s=164.4  gpu_reserved_gb=36.45  real_eeg_nll=2.054
+stage=V_individual  step=40  global_step=8440  loss=0.8468  lr=2.178e-05  wall_s=5.9  traj_s_per_s=166.3  gpu_reserved_gb=36.45  real_eeg_nll=1.749
+stage=V_individual  step=60  global_step=8460  loss=1.173  lr=3.906e-05  wall_s=8.8  traj_s_per_s=166.8  gpu_reserved_gb=36.45  real_eeg_nll=2.463
+stage=V_individual  step=80  global_step=8480  loss=0.7703  lr=5.282e-05  wall_s=11.8  traj_s_per_s=167.3  gpu_reserved_gb=36.45  real_eeg_nll=1.605
+stage=V_individual  step=100  global_step=8500  loss=0.7432  lr=5.77e-05  wall_s=14.7  traj_s_per_s=167.5  gpu_reserved_gb=36.45  real_eeg_nll=1.53
+stage=V_individual  step=120  global_step=8520  loss=0.8409  lr=5.76e-05  wall_s=17.6  traj_s_per_s=167.6  gpu_reserved_gb=36.45  real_eeg_nll=1.713
+stage=V_individual  step=140  global_step=8540  loss=1.098  lr=5.733e-05  wall_s=20.5  traj_s_per_s=167.6  gpu_reserved_gb=36.45  real_eeg_nll=2.363
+stage=V_individual  step=160  global_step=8560  loss=0.8893  lr=5.688e-05  wall_s=23.7  traj_s_per_s=166  gpu_reserved_gb=36.45  real_eeg_nll=1.847
+stage=V_individual  step=180  global_step=8580  loss=0.9398  lr=5.625e-05  wall_s=26.6  traj_s_per_s=166.2  gpu_reserved_gb=36.45  real_eeg_nll=1.956
+stage=V_individual  step=200  global_step=8600  loss=0.8561  lr=5.546e-05  wall_s=29.5  traj_s_per_s=166.4  gpu_reserved_gb=36.45  real_eeg_nll=1.75
+stage=V_individual  step=220  global_step=8620  loss=1.158  lr=5.45e-05  wall_s=32.5  traj_s_per_s=166.5  gpu_reserved_gb=36.45  real_eeg_nll=2.448
+stage=V_individual  step=240  global_step=8640  loss=0.9421  lr=5.339e-05  wall_s=35.4  traj_s_per_s=166.6  gpu_reserved_gb=36.45  real_eeg_nll=2.015
+stage=V_individual  step=260  global_step=8660  loss=1.119  lr=5.212e-05  wall_s=38.3  traj_s_per_s=166.6  gpu_reserved_gb=36.45  real_eeg_nll=2.324
+stage=V_individual  step=280  global_step=8680  loss=0.8376  lr=5.071e-05  wall_s=41.3  traj_s_per_s=166.6  gpu_reserved_gb=36.45  real_eeg_nll=1.687
+stage=V_individual  step=300  global_step=8700  loss=0.8972  lr=4.917e-05  wall_s=44.3  traj_s_per_s=166.6  gpu_reserved_gb=36.45  real_eeg_nll=1.861
+stage=V_individual  step=320  global_step=8720  loss=0.8141  lr=4.75e-05  wall_s=47.5  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=1.672
+stage=V_individual  step=340  global_step=8740  loss=0.7742  lr=4.572e-05  wall_s=50.5  traj_s_per_s=165.4  gpu_reserved_gb=36.45  real_eeg_nll=1.52
+stage=V_individual  step=360  global_step=8760  loss=0.9824  lr=4.383e-05  wall_s=53.5  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=2.009
+stage=V_individual  step=380  global_step=8780  loss=0.8405  lr=4.185e-05  wall_s=56.4  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=1.802
+stage=V_individual  step=400  global_step=8800  loss=1.008  lr=3.979e-05  wall_s=59.5  traj_s_per_s=165.2  gpu_reserved_gb=36.45  real_eeg_nll=2.094
+stage=V_individual  step=420  global_step=8820  loss=0.9856  lr=3.766e-05  wall_s=62.4  traj_s_per_s=165.4  gpu_reserved_gb=36.45  real_eeg_nll=2.039
+stage=V_individual  step=440  global_step=8840  loss=1.457  lr=3.547e-05  wall_s=65.3  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=3.063
+stage=V_individual  step=460  global_step=8860  loss=0.9852  lr=3.325e-05  wall_s=68.4  traj_s_per_s=165.4  gpu_reserved_gb=36.45  real_eeg_nll=2.106
+stage=V_individual  step=480  global_step=8880  loss=0.9395  lr=3.1e-05  wall_s=71.3  traj_s_per_s=165.4  gpu_reserved_gb=36.45  real_eeg_nll=1.95
+stage=V_individual  step=500  global_step=8900  loss=0.9504  lr=2.874e-05  wall_s=74.2  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=1.924
+stage=V_individual  step=520  global_step=8920  loss=0.8781  lr=2.647e-05  wall_s=77.2  traj_s_per_s=165.6  gpu_reserved_gb=36.45  real_eeg_nll=1.845
+stage=V_individual  step=540  global_step=8940  loss=0.919  lr=2.423e-05  wall_s=80.1  traj_s_per_s=165.6  gpu_reserved_gb=36.45  real_eeg_nll=1.823
+stage=V_individual  step=560  global_step=8960  loss=0.787  lr=2.201e-05  wall_s=83.1  traj_s_per_s=165.7  gpu_reserved_gb=36.45  real_eeg_nll=1.534
+stage=V_individual  step=580  global_step=8980  loss=1.17  lr=1.983e-05  wall_s=86  traj_s_per_s=165.7  gpu_reserved_gb=36.45  real_eeg_nll=2.262
+stage=V_individual  step=600  global_step=9000  loss=0.9705  lr=1.771e-05  wall_s=89  traj_s_per_s=165.7  gpu_reserved_gb=36.45  real_eeg_nll=1.933
+stage=V_individual  step=620  global_step=9020  loss=0.9052  lr=1.565e-05  wall_s=92  traj_s_per_s=165.6  gpu_reserved_gb=36.45  real_eeg_nll=1.863
+stage=V_individual  step=640  global_step=9040  loss=0.9346  lr=1.368e-05  wall_s=95  traj_s_per_s=165.6  gpu_reserved_gb=36.45  real_eeg_nll=1.882
+stage=V_individual  step=660  global_step=9060  loss=0.9867  lr=1.18e-05  wall_s=97.9  traj_s_per_s=165.6  gpu_reserved_gb=36.45  real_eeg_nll=2.016
+stage=V_individual  step=680  global_step=9080  loss=0.9236  lr=1.003e-05  wall_s=100.9  traj_s_per_s=165.6  gpu_reserved_gb=36.45  real_eeg_nll=1.862
+stage=V_individual  step=700  global_step=9100  loss=0.8253  lr=8.37e-06  wall_s=104  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=1.654
+stage=V_individual  step=720  global_step=9120  loss=0.8484  lr=6.839e-06  wall_s=106.9  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=1.742
+stage=V_individual  step=740  global_step=9140  loss=0.8564  lr=5.444e-06  wall_s=109.9  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=1.694
+stage=V_individual  step=760  global_step=9160  loss=0.9921  lr=4.193e-06  wall_s=112.9  traj_s_per_s=165.4  gpu_reserved_gb=36.45  real_eeg_nll=2.05
+stage=V_individual  step=780  global_step=9180  loss=0.8392  lr=3.093e-06  wall_s=115.9  traj_s_per_s=165.4  gpu_reserved_gb=36.45  real_eeg_nll=1.734
+stage=V_individual  step=800  global_step=9200  loss=0.8517  lr=2.153e-06  wall_s=118.9  traj_s_per_s=165.4  gpu_reserved_gb=36.45  real_eeg_nll=1.721
+stage=V_individual  step=820  global_step=9220  loss=1.427  lr=1.377e-06  wall_s=121.8  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=2.937
+stage=V_individual  step=840  global_step=9240  loss=1.001  lr=7.711e-07  wall_s=124.8  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=2.078
+stage=V_individual  step=860  global_step=9260  loss=0.9063  lr=3.379e-07  wall_s=127.7  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=1.843
+stage=V_individual  step=880  global_step=9280  loss=0.9448  lr=8.05e-08  wall_s=130.6  traj_s_per_s=165.5  gpu_reserved_gb=36.45  real_eeg_nll=1.842
+stage=V_individual  step=900  global_step=9300  loss=1.065  lr=4.533e-10  wall_s=133.6  traj_s_per_s=165.6  gpu_reserved_gb=36.45  real_eeg_nll=2.042
