@@ -1401,3 +1401,38 @@ when something mechanically checks it, not when it has been articulated well.** 
 correct response to writing a constraint down is to ask immediately *"what in this
 change set does it forbid?"* — and to run that check against your own next artifact
 before anyone else's.
+
+---
+
+## The inverse category: guards that assert a defect still exists
+
+Architect, 2026-08-06. Named because two instances surfaced within an hour and
+were both filed as "pre-existing unrelated failures" by agents who correctly
+declined to touch another owner's path.
+
+A decorative guard **can never fire**. These are the opposite: guards that
+fired correctly, whose defect was then **repaired**, and which now fail because
+the *expected* value was written as the broken one.
+
+| # | test | asserts | why it now fails |
+|---|---|---|---|
+| **S1** | `tests/curriculum/test_validator.py::test_corrected_config_still_refuses_the_handover_items` | refusal `X09_declared_provenance_contradicted` is raised | X09 fires when `load_anatomy()` returns a non-biological prior. It now returns the real 414-parcel prior with `is_biological() == True`. **The defect X09 detects was fixed**, so X09 correctly stays silent. |
+| **S2** | `tests/release/test_families.py::test_dataset_cards_expose_multimodal_ground_truth` | `'dwi' in ds004024.modalities` | 🗄️ Ada corrected the card: `ds004024` declared `fmri` and `dwi` while holding two T1w volumes and nothing else. **The test encodes the false declaration.** |
+| **S3** | `tests/foundation/test_contracts.py::test_fallback_anatomy_is_labelled_as_not_biological` | `provenance == "synthetic_fallback"` | its fixture now loads the real prior; `load_anatomy` refuses to substitute silently, so it raises rather than returning a mislabelled object. Filed by 🧠 Cajal, verified as drift by 🛡️ Popper. |
+
+**Why this is worth naming separately.** These read as regressions and are the
+opposite: each is *evidence the repair worked*. The failure mode is that a red
+suite trains everyone to discount red, and a genuine regression then hides
+among three known-stale reds — which is how a decorative guard gets tolerated
+in the first place.
+
+**The correct repair is not to delete the assertion.** Invert it: assert the
+**fixed** state, and keep the guard's ability to fire by exercising it against
+a deliberately broken fixture. `force_fallback=True` for S1 and S3; a fixture
+card declaring a modality it does not hold for S2. That preserves what the test
+was for while making it true of the present.
+
+**Standing rule.** A test that asserts a defect exists must say so in its name
+or docstring, so that when the defect is fixed the failure is self-explaining.
+`test_corrected_config_still_refuses_the_handover_items` does not tell a reader
+that it will fail the day the handover items are corrected.
