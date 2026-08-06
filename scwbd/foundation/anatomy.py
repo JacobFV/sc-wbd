@@ -61,6 +61,13 @@ class AnatomyPrior:
     #: This is agent C's own discipline applied to the gradient: an unknown
     #: value is made VISIBLE rather than hidden as a filled-in number.
     gradient_covered: Tensor | None = None
+    #: ``scwbd.anatomy.FamilyPartition`` (agent C) when the installed prior
+    #: declares one.  This is the **authoritative** regional-family partition;
+    #: ``scwbd.foundation.families.derive_families`` consumes it and refuses to
+    #: infer its own unless the caller explicitly opts in.  ``None`` means the
+    #: installed ``scwbd.anatomy`` declares no partition -- which is a fact about
+    #: the prior, not a licence to invent one.
+    family_partition: Any = None
     frame: str = "MNI152NLin2009cAsym_RAS"
     units_position: str = "mm"
     provenance: str = "synthetic_fallback"
@@ -365,6 +372,33 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
         ec = _classify_edges(W, L)
     else:
         ec = torch.as_tensor(ec, device=device, dtype=torch.long)
+
+    # Regional families (agent C).  The adapter is the only place that holds the
+    # raw BrainPrior, so it is the only place that can call agent C's deriver.
+    # If the function exists but raises, REFUSE -- the same rule as every other
+    # prior in this adapter, and for the same reason: a family partition that
+    # silently fell back to one inferred downstream is how an operator
+    # assignment stops being the one the evidence supports.
+    fam_part = getattr(obj, "family_partition", None)
+    if fam_part is None:
+        try:
+            _fam_mod = importlib.import_module("scwbd.anatomy")
+        except ModuleNotFoundError:
+            _fam_mod = None
+        deriver = getattr(_fam_mod, "derive_families", None) if _fam_mod is not None else None
+        if deriver is not None:
+            try:
+                fam_part = deriver(obj)
+            except Exception as exc:  # noqa: BLE001
+                raise RuntimeError(
+                    "scwbd.anatomy declares regional families but scwbd.anatomy.derive_families() "
+                    f"failed: {type(exc).__name__}: {exc}\n"
+                    "Refusing to continue with no declared partition: "
+                    "scwbd.foundation.families would then infer one, and the partition it infers "
+                    "(Yeo-7 cortical networks) is rejected by agent C's own spin test -- it "
+                    "separates 6 of 21 pairs. Fix the deriver rather than letting the fallback run."
+                ) from exc
+
     return AnatomyPrior(
         n_regions=n,
         labels=labels,
@@ -378,6 +412,7 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
         timescale_prior=ts if ts is not None else torch.full((n,), 0.05, device=device),
         gradient=grad_full,
         gradient_covered=grad_cov,
+        family_partition=fam_part,
         evidence_class=ec,
         frame=str(getattr(obj, "frame", "MNI152NLin2009cAsym_RAS")),
         provenance=str(getattr(obj, "provenance", "scwbd.anatomy.BrainPrior")),

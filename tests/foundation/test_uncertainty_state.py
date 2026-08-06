@@ -45,6 +45,9 @@ def _cfg(**kw) -> ModelConfig:
     d = dict(
         hidden=64, n_local_layers=2, region_embed=16, context_dim=32,
         encoder_channels=16, encoder_layers=2,
+        # no anatomy-declared partition on this branch; the fallback refuses
+        # unless opted into, so say so explicitly here
+        family_allow_derived_partition=True,
     )
     d.update(kw)
     return ModelConfig(**d)
@@ -263,6 +266,47 @@ def test_the_uncertainty_channel_stays_in_span(anat):
     """The propagator writes only into its own component."""
     m, res = _rollout(anat, _cfg(family_state=True))
     m.family_layout.assert_clean(res.state, where="uncertainty propagation")
+
+
+@pytest.mark.parametrize("arm,kw", ARMS)
+def test_bold_logvar_is_read_at_the_step_the_sample_was_taken(anat, arm, kw):
+    """The off-by-25.  Named, not merely avoided (architect's instruction).
+
+    The slow clock samples every ``hemo_ratio = 25`` fast steps. The BOLD
+    predictive variance must come from the state at the step the hemodynamic
+    sample was **taken**, not from the last fast step of the rollout. Because
+    ``X_i^uncertainty`` grows monotonically over the horizon, reading the wrong
+    step is not a subtle error — it systematically overstates the variance of
+    every sample except the last.
+    """
+    steps = 60
+    m, res = _rollout(anat, _cfg(**kw), steps=steps)
+    theta = torch.randn(3, 6) * 0.3
+    torch.manual_seed(0)
+    with torch.no_grad():
+        r = m.rollout(
+            y_context=torch.randn(3, 8, anat.n_regions) * 0.3,
+            theta=theta,
+            n_steps=steps,
+            with_hemo=True,
+        )
+    ratio = m.cfg.hemo_ratio
+    assert r.hemo is not None and r.hemo_logvar is not None
+    # one entry per slow sample, and the recorded indices are the sampling steps
+    assert r.hemo.shape[1] == r.hemo_logvar.shape[1] == len(r.hemo_steps)
+    assert list(r.hemo_steps) == [t for t in range(steps) if (t + 1) % ratio == 0]
+    # each recorded log-variance equals the interface applied to the state at
+    # that step -- and NOT to the final state
+    with torch.no_grad():
+        for k, t in enumerate(r.hemo_steps):
+            want = m.observation.predictive_logvar(r.state[:, t])
+            assert torch.allclose(r.hemo_logvar[:, k], want, atol=1e-6), f"slow sample {k} misaligned"
+        if len(r.hemo_steps) > 1:
+            last = m.observation.predictive_logvar(r.state[:, -1])
+            assert not torch.allclose(r.hemo_logvar[:, 0], last, atol=1e-4), (
+                "the first slow sample equals the FINAL state's log-variance; the alignment test "
+                "cannot distinguish correct from off-by-hemo_ratio"
+            )
 
 
 @pytest.mark.parametrize("arm,kw", ARMS)

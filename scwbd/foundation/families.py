@@ -460,24 +460,50 @@ _SUBCORTICAL_TOKENS: dict[str, str] = {
 #: Tokens that map an **anatomy-declared** family name onto a taxonomy kind, and
 #: therefore onto a component list and an engineered backend.  Order matters:
 #: the first token found in the (lower-cased) declared name wins.
+#: Order matters — the first token found wins, so more specific entries come
+#: first.  ``hypothal`` is listed ahead of ``thal`` on purpose: the hypothalamus
+#: is not a thalamic nucleus and must not inherit the thalamic relay backend.
+#:
+#: The SHORT forms (``hippo``, ``amyg``, ``thal``, ``caud``, ``put``, ``pal``)
+#: are here because agent C's shipped family ids use them —
+#: ``subcortex_hippo``, ``subcortex_thal``, …  An earlier version of this table
+#: had only the long forms (``hippocamp``, ``thalam``, ``putamen``, …) and
+#: matched **1 of agent C's 7** subcortical families; the other six fell through
+#: to the generic learned core with nothing raised, so every engineered backend
+#: §5 argues for would have been silently unassigned.  That is why
+#: :func:`derive_families` now reports untyped non-cortical families loudly
+#: rather than only in a note.
 _KIND_TOKENS: tuple[tuple[str, str], ...] = (
     ("hippocamp", "hippocampus"),
     ("subiculum", "hippocampus"),
     ("entorhinal", "hippocampus"),
+    ("hippo", "hippocampus"),
     ("amygdal", "amygdala"),
+    ("amyg", "amygdala"),
+    ("hypothal", None),  # NOT the thalamus; no engineered backend exists for it
     ("thalam", "thalamus"),
     ("pulvinar", "thalamus"),
+    ("thal", "thalamus"),
     ("basal_ganglia", "basal_ganglia"),
     ("striat", "basal_ganglia"),
     ("pallid", "basal_ganglia"),
     ("caudate", "basal_ganglia"),
     ("putamen", "basal_ganglia"),
     ("accumb", "basal_ganglia"),
+    ("nacc", "basal_ganglia"),
+    ("caud", "basal_ganglia"),
+    ("put", "basal_ganglia"),
+    ("pal", "basal_ganglia"),
     ("cerebell", "cerebellum"),
 )
 
 
 def _kind_from_declared_name(name: str) -> str | None:
+    """Map a declared family name onto a taxonomy kind, or ``None`` if unknown.
+
+    ``None`` means "no engineered backend in this repository", which is a fact to
+    report, not a default to apply quietly.
+    """
     low = name.lower()
     for tok, kind in _KIND_TOKENS:
         if tok in low:
@@ -485,10 +511,69 @@ def _kind_from_declared_name(name: str) -> str | None:
     return None
 
 
+def _from_anatomy_partition(anat) -> tuple[tuple[str, ...], dict[str, Any]] | None:
+    """Consume ``scwbd.anatomy.FamilyPartition`` (agent C) — the authoritative form.
+
+    Agent C shipped a richer object than the flat per-parcel labelling this
+    module originally specified: ``FamilyPartition`` with ``RegionFamily``
+    entries carrying ``family_id``, ``parcels``, an ``evidence_tier``, a
+    ``training_status`` and per-field provenance, plus ``declared_absent`` for
+    systems the atlas has no parcels for.  That is a better object and it wins;
+    the flat form below is kept only because tests and older priors use it.
+
+    Duck-typed on purpose — this module must not import ``scwbd.anatomy``.
+    """
+    part = getattr(anat, "family_partition", None)
+    if part is None:
+        return None
+    fams = getattr(part, "families", None)
+    if not fams:
+        return None
+    n = int(anat.n_regions)
+    names: list[str | None] = [None] * n
+    meta: dict[str, Any] = {}
+    for f in fams:
+        fid = str(getattr(f, "family_id", "") or getattr(f, "name", ""))
+        parcels = getattr(f, "parcels", None)
+        if not fid or parcels is None:
+            raise ValueError(
+                "scwbd.anatomy.FamilyPartition entry has no family_id/parcels; the foundation "
+                "cannot bind operators to a partition it cannot read"
+            )
+        for p in parcels:
+            p = int(p)
+            if not 0 <= p < n:
+                raise ValueError(f"family {fid!r} references parcel {p} outside 0..{n - 1}")
+            if names[p] is not None:
+                raise ValueError(f"parcel {p} is in both {names[p]!r} and {fid!r}")
+            names[p] = fid
+        meta[fid] = {
+            "evidence_tier": getattr(f, "evidence_tier", None),
+            "training_status": getattr(f, "training_status", None),
+            "membership_source": getattr(f, "membership_source", None),
+            "separating_evidence": list(getattr(f, "separating_evidence", ()) or ()),
+        }
+    missing = [i for i, v in enumerate(names) if v is None]
+    if missing:
+        raise ValueError(
+            f"scwbd.anatomy.FamilyPartition leaves {len(missing)} parcel(s) unassigned, e.g. "
+            f"{missing[:5]}. Every parcel must belong to exactly one family or nothing downstream "
+            "can be enforced about its span."
+        )
+    return tuple(str(v) for v in names), {
+        "source": "scwbd.anatomy.FamilyPartition (agent C)",
+        "per_family": meta,
+        "declared_absent": dict(getattr(part, "declared_absent", {}) or {}),
+        "separation_evidence": dict(getattr(part, "separation_evidence", {}) or {}),
+    }
+
+
 def _declared_families(anat) -> tuple[tuple[str, ...], dict[str, Any]] | None:
     """Read a family partition **declared by the anatomy prior**, if it has one.
 
-    This is the interface ``scwbd.foundation`` needs from ``scwbd.anatomy``:
+    Prefers :func:`_from_anatomy_partition`.  The flat forms below are the
+    interface this module originally specified, kept for tests and for any prior
+    that supplies labels without agent C's object:
 
     * a per-parcel family name — ``family`` / ``families`` / ``family_name`` as a
       length-``N`` sequence of strings, **or** ``family_id`` (length ``N``
@@ -506,6 +591,10 @@ def _declared_families(anat) -> tuple[tuple[str, ...], dict[str, Any]] | None:
     falling through to the derived partition is how a declared partition stops
     being the one in force.
     """
+    from_c = _from_anatomy_partition(anat)
+    if from_c is not None:
+        return from_c
+
     n = int(anat.n_regions)
     prov = dict(getattr(anat, "family_provenance", None) or {})
 
@@ -640,6 +729,7 @@ def derive_families(
     d_grid: int = 12,
     d_context: int = 4,
     d_prediction: int = 8,
+    allow_derived: bool = False,
 ) -> FamilyPartition:
     """Partition the prior's regions into families **using only what it declares or distinguishes**.
 
@@ -686,12 +776,15 @@ def derive_families(
         names, dprov = declared
         source = str(dprov["source"])
         untyped: set[str] = set()
+        untyped_noncortical: set[str] = set()
         for i in range(n):
             name = names[i]
             k = _kind_from_declared_name(name)
             if k is None:
                 k = "cortex"
                 untyped.add(name)
+                if division[i] != "cortex":
+                    untyped_noncortical.add(f"{name} (division={division[i]})")
             members.setdefault(name, []).append(i)
             disc.setdefault(name, f"declared by the anatomy prior ({source})")
             kind.setdefault(name, k)
@@ -705,13 +798,58 @@ def derive_families(
                 "declared families with no engineered backend in this repository (generic core, "
                 "component list = cortical): " + ", ".join(sorted(untyped))
             )
+        if untyped_noncortical:
+            # Loud, because this is how §5's engineered backends go silently
+            # unassigned: a subcortical or cerebellar family whose declared name
+            # this module does not recognise gets the cortical component list and
+            # the generic core, and every downstream report says "per-family
+            # operators" while the cortex-shaped default is what actually ran.
+            notes.append(
+                "*** NON-CORTICAL FAMILIES WITH NO RECOGNISED BACKEND: "
+                + ", ".join(sorted(untyped_noncortical))
+                + ". These got the CORTICAL component list and the generic core. body.tex §5 "
+                "argues these systems warrant engineered backends; none was assigned. Either add "
+                "the name token to families._KIND_TOKENS or state in the manifest that the "
+                "subsystem argument has no expression for them. ***"
+            )
         if dprov.get("per_family"):
             notes.append(f"per-family provenance supplied by the prior for {len(dprov['per_family'])} families")
+        if dprov.get("declared_absent"):
+            notes.append(
+                "systems the prior declares ABSENT (no parcels in this atlas, reason given by "
+                "agent C): " + "; ".join(f"{k}: {v}" for k, v in dprov["declared_absent"].items())
+            )
+        untrained = sorted(
+            k for k, v in (dprov.get("per_family") or {}).items()
+            if str(v.get("training_status", "")).startswith("prior_only")
+        )
+        if untrained:
+            notes.append(
+                "families the prior marks as carrying NO regional data (narrowing N-4 -- "
+                "initialised from the prior and declared untrained): " + ", ".join(untrained)
+            )
+    elif not allow_derived:
+        raise ValueError(
+            "the anatomy prior declares no family partition, and the fallback derivation is "
+            "REFUSED by default.\n\n"
+            "The fallback splits cortex by Yeo-7 network. Agent C tested exactly that under a "
+            "Vasa spin null and it separates only 6 of 21 pairs -- it is not a partition. The "
+            "evidence supports a unimodal/association split and nothing finer. A fallback that "
+            "produces a partition the evidence rejects is worse than no fallback, because it "
+            "produces one silently and everything downstream binds operators to it.\n\n"
+            "Remedies, in order of preference:\n"
+            "  1. install/repair `scwbd.anatomy` so `derive_families(prior)` supplies the "
+            "     partition -- `AnatomyPrior.family_partition` carries it through;\n"
+            "  2. supply a partition yourself on the prior (`family` / `family_id`+`family_names`);\n"
+            "  3. pass allow_derived=True to state EXPLICITLY that this run uses a partition the "
+            "     spin test rejects. Tests of the fallback itself do this; a training run must not."
+        )
     else:
         notes.append(
-            "anatomy prior declares NO family partition (no `family`/`family_id` attribute); the "
-            "partition below was derived here from division + parcel labels + system id. Replace "
-            "this path as soon as the prior declares one."
+            "PARTITION DERIVED BY FALLBACK, NOT DECLARED. The cortical split is Yeo-7, which "
+            "agent C's Vasa spin null REJECTS as a partition (6 of 21 pairs separate). Reached "
+            "only via allow_derived=True. No operator assignment resting on this split is "
+            "supported by the anatomical evidence."
         )
     for i in (range(n) if declared is None else ()):
         d = division[i]

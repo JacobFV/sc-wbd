@@ -43,12 +43,16 @@ def synthetic_anat():
 
 @pytest.fixture(scope="module")
 def flayout(anat):
-    return FamilyStateLayout(derive_families(anat))
+    return FamilyStateLayout(derive_families(anat, allow_derived=True))
 
 
 def _small_cfg(**kw) -> ModelConfig:
     base = dict(
         family_state=True,
+        # This branch has no anatomy-declared partition, so every model built
+        # here uses the fallback -- which now REFUSES unless opted into. Stating
+        # it in the helper is the point: the opt-in is visible at every call.
+        family_allow_derived_partition=True,
         hidden=64,
         n_local_layers=2,
         region_embed=16,
@@ -73,8 +77,8 @@ def test_partition_covers_every_parcel_exactly_once(anat, flayout):
 
 def test_family_count_is_whatever_the_prior_distinguishes(anat, synthetic_anat):
     """Not a fixed list: the two priors legitimately give different counts."""
-    real = derive_families(anat)
-    synth = derive_families(synthetic_anat)
+    real = derive_families(anat, allow_derived=True)
+    synth = derive_families(synthetic_anat, allow_derived=True)
     assert len(real) != len(synth), (
         "the real and synthetic priors distinguish different numbers of families; if these "
         "agree, the partition is being hardcoded somewhere rather than derived"
@@ -86,14 +90,14 @@ def test_family_count_is_whatever_the_prior_distinguishes(anat, synthetic_anat):
 
 def test_unpopulated_taxonomy_families_are_reported_not_invented(anat):
     """The real prior has no cerebellar parcels.  That must be visible."""
-    part = derive_families(anat)
+    part = derive_families(anat, allow_derived=True)
     assert "cerebellum" in part.unpopulated
     assert all(f.name != "cerebellum" for f in part), "an empty family must not be fabricated"
     assert any("ZERO regions" in n for n in part.notes)
 
 
 def test_unparsed_subcortical_parcels_are_not_folded_into_a_neighbour(synthetic_anat):
-    part = derive_families(synthetic_anat)
+    part = derive_families(synthetic_anat, allow_derived=True)
     names = {f.name for f in part}
     assert "subcortex_unassigned" in names
     assert "hippocampus" not in names  # the synthetic labels name no structures
@@ -106,7 +110,7 @@ def test_declared_partition_wins_over_derivation(anat):
         "hippocampus_declared" if d == "subcortex" else f"cortex_block{i % 3}"
         for i, d in enumerate(anat.division)
     )
-    part = derive_families(a)
+    part = derive_families(a, allow_derived=True)
     assert part.source == "anatomy_declared"
     assert {f.name for f in part} == {"hippocampus_declared", "cortex_block0", "cortex_block1", "cortex_block2"}
     # the declared name is matched onto an engineered backend by token
@@ -118,7 +122,7 @@ def test_declared_partition_of_arbitrary_size(anat):
     for n_fam in (2, 3, 17, 41):
         a = copy.copy(anat)
         a.family = tuple(f"declared_{i % n_fam:03d}" for i in range(anat.n_regions))
-        part = derive_families(a)
+        part = derive_families(a, allow_derived=True)
         assert len(part) == n_fam
         FamilyStateLayout(part)  # must be constructible at any N
 
@@ -127,17 +131,162 @@ def test_partial_family_declaration_raises(anat):
     a = copy.copy(anat)
     a.family_id = torch.zeros(anat.n_regions, dtype=torch.long)
     with pytest.raises(ValueError, match="family_names"):
-        derive_families(a)
+        derive_families(a, allow_derived=True)
 
     b = copy.copy(anat)
     b.family = ("only", "three", "labels")
     with pytest.raises(ValueError, match="partial family declaration|family labels for"):
-        derive_families(b)
+        derive_families(b, allow_derived=True)
+
+
+def test_the_derived_fallback_refuses_unless_explicitly_opted_into(anat):
+    """A fallback that produces an evidence-rejected partition must not run silently.
+
+    Agent C tested the Yeo-7 cortical split under a Vasa spin null: it separates
+    6 of 21 pairs, so it is not a partition. Every other call in this file passes
+    ``allow_derived=True`` precisely because the default refuses.
+    """
+    with pytest.raises(ValueError, match="REFUSED by default"):
+        derive_families(anat)
+    part = derive_families(anat, allow_derived=True)
+    assert any("REJECTS" in n for n in part.notes), (
+        "the opted-in path must still record that the partition is evidence-rejected"
+    )
+
+
+def test_a_training_config_cannot_reach_the_derived_partition_by_default(anat):
+    from scwbd.foundation.model import build_family_layout
+
+    cfg = ModelConfig(family_state=True)  # NOT _small_cfg: that opts in
+    assert cfg.family_allow_derived_partition is False, "the default must refuse"
+    with pytest.raises(ValueError, match="REFUSED by default"):
+        build_family_layout(cfg, anat)
+
+
+def test_an_anatomy_declared_partition_is_consumed_verbatim(anat):
+    """The handoff from ``scwbd.anatomy.FamilyPartition`` (agent C).
+
+    Reproduces the shape agent C actually shipped — ``family_id`` + ``parcels``
+    per family, not the flat per-parcel labelling this module first specified —
+    and asserts it takes precedence with no opt-in.
+    """
+    from dataclasses import dataclass, field as dfield
+
+    @dataclass
+    class _F:
+        family_id: str
+        parcels: tuple
+        evidence_tier: str = "measured_separation"
+        training_status: str = "has_regional_data"
+        separating_evidence: tuple = ()
+
+    @dataclass
+    class _P:
+        families: tuple
+        declared_absent: dict = dfield(default_factory=dict)
+        separation_evidence: dict = dfield(default_factory=dict)
+
+    n = anat.n_regions
+    ctx = [i for i, d in enumerate(anat.division) if d == "cortex"]
+    sub = [i for i, d in enumerate(anat.division) if d != "cortex"]
+    a = copy.copy(anat)
+    a.family_partition = _P(
+        families=(
+            _F("cortex_unimodal", tuple(ctx[: len(ctx) // 3])),
+            _F("cortex_association", tuple(ctx[len(ctx) // 3 :])),
+            _F("subcortex_hippo", tuple(sub), "atlas_separation", "prior_only_untrained"),
+        ),
+        declared_absent={"cerebellum": "no cerebellar parcels in this atlas"},
+    )
+    part = derive_families(a)  # NO allow_derived -- a declaration needs no opt-in
+    assert part.source == "anatomy_declared"
+    assert {f.name for f in part} == {"cortex_unimodal", "cortex_association", "subcortex_hippo"}
+    assert sum(f.n_regions for f in part) == n
+    assert part.by_name("subcortex_hippo").backend == "hippocampal_code"
+    assert any("declared_absent" in n or "cerebellum" in n for n in part.notes)
+
+
+def test_agent_c_family_ids_map_onto_the_engineered_backends():
+    """Pins the ids agent C actually shipped against the backend assignment.
+
+    Regression: an earlier ``_KIND_TOKENS`` carried only the long forms
+    (``hippocamp``, ``thalam``, ``putamen``, …) and matched **1 of these 7**.
+    The other six fell through to the generic learned core with nothing raised —
+    every engineered backend body.tex §5 argues for silently unassigned, while
+    the config still said ``family_state: true``.
+    """
+    from scwbd.foundation.families import DEFAULT_FAMILY_CORES, _kind_from_declared_name
+
+    expected = {
+        "cortex_unimodal": None,
+        "cortex_association": None,
+        "subcortex_accumb": "basal_ganglia",
+        "subcortex_amyg": "amygdala",
+        "subcortex_caud": "basal_ganglia",
+        "subcortex_hippo": "hippocampus",
+        "subcortex_pal": "basal_ganglia",
+        "subcortex_put": "basal_ganglia",
+        "subcortex_thal": "thalamus",
+    }
+    for fid, kind in expected.items():
+        assert _kind_from_declared_name(fid) == kind, f"{fid} mapped to {_kind_from_declared_name(fid)!r}"
+    # and the ones with an engineered backend must actually resolve to one
+    for fid, kind in expected.items():
+        if kind in DEFAULT_FAMILY_CORES:
+            assert resolve_backend(DEFAULT_FAMILY_CORES[kind]) is not None
+
+
+def test_hypothalamus_does_not_inherit_the_thalamic_backend():
+    """``hypothal`` contains ``thal``.  It is not a thalamic nucleus."""
+    from scwbd.foundation.families import _kind_from_declared_name
+
+    assert _kind_from_declared_name("subcortex_hypothal") is None
+    assert _kind_from_declared_name("subcortex_thal") == "thalamus"
+
+
+def test_an_unrecognised_non_cortical_family_is_reported_loudly(anat):
+    """§5's engineered backends must not go unassigned quietly."""
+    from dataclasses import dataclass
+
+    @dataclass
+    class _F:
+        family_id: str
+        parcels: tuple
+
+    @dataclass
+    class _P:
+        families: tuple
+
+    ctx = [i for i, d in enumerate(anat.division) if d == "cortex"]
+    sub = [i for i, d in enumerate(anat.division) if d != "cortex"]
+    a = copy.copy(anat)
+    a.family_partition = _P(families=(_F("cortex_all", tuple(ctx)), _F("subcortex_zzz", tuple(sub))))
+    part = derive_families(a)
+    assert any("NON-CORTICAL FAMILIES WITH NO RECOGNISED BACKEND" in n for n in part.notes)
+    assert part.by_name("subcortex_zzz").backend == "learned"
+
+
+def test_an_incomplete_anatomy_partition_raises(anat):
+    from dataclasses import dataclass
+
+    @dataclass
+    class _F:
+        family_id: str
+        parcels: tuple
+
+    @dataclass
+    class _P:
+        families: tuple
+
+    a = copy.copy(anat)
+    a.family_partition = _P(families=(_F("only_some", tuple(range(10))),))
+    with pytest.raises(ValueError, match="unassigned"):
+        derive_families(a)
 
 
 def test_backend_assignment_to_a_nonexistent_family_raises(anat):
     with pytest.raises(KeyError, match="does not produce"):
-        derive_families(anat, cores={"cortex_auditory": "wilson_cowan"})
+        derive_families(anat, cores={"cortex_auditory": "wilson_cowan"}, allow_derived=True)
 
 
 # ======================================================================
@@ -227,7 +376,7 @@ def test_padding_fraction_is_reported(flayout):
 
 
 def test_overlapping_or_orphan_regions_raise(anat):
-    part = derive_families(anat)
+    part = derive_families(anat, allow_derived=True)
     fams = list(part.families)
     # drop one family: its parcels become orphans
     orphaned = replace(part, families=tuple(fams[1:]))
@@ -259,7 +408,7 @@ def test_a_port_over_an_undeclared_component_raises():
 
 
 def test_same_port_name_with_conflicting_units_raises(anat):
-    part = derive_families(anat)
+    part = derive_families(anat, allow_derived=True)
     fams = list(part.families)
     i = next(k for k, f in enumerate(fams) if f.name.startswith("cortex_"))
     bad = replace(
@@ -310,7 +459,7 @@ def test_hippocampal_family_declares_H_t_exactly(flayout):
 
 
 def test_engineered_backend_state_must_fit_the_declared_components(anat):
-    part = derive_families(anat)
+    part = derive_families(anat, allow_derived=True)
     f = part.by_name("thalamus")
     f.check_backend(resolve_backend(f.backend))  # passes
     truncated = replace(f, backend_components=("relay",))  # 2 channels for a 3-dim backend
