@@ -1,0 +1,183 @@
+{
+  "anatomy": {
+    "n_regions": 414,
+    "is_biological": true,
+    "gradient_std": 3.8881988525390625,
+    "ei_prior_std": 0.40909358859062195,
+    "timescale_prior_std": 0.07078678160905838
+  },
+  "parameter_level": {
+    "level": "parameter",
+    "per_dim": {
+      "log_G": {
+        "wilson_cowan": 1.9735099077224731,
+        "jansen_rit": 1.9735106229782104,
+        "wong_wang": 1.9735099077224731,
+        "stuart_landau": 1.968253254890442,
+        "linear_gaussian": 1.9735095500946045
+      },
+      "log_velocity": {
+        "wilson_cowan": 0.0,
+        "jansen_rit": 0.0,
+        "wong_wang": 0.0,
+        "stuart_landau": 0.0,
+        "linear_gaussian": 0.0
+      },
+      "ei_global": {
+        "wilson_cowan": 0.6451520919799805,
+        "jansen_rit": 0.440774530172348,
+        "wong_wang": 0.6451520919799805,
+        "stuart_landau": 0.6358575820922852,
+        "linear_gaussian": 0.9814961552619934
+      },
+      "ei_gradient": {
+        "wilson_cowan": 1.3264485597610474,
+        "jansen_rit": 1.3226224184036255,
+        "wong_wang": 1.3264485597610474,
+        "stuart_landau": 1.212733268737793,
+        "linear_gaussian": 1.900912880897522
+      },
+      "log_sigma": {
+        "wilson_cowan": 1.9344267845153809,
+        "jansen_rit": 1.9473683834075928,
+        "wong_wang": 1.9473683834075928,
+        "stuart_landau": 1.8709690570831299,
+        "linear_gaussian": 1.829785704612732
+      },
+      "drive": {
+        "wilson_cowan": 1.066666841506958,
+        "jansen_rit": 0.9056603908538818,
+        "wong_wang": 2.0,
+        "stuart_landau": 2.0,
+        "linear_gaussian": 0.49965351819992065
+      }
+    },
+    "movers": {
+      "log_G": [
+        "wilson_cowan",
+        "jansen_rit",
+        "wong_wang",
+        "stuart_landau",
+        "linear_gaussian"
+      ],
+      "log_velocity": [],
+      "ei_global": [
+        "wilson_cowan",
+        "jansen_rit",
+        "wong_wang",
+        "stuart_landau",
+        "linear_gaussian"
+      ],
+      "ei_gradient": [
+        "wilson_cowan",
+        "jansen_rit",
+        "wong_wang",
+        "stuart_landau",
+        "linear_gaussian"
+      ],
+      "log_sigma": [
+        "wilson_cowan",
+        "jansen_rit",
+        "wong_wang",
+        "stuart_landau",
+        "linear_gaussian"
+      ],
+      "drive": [
+        "wilson_cowan",
+        "jansen_rit",
+        "wong_wang",
+        "stuart_landau",
+        "linear_gaussian"
+      ]
+    },
+    "inert": [
+      "log_velocity"
+    ],
+    "notes": {}
+  },
+  "inert": [],
+  "unverified_without_trajectory_level": [
+    "log_velocity"
+  ],
+  "parameter_level_exempt": {
+    "log_velocity": "enters the integration through anat.delay_matrix(velocity) -> DelayedCoupling, never through _regional_theta. The parameter level is structurally blind to it; only the trajectory level can see it."
+  },
+  "sampling_diversity": {
+    "n_shards": 148,
+    "n_trajectories": 37888,
+    "effective_distinct_values": {
+      "log_G": 37888,
+      "log_velocity": 148,
+      "ei_global": 37888,
+      "ei_gradient": 37888,
+      "log_sigma": 37888,
+      "drive": 37888
+    },
+    "velocity_deficit_factor": 256,
+    "why": "generate_corpus shares one conduction velocity across a batch (simulate.py: theta[:, 1] = theta[0, 1]); one batch is one shard."
+  },
+  "spec": {
+    "out_dir": "/data/scwbd/sim_corpus_414",
+    "tier": "fast",
+    "backends": [
+      "wilson_cowan",
+      "jansen_rit",
+      "wong_wang",
+      "stuart_landau",
+      "linear_gaussian"
+    ],
+    "backend_weights": [
+      0.3,
+      0.22,
+      0.22,
+      0.16,
+      0.1
+    ],
+    "control_graphs": [
+      "randomized",
+      "distance_matched",
+      "dense",
+      "local_only"
+    ],
+    "control_graph_fraction": 0.06,
+    "batch": 256,
+    "dt": 0.001,
+    "duration_s": 12.0,
+    "warmup_s": 3.0,
+    "store_every": 8,
+    "n_delay_bins": 16,
+    "target_traj_seconds": 454656.0,
+    "seed": 20260805,
+    "max_wall_seconds": 14400.0,
+    "shard_trajectories": 1024,
+    "device": "cuda",
+    "theta_prior": {
+      "log_G": [
+        -3.912023005428146,
+        1.0986122886681098
+      ],
+      "log_velocity": [
+        0.4054651081081644,
+        2.4849066497880004
+      ],
+      "ei_global": [
+        0.6,
+        1.6
+      ],
+      "ei_gradient": [
+        -0.45,
+        0.45
+      ],
+      "log_sigma": [
+        -6.214608098422191,
+        -1.8971199848858813
+      ],
+      "drive": [
+        0.3,
+        1.9
+      ]
+    },
+    "fs_hz": 125.0,
+    "n_stored": 1500
+  }
+}
