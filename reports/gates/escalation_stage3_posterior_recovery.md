@@ -203,3 +203,52 @@ already holds the old module, but `save_checkpoint` stamps `git_sha()` at save
 time, so every remaining Stage IV/V checkpoint would carry a SHA whose source
 differs from the code that produced it. **That is the provenance violation I
 already committed once in this run.** The patch lands after Stage V.
+
+---
+
+# ADDENDUM B — corrected numbers on the full, representative val set
+
+The backend-biased sample (handover item 1) is fixed. Re-ran over **all 1888 val
+windows**, backend counts `[155, 101, 259, 761, 612]` — all five present, versus
+`[0, 0, 110, 219, 183]` in the 512 I escalated.
+
+| param | R² (biased 512) | **R² (all 1888)** | z_sd 512 | **z_sd all** | edge 512 | **edge all** |
+|---|---|---|---|---|---|---|
+| log_G | −0.089 | **−0.006** | 1.06 | 1.02 | 0.125 | 0.127 |
+| log_velocity | 0.036 | **0.052** | 0.85 | 1.01 | 0.084 | 0.152 |
+| ei_global | 0.300 | **0.209** | 1.05 | 1.03 | 0.129 | 0.119 |
+| ei_gradient | 0.045 | **0.036** | 1.48 | 1.40 | 0.311 | 0.278 |
+| log_sigma | −0.447 | **−0.465** | 1.32 | 1.27 | 0.225 | 0.217 |
+| drive | 0.122 | **0.123** | 0.98 | 0.95 | 0.064 | 0.064 |
+
+coverage MAE 0.0268 → 0.0309. min KS p 1.3e-57 → 1.31e-201 (**this is power, not
+degradation** — 1888 vs 512 datasets).
+
+## Correction to what I escalated
+
+I wrote *"two parameters are worse than predicting the prior mean."* On the
+representative set that is **one, not two**:
+
+- `log_sigma` **−0.465** — clearly worse than the prior mean. Stands.
+- `log_G` **−0.006** — indistinguishable from zero. The honest statement is *no
+  better than* the prior mean, **not** *worse than* it. My −0.089 was an artefact
+  of the backend-biased subset.
+
+## The bias ran in both directions, which is the point
+
+It **flattered** the model on `ei_global` (0.300 → 0.209) and **penalised** it on
+`log_G` (−0.089 → −0.006). That is why fixing it was not a choice about outcome: I
+could not have predicted the sign, and it moved both ways.
+
+## Conclusion: unchanged, and slightly better stated
+
+Five of six parameters sit between −0.47 and 0.13 — no recovery. `ei_global`
+(0.209) is the only one with any signal, and it is **weaker** than I reported.
+`ei_gradient` remains the confidently-wrong case (z_sd 1.40, edge mass 0.278), and
+per Addendum A it is *not* excused by the gradient defect.
+
+> **A posterior that cannot invert its own simulator has not earned an inference
+> claim about brains.**
+
+That sentence survives the correction. The supporting number does not, in one
+place, and the corrected version is the one to quote.
