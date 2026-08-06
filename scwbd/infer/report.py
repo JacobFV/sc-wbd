@@ -227,6 +227,59 @@ def _theta_lmin(entry: Mapping[str, Any], key: str = "fisher_T4") -> float:
 PRIOR_DOMINATED_THRESHOLD = 0.1
 
 
+def modality_decomposition(results: Mapping[str, Any]) -> dict[str, Any]:
+    """Where each modality's theta information actually goes.
+
+    Gate G4 refuses to treat ``I_{EEG+BOLD} = I_EEG + I_BOLD`` as evidence,
+    because under the modality-block-diagonal form of T4 it is an algebraic
+    identity rather than a finding.  This function *measures* the residual of
+    that identity (it should be at round-off) and then reports the quantity the
+    identity does not settle: how much information each modality contributes to
+    each preregistered parameter, and in particular to the conduction delay.
+
+    A fusion gain on the worst-determined direction can be 1.000x while the
+    information *volume* still grows, so both are reported.
+    """
+    from .fisher import schur_information
+
+    idx = [PARAM_NAMES.index(n) for n in THETA_NAMES]
+    out: dict[str, Any] = {}
+    for rname, rr in results["regimes"].items():
+        d = rr["designs"]
+        if not {"eeg_only", "fmri_only", "joint_native"} <= set(d):
+            continue
+
+        def I(name: str) -> np.ndarray:
+            return np.asarray(d[name]["fisher_T4"]["I_likelihood"], float)
+
+        residual = float(
+            np.abs(I("joint_native") - I("eeg_only") - I("fmri_only")).max()
+        )
+        prof = {k: schur_information(I(k), idx)
+                for k in ("eeg_only", "fmri_only", "joint_native")}
+        per_param = {
+            nm: {k: float(m[i, i]) for k, m in prof.items()}
+            for i, nm in enumerate(THETA_NAMES)
+        }
+        lmin = {k: float(np.linalg.eigvalsh(m)[0]) for k, m in prof.items()}
+        logdet = {k: float(np.linalg.slogdet(m)[1]) for k, m in prof.items()}
+        out[rname] = {
+            "additivity_residual_max_abs": residual,
+            "additivity_holds_to_roundoff": bool(residual < 1e-8),
+            "theta_profile_information_by_parameter": per_param,
+            "theta_profile_min_eigenvalue": lmin,
+            "theta_profile_logdet": logdet,
+            "fusion_lmin_ratio": (
+                lmin["joint_native"] / lmin["eeg_only"] if lmin["eeg_only"] else None
+            ),
+            "fusion_logdet_gain_nats": logdet["joint_native"] - logdet["eeg_only"],
+            "fusion_volume_ratio": float(
+                np.exp(logdet["joint_native"] - logdet["eeg_only"])
+            ),
+        }
+    return out
+
+
 def nuisance_identifiability(results: Mapping[str, Any]) -> dict[str, Any]:
     """Diagnose which parameters are informed by data and which are prior echoes.
 
@@ -616,6 +669,7 @@ def write_report(
     decision = decision or evaluate_decision_rule(results)
     payload = as_builtin({"results": results, "decision": decision,
                           "nuisance_identifiability": nuisance_identifiability(results),
+                          "modality_decomposition": modality_decomposition(results),
                           "environment": _env()})
     jpath = outdir / "results.json"
     jpath.write_text(json.dumps(payload, indent=1, sort_keys=True))
@@ -701,6 +755,29 @@ def write_report(
                 tc = float(np.trace(np.array(mc["I_likelihood"], float)))
                 t4 = float(np.trace(np.array(v["fisher_T4"]["I_likelihood"], float)))
                 A(f"| `{d}` | {_fmt(tc)} | {_fmt(t4)} | {_fmt(tc / t4 if t4 else np.nan)} |")
+    modal = modality_decomposition(results)
+    if modal:
+        A("\n## Where each modality's θ information goes\n")
+        A("Under the modality-block-diagonal form of T4, "
+          "`I_EEG+BOLD = I_EEG + I_BOLD` is an algebraic identity, not a "
+          "finding — gate G4 names it and refuses to report it as evidence. "
+          "The residual below measures that identity; what follows it is the "
+          "part the identity does not settle.\n")
+        for rname, m in modal.items():
+            A(f"\n**`{rname}`** — additivity residual "
+              f"`{m['additivity_residual_max_abs']:.2e}` "
+              f"({'round-off, identity confirmed' if m['additivity_holds_to_roundoff'] else 'NOT round-off'})\n")
+            A("| θ parameter | EEG alone | fMRI alone | joint native |")
+            A("|---|---|---|---|")
+            for nm, v in m["theta_profile_information_by_parameter"].items():
+                A(f"| `{nm}` | {_fmt(v['eeg_only'])} | {_fmt(v['fmri_only'])} | "
+                  f"{_fmt(v['joint_native'])} |")
+            A(f"\nFusion gain on the worst-determined direction: "
+              f"**{m['fusion_lmin_ratio']:.4f}x** "
+              f"(criterion C1 requires ≥ 1.05x). "
+              f"Fusion gain in information *volume*: "
+              f"{m['fusion_volume_ratio']:.4f}x "
+              f"({m['fusion_logdet_gain_nats']:+.4f} nats).\n")
     delta = preregistration_delta(outdir)
     if delta:
         A(delta)

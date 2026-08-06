@@ -6,6 +6,7 @@ import json
 
 import numpy as np
 
+from scwbd.infer.linear_gaussian import PARAM_NAMES
 from scwbd.infer.report import nuisance_identifiability, preregistration_delta
 
 
@@ -102,3 +103,37 @@ def test_preregistration_delta_shouts_when_the_criteria_moved(tmp_path):
 def test_preregistration_delta_is_empty_without_a_preregistration(tmp_path):
     (tmp_path / "manifest.json").write_text(json.dumps({"status": "x"}))
     assert preregistration_delta(tmp_path) == ""
+
+
+def _modal_results(I_eeg, I_bold, I_joint):
+    def entry(I):
+        return {"fisher_T4": {"I_likelihood": np.asarray(I).tolist()}}
+    return {"regimes": {"reference": {"designs": {
+        "eeg_only": entry(I_eeg), "fmri_only": entry(I_bold),
+        "joint_native": entry(I_joint),
+    }}}}
+
+
+def test_modality_decomposition_confirms_the_additivity_identity():
+    from scwbd.infer.report import modality_decomposition
+
+    rng = np.random.default_rng(0)
+    n = len(PARAM_NAMES)
+    A = rng.normal(size=(n, n)); I_eeg = A @ A.T + n * np.eye(n)
+    B = rng.normal(size=(n, n)); I_bold = B @ B.T + n * np.eye(n)
+    out = modality_decomposition(_modal_results(I_eeg, I_bold, I_eeg + I_bold))
+    m = out["reference"]
+    assert m["additivity_holds_to_roundoff"]
+    assert m["additivity_residual_max_abs"] < 1e-10
+    # summing information can only add, never remove, so both summaries grow
+    assert m["fusion_lmin_ratio"] >= 1.0
+    assert m["fusion_logdet_gain_nats"] >= 0.0
+
+
+def test_modality_decomposition_flags_a_broken_identity():
+    from scwbd.infer.report import modality_decomposition
+
+    n = len(PARAM_NAMES)
+    I = np.eye(n) * 3.0
+    out = modality_decomposition(_modal_results(I, I, I))   # joint != sum
+    assert not out["reference"]["additivity_holds_to_roundoff"]
