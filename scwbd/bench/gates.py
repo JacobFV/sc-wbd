@@ -303,9 +303,57 @@ G1_SUPPORTED_CLAIM = "native clocks beat resampling; a modality's value is not a
 #: interval [nan, nan]. NO REAL-EEG HOLDOUT NUMBER MAY BE QUOTED until that path
 #: is cleared, and that includes the control's.
 G5_STAGE_V_OVER_PERMISSION = (
-    "NOT_A_FAILURE; PASS_NOT_CLEAN; CONTROL_REQUESTED_freeze_eeg.source_proj; "
-    "SCORING_BLOCKED_ON_EVALUATION_PATH"
+    "NOT_A_FAILURE; PASS_NOT_CLEAN; CONTROL_RUN_freeze_eeg.source_proj_VERIFIED_BY_DELTA; "
+    "CONFOUND_190.6pct_OF_EFFECTIVE_CAPACITY; SCORING_BLOCKED_ON_EVALUATION_PATH"
 )
+
+#: CONTROL DELIVERED AND VERIFIED BY CHANGE, NOT BY PERMISSION. All four
+#: eeg.source_proj.* tensors show max|delta| exactly 0.000e+00 from
+#: stage_IV_assembly.pt, against 3.567e-03 / 1.276e-03 / 2.189e-03 / 2.748e-04 in
+#: production (g5_control_checkpoint.md lines 36-39, verified by bench). Permitted
+#: count 16 -> 12; the six declared nuisance tensors still train; zero non-EEG
+#: tensors changed; config differs in three bookkeeping lines only.
+#:
+#: THE CONFOUND IS ~5x WORSE THAN THE FIGURE I RULED AGAINST, and the correction
+#: came from the party it damages. 79.6% of the individualizer NEVER MOVED:
+#: z_session (2,616 params) and _alpha_raw (12) are bit-identical to a freshly
+#: initialised Individualizer. Trainable 3,300; moved 672. So the undeclared
+#: eeg.source_proj.* at 1,281 params is 38.8% of NOMINAL capacity and
+#: **190.6% OF EFFECTIVE CAPACITY** -- the undeclared projection carried nearly
+#: TWICE the adapting capacity of the individualization mechanism itself.
+#: My preregistered three-outcome table is unaffected: it partitions the same way
+#: and was fixed before any of this. The objection is simply much stronger than
+#: the number I was given.
+G5_CONFOUND_EFFECTIVE_CAPACITY_PCT = 190.6
+
+#: SEPARATE AND LARGER FINDING, bearing on G5's CLAIM TEXT rather than on the
+#: confound: **THE SESSION LEVEL OF THE HIERARCHY IS INERT.** z_session is 2,616
+#: of 3,300 trainable parameters -- 79% of the mechanism -- and is bit-identical
+#: to initialisation in BOTH the production run and the control.
+#:
+#: ARCHITECTURE.md describes Stage V as "individualization with centered
+#: population effects and hierarchical session effects". The session level of
+#: that hierarchy did nothing. So whatever G5 measures, IT IS NOT SESSION-LEVEL
+#: ADAPTATION: at most person-level (z_person, 654 params) plus four scalars.
+#:
+#: CONSEQUENCE FOR THE CLAIM, which bench sets: G5's licensed claim narrows from
+#: "individualization" to "PERSON-LEVEL adaptation, within this recording setup"
+#: -- the second narrowing this gate has taken on evidence, after the single-site
+#: constraint. And note the interaction with G5's own baseline set: the gate
+#: scores the candidate against a SESSION-ADAPTED baseline. A candidate whose own
+#: session mechanism never trained is not a hierarchical model being compared to a
+#: session baseline; it is a person-level model being compared to one. That does
+#: not invalidate the comparison, but it changes what a win would mean, and the
+#: report must say so rather than let "individualization" carry the older sense.
+#:
+#: WHY IT HAPPENED IS NOT RECORDED, deliberately. Agent Turing declined to
+#: diagnose a mechanism they had not measured and offered one observation instead:
+#: _person_seen_sessions (a buffer, not a parameter) DID move, so sessions are
+#: observed while z_session is not learned, which makes a gradient-path problem
+#: more likely than dead code. THAT IS A HYPOTHESIS, NOT A FINDING, and bench
+#: records it as one. Whether it earns its own control is a separate decision.
+G5_SESSION_LEVEL_INERT = True
+G5_LICENSED_CLAIM = "person-level adaptation, within this recording setup"
 
 #: What agent Turing's first reading got wrong, recorded because it PROTECTS a
 #: result rather than damaging one: they initially read 31,193 params

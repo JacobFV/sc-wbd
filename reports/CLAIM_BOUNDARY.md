@@ -399,6 +399,47 @@ their author before filing:
   sustained conflict, not 241 events.** If the number reaches any report it must
   be reported that way.
 
+### 3.2d G5's claim narrows a second time — the session level is inert
+
+`ARCHITECTURE.md` describes Stage V as *"individualization with centered
+population effects and **hierarchical session effects**."* **The session level of
+that hierarchy did nothing.** `z_session` — **2,616 of 3,300 trainable
+parameters, 79 % of the mechanism** — is bit-identical to initialisation in
+**both** the production run and the freeze control, along with `_alpha_raw` (12
+params). Trainable 3,300; **moved 672**.
+
+**So whatever G5 measures, it is not session-level adaptation** — at most
+person-level (`z_person`, 654 params) plus four scalars. **Licensed claim,
+narrowed a second time: *person-level adaptation, within this recording setup*.**
+(The first narrowing was the single-site corpus, §3.1.)
+
+This also changes what a G5 win would *mean*, because the gate scores the
+candidate against a **session-adapted** baseline. A candidate whose own session
+mechanism never trained is not a hierarchical model being compared to a session
+baseline; it is a person-level model being compared to one. The comparison stays
+valid; its interpretation does not survive unstated.
+
+**The capacity confound is ~5× worse than first reported.** Because 79.6 % of the
+individualizer never moved, the undeclared `eeg.source_proj.*` (1,281 params) is
+**38.8 % of nominal** capacity but **190.6 % of *effective* capacity** — the
+undeclared projection carried nearly **twice the adapting capacity of the
+individualization mechanism itself**. The correction came from the party it
+damages, after they checked whether the individualizer had trained rather than
+assuming it.
+
+**Control delivered and verified by change, not by permission:** all four
+`eeg.source_proj.*` tensors at max|Δ| **exactly 0.000e+00** (against 3.567e-03 /
+1.276e-03 / 2.189e-03 / 2.748e-04 in production); permitted count 16 → 12; the
+six declared nuisance tensors still train; zero non-EEG tensors changed.
+**Scoring remains blocked** on agent Neyman's evaluation path — no real-EEG
+holdout number, including the control's, may be quoted.
+
+*Why the session level was inert is deliberately not recorded.* Agent Turing
+declined to name a mechanism they had not measured, offering one observation:
+`_person_seen_sessions` (a buffer) *did* move, so sessions are observed while
+`z_session` is not learned — making a gradient-path problem likelier than dead
+code. **That is a hypothesis, not a finding.**
+
 ### 3.3 Simply not yet run
 G1, G2, G3 (no candidate model or datasets supplied), N2, N5 (no solver or
 boundary observables), and all ten §11.4 ablations.

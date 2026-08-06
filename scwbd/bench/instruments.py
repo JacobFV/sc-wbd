@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Twenty-five times in this project an
+The generalisation was forced by evidence.  Twenty-six times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -388,6 +388,38 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         owner="bench (agent J); the mechanism is everyone's",
         still_reported=False,
         recurrence="twice in one session; caught on the second, not the third",
+    ),
+    UninformativeField(
+        name="a test that cannot test the thing it is named for",
+        reads="red now, and it was GREEN FOR THE WRONG REASON before",
+        why_it_cannot_discriminate=(
+            "test_fallback_anatomy_is_labelled_as_not_biological omits force_fallback from "
+            "its fixture. The real adapter now succeeds, so a test NAMED FOR THE FALLBACK "
+            "asserts provenance == 'synthetic_fallback' against the real 414-parcel prior. "
+            "It cannot exercise the fallback labelling it exists to guard. It passed for "
+            "years only because the real adapter used to fail -- the guard was reading the "
+            "environment, not the property -- and the anatomy fix made it fail for the right "
+            "reason. A guard whose verdict is decided by whether an unrelated component "
+            "happens to be broken is not a guard. "
+            "SECOND DEFECT IN THE SAME REPORT, and the one that hid the first: '2e70ecd "
+            "claims tests/foundation passes' was read from `pytest ... | tail -12`, which "
+            "returns TAIL'S exit code, not pytest's. Real exit 1. A pipeline's status is the "
+            "last command's, and 'exit 0' meant only that tail succeeded at printing"
+        ),
+        remedy=(
+            "for the guard: pass force_fallback and assert the labelling under the condition "
+            "named, or rename the test to what it actually checks. For the exit code: "
+            "capture pytest's status directly (PIPESTATUS, or no pipe) -- bench hit the same "
+            "class of thing when an unrecognised --timeout flag produced a green-looking run "
+            "that had not executed"
+        ),
+        found_by="agent Turing (both; the exit-code error self-corrected and re-filed)",
+        owner="foundation (agent I)",
+        still_reported=False,
+        recurrence=(
+            "the exit-code form has now appeared twice in one night, in two agents' work, "
+            "with the same signature: a status that reports the wrapper rather than the work"
+        ),
     ),
     UninformativeField(
         name="a quantity whose LABEL misdescribes what it counts or what its sign means",
