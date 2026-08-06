@@ -601,6 +601,44 @@ because it signals awareness of the limitation it fails to apply.
 Operational test: state the caveat, then state the claim *as if the caveat were
 binding*. If the claim survives unchanged, one of the two is wrong.
 
+**4b. Ask whether a qualifier addresses the *largest* source of error, or a
+smaller one that happens to be nameable.**
+
+> A **true** qualifier that increases apparent confidence while the underlying
+> measurement stays weak is worse than a decorative one. The decorative case is
+> inert; this one **borrows credibility.**
+
+Reported: *"2.24 s/step, settled, warm-up excluded."* Every word true — warm-up
+*was* excluded, and excluding it is correct practice. But the reader hears
+"warm-up excluded" as *"the confound has been handled, so this is the converged
+value"*, when it actually meant *"this is a 60-step sample taken immediately
+after warm-up"* — precisely where a rate is **least** likely to have converged.
+The settled figure was **2.95** (+32 %).
+
+**Warm-up was nameable. Sample length was the larger error and went unnamed.**
+Handling the confound you can name, and saying so, transfers confidence from the
+named confound to the unnamed one.
+
+This is recommendation 4's sibling. There the caveat failed to constrain the
+claim; here the caveat *strengthened* it while the evidence did not.
+
+**The short-window error, three times in one night:**
+
+| claim | window | direction |
+|---|---|---|
+| period-60 spike structure | 3 points | spurious pattern |
+| KL "climbing monotonically" | 5 points | spurious pattern |
+| "2.24 s/step, settled" | 60 steps of 2600 | **optimistic estimate** |
+
+Symmetric in direction, **asymmetric in how it is caught**: a spurious pattern
+invites scrutiny, an optimistic estimate invites relief. The third survived
+longest and was the only one nobody questioned on arrival — including its author,
+who had retracted the other two that same night.
+
+**Permanent correction:** state the measurement window, never the word "settled".
+*"2.95 s/step over steps 200–380"* cannot borrow authority it has not earned;
+*"settled"* can.
+
 **5. Treat a perfect score as a reason to check the metric, not to adopt the
 candidate.**
 
