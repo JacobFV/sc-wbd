@@ -1543,3 +1543,85 @@ Two standing recommendations, in the register's usual form:
    much as the sweep: alongside "crossing the bound refuses" there is "a value
    inside it does not", without which an axis that refused unconditionally
    would pass too.
+
+---
+
+## Entry: a test suite that never exercises a default cannot catch a change to it
+
+`scwbd/release/publish.py`, `tests/release/test_publish.py`. Found by
+📡 Shannon while mutation-testing the publish path before the first push.
+
+The property under guard was the one that matters most on a publish path:
+**`publish()` must not push unless explicitly told to.** `dry_run=True` is the
+default, and the dry-run branch returns before `huggingface_hub` is imported at
+all, so a dry run cannot reach the network even through a library side effect.
+
+Four tests covered it. All four passed. Then I flipped the default:
+
+```python
+-    dry_run: bool = True,
++    dry_run: bool = False,
+```
+
+**The whole suite stayed green.** A one-token change converting "dry run
+unless asked" into "push unless asked" — on a module whose entire purpose is
+not creating remote state prematurely — was invisible to four tests written
+specifically to guard it.
+
+### Why it was invisible
+
+Every test called `publish(..., dry_run=True)` or `publish(..., dry_run=False)`
+**explicitly**. Each one therefore tested the *branch*, and not one tested the
+*default that selects the branch*. The branches were well covered; the thing
+that decides which branch a real caller gets was covered by nothing.
+
+This is the register's usual shape at a new location. The guard was not absent
+and not wrong — it was aimed one level away from the defect. `dry_run=True`
+passed as an argument is a different fact from `dry_run=True` as a signature
+default, and only the second one describes what happens when someone calls
+`publish(plan, namespace=ns)` and forgets the keyword. Which is exactly the
+accident the default exists to prevent.
+
+### The tell
+
+**A parameter with a safety-relevant default, and no test that omits it.**
+Grep-able: for any function whose default encodes a safety posture, look for a
+call in the suite with that argument *absent*. If every call site in the tests
+passes it, the default is unguarded no matter how many tests mention it.
+
+The same shape covers more than defaults: it is the general case of **the path
+that is exercised and the path that ships being different**. A fixture that
+always supplies a value hides what happens when nothing does; a test harness
+that always sets an environment variable hides the unset case.
+
+### The fix, and its own control
+
+Two tests, because one would not have been enough:
+
+```python
+res = publish(plan, namespace="ns", stage_dir=tmp_path)   # no dry_run kwarg
+assert res["dry_run"] is True
+
+sig = inspect.signature(publish)
+assert sig.parameters["dry_run"].default is True
+assert "dry_run=not args.push" in inspect.getsource(_main)
+```
+
+The first exercises the default through the real call path. The second asserts
+the default *and* the CLI wiring, because `--push` could stop being consulted
+independently of the signature — and a later mutation confirmed that: hardcoding
+`dry_run=False` in the CLI while leaving the signature correct was caught only
+by the third assertion.
+
+Both mutants now die. Two further mutants on the same module — removing the
+attribution gate, and removing the "unattributable" branch that refuses an asset
+with no derivable provenance — were already caught, which is why the surviving
+one was worth recording rather than quietly fixing.
+
+### Standing recommendation
+
+**Mutate the default, not just the behaviour.** The existing bar in this
+register is that a guard must be shown to fire. This entry adds a second
+question to ask of any guard with a default: *does the suite ever let the
+default choose?* A control that is only ever reached by an explicit argument
+tests the callee and leaves every caller unguarded.

@@ -56,8 +56,12 @@ from typing import Any, Iterable, Mapping, Sequence
 
 __all__ = [
     "NAMESPACE_ENV",
+    "TOKEN_ENV_OVERRIDES",
     "NamespaceError",
+    "IdentityMismatch",
     "PublishBlocked",
+    "observed_identity",
+    "verify_identity",
     "FileSpec",
     "ArtifactPlan",
     "resolve_namespace",
@@ -406,6 +410,37 @@ def _licence_section(union: Any, attribution: Any) -> str:
     return "\n".join(out)
 
 
+#: The public source repository. Every card links it so a reader can check any
+#: figure against the code that generated it.
+PROJECT_URL = "https://github.com/JacobFV/sc-wbd"
+
+#: The project's own licence, set by the owner to the most restrictive term any
+#: input imposes. It is a **floor**, not a substitute for the per-artifact
+#: computation: an artifact may inherit more than this, never less.
+PROJECT_LICENCE = "CC-BY-NC-SA-4.0"
+
+
+def _project_section() -> str:
+    return "\n".join(
+        [
+            "## The project",
+            "",
+            f"Source code: <{PROJECT_URL}>",
+            "",
+            f"The SC-WBD repository itself is licensed **{PROJECT_LICENCE}**, "
+            "the most restrictive term any of its inputs imposes. Treat that as "
+            "a floor: the licence section above is computed from *this "
+            "artifact's* own inputs and an artifact can inherit more than the "
+            "floor, never less.",
+            "",
+            "This is research code. It is not a medical device, not a clinical "
+            "tool, and nothing here should be used to make a decision about a "
+            "person.",
+            "",
+        ]
+    )
+
+
 def _provenance_footer(sources: Sequence[tuple[str, str]]) -> str:
     out = [
         "## How this card was produced",
@@ -617,6 +652,7 @@ def _anatomy_card(
             "",
         ]
     body += [
+        _project_section(),
         _provenance_footer(
             [
                 (str(mp), "asset inputs, sizes and per-source licences"),
@@ -882,6 +918,7 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
         "- It is **not** evidence for or against the SC-WBD thesis.",
         "",
         _licence_section(plan.licence, plan.attribution),
+        _project_section(),
         _provenance_footer(
             [
                 (eval_rel, "every score, CI, parameter count and split size"),
@@ -1037,6 +1074,7 @@ def _corpus_card(
         "real edge classes.",
         "",
         _licence_section(plan.licence, plan.attribution),
+        _project_section(),
         _provenance_footer(
             [
                 (index_rel, "all corpus totals, shard list and anatomy block"),
@@ -1091,6 +1129,73 @@ PLANNERS: Mapping[str, Any] = {
 
 
 # ---------------------------------------------------------------------------
+# identity: an RL-11 guard, not an assumption
+# ---------------------------------------------------------------------------
+#: Set on this box, and it **silently overrides the stored CLI login**:
+#: ``hf auth whoami`` reports ``brandonin`` while ``env -u HF_TOKEN hf auth
+#: whoami`` reports ``jacob-valdez``. Authenticating as the wrong user is
+#: invisible on its own — it only shows up as an artifact in someone else's
+#: namespace — so this is checked and reported rather than assumed.
+TOKEN_ENV_OVERRIDES = ("HF_TOKEN", "HUGGING_FACE_HUB_TOKEN")
+
+
+class IdentityMismatch(RuntimeError):
+    """The authenticated account cannot write to the requested namespace."""
+
+
+def observed_identity(token: str | None = None) -> dict[str, Any]:
+    """Ask the Hub who we actually are. Returns the observation, not a verdict.
+
+    Reported rather than reduced to a boolean on purpose: "identity ok" tells
+    you nothing when it is wrong, and the interesting case here is precisely
+    the one where a caller believes one thing and the network believes another.
+    """
+    from huggingface_hub import HfApi
+
+    who = HfApi(token=token).whoami()
+    return {
+        "user": who.get("name"),
+        "orgs": [o.get("name") for o in (who.get("orgs") or [])],
+        "auth_type": who.get("auth", {}).get("type"),
+        "token_env_set": [v for v in TOKEN_ENV_OVERRIDES if os.environ.get(v)],
+    }
+
+
+def verify_identity(namespace: str, *, token: str | None = None) -> dict[str, Any]:
+    """Refuse unless the authenticated account may write to ``namespace``.
+
+    This is the guard that makes the push falsifiable. Two failure modes it
+    closes, which compose badly with each other:
+
+    * a token environment variable overriding the stored login, so the caller
+      authenticates as someone else while believing otherwise; and
+    * ``create_repo(exist_ok=True)``, which on a namespace collision uploads
+      *into an existing repo* instead of failing.
+
+    Wrong identity plus silent-merge-on-collision puts an artifact somewhere
+    nobody intended with nothing reporting it. So identity is asserted against
+    the network before any bytes move, and the observation travels in the
+    result either way.
+    """
+    ident = observed_identity(token=token)
+    user, orgs = ident["user"], ident["orgs"]
+    if namespace != user and namespace not in orgs:
+        raise IdentityMismatch(
+            f"Authenticated as {user!r} (orgs: {orgs or 'none'}), which cannot "
+            f"write to namespace {namespace!r}.\n"
+            + (
+                f"  {'/'.join(ident['token_env_set'])} is set in the "
+                "environment and overrides the stored CLI login. Re-run with "
+                f"`env -u {' -u '.join(ident['token_env_set'])} ...`.\n"
+                if ident["token_env_set"]
+                else ""
+            )
+            + "  Refusing rather than publishing to the wrong account."
+        )
+    return ident
+
+
+# ---------------------------------------------------------------------------
 # publish
 # ---------------------------------------------------------------------------
 def publish(
@@ -1102,12 +1207,17 @@ def publish(
     stage_dir: str | Path | None = None,
     token: str | None = None,
     require_attribution: bool = True,
+    allow_existing: bool = False,
 ) -> dict[str, Any]:
     """Gate the plan and, only when ``dry_run`` is False, push it.
 
     The gate runs **before** the dry-run/push branch, so a dry run exercises
     exactly the check a real publish would hit. A gate that only fires on the
     push path is a gate nobody has ever seen fire.
+
+    On the push path two further preconditions are asserted against the
+    network, in this order and before any write: :func:`verify_identity`, then
+    repository non-existence. Both refuse rather than proceed.
     """
     repo_id = plan.repo_id(namespace)
     result: dict[str, Any] = {
@@ -1145,10 +1255,32 @@ def publish(
     # module scope, so that a dry run cannot reach the Hub even by accident.
     from huggingface_hub import HfApi
 
+    # 1. Who are we, really? Refuses before any write.
+    ident = verify_identity(namespace, token=token)
+    result["identity"] = ident
+
     api = HfApi(token=token)
+
+    # 2. Is the name free? A pre-existing repo we did not create is refused
+    #    rather than uploaded into: exist_ok=True would silently merge, and on
+    #    a first publish that is indistinguishable from success.
+    if api.repo_exists(repo_id=repo_id, repo_type=plan.repo_type):
+        if not allow_existing:
+            raise PublishBlocked(
+                f"{repo_id} ({plan.repo_type}) already exists. Refusing to "
+                "upload into a repository this run did not create — that would "
+                "merge into whatever is already there and report success. Pass "
+                "allow_existing=True / --allow-existing if merging is intended."
+            )
+        result["preexisting"] = True
+
     api.create_repo(
-        repo_id=repo_id, repo_type=plan.repo_type, private=private, exist_ok=True
+        repo_id=repo_id,
+        repo_type=plan.repo_type,
+        private=private,
+        exist_ok=allow_existing,
     )
+    uploaded: list[str] = []
     if stage is not None:
         api.upload_file(
             path_or_fileobj=str(stage / "README.md"),
@@ -1156,6 +1288,7 @@ def publish(
             repo_id=repo_id,
             repo_type=plan.repo_type,
         )
+        uploaded.append("README.md")
     for f in plan.files:
         api.upload_file(
             path_or_fileobj=str(f.local),
@@ -1163,7 +1296,16 @@ def publish(
             repo_id=repo_id,
             repo_type=plan.repo_type,
         )
-    result["action"] = f"created {repo_id} and uploaded {len(plan.files)} file(s)"
+        uploaded.append(f.repo_path)
+    result["uploaded"] = uploaded
+    result["url"] = (
+        f"https://huggingface.co/{'datasets/' if plan.repo_type == 'dataset' else ''}"
+        f"{repo_id}"
+    )
+    result["action"] = (
+        f"created {repo_id} as {ident['user']} and uploaded "
+        f"{len(uploaded)} file(s)"
+    )
     return result
 
 
@@ -1198,10 +1340,35 @@ def _main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI
                     help="anatomy-prior: include Hansen-derived maps (makes it NC-SA).")
     ap.add_argument("--stage-dir", default=None,
                     help="Write the generated card and plan here for review.")
+    ap.add_argument("--allow-existing", action="store_true",
+                    help="Upload into a repo that already exists. Off by "
+                         "default: silent merge on collision is a footgun.")
+    ap.add_argument("--whoami", action="store_true",
+                    help="Report the authenticated identity and exit. Creates "
+                         "no state.")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
 
     namespace = resolve_namespace(args.namespace)
+
+    for var in TOKEN_ENV_OVERRIDES:
+        if os.environ.get(var):
+            print(
+                f"!! {var} is set and OVERRIDES the stored CLI login. If this "
+                f"is not deliberate, re-run with `env -u {var} ...`."
+            )
+
+    if args.whoami:
+        try:
+            ident = verify_identity(namespace)
+        except IdentityMismatch as exc:
+            print(f"IDENTITY MISMATCH for namespace {namespace!r}")
+            for line in str(exc).splitlines():
+                print(f"  {line}")
+            return 3
+        print(f"OK  authenticated as {ident['user']!r} "
+              f"(orgs: {ident['orgs'] or 'none'}) -> may write to {namespace!r}")
+        return 0
 
     kwargs: dict[str, Any] = {}
     if args.artifact == "anatomy-prior":
@@ -1226,7 +1393,13 @@ def _main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI
             dry_run=not args.push,
             private=not args.public,
             stage_dir=args.stage_dir,
+            allow_existing=args.allow_existing,
         )
+    except IdentityMismatch as exc:
+        print(f"IDENTITY MISMATCH  refusing to publish {plan.repo_id(namespace)}")
+        for line in str(exc).splitlines():
+            print(f"  {line}")
+        return 3
     except (PublishBlocked, AttributionError) as exc:
         # A blocked artifact is a normal outcome to report, not a crash. The
         # traceback would bury the one thing the operator needs to read.
@@ -1240,9 +1413,20 @@ def _main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI
         print(f"{'PUSH' if args.push else 'DRY RUN'}  {res['repo_id']} "
               f"({res['repo_type']})")
         print(f"  files: {res['n_files']}  bytes: {res['n_bytes']:,}")
+        ident = res.get("identity")
+        if ident:
+            # The observation, not a boolean: "identity ok" tells you nothing
+            # when it is wrong.
+            print(f"  identity: user={ident['user']!r} orgs={ident['orgs'] or 'none'}"
+                  f" auth={ident['auth_type']}")
+            if ident["token_env_set"]:
+                print(f"  identity: {'/'.join(ident['token_env_set'])} was set "
+                      "in the environment")
         for w in res["warnings"]:
             print(f"  warning: {w}")
         print(f"  {res['action']}")
+        if res.get("url"):
+            print(f"  url: {res['url']}")
         if res.get("staged_to"):
             print(f"  card staged: {res['staged_to']}/README.md")
     return 0
