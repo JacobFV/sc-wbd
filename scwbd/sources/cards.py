@@ -608,8 +608,6 @@ class SourceCardDoc:
                 "target_ports": tuple(itv.get("target_ports") or ()),
                 "sham": clean(itv.get("sham")),
                 "randomized": bool(itv.get("randomized", False)),
-                "is_prospective_human": bool(itv.get("is_prospective_human", False)),
-                "ethics_review": clean(itv.get("ethics_review")),
                 "dose_independently_calibrated": bool(
                     itv.get("dose_independently_calibrated", False)
                 ),

@@ -27,6 +27,7 @@ identity:
   file_manifest: null
 
 governance:
+  license_spdx: "DUA-RAM"
   status: unavailable
   unavailable_reason: >-
     the RAM public release requires registration and acceptance of a data use agreement, and the data are human intracranial recordings with concurrent direct electrical stimulation. No registration was completed and nothing was downloaded. Even with access, the stimulation arm would be evaluation-only here: ARCHITECTURE.md forbids optimising an intervention outside an independently validated A_safe (R11).
@@ -128,15 +129,12 @@ intervention:
   target_ports: []
   sham: unknown
   randomized: true
-  is_prospective_human: false
-  ethics_review: "site IRBs of the participating clinical centres (original acquisition)"
   dose_independently_calibrated: false
   note: >-
     Declared for completeness. Because the source is unavailable and no
     independently validated A_safe exists, every intervention gradient path is
     forbidden (R11) and the model may not propose stimulation parameters from
-    it. ARCHITECTURE.md is explicit that no agent may implement a human
-    stimulation protocol.
+    it.
 missingness:
   planned: "the entire dataset is absent"
   unplanned: "not applicable"

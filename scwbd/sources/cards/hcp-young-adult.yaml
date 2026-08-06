@@ -27,6 +27,9 @@ identity:
   file_manifest: null
 
 governance:
+  license_spdx: "DUA-HCP-OpenAccess"
+  license_spdx_note: >-
+    click-through data use terms, not an SPDX licence.
   status: unavailable
   unavailable_reason: >-
     the Open Access tier requires each user to accept the WU-Minn HCP Open Access Data Use Terms through a ConnectomeDB account, and the Restricted tier (family structure, twin zygosity, age in years) requires a separate signed agreement. No account was created and no terms were accepted, so nothing was downloaded. NOTE: HCP is a twin and sibling study - without the Restricted tier the family structure needed for a leakage-safe split is not even obtainable, which is a second, independent reason not to use it here (R10).

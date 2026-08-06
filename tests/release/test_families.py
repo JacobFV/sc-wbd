@@ -165,12 +165,51 @@ def test_measured_modalities_span_more_than_eeg():
 
 
 def test_dataset_cards_expose_multimodal_ground_truth():
-    """Verified against the cards, not against a relayed list."""
+    """Verified against the cards **and** against the files behind them.
+
+    CORRECTED 2026-08-06 (🗄️ Ada). This test used to assert
+    ``"dwi" in cards["ds004024"].modalities`` under the docstring "verified
+    against the cards, not against a relayed list". It passed, and it was
+    wrong: the fetched ds004024 subset holds two T1w volumes and neither
+    diffusion nor BOLD. The card said ``dwi``, the test read the card, and the
+    pair agreed with each other about something that was not on disk.
+
+    A card is a relayed list. Reading one is not verification — it moves the
+    unchecked assertion one file further away. So this test now requires each
+    claimed modality to carry ``signal.modality_evidence`` (globs that
+    ``scwbd.sources.audit`` A4 resolves against the tree), which is what makes
+    the claim falsifiable.
+    """
+    import yaml
+
+    from scwbd.sources.cards import CARD_DIR
+
     cards = load_dataset_cards()
     assert "fmri" in cards["ds000117"].modalities
     assert "meg" in cards["ds000117"].modalities
-    assert "dwi" in cards["ds004024"].modalities
     assert cards["eegmmidb"].modalities == ("eeg",)
+
+    # ds004024 is EEG + structural MRI only. Asserted negatively so that
+    # re-adding a phantom modality fails here too.
+    assert "dwi" not in cards["ds004024"].modalities
+    assert "fmri" not in cards["ds004024"].modalities
+    assert "mri" in cards["ds004024"].modalities
+
+    # The multimodal ground truth `-raw` needs comes from the paired corpus.
+    assert {"eeg", "fmri"} <= set(cards["ds002336"].modalities)
+    assert {"cardiac", "resp"} <= set(cards["ds000113"].modalities)
+
+    # Every claimed modality on an available card must have evidence behind it.
+    for cid, info in cards.items():
+        if not info.is_available:
+            continue
+        sig = (yaml.safe_load((CARD_DIR / f"{cid}.yaml").read_text()) or {}).get("signal", {})
+        evidence = sig.get("modality_evidence") or {}
+        missing = [m for m in info.modalities if m not in evidence]
+        assert not missing, (
+            f"{cid}: modalities {missing} are declared with no "
+            f"signal.modality_evidence; that is how ds004024 claimed dwi"
+        )
 
 
 def test_unavailable_datasets_are_marked_unavailable():

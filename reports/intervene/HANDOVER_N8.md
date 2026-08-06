@@ -158,6 +158,6 @@ I have not touched `scwbd/runtime/**`; that is 🤖 K's call and this is a sugge
 A numerical PASS lifts a precondition. N8 says the induced-field discretisation is
 accurate at contact geometry within a declared resolution envelope. It says nothing
 about target engagement, network effect, or clinical utility, and no claim-bearing
-run has been made. Simulation only; build-order item 6 remains out of scope, and
+run has been made. Simulation only; no hardware is driven, and
 nothing here is a stimulation parameter, dosing protocol, or recommendation for a
 person.

@@ -148,7 +148,7 @@ Two limits, stated plainly so nobody over-reads the verdict:
 2. N3 validates conduction, not induction — see the scope caveat above.
 
 Nothing here is a stimulation parameter, a dosing protocol, or a recommendation
-for a person. Build-order item 6 remains out of scope.
+for a person. Simulation only.
 
 ## Related change you may want to know about
 

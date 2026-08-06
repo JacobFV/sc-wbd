@@ -519,6 +519,11 @@ class SCWBD(nn.Module):
         self.eeg = EEGHead(L, lf)
         self.bold = BOLDHead(L, self.n_regions, dt_slow=cfg.dt_model * cfg.hemo_ratio)
         self.behaviour = BehaviourHead(L, self.n_regions, n_out=cfg.n_behaviour)
+        # Hand the heads the typed boundary. `set_observation` stores it WITHOUT
+        # nn.Module registration, so `self.observation` stays the single owner and
+        # `parameter_report()` does not count it three times.
+        self.eeg.set_observation(self.observation)
+        self.bold.set_observation(self.observation)
         self._rho_ema = 0.0
 
     # -- construction -----------------------------------------------------

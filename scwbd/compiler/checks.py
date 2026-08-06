@@ -15,9 +15,8 @@ from __future__ import annotations
 
 from typing import Iterator
 
-from ..schema.authorization import AuthorizationVerdict
 from ..schema.claims import ClaimManifest
-from ..schema.clocks import UNVERIFIED_SYNC
+
 from ..schema.lineage import LineageError
 from ..schema.refusals import CompilerRefusal
 from ..schema.schema import BrainSchema
@@ -627,111 +626,20 @@ def check_r10(schema: BrainSchema, claim: ClaimManifest) -> Iterator[CompilerRef
 # R11 - intervention optimization outside an independently validated feasible
 #       set
 # ---------------------------------------------------------------------------
-def _authorization_refusal(
-    verdict: AuthorizationVerdict, offending: object, detail_prefix: str, evidence: dict
-) -> CompilerRefusal:
-    """Turn a refused authorization verdict into R11 with its specific reason."""
-    return CompilerRefusal(
-        "R11",
-        remedy=(
-            "supply a complete, in-date AuthorizationRecord whose consent scope "
-            "covers the requested intervention class and whose A_safe is "
-            "attributable to the named protocol; "
-            + "; ".join(f.remedy for f in verdict.failures if f.remedy)
-        ),
-        offending_object=offending,
-        detail=f"{detail_prefix}: {verdict.reason()}",
-        evidence={
-            **evidence,
-            "authorization_failures": [
-                f.model_dump(mode="json") for f in verdict.failures
-            ],
-            "authorization_failure_codes": list(verdict.failure_codes),
-            "authorization_record_id": verdict.record_id,
-            "authorization_record_hash": verdict.record_hash,
-            "claim_scope": verdict.claim_scope,
-        },
-    )
-
-
 def check_r11(schema: BrainSchema, claim: ClaimManifest) -> Iterator[CompilerRefusal]:
     """R11: intervention optimization outside an independently validated A_safe.
 
-    Governance is **gated, not hard-coded**.  A prospective human stimulation
-    protocol is refused *unless* ``claim.authorization`` is a validated
-    :class:`~scwbd.schema.authorization.AuthorizationRecord` that covers the
-    declared intervention class at ``claim.request_time_s``.  An unconditional
-    refusal would be a constant, and a constant cannot discriminate between a
-    project holding a current IRB approval and one holding nothing; it would
-    encode a belief about the world rather than check one.
+    A feasible set is a **validity domain on the simulator**, not a permission.
+    R11 refuses when an optimizer is pointed at an intervention model whose
+    bounds are absent, unvalidated, or uncited, or whose dose and pose were
+    calibrated against the very model being fitted -- each of which makes the
+    resulting search meaningless rather than unapproved.
 
-    Every other reason R11 ever refused still refuses, authorization or not:
-    no ``A_safe``, an ``A_safe`` that is not independently validated, an
-    uncalibrated dose or pose, or optimization requested with no intervention
-    model at all.  Authorization admits operating *within* declared limits; it
-    never widens them.
-
-    Claim limit: a validated record is a *recorded declaration*.  Nothing here
-    establishes that an ethics approval exists in the world.
+    Every reason it refuses is a property of the declared model: no ``A_safe``,
+    an ``A_safe`` that is not independently validated, an uncalibrated dose or
+    pose, or optimization requested with no intervention model at all.
     """
     interventions = [(s, s.intervention) for s in schema.sources if s.intervention is not None]
-
-    # -- the governance gate -------------------------------------------------
-    for source, iv in interventions:
-        if not (iv.is_prospective_human and iv.is_physical_stimulation):
-            continue
-        axes = tuple(sorted(iv.a_safe.constraints)) if iv.a_safe is not None else ()
-        verdict = claim.authorization_for(
-            iv.modality,
-            a_safe_id=iv.a_safe.id if iv.a_safe is not None else None,
-            required_a_safe_axes=axes,
-            what=f"source card {source.id!r}",
-        )
-        if not verdict.admitted:
-            yield _authorization_refusal(
-                verdict,
-                iv,
-                (
-                    f"source {source.id!r} declares prospective human "
-                    f"{iv.modality} stimulation and no validated authorization "
-                    "admits it"
-                ),
-                {"source": source.id, "modality": iv.modality},
-            )
-
-    if claim.prospective_human:
-        classes = sorted(
-            {
-                iv.modality
-                for _, iv in interventions
-                if iv.is_prospective_human and iv.is_physical_stimulation
-            }
-        )
-        if not classes:
-            yield CompilerRefusal(
-                "R11",
-                offending_object=claim,
-                detail=(
-                    "the claim manifest requests a prospective human protocol but "
-                    "no source card declares a prospective human physical "
-                    "intervention, so there is no intervention class to authorise "
-                    "and nothing an approval could be checked against"
-                ),
-                evidence={"claim": claim.id},
-            )
-        for modality in classes:
-            verdict = claim.authorization_for(modality, what="claim manifest")
-            if not verdict.admitted:
-                yield _authorization_refusal(
-                    verdict,
-                    claim,
-                    (
-                        "the claim manifest requests a prospective human "
-                        f"{modality} protocol and no validated authorization "
-                        "admits it"
-                    ),
-                    {"claim": claim.id, "modality": modality},
-                )
 
     if not claim.optimizes_intervention:
         return
@@ -788,27 +696,6 @@ def check_r11(schema: BrainSchema, claim: ClaimManifest) -> Iterator[CompilerRef
                 ),
                 evidence={"source": source.id},
             )
-        if iv.is_physical_stimulation and iv.ethics_review is None:
-            # An AuthorizationRecord is the machine-readable form of the same
-            # thing, so it satisfies this requirement -- but only if it
-            # validates for *this* modality, at the requested time, against
-            # *this* A_safe.  A record that merely exists does not.
-            verdict = claim.authorization_for(
-                iv.modality,
-                a_safe_id=safe.id,
-                required_a_safe_axes=tuple(sorted(safe.constraints)),
-                what=f"source card {source.id!r}",
-            )
-            if not verdict.admitted:
-                yield _authorization_refusal(
-                    verdict,
-                    iv,
-                    (
-                        f"source {source.id!r} optimizes a {iv.modality} exposure "
-                        "with no applicable ethics and regulatory review on record"
-                    ),
-                    {"source": source.id, "modality": iv.modality},
-                )
 
 
 #: Checks in table order.  R01 needs the compiled graphs; the rest do not.

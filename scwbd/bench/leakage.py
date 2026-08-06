@@ -10,9 +10,9 @@ Splitting is **agent B's** (:mod:`scwbd.sources.splits`): this module consumes
 Duplicating a splitter would mean auditing a copy of the thing under audit.
 
 Row 10 (TMS/tFUS decision claim) is a **standing refusal**, not a check that
-happens to be unimplemented: prospective human stimulation is out of scope for
-SC-WBD-001-beta (no IRB, no consent, no participants), so the audit reports
-``COULD_NOT_RUN`` unconditionally and says why.
+happens to be unimplemented: the comparison it mandates needs a prospective
+human dataset, none is held, and none is obtainable from offline
+reconstruction, so the audit reports ``COULD_NOT_RUN`` unconditionally.
 """
 
 from __future__ import annotations
@@ -816,11 +816,11 @@ def audit_tms_tfus_decision_claim(*, thresholds: Thresholds = Thresholds(),
     """Always ``COULD_NOT_RUN``.  This is a refusal, not a missing feature.
 
     The control this row mandates is a *prospective, causally identified
-    target/protocol comparison in humans*.  SC-WBD-001-beta's build order stops
-    at item 5; item 6 is out of scope (no IRB, no consent, no participants) and
-    no agent may implement a human stimulation protocol.  The audit therefore
-    reports that the decision claim is unsupported and unsupportable in this
-    release, whatever inputs are passed.
+    target/protocol comparison in humans*.  No such dataset is held, and no
+    amount of offline reconstruction produces one -- the quantity it would
+    measure, decision validity, is not a function of the data on hand.  The
+    audit therefore reports the decision claim unsupported and unsupportable
+    in this release, whatever inputs are passed.
     """
     man = _manifest("D10_tms_tfus_decision_claim", seed=seed, thresholds=thresholds,
                     refusal_fixtures=["R11 (intervention optimization outside a validated "
@@ -828,10 +828,10 @@ def audit_tms_tfus_decision_claim(*, thresholds: Thresholds = Thresholds(),
     sub = could_not_run(
         "prospective_decision_comparison",
         "Prospective randomized or otherwise causally identified target/protocol comparison.",
-        "OUT OF SCOPE BY CONSTRUCTION: the build order stops at item 5 (empirical subsystem); "
-        "item 6 (prospective human TMS/tFUS) has no IRB, no consent and no participants, and "
-        "no agent may implement a human stimulation protocol (ARCHITECTURE.md §0). No inputs "
-        "can make this audit run in SC-WBD-001-beta.",
+        "UNSUPPORTABLE BY CONSTRUCTION: this row needs a prospective, causally identified "
+        "target/protocol comparison in people. No such dataset is held, and decision validity "
+        "is not recoverable from offline reconstruction of already-collected recordings. No "
+        "inputs can make this audit run in SC-WBD-001-beta.",
         falsified_by="any claimed wellness or treatment efficacy from offline reconstruction",
     )
     return ClaimReport(

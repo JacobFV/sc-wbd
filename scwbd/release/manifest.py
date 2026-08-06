@@ -723,8 +723,22 @@ class ProvenanceBlock:
     alias_reason: str | None = None
     notes: str = ""
 
+    def attribution(self) -> Any:
+        """The citation set this artifact inherited, derived from the manifest.
+
+        Computed over ``manifest.dataset_links`` restricted to
+        ``manifest.contributing`` — **the same objects** :meth:`licence_terms`
+        unions — so the citation set and the licence set cannot be computed
+        over different sources.  Passing a list by hand is what lets them
+        drift, so no list is passed.
+        """
+        from ..sources.attribution import attribution_from_manifest
+
+        return attribution_from_manifest(self.manifest, tag=self.tag.format())
+
     def as_dict(self) -> dict[str, Any]:
         lic = self.manifest.licence()
+        att = self.attribution()
         return {
             "schema": "scwbd-checkpoint-provenance/1.0.0",
             "tag": self.tag.format(),
@@ -739,6 +753,14 @@ class ProvenanceBlock:
             "source_family_manifest": self.manifest.as_dict(),
             "effective_licence": lic.as_dict(),
             "licence_summary": lic.summary(),
+            # Citation is not decoration. For scwbd.anatomy.sources.SRC
+            # ["tian2020"] it IS the licence condition ("...subject to the
+            # single condition that any publication using the atlas cites
+            # Tian Y. et al. (2020)"), and ODC-By carries attribution as its
+            # only obligation. An artifact that records the obligation but not
+            # what to attribute cannot be used in compliance with it.
+            "attribution": att.as_dict(),
+            "attribution_text": att.render(),
             "claim_boundary": self.claim_boundary,
             "owner_licence_decision": dict(OWNER_LICENCE_DECISION),
             # both versions travel; a superseded decision that vanishes from the
@@ -750,10 +772,29 @@ class ProvenanceBlock:
             "notes": self.notes,
         }
 
-    def save(self, path: str | Path) -> None:
+    def save(self, path: str | Path, *, require_attribution: bool = True) -> None:
+        """Write the provenance record, refusing an unattributable artifact.
+
+        ``require_attribution`` defaults to **True** and the refusal happens
+        **before** anything is written: a contributing source that nothing can
+        state a citation for raises
+        :class:`~scwbd.sources.attribution.AttributionError` and no file
+        appears on disk.  A half-written record would be worse than none —
+        downstream would read a provenance block that exists and is short.
+
+        This is deliberately not a warning.  ``reports/decorative_guards.md``
+        catalogues ~26 controls in this repository that looked green and could
+        not fire; a citation check that logs and proceeds would be the
+        twenty-seventh.  The escape hatch exists (``require_attribution=False``)
+        for diagnosing a broken registry, and it is a named argument at the
+        call site so using it is a visible act rather than a default.
+        """
+        payload = self.as_dict()
+        if require_attribution:
+            self.attribution().require_complete()
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps(self.as_dict(), indent=2, sort_keys=False) + "\n")
+        p.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n")
 
 
 def build_manifest(

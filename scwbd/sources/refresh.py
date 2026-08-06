@@ -206,6 +206,94 @@ def _probe_ds004024(rootp: Path) -> dict[str, Any]:
     return d
 
 
+def _probe_ds002336(rootp: Path) -> dict[str, Any]:
+    """Simultaneous EEG+fMRI: count the two arms separately.
+
+    A participant with EEG but no BOLD (or the reverse) is NOT a paired
+    episode, and the whole value of this source is the pairing. So the probe
+    counts them independently and states the intersection, rather than
+    reporting one number that a reader would take for both.
+    """
+    d = _probe_bids(rootp, binary_glob="*_eeg.eeg")
+    eeg = set(d["population.participants_with_signal_binaries"])
+    bold = {next((x for x in p.parts if x.startswith("sub-")), "?")
+            for p in rootp.rglob("*_bold.nii.gz")}
+    paired = sorted(eeg & bold)
+    d["population.participants_with_bold"] = sorted(bold)
+    d["population.participants_paired_eeg_and_bold"] = paired
+
+    # Participant-level pairing is not enough. "Fully paired episode" is a
+    # claim about a RUN: this subject, this task, both arms. Counting subjects
+    # would report 10/10 while individual runs are missing one arm, which is
+    # exactly the kind of number that survives review and is wrong.
+    def _key(p: Path) -> tuple[str, str]:
+        sub = next((x for x in p.parts if x.startswith("sub-")), "?")
+        task = next((t.split("-", 1)[1] for t in p.name.split("_")
+                     if t.startswith("task-")), "?")
+        return sub, task
+
+    eeg_runs = {_key(p) for p in rootp.glob("sub-*/eeg/*_eeg.vhdr")}
+    bold_runs = {_key(p) for p in rootp.glob("sub-*/func/*_bold.nii.gz")}
+    paired_runs = eeg_runs & bold_runs
+    eeg_only = sorted(eeg_runs - bold_runs)
+    bold_only = sorted(bold_runs - eeg_runs)
+    tasks = sorted({t for _, t in eeg_runs | bold_runs})
+    d["population.runs_per_session"] = (
+        f"{len(tasks)} task types on disk ({', '.join(tasks)}); "
+        f"{len(eeg_runs)} EEG runs, {len(bold_runs)} BOLD runs, "
+        f"{len(paired_runs)} runs with BOTH arms"
+    )
+    d["missingness.unplanned"] = (
+        f"raw EEG present for {len(eeg)}, BOLD for {len(bold)}, and both for "
+        f"{len(paired)} of {len(d['population.participant_ids'])} participants. "
+        f"AT RUN LEVEL the pairing is incomplete: {len(paired_runs)} of "
+        f"{len(eeg_runs | bold_runs)} (subject, task) runs have both arms; "
+        f"{len(eeg_only)} are EEG-only ({', '.join(f'{s}/{t}' for s, t in eeg_only[:6])}"
+        f"{' ...' if len(eeg_only) > 6 else ''}) and {len(bold_only)} are BOLD-only "
+        f"({', '.join(f'{s}/{t}' for s, t in bold_only[:6])}"
+        f"{' ...' if len(bold_only) > 6 else ''}). An unpaired run is excluded from "
+        "cross-modal terms rather than half-imputed; it remains usable as a "
+        "single-modality record."
+    )
+    d["spatial.n_elements"] = (
+        f"64 EEG sensors; BOLD voxel grid per run (read from the NIfTI header, not "
+        f"assumed). {len(eeg_runs)} EEG runs and {len(bold_runs)} BOLD runs on disk."
+    )
+    return d
+
+
+def _probe_ds000113(rootp: Path) -> dict[str, Any]:
+    subs = sorted(p.name for p in rootp.glob("sub-*") if p.is_dir())
+    bold = sorted({next((x for x in p.parts if x.startswith("sub-")), "?")
+                   for p in rootp.rglob("*_bold.nii.gz")})
+    by_ses: dict[str, set[str]] = defaultdict(set)
+    for p in rootp.rglob("*_bold.nii.gz"):
+        ses = next((x for x in p.parts if x.startswith("ses-")), "ses-none")
+        sub = next((x for x in p.parts if x.startswith("sub-")), "?")
+        by_ses[ses].add(sub)
+    n_physio = len(list(rootp.rglob("*recording-cardresp_physio.tsv.gz")))
+    n_gaze = len(list(rootp.rglob("*recording-eyegaze_physio.tsv.gz")))
+    n_unreadable = len([p for p in rootp.rglob("*_physio.tsv.gz") if "recording-" not in p.name])
+    return {
+        "population.n_participants": len(subs),
+        "population.participant_ids": subs,
+        "population.participants_with_bold": bold,
+        "missingness.unplanned": (
+            "BOLD on disk per session: "
+            + "; ".join(f"{k} for {len(v)} participants" for k, v in sorted(by_ses.items()))
+            + f". Physiological recordings: {n_physio} cardiac/respiratory files and "
+            f"{n_gaze} eye-gaze files are readable; {n_unreadable} further physio files "
+            "carry no `recording-` entity and no sidecar exists for them at any level, so "
+            "their rate and columns are unstated and load_physio refuses them."
+        ),
+        "spatial.n_elements": (
+            f"BOLD voxel grid read per file from the NIfTI header. "
+            f"{len(list(rootp.rglob('*_bold.nii.gz')))} functional runs on disk across "
+            f"{len(bold)} participants."
+        ),
+    }
+
+
 def _probe_mne(rootp: Path) -> dict[str, Any]:
     fifs = sorted(p.name for p in rootp.rglob("*.fif"))
     return {
@@ -237,6 +325,8 @@ PROBES: dict[str, Callable[[Path], dict[str, Any]]] = {
     "sleep-edfx": _probe_sleep_edfx,
     "ds000117": _probe_ds000117,
     "ds004024": _probe_ds004024,
+    "ds002336": _probe_ds002336,
+    "ds000113": _probe_ds000113,
     "mne-sample": _probe_mne,
     "mne-somato": _probe_mne,
     "mne-spm-face": _probe_mne,

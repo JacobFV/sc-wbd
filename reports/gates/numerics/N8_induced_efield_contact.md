@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** no reference or self-convergence study achieves a defensible tolerance at contact geometry, or the solver's error there exceeds the preregistered tolerance
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c0e5833 · 2026-08-06T09:54:23+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1a35a9a · 2026-08-06T19:03:42+00:00*
 
 ## Sub-checks
 

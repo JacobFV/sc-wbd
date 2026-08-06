@@ -57,6 +57,10 @@ Every instance below was green, plausible, and load-bearing.
 | 13 | `test_fallback_anatomy_is_labelled_as_not_biological` (Hodgkin's path) | that a synthetic connectome cannot masquerade as anatomy | **subject drift, not blindness — see below.** `load_anatomy` now *refuses* to substitute the synthetic prior silently: it raises unless `force_fallback=True`. The fixture does not pass it, so the fallback path the guard polices is **never entered**. Verified by running the fixture: it does not return a mislabelled prior, it raises `RuntimeError` (missing `Tian_Subcortex_S1_3T_1mm.nii.gz`); where the assets are present it would load the **real** prior and the assert would fail. | 🛡️ Popper, on the architect's report, by executing the fixture rather than reading it |
 | 12 | `matched_capacity` again, on ablation A1 | that the two arms differed only in the hypothesis | budgets guard the **model**; nothing guarded the path from the model to the number. a shared state-slice view silently narrowed the A1 treatment arm's EEG **mean path** to `("rate_e","rate_i")` = **2 exported dims** against the control's `("rate_e","rate_i","spectral")` = **18** — every field `Budget` declares could match exactly. A1 would have concluded heterogeneity does not help. | 🌊 Hodgkin, tracing what his own head actually received rather than what the layout declared — self-reported before shipping |
 
+| 10 | `EEGHead`'s **"heteroscedastic noise model"** (`heads.py:219`, and the module docstring's "Every head returns … a heteroscedastic log-variance", `heads.py:11`) | that the model's predictive uncertainty responds to the brain state it is modelling | `lv = self.log_noise.expand_as(y)` where `log_noise = nn.Parameter(torch.zeros(n_ch))`. It is a per-channel constant. It never reads `x`. It has no horizon axis, so a 48-step-ahead prediction claims exactly the confidence of a 1-step-ahead one. `body.tex` §2.1 lists `X^uncertainty` as a state component; the head could not have read it. Cost: **+0.4467 nats** excess NLL, 1.62× the entire deficit to persistence, and the whole of run 1's FAIL. | 🔥 Turing, asking what `lv` was a function of |
+| 11 | `BOLDHead.log_noise` (`heads.py:286`/`:323`) | a fitted haemodynamic noise model | same broadcast defect, *and* the parameter is at **exactly `-4.0` across all 454 regions, sd exactly `0.0`** in the shipped checkpoint. It never received a gradient, because no measured BOLD ever entered the corpus. Nothing was scored on it — which is why nobody noticed, and exactly why it is dangerous: the moment 🗄️ Ada lands haemodynamic data, an unfitted noise model is presented as a fitted one. | 🔥 Turing, reading the checkpoint's parameters rather than its report |
+| 12 | SC-WBD's `describe()` in the holdout table (`evaluate.py`) | that the arm's entry was comparable with the baselines' | three keys — `name`, `structured_state`, `connectome_masked` — and none of them `variance_calibration`, which all six baselines carry. The instrument reported no difference **because it had no field in which a difference could appear.** The two arms with no *held-out* calibration were exactly the two with positive excess NLL. | 🛡️ Popper, diffing the two `describe()` shapes |
+
 Number 4 is the sharpest: it sits *inside the mechanism built to catch stale
 artifacts*, and it was about to be handed to a brand-new provenance enforcement
 gate that would have consumed a field structurally incapable of ever reading
@@ -136,6 +140,39 @@ undetected, it was **unrepresentable**. Every check was green and every check wa
 correct. That is a fourth variant, distinct from absence, wrong-question and
 preserved-quantity: **the guard is sound, the question is right, the quantity is
 right, and the surrogate the guard runs on cannot express the failure at all.**
+Numbers 10–12 are the most expensive. They are one defect seen from three
+angles: a channel that could not vary (10), a parameter that was never fitted
+(11), and a comparison table with no column in which either could show up (12).
+Together they produced a filed FAIL — *"beaten by five of six baselines"* — for a
+model that has the **lowest MSE of all seven arms**. The forecast was the best in
+the table. Only the confidence attached to it was wrong, and nothing in the
+instrument could say so.
+
+The general form is worth having, because it is not about variance:
+
+> **A constant is the most convincing possible measurement.** It is perfectly
+> reproducible, it has zero variance across runs, and it never contradicts
+> itself. Every property that makes a number trustworthy is maximised by a
+> number that cannot move.
+
+The operational check that finds this class in one pass, and the one that found
+10 and 11: **for every quantity the code names as varying, ask what it is a
+function of, and read the answer off the expression rather than the docstring.**
+If the expression's free variables do not include the thing it claims to depend
+on, it is decorative — before any run, before any data. `lv =
+self.log_noise.expand_as(y)` fails that check by inspection.
+
+The repair carries its own trap, and it is worth recording because 🌊 Hodgkin hit
+it independently on the state side the same day. The natural way to add a
+state-dependent term is to zero-initialise its output projection so the module
+"starts as a no-op". That reproduces the defect exactly: the quantity is constant
+at step 0, a firing test passes while measuring nothing, and heteroscedasticity
+appears only if training happens to find it — a shape, not a mechanism. Both
+repairs are therefore initialised **non-zero and from the physics**
+(`EEGHead.logvar_mix` from the row-normalised lead field; Hodgkin's
+`init_state_gain=0.05`), and `tests/foundation/test_head_variance.py` asserts the
+un-repaired arm's spread is **exactly `0.0`** rather than describing it as
+constant. Asserting the dead case is what makes the live case evidence.
 
 ### The absence variant (4 and 5)
 
@@ -1364,3 +1401,145 @@ when something mechanically checks it, not when it has been articulated well.** 
 correct response to writing a constraint down is to ask immediately *"what in this
 change set does it forbid?"* — and to run that check against your own next artifact
 before anyone else's.
+
+---
+
+## The inverse category: guards that assert a defect still exists
+
+Architect, 2026-08-06. Named because two instances surfaced within an hour and
+were both filed as "pre-existing unrelated failures" by agents who correctly
+declined to touch another owner's path.
+
+A decorative guard **can never fire**. These are the opposite: guards that
+fired correctly, whose defect was then **repaired**, and which now fail because
+the *expected* value was written as the broken one.
+
+| # | test | asserts | why it now fails |
+|---|---|---|---|
+| **S1** | `tests/curriculum/test_validator.py::test_corrected_config_still_refuses_the_handover_items` | refusal `X09_declared_provenance_contradicted` is raised | X09 fires when `load_anatomy()` returns a non-biological prior. It now returns the real 414-parcel prior with `is_biological() == True`. **The defect X09 detects was fixed**, so X09 correctly stays silent. |
+| **S2** | `tests/release/test_families.py::test_dataset_cards_expose_multimodal_ground_truth` | `'dwi' in ds004024.modalities` | 🗄️ Ada corrected the card: `ds004024` declared `fmri` and `dwi` while holding two T1w volumes and nothing else. **The test encodes the false declaration.** |
+| **S3** | `tests/foundation/test_contracts.py::test_fallback_anatomy_is_labelled_as_not_biological` | `provenance == "synthetic_fallback"` | its fixture now loads the real prior; `load_anatomy` refuses to substitute silently, so it raises rather than returning a mislabelled object. Filed by 🧠 Cajal, verified as drift by 🛡️ Popper. |
+
+**Why this is worth naming separately.** These read as regressions and are the
+opposite: each is *evidence the repair worked*. The failure mode is that a red
+suite trains everyone to discount red, and a genuine regression then hides
+among three known-stale reds — which is how a decorative guard gets tolerated
+in the first place.
+
+**The correct repair is not to delete the assertion.** Invert it: assert the
+**fixed** state, and keep the guard's ability to fire by exercising it against
+a deliberately broken fixture. `force_fallback=True` for S1 and S3; a fixture
+card declaring a modality it does not hold for S2. That preserves what the test
+was for while making it true of the present.
+
+**Standing rule.** A test that asserts a defect exists must say so in its name
+or docstring, so that when the defect is fixed the failure is self-explaining.
+`test_corrected_config_still_refuses_the_handover_items` does not tell a reader
+that it will fail the day the handover items are corrected.
+## Entry: a safety bound that had never been shown to bind
+
+`scwbd/intervene/limits/a_safe.toml` and `scwbd/intervene/safety.py`. Found by
+⚡ Faraday while reconciling the intervention stack's documentation.
+
+Two findings. The first is the register's ordinary shape at unusual stakes; the
+second is a variant I had not seen recorded here.
+
+### 1. Measured, not grepped: 7 of 17 bounds had ever fired
+
+`a_safe.toml` declares 15 numeric axes — TMS field and pulse limits, the tFUS
+acoustic and thermal envelope, sensory photosensitivity and SPL ceilings — each
+with an external citation (Rossi et al. 2021, Deng et al. 2013, FDA 2023, Aubry
+et al. 2023 / ITRUSST, Sapareto & Dewey 1984, WCAG 2.2, NIOSH 1998). Between
+them they declare **17 bound sides** (14 `max`, 3 `min`).
+
+I did not grep for coverage. I instrumented `LimitSpec.check` with a nine-line
+pytest plugin that records every `Violation` it actually returns during a run,
+which answers *was this bound ever made to refuse* directly rather than by
+inference. Across the eight test files that exercise limits:
+
+**Before: 7 of 17 fired. After: 17 of 17.**
+
+Never fired: the session-duration ceiling, **the entire tFUS envelope** —
+mechanical index, ISPPA, ISPTA, duty cycle, thermal dose, temperature rise —
+and **all three `min` sides**. That last one is the sharp part: with no `min`
+ever crossed, the `below_minimum` branch of `LimitSpec.check` had **never
+executed against a real violation anywhere in the suite**. Half of the
+comparator was untested code wearing a citation.
+
+The plugin also reports which axes were passed to `check` *at all*. Six tFUS
+axes were **never evaluated once, in either direction**. `test_tfus.py` exists
+and is in the set; its `test_exposure_metrics_map_onto_declared_safety_axes`
+asserts the axis *names* map correctly and never performs a feasibility check.
+A test named after the thing, passing, adjacent to the thing, not testing it.
+
+**A grep-based inventory of the same question returned "6 of 15 axes".** The
+measurement says 7 axes / 7 of 17 sides. Close enough to feel confirmatory and
+wrong in both directions — which is the argument for the instrument over the
+search. Both readings are checked in at `reports/intervene/limit_firing_*.json`
+and the plugin at `reports/intervene/firing_plugin.py`; it runs against any
+commit.
+
+### 2. The variant: a bound the loader silently declined to load
+
+`[protocol.reversibility]` declared `required = true`, with a `basis`, a
+citation to `body.tex` §7.4, and **no `min` and no `max`**. `SafetyLimits.load`
+contained:
+
+```python
+if "min" not in entry and "max" not in entry:
+    continue  # a declarative rule, not a numeric bound
+```
+
+So it never became a `LimitSpec`. It was never in `keys()`, never returned by
+`get()`, never checked by `FeasibleSet.contains`. `ProposedIntervention` even
+carries a `reversible` field — set by callers, read by nothing.
+
+This is distinct from the entries already in this report. The guards catalogued
+above *ran* and could not discriminate. This one **never ran**, and nothing
+anywhere reported its absence: no warning, no unmatched-pattern metric, no
+`KeyError`. It was cited, reviewed, present in the file, and unreachable, and
+the only way to discover it was to enumerate the loaded limits and diff them
+against the declared ones. **A silent `continue` in a loader is a delete
+statement with a comment on it.**
+
+The nearest relative in this register is agent Turing's exact-name gradient
+permission that matched an empty set under `torch.compile` — the same shape,
+*declared and matching nothing*, and the same remedy: the loader must refuse
+what it cannot use rather than skipping it.
+
+`SafetyLimits.load` now raises on an entry declaring neither `min` nor `max`
+— *"a bound that cannot fire is not a bound"* — so the failure is at startup
+instead of invisible forever. That guard is permanent.
+
+**Postscript, recorded because the alternative is letting this entry go stale.**
+The reversibility rule was first *moved* to `[decision.reversibility]` and
+enforced on a live-application path. That path was subsequently removed from the
+repository along with the rest of the governance surface, which left the rule
+with nothing to trigger it. Rather than let it return to exactly the state this
+entry describes — declared, cited, unreachable — **it was deleted from the
+limits file.** Deleting a rule you can no longer enforce is honest; leaving it
+in place re-creates the defect and buys back none of the safety. The
+generalisable form: *when the caller a guard protected goes away, the guard is
+not "still there for later" — it is decoration again, and it should go with
+it.*
+
+### The generalisable part
+
+**A limit that has never been observed to refuse is indistinguishable from a
+limit that cannot, and citing it does not change that.** Every one of these
+axes traced to a real external standard. The citation is what made them look
+finished; it is evidence that somebody chose the number correctly, and carries
+no information about whether the comparison against it is reachable.
+
+Two standing recommendations, in the register's usual form:
+
+1. **The firing measurement should be a gate, not a one-off.** A bound added to
+   a limits file without a test that makes it refuse should fail CI. The
+   instrument already exists and takes seconds.
+2. **Sweep the loaded objects, not a hardcoded list.** The replacement tests
+   parametrise over `SafetyLimits.load().all_specs()`, so a bound added
+   tomorrow is covered tomorrow — and one that cannot be made to fire fails the
+   suite rather than joining it quietly. The discriminating control matters as
+   much as the sweep: alongside "crossing the bound refuses" there is "a value
+   inside it does not", without which an axis that refused unconditionally
+   would pass too.

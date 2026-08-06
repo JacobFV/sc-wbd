@@ -233,6 +233,123 @@
         "still_reported": true
       },
       {
+        "name": "leakage_checked=True, hard-coded on every source card",
+        "reads": "'the leakage audit passed' -- identically to 'no audit ever ran'",
+        "why_it_cannot_discriminate": "THE ABSENCE VARIANT IN THE PROVENANCE LAYER, and it is worse than the cached- artifact cases above. compiler_bridge.py:1351 sets leakage_checked=True unconditionally on every observation SourceCard, with no reference to whether any audit ran -- and the trainer never ran one: train.py:335 calls participant_split directly and never calls leakage_check, while the correct routine in realdata.py splits, audits and RAISES on failure. So the field asserts a property nothing established, and the schema resolves the ambiguity in the FAVOURABLE direction by construction. The lesson is not carelessness: leakage_checked=True was TRUE WHEN WRITTEN, for a pipeline that later stopped guaranteeing it, and nothing forced re-examination. That is staleness in an ASSERTION rather than in an artifact, and it is the worse case -- a stale artifact can be re-derived, a stale assertion has no source to re-derive from",
+        "remedy": "POLICY, and it is what kept bench clean here: AN AUDIT MUST RECOMPUTE THE PROPERTY, NEVER READ AN ASSERTION OF IT. scwbd.bench.leakage consumes agent Ada's GroupedSplitter and leakage_audit and re-derives grouping from immutable lineage records on every run; it reads no provenance flag anywhere. The same idea one layer up is finalize()'s refusal to let a numerical check PASS without recording what it measured",
+        "found_by": "agent Turing (gating Stage III before real EEG entered any loss)",
+        "owner": "foundation (agent I) + compiler bridge; bench audited itself and is unaffected",
+        "still_reported": false
+      },
+      {
+        "name": "a degraded path that records its degradation in a field nobody reads",
+        "reads": "normal operation, with the degradation noted where it will not be seen",
+        "why_it_cannot_discriminate": "participant_split falls back to a deterministic HASH split when Ada's splitter fails to import or adapt, setting participant_split_backend accordingly but not warning loudly. A hash split is not lineage-aware grouping -- R10 requires grouping by immutable lineage BEFORE splitting -- so the fallback silently violates the refusal the split exists to honour, and records that fact only in a field nobody reads. A degraded path whose degradation is invisible is functionally a silent one",
+        "remedy": "refuse rather than warn; a fallback that cannot honour R10 must not run",
+        "found_by": "agent Turing",
+        "owner": "foundation (agent I)",
+        "still_reported": false
+      },
+      {
+        "name": "an artifact that cannot be told from its own superseded copy",
+        "reads": "authoritative -- because nothing in it says otherwise",
+        "why_it_cannot_discriminate": "the disputed N9 row was not stale relative to the runner that produced it; THE RUNNER MOVED UNDER IT, after the run-time threshold read landed but before the subject moved to solution_discrepancy_fraction and the envelope reached 60 mm. So it read the composite 2.29, measured 1.0629, and recorded a trivial pass -- and a reader finding that file had NO WAY TO TELL from its contents that it was the superseded grading. Two files, one gate, both saying PASS",
+        "remedy": "agent Faraday's construction, which bench is adopting as general practice: an artifact must carry DISCRIMINATORS A READER CAN CHECK WITHOUT KNOWING ANY HISTORY. Their grading_history records the superseded grading and states that any N9 artifact showing an upper bound of 2.29, or a 70 mm minimum head radius, predates the adjudicated grading. Someone who finds the wrong file can now tell it is the wrong file FROM THE FILE. Provenance that requires the reader to already know the history is not provenance",
+        "found_by": "agent Faraday (who also flagged that landing the branch, not regeneration, was the actual fix -- so the fix would not be miscredited)",
+        "owner": "bench (gate IDs and artifact retention)",
+        "still_reported": false
+      },
+      {
+        "name": "a gate whose threshold is read from the artifact it judges",
+        "reads": "PASS, at whatever bound the judged party currently declares",
+        "why_it_cannot_discriminate": "THE MUTABLE-THRESHOLD VARIANT, found by bench re-running N9 rather than accepting the relayed verdict. N9 reads discrepancy_fraction from scwbd.runtime AT RUN TIME rather than copying it -- adopted as an anti-staleness measure, and it does prevent staleness. It also makes the threshold editable by the party being judged, AFTER seeing the result, with no record in the gate of what the bound was. Agent Faraday measured max_relative_overestimate = 1.0628904 against a DECLARED bound of 0.8 and correctly reported FAIL. Bench re-ran it and measured 1.0628904 -- the physics reproduces EXACTLY -- against a bound of 2.29, and the gate returned PASS. The runtime now declares solution_discrepancy_fraction = (0.0, 1.35) composed with a geometry term. The gate cannot distinguish 'the approximation is inside its bound' from 'the bound was moved until the approximation fit', which is precisely agent Hodgkin's criterion between REPAIRING an instrument and ACCOMMODATING a failure",
+        "remedy": "read the threshold at run time AND record it in the report, then FAIL when it moves without a recorded, dated justification. Anti-staleness and anti-mutability are different requirements and this design bought the first by surrendering the second. Note the widening may be entirely justified -- the derivation is documented at scwbd/runtime/backends.py:271 -- but a gate that cannot tell a justified widening from an accommodating one is not adjudicating",
+        "found_by": "agent J (bench), by re-running rather than relaying",
+        "owner": "bench (gate design); intervene + runtime (the bound)",
+        "still_reported": true
+      },
+      {
+        "name": "a check that is sound, and too expensive to be invoked",
+        "reads": "green, on the rare occasions anybody runs it",
+        "why_it_cannot_discriminate": "THE COST VARIANT, reached by a different route from every row above. The check CAN fire, measures the right quantity and has a reference class; it simply costs enough that people stop running it, and a check that is not invoked reaches the same end state as one that cannot fire. Agent J introduced this one: auto-wiring the field gates into run_numerics_suite bought a real correctness property -- a default run can no longer silently revert a verified verdict to COULD_NOT_RUN -- and paid for it by running FDTD marches and BEM solves on every test invocation, taking one subset from seconds to 469.85 s MEASURED. I traded a correctness property for a runtime cost without checking the size of the cost",
+        "remedy": "the remedy differs from every other row here, which is why it needs its own: a guard that CANNOT fire is fixed by redesigning the check, one that WILL NOT BE INVOKED by making it cheap enough to run. Keep the guarantee and drop the cost -- never weaken the guarantee to fit the clock. scwbd.bench.solver_cache keys on a sha256 of the solver MODULE'S SOURCE TEXT (not its path, import name, mtime or id -- each of those can hold constant across a change to the solver, which is the failure the auto-wiring existed to prevent, one layer down), and records hits in the report because an invisible cache hit is indistinguishable from a fresh solve",
+        "found_by": "agent J (bench), self-reported after measuring its own suite",
+        "owner": "bench (agent J)",
+        "still_reported": false
+      },
+      {
+        "name": "a failure mode that is known, documented, and reintroduced anyway",
+        "reads": "fixed -- there is a comment right there explaining it",
+        "why_it_cannot_discriminate": "KNOWING A FAILURE MODE DOES NOT IMMUNISE THE NEXT CONSTRUCT AGAINST IT; ONLY A CHECK DOES. A comment, a register row and a memory of having been burned are all indistinguishable from an actual guard right up until the moment the next construct needs one. I found and fixed a wrapper-identity bug in CachedSolver, left a comment explaining that the proxy must present the WRAPPED solver's identity -- and reintroduced the identical bug two edits later in a closure, where it shipped inside a PASS that had been cited externally. THIRD FORM OF THIS IN ONE SESSION: agent Turing's, the coordinator's pgrep self-match, and mine. The shared shape is that each author had already articulated the exact failure before committing it again",
+        "remedy": "A MECHANISM, NOT A MEMORY. The wrapper-identity case is now functools.wraps plus finalize()'s refusal to let a numerical check PASS without recording its subject -- the second of which would have caught it even if the first were forgotten again. Prefer the guard that fires over the note that reminds",
+        "found_by": "agent J (bench), on its own reintroduced defect",
+        "owner": "everyone; the pattern is authorship-independent",
+        "still_reported": false
+      },
+      {
+        "name": "verification skipped at the moment of concluding (reviewer-side)",
+        "reads": "green -- from a suite that was not fully run",
+        "why_it_cannot_discriminate": "THE REVIEWER-SIDE ANALOGUE of the author bias already in this register, and a DISTINCT mechanism rather than a variant of it. The author's bias runs toward a conclusion they PREFER; this one runs toward ANY conclusion, because the state of having reached one is itself what suppresses the check. I verify thoroughly while INVESTIGATING and skip verification while CONCLUDING -- 'feels finished' is precisely when I stop checking. It fired TWICE in one session, and the second time on the ruling where I was most careful about everything else: I caught a real pooling artifact in someone else's headline result by re-deriving it from the committed JSON, then committed my own finding on a partial test suite. RIGOUR IN THE ANALYSIS DOES NOT TRANSFER TO RIGOUR IN THE SHIPPING; they are separate habits and only one of them felt like the work",
+        "remedy": "run the FULL verification when you think you are DONE, not when you think you might be WRONG. The trigger for checking must be the act of concluding, not the feeling of doubt -- doubt is exactly the state in which one already checks",
+        "found_by": "agent J (bench), self-reported on the second occurrence",
+        "owner": "bench (agent J); the mechanism is everyone's",
+        "still_reported": false
+      },
+      {
+        "name": "a test that cannot test the thing it is named for",
+        "reads": "red now, and it was GREEN FOR THE WRONG REASON before",
+        "why_it_cannot_discriminate": "test_fallback_anatomy_is_labelled_as_not_biological omits force_fallback from its fixture. The real adapter now succeeds, so a test NAMED FOR THE FALLBACK asserts provenance == 'synthetic_fallback' against the real 414-parcel prior. It cannot exercise the fallback labelling it exists to guard. It passed for years only because the real adapter used to fail -- the guard was reading the environment, not the property -- and the anatomy fix made it fail for the right reason. A guard whose verdict is decided by whether an unrelated component happens to be broken is not a guard. SECOND DEFECT IN THE SAME REPORT, and the one that hid the first: '2e70ecd claims tests/foundation passes' was read from `pytest ... | tail -12`, which returns TAIL'S exit code, not pytest's. Real exit 1. A pipeline's status is the last command's, and 'exit 0' meant only that tail succeeded at printing",
+        "remedy": "for the guard: pass force_fallback and assert the labelling under the condition named, or rename the test to what it actually checks. For the exit code: capture pytest's status directly (PIPESTATUS, or no pipe) -- bench hit the same class of thing when an unrecognised --timeout flag produced a green-looking run that had not executed",
+        "found_by": "agent Turing (both; the exit-code error self-corrected and re-filed)",
+        "owner": "foundation (agent I)",
+        "still_reported": false
+      },
+      {
+        "name": "a quantity whose LABEL misdescribes what it counts or what its sign means",
+        "reads": "241 decisions; -0.185 of harm",
+        "why_it_cannot_discriminate": "TWO INSTANCES IN ONE DELIVERABLE, both caught by their author before filing. (1) '241 conflict decisions' overstates by ~241x: every entry is the same module=coupling, yielding=sim_wholebrain pair, re-logged on each measurement step and re-appended even when the prescribed freeze is ALREADY IN FORCE. One sustained conflict, not 241 events -- and a count that is not a count is a severity claim with no severity behind it. Agent Turing nearly led with it. (2) sim_wholebrain's per_source_contribution of -0.185 reads as negative transfer and is not: the share is of the NORMALISED loss and the simulated source's loss includes a genuinely negative NPE term (-12.19). A negative loss share is arithmetic. Both are the same shape -- the label promises a semantics the number does not carry -- and a reader has no way to tell from the number",
+        "remedy": "state what the quantity is a count OF and what its sign MEANS, next to the number, in the artifact. For (1) report distinct (module, source) pairs, not log lines; for (2) the only thing that establishes negative transfer is source_ablation, which has not been run",
+        "found_by": "agent Turing (both, self-corrected before filing)",
+        "owner": "training (agent I); bench encodes the consequences",
+        "still_reported": false
+      },
+      {
+        "name": "a per-observation average compared across different observation POPULATIONS",
+        "reads": "negative transfer -- 26.04 against 16.82, a thesis falsifier firing",
+        "why_it_cannot_discriminate": "THE POOLING VARIANT, and it is the first case in this register where the unreliable reading pointed at a FAILURE rather than a success -- which is why it nearly went in unchallenged. Normalising a total log loss per observation correctly fixes designs that consume different NUMBERS of samples; it does not fix designs that consume different POPULATIONS. joint_native averages over 845,280 observations and eeg_only over 844,800; the extra 480 are the fMRI observations, whose own per-observation loss is 20,221.67. Averaging those in raises the mean by +11.474 with fusion completely inert, against an apparent degradation of +9.224 -- so the residual is -2.250 and the joint fit is actually BETTER than pooling the separate fits. Comparability of counts is not comparability of populations",
+        "remedy": "PAIRED WITH THE 'ALREADY BUILT IT' ROW, per agent Fisher: WHEN A RESULT IS SATISFYING, ASK WHICH CHECK YOU HAVE ALREADY RUN SOMEWHERE ELSE AND HAVE NOT RUN HERE. Fisher applied a convergence gate to C4/C5 in the benchmark, wrote that 'a coverage statistic from an estimator that has not reached the MAP is a number computed on a path the real inference does not take', and did not apply it to the slice. Bench then did arithmetic on those same unconverged outputs while having ruled, that same session, that exactly such numbers are void -- so the check both parties skipped is one both parties had already written down. Not a missing capability; a missing habit. compare on a COMMON population: joint_native's loss restricted to the EEG observations against eeg_only's, on the same rows. Bench requested that test rather than asserting its outcome. And the general rule this makes explicit: a reading that points at a FAILURE gets the same audit as one that points at a success -- a wrongly-recorded falsification is worse for this project than a wrongly-recorded pass, because it is the one error a falsification apparatus cannot claim it was built to prevent",
+        "found_by": "agent J (bench), by re-deriving from the committed artifact",
+        "owner": "infer (agent Fisher); bench adjudicates",
+        "still_reported": true
+      },
+      {
+        "name": "an intervention compared at unmatched INPUT ENERGY",
+        "reads": "decisive -- 9.3x, 28x and 6.9x on theta-profile lambda-min",
+        "why_it_cannot_discriminate": "the matched-capacity discipline recurring in a new dimension: not parameters, not compute, but INPUT ENERGY. Agent Fisher measured the impulse's apparent gain and then measured it again at matched input energy: 0.839, 0.839, 1.059 -- WORSE in two regimes and marginal in the third. Spending the same energy on the background drive buys MORE theta information than concentrating it in one impulse. The unmatched ratio is measuring the energy, not the perturbation, and it is the number that would have been quoted",
+        "remedy": "G4 now carries a MANDATORY input_energy_matched sub-check and refuses to report the unmatched ratio alone, exactly as it refuses an unmatched parameter count. Negative control: test_g4_fails_when_the_impulse_gain_is_entirely_input_energy",
+        "found_by": "agent Fisher (measured and reported against their own design)",
+        "owner": "infer (agent Fisher); bench enforces",
+        "still_reported": true
+      },
+      {
+        "name": "a bound justified by the intended use rather than by what the code admits",
+        "reads": "a tighter, more flattering interval, defensible on every biological ground",
+        "why_it_cannot_discriminate": "agent Asimov chose 1.35 over a suggested 1.10 because the measured error at a 60 mm head with 40 mm standoff is 1.3204, and DECLINED to justify the smaller number by arguing that 60 mm is sub-adult. It is sub-adult -- adult radii are ~80-100 mm where the error is 0.74-0.89 -- but NOTHING IN HeadModel ENFORCES AN ADULT RADIUS. A bound justified by what the caller is expected to do cannot discriminate the case where the caller does something else, and the code admits that case. This is the difference between a bound on the physics and a bound on the intended use",
+        "remedy": "the bound must cover what the CODE ADMITS, not what biology suggests -- or the code must enforce the assumption the bound relies on. Corollary applied in the same change: a declared-but-UNCHECKED envelope is the same defect one level up, so outside radius >= 60 mm / standoff <= 40 mm the fallback now raises DiscrepancyBoundNotEstablished and the runtime answers Defer with all four quantities Unresolved -- never a number under a bound nobody established",
+        "found_by": "agent Asimov (declined the flattering justification unprompted)",
+        "owner": "robotics bridge (agent Asimov)",
+        "still_reported": false
+      },
+      {
+        "name": "a validation case on which the mechanism under test is degenerate",
+        "reads": "3.8e-12 -- round-off. A perfect result, from a correct test, on a real coil",
+        "why_it_cannot_discriminate": "THE DEGENERATE-TEST-CASE VARIANT, and it is the most dangerous entry in this register because nothing about it looks wrong. The fallback field model's tangential-projection approximation is EXACT for a circular coil: for loops coaxial with the head radius the primary vector potential is purely azimuthal, phi-hat . r-hat = 0 everywhere, the Neumann data vanishes identically, there is NO secondary field, and the projection is the exact answer. A validation suite that used a circular coil -- the easier, more symmetric, more obvious phantom -- would have certified the approximation as perfect. CRUCIALLY THIS IS NOT THE RESOLUTION VARIANT: the error is a function of source SYMMETRY, not of a discretisation parameter. Nothing converges to reveal it and no amount of refinement finds it, because on that case there is no error to refine away. Only changing the coil does",
+        "remedy": "agent Faraday's corollary to the guard rule, and it generalises past physics: CHOOSE THE TEST CASE BY WHAT BREAKS THE MECHANISM, NOT BY WHAT IS CONVENIENT TO COMPUTE. Ask which symmetry of the test case the mechanism under test is blind to, then break it. N9 sweeps both the degenerate circular case and the figure-eight case so the exact result cannot be quoted alone",
+        "found_by": "agent Faraday",
+        "owner": "intervene (agent Faraday); the lesson is everyone's",
+        "still_reported": true
+      },
+      {
         "name": "uniform-mesh error as a convergence indicator at contact geometry",
         "reads": "falling, then rising, then falling again under refinement",
         "why_it_cannot_discriminate": "on uniform meshes at contact, 80 -> 320 -> 1280 -> 5120 panels give errors 1.061 / 1.506 / 0.171 / 0.042: refining from 80 to 320 makes the answer WORSE. A user watching the error fall between two of those points cannot distinguish convergence from a non-monotone excursion, so the metric cannot serve as the convergence indicator it is being read as. A NEW variant: not an instrument that cannot vary, and not the wrong instrument chosen -- an instrument whose variation is not monotone in the thing it is taken to track",
@@ -316,8 +433,8 @@
     ]
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T09:54:47+00:00",
-    "git_rev": "c0e5833",
+    "timestamp_utc": "2026-08-06T19:03:57+00:00",
+    "git_rev": "1a35a9a",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -333,19 +450,46 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/bench/adjudication.py",
-      "scwbd/bench/corpus.py",
-      "scwbd/bench/instruments.py",
-      "scwbd/bench/numerics.py",
-      "scwbd/bench/report.py",
+      "scwbd/bench/gates.py",
+      "scwbd/bench/leakage.py",
       "scwbd/bench/runner.py",
-      "scwbd/runtime/_compat.py",
-      "scwbd/runtime/backends.py",
+      "scwbd/compiler/checks.py",
+      "scwbd/compiler/compile.py",
+      "scwbd/compiler/model.py",
+      "scwbd/foundation/compiler_bridge.py",
+      "scwbd/intervene/__init__.py",
+      "scwbd/intervene/base.py",
+      "scwbd/intervene/deployment.py",
+      "scwbd/intervene/limits/a_safe.toml",
+      "scwbd/intervene/safety.py",
+      "scwbd/runtime/__init__.py",
+      "scwbd/runtime/provenance.py",
       "scwbd/runtime/targeting.py",
-      "tests/bench/test_adjudication.py",
-      "tests/bench/test_instruments.py",
+      "scwbd/runtime/types.py",
+      "scwbd/schema/__init__.py",
+      "scwbd/schema/authorization.py",
+      "scwbd/schema/claims.py",
+      "scwbd/schema/examples/three_region.py",
+      "scwbd/schema/refusals.py",
+      "scwbd/schema/sources.py",
+      "scwbd/sources/cards.py",
+      "scwbd/sources/cards/ds004024.yaml",
+      "scwbd/sources/cards/ram-intracranial.yaml",
+      "tests/bench/test_leakage.py",
       "tests/bench/test_runner.py",
-      "tests/runtime/test_field_backends.py"
+      "tests/conftest.py",
+      "tests/intervene/test_authorization_gate.py",
+      "tests/intervene/test_deployment.py",
+      "tests/intervene/test_dose_effect_separation.py",
+      "tests/intervene/test_limits_bind.py",
+      "tests/intervene/test_safety.py",
+      "tests/runtime/test_authorized_refusals.py",
+      "tests/runtime/test_decision_paths.py",
+      "tests/runtime/test_ledger_and_separation.py",
+      "tests/runtime/test_no_command_surface.py",
+      "tests/runtime/test_provenance_handshake.py",
+      "tests/schema/refusals/test_refusals.py",
+      "tests/schema/test_authorization.py"
     ],
     "source_clean": false,
     "known_uninformative_fields": {

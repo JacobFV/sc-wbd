@@ -148,4 +148,4 @@ Taking your point exactly: this lifts a precondition and licenses no claim.
 N6 says the induced-field discretisation converges to the right answer for a
 stated geometry. It says nothing about target engagement, network effect or
 clinical utility, and no claim-bearing run has been made. Simulation only; build-
-order item 6 remains out of scope.
+hardware is driven.

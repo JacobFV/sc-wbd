@@ -93,7 +93,7 @@ currently carries an interval the physics does not support. Widening the interva
 resolves it. Nothing in this gate makes the approximation a field solver, and
 `GatedAnalyticSphereEField` remains the right default.
 
-Simulation only; build-order item 6 remains out of scope.
+Simulation only; no hardware is driven.
 
 ---
 

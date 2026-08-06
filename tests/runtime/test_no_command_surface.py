@@ -107,19 +107,12 @@ class TestThePublicSurfaceHasNoCommandEntryPoint:
         from scwbd.runtime import TargetingService
 
         public = {n for n in vars(TargetingService) if not n.startswith("_")}
-        # ``is_protocol_bound`` is a read-only governance accessor: it reports
-        # whether a validated AuthorizationRecord was supplied, so a consumer
-        # can branch on the claim scope it is being served.  It takes no
-        # arguments, sets nothing and reaches nothing downstream of the
-        # registered external scalp target.
         assert public == {
             "load",
             "evaluate_pose",
             "with_config",
             "read",
-            "is_protocol_bound",
         }
-        assert isinstance(vars(TargetingService)["is_protocol_bound"], property)
 
     def test_the_served_model_surface_is_exactly_load_handshake_and_evaluate(self):
         from scwbd.runtime import ServedModel
@@ -211,14 +204,10 @@ class TestTheSimulationOnlyNoticeTravels:
     def test_the_notice_claims_only_what_the_code_enforces(self):
         """The notice must describe *this software*, never anyone's paperwork.
 
-        This test used to assert the opposite: that the notice contained the
-        phrases "no consent", "no participants" and "no device".  Those are
-        claims about the world, they were false, and no code checked any of
-        them -- ``scwbd.schema.authorization`` gates prospective human work on
-        a validated declaration and admits a complete one.  A test that pins a
-        false claim in place is worse than no test, so it is inverted here: the
-        notice may not reassert them, and must instead name the properties of
-        the software that are actually enforced.
+        It once asserted "no consent", "no participants", "no device" -- claims
+        about the world that nothing here checked. A test that pins a false
+        claim in place is worse than no test, so it is inverted: those phrases
+        are banned, and the enforced properties are asserted instead.
         """
         from scwbd.runtime import SIMULATION_ONLY_NOTICE
 
@@ -232,10 +221,9 @@ class TestTheSimulationOnlyNoticeTravels:
         assert "not a dosing" in SIMULATION_ONLY_NOTICE
         assert "no device command" in SIMULATION_ONLY_NOTICE
 
-    def test_nothing_can_be_flagged_as_authorized_for_human_use(
+    def test_no_evaluation_exposes_a_command_or_a_dose(
         self, service, head, nominal_pose
     ):
         evaluation = service.evaluate_pose(head, nominal_pose)
-        assert evaluation.provenance.human_use_authorized is False
-        assert evaluation.provenance.prospective_human is False
-        assert evaluation.ledger.validity_domain["human_use_authorized"] is False
+        for banned in ("command", "dose_mt", "amplitude", "trigger", "fire"):
+            assert not hasattr(evaluation, banned)

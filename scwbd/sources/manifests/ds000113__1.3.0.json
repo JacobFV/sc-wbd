@@ -1,0 +1,1340 @@
+{
+ "algorithm": "sha256",
+ "dataset_id": "ds000113",
+ "files": {
+  ".bidsignore": {
+   "bytes": 59,
+   "sha256": "fbd085cd0a39e10888c7837171b6aeb56378a428b5e3b2c4ea000adacfc468f9"
+  },
+  ".datalad/.gitattributes": {
+   "bytes": 132,
+   "sha256": "84890900c3a64c90b3f3db5366717517d376aa246a01d2885ca22269e4510e78"
+  },
+  ".datalad/config": {
+   "bytes": 63,
+   "sha256": "e7cb18dfee87feea57900fef4a3092a96b493580a9aae8ee989218300c801d11"
+  },
+  ".gitattributes": {
+   "bytes": 284,
+   "sha256": "9476689a1190b1b79c7a65a128f992a551d86f55236c939a74218973423fcdd1"
+  },
+  "CHANGES": {
+   "bytes": 171,
+   "sha256": "56ce454f587c8d2fcbc1fc09e2f8e66065b73bd24d0546ea0eda39a4ad6ccdd6"
+  },
+  "README": {
+   "bytes": 23818,
+   "sha256": "ff5e105920fe310583f79dd33f38b444ba807be473a1e6028fbc965095b64856"
+  },
+  "T1w.json": {
+   "bytes": 234,
+   "sha256": "9f37ce53df73b761f898812f55e799be1e7f2c5f07923c9593be72353e4442ca"
+  },
+  "angio.json": {
+   "bytes": 214,
+   "sha256": "7e435fabecdccfa4a05b597cc6695d0df8ed145bb220105e0805b87cc75cac7a"
+  },
+  "dataset_description.json": {
+   "bytes": 791,
+   "sha256": "060bffa78bd7c1c0944827d1cd17eaf09a56550626a68a1652b709426b946fea"
+  },
+  "dwi.json": {
+   "bytes": 183,
+   "sha256": "983863892936e2425b1d9857d84f042ad1665df198879845c4ef45d4d070c0f5"
+  },
+  "participants.tsv": {
+   "bytes": 15420,
+   "sha256": "0fc9f456568bd8044efc8f2a62f2c471f2a8b766976d0f04b01aac48f8568f16"
+  },
+  "recording-cardresp_physio.json": {
+   "bytes": 247,
+   "sha256": "322dd006d31df48fad48fbaf94dbfa248e6d110539209bc6234cc06e2bae5661"
+  },
+  "recording-eyegaze_physio.json": {
+   "bytes": 275,
+   "sha256": "f8a8684dec9120b2a58efab07817badb6b8fa87b50c54661cf5a79681356ab59"
+  },
+  "recording-motion_physio.json": {
+   "bytes": 334,
+   "sha256": "71a865b8d428c0bda2753524e94607dc31c71346a56e75a8b48e0845d3484dae"
+  },
+  "ses-r08_task-orientation_bold.json": {
+   "bytes": 323,
+   "sha256": "69b4c05ba638e5e5bb9185a8b43aa9ae4d8c8470eeca979fd28502fac6fd23cd"
+  },
+  "ses-r14_task-orientation_bold.json": {
+   "bytes": 323,
+   "sha256": "b43a460466f2e6dabd4d09fcb12910cd064f023982ad470483dfe2079ec7757c"
+  },
+  "ses-r20_task-orientation_bold.json": {
+   "bytes": 428,
+   "sha256": "9aa9ca62ba804dcc444ae291e22e7b67fb8a94d41939874b553ffaa1be6789d0"
+  },
+  "ses-r30_task-orientation_bold.json": {
+   "bytes": 428,
+   "sha256": "59556dab646ea9ae06b03453507d858e356394d33e653057cd1b8ecea98cdc0e"
+  },
+  "stimuli/annotations/german_audio_description.csv": {
+   "bytes": 49358,
+   "sha256": "49140697bfd54e0d384b30efb7256c246b99f8c2cd63a48d54078e7d03e26286"
+  },
+  "stimuli/annotations/scenes.csv": {
+   "bytes": 7213,
+   "sha256": "0a60f2661dace61f7b645fe3127b437a3d1a3e0fd413780d49224bd3c7bb5972"
+  },
+  "stimuli/generate/generate_melt_cmds.py": {
+   "bytes": 4128,
+   "sha256": "d44837509df0becb0c3f2781022de4f4ae557ec9357bdf555c8153fa4cf798c3"
+  },
+  "stimuli/psychopy/buttons.csv": {
+   "bytes": 37,
+   "sha256": "93d2822e27ea518265397deb9b368dc8968d4a747cab9c7731240782d7ec7ae7"
+  },
+  "stimuli/psychopy/forrest_gump.psyexp": {
+   "bytes": 37505,
+   "sha256": "c4f5828f0ab5910897b9776ca9df05ec20c68851dc4cb5b17314205c08b54fde"
+  },
+  "stimuli/psychopy/segment_cfg.csv": {
+   "bytes": 224,
+   "sha256": "dfb6b1e79c5d5d6e3689f73f75b3bb2eb493757ae275453f6e2bc324eb379405"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-01_events.tsv": {
+   "bytes": 2314,
+   "sha256": "85d8950b38fb644d800304f86b62fc6270bc915cda33d69b80a3c3696faf8ef1"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-01_physio.tsv.gz": {
+   "bytes": 239059,
+   "sha256": "9aa7f9da64764c890f0cf46cb6135a067745b733f6521baa085f9c2da75e9d13"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-02_events.tsv": {
+   "bytes": 2337,
+   "sha256": "5a96857cd9c1b82bf6dacb6a86c655e8fb1aba806087416d008d03511332e9a8"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-02_physio.tsv.gz": {
+   "bytes": 271347,
+   "sha256": "be2d18653f19e6ae8b25b9f55c691acc15391b11ea12b0debacc964be6b9bfe7"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-03_events.tsv": {
+   "bytes": 2360,
+   "sha256": "adb2f667977d91ebd8189f6eb42b5c6627eb10d1dd82d971f186eedc523c97ae"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-03_physio.tsv.gz": {
+   "bytes": 273453,
+   "sha256": "d70acdf0e83ab9ada0cf7cdd5641a19e788db95be8bb05c3d1436878ec6673cc"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-04_events.tsv": {
+   "bytes": 2333,
+   "sha256": "72a0eeeffb9ddc29fd9262c8c7dd26aa5d9a5a07e5c5d0f3168e7c844190ad4f"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-04_physio.tsv.gz": {
+   "bytes": 279850,
+   "sha256": "a0e697a0d8e694cb8b81ae1b0fe06ad31c0d71a5e327e71ed9fdc87b1465d263"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-05_events.tsv": {
+   "bytes": 2330,
+   "sha256": "884fc17876f9e8aa5d1a57223438ea3128b736bcd91c9ced2b393b3f07ed8b6e"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-05_physio.tsv.gz": {
+   "bytes": 276997,
+   "sha256": "3917eb935dc4bb2a9944f351993999ed6d3a8906aaa3fa2138480d624c8f2787"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-06_events.tsv": {
+   "bytes": 2336,
+   "sha256": "46bd76d95544b1a23ce11c757161922b5e60cc5e5ca2a3a511c727490ec8c42f"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-06_physio.tsv.gz": {
+   "bytes": 276722,
+   "sha256": "fad72134af891867d70a4a2737bbf977f0c0e14ae0f85a2517fed94c69dbd7a1"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-07_events.tsv": {
+   "bytes": 2349,
+   "sha256": "d5708704bff2ad0afb0935b1253ea911b9632dc5da62a247d6c4c76e8abc1645"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-07_physio.tsv.gz": {
+   "bytes": 274249,
+   "sha256": "dc91a507d5226666f1a87f6176a106c02bdf2bf137cf37eb5f113fd98037655c"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-08_events.tsv": {
+   "bytes": 2347,
+   "sha256": "f203834adebbecaed569b093dc66db8272714e318993ffd3a5d9b84801f2938c"
+  },
+  "sub-01/ses-auditoryperception/func/sub-01_ses-auditoryperception_task-auditoryperception_run-08_physio.tsv.gz": {
+   "bytes": 273219,
+   "sha256": "d25407714e08f293ecb8898c275b456f336dc7f7dfb1d73ccc1c65cb69d78c51"
+  },
+  "sub-01/ses-forrestgump/anat/sub-01_ses-forrestgump_T1w.nii.gz": {
+   "bytes": 13932380,
+   "sha256": "7c702aee386767418cc1a914fb8957c75ff2844e1d72de2c2d4b85cbac88f0cf"
+  },
+  "sub-01/ses-forrestgump/anat/sub-01_ses-forrestgump_T2w.nii.gz": {
+   "bytes": 14147712,
+   "sha256": "652248cb57ccbca27778660960b005e9206a9281811ea8480cae6fb3eb2652d2"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-movielocalizer_run-1_bold.json": {
+   "bytes": 191452,
+   "sha256": "d999a1fb27017ed5a194e6ae76c25d4c101dc36f13b01ba5351872bcc3dc3d8b"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-movielocalizer_run-1_bold.nii.gz": {
+   "bytes": 6371236,
+   "sha256": "48d612f8525d175acb7bde3e87adfc82a61a37ce175b16cb6bdd82a96ae1f63c"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-movielocalizer_run-1_defacemask.nii.gz": {
+   "bytes": 1846,
+   "sha256": "ddfc6cb12c2b17b5f851aff6b79cac459885e7f1f0d2d376e436e477cfff9ca9"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-movielocalizer_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 42246,
+   "sha256": "c3a3fe42d151229c2ca86d9201207088a640993ee48a2f889e7e8ec27861c3dc"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-1_bold.json": {
+   "bytes": 595528,
+   "sha256": "75371406ae2e2f9a70d07ccb2bcac4a9b6bfb149e025ae58bafdfbd5145139d8"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-1_defacemask.nii.gz": {
+   "bytes": 1881,
+   "sha256": "a071312878d2369d00262fb7af805c924785b77155c8673599ef697a4624015e"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-1_events.tsv": {
+   "bytes": 243,
+   "sha256": "6d67fc2135fe37d521e857ae6dc60e34cdb5224718288d8efb3cd6975fc5c22f"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 136604,
+   "sha256": "80a801a5a9d3af79c5e35d6b249e086a3c3cee6a4195f90f16c181efb2082ce0"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-2_bold.json": {
+   "bytes": 595536,
+   "sha256": "4bf5c222a72b1ab7fbaebc28430ffdcf2325285b635719363facc988d1f92e18"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-2_defacemask.nii.gz": {
+   "bytes": 1859,
+   "sha256": "4b7cedad6368e0630588ce54f5b6a8f7adbd41cc7d5cc69d2bf0797d51659a27"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-2_events.tsv": {
+   "bytes": 243,
+   "sha256": "cda6f5a685dc7aafd8936bd1204dc906824622538d43beda1a831c8e1a95375b"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-2_recording-cardresp_physio.tsv.gz": {
+   "bytes": 138084,
+   "sha256": "24e9d65d8fda82f0517e3d62fcb037b1666a76990737f75a13598e81a7fc85fe"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-3_bold.json": {
+   "bytes": 595617,
+   "sha256": "e9504ef8e4e6b3dd48e4778fd1b527efe255f5ae56cc82a8b5956548ec4c4d43"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-3_defacemask.nii.gz": {
+   "bytes": 1865,
+   "sha256": "fa37947dd85f6ecdc8cfa3068e359fe6aad4edf0898a1874da1064f164f43a0f"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-3_events.tsv": {
+   "bytes": 243,
+   "sha256": "f7e8db4d37126f40e830c176ae505fc6aae0a0d750854e2954bbc4f3b2a9552b"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-3_recording-cardresp_physio.tsv.gz": {
+   "bytes": 137581,
+   "sha256": "80b94554c839bb15ec41fcb8dc4db8b5395081bb2745b81d0f30577e69d6ce60"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-4_bold.json": {
+   "bytes": 595627,
+   "sha256": "0924b2ed2f7258dc774056d19e12f1c13f72b254652cf52e70fa027843551796"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-4_defacemask.nii.gz": {
+   "bytes": 1864,
+   "sha256": "73fd04e925e835abb873e67f28f1a4a1a5f41ca0dc1ec4410a6357b3c4112b52"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-4_events.tsv": {
+   "bytes": 243,
+   "sha256": "c8eae1c81178bb710176df7a42c9e50c933c28e70f70d6814d764e231325d2e6"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-objectcategories_run-4_recording-cardresp_physio.tsv.gz": {
+   "bytes": 136500,
+   "sha256": "17a06b362b1750b88c9693bf83a46a83c6477c1f2b796065025ed6945a7ebfca"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapccw_run-1_bold.json": {
+   "bytes": 348628,
+   "sha256": "a04920cb1eaf8f17bde53951ae9b52a039f4c585d7d2ed73a82d5782d88a9aec"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapccw_run-1_bold.nii.gz": {
+   "bytes": 12013135,
+   "sha256": "5ae232f76c082646207fe20bbea4c260b4ec3abb02fb2eafd5ce9cce887a9b85"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapccw_run-1_defacemask.nii.gz": {
+   "bytes": 1819,
+   "sha256": "89713c0f5d2930655e2fd0b910b796334abd105ee58c5a8bb39d8b62ff31bb7b"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapccw_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 79853,
+   "sha256": "80c757de6c61125cdbab4a4b318a51df39a59efe716fba482d5ac158a1248988"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapclw_run-1_bold.json": {
+   "bytes": 348634,
+   "sha256": "d0641d09ab6efffaedb211015ab77ac6cb41a7573262f2613b701a988ae3d50b"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapclw_run-1_bold.nii.gz": {
+   "bytes": 12046133,
+   "sha256": "dcfeecebf3e0e53822486e2108af232589640f51a7eee3235d3b523f5d2eef3f"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapclw_run-1_defacemask.nii.gz": {
+   "bytes": 1886,
+   "sha256": "2362f2a909ee7ad9b248a045eeb2d3612eb9828b440ae135fad0423dbbbc8c88"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapclw_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 78965,
+   "sha256": "90b2715df3c054ab133eec3b1e9336d318c0392e77a58a5e53396778937cdc77"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapcon_run-1_bold.json": {
+   "bytes": 348608,
+   "sha256": "188e2ecb3f7eee5bc338677050b0f292f72d939baa97bd6b3174bbfe7e7dea10"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapcon_run-1_bold.nii.gz": {
+   "bytes": 12075423,
+   "sha256": "200368be390b3d39db1d515ba83b508a864514adf36aa5ef8699361c4dfcc39b"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapcon_run-1_defacemask.nii.gz": {
+   "bytes": 1908,
+   "sha256": "d6eeb22167c3e1aad13bc2b012c590756af755ecebb29401652e35c8a7c744cf"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapcon_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 78819,
+   "sha256": "1b45a214e8733663dba1a148f1f5b1df3a49f834dfb7b6113253d99d44190403"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapexp_run-1_bold.json": {
+   "bytes": 348661,
+   "sha256": "74cf9a64b40fffe5c5e5588080469b13d9e3e387d10cc8247cf11b93e733cb6c"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapexp_run-1_bold.nii.gz": {
+   "bytes": 11995728,
+   "sha256": "ee32f362616b845b4ae79648a77c4ea6e2073a4eb5dd2d51109b1ccca06ed5ce"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapexp_run-1_defacemask.nii.gz": {
+   "bytes": 1846,
+   "sha256": "e9ccbb0aa1e6bd0a5c11b74843257225c847a0496563fb9a482b2e787671983f"
+  },
+  "sub-01/ses-localizer/func/sub-01_ses-localizer_task-retmapexp_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 78427,
+   "sha256": "668d06fcff24a3b2567242d8d75a7949643a9162b48696f2dcf9f20474bbc7fd"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-1_bold.json": {
+   "bytes": 1705197,
+   "sha256": "c7bb4b99d2255938097669e1dada1ec563f16ecfa865f0d6179557d19f655a86"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-1_defacemask.nii.gz": {
+   "bytes": 1562,
+   "sha256": "79cd17fbb6d5478b48bf3dfca5e6c88c51604b01ab26ad8b87ff327851fe53ae"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-1_events.tsv": {
+   "bytes": 992708,
+   "sha256": "7efd2240f9dd8886454e735e2b6487b6aa4357631d0f33d38448c3ca567ea81a"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-1_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5340865,
+   "sha256": "555a74e30a91dfc8f6f2a1768404fb251deab2b5d1b945b61cfae0afb6a2b7d3"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-2_bold.json": {
+   "bytes": 1667470,
+   "sha256": "b557614193d7d1b2c2f7e2dd60120e8a5eac187aa3438e6a76964a1016b7b060"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-2_defacemask.nii.gz": {
+   "bytes": 1686,
+   "sha256": "8b6c94173df3dbd92cebf6155e46c45ac9f158b5eb27ade28852101722a5a0d0"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-2_events.tsv": {
+   "bytes": 970209,
+   "sha256": "27284ff136dde64ab9cdba35eb22e5826a170f08b8f63ecc7bad505804c5653e"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-2_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 2837279,
+   "sha256": "cdce5292849c647d5b156ffd42bac68b24a9efc1a34758b427ed1196343cc61d"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-3_bold.json": {
+   "bytes": 1656063,
+   "sha256": "22c8d34ca63f6383eb8bcf4cf2c5d3670ae7d1c43f190a2818356382b1681358"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-3_defacemask.nii.gz": {
+   "bytes": 1685,
+   "sha256": "18cb73a3b63250636138d9dd96c498e462e287f5fd0a0bea58b66f15a60ea629"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-3_events.tsv": {
+   "bytes": 963407,
+   "sha256": "eab10ee0f6407cdeae55dabbe7661608d066a6ca5dc48983123ea60796259461"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-3_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5154944,
+   "sha256": "0dd1006024bc72f37d687acd2339a0ee68c7e801c876b99e2af90eab0cf2a1e5"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-4_bold.json": {
+   "bytes": 1844894,
+   "sha256": "d6a73364f30e0ce5f7f0b5ed1849b6411e4d0cf356b27f5e9456848d429fdbf9"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-4_defacemask.nii.gz": {
+   "bytes": 1732,
+   "sha256": "c86f2c49dc31845444e5faa7b16b66fe248e03dd69a9e093f623ad483d322dd6"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-4_events.tsv": {
+   "bytes": 1076011,
+   "sha256": "25c781b155460db848cc190592d4ab2bedee7da863ff8a94aa4429d2c0a6c447"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-4_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5722960,
+   "sha256": "8388fc88e0d99f6315f248aab535ca4b346e3c82d8a8700a13d4c6d607848df4"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-5_bold.json": {
+   "bytes": 1746425,
+   "sha256": "1eca89d6d975a53ceca6882df5615d67e951f63ee1630683a81f8d5a5b998adc"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-5_defacemask.nii.gz": {
+   "bytes": 1626,
+   "sha256": "b57d86c81cc0e5d400b8379cc110a5ef5294d41b3f2e8371286326d444757105"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-5_events.tsv": {
+   "bytes": 1017456,
+   "sha256": "75cbf74fea617c956fcb20831eba18b2229b02328a037167bf03e87e934543ff"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-5_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5517963,
+   "sha256": "3a322e7f2c51f43413f2e440a1ff9537067bbfdb758862b63992870e37e8ad66"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-6_bold.json": {
+   "bytes": 1659482,
+   "sha256": "3fd4d60fb8dfac493115efd2bd69f252f7ba8ff68647dac404c942bb5e0c26f2"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-6_defacemask.nii.gz": {
+   "bytes": 1742,
+   "sha256": "46affdce151dec61ad80a5f5818456a0be98f7ead67df09af71f2cc2fc92a7a9"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-6_events.tsv": {
+   "bytes": 965658,
+   "sha256": "2731dc557f071dae72ce7986131cf92578dedbc8f3392678c337528dea611ee7"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-6_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5176395,
+   "sha256": "0dc79450753f64ab43f77af82e905d2a5754180533c3e283d0e97590c2c6df27"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-7_bold.json": {
+   "bytes": 2049176,
+   "sha256": "7774299f95fef71c01afeb63b91529ab92b67916c79e7b21d6fb06f9d0c0b1e3"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-7_defacemask.nii.gz": {
+   "bytes": 1778,
+   "sha256": "dc6863019238cefefecf15b5f4d27177eaed676f32597c6118cf3aafa816ae2b"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-7_events.tsv": {
+   "bytes": 1207141,
+   "sha256": "cb92744b5ce97395668c6766b97fab04eee3f1b08502748ed9787ce4bdfec24d"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-7_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 6262490,
+   "sha256": "65b6192ce99feabe0dd35c5955d8f005db12ab259085a235047519e14fdb500e"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-8_bold.json": {
+   "bytes": 1278461,
+   "sha256": "8f61aa7ea7af89e7eef42272c60b2ae470533169d420e304fe27db2576d58bc0"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-8_defacemask.nii.gz": {
+   "bytes": 1733,
+   "sha256": "54f99ad7565bc01e8ae2905dbc99fc8faf22b25455b5e61142ffaa3ee9b3c9c6"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-8_events.tsv": {
+   "bytes": 735536,
+   "sha256": "a93c5d4d9a821b418e47b4d2e66821569e3bd898f2a891baa38fe24ac1e2f42f"
+  },
+  "sub-01/ses-movie/func/sub-01_ses-movie_task-movie_run-8_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 3933019,
+   "sha256": "9c2859b62901a08c610f58c4645ec717dc63fbb7e5374011da3951ccfc156d83"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-01_events.tsv": {
+   "bytes": 2289,
+   "sha256": "cc89d48426a87d84cd5242a5f12ce9d9cfca1d96726dbaaabb08fa9675a3a59e"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-01_physio.tsv.gz": {
+   "bytes": 247497,
+   "sha256": "6dc2d65598c54d6b4a5b8a4983c9d8936a5f8815ee48f6648250c3efadff1ab9"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-02_events.tsv": {
+   "bytes": 2326,
+   "sha256": "756a6734642e4ddf7ea1a04599068ce635f3bd9cac3b3cd3dd6e0fc6aac677f9"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-02_physio.tsv.gz": {
+   "bytes": 248412,
+   "sha256": "570ea335772d61896f408103496f285f1b306874790bc2c63c17bd3f6e158779"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-03_events.tsv": {
+   "bytes": 2337,
+   "sha256": "5ee0c0cc3afac0e6b7bc6b95e334a490e3a83862a89e8262f27505a65903e74a"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-03_physio.tsv.gz": {
+   "bytes": 241974,
+   "sha256": "1110fd1e9c67b4a22cea1e9e40c7b419771d7189f33fe03c42fe9108c823bb86"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-04_events.tsv": {
+   "bytes": 2380,
+   "sha256": "d37cdd52a544e26197021a96f75c6307e71db0b234ec2771d2c2b2c8b321d435"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-04_physio.tsv.gz": {
+   "bytes": 239210,
+   "sha256": "047ed1ebb62b9dcf4f91d2d03d115e44a755b535e15e21877f7fc6711f3fd0c8"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-05_events.tsv": {
+   "bytes": 2330,
+   "sha256": "931a335f62c27bc7436a6d6974aed4ea32f62ccf6edb735b2d731c3e64c98dd0"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-05_physio.tsv.gz": {
+   "bytes": 232924,
+   "sha256": "09aabd07c897204c5df10c1694d52ea25a48a2dd03bf283f6029c5e136ed0945"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-06_events.tsv": {
+   "bytes": 2337,
+   "sha256": "9c4f979dece632b46213724cc3f2fedd294f0c652a00d1501e5278b65f39a0a9"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-06_physio.tsv.gz": {
+   "bytes": 239650,
+   "sha256": "825e72159556491194e590b003e016b58c638a7992137c46d671032d9547a19e"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-07_events.tsv": {
+   "bytes": 2376,
+   "sha256": "98b14278536ea6ad7528ac636fc64acea796afb062f7e7b62bf5c6208735b2a7"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-07_physio.tsv.gz": {
+   "bytes": 221634,
+   "sha256": "ba26c97abd4b34c81051864bc781c74abf30c2bdfa94499a48a61010fe4854d6"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-08_events.tsv": {
+   "bytes": 2374,
+   "sha256": "af37f68dd9e65cfcd496f88d798c54bdc58284f497bce27ccdc4a1c3ab807317"
+  },
+  "sub-02/ses-auditoryperception/func/sub-02_ses-auditoryperception_task-auditoryperception_run-08_physio.tsv.gz": {
+   "bytes": 226233,
+   "sha256": "b702351d15a884c1cf75837c6d74f0b6e40d112b5bbb4d55f600cf13af4df27d"
+  },
+  "sub-02/ses-forrestgump/anat/sub-02_ses-forrestgump_T1w.nii.gz": {
+   "bytes": 15753974,
+   "sha256": "caa695b28428a30f536b9240167cd40e767c6c469bb477e248d6a676e475221f"
+  },
+  "sub-02/ses-forrestgump/anat/sub-02_ses-forrestgump_T2w.nii.gz": {
+   "bytes": 16224164,
+   "sha256": "76db0ffeff02afd6fc10640eea9aeb31556bb302c2f852aecee2c49e43ca5161"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-movielocalizer_run-1_bold.json": {
+   "bytes": 191422,
+   "sha256": "818c1c06277877bec3fcbf44814eaf08044184bf1f068c88ce5e208ea3b6f515"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-movielocalizer_run-1_bold.nii.gz": {
+   "bytes": 7220294,
+   "sha256": "79a7062b610f37789c58989fdb1493ea7ca827ed401084b982932078186fc5e2"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-movielocalizer_run-1_defacemask.nii.gz": {
+   "bytes": 1951,
+   "sha256": "025c505e8b8ceffa7237cab5722064e76b400a66619f0fa639ccd3ecc4f3611c"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-1_bold.json": {
+   "bytes": 595629,
+   "sha256": "756528088c450db6bd2b91a22c7f5b038b24859bcc3e34f27163fb6d59376f99"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-1_defacemask.nii.gz": {
+   "bytes": 2103,
+   "sha256": "5273b40f7703c98e8d66d5008fa92dcd71cfe4df0295d3269c9d3cbc38224967"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-1_events.tsv": {
+   "bytes": 243,
+   "sha256": "6701f63686a496d69435f7708ff7333bc02ea24b0ed51d5be488eb64dce00505"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-2_bold.json": {
+   "bytes": 595551,
+   "sha256": "eb1b20c2ffd66ca612498429eb6fe4dbecf8099eb7f9a3a85299c4c2ba75538a"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-2_defacemask.nii.gz": {
+   "bytes": 2089,
+   "sha256": "f40870a75a3aa7206400a8be52f9b8f405f4fd85d4adff6eb19bc286e574a965"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-2_events.tsv": {
+   "bytes": 243,
+   "sha256": "0c921da53d34fbc22b6f2b161e5a5ab4967972f437b65eeb002da1a92efb2961"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-3_bold.json": {
+   "bytes": 595596,
+   "sha256": "c11bd0940dbc20ff51308daac5a0c5dd3ffe66244102b1a232e7e5246a3c1fc6"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-3_defacemask.nii.gz": {
+   "bytes": 2073,
+   "sha256": "778a57062ba7e9e5d152ba47a6afc576f852dd3cc84f075608abde4c1925a552"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-3_events.tsv": {
+   "bytes": 243,
+   "sha256": "b21f709572691bf70362492de95e18ae82477b207270381a617b7be27f08f837"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-4_bold.json": {
+   "bytes": 595577,
+   "sha256": "f4cbb523cf6b316cd4399aa9a906e5270f1b5b0a73b34c258acee8d533a57d73"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-4_defacemask.nii.gz": {
+   "bytes": 2078,
+   "sha256": "5b6e8ac2376d2914354e9300f473bfa661ce55918393e2e52ff97479e0d677e0"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-objectcategories_run-4_events.tsv": {
+   "bytes": 243,
+   "sha256": "b21f709572691bf70362492de95e18ae82477b207270381a617b7be27f08f837"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapccw_run-1_bold.json": {
+   "bytes": 250819,
+   "sha256": "e018f1074531024c5a55b95765bfdf1e88bab644ed57e89954638551649d0162"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapccw_run-1_bold.nii.gz": {
+   "bytes": 13421474,
+   "sha256": "28d96527781fdb75ce6bd479b523b1c1a7f3cf1ae63b7b9aeab04ccc8f34356c"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapccw_run-1_defacemask.nii.gz": {
+   "bytes": 2021,
+   "sha256": "36f6175fc33b3f7616777a6aed06cc7e9a3c2d2dd346d5c2e4f2c298ea0acd42"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapccw_run-2_bold.json": {
+   "bytes": 250794,
+   "sha256": "b7fecfa27909fa9c267d0c042982ea0718a917274fa02819750dc5228d722a8e"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapccw_run-2_bold.nii.gz": {
+   "bytes": 13458617,
+   "sha256": "b5bf74d8e4b966f51219027d308831d722e99c29614836400ad1dda034d8248d"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapccw_run-2_defacemask.nii.gz": {
+   "bytes": 2010,
+   "sha256": "c1cbd4a572062d0f5f4954d33dcf03286f8354e66103e028d2ed30226ec6e54b"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapclw_run-1_bold.json": {
+   "bytes": 250830,
+   "sha256": "bcd5e71cfd6bd3e56d8125a6b87c101ff4616f889ae8a1dbbe39ed81543c16e5"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapclw_run-1_bold.nii.gz": {
+   "bytes": 13486616,
+   "sha256": "5f98b6cb4a5b9a2294578cee9010c839d6cb4b65f30fa2c18a165c3e703fa70a"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapclw_run-1_defacemask.nii.gz": {
+   "bytes": 2016,
+   "sha256": "ece687afefede7fef4541ef66694bba1c205c39d0df47b075c9ef9ceff162352"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapclw_run-2_bold.json": {
+   "bytes": 250635,
+   "sha256": "50277758eea8ec79b62a0042e3a09b3550f84bdcc12e2b56f3fbf1cd067f2d3f"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapclw_run-2_bold.nii.gz": {
+   "bytes": 13433272,
+   "sha256": "f10df87c2c91de528f6bf68a76c0fa266b4aa9bda5221c2de0b654c48256a596"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapclw_run-2_defacemask.nii.gz": {
+   "bytes": 2025,
+   "sha256": "cb1fdcf4ccef2bc5e6269a42b42875171bd1286d9c5a2b1f658cf60435ac5089"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapcon_run-1_bold.json": {
+   "bytes": 250844,
+   "sha256": "8788bc3c5585dbe29672991fe6173423297a42c54f8293ec0c533cf3dbd70c59"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapcon_run-1_bold.nii.gz": {
+   "bytes": 13409304,
+   "sha256": "5df1d6a7cfc11d47ab80ec3d45648a74d364812292c98f7bb2c26680b6487697"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapcon_run-1_defacemask.nii.gz": {
+   "bytes": 2005,
+   "sha256": "7906c46f0af26124ab3adb4913bb3d76549b1674a21d30ae0a9a88a641a5fa13"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapcon_run-2_bold.json": {
+   "bytes": 250793,
+   "sha256": "f13a733ce0544d2188f1de412811f5b4e93b60f2121b2523b414e30f1fa1dbae"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapcon_run-2_bold.nii.gz": {
+   "bytes": 13456443,
+   "sha256": "78dae5b5a8af45f0a3b5a73afda02ef9f36c95db4722c3aebe5b350e554261e2"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapcon_run-2_defacemask.nii.gz": {
+   "bytes": 1983,
+   "sha256": "c216d856a84f8eb1279bb385aa69b7ec8970ac1a944571d00e44bc9a77717ae3"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapexp_run-1_bold.json": {
+   "bytes": 250823,
+   "sha256": "b31e950e6423f30625c69bc4aa2073abed66a568dc6038a506c93c368bbbd2fd"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapexp_run-1_bold.nii.gz": {
+   "bytes": 13443114,
+   "sha256": "efe2c9a471c961bbfbf0575b6e8c60c37e799dc1ded342f7b1880d9e2906bebd"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapexp_run-1_defacemask.nii.gz": {
+   "bytes": 2042,
+   "sha256": "f0b8e01b7c948a59167e7585d09e7aea225f06018c519cabfa348f39fbfbb5f1"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapexp_run-2_bold.json": {
+   "bytes": 250777,
+   "sha256": "246861b83ed25ef876209cbafa961af4c87196ecb5f23f4bf42bbc92ee51ba01"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapexp_run-2_bold.nii.gz": {
+   "bytes": 13436545,
+   "sha256": "24ecdfb349b1e96049810bc15e27ff4f4068f8b8e9677a59a9c35f164206b2a9"
+  },
+  "sub-02/ses-localizer/func/sub-02_ses-localizer_task-retmapexp_run-2_defacemask.nii.gz": {
+   "bytes": 2002,
+   "sha256": "c4cbdf38b05374094a439234d10e088c3b7cd7ea531797d859c07ea4785843a6"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-1_bold.json": {
+   "bytes": 1705305,
+   "sha256": "509463d1e0e55821b0efe0c904ffffaec895c689fab9dc7553dde1cb807afbb6"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-1_defacemask.nii.gz": {
+   "bytes": 1960,
+   "sha256": "e48f671e604e87a47eed8fa120468bb8f14498f4b2ef722a9602de73dc51ec42"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-1_events.tsv": {
+   "bytes": 992660,
+   "sha256": "bd0742537cad891b5fb3f430ceab0580863145f81adf9b1fb269191c8e33b783"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 390146,
+   "sha256": "dcb84e8ee5e687d8ffdd4f6be2fccb82e48aa0459b5d2470ad34b922be28503b"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-1_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 4621969,
+   "sha256": "3851142012a5020d0390472c4e1de74f6d6ad509037a657fb329c711359cf28a"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-2_bold.json": {
+   "bytes": 1667450,
+   "sha256": "bd07c011c5a4954b41cb86560ca6e78cda2c3d13da14e4a40a34140d2bd4d281"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-2_defacemask.nii.gz": {
+   "bytes": 1943,
+   "sha256": "6266ea47563fa92026ea44f82bfcf89c0e84bc2ed12aab732d69d140ad23d7e3"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-2_events.tsv": {
+   "bytes": 970261,
+   "sha256": "470145028a0836791080951ad43f9e6950a1df3da22838d34f05421020bf199b"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-2_recording-cardresp_physio.tsv.gz": {
+   "bytes": 386324,
+   "sha256": "cb562e5a7c70985093eeb24efcce20f203f002834bf8898ff2e0e64b251b00aa"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-2_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 4711666,
+   "sha256": "c5c65f4c0f36675c640cc8554030f2005afef023940668ff84338b618598e958"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-3_bold.json": {
+   "bytes": 1656010,
+   "sha256": "f897ddf724f6bf8f25330fd327defd2495c6e920011e9a4a8f24270c6930097b"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-3_defacemask.nii.gz": {
+   "bytes": 2001,
+   "sha256": "287e29e678cce9a188b4765e39e0bf209233685d7eb70094ba8eb4f5cfbf2ca3"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-3_events.tsv": {
+   "bytes": 963461,
+   "sha256": "aa3a43449cdc4cd35c9f221c53da084810dfd0b39c314666a77a6f1936269a16"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-3_recording-cardresp_physio.tsv.gz": {
+   "bytes": 374458,
+   "sha256": "b5532b23c183381e06e71f2925b5cd43115115a8eacfdd443b75ecc20325438b"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-3_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 4662598,
+   "sha256": "e0db284cc15c8844e879225323ccd6c329fb78879c765a5a6a327016d2540adf"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-4_bold.json": {
+   "bytes": 1845032,
+   "sha256": "ad19942126bcb50f5068ad3b1a4a02ad8b5a1ce17b661096dbb4e3af9a45c25d"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-4_defacemask.nii.gz": {
+   "bytes": 2072,
+   "sha256": "0e42c250842a927c1108bf11d29ed628f18eacd9b9d6080a0427b7494141f0fd"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-4_events.tsv": {
+   "bytes": 1075961,
+   "sha256": "5779ff300893302eaeffedab6c26897875d2284f9ca9fe44e99f978a2e994f1a"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-4_recording-cardresp_physio.tsv.gz": {
+   "bytes": 419980,
+   "sha256": "ae4e26cac36a38e136bca3107ece1952072bdd5a858187c51895de340471b405"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-4_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5406331,
+   "sha256": "ce9c5484e005dac8f1d093c15559d6e3003c55bc4ea76722fb4ce29cd1900038"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-5_bold.json": {
+   "bytes": 1749776,
+   "sha256": "ee38d1381e8f97f289fd70ea4fee0b97804e2de77db545d1574cef25d8597e8e"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-5_defacemask.nii.gz": {
+   "bytes": 2017,
+   "sha256": "9dba3afb1a15a41e3db2c3bff655c8393221f8dbbf88b2f9f809b70a865df505"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-5_events.tsv": {
+   "bytes": 1017460,
+   "sha256": "7e478cd9a62ba4429ff1eb96cd501d26df0ad0d167c2078e62727dbdefea6c05"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-5_recording-cardresp_physio.tsv.gz": {
+   "bytes": 394099,
+   "sha256": "115dc36e812f5e068c3cb90688e563a5203fd92f7ef302baa27f893bea47cb66"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-5_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5333650,
+   "sha256": "f4cc8513fa20db56e680397e66b64430cd2458c29b93f6abc1191874cfeeda6f"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-6_bold.json": {
+   "bytes": 1659967,
+   "sha256": "f5d7e0db62810be333cb08e1dac2275ecd1d820d8f2dd9bb5bb3e9715691cc0b"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-6_defacemask.nii.gz": {
+   "bytes": 2063,
+   "sha256": "699f265e6a3a6ad940054dce0f287c361a5a1431e8fa687e63492ba39165a31e"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-6_events.tsv": {
+   "bytes": 965712,
+   "sha256": "9918782828c949564955dfed341517497dc1adef2b5b866d7bac0e0ed81a9623"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-6_recording-cardresp_physio.tsv.gz": {
+   "bytes": 372121,
+   "sha256": "d22c57562f562fb0acaeae2bab5c4832b3d8f38b6774c67c6366ba0f75d41423"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-6_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 4903692,
+   "sha256": "97fb84847bf40867454c6c6b1892e26123450f2a3d2cccbb583ee5c5b1bb316d"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-7_bold.json": {
+   "bytes": 2048932,
+   "sha256": "b5dcfbfbb104edf2590220f724cef7aff7c6a45538455111f196dd247ae99ebc"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-7_defacemask.nii.gz": {
+   "bytes": 2048,
+   "sha256": "d884a0581a2b6a4cd14b4de6cc36443b1394fe0dc3551115c6bd4db7d2098650"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-7_events.tsv": {
+   "bytes": 1207098,
+   "sha256": "998940cd858799821ae5b1f16c8d357ce3a26e1b535e104642d8a06f5216316a"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-7_recording-cardresp_physio.tsv.gz": {
+   "bytes": 465806,
+   "sha256": "1edc70f2e562dedb53834a5a1557dfd0bee047377f0061939073bd760bd0f873"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-7_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 6244496,
+   "sha256": "ef991a069e8ebcc6ffe6e5770f45b7dfbe37bfd7f792fbcaed787dd9b3ff6a77"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-8_bold.json": {
+   "bytes": 1278494,
+   "sha256": "a3f6703d581701972c0ef00bb0882246442c9cafc902707805aa4e85c42de502"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-8_defacemask.nii.gz": {
+   "bytes": 2103,
+   "sha256": "7362515532ef843903475a40de9c92264e20f115ef1514abefd9350f89da55b4"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-8_events.tsv": {
+   "bytes": 735537,
+   "sha256": "2d5f906be6e4891ed7c150f038d32060bf10e470ebb09354070daefc77556b33"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-8_recording-cardresp_physio.tsv.gz": {
+   "bytes": 289562,
+   "sha256": "c9b79cfb185d59cd1f7347f85dd9c7ace987fb94e7fe8c24056d0721f7af1de4"
+  },
+  "sub-02/ses-movie/func/sub-02_ses-movie_task-movie_run-8_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 3598454,
+   "sha256": "ea53fcf3fb3de4e91e1b4ffad75cfe1600a7c61618696b96f3ddc183643e9450"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-01_events.tsv": {
+   "bytes": 2283,
+   "sha256": "30ed69b79d6069452f011d05576cf136140897aaebd34562c75914d9b8a86ed5"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-01_physio.tsv.gz": {
+   "bytes": 160110,
+   "sha256": "53b13794aef4778078f7ad1da2c8cd29995628ee19a40b1d097785dad1cee1f9"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-02_events.tsv": {
+   "bytes": 2305,
+   "sha256": "2e3071b7ea28d2421607d59d7bc8f4b67d6a4232846338c933ef11a49a0e145a"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-02_physio.tsv.gz": {
+   "bytes": 157207,
+   "sha256": "0bb354d274ef99634dae2574493b363047ca261941a057d162d9179d1f721909"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-03_events.tsv": {
+   "bytes": 2333,
+   "sha256": "27828ad498480f33c7f3d394a79b77daa6140abdff88be8399f7d4eb96ec51d2"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-03_physio.tsv.gz": {
+   "bytes": 160396,
+   "sha256": "640bf1f18c63452231d494ffab7e5031c5b1b21e35ce4abdf2c5359f2c41a21d"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-04_events.tsv": {
+   "bytes": 2364,
+   "sha256": "2d254f0238da8e260a4240edae7cce965c5b8cc3e03d652e49c0325da44e8831"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-04_physio.tsv.gz": {
+   "bytes": 170463,
+   "sha256": "80166c6d6bf312921c12b76fd885ed632a5888452b819ea3c23eb4cdc047cf22"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-05_events.tsv": {
+   "bytes": 2338,
+   "sha256": "eeef6618b2ec38960611622c69a6e3fccd8cec191374350819d6b155daa088f8"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-05_physio.tsv.gz": {
+   "bytes": 168463,
+   "sha256": "b3c72f54359cecfa9e949bda16a3840b72565cbffbe50bce688bb703758046ca"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-06_events.tsv": {
+   "bytes": 2337,
+   "sha256": "ea80889f1aef548d05d820ffc80ccba540f8ad992344cb42c9b2f9e3e9c9e4b6"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-06_physio.tsv.gz": {
+   "bytes": 183659,
+   "sha256": "74a0e08d69b3009e392a99dfbd6dcd2c43c6f82da7dacdf13aaf262dda441f9c"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-07_events.tsv": {
+   "bytes": 2345,
+   "sha256": "54166367fc123eb12ba192451c5e9845a3593782916c115c22cf32494042e67e"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-07_physio.tsv.gz": {
+   "bytes": 182600,
+   "sha256": "9f23b0c7ea167c7f47332f3cd5f4eeaf2a0e82de987f1d558695205c026b7e7a"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-08_events.tsv": {
+   "bytes": 2397,
+   "sha256": "fd218bf5b17cbf72e850f30150d1c507802e0d0f3fea1408b7c3ca2685e8b190"
+  },
+  "sub-03/ses-auditoryperception/func/sub-03_ses-auditoryperception_task-auditoryperception_run-08_physio.tsv.gz": {
+   "bytes": 179746,
+   "sha256": "bfe10e7a035ab061d41b79d71edaf71660fc4344cf0ce8809f54104978f36243"
+  },
+  "sub-03/ses-forrestgump/anat/sub-03_ses-forrestgump_T1w.nii.gz": {
+   "bytes": 11593228,
+   "sha256": "d2fcb364d63a0412f278df5b0cfbfb7261cd167f89d31a3bf0235c80737af874"
+  },
+  "sub-03/ses-forrestgump/anat/sub-03_ses-forrestgump_T2w.nii.gz": {
+   "bytes": 11956283,
+   "sha256": "4ae4e7b663f010aa7dccae22ada853135a1af6dcf2944fb4cb6dfd3b8b0c4619"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-movielocalizer_run-1_bold.json": {
+   "bytes": 191437,
+   "sha256": "8964ac3025f6004db00174218f82f9a2ad36df192915e330229c3ca514ac97ce"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-movielocalizer_run-1_bold.nii.gz": {
+   "bytes": 5772048,
+   "sha256": "17556dbcd06951db76c5d17e49b0bbb6ace664995e52b23f53a1fbdd2653a2ca"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-movielocalizer_run-1_defacemask.nii.gz": {
+   "bytes": 2032,
+   "sha256": "e8830ed1e33143c5f79940c2d41b18a1a4634965ea8e3c4cae03ddff361bfd24"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-movielocalizer_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 42253,
+   "sha256": "2ee24d8affe53825cb0c4759fa13d7c7d3f136714ebf28e674a997c2eb906197"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-1_bold.json": {
+   "bytes": 595309,
+   "sha256": "0d2560e754dc726a598c9987c288cfd628126bb69bf1ec5981e040657014f96c"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-1_defacemask.nii.gz": {
+   "bytes": 2060,
+   "sha256": "e59f21872b0715f0929d3ef2f165dce7bba669e20873427f36e0de74d54ba446"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-1_events.tsv": {
+   "bytes": 243,
+   "sha256": "b6c2e11bf87fa628eebd608795660a3ab61dc6c632d9b351d5334f9803ef497f"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 124374,
+   "sha256": "b0be23549b0c9ac5ad71532d31f93b06e69ddd782211fa890ecacb7ff0ff4540"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-2_bold.json": {
+   "bytes": 595478,
+   "sha256": "1ec87b19c63adcdf402eedc1e23fe8608e64fb101ffe86e8d314f032a5641306"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-2_defacemask.nii.gz": {
+   "bytes": 2042,
+   "sha256": "6695ff86ae8973f6f5233f31f39380806d3d73f45857482aa47bc50f46fdf493"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-2_events.tsv": {
+   "bytes": 243,
+   "sha256": "59dfc0c3b8e31bcee740ff2d1e51f42db9f4b587c73cac8de60737c872d45a1b"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-2_recording-cardresp_physio.tsv.gz": {
+   "bytes": 118979,
+   "sha256": "5364a61ecde715a79f3f2dae2f113f6a83aff3ecaa55835f05a2e6e1f92382e6"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-3_bold.json": {
+   "bytes": 595357,
+   "sha256": "3eb75b2428aac90d576e23b144897b390f2f9353ab5914ed90f0db6ed00d11e4"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-3_defacemask.nii.gz": {
+   "bytes": 1963,
+   "sha256": "89eb6d8e876d26f33ed7b94b852b451bfdba8cfd3c8513f9a47eb2efd2540c0a"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-3_events.tsv": {
+   "bytes": 243,
+   "sha256": "46cac7e7d18d84f08d357907974e64aff364416b4192f82a1146f1e04428750d"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-3_recording-cardresp_physio.tsv.gz": {
+   "bytes": 116256,
+   "sha256": "b71449d248b0bea3c91ddad2b6be80c8c6470c6629d0b155a522cc0d5f930d04"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-4_bold.json": {
+   "bytes": 595400,
+   "sha256": "cf41846a302627e07535e84e21766f86660ccfc5e6e1374e177d5dc873ba96fa"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-4_defacemask.nii.gz": {
+   "bytes": 2021,
+   "sha256": "350580dd627c3cced9c1e0d129f58bfcc59a84d1c1eddd728aba416829eb0488"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-4_events.tsv": {
+   "bytes": 243,
+   "sha256": "41ed89fa80a03499cb4507143fa579ebd33bdf6f09582d1bf9be05868c238af5"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-objectcategories_run-4_recording-cardresp_physio.tsv.gz": {
+   "bytes": 117265,
+   "sha256": "05787265fdc14f6d352f58ea6087828d69629b8c2a15c152f70d45faa1bf97db"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapccw_run-1_bold.json": {
+   "bytes": 348624,
+   "sha256": "123cf65bdfe4c8c0a4a7dc58774c32eb1270a7695d1e1943e4c4b67b117d44a2"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapccw_run-1_bold.nii.gz": {
+   "bytes": 10873900,
+   "sha256": "6b106c20ea217097a7cd322cfef68ec091738fcf5593dd0b7d7b08999a95b8da"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapccw_run-1_defacemask.nii.gz": {
+   "bytes": 2066,
+   "sha256": "1cf794dc097800db5b9886a22a3fdecd8fead37911e69f1d03b2617de51e50be"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapccw_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 72949,
+   "sha256": "53dd20bc7291108f6ddebc1bf7f65c2ee49fa9f015b01c3ad1587ca1ec03c97e"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapclw_run-1_bold.json": {
+   "bytes": 348523,
+   "sha256": "3a206de0cf2332ca148687016cb0ec183d2fc8869392d739c40b3e562d174a45"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapclw_run-1_bold.nii.gz": {
+   "bytes": 10997589,
+   "sha256": "1ad1f0aab44d275bb3217b0f91903c9b53d03551965c93e6b69e7eb37481d319"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapclw_run-1_defacemask.nii.gz": {
+   "bytes": 2032,
+   "sha256": "7b41cfcc88ebf54ba5d7c9d1cd151499f6859a0971c48ba681b1d49dcf66b25f"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapclw_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 71403,
+   "sha256": "0c58de5dc411b9775622a921967a7d805f4e76c1585ad360aa726b98564110e3"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapcon_run-1_bold.json": {
+   "bytes": 349127,
+   "sha256": "29e538522045ef59308a4e0dd5c603cd6a81a954ee852634c7524a49cb48753a"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapcon_run-1_bold.nii.gz": {
+   "bytes": 10989361,
+   "sha256": "a0bbb306db6e10a1f02da816bbaab82905d0547a25a3879cf267438a6d142f27"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapcon_run-1_defacemask.nii.gz": {
+   "bytes": 2066,
+   "sha256": "f0cdf16d2fde99cc64b4caab2bc10261614a47c942d5e9d7f922850ab6718133"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapcon_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 71350,
+   "sha256": "4e6a7381436bbb4d31545e65e21a8339abc65d14ecadd459bee50a216b0707b6"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapexp_run-1_bold.json": {
+   "bytes": 348585,
+   "sha256": "3da9b3ea9c317daad3ca39e7f5ff5798448f927139284e4638311bf46b6254fc"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapexp_run-1_bold.nii.gz": {
+   "bytes": 10895059,
+   "sha256": "bba9b2d47a8a5e9fcf118adcbb8f61418517cc748a08d6cf63a815ef5b7ddeb8"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapexp_run-1_defacemask.nii.gz": {
+   "bytes": 2040,
+   "sha256": "f9730b0f3eb9122707bc52d9b412c16a71d58f4abc9e40fbd4e26b50e3c2aa5c"
+  },
+  "sub-03/ses-localizer/func/sub-03_ses-localizer_task-retmapexp_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 77571,
+   "sha256": "47b33f397017a54c297476ec6bb99e2e6ab886e96f9e4566312de505202b6f1a"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-1_bold.json": {
+   "bytes": 1705347,
+   "sha256": "5b4cf091ddf3e7a15eb4b566247fdb25f8ab1d263dcff174c836f2dfb8b60682"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-1_defacemask.nii.gz": {
+   "bytes": 2010,
+   "sha256": "cf11191346cfe690a7b6555732e9622e0dd77e50696596c520cd3ec584c71e2d"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-1_events.tsv": {
+   "bytes": 992611,
+   "sha256": "b1aff1fd82af2d7eb425e19528fce9051fc20d97da4aec5419e0821ecc06f363"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 357326,
+   "sha256": "25f634eff980499c3c9014003ffe1354c42cc744e6de67bc4eec9d05b3b0a01e"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-1_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 4780029,
+   "sha256": "e20c7cd02b9c4cff3a5f8d129398f666a1c242923bb56e925e6c0f00f0a603d9"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-2_bold.json": {
+   "bytes": 1667487,
+   "sha256": "3d88a65fa2386381fbf25d46fe08c541cea91a8a28133f725f282615c7f71fd5"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-2_defacemask.nii.gz": {
+   "bytes": 1999,
+   "sha256": "fb5ace95cc1fc4db71af7c9ff89a04c36ae3e347f6d607ea7405b6aaeb126ba0"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-2_events.tsv": {
+   "bytes": 970147,
+   "sha256": "ba27cdba66a58438dbb84f2ab426ee05a41d9223228b43d9dfa2a01ec3b3914f"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-2_recording-cardresp_physio.tsv.gz": {
+   "bytes": 352047,
+   "sha256": "fdb572c62c0bda35244aae4a03dc926aca090928ecbbb2d359a7b38abb18400b"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-2_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 4856358,
+   "sha256": "16d3587da8dd2f8cb33c87d86c7081bbf9a078ea72713b1950ddb2445c4f4fe5"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-3_bold.json": {
+   "bytes": 1656861,
+   "sha256": "b4d2d43299af1a39359a443e836069235838ff72bb2fb61f1ffeee050858b617"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-3_defacemask.nii.gz": {
+   "bytes": 1993,
+   "sha256": "761bdec95bf6656f036b8f80c3a9eb4824469fb046b87298bf6c90cb04344e98"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-3_events.tsv": {
+   "bytes": 963410,
+   "sha256": "7e842f5e7feb7bc2ecde5fbff7bdfe7fa75aebff70ebb6b20212950f68aeef29"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-3_recording-cardresp_physio.tsv.gz": {
+   "bytes": 351100,
+   "sha256": "a93c008885aaebdef76c4195e0dfae5f41a6ebb60a00bdfc4d0923dc902958df"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-3_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 4870611,
+   "sha256": "ae3a060ab0eb2e9f2f69ca822f254dcfdd80b3a02b5ed85cbfd8d77b306c8844"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-4_bold.json": {
+   "bytes": 1845543,
+   "sha256": "208e97baee4a0b03a53cbfdbbf2cd29a20ecfe41b23dd5bdd919f8051d628603"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-4_defacemask.nii.gz": {
+   "bytes": 1962,
+   "sha256": "2cc71986b32d1860a0eb2479a3127ca2a11250c01fd92bcba8caff70f3e5d98e"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-4_events.tsv": {
+   "bytes": 1075913,
+   "sha256": "341e566416f5869632cba56752b8c7aa737abd65e6c969f461732e6f73d2af4e"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-4_recording-cardresp_physio.tsv.gz": {
+   "bytes": 390076,
+   "sha256": "a873845f5517c5395684ab58c3d4bae3486c251dca2f9b0a21321d04b2b27d12"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-4_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5545134,
+   "sha256": "751d3a4bba3e67c4154670acb70f2b962782412d951e2c52437348a3dd8f7381"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-5_bold.json": {
+   "bytes": 1746306,
+   "sha256": "85cea4d7371c7611c90668b3d034146c90328f5e69882863252e6499bea62364"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-5_defacemask.nii.gz": {
+   "bytes": 2089,
+   "sha256": "835df500c9ce5b49b1652f7b24fa05ec11625aa00bb3c2eb9b65222d04beb3fe"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-5_events.tsv": {
+   "bytes": 1017398,
+   "sha256": "a352e413e7e93be1ff753afb5d4160e18e30176b5876b4e06a4b78cc12ab9c58"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-5_recording-cardresp_physio.tsv.gz": {
+   "bytes": 393423,
+   "sha256": "3c0449c8f828e13d54583955d1bf5d05f3d95914434fe3e5f6d20d333aba31e0"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-5_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5318803,
+   "sha256": "a8218b5c765f22ef0d13f47980ca1d7dd0c9e147b686e48b60c99a7e1943705c"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-6_bold.json": {
+   "bytes": 1659574,
+   "sha256": "3c85ffb91408ce7d74efe555ee967be4551ed50f63aa4a02d06282f96c3d4be1"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-6_defacemask.nii.gz": {
+   "bytes": 2121,
+   "sha256": "c46383c4874bcf28a55935371ede2f1762a7c206a67ed90da770fdf479dad157"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-6_events.tsv": {
+   "bytes": 965660,
+   "sha256": "cee9008835bc6a7c211692f710528247cd64956f20b1c8794d4163013e62e08e"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-6_recording-cardresp_physio.tsv.gz": {
+   "bytes": 377455,
+   "sha256": "f2ea20d5f465fb920d6784038a3f707be9c558092a6ca43f88807cbae4023bd5"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-6_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 5072837,
+   "sha256": "5492ad015fcf01a824f6be435567fb285cb708ae6535dc3767de4460f091a1ac"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-7_bold.json": {
+   "bytes": 2048739,
+   "sha256": "4465797b348d9b308aadc251968616120c2135dc6eb3943448e719affca6dd33"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-7_defacemask.nii.gz": {
+   "bytes": 2139,
+   "sha256": "94d9fac0e380996dfdb505474721318711d400b799421d4332f23d1c070ccf3f"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-7_events.tsv": {
+   "bytes": 1207092,
+   "sha256": "2c828b1a730ef30a6250398b3e1881c4fb06179c9aebf27b25aa5e7bd65a1d6b"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-7_recording-cardresp_physio.tsv.gz": {
+   "bytes": 475652,
+   "sha256": "10641e9f6b8643e727cf339822c732783de6f6b961f0019367e6e3deb5a92c19"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-7_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 6141492,
+   "sha256": "f05b0e02012b4842f8634fde630b3c62c8b8d5b58edcab1e22d1f99fb965f31c"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-8_bold.json": {
+   "bytes": 1278232,
+   "sha256": "5ba06378a8922964549308b6fcb7428dc533af07a6c84968ec71e06207f8d576"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-8_defacemask.nii.gz": {
+   "bytes": 2127,
+   "sha256": "f0be82df7c50f89be0eec13c6999705bdfd249cb6d220f90ad04f62445eb2bb6"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-8_events.tsv": {
+   "bytes": 735483,
+   "sha256": "889a02ba387fbf0d3741dcd3a69e47420cb2396b2c0318dd6cba0ff9d48fb6df"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-8_recording-cardresp_physio.tsv.gz": {
+   "bytes": 298886,
+   "sha256": "c9956b24b4c6dc49d2013b8d355c36759fd55e3554f750189edbb7f96a6f2dc4"
+  },
+  "sub-03/ses-movie/func/sub-03_ses-movie_task-movie_run-8_recording-eyegaze_physio.tsv.gz": {
+   "bytes": 4035571,
+   "sha256": "64eb5dca49c6cc9b27060eaab6dad6096e4e929f9d4408cd2b6643d6a909e39a"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-01_events.tsv": {
+   "bytes": 2307,
+   "sha256": "7beb88687f8e79c2cb23abbbc7daf675382fd3e54b4f5e9674a4be5f86b23d9d"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-01_physio.tsv.gz": {
+   "bytes": 257486,
+   "sha256": "64ac01d12ced9647c5f4cc6d3205dcf0f116453ec6a5ee274dd9a0add4f6032a"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-02_events.tsv": {
+   "bytes": 2329,
+   "sha256": "12842e929c34ee2d643ef17f6c3b3cae93d3539b0f50796f5c9a173d2dd5dd8c"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-02_physio.tsv.gz": {
+   "bytes": 261625,
+   "sha256": "2f2eb03fd4be65c3dd66cf44b9989b66f4e5c60822a10821f4f1598a6873df79"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-03_events.tsv": {
+   "bytes": 2384,
+   "sha256": "1934b321ef0dfc8ac32828dfaf1a5d334820dccf4081cc107fc1ea726a116605"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-03_physio.tsv.gz": {
+   "bytes": 260437,
+   "sha256": "57944ab40dd588ec495260060df27ae00f56f1f4563e778feb2d53a945036cfa"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-04_events.tsv": {
+   "bytes": 2335,
+   "sha256": "679f329dbf8bc40893c366e6aba3dfd42e754d3a38ceb0143876fd26b075c54f"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-04_physio.tsv.gz": {
+   "bytes": 258580,
+   "sha256": "4c02919893710879237e54428256031470d588b47e5f38f48534ae8f9fdb6834"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-05_events.tsv": {
+   "bytes": 2337,
+   "sha256": "3630b4cd6d93053050fc4e350933b2be84cd0fe8b245de6542c7b287e92f66c8"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-05_physio.tsv.gz": {
+   "bytes": 253388,
+   "sha256": "126ecbbb0bc15cc4121392b0b22e86ba02c941f016e3470fc2408510d7969940"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-06_events.tsv": {
+   "bytes": 2335,
+   "sha256": "aab7a8c612fc56071f9e634d5f382a9794d711bfa70eed9ff84f3cf39c953f93"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-06_physio.tsv.gz": {
+   "bytes": 249651,
+   "sha256": "252a6b75d825e3f039bc031719dd4636de69ad6e3030cd891d37cdce60c3a4ab"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-07_events.tsv": {
+   "bytes": 2386,
+   "sha256": "0ff57b7d056f4e32b1aa5f8958aa8b267fe6c1e06cb6a19cf24a6025e077df41"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-07_physio.tsv.gz": {
+   "bytes": 228211,
+   "sha256": "b2c6396fae49b7f359c0b52588580c0c593f8092b2f2fef283290702e49337e6"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-08_events.tsv": {
+   "bytes": 2358,
+   "sha256": "dcdc179d76e277c4e2b2b6b056d0bf79092c493ff40f8a8aad657da2d16ab121"
+  },
+  "sub-04/ses-auditoryperception/func/sub-04_ses-auditoryperception_task-auditoryperception_run-08_physio.tsv.gz": {
+   "bytes": 231082,
+   "sha256": "9226e3e9e40612e873414496a424d97a0c42d6e8852a85ac21d9c10b088c8b05"
+  },
+  "sub-04/ses-forrestgump/anat/sub-04_ses-forrestgump_T1w.nii.gz": {
+   "bytes": 13007380,
+   "sha256": "d6e9ef3375d5a89c37f59c83ecf1f1553f34efe9cbb95f8abcb698131e2ff0af"
+  },
+  "sub-04/ses-forrestgump/anat/sub-04_ses-forrestgump_T2w.nii.gz": {
+   "bytes": 13466727,
+   "sha256": "fd94af1b50a32498e110f416416b46da12545e8c268e663f5ce535097e76a028"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-movielocalizer_run-1_bold.json": {
+   "bytes": 191512,
+   "sha256": "afecf58224ccbb52b5929b8b64511e608a21223c9daad31937e3477673883345"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-movielocalizer_run-1_bold.nii.gz": {
+   "bytes": 6566018,
+   "sha256": "b494f025db62939a8595412df2d3bbe81262ed642c5fe86abc451b6cd5c40f75"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-movielocalizer_run-1_defacemask.nii.gz": {
+   "bytes": 2067,
+   "sha256": "2232f662a61b14d8d304d2b37339499e2b8cae81ac2e42357fc0ee917827379c"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-movielocalizer_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 39041,
+   "sha256": "63bba01b83870b0787137743aa420354427154de15dfd6fe0cd7c769788dd0b0"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-objectcategories_run-1_bold.json": {
+   "bytes": 595559,
+   "sha256": "7d886e5f8116f904e3206fc1b82971516c7c62f312d971ed40d53d47a2091dca"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-objectcategories_run-1_defacemask.nii.gz": {
+   "bytes": 2123,
+   "sha256": "0d185562dca3f66681c3e161327198111303cba331477375093f1a4a33005c6b"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-objectcategories_run-1_events.tsv": {
+   "bytes": 243,
+   "sha256": "3a77b5d0d179f515b2f8b2cde98b6909ea79a18d9e06bbcb31b0106e6d89e012"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-objectcategories_run-1_recording-cardresp_physio.tsv.gz": {
+   "bytes": 127566,
+   "sha256": "906c4ec72cdf48ef74548b838aa6c084e98c1580f067a21082b94aec29c4d46e"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-objectcategories_run-2_bold.json": {
+   "bytes": 595567,
+   "sha256": "add7218b0aac680333ee27750039be46fb9b672f2a5667b1cfeeeae4467869b3"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-objectcategories_run-2_defacemask.nii.gz": {
+   "bytes": 2083,
+   "sha256": "8b98c2b62eebe7dba195b30d46c92eaac74fe7c7d842e139abda9831561a58f2"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-objectcategories_run-2_events.tsv": {
+   "bytes": 243,
+   "sha256": "4f1445f319fa69c0bbcd42594a69feba1794e2511e561dc8662267b921120bfc"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-objectcategories_run-2_recording-cardresp_physio.tsv.gz": {
+   "bytes": 126276,
+   "sha256": "60b1386189e13b21ef66466bfbe4285223cfbb48b6f47720a808b2fc320e169a"
+  },
+  "sub-04/ses-localizer/func/sub-04_ses-localizer_task-objectcategories_run-3_bold.json": {
+   "bytes": 595603,
+   "sha256": "03a58eadd8c34ec8c15512f41756e402b55fca07081e67803ca7f5dbf84cc8a1"
+  }
+ },
+ "generated_utc": "2026-08-06T18:46:11+00:00",
+ "manifest_sha256": "f2ea37c7bd785feb9229e768c59437ee401ab55bf119e7fef0150a318e7ccd3a",
+ "n_files": 332,
+ "root": "/home/brandonin/Documents/scwbd-wt/ada/data/ds000113/1.3.0",
+ "total_bytes": 550458275,
+ "version": "1.3.0"
+}

@@ -46,6 +46,7 @@ identity:
 # G_k  governance and consent
 # =====================================================================
 governance:
+  license_spdx: "ODC-By-1.0"        # attribution, no NC, no SA.
   status: live
   license: "Open Data Commons Attribution License v1.0 (ODC-By 1.0)"
   license_url: "https://opendatacommons.org/licenses/by/1-0/"
@@ -273,6 +274,8 @@ population:
 # S_k(signal)  native signal and units
 # =====================================================================
 signal:
+  modality_evidence:
+    eeg: {globs: ["S*/*.edf"], channel_type: EEG}
   modalities: ["eeg"]
   n_channels: 64
   channel_types: {eeg: 64}
