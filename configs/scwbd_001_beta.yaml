@@ -2,7 +2,20 @@
 # This file is copied verbatim into checkpoints/scwbd-001-beta/config.yaml
 # together with the git SHA. If they disagree, the checkpoint is not the artifact.
 model:
-  n_regions: 454              # Schaefer-400 cortex + 32 subcortex + 22 cerebellum
+  # 454 = the SYNTHETIC prior's region count, not a real parcellation.
+  #
+  # This previously read "Schaefer-400 cortex + 32 subcortex + 22 cerebellum",
+  # which described an intent the code did not execute. The anatomy adapter
+  # (anatomy.py:_from_agent_c) reads obj.weights where the real BrainPrior
+  # exposes obj.structural.weights; the AttributeError is swallowed by a bare
+  # `except Exception` at anatomy.py:293 and _synthetic_prior is substituted.
+  # The real prior is 414 parcels (verified: BrainPrior.labels.shape), so 454
+  # was itself the tell that the
+  # fallback was in force -- and the comment asserting a parcellation the model
+  # never loaded is a false provenance assertion.
+  #
+  # See reports/training/anatomy_provenance.md. Fix belongs in the next run.
+  n_regions: 454
   local_core: learned         # "learned" | wilson_cowan | jansen_rit | wong_wang | ...
   hidden: 288
   n_local_layers: 3
@@ -68,6 +81,12 @@ train:
   report_dir: reports/training
   seed: 20260805
   device: cuda
+  # TRUE because this run was ALREADY trained on the synthetic prior -- the
+  # adapter defect was found at Stage III and the fix ships for the next run.
+  # This changes no behaviour; it makes the fallback a declaration instead of an
+  # accident, and keeps this run resumable now that a silent fallback raises.
+  # The next run sets this false and rebuilds the corpus at 414 parcels.
+  anatomy_force_fallback: true
   amp_dtype: bfloat16
   # Device-side ceiling on the CUDA caching allocator. NOT redundant with
   # `systemd-run -p MemoryMax=40G`: on this unified-memory box the cgroup does

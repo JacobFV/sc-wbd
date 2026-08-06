@@ -132,6 +132,19 @@ class TrainConfig:
     report_dir: str = "reports/training"
     seed: int = 20260805
     device: str = "cuda"
+    #: Train on the **synthetic** anatomical prior on purpose.
+    #:
+    #: Default ``False``: ``load_anatomy`` now *raises* if ``scwbd.anatomy`` is
+    #: importable but cannot be adapted, rather than substituting the synthetic
+    #: prior silently.  Setting this to ``True`` is the only way to get the
+    #: fallback, and it makes "this run carries no biological content" a
+    #: **declaration in the config** rather than an accident in a swallowed
+    #: exception.
+    #:
+    #: SC-WBD-001-beta sets it ``True`` because it was *already* trained that
+    #: way -- see reports/training/anatomy_provenance.md.  The flag changes no
+    #: behaviour for that run; it states what the run was always doing.
+    anatomy_force_fallback: bool = False
     amp_dtype: str = "bfloat16"
     #: Hard ceiling, in GB, on what the CUDA caching allocator may reserve.
     #:

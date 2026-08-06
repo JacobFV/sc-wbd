@@ -175,7 +175,25 @@ class FoundationTrainer:
         self.report_dir = Path(cfg.train.report_dir)
         self.report_dir.mkdir(parents=True, exist_ok=True)
 
-        self.anat = (anat or load_anatomy(device=self.device, n_cortex=400)).to(self.device)
+        self.anat = (
+            anat
+            or load_anatomy(
+                device=self.device,
+                n_cortex=400,
+                force_fallback=cfg.train.anatomy_force_fallback,
+            )
+        ).to(self.device)
+        if not self.anat.is_biological():
+            # Loud, every run, in the log the operator actually reads -- the
+            # provenance field said this correctly all along and nobody looked.
+            print(
+                "[anatomy] WARNING: prior is SYNTHETIC "
+                f"(provenance={self.anat.provenance!r}, n_regions={self.anat.n_regions}). "
+                "This model carries NO biological content: G2 is void, and no claim "
+                "about connectome-masked coupling, receptor-derived E/I or anatomical "
+                "regional heterogeneity is supportable from it.",
+                flush=True,
+            )
         self.theta_prior = ThetaPrior()
         self.model = SCWBD(cfg.model, self.anat).to(self.device)
         self.posterior = AmortizedPosterior(
