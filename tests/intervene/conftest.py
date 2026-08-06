@@ -17,6 +17,20 @@ from scwbd.intervene.tms import (
 torch.manual_seed(0)
 
 
+def pytest_configure(config):
+    """Register the ``slow`` marker.
+
+    These are the field solves and Monte Carlos that cost seconds each and
+    cannot be made cheap without weakening what they check.  The whole suite
+    runs in about two minutes; ``-m "not slow"`` gives CI a sub-30-second lane
+    that still covers every refusal, invariant and closed-form comparison.
+    """
+    config.addinivalue_line(
+        "markers",
+        "slow: heavy field solve or Monte Carlo; deselect with -m 'not slow'",
+    )
+
+
 @pytest.fixture(scope="session")
 def head() -> SphericalHeadModel:
     return SphericalHeadModel()

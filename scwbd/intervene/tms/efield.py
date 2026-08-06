@@ -41,15 +41,17 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
 import torch
 from torch import Tensor
 
-from ..base import SIMULATION_ONLY_NOTICE, Ledger, PhysicalDose
+from ..base import SIMULATION_ONLY_NOTICE, InterventionRefusal, Ledger, PhysicalDose
 from .coil import MU0, CoilGeometry, TMSPulse
 
 __all__ = [
+    "ImpossibleGeometry",
+    "assert_sources_exterior",
     "analytic_sphere_efield",
     "primary_efield_dipoles",
     "primary_efield_segments",
@@ -68,6 +70,107 @@ __all__ = [
 ]
 
 _DT = torch.float64
+
+#: how far outside the scalp a coil element must sit before the coil is treated
+#: as physically placed.  Not a safety margin -- a solid-object constraint.
+_MIN_SCALP_CLEARANCE_M = 1e-4
+
+#: target size of a (field point x dipole) working block, in elements
+_MAX_PAIR_BLOCK = 16_000_000
+
+
+class ImpossibleGeometry(InterventionRefusal):
+    """The requested geometry is not a geometry the field equations describe.
+
+    Refusal ``R06`` (result outside the stated validity domain).  Raised when a
+    source element would have to be *inside* the conductor, or a field point
+    outside it.
+
+    This exists because the failure it prevents is not an inaccuracy, it is a
+    fabrication.  The Sarvas / Heller--van Hulsteyn interior solution has
+    :math:`F = a\\,(R_c a + R_c^2 - r\\cdot r_c)` in its denominator; ``F``
+    passes through zero as a source crosses the field point's shell, and the
+    formula then returns a large, smooth, entirely fictitious number.  An
+    edge-case probe of this module reached ``peak |E| = 218681.8 V/m`` at a
+    scalp distance of ``-25.97 mm`` -- a coil 26 mm *inside* the head.  Nothing
+    about that number is a field; it is the pole of a rational function.
+    Returning it would launder numerical error as biology, so it is refused.
+    """
+
+    def __init__(self, message: str, *, remedy: str = "", offending_object: Any = None):
+        super().__init__("R06", message, remedy=remedy, offending_object=offending_object)
+
+
+def assert_sources_exterior(
+    points: Tensor,
+    dipole_pos: Tensor,
+    *,
+    head: "SphericalHeadModel | None" = None,
+    clearance_m: float = 0.0,
+    device_origin: Tensor | None = None,
+    context: str = "analytic_sphere_efield",
+) -> None:
+    """Refuse geometries the interior solution does not describe.
+
+    Two conditions, both preconditions of the derivation rather than tolerances:
+
+    1. **Every source is farther from the centre than every field point.**  The
+       interior solution assumes a sphere of some radius :math:`a` with all
+       field points inside and all sources outside; such an :math:`a` exists
+       exactly when :math:`\\min_c|r_c| > \\max|r|`.  This check needs no head
+       radius, so it protects :func:`analytic_sphere_efield` on its own.
+    2. When a :class:`SphericalHeadModel` is supplied, **sources lie outside the
+       scalp and field points inside it**.  A coil element inside the head is
+       not a placement error to be extrapolated through; it is not a placement.
+
+    ``device_origin`` is checked alongside the source elements.  It matters: a
+    figure-eight coil has no dipole element at its own centre, so a shallow
+    interpenetration can put the coil body inside the scalp while every
+    *discretised* element is still outside.  The origin is where the scalp
+    distance is measured, so that is the point that must clear.
+    """
+    r = points.to(_DT).reshape(-1, 3)
+    rc = dipole_pos.to(_DT).reshape(-1, 3)
+    if device_origin is not None:
+        rc = torch.cat([rc, device_origin.to(_DT).reshape(-1, 3)])
+    max_r = float(r.norm(dim=-1).max())
+    min_rc = float(rc.norm(dim=-1).min())
+    if not (min_rc > max_r):
+        raise ImpossibleGeometry(
+            f"{context}: the nearest source element is {min_rc * 1e3:.3f} mm from "
+            f"the head centre but a field point is at {max_r * 1e3:.3f} mm, so no "
+            "conductor boundary separates them. The interior solution is derived "
+            "for sources strictly outside the sphere containing every field point; "
+            "with the source inside, its denominator passes through zero and the "
+            "returned magnitude is a pole, not a field.",
+            remedy="place the source outside the conductor, or use a solver "
+            "formulated for interior sources",
+            offending_object={
+                "min_source_radius_m": min_rc,
+                "max_field_point_radius_m": max_r,
+            },
+        )
+    if head is None:
+        return
+    clearance = max(float(clearance_m), 0.0)
+    if min_rc < head.radius + clearance:
+        raise ImpossibleGeometry(
+            f"{context}: a source element sits {(min_rc - head.radius) * 1e3:.3f} mm "
+            f"from the scalp of a {head.radius * 1e3:.1f} mm head -- i.e. inside it. "
+            "A coil cannot occupy the same space as the head, so there is no field "
+            "to compute and no extrapolation that would make one.",
+            remedy="increase the coil standoff until the scalp distance is "
+            "non-negative, or model the geometry that actually produced it",
+            offending_object={"scalp_distance_m": min_rc - head.radius},
+        )
+    if max_r > head.radius:
+        raise ImpossibleGeometry(
+            f"{context}: a field point is {max_r * 1e3:.3f} mm from the head centre, "
+            f"outside the {head.radius * 1e3:.1f} mm scalp. This solver returns the "
+            "*interior* solution; outside the conductor it is not the field.",
+            remedy="restrict the field points to the conductor interior",
+            offending_object={"max_field_point_radius_m": max_r},
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -124,6 +227,9 @@ def analytic_sphere_efield(
     dipole_mdot: Tensor,
     *,
     chunk: int = 4096,
+    point_chunk: int | None = None,
+    head: "SphericalHeadModel | None" = None,
+    validate_geometry: bool = True,
 ) -> Tensor:
     """Total induced E-field inside a spherically symmetric conductor.
 
@@ -145,34 +251,56 @@ def analytic_sphere_efield(
 
     Both terms are perpendicular to :math:`r`, so :math:`\\hat r\\cdot E=0`
     identically -- the Heller--van Hulsteyn theorem falls out of the algebra.
+
+    ``validate_geometry`` (default on) enforces the derivation's own
+    precondition via :func:`assert_sources_exterior`; turning it off is not a
+    supported way to obtain a number for an impossible placement.
     """
     r = r.to(_DT).reshape(-1, 3)
     pos = dipole_pos.to(_DT).reshape(-1, 3)
     mdot = dipole_mdot.to(_DT).reshape(-1, 3)
+    if validate_geometry:
+        assert_sources_exterior(r, pos, head=head)
 
+    # The sum over dipoles is factorised so that no [N,D,3] tensor is ever
+    # built.  Both cross products carry the same left operand ``r``, so
+    #
+    #   sum_d [ (r x m_d)/F - (gradF.m)_d (r x r_c,d)/F^2 ]
+    #       = r x [ (1/F) @ m  -  W @ r_c ],   W = (gradF.m)/F^2,
+    #
+    # which is two [N,D] @ [D,3] matmuls.  Everything else is a [N,D] scalar
+    # obtainable from the Gram matrix ``r @ r_c^T``, since
+    # ``a.r_c = R_c^2 - r.r_c`` and ``a^2 = |r|^2 - 2 r.r_c + R_c^2``.
+    # Same arithmetic, ~an order of magnitude less memory traffic; the Monte
+    # Carlo in ``pose.propagate_pose_uncertainty`` is what needs it.
+    r2 = (r * r).sum(-1)  # [N]
     out = torch.zeros_like(r)
     for s in range(0, pos.shape[0], chunk):
         rc = pos[s : s + chunk]  # [D,3]
         md = mdot[s : s + chunk]  # [D,3]
-        Rc = rc.norm(dim=-1)  # [D]
-        a_vec = rc[None, :, :] - r[:, None, :]  # [N,D,3]
-        a = a_vec.norm(dim=-1).clamp_min(1e-15)  # [N,D]
-        r_dot_rc = (r[:, None, :] * rc[None, :, :]).sum(-1)  # [N,D]
-        a_dot_rc = (a_vec * rc[None, :, :]).sum(-1)  # [N,D]
+        Rc2 = (rc * rc).sum(-1)  # [D]
+        Rc = Rc2.sqrt()  # [D]
+        rc_dot_m = (rc * md).sum(-1)  # [D]
+        # keep each [n,D] temporary near 128 MB; splitting more finely than that
+        # costs more in per-op threading overhead than it saves in cache misses
+        pc = point_chunk or max(1, _MAX_PAIR_BLOCK // max(1, rc.shape[0]))
 
-        F = a * (Rc[None, :] * a + Rc[None, :] ** 2 - r_dot_rc)
-        c1 = a**2 / Rc[None, :] + a_dot_rc / a + 2 * a + 2 * Rc[None, :]
-        c2 = a + 2 * Rc[None, :] + a_dot_rc / a
-        gradF = c1[..., None] * rc[None, :, :] - c2[..., None] * r[:, None, :]
+        for t in range(0, r.shape[0], pc):
+            rr = r[t : t + pc]  # [n,3]
+            r_dot_rc = rr @ rc.T  # [n,D]
+            a = (r2[t : t + pc, None] + Rc2[None, :] - 2 * r_dot_rc)
+            a = a.clamp_min(1e-30).sqrt()  # [n,D]
+            a_dot_rc = Rc2[None, :] - r_dot_rc  # [n,D]
+            adr_over_a = a_dot_rc / a
 
-        r_x_m = torch.cross(r[:, None, :].expand(-1, rc.shape[0], -1),
-                            md[None, :, :].expand(r.shape[0], -1, -1), dim=-1)
-        r_x_rc = torch.cross(r[:, None, :].expand(-1, rc.shape[0], -1),
-                             rc[None, :, :].expand(r.shape[0], -1, -1), dim=-1)
-        gF_m = (gradF * md[None, :, :]).sum(-1)  # [N,D]
+            F = a * (Rc[None, :] * a + a_dot_rc)
+            inv_F = 1.0 / torch.where(F.abs() < 1e-300, torch.full_like(F, 1e-300), F)
+            c1 = a * a / Rc[None, :] + adr_over_a + 2 * a + 2 * Rc[None, :]
+            c2 = a + 2 * Rc[None, :] + adr_over_a
+            gF_m = c1 * rc_dot_m[None, :] - c2 * (rr @ md.T)  # [n,D]
 
-        term = F[..., None] * r_x_m - gF_m[..., None] * r_x_rc
-        out = out - (MU0 / (4 * math.pi)) * (term / (F**2).clamp_min(1e-300)[..., None]).sum(1)
+            S = inv_F @ md - (gF_m * inv_F * inv_F) @ rc  # [n,3]
+            out[t : t + pc] -= (MU0 / (4 * math.pi)) * torch.cross(rr, S, dim=-1)
     return out
 
 
@@ -240,6 +368,44 @@ class TriMesh:
     def enclosed_volume(self) -> float:
         t = self.tri()
         return float((torch.cross(t[:, 0], t[:, 1], dim=-1) * t[:, 2]).sum() / 6.0)
+
+    def solid_angle(self, points: Tensor, *, chunk: int = 64) -> Tensor:
+        """Solid angle subtended by this closed surface at ``points``.
+
+        :math:`4\\pi` inside, :math:`0` outside, computed with the same exact
+        panel integral the BEM matrix uses -- so "is the coil inside the head"
+        is answered by the solver's own geometry kernel, not by a bounding
+        sphere that would be wrong for a real head.
+        """
+        obs = points.to(_DT).reshape(-1, 3)
+        nrm, _ = self.normals_areas()
+        tri = self.tri()
+        out = torch.zeros(obs.shape[0], dtype=_DT)
+        for s in range(0, obs.shape[0], chunk):
+            g = triangle_field_integral(obs[s : s + chunk], tri)  # [B,T,3]
+            out[s : s + chunk] = -(g * nrm[None]).sum(-1).sum(-1)
+        return out
+
+    def bounding_sphere(self) -> tuple[Tensor, float]:
+        """Centre and radius of a sphere that strictly contains this surface."""
+        centre = self.vertices.mean(dim=0)
+        return centre, float((self.vertices - centre).norm(dim=-1).max())
+
+    def contains(self, points: Tensor, *, chunk: int = 256) -> Tensor:
+        """Boolean mask: which ``points`` lie inside this closed surface.
+
+        A point outside the bounding sphere is outside the surface, exactly and
+        by definition, so only the remaining candidates pay for the panel
+        integral.  For a coil sitting on a scalp that is every element, and the
+        containment guard costs essentially nothing.
+        """
+        p = points.to(_DT).reshape(-1, 3)
+        centre, radius = self.bounding_sphere()
+        out = torch.zeros(p.shape[0], dtype=torch.bool)
+        cand = (p - centre).norm(dim=-1) <= radius
+        if bool(cand.any()):
+            out[cand] = self.solid_angle(p[cand], chunk=chunk).abs() > 2 * math.pi
+        return out
 
 
 def triangle_field_integral(obs: Tensor, tri: Tensor) -> Tensor:
@@ -414,6 +580,34 @@ class ChargeBEM:
     def n_faces(self) -> int:
         return int(self.c.shape[0])
 
+    @property
+    def outer_surface(self) -> TriMesh:
+        """The enclosing surface, by enclosed volume."""
+        return max(self.surfaces, key=lambda m: m.enclosed_volume())
+
+    def assert_sources_outside(
+        self, dipole_pos: Tensor, *, context: str = "ChargeBEM"
+    ) -> None:
+        """Refuse sources that lie inside the conductor.
+
+        Uses the exact solid angle of the enclosing surface, so it is correct
+        for realistic head geometry and not just for spheres -- a bounding-radius
+        test would reject legitimate placements over concave regions and accept
+        illegitimate ones over convex ones.
+        """
+        pos = dipole_pos.to(_DT).reshape(-1, 3)
+        inside = self.outer_surface.contains(pos)
+        n_in = int(inside.sum())
+        if n_in:
+            raise ImpossibleGeometry(
+                f"{context}: {n_in} of {pos.shape[0]} source elements lie inside the "
+                "outermost conductor surface. The surface-charge formulation places "
+                "all sources in the exterior; with a source inside there is no "
+                "solution to report, only a divergent quadrature.",
+                remedy="move the source outside the head surface",
+                offending_object={"n_sources_inside": n_in},
+            )
+
     def _matrix(self, chunk: int = 256) -> Tensor:
         if self._M is not None:
             return self._M
@@ -543,11 +737,21 @@ def efield_from_coil(
     result is a *physical dose*: it carries units, support, and a ledger, and
     it deliberately cannot be turned into a neural effect without going through
     a named response operator.
+
+    The geometry is checked before any physics runs
+    (:func:`assert_sources_exterior`).  A coil that intersects the head is
+    refused with :class:`ImpossibleGeometry`, not extrapolated.
     """
     didt = float(pulse.peak_didt) if t is None else float(pulse.didt(t))
     pos, mdot = coil_dipoles_in_head_frame(coil, T_head_from_coil, didt)
+    if head is not None:
+        assert_sources_exterior(
+            points, pos, head=head, clearance_m=_MIN_SCALP_CLEARANCE_M,
+            device_origin=T_head_from_coil.to(_DT)[:3, 3],
+            context="efield_from_coil",
+        )
     if solver == "analytic":
-        e = analytic_sphere_efield(points, pos, mdot)
+        e = analytic_sphere_efield(points, pos, mdot, head=head)
         model = "analytic_spherical_sarvas_heller_van_hulsteyn"
         num_var = 0.0
     elif solver == "bem":
@@ -555,6 +759,7 @@ def efield_from_coil(
             if head is None:
                 raise ValueError("bem solver needs a ChargeBEM or a SphericalHeadModel")
             bem = LayeredSphereBEM(head)
+        bem.assert_sources_outside(pos, context="efield_from_coil[bem]")
         e = bem.total_field(points, pos, mdot)
         model = f"charge_bem_{bem.n_faces}_faces"
         num_var = float((0.02 * e.norm(dim=-1).max()) ** 2)

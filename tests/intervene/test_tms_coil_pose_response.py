@@ -10,7 +10,7 @@ import math
 import pytest
 import torch
 
-from scwbd.intervene.base import InterventionRefusal, PhysicalDose, TargetEngagement
+from scwbd.intervene.base import PhysicalDose, TargetEngagement
 from scwbd.intervene.tms.coil import (
     CircularCoil,
     FigureEightCoil,
@@ -33,7 +33,6 @@ from scwbd.intervene.tms.pose import (
     se3_adjoint,
     se3_exp,
     se3_log,
-    standard_fiducials,
 )
 from scwbd.intervene.tms.response import (
     ActivatingFunctionResponse,
@@ -218,6 +217,7 @@ def test_full_chain_composes_all_four_factors_of_equation_three(pose):
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.slow
 def test_pose_to_field_sensitivity_is_material_and_axis_specific(
     coil, pulse, pose, head, cortex
 ):
@@ -249,6 +249,7 @@ def test_pose_to_field_sensitivity_is_material_and_axis_specific(
     assert rot10.target_direction_change_deg == pytest.approx(10.0, abs=0.5)
 
 
+@pytest.mark.slow
 def test_pose_covariance_propagates_into_field_uncertainty(coil, pulse, pose, head, cortex):
     pts, _ = cortex
     mag = efield_from_coil(coil, pulse, pose.matrix(), pts, head=head).value.norm(dim=-1)
@@ -268,6 +269,7 @@ def test_pose_covariance_propagates_into_field_uncertainty(coil, pulse, pose, he
     assert fu.target_sd == pytest.approx(fu2.target_sd)
 
 
+@pytest.mark.slow
 def test_a_systematic_twist_bias_shifts_the_field_and_is_reported_separately(
     coil, pulse, head, cortex
 ):
