@@ -1,11 +1,11 @@
 {
   "run_name": "scwbd-ci-smoke",
-  "git_sha": "9b7a5a0d2a608c7a50f6a5870711e75527780955-dirty",
+  "git_sha": "de498d852a44ee39ec92fc295eb6f54f55cb6436-dirty",
   "environment": {
     "python": "3.12.13",
     "torch": "2.13.0+cu130",
     "cuda_available": true,
-    "git_sha": "9b7a5a0d2a608c7a50f6a5870711e75527780955-dirty",
+    "git_sha": "de498d852a44ee39ec92fc295eb6f54f55cb6436-dirty",
     "device": "NVIDIA GB10",
     "capability": "12.1",
     "total_memory_gb": 130.6,
@@ -15,9 +15,9 @@
     {
       "stage": "I_regional",
       "steps": 4,
-      "wall_seconds": 2.7964813709259033,
+      "wall_seconds": 3.721858263015747,
       "best_loss": 0.951659599642183,
-      "steps_per_second": 1.430368906292988,
+      "steps_per_second": 1.0747319530537094,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -233,9 +233,9 @@
     {
       "stage": "II_interface",
       "steps": 4,
-      "wall_seconds": 1.273792028427124,
+      "wall_seconds": 0.6643087863922119,
       "best_loss": 0.9570320410428838,
-      "steps_per_second": 3.140230045982618,
+      "steps_per_second": 6.021296243458649,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -450,9 +450,9 @@
     {
       "stage": "III_sliced",
       "steps": 4,
-      "wall_seconds": 2.5755774974823,
+      "wall_seconds": 3.8878002166748047,
       "best_loss": 0.7642725831136582,
-      "steps_per_second": 1.5530497544376412,
+      "steps_per_second": 1.0288594518936363,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -688,9 +688,9 @@
     {
       "stage": "IV_assembly",
       "steps": 4,
-      "wall_seconds": 2.513688087463379,
+      "wall_seconds": 1.2717771530151367,
       "best_loss": 0.9291538565748083,
-      "steps_per_second": 1.5912873279502602,
+      "steps_per_second": 3.1452051096505205,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -926,9 +926,9 @@
     {
       "stage": "V_individual",
       "steps": 3,
-      "wall_seconds": 0.4495551586151123,
+      "wall_seconds": 0.13228535652160645,
       "best_loss": 0.999998927116394,
-      "steps_per_second": 6.673263430547033,
+      "steps_per_second": 22.678247078012777,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -1023,10 +1023,13 @@
             ]
           },
           "eegmmidb_real": {
-            "n_permitted": 16,
-            "n_blocked": 94,
+            "n_permitted": 12,
+            "n_blocked": 98,
             "patterns": [
-              "eeg.*",
+              "eeg.log_gain",
+              "eeg.offset",
+              "eeg.log_noise",
+              "eeg.nuisance*",
               "individualizer.*"
             ],
             "frozen": [
@@ -1136,7 +1139,7 @@
       }
     }
   ],
-  "total_wall_seconds": 10.8490571975708,
+  "total_wall_seconds": 11.982497453689575,
   "global_steps": 19,
   "model_parameters": {
     "log_dt_scale": 454,

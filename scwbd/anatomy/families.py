@@ -58,7 +58,7 @@ What this module refuses to do
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Literal, Sequence
+from typing import Any, Iterable, Sequence
 
 import numpy as np
 
@@ -117,8 +117,11 @@ FAMILY_FIELDS = (
 #: 4-family and 3-family partitions each contain at least one pair that does not
 #: separate, so they are not shipped.
 #:
-#: Reproduce with ``python -m scwbd.anatomy.families --verify`` (see
-#: ``tests/anatomy/test_families.py::test_declared_partition_separates``).
+#: The ladder and its numbers are in ``reports/anatomy_families.md`` §3; the
+#: separation is re-checked at 200 spins by
+#: ``tests/anatomy/test_families.py::test_declared_partition_separates_but_a_matched_null_does_not``,
+#: which also asserts that a smoothness-matched null partition separates *less*
+#: -- without that clause the check would pass for any contiguous split.
 CORTICAL_FAMILY_DEFINITION: dict[str, tuple[str, ...]] = {
     "cortex_unimodal": ("Vis", "SomMot"),
     "cortex_association": ("Default", "Cont", "DorsAttn", "SalVentAttn", "Limbic"),
@@ -144,7 +147,7 @@ SEPARATION_EVIDENCE: dict[str, Any] = {
         "q_myelin_thickness": 0.0010,
     },
     "rejected": {
-        "C7_yeo7": "17 of 21 pairs do not separate (e.g. SomMot vs Vis q=0.49/0.78)",
+        "C7_yeo7": "15 of 21 pairs do not separate (e.g. SomMot vs Vis q=0.49/0.78)",
         "C4_uni_dorsattn_salvent_assoc": "2 of 6 pairs do not separate "
         "(dorsal_attention vs association q=0.21/0.19; salience vs association q=0.078/0.57)",
         "C3_uni_attention_assoc": "attention_salience vs association q=0.75/0.38",
@@ -463,9 +466,28 @@ def _src(key: str) -> dict[str, Any]:
 
 
 def _licence(key: str) -> tuple[str, bool, str]:
+    """Licence text, non-commercial flag, citation for a source key.
+
+    The NC test is delegated to :func:`scwbd.release.licence.is_noncommercial_text`
+    rather than done here with a substring match.  That module is the contract
+    the checkpoint policy already reads, and a bare ``"NC" in text`` matches
+    "Encoding", "Inc." and "Franchise" -- a false NC routes as badly as a missed
+    one.  Imported lazily so ``scwbd.anatomy`` keeps loading if the release
+    package is not installed.
+    """
     s = _src(key)
     lic = str(s.get("licence") or s.get("license") or "")
-    nc = ("NC" in lic) or ("NonCommercial" in lic) or ("non-commercial" in lic.lower())
+    try:
+        from scwbd.release.licence import is_noncommercial_text
+
+        nc = bool(is_noncommercial_text(lic))
+    except ImportError:  # pragma: no cover - release package always present here
+        raise ImportError(
+            "scwbd.release.licence is unavailable, so the non-commercial status of "
+            f"source {key!r} cannot be established. Refusing to fall back to a "
+            "substring match: a licence flag that is wrong in the permissive "
+            "direction is worse than no flag."
+        ) from None
     return lic, nc, str(s.get("citation", ""))
 
 
