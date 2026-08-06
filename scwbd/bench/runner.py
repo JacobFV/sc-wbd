@@ -26,6 +26,7 @@ from typing import Any, Iterable, Mapping, Sequence
 from . import adapters
 from .ablations import ABLATIONS, run_all_ablations
 from .gates import CLAIMS, run_all_gates
+from .instruments import KNOWN_UNINFORMATIVE, audit_instruments
 from .leakage import APPENDIX_D_ROWS, run_all_audits
 from .numerics import run_numerics_suite
 from .report import (
@@ -105,9 +106,11 @@ def build_summary(
     ablations: Sequence[ClaimReport],
     audits: Sequence[ClaimReport],
     numerics: Sequence[ClaimReport],
+    instruments: Sequence[ClaimReport] = (),
 ) -> str:
     prov = provenance()
-    all_reports = list(gates) + list(ablations) + list(audits) + list(numerics)
+    all_reports = (list(gates) + list(ablations) + list(audits) + list(numerics)
+                   + list(instruments))
     n_pass = sum(1 for r in all_reports if r.status == "PASS")
     n_fail = sum(1 for r in all_reports if r.status == "FAIL")
     n_cnr = sum(1 for r in all_reports if r.status == "COULD_NOT_RUN")
@@ -216,6 +219,45 @@ def build_summary(
     L += _table(list(numerics), title="4. Numerical, representational and physical tests "
                                      "(§11.1)",
                 describe={})
+
+    # -- the instrument section ------------------------------------------
+    L.append("## 4b. Instruments that cannot discriminate")
+    L.append("")
+    L.append(
+        "A green reading from an instrument that is structurally incapable of reading any "
+        "other way is not evidence. This has now happened **four** times in this project, "
+        "and the fourth was inside the mechanism built to catch stale artifacts:"
+    )
+    L.append("")
+    L.append("| field | what it reads | why it cannot discriminate | remedy | found by |")
+    L.append("|---|---|---|---|---|")
+    for u in KNOWN_UNINFORMATIVE:
+        L.append(
+            f"| `{u.name}` | {u.reads} | {u.why_it_cannot_discriminate.replace('|', '/')} "
+            f"| {u.remedy.replace('|', '/')} | {u.found_by} |"
+        )
+    L.append("")
+    L.append(
+        "**Standing rule, now executable.** For every guard or provenance field a claim "
+        "relies on, there must exist an input under which it reads differently. If there is "
+        "not, it is decoration and must be labelled as such rather than reported. "
+        "`N7_instrument_discrimination` runs each guard this bench relies on over at least "
+        "two inputs and fails any whose readings are all identical; the audit has its own "
+        "negative control, so it can fail."
+    )
+    L.append("")
+    if instruments:
+        L += _table(list(instruments), title="4c. Instrument discrimination audit",
+                    describe={})
+    L.append(
+        "The whole-tree `-dirty` flag is **not** recorded in this bench's provenance and "
+        "nothing gates on it. What is recorded is `source_dirty_paths`: the porcelain "
+        "entries scoped to source directories, as a list of paths rather than a boolean, so "
+        "a reader can see that dirt belongs to another agent's in-flight work rather than "
+        "to the source under test. In a shared multi-agent worktree even the scoped flag "
+        "cannot say *whose* edit it was; the path list can."
+    )
+    L.append("")
 
     # dependency state
     L.append("## 5. Dependency state (who is blocking what)")
@@ -333,6 +375,7 @@ def run_everything(config: Mapping[str, Any] | None = None, *, seed: int = 0,
     ablations = run_all_ablations(cfg.get("ablations"), seed=seed)
     audits = run_all_audits(cfg.get("leakage"), seed=seed)
     numerics = run_numerics_suite(seed=seed, **dict(cfg.get("numerics", {})))
+    instruments = [audit_instruments(seed=seed, **dict(cfg.get("instruments", {})))]
 
     if write:
         GATES_DIR.mkdir(parents=True, exist_ok=True)
@@ -345,10 +388,13 @@ def run_everything(config: Mapping[str, Any] | None = None, *, seed: int = 0,
             r.write(GATES_DIR / "leakage")
         for r in numerics:
             r.write(GATES_DIR / "numerics")
+        for r in instruments:
+            r.write(GATES_DIR / "instruments")
         (GATES_DIR / "SUMMARY.md").write_text(
-            build_summary(gates, ablations, audits, numerics), encoding="utf-8"
+            build_summary(gates, ablations, audits, numerics, instruments), encoding="utf-8"
         )
-    return {"gates": gates, "ablations": ablations, "leakage": audits, "numerics": numerics}
+    return {"gates": gates, "ablations": ablations, "leakage": audits,
+            "numerics": numerics, "instruments": instruments}
 
 
 def main(argv: Sequence[str] | None = None) -> int:

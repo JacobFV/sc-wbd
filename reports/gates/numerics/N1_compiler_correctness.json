@@ -540,8 +540,8 @@
     }
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T07:56:41+00:00",
-    "git_rev": "4d617af",
+    "timestamp_utc": "2026-08-06T08:19:51+00:00",
+    "git_rev": "19c4acc",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -549,6 +549,43 @@
       "numpy": "2.5.1",
       "scipy": "1.18.0",
       "torch": "2.13.0+cu130"
-    }
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/bench/instruments.py",
+      "scwbd/bench/report.py",
+      "scwbd/bench/runner.py",
+      "scwbd/infer/cli.py",
+      "scwbd/infer/filters.py",
+      "scwbd/infer/fisher.py",
+      "scwbd/infer/identifiability.py",
+      "scwbd/infer/linear_gaussian.py",
+      "scwbd/infer/sbi.py",
+      "scwbd/infer/synthetic_slice.py",
+      "scwbd/infer/types.py",
+      "tests/bench/test_instruments.py",
+      "tests/bench/test_runner.py",
+      "tests/infer/conftest.py",
+      "tests/infer/test_device_parity.py",
+      "tests/infer/test_multirate.py",
+      "tests/infer/test_recovery.py",
+      "tests/infer/test_sbi.py",
+      "tests/infer/test_synthetic_slice.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
   }
 }

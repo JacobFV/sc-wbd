@@ -1,8 +1,8 @@
 # SC-WBD-001-beta — claim gate scoreboard
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git 4d617af · 2026-08-06T07:57:58+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git 19c4acc · 2026-08-06T08:21:19+00:00*
 
-**3 PASS · 0 FAIL · 30 COULD_NOT_RUN** out of 33 claim-bearing checks.
+**4 PASS · 0 FAIL · 30 COULD_NOT_RUN** out of 34 claim-bearing checks.
 
 > A gate that cannot run is **not** a gate that passed. Nothing in this repository may be claimed on the basis of a `could-not-run` row. Engineering breadth, parameter count, plausible diagrams, and in-sample fit are not substitutes for these tests (`thesis_contract.tex`).
 
@@ -24,6 +24,7 @@ A gate that cannot fail is worthless. Each gate therefore ships with a negative 
 - `test_gates_can_fail.py::test_g4_fails_when_a_parameter_is_not_recovered`
 - `test_gates_can_fail.py::test_g5_fails_when_subjects_differ_only_by_noise`
 - `test_gates_can_fail.py::test_g5_fails_when_the_scan_is_doing_the_work`
+- `test_instruments.py::test_audit_fails_on_an_instrument_that_cannot_vary`
 - `test_leakage.py::test_participant_audit_catches_an_intentionally_leaked_split`
 - `test_leakage.py::test_retrieval_audit_catches_near_duplicate_records`
 - `test_leakage.py::test_tms_decision_claim_is_a_standing_refusal`
@@ -139,6 +140,27 @@ Every eigenvalue and condition number in a G4 report travels with its basis (def
 | `N4_acoustic_solver` | PASS | 2/2 mandatory sub-checks; subject: scwbd.intervene.numerics.free_field_monopole_fdtd | — |
 | `N6_induced_efield` | could-not-run | induced_efield: could not run — missing: induced-field solver (agent Faraday: scwbd.intervene.tms.efield); closed-form reference (Sarvas / Heller-van … | — |
 
+## 4b. Instruments that cannot discriminate
+
+A green reading from an instrument that is structurally incapable of reading any other way is not evidence. This has now happened **four** times in this project, and the fourth was inside the mechanism built to catch stale artifacts:
+
+| field | what it reads | why it cannot discriminate | remedy | found by |
+|---|---|---|---|---|
+| `git_sha() -dirty suffix (whole-tree scope)` | always '-dirty' during any run | the run writes tracked output (reports/training/train_main.log, reports/training/scwbd-001-beta_train.jsonl), so git status --porcelain is never empty while a run is in flight; the flag therefore cannot separate 'source was modified' from 'the run wrote its own log', and every checkpoint the project has produced carries it | scope the check to source paths and record the offending PATHS rather than a boolean: scwbd.bench.report.source_dirty_entries(SOURCE_PATHS) | agent Turing |
+| `exact-name gradient permission matching under torch.compile` | 'permission matched' on CPU, silently matches nothing on CUDA | torch.compile renames parameters, so a permission keyed on an exact parameter name matches an empty set and the source appears authorised while updating nothing | N1's gradient.unmatched_permission_patterns metric fails when a permission pattern matches nothing; run it against the compiled module, not only the eager one | agent Turing |
+| `systemd-run MemoryMax against CUDA unified memory` | memory.current ~8 GB against a 40 GB cap | CUDA allocations on unified memory are not charged to the cgroup, so the cap is not binding and the reassuring number is measuring the wrong pool | measure the allocator's own accounting, and prove the cap binds by exceeding it | agent Turing |
+| `'allocated by PyTorch' at OOM` | always equal to the ceiling | at the moment of OOM the allocated figure is pinned to the limit by construction, so it cannot distinguish batch-linear from batch-independent growth — the question the number was consulted to answer | sweep batch size and fit the growth curve; a single reading at OOM cannot | agent Turing |
+
+**Standing rule, now executable.** For every guard or provenance field a claim relies on, there must exist an input under which it reads differently. If there is not, it is decoration and must be labelled as such rather than reported. `N7_instrument_discrimination` runs each guard this bench relies on over at least two inputs and fails any whose readings are all identical; the audit has its own negative control, so it can fail.
+
+## 4c. Instrument discrimination audit
+
+| id | status | headline number or blocker | consequence if failed |
+|---|---|---|---|
+| `N7_instrument_discrimination` | PASS | 5/5 mandatory sub-checks; subject: the guards and provenance fields of scwbd.bench | — |
+
+The whole-tree `-dirty` flag is **not** recorded in this bench's provenance and nothing gates on it. What is recorded is `source_dirty_paths`: the porcelain entries scoped to source directories, as a list of paths rather than a boolean, so a reader can see that dirt belongs to another agent's in-flight work rather than to the source under test. In a shared multi-agent worktree even the scoped flag cannot say *whose* edit it was; the path list can.
+
 ## 5. Dependency state (who is blocking what)
 
 | module | owner | available |
@@ -168,6 +190,9 @@ Only the following, and only at the scope stated. A passing check licenses exact
 - **N4_acoustic_solver**: The acoustic solver reproduces free-field spreading and satisfies the Helmholtz equation, validated independently of any neural-response model.
   - subject: scwbd.intervene.numerics.free_field_monopole_fdtd
   - scope limit: REFINEMENT RULE: the Helmholtz residual here is set by TEMPORAL dispersion, not by h. Measured with the scheme's own Laplacian the spatial error cancels, leaving (omega*dt)^2/12. Refining h at fixed dt leaves the residual flat, which reads like a failure and is not one. Refine dt with h at fixed CFL.
+- **N7_instrument_discrimination**: Every guard and provenance field this bench relies on has an input under which it reads differently, so a green reading is evidence rather than decoration.
+  - subject: the guards and provenance fields of scwbd.bench
+  - scope limit: A green reading from an instrument that cannot vary is not evidence. Four such instruments have already been found in this project; the fourth was inside the mechanism built to catch stale artifacts.
 
 ## 7. What we cannot yet claim
 

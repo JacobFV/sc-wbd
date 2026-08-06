@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** relative error above tolerance, or a Helmholtz residual that does not fall as the TIME step is refined at fixed CFL (see the refinement note: refining h alone leaves the residual flat for reasons unrelated to solver quality, so 'flat under h refinement' is NOT a falsification of this gate)
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 4d617af · 2026-08-06T07:57:56+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 19c4acc · 2026-08-06T08:21:17+00:00*
 
 ## Sub-checks
 
