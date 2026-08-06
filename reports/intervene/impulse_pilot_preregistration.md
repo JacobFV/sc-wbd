@@ -157,3 +157,51 @@ be silently wrong.
 in the harness is still the one written above. A preregistration the code has
 quietly drifted from is worse than none: it reads as a commitment while no
 longer describing what ran.
+
+
+---
+
+## 7. Run order when the checkpoint lands
+
+**Primary first, null second.** Two invocations, not one:
+
+    # ~2 min -- the reading, on its own
+    PYTHONPATH=. python -m scwbd.intervene.run_impulse_pilot --no-permutations
+
+    # ~40 min -- the shuffled-normal null
+    PYTHONPATH=. python -m scwbd.intervene.run_impulse_pilot
+
+The primary reading (collapsed / attenuated / survived) is available in about
+two minutes and does not depend on the null. If it collapses, that is worth
+knowing immediately rather than after 200 permutations have finished
+confirming something the first number already said. The null answers a
+different question -- *is it orientation that carries the contrast* -- and is
+only interesting once there is a contrast to attribute.
+
+This ordering does not change any threshold. Both are fixed above, and running
+the primary first cannot influence the null because the null's seed, K and
+direction are fixed and it is computed from the same weights either way.
+
+**Resources.** The harness is CPU-only by default (`--device cpu`) and never
+reserves CUDA, so the `cuda_reserve_gb` inherited from `scwbd-001.yaml` does
+not apply to it. If it is ever run on GPU, cap the reservation explicitly.
+
+## 8. Three checkpoint states, not two
+
+`awaiting_checkpoint` must not mask a load failure. The harness distinguishes:
+
+| status | meaning | exit |
+|---|---|---|
+| `awaiting_checkpoint` | no checkpoint found | 0 |
+| `checkpoint_unreadable` | one exists and could not be used | 0, with the reason |
+| `ran` | loaded, **and at least one weight tensor changed** | 0 |
+
+The third condition is the decisive one and it is checked against the weights
+themselves, not against the load report. The first version of this harness
+captured `load_report` into provenance and never looked at it: with
+`strict=False`, a checkpoint whose keys did not match would have loaded nothing
+and still reported `ran`, and every "trained" number would have been an
+untrained one wearing a checkpoint's name. That is the
+`reports/decorative_guards.md` silent-load-failure entry, reproduced inside the
+harness written to be trustworthy. Snapshotting the initial weights and
+counting how many moved cannot fail that way, and the count is recorded.

@@ -277,6 +277,57 @@ class TestTheStagedStates:
         assert c["stage"] == "I_regional"
 
 
+class TestArrivedAndUnreadableIsNotAwaiting:
+    """The distinction the architect asked for, and a defect I had shipped.
+
+    The first version captured `load_report` into provenance and never checked
+    it. With ``strict=False`` a checkpoint whose keys did not match would load
+    nothing and still report ``ran`` -- the silent-load-failure pattern from
+    ``reports/decorative_guards.md``, in the harness written to avoid it.
+    """
+
+    def test_an_unparseable_file_is_unreadable_not_awaiting(self, tmp_path):
+        bad = tmp_path / "garbage.pt"
+        bad.write_bytes(b"not a checkpoint")
+        res = P.run_pilot(bad, permutations=False)
+        assert res.status == "checkpoint_unreadable"
+        assert "torch.load failed" in res.reading
+
+    def test_a_foreign_format_is_unreadable(self, tmp_path):
+        wrong = tmp_path / "wrong.pt"
+        torch.save({"format": "something-else"}, wrong)
+        res = P.run_pilot(wrong, permutations=False)
+        assert res.status == "checkpoint_unreadable"
+        assert "unrecognised checkpoint format" in res.reading
+
+    def test_a_checkpoint_that_moves_no_weight_is_refused(self, tmp_path):
+        """The decisive check. Right format, empty state dict, strict=False --
+        this is precisely the case a load report can pass."""
+        empty = tmp_path / "empty.pt"
+        torch.save(
+            {"format": "scwbd-foundation-checkpoint/1", "model": {}, "config": {}, "step": 0},
+            empty,
+        )
+        res = P.run_pilot(empty, permutations=False)
+        assert res.status == "checkpoint_unreadable"
+        assert "not one weight tensor changed" in res.reading
+
+    def test_the_three_states_are_distinct(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        assert P.run_pilot(None, permutations=False).status == "awaiting_checkpoint"
+        bad = tmp_path / "b.pt"
+        bad.write_bytes(b"x")
+        assert P.run_pilot(bad, permutations=False).status == "checkpoint_unreadable"
+
+    @pytest.mark.slow
+    def test_a_real_load_records_how_many_tensors_moved(self, surrogate_checkpoint):
+        res = P.run_pilot(surrogate_checkpoint, permutations=False)
+        c = res.provenance["checkpoint"]
+        assert c["tensors_changed_by_load"] > 0
+        assert c["tensors_changed_by_load"] <= c["tensors_total"]
+        assert isinstance(c["strict_load"], bool)
+
+
 # ---------------------------------------------------------------------------
 # 5. the reading is applied as written
 # ---------------------------------------------------------------------------
