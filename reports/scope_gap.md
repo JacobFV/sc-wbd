@@ -204,10 +204,20 @@ is 1.62× it. This is robust to the missing interval: the MSE would have to be
 2.44× larger than measured — and larger than persistence's — for the NLL to be
 explicable by the conditional mean.
 
-**The comparison is not calibration-matched.** All six baselines carry
-`variance_calibration` (`baselines.py:418-427`, held-out per-channel residual
-variance). SC-WBD's `describe()` has three keys and none of them is that. The
-two arms that received no calibration are exactly the two with positive excess.
+**The comparison is not calibration-matched.** All six baselines carry a
+`variance_calibration` entry; five of them are **held-out** per-horizon,
+per-channel residual variance (`baselines.py:459-489`, fitted on calibration
+windows split off at fit time). SC-WBD's `describe()` has three keys and none
+of them is that.
+
+> **Correction, 2026-08-06, on Turing's re-derivation.** This paragraph first
+> read "the two arms that received no calibration are exactly the two with
+> positive excess", which contradicted its own preceding sentence. `dense_neural`
+> *does* carry a `variance_calibration` entry — "heteroscedastic head trained
+> in-sample on free-running rollouts" — and it has the **largest** positive
+> excess, +2.1534. The accurate statement is: **the two arms with no *held-out*
+> calibration are exactly the two with positive excess.** In-sample calibration
+> does not protect you; held-out calibration does.
 
 Two things this does **not** license, both of which Popper flagged against its
 own finding:
@@ -232,3 +242,96 @@ blocker 4.
 
 `real_split.verified` remains `false`, and the evaluation's `git_sha` is
 `-dirty`.
+
+### P0 resolved: run 2 inherits the cause, in full
+
+🔥 Turing, 2026-08-06, verified independently by the architect against the code
+and the branch diff.
+
+**The mechanism** — `scwbd/foundation/heads.py:238` and `:258`:
+
+```python
+self.log_noise = nn.Parameter(torch.zeros(n_ch))   # __init__, shape (C,)
+...
+lv = self.log_noise.expand_as(y)                   # forward()
+```
+
+SC-WBD's entire predictive variance for EEG is **one learned scalar per
+channel, broadcast**. `lv` never reads the state `x`. It is constant across
+time, across horizon step, across window, across participant, and across
+condition. `heads.py:219` claims the head learns "(iii) a heteroscedastic noise
+model" and `heads.py:11` repeats it. It cannot: there is no path from state to
+variance. This is a decorative guard in the exact sense of
+`reports/decorative_guards.md` — a named capability structurally incapable of
+firing — and it has been added to that catalogue.
+
+The five held-out-calibrated baselines get variance of shape
+**(horizon, C)** (`baselines.py:459-489`), so their uncertainty may grow with
+h. SC-WBD's cannot. One constant covering h=1 through h=24 is a compromise the
+Gaussian log-score punishes at every horizon simultaneously.
+
+**Run 2 inherits it.** Verified against `wt/hodgkin` rather than assumed —
+these four files are byte-identical between `master` and Hodgkin's branch:
+
+```
+IDENTICAL  scwbd/foundation/heads.py       <- the variance head
+IDENTICAL  scwbd/foundation/evaluate.py    <- the scoring path
+IDENTICAL  scwbd/foundation/train.py       <- the loss
+IDENTICAL  scwbd/foundation/baselines.py   <- the baselines' calibration
+```
+
+and `model.py:483` on that branch is still `self.eeg = EEGHead(L, lf)`.
+`RegionFamily` changes *what feeds* `source_amplitude()`; it changes nothing
+about `lv`, because `lv` has no input. All four candidate causes are shared.
+
+**What it does to A1.** Both arms carry the same defect, so the *paired*
+contrast is partly protected — but only partly, since each arm fits its own
+`log_noise` and the penalty does not cancel exactly. Two consequences that do
+not cancel at all:
+
+1. A1 is scored on NLL. A channel carrying zero state information contributes a
+   large additive term to both arms, which is **noise with respect to the
+   hypothesis A1 tests**. The ablation loses power to detect exactly the
+   structured-state effect it exists to measure.
+2. Both arms would again lose to persistence in absolute terms, for a reason
+   with nothing to do with structured state — reproducing the run-1 headline
+   whether or not heterogeneous state works.
+
+**Binding precondition on run 2.** Training does not start until `log_noise`
+becomes a function of state and of horizon step. A post-hoc instrument
+recalibration at evaluation does **not** discharge this: A1's power problem is
+in the trained loss, not in the scorer.
+
+Outstanding: the decomposition of the +0.4469 excess into horizon-flatness
+versus overall misfit is in progress. Nothing above depends on it — the
+inheritance finding is a fact about the code, not about the numbers.
+
+### Why the verification apparatus could not have caught this
+
+📐 Fisher, 2026-08-06, while reconciling `scwbd/infer/`.
+
+The identifiability machinery is the part of this project that found most of
+the other defects in this report. It could not have found this one, and the
+reason is structural rather than an oversight:
+
+- **C1/C2/C3 are exact Fisher computations on a linear-Gaussian surrogate.**
+  There, state-independent innovation covariance is a *theorem*, not a
+  modelling choice — it is precisely why the Riccati recursion can be shared
+  across the trajectory. So a constant `log_noise` is **correct** in the
+  surrogate. The surrogate cannot represent the defect, let alone detect it.
+- **C4/C5 are about parameter intervals over `η`, not predictive intervals
+  over observations.** Run 1 failed in the predictive channel. The
+  identifiability report was never measuring it.
+
+`scwbd/infer` imports nothing from `scwbd.foundation` and loads no checkpoint,
+so no identifiability conclusion depends on the model's uncertainty being
+state-dependent. But the inference is easy to make and would be wrong, so the
+identifiability report now generates a `SCOPE_BOUNDARY_UNCERTAINTY` section
+stating both points rather than leaving them to be inferred.
+
+**The general lesson, which outlives this defect:** a verification apparatus
+built on a surrogate inherits the surrogate's assumptions as blind spots, and
+those blind spots are invisible from inside the apparatus — every check was
+green and every check was correct. Ask of any future guard not only "can it
+fire" but "is the failure it targets representable in the model it runs
+against".
