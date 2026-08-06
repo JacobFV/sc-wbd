@@ -305,3 +305,33 @@ in the trained loss, not in the scorer.
 Outstanding: the decomposition of the +0.4469 excess into horizon-flatness
 versus overall misfit is in progress. Nothing above depends on it — the
 inheritance finding is a fact about the code, not about the numbers.
+
+### Why the verification apparatus could not have caught this
+
+📐 Fisher, 2026-08-06, while reconciling `scwbd/infer/`.
+
+The identifiability machinery is the part of this project that found most of
+the other defects in this report. It could not have found this one, and the
+reason is structural rather than an oversight:
+
+- **C1/C2/C3 are exact Fisher computations on a linear-Gaussian surrogate.**
+  There, state-independent innovation covariance is a *theorem*, not a
+  modelling choice — it is precisely why the Riccati recursion can be shared
+  across the trajectory. So a constant `log_noise` is **correct** in the
+  surrogate. The surrogate cannot represent the defect, let alone detect it.
+- **C4/C5 are about parameter intervals over `η`, not predictive intervals
+  over observations.** Run 1 failed in the predictive channel. The
+  identifiability report was never measuring it.
+
+`scwbd/infer` imports nothing from `scwbd.foundation` and loads no checkpoint,
+so no identifiability conclusion depends on the model's uncertainty being
+state-dependent. But the inference is easy to make and would be wrong, so the
+identifiability report now generates a `SCOPE_BOUNDARY_UNCERTAINTY` section
+stating both points rather than leaving them to be inferred.
+
+**The general lesson, which outlives this defect:** a verification apparatus
+built on a surrogate inherits the surrogate's assumptions as blind spots, and
+those blind spots are invisible from inside the apparatus — every check was
+green and every check was correct. Ask of any future guard not only "can it
+fire" but "is the failure it targets representable in the model it runs
+against".
