@@ -838,15 +838,145 @@ With the anatomy inputs supplied, the same block renders Hansen's
 `CC-BY-NC-SA-4.0` and Tian's citation condition verbatim from
 `scwbd/anatomy/sources.py`, never paraphrased.
 
-### 11.4 What is not done
+### 11.4 Wired into the release path
 
-The block is **not yet called from the release path**. `ProvenanceBlock` lives
-in `scwbd/release/**`, which is Lovelace's; wiring
-`attribution_from_manifest(...).require_complete()` into it is a one-line
-change in that file and is theirs to make. Until it is, the capability exists
-and is tested but no checkpoint is *forced* to carry it — which is precisely
-the "built and unwired" state this report criticises elsewhere, and it is named
-here rather than left for someone to discover.
+**Done.** Ownership of `scwbd/release/**` was unclaimed, so I took this change
+rather than leaving a built-but-uncalled mechanism — which is the category
+`reports/decorative_guards.md` exists to name, and leaving a new one behind
+while writing a report about them would have been absurd.
 
-**Recommended for Lovelace:** call `require_complete()` on the release path, so
-that an artifact with an unattributable source cannot be written at all.
+`ProvenanceBlock` now carries `attribution` and `attribution_text`, derived by
+`attribution_from_manifest()` over the same `dataset_links` the licence union
+uses. `ProvenanceBlock.save()` calls `require_complete()` **before writing
+anything**, so an artifact with an unattributable contributing source raises
+and **no file appears on disk** — a half-written provenance record is worse
+than none, because downstream reads one that exists and is short.
+
+Verified by execution, in `tests/release/test_attribution_gate.py`:
+
+| test | asserts |
+|---|---|
+| `test_an_unattributable_artifact_cannot_be_written` | raises **and** `not out.exists()` |
+| `test_the_refusal_names_the_offending_source` | names the source *and* why it matters (`tian2020`) |
+| `test_the_refusal_survives_a_source_that_merely_looks_fine` | the gate keys on the **link**, not on card contents — the real defect had a valid SPDX and a valid citation |
+| `test_the_escape_hatch_is_explicit_and_still_records_the_hole` | `require_attribution=False` writes `ok: false` and `NOT COMPLIANT`, so such a file is identifiable afterwards |
+| `test_the_gate_is_on_by_default` | a control that must be opted into is not a control |
+
+**One pre-existing test broke, and it should have.**
+`tests/release/test_families.py::test_dataset_cards_expose_multimodal_ground_truth`
+asserted `"dwi" in cards["ds004024"].modalities` under the docstring *"Verified
+against the cards, not against a relayed list."* It was green because the card
+was wrong. **A card is a relayed list** — reading one is not verification, it
+moves the unchecked assertion one file further away. The test now asserts the
+negative (`dwi` and `fmri` are *not* in ds004024), asserts the paired corpus
+supplies the multimodal ground truth instead, and requires **every** claimed
+modality on an available card to carry `signal.modality_evidence`. All 154
+release tests pass.
+
+---
+
+## 12. N-4a: what registration would actually take
+
+The coordinator asked whether this is an afternoon or a week, because both
+new mixture cards are disabled on it and that makes `ds002336`'s paired episode
+**potential rather than realised**. Measured, not estimated.
+
+### 12.1 Everything downstream of the transform already exists
+
+| component | status |
+|---|---|
+| BOLD reader at native grid + TR | **built** — `scwbd/sources/loaders/bids_bold.py` |
+| Schaefer400×7 as an MNI152-1mm **label volume** | **on disk** — `assets/derived/parcellations/Schaefer400x7__MNI152-1mm.npz`, `voxel_labels (182, 218, 182)` + `affine`. `TianS2` and `Aseg14` likewise |
+| a place to declare the transform | **built** — `scwbd/transforms/frame_graph.py::FrameGraph` |
+| parcel averaging once aligned | **available** — `nilearn 0.14.0` (`NiftiLabelsMasker`) |
+| subject T1w for every participant | **on disk** — ds002336 10/10, ds000113 4/4, ds000117 2/2 |
+
+### 12.2 The one missing component
+
+**A subject→MNI transform estimator. There is no registration engine on this
+machine.**
+
+```
+flirt  ABSENT   antsRegistration  ABSENT   fslmaths     ABSENT
+mri_vol2vol ABSENT   recon-all    ABSENT   3dAllineate  ABSENT
+antspy MISSING       nipype       MISSING
+```
+
+And there is no shortcut, because the data are genuinely in native space —
+measured by comparing the BOLD affines of the ten ds002336 subjects against
+each other:
+
+```
+sub-xp101 … sub-xp110   frame=scanner_anat_RAS   max|A - A_ref| up to 23.25 mm
+```
+
+23 mm of disagreement is most of a lobe. ds000113's retinotopy is
+`scanner_anat_RAS` too, and ds000117's BOLD is `aligned_anat_RAS` — aligned to
+another scan of the *same subject*, still not to a template.
+
+I checked the one path that would have avoided writing registration at all:
+StudyForrest ships `linear_anatomical_alignment` transforms upstream (158
+files, 0.06 MB — trivially fetchable). They cover **`ses-forrestgump` only**,
+not `ses-localizer`. They do not apply to the retinotopy we hold, and
+ds002336 ships none at all. Dead end.
+
+### 12.3 Options, with honest cost
+
+| option | cost | verdict |
+|---|---|---|
+| **A. `antspyx` from PyPI** (reachable, HTTP 200) — affine + SyN, Apache-2.0 | ~2–3 days | the only credible route |
+| **B. write an affine registration in-repo** (scipy + mutual information) | weeks, and unvalidatable in the time | **no.** An unvalidated transform silently misplaces every parcel and the loss still falls |
+| **C. reuse upstream transforms** | — | dead end, see above |
+| **D. defer; declare untrained** | zero | the current state, and honest |
+
+**It is not an afternoon, and the expensive part is not the pipeline.** Writing
+BOLD→T1w→MNI with `antspyx` is a few hundred lines. *Validating* it is the
+cost, and skipping validation would produce exactly the failure this fleet
+keeps finding: something that runs, produces numbers, and is wrong in a way no
+loss curve shows.
+
+### 12.4 The validation already exists in the data
+
+Worth saying because it changes the risk: **the retinotopy is its own
+registration test.** The four traversals (`ccw`, `clw`, `expanding`,
+`contracting`) of `ds000113` measure a known, stereotyped map. If the transform
+is right, their phase structure lands coherently in the Schaefer visual
+parcels and the opposing traversals cancel in the expected way; if it is wrong,
+they do not. That is a mechanism that can fail, not an inspection — and it is
+the strongest argument for having acquired the retinotopy even though the
+family it serves cannot yet be trained.
+
+Equivalently for `ds002336`: the motor localizer must land in the Schaefer
+somatomotor network, and the same subject's simultaneous EEG gives an
+independent lateralisation to check it against.
+
+### 12.5 Recommendation
+
+**Defer explicitly, and put it in run 2 only if the fleet takes the `antspyx`
+dependency.** Concretely:
+
+1. **Owner: 🧠 Cajal.** The transform is a coordinate-frame question, and the
+   frames, the atlas and `FrameGraph` are theirs. I own the consuming side —
+   `bids_bold` already returns the native affine and `frame_id` per file, so it
+   needs no change to accept a transform.
+2. **Blocker to decide first: the dependency.** `antspyx` is a large binary
+   wheel and this repo currently has no such dependency. That is a fleet
+   decision, not mine.
+3. **Do not enable either mixture card before the retinotopy validation in
+   §12.4 passes.** `ds000113_real` additionally may not be enabled at all until
+   its licence is resolved — two independent blockers, and fixing one must not
+   be mistaken for fixing both.
+
+Until then N-4a stands as written: the BOLD is **readable, not trainable**, and
+`ds002336`'s paired episode is on disk, manifested, licence-clean and reachable
+by code — but it does not yet reach the model, and no claim may say it does.
+
+### 12.6 One thing this unblocks now, without any registration
+
+🧭 Gauss owns D4 (one validated restriction/prolongation pair). `ds002336` is a
+**measured** fine/coarse pair — 5000 Hz EEG and 0.5 Hz BOLD, same subject, same
+block, 10,000:1 — and using it as the D4 pair needs the two clocks and the two
+native supports, which `bids_bold` and `bids_eeg` already return. It does
+**not** need the parcellation: a restriction operator between two temporal
+resolutions is a different object from a spatial parcel map. That work is not
+blocked by N-4a and should not wait for it.
