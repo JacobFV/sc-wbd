@@ -52,6 +52,30 @@ WAVENUMBER_PER_M = 100.0
 SEED = 0
 
 
+#: What geometry these gates actually ran on, stated as an explicit negative.
+#:
+#: A reader can already see ``sphere_radius_m`` in the artifacts and infer that no
+#: subject anatomy was involved -- but inference is not provenance.  The
+#: anatomical prior in this build never reached the model (``load_anatomy()``
+#: returned a synthetic ellipsoid on every run), so "which results depended on
+#: anatomy" is a live question, and the useful thing is for these gates to answer
+#: it from their own contents rather than requiring the reader to already know
+#: that field physics takes head geometry and not the connectome.
+GEOMETRY_PROVENANCE: dict[str, Any] = {
+    "geometry_source": "analytic phantom constructed in-process "
+                       "(scwbd.intervene.tms.efield.SphericalHeadModel, or an "
+                       "unbounded homogeneous medium for N3/N4)",
+    "uses_subject_anatomy": False,
+    "uses_scwbd_anatomy_load_anatomy": False,
+    "uses_connectome": False,
+    "note": "These solvers take head GEOMETRY (a radius, a triangulated surface) "
+            "and never the connectome, so the anatomical-prior defect does not "
+            "touch these verdicts. Every geometry here is a sphere declared in "
+            "the artifact; none is derived from a subject, a template or "
+            "scwbd.anatomy.",
+}
+
+
 def em_gate_points(seed: int = SEED) -> np.ndarray:
     """The N3 field points, reproduced exactly as ``validate_em_solver`` draws them."""
     rng = np.random.default_rng(seed)
@@ -129,6 +153,7 @@ def run_n3(*, n_per_axis: int = 256, convergence: bool = True) -> Any:
             "from the reported number is what the finite domain costs, and it is a "
             "budget item, not a fitted correction."
         )
+    rep.artifacts["geometry_provenance"] = GEOMETRY_PROVENANCE
     return rep.finalize()
 
 
@@ -222,6 +247,7 @@ def run_n4(*, points_per_wavelength: int = 20, convergence: bool = True,
                 for r in rows
             )
         )
+    rep.artifacts["geometry_provenance"] = GEOMETRY_PROVENANCE
     rep.artifacts["fdtd_meta"] = dict(result.meta, n_per_axis=result.n_per_axis,
                                       spacing_m=result.spacing_m, n_steps=result.n_steps)
     return rep.finalize()
@@ -326,6 +352,7 @@ def run_n6(*, convergence: bool = True, subdivisions: Sequence[int] = (1, 2, 3, 
             "dipole_mdot_A_m2_per_s": [list(m) for m in N6_DIPOLE_MDOT],
         },
     }
+    rep.artifacts["geometry_provenance"] = GEOMETRY_PROVENANCE
     rep.artifacts["mesh_refinement"] = rows
     rep.artifacts["reference_self_convergence"] = reference_degree_convergence(
         pts, **kw
@@ -510,6 +537,7 @@ def run_n8(*, self_convergence: bool = True, audits: bool = True) -> Any:
             "field_points": f"{len(pts)} on the {N8_CORTEX_RADIUS} m cortical shell",
         },
     }
+    rep.artifacts["geometry_provenance"] = GEOMETRY_PROVENANCE
     rep.artifacts["self_convergence_family"] = rows
 
     if audits:
@@ -935,6 +963,7 @@ def run_n9(*, include_axisymmetric: bool = True) -> Any:
                     "backend computes this same expression, so the gate's subject is the "
                     "object actually in the runtime path",
             },
+            "geometry_provenance": GEOMETRY_PROVENANCE,
             "grading_history": {
                 "current": {
                     "graded_against": "solution_discrepancy_fraction",
@@ -955,11 +984,13 @@ def run_n9(*, include_axisymmetric: bool = True) -> Any:
                         "any artifact showing upper_bound 2.29 or a 70 mm minimum radius "
                         "predates the adjudicated grading and should not be cited.",
                 },
-                "note_on_claim_id":
-                    "this runner emits N9_fallback_field_approximation. A scoreboard row "
-                    "named N9_fallback_field_bound covering the same subject exists; agent "
-                    "Popper owns gate ids and should settle on one. Recorded here so the "
-                    "two are linkable rather than silently divergent.",
+                "claim_id_resolution":
+                    "Settled 2026-08-06 by agent Popper on N9_fallback_field_approximation, "
+                    "as the accurate name once the subject became the approximation's own "
+                    "error rather than a composite bound. The superseded scoreboard row "
+                    "N9_fallback_field_bound was DELETED rather than kept alongside this "
+                    "one: two files for one gate, both reading PASS, is itself the defect. "
+                    "reports/intervene/ is the authoritative artifact.",
             },
             "bound_provenance": {
                 "pinned": list(N9_PINNED_BOUND["solution_discrepancy_fraction"]),

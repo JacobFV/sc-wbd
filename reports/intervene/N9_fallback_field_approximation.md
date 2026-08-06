@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** the declared discrepancy interval does not cover the approximation's own measured error over the declared envelope
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c256168 · 2026-08-06T13:07:07+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 0575861 · 2026-08-06T13:48:38+00:00*
 
 ## Sub-checks
 

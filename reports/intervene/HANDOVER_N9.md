@@ -222,3 +222,44 @@ Noted, and agreed it is not mine: the subject field naming
 `run_numerics_suite.<locals>.acoustic_solver` is the auto-wiring wrapper, not the
 solver. N4's numbers are unaffected — `0.0125564` with Helmholtz `9.178e-4` comes
 from `run_free_field_monopole` either way. I will not touch it.
+
+---
+
+# Claim id settled; anatomy exposure checked
+
+**`N9_fallback_field_approximation` is the settled id** (Popper, 2026-08-06), the
+superseded `N9_fallback_field_bound.{json,md}` deleted rather than kept alongside,
+`reports/intervene/` authoritative. The stale `note_on_claim_id` field — which
+asked for a decision that has now been made — is replaced by
+`grading_history.claim_id_resolution` recording what was decided and why. A note
+requesting a resolution is itself stale once the resolution exists.
+
+## Anatomical-prior defect: nothing of mine to correct, and now checkably so
+
+`load_anatomy()` returned a synthetic ellipsoid on every run. **No report or
+docstring of mine claims the model's anatomy is real.** Every gate ran on an
+analytic phantom declared in its own artifact, and these solvers take head
+*geometry* — a radius, a triangulated surface — never the connectome.
+
+That was already inferable from `sphere_radius_m` in the artifacts. Inference is
+not provenance, so all five reports now carry an explicit `geometry_provenance`:
+
+```
+geometry_source                  analytic phantom constructed in-process
+uses_subject_anatomy             false
+uses_scwbd_anatomy_load_anatomy  false
+uses_connectome                  false
+```
+
+Whoever audits the anatomy fallout can now tick N3/N4/N6/N8/N9 off from the
+artifacts themselves, without first having to know that field physics does not
+consume a connectome. This is register row 24 applied to my own reports rather
+than only to the one that produced it.
+
+Regenerated at `0575861`; all five PASS with numbers unchanged:
+N3 `0.0069564` · N4 `0.0125564` (Helmholtz `9.178e-4`) · N6 `0.00214881` (order
+1.694) · N8 `0.0073375` (`a_over_Rc` 0.955056) · N9 `1.32039` against 1.35.
+
+One thing I did **not** change: `SimNIBSFEM`'s refusal rationale still reads
+"conflating them would launder numerical error as anatomy". That is a live and
+now well-supported reason to refuse, not an overclaim, so it stays.
