@@ -18,7 +18,11 @@ enforces the reporting discipline of ``body.tex`` §11.2 and
   kind ``"calibration"`` ("aggregate accuracy cannot substitute for
   calibration within the intended deployment population");
 * a metric that claims to be an estimate must carry an interval unless it is
-  explicitly declared exact (counts, ranks, booleans).
+  explicitly declared exact (counts, ranks, booleans);
+* a passing numerical check must record **what it measured** — the subject or
+  the solver provenance. An artifact that does not record how it was produced
+  is how a stale output gets compared against new code and mistaken for a
+  result, which has already happened twice in this repository.
 
 These are raised as :class:`ReportDisciplineError` at construction time, so a
 non-compliant report cannot be written to ``reports/``.
@@ -431,6 +435,15 @@ class ClaimReport:
                 raise ReportDisciplineError(
                     f"{self.manifest.claim_id}: a gate may not PASS without baselines run "
                     "(ARCHITECTURE.md §4: baseline comparisons are part of 'done')"
+                )
+            if self.kind == "numerics" and not (
+                self.artifacts.get("subject") or self.artifacts.get("solver_provenance")
+            ):
+                raise ReportDisciplineError(
+                    f"{self.manifest.claim_id}: a passing numerical check must record what "
+                    "it measured (artifacts['subject'] or artifacts['solver_provenance']). "
+                    "An artifact that does not record how it was produced is how a stale "
+                    "output gets compared against new code and mistaken for a result."
                 )
         if self.status == "COULD_NOT_RUN":
             if not self.blocking_reasons:

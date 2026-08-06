@@ -2,11 +2,11 @@
   "bench_schema_version": "scwbd-bench-report/1.0.0",
   "kind": "numerics",
   "claim_id": "N4_acoustic_solver",
-  "status": "COULD_NOT_RUN",
+  "status": "PASS",
   "manifest": {
     "claim_id": "N4_acoustic_solver",
     "claim_text": "The acoustic solver reproduces free-field spreading and satisfies the Helmholtz equation, validated independently of any neural-response model.",
-    "falsified_by": "relative error above tolerance, or a Helmholtz residual that does not vanish under grid refinement",
+    "falsified_by": "relative error above tolerance, or a Helmholtz residual that does not fall as the TIME step is refined at fixed CFL (see the refinement note: refining h alone leaves the residual flat for reasons unrelated to solver quality, so 'flat under h refinement' is NOT a falsification of this gate)",
     "consequence_if_failed": "The acoustic solver may not be used for tFUS exposure or targeting; every downstream acoustic claim is suspended.",
     "thesis_version": "V6",
     "schema_version": "scwbd-schema/1.0.0",
@@ -27,26 +27,137 @@
     "preregistered": true
   },
   "consequence_applied": null,
-  "blocking_reasons": [
-    "acoustic_solver: could not run \u2014 no acoustic solver supplied (agent G scwbd.intervene); the exposure model is unvalidated and no tFUS claim may be made"
-  ],
+  "blocking_reasons": [],
   "subchecks": [
     {
       "name": "acoustic_solver",
-      "description": "Acoustic solver versus free-field reference.",
-      "status": "COULD_NOT_RUN",
+      "description": "Relative error against a closed-form solution, with no neural model in the loop.",
+      "status": "PASS",
       "mandatory": true,
-      "reason": "no acoustic solver supplied (agent G scwbd.intervene); the exposure model is unvalidated and no tFUS claim may be made",
-      "falsified_by": "relative error above tolerance, or a Helmholtz residual that does not vanish under grid refinement",
-      "metrics": []
+      "reason": "",
+      "falsified_by": "relative error above tolerance against the analytic solution",
+      "metrics": [
+        {
+          "name": "acoustic_solver.mean_relative_error",
+          "value": 0.012556425877959692,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": {
+            "lo": 0.01174842476089093,
+            "hi": 0.013344869640806799,
+            "level": 0.95,
+            "method": "bootstrap-percentile"
+          },
+          "threshold": 0.05,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": true,
+          "exact": false,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "acoustic_solver.max_relative_error",
+          "value": 0.06304878245712699,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": null,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "helmholtz_residual",
+      "description": "Relative residual of lap(p) + k^2 p on the solver's own grid.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the discrete field does not satisfy its own governing equation",
+      "metrics": [
+        {
+          "name": "acoustic.helmholtz_relative_residual",
+          "value": 0.0009130205491218672,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.05,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": true
+        }
+      ]
     }
   ],
   "baselines_run": [],
-  "notes": [],
-  "artifacts": {},
+  "notes": [
+    "REFINEMENT RULE: the Helmholtz residual here is set by TEMPORAL dispersion, not by h. Measured with the scheme's own Laplacian the spatial error cancels, leaving (omega*dt)^2/12. Refining h at fixed dt leaves the residual flat, which reads like a failure and is not one. Refine dt with h at fixed CFL.",
+    "Amplitude calibration is part of what is under test when the source strength is fixed a priori rather than fitted to the reference; a residual amplitude bias must be reported, not divided out.",
+    "The dt-refinement table is agent Faraday's (dt refined WITH h at fixed CFL); agent J independently reproduced its finest row. Predicted temporal-dispersion residual (omega*dt)^2/12 = 9.139e-4 versus 9.18e-4 measured.",
+    "Solver provenance: agent Faraday, branch wt/faraday @ 915fcad, NOT yet merged to master."
+  ],
+  "artifacts": {
+    "subject": "scwbd.intervene.numerics.free_field_monopole_fdtd",
+    "solver_provenance": {
+      "solver_module": "scwbd.intervene.numerics (agent Faraday)",
+      "solver_source_file": "/home/brandonin/Documents/scwbd-wt/faraday/scwbd/intervene/numerics.py",
+      "solver_branch": "wt/faraday",
+      "solver_commit": "915fcad",
+      "merged_into_master": false,
+      "verdict_owner": "agent J (bench); gate code from master, unmodified",
+      "reproduce": "python -m scwbd.intervene.run_field_gates --out reports/intervene",
+      "independent_rerun": "agent J re-ran both gates from master's scwbd.bench.numerics against these solvers rather than adopting agent Faraday's JSON; point estimates and bootstrap intervals reproduced (N3 0.0069564 [0.00589, 0.00828]; N4 0.0125564 [0.01175, 0.01334]; Helmholtz 9.13e-4 vs their 9.18e-4 on an independent march)"
+    },
+    "fdtd_meta": {
+      "spacing_m": 0.0031415926535897933,
+      "n_per_axis": 151,
+      "points_per_wavelength": 20.0,
+      "n_steps": 1800
+    },
+    "dt_refinement_reported_by_faraday": [
+      {
+        "points_per_wavelength": 10.0,
+        "spacing_m": 0.006283185307179587,
+        "time_step_s": 1.3962634015954637e-06,
+        "n_per_axis": 119.0,
+        "mean_relative_error": 0.040714590735443666,
+        "max_relative_error": 0.16048951409280726,
+        "mean_amplitude_ratio": 1.0397836220336623,
+        "helmholtz_relative_residual": 0.003647509252609876,
+        "observed_order": NaN
+      },
+      {
+        "points_per_wavelength": 14.0,
+        "spacing_m": 0.004487989505128276,
+        "time_step_s": 9.97331001139617e-07,
+        "n_per_axis": 163.0,
+        "mean_relative_error": 0.023605328199949746,
+        "max_relative_error": 0.11330921395551548,
+        "mean_amplitude_ratio": 1.0234851458410328,
+        "helmholtz_relative_residual": 0.0018715976496129323,
+        "observed_order": 1.6200863128368124
+      },
+      {
+        "points_per_wavelength": 20.0,
+        "spacing_m": 0.0031415926535897933,
+        "time_step_s": 6.981317007977319e-07,
+        "n_per_axis": 231.0,
+        "mean_relative_error": 0.012556425877959689,
+        "max_relative_error": 0.06304878245712699,
+        "mean_amplitude_ratio": 1.0120949574687108,
+        "helmholtz_relative_residual": 0.0009178484246932203,
+        "observed_order": 1.769790426193955
+      }
+    ]
+  },
   "provenance": {
-    "timestamp_utc": "2026-08-06T06:22:53+00:00",
-    "git_rev": "a8221f6",
+    "timestamp_utc": "2026-08-06T07:57:56+00:00",
+    "git_rev": "4d617af",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {

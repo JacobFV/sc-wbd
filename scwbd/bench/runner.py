@@ -151,6 +151,15 @@ def build_summary(
         "measurement either."
     )
     L.append("")
+    L.append(
+        "**Provenance is part of the discipline.** Twice now this repository has come close "
+        "to comparing new code against a stale artifact: gates written before a solver "
+        "existed, and cached `.npz` maps built by a route the module no longer used. Neither "
+        "artifact recorded how it was produced. A passing numerical check here is therefore "
+        "refused unless it records its subject or its solver provenance, and every report "
+        "carries the git revision and the timestamp of the run that produced it."
+    )
+    L.append("")
 
     L += _table(list(gates), title="1. Claim gates G1–G5 (`tab:claim-gates`)",
                 describe={k: v["claim"] for k, v in CLAIMS.items()})
@@ -239,7 +248,9 @@ def build_summary(
             if subject:
                 L.append(f"  - subject: {subject}")
             for n in r.notes:
-                if "not evidence" in n or "not a statement" in n:
+                if any(k in n for k in ("not evidence", "not a statement", "SCOPE:",
+                                        "does NOT license", "does not cover",
+                                        "REFINEMENT RULE:")):
                     L.append(f"  - scope limit: {n}")
     L.append("")
 
@@ -263,6 +274,25 @@ def build_summary(
             else:
                 for reason in r.blocking_reasons[:2]:
                     L.append(f"  - blocked by: {reason}")
+    L.append("")
+    L.append("### What a passing numerical gate does and does not unblock")
+    L.append("")
+    L.append(
+        "A numerical PASS lifts a *precondition*; it licenses no claim on its own. It means "
+        "the solver may now be used in a claim-bearing run, not that any run has been made. "
+        "Numerical correctness is necessary and never sufficient: agreement with recorded "
+        "signals is stronger, held-out perturbation stronger still (thesis §0.2), and field "
+        "accuracy, target engagement, network effect and clinical utility remain four "
+        "separate quantities (§0.5)."
+    )
+    L.append("")
+    L.append(
+        "In particular `N3` validates **conduction** — a current dipole in an unbounded "
+        "homogeneous conductor, the EEG/lead-field forward problem. It does **not** cover "
+        "the magnetically induced TMS field, which has a different source term and boundary "
+        "condition. That is gate `N6`, and it has not run. Any claim that depends on the "
+        "induced field remains suspended."
+    )
     L.append("")
     L.append("### Standing exclusions (independent of any result)")
     L.append("")

@@ -1,8 +1,8 @@
 # SC-WBD-001-beta — claim gate scoreboard
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git a8221f6 · 2026-08-06T06:22:53+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git 4d617af · 2026-08-06T07:57:58+00:00*
 
-**1 PASS · 0 FAIL · 31 COULD_NOT_RUN** out of 32 claim-bearing checks.
+**3 PASS · 0 FAIL · 30 COULD_NOT_RUN** out of 33 claim-bearing checks.
 
 > A gate that cannot run is **not** a gate that passed. Nothing in this repository may be claimed on the basis of a `could-not-run` row. Engineering breadth, parameter count, plausible diagrams, and in-sample fit are not substitutes for these tests (`thesis_contract.tex`).
 
@@ -44,12 +44,17 @@ A gate that cannot fail is worthless. Each gate therefore ships with a negative 
 - `test_numerics.py::test_conservation_check_catches_drift`
 - `test_numerics.py::test_seed_reproducibility_catches_non_determinism_and_ignored_seeds`
 - `test_numerics.py::test_permit_is_refused_when_a_backend_produced_nothing`
+- `test_numerics.py::test_n6_refuses_to_reuse_the_conduction_reference`
+- `test_numerics.py::test_n6_passes_an_exact_solver_and_fails_a_wrong_one`
+- `test_numerics.py::test_n6_mesh_convergence_can_fail`
 - `test_report_discipline.py::test_accuracy_without_calibration_is_refused`
 - `test_report_discipline.py::test_failure_carries_the_implementation_consequence`
 - `test_statistics.py::test_smoothing_check_fires_on_a_deliberately_oversmoothed_model`
 - `test_statistics.py::test_plot_helpers_refuse_a_point_estimate_without_an_interval`
 
 Positive controls (worlds where the effect is present, and the gate must `PASS`) live in `tests/bench/test_gates_can_pass.py`; a gate that can never pass is not a measurement either.
+
+**Provenance is part of the discipline.** Twice now this repository has come close to comparing new code against a stale artifact: gates written before a solver existed, and cached `.npz` maps built by a route the module no longer used. Neither artifact recorded how it was produced. A passing numerical check here is therefore refused unless it records its subject or its solver provenance, and every report carries the git revision and the timestamp of the run that produced it.
 
 ## 1. Claim gates G1–G5 (`tab:claim-gates`)
 
@@ -130,8 +135,9 @@ Every eigenvalue and condition number in a G4 report travels with its basis (def
 | `N1_compiler_correctness` | PASS | 7/7 mandatory sub-checks; subject: reference example: scwbd.schema.examples.three_region | — |
 | `N5_solver_suite` | could-not-run | solver_convergence: could not run — no solver supplied (agent E dynamics / agent G field solvers) | — |
 | `N2_boundary_consistency` | could-not-run | boundary_consistency: could not run — the fine and/or coarse boundary observable was not supplied by the backends (agent E dynamics / agent D restrict… | — |
-| `N3_em_solver` | could-not-run | em_solver: could not run — no EM solver supplied (agent G scwbd.intervene / agent F lead fields); the field model is unvalidated and no E-field claim … | — |
-| `N4_acoustic_solver` | could-not-run | acoustic_solver: could not run — no acoustic solver supplied (agent G scwbd.intervene); the exposure model is unvalidated and no tFUS claim may be mad… | — |
+| `N3_em_solver` | PASS | 1/1 mandatory sub-checks; subject: scwbd.intervene.numerics.quasistatic_dipole_potential_fd | — |
+| `N4_acoustic_solver` | PASS | 2/2 mandatory sub-checks; subject: scwbd.intervene.numerics.free_field_monopole_fdtd | — |
+| `N6_induced_efield` | could-not-run | induced_efield: could not run — missing: induced-field solver (agent Faraday: scwbd.intervene.tms.efield); closed-form reference (Sarvas / Heller-van … | — |
 
 ## 5. Dependency state (who is blocking what)
 
@@ -156,6 +162,12 @@ Only the following, and only at the scope stated. A passing check licenses exact
 - **N1_compiler_correctness**: The compiler produces a model whose shapes, units, frames, clocks, delays, masks and gradient permissions are internally consistent, and whose recorded claim class is the one it was compiled for.
   - subject: reference example: scwbd.schema.examples.three_region
   - scope limit: A PASS here means the compiler emits an internally consistent artifact for this subject. It is not evidence about any other schema, and it is not evidence that any compiled operator is neurally realized.
+- **N3_em_solver**: The quasi-static CONDUCTION solver reproduces the closed-form potential of a current dipole in an unbounded homogeneous conductor, validated independently of any neural-response model. This is the EEG/lead-field forward problem; it is NOT the magnetically induced TMS field, which has a different source term and boundary condition and needs its own gate (N6).
+  - subject: scwbd.intervene.numerics.quasistatic_dipole_potential_fd
+  - scope limit: SCOPE: conduction, not induction. A PASS licenses the quasi-static conduction discretisation used for EEG lead fields. It does NOT license the magnetically induced TMS field: different source term, different boundary condition, separate gate (N6_induced_efield).
+- **N4_acoustic_solver**: The acoustic solver reproduces free-field spreading and satisfies the Helmholtz equation, validated independently of any neural-response model.
+  - subject: scwbd.intervene.numerics.free_field_monopole_fdtd
+  - scope limit: REFINEMENT RULE: the Helmholtz residual here is set by TEMPORAL dispersion, not by h. Measured with the scheme's own Laplacian the spatial error cancels, leaving (omega*dt)^2/12. Refining h at fixed dt leaves the residual flat, which reads like a failure and is not one. Refine dt with h at fixed CFL.
 
 ## 7. What we cannot yet claim
 
@@ -243,10 +255,14 @@ Each line below is a claim SC-WBD-001-beta **may not make** in text, figures, ab
   - blocked by: solver_stability: could not run — no trajectory supplied
 - **N2_boundary_consistency** (did not run): Fine and coarse regional backends agree within the declared tolerance on boundary observables, so adaptive resolution may be used for inference.
   - blocked by: boundary_consistency: could not run — the fine and/or coarse boundary observable was not supplied by the backends (agent E dynamics / agent D restriction maps); adaptive resolution may not be used for inference until both produce it (§11.1)
-- **N3_em_solver** (did not run): The electromagnetic solver reproduces a closed-form quasi-static reference, validated independently of any neural-response model.
-  - blocked by: em_solver: could not run — no EM solver supplied (agent G scwbd.intervene / agent F lead fields); the field model is unvalidated and no E-field claim may be made
-- **N4_acoustic_solver** (did not run): The acoustic solver reproduces free-field spreading and satisfies the Helmholtz equation, validated independently of any neural-response model.
-  - blocked by: acoustic_solver: could not run — no acoustic solver supplied (agent G scwbd.intervene); the exposure model is unvalidated and no tFUS claim may be made
+- **N6_induced_efield** (did not run): The magnetically induced E-field solver reproduces the closed-form (Sarvas / Heller-van Hulsteyn) solution for a spherically symmetric conductor, validated independently of any neural-response model.
+  - blocked by: induced_efield: could not run — missing: induced-field solver (agent Faraday: scwbd.intervene.tms.efield); closed-form reference (Sarvas / Heller-van Hulsteyn); agent J does not implement induction physics and will not substitute the conduction reference from N3, which is a different problem
+
+### What a passing numerical gate does and does not unblock
+
+A numerical PASS lifts a *precondition*; it licenses no claim on its own. It means the solver may now be used in a claim-bearing run, not that any run has been made. Numerical correctness is necessary and never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis §0.2), and field accuracy, target engagement, network effect and clinical utility remain four separate quantities (§0.5).
+
+In particular `N3` validates **conduction** — a current dipole in an unbounded homogeneous conductor, the EEG/lead-field forward problem. It does **not** cover the magnetically induced TMS field, which has a different source term and boundary condition. That is gate `N6`, and it has not run. Any claim that depends on the induced field remains suspended.
 
 ### Standing exclusions (independent of any result)
 

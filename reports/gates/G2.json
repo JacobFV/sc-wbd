@@ -99,11 +99,15 @@
     }
   ],
   "baselines_run": [],
-  "notes": [],
+  "notes": [
+    "Sparsity or plausibility alone is not evidence for the declared topology (Appendix D, 'Connectome prior value').",
+    "Controls are agent C's; this gate refuses to synthesise them, because the control IS the experiment. A gate that invents its own null has measured nothing.",
+    "If the topology or any derived prior is route-fragile (agent C's ledgers carry route_agreement_r / route_fragile) or carries a forbidden_inference, that must be disclosed alongside the verdict: a topology claim inherits the fragility of the maps it was built from."
+  ],
   "artifacts": {},
   "provenance": {
-    "timestamp_utc": "2026-08-06T06:22:53+00:00",
-    "git_rev": "a8221f6",
+    "timestamp_utc": "2026-08-06T07:56:41+00:00",
+    "git_rev": "4d617af",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {

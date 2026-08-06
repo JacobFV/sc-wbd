@@ -55,6 +55,7 @@ __all__ = [
     "helmholtz_residual",
     "validate_em_solver",
     "validate_acoustic_solver",
+    "validate_induced_efield_solver",
     "run_numerics_suite",
 ]
 
@@ -728,7 +729,15 @@ def permit_adaptive_resolution(fine_observable: np.ndarray | None = None,
         seed=seed,
         thresholds={"boundary_rel_tol": tol},
     )
-    rep = ClaimReport(manifest=man, subchecks=[sub], kind="numerics").finalize()
+    rep = ClaimReport(
+        manifest=man, subchecks=[sub], kind="numerics",
+        artifacts={"subject": (
+            "fine observable n="
+            f"{np.asarray(fine_observable).size if fine_observable is not None else 0}"
+            ", coarse observable n="
+            f"{np.asarray(coarse_observable).size if coarse_observable is not None else 0}"
+            f", declared tolerance {tol}")},
+    ).finalize()
     observed = next((m.value for m in sub.metrics
                      if m.name == "boundary.mean_relative_disagreement"), None)
     granted = rep.status == "PASS"
@@ -767,7 +776,24 @@ def analytic_free_field_pressure(points: np.ndarray, source_pos: np.ndarray,
 
 
 def helmholtz_residual(field: np.ndarray, *, dx: float, k: float) -> float:
-    """Relative residual of ``lap(p) + k^2 p = 0`` on a uniform 3-D grid."""
+    """Relative residual of ``lap(p) + k^2 p = 0`` on a uniform 3-D grid.
+
+    **Refinement warning (this bit is load-bearing).**  Evaluated with the
+    scheme's *own* second-difference Laplacian, the spatial truncation error
+    cancels: a discrete steady state satisfies the discrete Helmholtz equation
+    to round-off.  What remains is *temporal* dispersion, which for a leapfrog
+    march is
+
+    ``|k^2 - kappa^2| / k^2 = (omega*dt)^2 / 12 + O(dt^4)``,
+    ``kappa = (2/(c*dt)) * sin(omega*dt/2)``.
+
+    So this residual falls when **dt** is refined, and sits flat when ``h`` is
+    refined at fixed ``dt``.  A convergence study that refines only ``h`` will
+    show no improvement and can be misread as "the residual does not vanish
+    under refinement" — a false falsification.  Refine ``dt`` with ``h`` at
+    fixed CFL.  (Caught by agent Faraday on the first N4 sweep; the criterion
+    in this module's N4 manifest was reworded because of it.)
+    """
     p = np.asarray(field)
     lap = np.zeros_like(p)
     for ax in range(p.ndim):
@@ -775,6 +801,12 @@ def helmholtz_residual(field: np.ndarray, *, dx: float, k: float) -> float:
     core = tuple(slice(1, -1) for _ in range(p.ndim))
     res = lap[core] + (k**2) * p[core]
     return float(np.linalg.norm(res) / (np.linalg.norm((k**2) * p[core]) + 1e-30))
+
+
+def _subject_of(fn: Any) -> str:
+    """Which callable produced these numbers (recorded on every report)."""
+    return (f"{getattr(fn, '__module__', '?')}."
+            f"{getattr(fn, '__qualname__', getattr(fn, '__name__', repr(fn)))}")
 
 
 def _validate_against_analytic(numeric: np.ndarray, analytic: np.ndarray, *, tol: float,
@@ -814,11 +846,14 @@ def validate_em_solver(solver: Callable[..., np.ndarray] | None = None, *,
     """Validate an electromagnetic solver *independently of neural-response models*."""
     man = _manifest(
         "N3_em_solver",
-        "The electromagnetic solver reproduces a closed-form quasi-static reference, "
-        "validated independently of any neural-response model.",
+        "The quasi-static CONDUCTION solver reproduces the closed-form potential of a "
+        "current dipole in an unbounded homogeneous conductor, validated independently of "
+        "any neural-response model. This is the EEG/lead-field forward problem; it is NOT "
+        "the magnetically induced TMS field, which has a different source term and boundary "
+        "condition and needs its own gate (N6).",
         "relative error above tolerance against the analytic dipole solution",
-        "The EM solver may not be used for lead fields, E-field prediction or targeting; "
-        "every downstream field-dependent claim is suspended.",
+        "The conduction solver may not be used for lead fields or source modelling; every "
+        "downstream conduction-dependent claim is suspended.",
         seed=seed,
         thresholds={"relative_tol": tol, "sigma_S_per_m": sigma},
     )
@@ -860,9 +895,25 @@ def validate_em_solver(solver: Callable[..., np.ndarray] | None = None, *,
                                      falsified_by=man.falsified_by)],
             kind="numerics").finalize()
     sub = _validate_against_analytic(num, ref, tol=tol, label="em_solver", seed=seed)
-    return ClaimReport(manifest=man, subchecks=[sub], kind="numerics",
-                       notes=["Field accuracy, target engagement, network effect and clinical "
-                              "utility remain separate quantities (thesis §0.5)."]).finalize()
+    return ClaimReport(
+        manifest=man, subchecks=[sub], kind="numerics",
+        artifacts={"subject": _subject_of(solver),
+                   "reference": "current dipole in an unbounded homogeneous conductor "
+                                "(conduction / volume-current problem)",
+                   "does_not_cover": "magnetically induced E-field of a TMS coil "
+                                     "(induction); see gate N6"},
+        notes=[
+            "SCOPE: conduction, not induction. A PASS licenses the quasi-static conduction "
+            "discretisation used for EEG lead fields. It does NOT license the magnetically "
+            "induced TMS field: different source term, different boundary condition, "
+            "separate gate (N6_induced_efield).",
+            "A verification gate is destroyed if the reference leaks into the solver. Check "
+            "that the boundary data is homogeneous, not the analytic value, before reading "
+            "this PASS as evidence.",
+            "Field accuracy, target engagement, network effect and clinical utility remain "
+            "separate quantities (thesis §0.5).",
+        ],
+    ).finalize()
 
 
 def validate_acoustic_solver(solver: Callable[..., np.ndarray] | None = None, *,
@@ -876,8 +927,10 @@ def validate_acoustic_solver(solver: Callable[..., np.ndarray] | None = None, *,
         "N4_acoustic_solver",
         "The acoustic solver reproduces free-field spreading and satisfies the Helmholtz "
         "equation, validated independently of any neural-response model.",
-        "relative error above tolerance, or a Helmholtz residual that does not vanish under "
-        "grid refinement",
+        "relative error above tolerance, or a Helmholtz residual that does not fall as the "
+        "TIME step is refined at fixed CFL (see the refinement note: refining h alone leaves "
+        "the residual flat for reasons unrelated to solver quality, so 'flat under h "
+        "refinement' is NOT a falsification of this gate)",
         "The acoustic solver may not be used for tFUS exposure or targeting; every downstream "
         "acoustic claim is suspended.",
         seed=seed,
@@ -929,7 +982,148 @@ def validate_acoustic_solver(solver: Callable[..., np.ndarray] | None = None, *,
                      metrics=[], mandatory=False, forced_status="COULD_NOT_RUN",
                      reason="no solver grid/dx supplied; only the free-field comparison was run")
         )
-    return ClaimReport(manifest=man, subchecks=subs, kind="numerics").finalize()
+    return ClaimReport(
+        manifest=man, subchecks=subs, kind="numerics",
+        artifacts={"subject": _subject_of(solver)},
+        notes=[
+            "REFINEMENT RULE: the Helmholtz residual here is set by TEMPORAL dispersion, "
+            "not by h. Measured with the scheme's own Laplacian the spatial error cancels, "
+            "leaving (omega*dt)^2/12. Refining h at fixed dt leaves the residual flat, which "
+            "reads like a failure and is not one. Refine dt with h at fixed CFL.",
+            "Amplitude calibration is part of what is under test when the source strength is "
+            "fixed a priori rather than fitted to the reference; a residual amplitude bias "
+            "must be reported, not divided out.",
+        ],
+    ).finalize()
+
+
+def validate_induced_efield_solver(
+    solver: Callable[..., np.ndarray] | None = None,
+    *,
+    analytic: Callable[..., np.ndarray] | None = None,
+    points: np.ndarray | None = None,
+    solver_kwargs: Mapping[str, Any] | None = None,
+    tol: float = 0.05,
+    convergence: Sequence[Mapping[str, float]] | None = None,
+    expected_order: float = 1.5,
+    seed: int = 0,
+) -> ClaimReport:
+    """Validate the **magnetically induced** E-field solver (N6).
+
+    N3 validates *conduction*: a current dipole in an unbounded homogeneous
+    conductor, which is the EEG/lead-field forward problem.  A TMS coil's
+    induced field is a different problem — different source term (``-dA/dt``
+    plus the secondary charge field), different boundary condition — and a
+    conduction PASS licenses nothing about it.  This gate exists so that gap is
+    visible on the scoreboard rather than implicit in a caveat.
+
+    The analytic reference (Sarvas / Heller--van Hulsteyn closed form for a
+    spherically symmetric conductor) must be **supplied**, not assumed: agent J
+    does not implement induction physics.  When the reference and the solver
+    come from the same module the report says so, because a solver checked
+    against its own module's closed form is a weaker test than one checked
+    against an independent implementation.
+    """
+    man = _manifest(
+        "N6_induced_efield",
+        "The magnetically induced E-field solver reproduces the closed-form "
+        "(Sarvas / Heller-van Hulsteyn) solution for a spherically symmetric conductor, "
+        "validated independently of any neural-response model.",
+        "relative error above tolerance against the closed form, or a mesh-refinement study "
+        "that does not converge at the advertised order",
+        "The induced-field solver may not be used for TMS E-field prediction, target "
+        "engagement or pose ranking; every downstream induction-dependent claim is "
+        "suspended (N3 does not cover this: it validates conduction, not induction).",
+        seed=seed,
+        thresholds={"relative_tol": tol, "expected_order": expected_order},
+    )
+    missing: list[str] = []
+    if solver is None:
+        missing.append("induced-field solver (agent Faraday: scwbd.intervene.tms.efield)")
+    if analytic is None:
+        missing.append(
+            "closed-form reference (Sarvas / Heller-van Hulsteyn); agent J does not "
+            "implement induction physics and will not substitute the conduction reference "
+            "from N3, which is a different problem"
+        )
+    if missing:
+        return ClaimReport(
+            manifest=man,
+            subchecks=[could_not_run(
+                "induced_efield", "Induced E-field versus the closed form.",
+                "missing: " + "; ".join(missing),
+                falsified_by=man.falsified_by)],
+            kind="numerics",
+            notes=["Opened because N3 passed for CONDUCTION only. Any claim that depends on "
+                   "the induced TMS field remains suspended until this gate runs."],
+        ).finalize()
+
+    kw = dict(solver_kwargs or {})
+    if points is None:
+        rng = np.random.default_rng(seed)
+        pts = rng.normal(0, 0.05, size=(512, 3))
+        points = pts[np.linalg.norm(pts, axis=1) > 0.02]
+    try:
+        num = np.asarray(solver(points=points, **kw), dtype=float)
+        ref = np.asarray(analytic(points=points, **kw), dtype=float)
+    except TypeError:
+        try:
+            num = np.asarray(solver(points), dtype=float)
+            ref = np.asarray(analytic(points), dtype=float)
+        except Exception as exc:
+            return ClaimReport(
+                manifest=man,
+                subchecks=[could_not_run(
+                    "induced_efield", "Induced E-field versus the closed form.",
+                    f"solver or reference raised {type(exc).__name__}: {exc}",
+                    falsified_by=man.falsified_by)],
+                kind="numerics").finalize()
+    except Exception as exc:
+        return ClaimReport(
+            manifest=man,
+            subchecks=[could_not_run(
+                "induced_efield", "Induced E-field versus the closed form.",
+                f"solver or reference raised {type(exc).__name__}: {exc}",
+                falsified_by=man.falsified_by)],
+            kind="numerics").finalize()
+
+    subs = [_validate_against_analytic(num, ref, tol=tol, label="induced_efield", seed=seed)]
+    artifacts: dict[str, Any] = {"subject": _subject_of(solver),
+                                 "reference": _subject_of(analytic)}
+
+    shared = getattr(solver, "__module__", "?") == getattr(analytic, "__module__", "?")
+    subs.append(SubCheck(
+        name="reference_provenance",
+        description="Does the closed-form reference come from the same module as the solver?",
+        metrics=[Metric(
+            name="induced_efield.reference_shares_module_with_solver",
+            value=float(shared), kind="audit", exact=True,
+            note=(f"solver={getattr(solver, '__module__', '?')}, "
+                  f"reference={getattr(analytic, '__module__', '?')}; shared provenance is "
+                  "not disqualifying, but it is a weaker test than an independent "
+                  "implementation and must not be described as independent validation"),
+        )],
+        mandatory=False,
+    ))
+
+    if convergence:
+        errs = [float(r["error"]) for r in convergence]
+        sizes = [float(r.get("h", r.get("n_elements", i + 1)))
+                 for i, r in enumerate(convergence)]
+        p = convergence_order(errs, sizes)
+        subs.append(SubCheck(
+            name="mesh_convergence",
+            description="Observed order of the induced-field discretisation.",
+            metrics=[Metric(
+                name="induced_efield.observed_order", value=p, kind="numerical", exact=True,
+                threshold=expected_order, direction="greater_is_better",
+                note=f"errors {['%.3g' % e for e in errs]}")],
+            mandatory=True,
+            falsified_by="refinement does not converge at the advertised order",
+        ))
+    return ClaimReport(manifest=man, subchecks=subs, artifacts=artifacts, kind="numerics",
+                       notes=["Induction, not conduction: this gate is what N3 does NOT "
+                              "cover."]).finalize()
 
 
 # ==========================================================================
@@ -948,6 +1142,10 @@ def run_numerics_suite(
     boundary_tol: float = 0.05,
     em_solver: Callable[..., np.ndarray] | None = None,
     acoustic_solver: Callable[..., np.ndarray] | None = None,
+    acoustic_grid: np.ndarray | None = None,
+    acoustic_dx: float | None = None,
+    induced_efield_solver: Callable[..., np.ndarray] | None = None,
+    induced_efield_analytic: Callable[..., np.ndarray] | None = None,
     seed: int = 0,
 ) -> list[ClaimReport]:
     """Run §11.1 end to end; every absent input yields a loud COULD_NOT_RUN."""
@@ -973,6 +1171,8 @@ def run_numerics_suite(
                 check_conservation(trajectory, invariant),
                 check_seed_reproducibility(stochastic_entry_point, seed=seed),
             ],
+            artifacts={"subject": _subject_of(solver) if solver is not None
+                       else "no solver supplied"},
             kind="numerics",
         ).finalize()
     )
@@ -980,6 +1180,22 @@ def run_numerics_suite(
     _, permit_report = permit_adaptive_resolution(fine_observable, coarse_observable,
                                                   tol=boundary_tol, seed=seed)
     reports.append(permit_report)
+    if em_solver is None or acoustic_solver is None:
+        # agent Faraday's reference-problem solvers, once they are importable
+        dep = adapters.field_solvers()
+        if dep.available:
+            em_fn, ac_run = dep.obj
+            em_solver = em_solver or em_fn
+            if acoustic_solver is None:
+                def acoustic_solver(points, source_pos=(0.0, 0.0, 0.0), k=100.0, **kw):
+                    return ac_run(points, source_pos, k, **kw).pressure
+                if acoustic_grid is None:
+                    probe = ac_run(np.full((1, 3), 0.02), (0.0, 0.0, 0.0), 100.0)
+                    acoustic_grid, acoustic_dx = probe.grid_block, probe.spacing_m
     reports.append(validate_em_solver(em_solver, seed=seed))
-    reports.append(validate_acoustic_solver(acoustic_solver, seed=seed))
+    reports.append(validate_acoustic_solver(acoustic_solver, grid=acoustic_grid,
+                                            dx=acoustic_dx, seed=seed))
+    reports.append(validate_induced_efield_solver(induced_efield_solver,
+                                                  analytic=induced_efield_analytic,
+                                                  seed=seed))
     return reports
