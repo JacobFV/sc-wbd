@@ -703,3 +703,27 @@ Three properties this boundary must have:
 3. **It is orthogonal to `sim2real_ready` and `promotion_eligible`,** which
    remain `false`. IRB approval is not promotion eligibility, and nothing in
    this section may be read as relaxing the claim boundary.
+
+**The notice text is the owner's.** The `scwbd.intervene` notice states, in
+their words: *approved by IRB board UT Arlington for computational studies,
+pending preliminary review on August 25, 2026 before live patient TMS applied
+using it.*
+
+Faraday objected to putting an unverifiable claim about the world into a source
+string — the defect they were dispatched to remove, inverted — and argued that
+**a false permission does not fail safe the way a false restriction does.** The
+argument was put to the owner and the owner reaffirmed. It is their approval
+and their claim to make. Recorded here so it is not re-litigated.
+
+What the decision does **not** touch, and what no agent may quietly relax:
+
+- The **string is documentation; `authorize_live_application` is enforcement.**
+  Separate surfaces. The prose does not weaken the gate by one line.
+- 2026-08-25 remains a **lower bound on a review record, never an unlock** — it
+  appears only on the refusing side of every comparison, and
+  `TestTheDateIsNotAnUnlock` proves it at a 2027 clock.
+- An `AuthorizationRecord` remains **necessary and not sufficient**, and a
+  placeholder may not be fabricated; the type refuses one.
+
+A future reader who finds the prose permissive and the code restrictive should
+conclude the code is right, not that the code is stale.

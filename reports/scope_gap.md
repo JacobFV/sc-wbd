@@ -543,3 +543,74 @@ The 14 subcortical parcels share **one** E/I value and **one** timescale — 401
 distinct values across 414 regions. Cajal marked those fields `not_established`
 rather than emit an average-brain label (§7 rule 1), so subcortical families
 carry membership and provenance and nothing else.
+
+### A1 is underpowered at 27 participants, and the split must be fixed now
+
+🛡️ Popper, 2026-08-06 (`9a21af9`). Derived from run 1's own six paired
+participant-clustered comparisons — median CI half-width, range 0.1373–0.2711.
+
+**MDE = 0.1404 nats at 27 test participants.**
+
+| effect | size | detectable |
+|---|---:|---|
+| horizon term of the variance excess | 0.0096 | no — 15× below |
+| matched-calibration gain | 0.1025–0.1249 | **no** |
+| **MDE at n=27** | **0.1404** | — |
+| state term | 0.19–0.26 | yes |
+| gap to persistence | 0.2765 | yes, ≈2× |
+
+**A1 cannot see an effect the size of the entire calibration gain.** MDE scales
+≈1/√n and the corpus holds **109**: n=54 → 0.0993, n=109 → 0.0699. 27-in-test
+is a **choice, not a constraint**, and it must be fixed *before* scoring rather
+than revisited after an inconclusive result.
+
+**Architect decision: run 2 scores on the full available test split, sized
+before any arm trains, and the size is recorded in the pre-registration.** An
+inconclusive A1 at n=27 would be uninterpretable — indistinguishable from a
+true null — and we would have spent the run to learn nothing.
+
+**Consequence not asked for:** the 7 subcortical families are 14 of 414 parcels
+(3.1%). No family-level effect there is measurable at any participant count
+this corpus supports. **Out of claim for A1**, on N-4's precedent.
+
+**A1 and A5 are different ablations and were being run together.** §11.4
+bullet 1 is about the state *space* `𝒳_i`; bullet 5 is about operator typing.
+θ cannot replicate a state-space change — a 28-dim uniform state conditioned on
+θ is still 28 uniform dims — so the θ-confound is **fatal to A5 and only
+partial for A1**, provided the arms keep it partial.
+
+> **Binding: A1's arms vary state structure only. Operator assignment is held
+> identical across every arm.** If run 2's treatment arm varies both per-family
+> state and per-family operators, A1 and A5 are confounded and neither is
+> testable. Cajal's evidence is on receptor profile, timescale and myelin —
+> properties an operator's *parameters* carry — so letting the treatment arm
+> also change operator families imports precisely the ambiguity A1 exists to
+> resolve.
+
+**The licence narrows accordingly**, and the narrow sentence is what the report
+must carry: *a two-family cortical state partition beats a uniform one at
+matched capacity.* **Not** "operator-valued heterogeneous regional state."
+Cajal's N-7 is upheld.
+
+**Third arm required.** `theta_conditioned_pooled` — one operator, uniform
+state, θ carrying **exactly** the features the spin test used (20 Hansen maps,
+myelin + thickness, intrinsic timescale; the features, not the family label). A
+control denied them is handicapped at **stage 2** under RL-6, the mirror of the
+stage-4 interface defect. New falsifier **F8**: if it matches the candidate,
+the state-structure claim reduces to a conditioning claim.
+
+**Disagreement recorded rather than smoothed.** Popper could not reproduce
+Turing's `L4 = 2.0205` without the checkpoint eval; the independent band from
+the baselines' own calibration gain is **[1.9834, 2.0058]**. Since content
+requires `NLL < L4`, 2.0205 is the **more permissive** value by 0.015–0.037. It
+is adopted as an **upper bound only** and L4 is recomputed per arm.
+
+**P0 verified from `stage_V_individual.pt` independently:** `eeg.log_noise`
+mean +0.2732, sd 0.0302, **3.02× overconfident**, 19.8% of the closed form —
+resolving the two-root ambiguity to the overconfident root within 1%.
+
+**And the endpoint was not moved.** Turing's restored MSE intervals show
+SC-WBD beating every baseline on the conditional mean, and promoting MSE to
+primary is defensible on the merits. Popper declined — §8b rule 4, endpoint
+selection on an outcome already seen. The pre-commitment was written for that
+temptation and it arrived faster than expected.
