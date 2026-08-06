@@ -324,6 +324,7 @@ Estimates scatter wider than the stated posterior (`sd_post/sd_emp` < 0.9 — a 
 ![eigenvalue_spectra](figures/eigenvalue_spectra.png)
 ![interval_coverage](figures/interval_coverage.png)
 ![delay_error](figures/delay_error.png)
+![profile_likelihoods](figures/profile_likelihoods.png)
 ![posterior_correlations](figures/posterior_correlations.png)
 
 ## What would disable this module
@@ -332,4 +333,4 @@ If native-clock fusion does not raise theta profile information above the best s
 
 ---
 
-Generated 2026-08-06T05:55:03-0700 · git `b6348a8bd63c` · machine-readable: `results.json`.
+Generated 2026-08-06T06:28:26-0700 · git `3d4ab5e46dc9` · machine-readable: `results.json`.

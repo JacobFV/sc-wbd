@@ -114,7 +114,7 @@
   "environment": {
     "cuda_available": true,
     "device_name": "NVIDIA GB10",
-    "git_revision": "b6348a8bd63c8f88dfebe0aacce9fa1456b2b125",
+    "git_revision": "3d4ab5e46dc9f8867f6548927393f88ecc39b41f",
     "numpy": "2.5.1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "python": "3.12.13",
@@ -311,5 +311,5 @@
   "seed": 20260805,
   "status": "preregistered_before_run",
   "thesis_reference": "thesis_contract.tex sec. 0.3 (T1-T4), sec. 0.6 item 2, sec. 11",
-  "written_at": "2026-08-06T05:55:01-0700"
+  "written_at": "2026-08-06T06:28:25-0700"
 }
