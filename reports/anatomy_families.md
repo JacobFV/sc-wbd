@@ -386,3 +386,68 @@ collapsing the two would hide exactly that.
 - A demonstration that the unimodal/association distinction is better modelled
   as a gradient than a partition would invalidate the *form* of this
   declaration, not just its contents. That is the weakest joint in it (§5.3).
+
+---
+
+## 10. Addendum: per-parcel dipole orientation (2026-08-06)
+
+Added on the architect's ruling after 🧭 Gauss measured that a scalar-per-parcel
+support carries **5.6%** of the whitened lead field at 68 parcels and **16.2%**
+at 542, against **51.7%** for the three-component net dipole moment. Every
+per-parcel field this prior shipped before today was orientation-free, so the
+prior was supplying the representation the measurement calls the weak one.
+
+`scwbd.anatomy.geometry.parcel_orientation` → `ParcelOrientation`, reached from
+`BrainPrior.dipole_orientation()` and `AnatomyPrior.normal` /
+`.normal_coherence` / `.normal_covered`.
+
+**`coherence` is the load-bearing field, not the direction.** Cortical pyramidal
+cells sit normal to the sheet, so a parcel's contribution to a lead field is the
+*vector* sum of its face normals weighted by area. Cortex is folded, so opposing
+banks of one sulcus inside one parcel cancel. `coherence = |Σ a_f n_f| / Σ a_f`
+measures that; `effective_area_mm2 = coherence × area_mm2` is what reaches a
+sensor. Shipping a unit vector without it would be worse than shipping neither,
+because a unit vector always looks equally informative.
+
+Schaefer-400 on fsLR-32k midthickness, regenerated: 400/400 parcels covered,
+sign agreement 0.847 (near 0.5 would mean inconsistent mesh winding and a
+meaningless sign), coherence median **0.851**, min **0.275**, max 0.994.
+**77.8%** of the 102,492 mm² of labelled cortex survives folding.
+
+### 10.1 A geometric bound on what more parcels can buy
+
+Same computation across granularities, total area held fixed:
+
+| atlas | n | mean parcel mm² | median coherence | % of area surviving folding |
+|---|---|---|---|---|
+| Schaefer100x7 | 100 | 1025 | 0.701 | 61.9% |
+| Schaefer200x7 | 200 | 513 | 0.776 | 70.0% |
+| Schaefer300x7 | 300 | 343 | 0.821 | 74.6% |
+| Schaefer400x7 | 400 | 256 | 0.851 | 77.8% |
+
+Quadrupling the parcel count recovers 61.9% → 77.8%, and the ceiling is 100%, so
+**at most a further 1.29× is available from subdividing beyond 400** — whereas
+Gauss measures orientation as worth about 9×. This is an independent geometric
+route to his result and it offers the mechanism: extra parcels help only by
+un-cancelling moment that folding destroyed *within* a parcel, and by 400 there
+is little left to un-cancel.
+
+Stated as corroboration, not proof: Gauss measured whitened lead-field variance
+captured; this measures geometric dipole cancellation. They are related, not
+identical.
+
+### 10.2 Caveats
+
+- **Coherence here is an upper bound.** fsLR-32k is a decimated mesh and sulcal
+  detail is smoothed, so a native-resolution surface would cancel *more*. The
+  77.8% should not be quoted as the fraction reaching a real sensor array.
+- **Template folding, not a subject's.** Coherence is the quantity most
+  sensitive to individual sulcal geometry, and this is the group mesh. The
+  ledger says so.
+- **Not defined off the cortical sheet.** The 14 subcortical parcels are `nan`
+  with `covered=False` — never zero, because a zero vector is a direction of
+  zero length that a lead field would multiply by and silently get nothing from.
+- **Deliberately not a family field.** Families here are bilateral, so a
+  family's mean normal nearly cancels by symmetry; a family-level dipole
+  direction would be an artefact of that cancellation. `FAMILY_FIELDS` is
+  unchanged and Hodgkin's contract is not broken.

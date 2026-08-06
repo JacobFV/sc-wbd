@@ -43,6 +43,8 @@ __all__ = [
     "SurfaceGeometry",
     "ParcelGeometry",
     "parcel_geometry",
+    "ParcelOrientation",
+    "parcel_orientation",
     "geodesic_from_sources",
     "GEODESIC_BACKEND",
 ]
@@ -462,3 +464,207 @@ class SurfaceGeometry:
         s = load_surface(space, density, "midthickness", hemi)
         lap, mass = s.cotangent_laplacian()
         return cls(surface=s, laplacian=lap, mass=mass, adjacency=s.adjacency())
+
+
+# ---------------------------------------------------------------------------
+# parcel orientation: the net dipole, and how much of it folding destroys
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class ParcelOrientation:
+    """Net dipole direction per parcel, with the folding cancellation factor.
+
+    Why this exists
+    ---------------
+    🧭 Gauss measured that a **scalar** per parcel carries 5.6% of the whitened
+    lead field at 68 parcels and only 16.2% at 542, while **three numbers per
+    parcel** -- the net dipole moment -- carries 51.7%.  More parcels buy almost
+    nothing; orientation buys about 9x.  Every per-parcel field the anatomy
+    prior shipped before this was orientation-free, so the prior was supplying
+    the representation that measurement says is the weak one.
+
+    The physics, and why ``coherence`` is the load-bearing number
+    ------------------------------------------------------------
+    Cortical pyramidal cells are oriented normal to the cortical sheet, so a
+    parcel's contribution to the EEG/MEG lead field is the **vector sum** of its
+    surface normals weighted by area -- not the sum of their magnitudes.  Cortex
+    is folded, so opposing banks of a sulcus inside one parcel point in opposite
+    directions and **cancel**.
+
+    ``coherence`` is that cancellation, measured: ``|Σ a_f n_f| / Σ a_f`` over
+    the parcel's faces, in ``[0, 1]``.  A parcel of 1 means a flat patch whose
+    whole area projects; a parcel of 0.1 has a net dipole ten times weaker than
+    its area suggests and is nearly invisible to a sensor array regardless of
+    how active it is.  ``effective_area_mm2 = coherence * area_mm2`` is what
+    actually reaches a sensor, and it is the quantity a lead field should be
+    built from.  Reporting orientation without coherence would be worse than
+    reporting neither: a unit vector always looks equally informative.
+
+    Sign convention
+    ---------------
+    ``sign_convention`` records which way "positive" points, resolved from the
+    mesh rather than assumed, and R01 refuses an undeclared handedness.  The
+    convention is fixed by majority vote against the hemisphere centroid and the
+    achieved fraction is recorded in ``sign_agreement`` -- deep sulcal faces
+    genuinely point inward, so that fraction is well below 1 and a value near
+    0.5 would mean the mesh winding is inconsistent and the sign is meaningless.
+
+    What this is not
+    ----------------
+    * Not a subject's orientation.  It is the template mesh's, and the ledger
+      says so.
+    * Not defined off the surface.  Subcortical and cerebellar parcels have no
+      cortical sheet; they are ``nan`` and ``covered=False``, never filled in.
+    * Not a *family* property.  Families here are bilateral, so their mean
+      normal very nearly cancels by symmetry; a family-level dipole direction
+      would be an artefact of that cancellation, not a fact about the family.
+      Orientation is per parcel and is deliberately not aggregated.
+    """
+
+    parcellation_name: str
+    space: str
+    density: str
+    labels: np.ndarray
+    normal: np.ndarray  # (n,3) unit vector; nan where not covered
+    coherence: np.ndarray  # (n,) |Σ a n| / Σ a  in [0,1]; nan where not covered
+    area_mm2: np.ndarray  # (n,) total surface area of the parcel
+    effective_area_mm2: np.ndarray  # (n,) coherence * area_mm2
+    covered: np.ndarray  # (n,) bool
+    frame: str
+    handedness: str
+    sign_convention: str
+    sign_agreement: float
+    ledger: UncertaintyLedger
+    notes: str = ""
+
+    @property
+    def n_parcels(self) -> int:
+        return int(self.labels.shape[0])
+
+    def n_covered(self) -> int:
+        return int(self.covered.sum())
+
+    def summary(self) -> dict[str, Any]:
+        c = self.coherence[self.covered]
+        e = self.effective_area_mm2[self.covered]
+        a = self.area_mm2[self.covered]
+        return {
+            "parcellation": self.parcellation_name,
+            "n_parcels": self.n_parcels,
+            "n_covered": self.n_covered(),
+            "frame": self.frame,
+            "handedness": self.handedness,
+            "sign_convention": self.sign_convention,
+            "sign_agreement": round(float(self.sign_agreement), 4),
+            "coherence_median": round(float(np.median(c)), 4) if c.size else None,
+            "coherence_min": round(float(c.min()), 4) if c.size else None,
+            "coherence_max": round(float(c.max()), 4) if c.size else None,
+            "total_area_mm2": round(float(a.sum()), 1) if a.size else None,
+            "total_effective_area_mm2": round(float(e.sum()), 1) if e.size else None,
+            "area_surviving_folding": (
+                round(float(e.sum() / a.sum()), 4) if a.size and a.sum() > 0 else None
+            ),
+        }
+
+
+def parcel_orientation(parc: Parcellation, *, kind: str = "midthickness") -> ParcelOrientation:
+    """Net dipole orientation and folding coherence for each parcel.
+
+    Computed at **face** level, which is where the geometry actually lives: each
+    triangle contributes a vector of magnitude equal to its area, pointing along
+    its normal.  A face is assigned to the modal parcel of its three vertices,
+    so boundary faces are kept rather than dropped -- discarding them would bias
+    ``area_mm2`` low for exactly the small parcels where it matters most.
+    """
+    n = parc.n_parcels
+    normal = np.full((n, 3), np.nan)
+    coherence = np.full(n, np.nan)
+    area = np.zeros(n)
+    covered = np.zeros(n, dtype=bool)
+
+    if not parc.is_surface() or parc.vertex_labels is None:
+        raise ValueError(
+            f"parcel_orientation requires a surface parcellation; {parc.name!r} is "
+            "volumetric. A dipole orientation is a property of the cortical sheet "
+            "and does not exist for a volume parcel -- there is no honest value to "
+            "return, so this raises rather than emitting nan for every parcel."
+        )
+
+    net = np.zeros((n, 3))
+    agree_num = 0.0
+    agree_den = 0.0
+    for hemi in ("L", "R"):
+        surf = load_surface(parc.space, parc.density, kind, hemi)
+        vl = parc.vertex_labels[hemi]
+        v, f = surf.coords, surf.faces
+        # Face normal scaled by face area: 0.5 * (b-a) x (c-a).
+        fn = 0.5 * np.cross(v[f[:, 1]] - v[f[:, 0]], v[f[:, 2]] - v[f[:, 0]])
+        fa = np.linalg.norm(fn, axis=1)
+
+        # Sign: orient outward from the hemisphere centroid, by majority vote.
+        # Deep sulcal faces genuinely point inward, so agreement is well under 1;
+        # near 0.5 would mean inconsistent winding and a meaningless sign.
+        centre = v.mean(axis=0)
+        fc = v[f].mean(axis=1) - centre
+        dot = np.einsum("ij,ij->i", fn, fc)
+        agree_num += float((dot > 0).sum())
+        agree_den += float(dot.size)
+        if (dot > 0).mean() < 0.5:
+            fn = -fn
+
+        # Face -> parcel by modal vertex label; faces touching unlabelled
+        # vertices (medial wall) are dropped only if the modal label is -1.
+        lab3 = vl[f]
+        flab = np.where(
+            (lab3[:, 0] == lab3[:, 1]) | (lab3[:, 0] == lab3[:, 2]),
+            lab3[:, 0],
+            np.where(lab3[:, 1] == lab3[:, 2], lab3[:, 1], lab3[:, 0]),
+        )
+        ok = flab >= 0
+        np.add.at(net, flab[ok], fn[ok])
+        np.add.at(area, flab[ok], fa[ok])
+
+    covered = area > 0
+    mag = np.linalg.norm(net, axis=1)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        normal[covered] = net[covered] / np.maximum(mag[covered, None], 1e-12)
+        coherence[covered] = mag[covered] / np.maximum(area[covered], 1e-12)
+    area_out = np.where(covered, area, np.nan)
+    eff = np.where(covered, coherence * np.where(covered, area, 0.0), np.nan)
+    sign_agreement = agree_num / max(agree_den, 1.0)
+
+    led = externally_bounded_ledger(
+        units="dimensionless",
+        bias_interval=(-0.05, 0.05),
+        external_bound_source=(
+            f"{parc.space}/{parc.density} template mesh vertex spacing; the "
+            "orientation of a face is exact given the mesh, so the only bias is "
+            "the template's own discretisation of the cortical sheet"
+        ),
+        variance={"numerical": 1e-12},
+        notes=(
+            "Group template geometry, not any subject's folding pattern. "
+            "Individual sulcal geometry differs and coherence is the quantity "
+            "most sensitive to it."
+        ),
+    )
+    return ParcelOrientation(
+        parcellation_name=parc.name,
+        space=parc.space,
+        density=parc.density,
+        labels=parc.labels,
+        normal=normal,
+        coherence=coherence,
+        area_mm2=area_out,
+        effective_area_mm2=eff,
+        covered=covered,
+        frame=f"{parc.space}_{parc.density}_surface_RAS",
+        handedness="RAS (right-anterior-superior), right-handed",
+        sign_convention="outward from the hemisphere centroid (majority vote over faces)",
+        sign_agreement=sign_agreement,
+        ledger=led,
+        notes=(
+            f"Net dipole per parcel on the {kind} surface. coherence = "
+            "|sum a_f n_f| / sum a_f measures cancellation from cortical folding; "
+            "effective_area_mm2 = coherence * area_mm2 is what reaches a sensor."
+        ),
+    )

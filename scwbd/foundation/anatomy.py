@@ -74,6 +74,21 @@ class AnatomyPrior:
     #: is the same shape of defect as the synthetic prior that trained a whole
     #: run because nothing read its provenance field.
     families: Any | None = None
+    #: ``(N,3)`` unit net-dipole direction per parcel, ``nan`` off cortex.
+    #: 🧭 Gauss measured a scalar-per-parcel support carrying 5.6% of the
+    #: whitened lead field at 68 parcels and 16.2% at 542, against 51.7% for the
+    #: three-component net dipole moment: orientation is worth ~9x what extra
+    #: parcels are worth. Every other per-parcel field here is orientation-free.
+    normal: Tensor | None = None
+    #: ``(N,)`` folding coherence ``|Σ a n| / Σ a`` in ``[0,1]``. **Read this
+    #: with `normal`, never `normal` alone.** A unit vector always looks equally
+    #: informative; coherence is what says how much of the parcel's area
+    #: survives cancellation between opposing banks of its own sulci. A parcel
+    #: at 0.28 contributes about a quarter of what its area suggests.
+    normal_coherence: Tensor | None = None
+    #: ``(N,)`` bool -- True only where a cortical sheet exists. Subcortical
+    #: parcels have no normal and carry ``nan``, not zero.
+    normal_covered: Tensor | None = None
     frame: str = "MNI152NLin2009cAsym_RAS"
     units_position: str = "mm"
     provenance: str = "synthetic_fallback"
@@ -239,6 +254,19 @@ class AnatomyPrior:
             "source_note": self.source_note,
             "families": (
                 None if self.families is None else self.families.summary()
+            ),
+            "orientation": (
+                None
+                if self.normal is None or self.normal_covered is None
+                else {
+                    "n_covered": int(self.normal_covered.sum().item()),
+                    "coherence_median": round(
+                        float(self.normal_coherence[self.normal_covered].median().item()), 4
+                    ),
+                    "coherence_min": round(
+                        float(self.normal_coherence[self.normal_covered].min().item()), 4
+                    ),
+                }
             ),
         }
 
@@ -432,6 +460,17 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
             "parcels or every per-family operator is applied to the wrong rows."
         )
 
+    # Net dipole orientation. Absent on a prior that predates it, so this is a
+    # soft lookup -- but if it IS present and raises, that is a real failure and
+    # is not swallowed: the whole point of the field is that it changes what the
+    # observation model can see.
+    nrm = coh = ncov = None
+    if hasattr(obj, "dipole_orientation"):
+        ori = obj.dipole_orientation()
+        nrm = torch.as_tensor(ori.normal, device=device, dtype=torch.float32)
+        coh = torch.as_tensor(ori.coherence, device=device, dtype=torch.float32)
+        ncov = torch.as_tensor(ori.covered, device=device, dtype=torch.bool)
+
     return AnatomyPrior(
         n_regions=n,
         labels=labels,
@@ -446,6 +485,9 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
         gradient=grad_full,
         gradient_covered=grad_cov,
         families=fams,
+        normal=nrm,
+        normal_coherence=coh,
+        normal_covered=ncov,
         evidence_class=ec,
         frame=str(getattr(obj, "frame", "MNI152NLin2009cAsym_RAS")),
         provenance=str(getattr(obj, "provenance", "scwbd.anatomy.BrainPrior")),
