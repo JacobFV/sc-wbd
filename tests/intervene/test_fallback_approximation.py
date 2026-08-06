@@ -146,3 +146,47 @@ def test_the_runtime_fallback_computes_this_same_expression():
         "the runtime fallback no longer computes primary_tangential_projection; "
         "gate N9's subject and the runtime path have diverged"
     )
+
+
+# ---------------------------------------------------------------------------
+# the provenance pin (gate N9): the bound is read at run time AND pinned
+# ---------------------------------------------------------------------------
+
+
+def test_the_pin_matches_what_the_runtime_currently_declares():
+    """If this fails, someone moved the bound without updating its justification."""
+    backends = pytest.importorskip("scwbd.runtime.backends")
+    from scwbd.intervene.run_field_gates import N9_PINNED_BOUND, bound_has_moved
+
+    observed = backends.AnalyticSphericalEField().solution_discrepancy_fraction
+    assert not bound_has_moved(observed), (
+        f"scwbd.runtime declares {tuple(observed)} but gate N9 is pinned to "
+        f"{N9_PINNED_BOUND['solution_discrepancy_fraction']}, justified on "
+        f"{N9_PINNED_BOUND['justified_on']}. Update N9_PINNED_BOUND in the same "
+        "commit that moves the bound."
+    )
+
+
+def test_the_pin_carries_a_date_and_a_justification():
+    from scwbd.intervene.run_field_gates import N9_PINNED_BOUND
+
+    assert N9_PINNED_BOUND["justified_on"]
+    assert N9_PINNED_BOUND["justified_by"]
+    assert len(N9_PINNED_BOUND["justification"]) > 200
+
+
+@pytest.mark.parametrize(
+    "observed,moved",
+    [
+        ((0.0, 1.35), False),  # unchanged
+        ((0.0, 2.00), True),   # loosened -- the failure mode this exists for
+        ((0.0, 1.20), True),   # tightened -- also flagged: the question is
+                               # "did it move without anyone saying why"
+        ((-0.1, 1.35), True),  # lower bound moved
+    ],
+)
+def test_the_provenance_guard_fires_on_any_movement(observed, moved):
+    """A guard nobody can show firing is indistinguishable from one that cannot."""
+    from scwbd.intervene.run_field_gates import bound_has_moved
+
+    assert bound_has_moved(observed) is moved

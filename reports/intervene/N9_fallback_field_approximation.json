@@ -2,7 +2,7 @@
   "bench_schema_version": "scwbd-bench-report/1.0.0",
   "kind": "numerics",
   "claim_id": "N9_fallback_field_approximation",
-  "status": "FAIL",
+  "status": "PASS",
   "manifest": {
     "claim_id": "N9_fallback_field_approximation",
     "claim_text": "The runtime's fallback field model (tangential projection of the primary field) has a measured error over its declared geometry envelope, and the discrepancy interval it declares covers that error.",
@@ -16,12 +16,22 @@
     "permitted_source_cards": [],
     "baselines": [],
     "acceptance_thresholds": {
-      "declared_discrepancy_fraction": 0.8,
+      "solution_discrepancy_fraction": [
+        0.0,
+        1.35
+      ],
+      "composite_discrepancy_fraction": [
+        -0.4,
+        2.29
+      ],
       "envelope_head_radii_m": [
+        0.06,
+        0.065,
         0.07,
         0.075,
         0.085,
-        0.092
+        0.092,
+        0.1
       ],
       "envelope_standoffs_m": [
         0.0,
@@ -39,31 +49,88 @@
     "seed": 0,
     "preregistered": true
   },
-  "consequence_applied": "The fallback backend's ledger understates its own model discrepancy. Any dose, engagement or ranking obtained through it carries an uncertainty interval narrower than the physics justifies, and scwbd.runtime must widen the declared interval or refuse to use the backend for claim-bearing output.",
-  "blocking_reasons": [
-    "declared_bound_covers_error: FAILED \u2014 fallback.max_relative_overestimate = 1.06289 dimensionless (threshold < 0.8)"
-  ],
+  "consequence_applied": null,
+  "blocking_reasons": [],
   "subchecks": [
     {
-      "name": "declared_bound_covers_error",
-      "description": "The fallback declares a discrepancy_fraction that is supposed to carry BOTH the sphere-vs-head geometry prior AND this approximation's own overestimate. The approximation alone must fit inside it with room left.",
-      "status": "FAIL",
+      "name": "solution_bound_covers_error",
+      "description": "solution_discrepancy_fraction is the backend's claim about its error against the exact solution of the SAME geometry. That is exactly what this gate measures, so it is the interval to test against.",
+      "status": "PASS",
       "mandatory": true,
       "reason": "",
-      "falsified_by": "the declared discrepancy interval does not cover the approximation's own measured error over its declared envelope",
+      "falsified_by": "the declared solution-discrepancy interval does not cover the approximation's own measured error over its declared envelope",
       "metrics": [
         {
           "name": "fallback.max_relative_overestimate",
-          "value": 1.0628904000254993,
+          "value": 1.320394264107943,
           "units": "dimensionless",
           "kind": "numerical",
           "interval": null,
-          "threshold": 0.8,
+          "threshold": 1.35,
           "direction": "less_is_better",
           "require_interval_beats_threshold": false,
           "exact": true,
-          "note": "worst over the declared envelope, at head radius 70 mm and standoff 40 mm; declared interval +-0.8",
-          "passed": false
+          "note": "worst over the envelope, at head radius 60 mm and standoff 40 mm; declared solution interval (0.0, 1.35)",
+          "passed": true
+        },
+        {
+          "name": "fallback.composite_bound_would_have_been",
+          "value": 2.29,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "the composite discrepancy_fraction, recorded to show what this check would have been graded against had it kept pointing at the wrong term -- a threshold twice as loose, passing trivially",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "approximation_never_underestimates",
+      "description": "The declared interval is one-sided (lower bound 0.0). That is a claim about the physics, not a convenience, so it gets tested: the tangential projection drops a term and must therefore never come out low.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the approximation underestimates somewhere in the envelope, so a one-sided interval is the wrong shape for it",
+      "metrics": [
+        {
+          "name": "fallback.min_relative_overestimate",
+          "value": 0.45918204868621615,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.0,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "minimum over the envelope, at head radius 100 mm and standoff 0 mm",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "bound_provenance",
+      "description": "Has the threshold moved since it was last justified? The bound is read from the judged party at run time, which is what stops this gate going stale -- and that is exactly what would let it be loosened silently. So it is also pinned here, and any movement fails until the pin is updated: a commit, hence dated and attributable by construction. A tightening fails too; the question is 'did this move without anyone saying why', not 'did this get worse'.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the judged party's declared bound changed without a dated justification",
+      "metrics": [
+        {
+          "name": "fallback.bound_moved_since_justified",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "runtime declares (0.0, 1.35), matching the value pinned and justified on 2026-08-06 by agent Asimov (scwbd.runtime), reviewed by agent Popper (scwbd.bench)",
+          "passed": true
         }
       ]
     },
@@ -76,21 +143,8 @@
       "falsified_by": "the approximation's error is not characterised over its envelope",
       "metrics": [
         {
-          "name": "fallback.min_relative_overestimate",
-          "value": 0.5134157433885609,
-          "units": "dimensionless",
-          "kind": "numerical",
-          "interval": null,
-          "threshold": null,
-          "direction": "greater_is_better",
-          "require_interval_beats_threshold": false,
-          "exact": true,
-          "note": "at head radius 92 mm, standoff 0 mm",
-          "passed": null
-        },
-        {
           "name": "fallback.peak_direction_cosine_min",
-          "value": 0.9999884677118396,
+          "value": 0.999987008541619,
           "units": "dimensionless",
           "kind": "numerical",
           "interval": null,
@@ -113,7 +167,7 @@
       "metrics": [
         {
           "name": "fallback.max_mean_relative_error",
-          "value": 1.4942768301273517,
+          "value": 1.7763913891732275,
           "units": "dimensionless",
           "kind": "audit",
           "interval": null,
@@ -136,7 +190,7 @@
       "metrics": [
         {
           "name": "fallback.axisymmetric_max_relative_error",
-          "value": 3.768352434358618e-12,
+          "value": 6.659795023147303e-12,
           "units": "dimensionless",
           "kind": "audit",
           "interval": null,
@@ -153,19 +207,137 @@
   "baselines_run": [],
   "notes": [
     "The approximation is EXACT for a coil whose windings are circular loops coaxial with the head radius: the primary vector potential is then purely azimuthal, so r.E_p = 0, the Neumann data vanishes and there is no secondary field. Measured error for a circular coil is round-off. A gate that tested only that case would report a perfect PASS and be worthless.",
-    "For a figure-eight the wings are opposed and sit off the radial axis, the Neumann data does not vanish, and the approximation is high by 1.51x to 2.06x at the peak across the envelope. The overestimate grows monotonically as the head gets smaller and the standoff larger.",
+    "For a figure-eight the wings are opposed and sit off the radial axis, the Neumann data does not vanish, and the approximation is high by 1.46x to 2.32x at the peak across the envelope. The overestimate grows monotonically as the head gets smaller and the standoff larger.",
     "Direction is essentially unaffected (peak cosine >= 1.0000); the error is almost purely in magnitude. A consumer that uses only the field DIRECTION is affected far less than one that uses its magnitude, and the two should not inherit the same bound.",
-    "The declared interval is read from scwbd.runtime at run time rather than copied into this gate, so it tracks the real value instead of a snapshot that silently goes stale."
+    "The declared interval is read from scwbd.runtime at run time rather than copied into this gate, so it tracks the real value instead of a snapshot that silently goes stale. It is read from solution_discrepancy_fraction, the term that claims to cover THIS error, not from the composite discrepancy_fraction which also carries the geometry prior -- grading against the composite would repeat, one level up, the conflation the gate was built to catch.",
+    "The envelope reaches down to a 60 mm head radius. That is not an adult head; adult radii are ~80-100 mm, where the overestimate is 0.74-0.89. It is here because nothing in the runtime's HeadModel enforces an adult radius, and a bound has to cover what the code admits rather than what biology suggests.",
+    "The threshold is read at run time AND pinned here with a dated justification. The run-time read stops the gate going stale against a snapshot; the pin stops the bound moving without anyone saying why. Agent Popper raised the second problem as the cost of my solution to the first, and both properties are obtainable together -- a hardcoded snapshot has neither."
   ],
   "artifacts": {
     "subject": "scwbd.intervene.tms.efield.primary_tangential_projection",
     "reference": "scwbd.intervene.spectral_reference.AxialInductionReference (degree 250)",
     "solver_provenance": {
       "consumer": "scwbd.runtime.backends.AnalyticSphericalEField",
-      "declared_discrepancy_fraction": 0.8,
+      "solution_discrepancy_fraction": [
+        0.0,
+        1.35
+      ],
+      "composite_discrepancy_fraction": [
+        -0.4,
+        2.29
+      ],
       "equivalence_pinned_by": "tests/intervene/test_fallback_approximation.py -- asserts the runtime backend computes this same expression, so the gate's subject is the object actually in the runtime path"
     },
+    "bound_provenance": {
+      "pinned": [
+        0.0,
+        1.35
+      ],
+      "observed": [
+        0.0,
+        1.35
+      ],
+      "justified_on": "2026-08-06",
+      "justified_by": "agent Asimov (scwbd.runtime), reviewed by agent Popper (scwbd.bench)",
+      "justification": "Split from the former composite discrepancy_fraction=(-0.8,+0.8), which declared one interval for two physically distinct things: this approximation's error against the exact solution of the same geometry, and that geometry's error against a real head. Upper bound 1.35 covers the measured worst case 1.3204 at a 60 mm head radius with 40 mm standoff. 60 mm is not an adult head -- it is the smallest radius the runtime's HeadModel admits, and a bound must cover what the code admits. Lower bound 0.0 is attained (circular coil, where the approximation is exact) and the approximation never underestimates."
+    },
     "figure_eight_sweep": [
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.9356720009452064,
+        "relative_overestimate": 0.9356720009452064,
+        "mean_relative_error": 1.2963076534436493,
+        "peak_direction_cosine": 0.999993662727111
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.9822241091887867,
+        "relative_overestimate": 0.9822241091887867,
+        "mean_relative_error": 1.352268552398533,
+        "peak_direction_cosine": 0.9999940060128969
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.01,
+        "peak_ratio": 2.028362540358066,
+        "relative_overestimate": 1.0283625403580658,
+        "mean_relative_error": 1.4095250499262986,
+        "peak_direction_cosine": 0.9999942589828278
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.02,
+        "peak_ratio": 2.1217543942966492,
+        "relative_overestimate": 1.1217543942966492,
+        "mean_relative_error": 1.5277087900141928,
+        "peak_direction_cosine": 0.9999946297805359
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.03,
+        "peak_ratio": 2.2187375996744136,
+        "relative_overestimate": 1.2187375996744136,
+        "mean_relative_error": 1.6502283767920245,
+        "peak_direction_cosine": 0.9999949196365714
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.04,
+        "peak_ratio": 2.320394264107943,
+        "relative_overestimate": 1.320394264107943,
+        "mean_relative_error": 1.7763913891732275,
+        "peak_direction_cosine": 0.9999951777689049
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.8326099145509933,
+        "relative_overestimate": 0.8326099145509933,
+        "mean_relative_error": 1.1791218491269335,
+        "peak_direction_cosine": 0.9999929228660996
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.8742818395918643,
+        "relative_overestimate": 0.8742818395918643,
+        "mean_relative_error": 1.2309113722136475,
+        "peak_direction_cosine": 0.9999933131196134
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.9156737021341717,
+        "relative_overestimate": 0.9156737021341717,
+        "mean_relative_error": 1.2837227349412372,
+        "peak_direction_cosine": 0.999993600026198
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.999628560297765,
+        "relative_overestimate": 0.999628560297765,
+        "mean_relative_error": 1.3925631079363365,
+        "peak_direction_cosine": 0.9999940202659051
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.03,
+        "peak_ratio": 2.086933361048447,
+        "relative_overestimate": 1.0869333610484468,
+        "mean_relative_error": 1.5054641459971643,
+        "peak_direction_cosine": 0.9999943500369508
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.04,
+        "peak_ratio": 2.178489846596026,
+        "relative_overestimate": 1.178489846596026,
+        "mean_relative_error": 1.6216688874945095,
+        "peak_direction_cosine": 0.9999946453613713
+      },
       {
         "head_radius_m": 0.07,
         "standoff_m": 0.0,
@@ -357,9 +529,153 @@
         "relative_overestimate": 0.7362062665354567,
         "mean_relative_error": 1.1257704077762885,
         "peak_direction_cosine": 0.9999913795500066
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.4591820486862161,
+        "relative_overestimate": 0.45918204868621615,
+        "mean_relative_error": 0.7413645501743971,
+        "peak_direction_cosine": 0.999987008541619
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.4829466607863846,
+        "relative_overestimate": 0.4829466607863846,
+        "mean_relative_error": 0.7763121343120459,
+        "peak_direction_cosine": 0.9999877424629054
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.5067930045079543,
+        "relative_overestimate": 0.5067930045079543,
+        "mean_relative_error": 0.812147996963035,
+        "peak_direction_cosine": 0.9999882768005093
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.5556147489676493,
+        "relative_overestimate": 0.5556147489676493,
+        "mean_relative_error": 0.8859542481799499,
+        "peak_direction_cosine": 0.9999890621798436
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.6067130556779494,
+        "relative_overestimate": 0.6067130556779494,
+        "mean_relative_error": 0.961599213695965,
+        "peak_direction_cosine": 0.9999896980432523
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.04,
+        "peak_ratio": 1.6604314109204616,
+        "relative_overestimate": 0.6604314109204616,
+        "mean_relative_error": 1.038240742551527,
+        "peak_direction_cosine": 0.9999902892237653
       }
     ],
     "axisymmetric_sweep": [
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.0,
+        "peak_ratio": 0.9999999999998794,
+        "relative_overestimate": -1.20570220474292e-13,
+        "mean_relative_error": 5.6773274997422045e-14,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.000000000000001,
+        "relative_overestimate": 1.1102230246251565e-15,
+        "mean_relative_error": 1.3005203359241466e-15,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.01,
+        "peak_ratio": 0.9999999999999999,
+        "relative_overestimate": -1.1102230246251565e-16,
+        "mean_relative_error": 3.7123043379352376e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.02,
+        "peak_ratio": 0.9999999999999994,
+        "relative_overestimate": -5.551115123125783e-16,
+        "mean_relative_error": 3.231483145102771e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.03,
+        "peak_ratio": 0.9999999999999997,
+        "relative_overestimate": -3.3306690738754696e-16,
+        "mean_relative_error": 3.1954299609653985e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.04,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 3.334060849094256e-16,
+        "peak_direction_cosine": 0.9999999999999998
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.0000000000001787,
+        "relative_overestimate": 1.787459069646502e-13,
+        "mean_relative_error": 1.5075570878693007e-13,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.0000000000000027,
+        "relative_overestimate": 2.6645352591003757e-15,
+        "mean_relative_error": 3.1431930752068077e-15,
+        "peak_direction_cosine": 0.9999999999999998
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.01,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 3.432842747499165e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 3.4168157755893834e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.03,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 3.418804233191863e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.04,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 3.267521588582638e-16,
+        "peak_direction_cosine": 1.0
+      },
       {
         "head_radius_m": 0.07,
         "standoff_m": 0.0,
@@ -551,12 +867,60 @@
         "relative_overestimate": 0.0,
         "mean_relative_error": 3.106254350514236e-16,
         "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.0000000000016778,
+        "relative_overestimate": 1.6777690348135366e-12,
+        "mean_relative_error": 6.659795023147303e-12,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.005,
+        "peak_ratio": 0.9999999999995999,
+        "relative_overestimate": -4.001243780749064e-13,
+        "mean_relative_error": 1.485468146071781e-13,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.01,
+        "peak_ratio": 0.9999999999999911,
+        "relative_overestimate": -8.881784197001252e-15,
+        "mean_relative_error": 4.048798118120705e-15,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 3.1813994680335027e-16,
+        "peak_direction_cosine": 0.9999999999999999
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 3.307409715753637e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.04,
+        "peak_ratio": 0.9999999999999996,
+        "relative_overestimate": -4.440892098500626e-16,
+        "mean_relative_error": 3.3461864329195e-16,
+        "peak_direction_cosine": 1.0
       }
     ]
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T10:28:25+00:00",
-    "git_rev": "783feac",
+    "timestamp_utc": "2026-08-06T11:32:21+00:00",
+    "git_rev": "3a345bf",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -572,10 +936,7 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/intervene/run_field_gates.py",
-      "scwbd/intervene/tms/__init__.py",
-      "scwbd/intervene/tms/efield.py",
-      "tests/intervene/test_fallback_approximation.py"
+      "scwbd/intervene/run_field_gates.py"
     ],
     "source_clean": false,
     "known_uninformative_fields": {
