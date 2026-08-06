@@ -15,11 +15,24 @@ def bare():
     return run_everything(write=False, seed=0)
 
 
-def test_bare_repository_claims_nothing(bare):
-    flat = [r for group in bare.values() for r in group]
-    assert flat, "no checks were run at all"
-    assert not any(r.status == "PASS" for r in flat), \
-        "a check passed without any model, data or dependency being supplied"
+def test_no_claim_bearing_gate_passes_without_a_model(bare):
+    """Gates, ablations and audits have no subject yet, so none may pass.
+
+    Numerical checks are exempt only because they *do* have a subject once the
+    module they audit has landed (N1 compiles agent A's reference example), and
+    a numerics PASS licenses a statement about code, never about a brain.
+    """
+    for kind in ("gates", "ablations", "leakage"):
+        passing = [r.manifest.claim_id for r in bare[kind] if r.status == "PASS"]
+        assert not passing, f"{kind} passed with no model or data supplied: {passing}"
+
+
+def test_any_numerics_pass_declares_its_subject(bare):
+    for r in bare["numerics"]:
+        if r.status == "PASS":
+            assert r.artifacts.get("subject"), \
+                f"{r.manifest.claim_id} passed without recording what it checked"
+            assert any("not evidence" in n for n in r.notes)
 
 
 def test_summary_lists_every_gate_ablation_audit_and_numerical_check(bare):
@@ -33,7 +46,8 @@ def test_summary_lists_every_gate_ablation_audit_and_numerical_check(bare):
 
 def test_summary_has_the_what_we_cannot_claim_section(bare):
     md = build_summary(bare["gates"], bare["ablations"], bare["leakage"], bare["numerics"])
-    assert "## 6. What we cannot yet claim" in md
+    assert "## 7. What we cannot yet claim" in md
+    assert "## 6. What is licensed so far" in md
     assert "may not make" in md
     assert "No digital-twin claim" in md
     assert "No clinical, wellness or treatment claim" in md

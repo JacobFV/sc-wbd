@@ -25,6 +25,7 @@ __all__ = [
     "dependency_table",
     "fisher_backend",
     "fisher_design_map",
+    "reference_compiled",
     "theta_partition",
     "anatomy_controls",
 ]
@@ -178,6 +179,31 @@ def theta_partition() -> Dependency:
         "agent H has not declared THETA_NAMES/PARAM_NAMES; pass theta_index and "
         "nuisance_index explicitly",
     )
+
+
+def reference_compiled() -> Dependency:
+    """Compile agent A's worked three-region example, or report why not.
+
+    This is the subject of the N1 compiler-correctness check.  It is a
+    *reference example*, not the SC-WBD-001-beta schema: a pass licenses a
+    statement about the compiler, never about a whole-brain model.
+    """
+    comp = probe_attr("scwbd.compiler", "compile")
+    build_schema = probe_attr("scwbd.schema.examples.three_region",
+                              "build_three_region_schema")
+    build_claim = probe_attr("scwbd.schema.examples.three_region",
+                             "build_three_region_claim")
+    for dep in (comp, build_schema, build_claim):
+        if not dep.available:
+            return Dependency("scwbd.compiler.compile(three_region)", False, None, dep.reason)
+    try:
+        model = comp.obj(build_schema.obj(), claim=build_claim.obj())
+    except Exception as exc:
+        return Dependency(
+            "scwbd.compiler.compile(three_region)", False, None,
+            f"the reference example did not compile: {type(exc).__name__}: {exc}",
+        )
+    return Dependency("scwbd.compiler.compile(three_region)", True, model, "")
 
 
 def fisher_design_map(u: Any, cfg: Any, proto: Any, **kw: Any) -> Dependency:

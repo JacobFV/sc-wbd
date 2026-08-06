@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** The mandatory control (Hold out stimuli, semantic families and temporal continuations separately from participant holdout) shows the result survives only without it.
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git b32ca56 · 2026-08-06T05:59:59+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1e11e49 · 2026-08-06T06:11:53+00:00*
 
 ## Could not run
 

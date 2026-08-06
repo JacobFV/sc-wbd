@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import dataclasses
 import math
-from dataclasses import dataclass, field
 
 import numpy as np
 import pytest
+import torch
 
+from scwbd.bench.adapters import reference_compiled
 from scwbd.bench.numerics import (
     analytic_dipole_potential,
     analytic_free_field_pressure,
@@ -27,108 +29,175 @@ from scwbd.bench.numerics import (
 
 
 # --------------------------------------------------------------------------
-# compiler fixtures (duck-typed against ARCHITECTURE.md §2)
+# N1: agent A's compiler, on agent A's worked three-region example
 # --------------------------------------------------------------------------
-@dataclass
-class _Support:
-    units: str = "V"
-    frame: str = "subject_surface_RAS"
+def _reference():
+    dep = reference_compiled()
+    if not dep.available:
+        pytest.skip(f"agent A's reference example is unavailable: {dep.reason}")
+    return dep.obj
 
 
-@dataclass
-class _Temporal:
-    clock: str = "eeg_amp"
+def _mutate(model, **kw):
+    """Corrupt one structure of a compiled artifact, leaving the rest intact."""
+    return dataclasses.replace(model, **kw)
 
 
-@dataclass
-class _Port:
-    support: _Support = field(default_factory=_Support)
-    temporal: _Temporal = field(default_factory=_Temporal)
+class _StubOperator:
+    """An operator descriptor with a chosen delay, preserving its edge."""
+
+    def __init__(self, d, delay: float):
+        self.key, self.src, self.dst = d.key, d.src, d.dst
+        self.evidence_class, self.clock = d.evidence_class, d.clock
+        self._delay = delay
+
+    def delay_seconds(self) -> float:
+        return self._delay
 
 
-@dataclass
-class _Region:
-    ports: list = field(default_factory=lambda: [_Port()])
+def _with_delay(model, index: int, delay: float):
+    ds = list(model.dispatch.descriptors)
+    ds[index] = _StubOperator(ds[index], delay)
+    return _mutate(model, dispatch=dataclasses.replace(model.dispatch,
+                                                       descriptors=tuple(ds)))
 
 
-@dataclass
-class _Op:
-    delay: float = 0.01
-
-
-@dataclass
-class _Sched:
-    dt_min: float = 0.001
-
-
-@dataclass
-class _Compiled:
-    state_layout: dict
-    adjacency: dict
-    dispatch: list
-    schedule: _Sched
-    regions: list
-
-
-def _good_compiled():
-    return _Compiled(
-        state_layout={"r0": (0, 4), "r1": (4, 4)},
-        adjacency={"hard": np.eye(2), "soft": np.zeros((2, 2))},
-        dispatch=[_Op(0.01), _Op(0.02)],
-        schedule=_Sched(),
-        regions=[_Region(), _Region()],
-    )
-
-
-def test_compiler_check_passes_a_consistent_model():
-    rep = check_compiler_correctness(_good_compiled())
+def test_compiler_check_passes_the_reference_example():
+    """The compiler emits an internally consistent artifact for three_region."""
+    rep = check_compiler_correctness(_reference())
     assert rep.status == "PASS", rep.blocking_reasons
+    assert {s.name for s in rep.subchecks} == {
+        "state_layout", "units_frames_clocks", "delays", "masks",
+        "gradient_permissions", "uncertainty_ledger", "claim_class_integrity",
+    }
+    # a PASS here is a statement about the compiler, not about a brain
+    assert any("not evidence about any other schema" in n for n in rep.notes)
+
+
+def test_n1_runs_against_the_reference_example_by_default():
+    rep = check_compiler_correctness()
+    assert rep.artifacts["subject"].startswith("reference example")
+    assert rep.status in ("PASS", "FAIL")
 
 
 def test_compiler_check_catches_overlapping_state_offsets():
-    c = _good_compiled()
-    c.state_layout = {"r0": (0, 6), "r1": (4, 4)}      # overlap
-    rep = check_compiler_correctness(c)
+    m = _reference()
+    L = m.state_layout
+    clash = dataclasses.replace(L.entries[1], elem_offset=L.entries[1].elem_offset - 2)
+    bad = _mutate(m, state_layout=dataclasses.replace(
+        L, entries=(L.entries[0], clash) + L.entries[2:]))
+    rep = check_compiler_correctness(bad)
     assert rep.status == "FAIL"
     assert any("overlap" in r for r in rep.blocking_reasons)
 
 
+def test_compiler_check_catches_a_gap_in_the_state_vector():
+    m = _reference()
+    L = m.state_layout
+    moved = dataclasses.replace(L.entries[-1], elem_offset=L.entries[-1].elem_offset + 8)
+    bad = _mutate(m, state_layout=dataclasses.replace(L, entries=L.entries[:-1] + (moved,)))
+    rep = check_compiler_correctness(bad)
+    assert rep.status == "FAIL"
+    assert any("gaps" in r for r in rep.blocking_reasons)
+
+
 def test_compiler_check_catches_a_missing_unit():
-    c = _good_compiled()
-    c.regions[0].ports[0].support.units = ""
-    rep = check_compiler_correctness(c)
+    m = _reference()
+    L = m.state_layout
+    bad = _mutate(m, state_layout=dataclasses.replace(
+        L, entries=(dataclasses.replace(L.entries[0], units=""),) + L.entries[1:]))
+    rep = check_compiler_correctness(bad)
     assert rep.status == "FAIL"
     assert any("missing_units" in r for r in rep.blocking_reasons)
 
 
-def test_compiler_check_catches_a_negative_delay():
-    c = _good_compiled()
-    c.dispatch = [_Op(-0.5)]
-    rep = check_compiler_correctness(c)
+def test_compiler_check_catches_an_unknown_clock():
+    m = _reference()
+    L = m.state_layout
+    bad = _mutate(m, state_layout=dataclasses.replace(
+        L, entries=(dataclasses.replace(L.entries[0], clock="not_a_clock"),)
+        + L.entries[1:]))
+    rep = check_compiler_correctness(bad)
     assert rep.status == "FAIL"
-    assert any("negative" in r for r in rep.blocking_reasons)
+    assert any("unknown_referenced" in r for r in rep.blocking_reasons)
+
+
+def test_compiler_check_catches_a_negative_delay():
+    rep = check_compiler_correctness(_with_delay(_reference(), 3, -0.5))
+    assert rep.status == "FAIL"
+    assert any("delays.negative" in r for r in rep.blocking_reasons)
 
 
 def test_compiler_check_catches_a_delay_below_the_base_step():
-    c = _good_compiled()
-    c.dispatch = [_Op(1e-6)]
-    rep = check_compiler_correctness(c)
+    """A delay the scheduler cannot represent is silently rounded away."""
+    rep = check_compiler_correctness(_with_delay(_reference(), 3, 1e-7))
     assert rep.status == "FAIL"
     assert any("below_base_dt" in r for r in rep.blocking_reasons)
 
 
-def test_compiler_check_catches_inconsistent_mask_shapes():
-    c = _good_compiled()
-    c.adjacency = {"hard": np.eye(2), "soft": np.zeros((3, 3))}
-    rep = check_compiler_correctness(c)
+def test_compiler_check_catches_a_delay_beyond_the_hyperperiod():
+    m = _reference()
+    rep = check_compiler_correctness(_with_delay(m, 3, m.schedule.hyperperiod * 10))
     assert rep.status == "FAIL"
-    assert any("consistent_shape" in r for r in rep.blocking_reasons)
+    assert any("beyond_hyperperiod" in r for r in rep.blocking_reasons)
 
 
-def test_compiler_check_without_a_model_is_could_not_run():
-    rep = check_compiler_correctness(None)
+def test_compiler_check_catches_a_mask_that_omits_a_dispatched_operator():
+    m = _reference()
+    n = len(m.adjacency.region_ids)
+    empty = torch.sparse_coo_tensor(
+        torch.zeros((2, 0), dtype=torch.int64), torch.zeros(0, dtype=torch.bool),
+        size=(n, n)).coalesce()
+    bad = _mutate(m, adjacency=dataclasses.replace(
+        m.adjacency, masks={**m.adjacency.masks, "hard": empty}))
+    rep = check_compiler_correctness(bad)
+    assert rep.status == "FAIL"
+    assert any("dispatched_edges_not_masked" in r for r in rep.blocking_reasons)
+
+
+def test_compiler_check_catches_a_mask_edge_no_operator_implements():
+    m = _reference()
+    n = len(m.adjacency.region_ids)
+    full = torch.ones((n, n), dtype=torch.bool).to_sparse_coo().coalesce()
+    bad = _mutate(m, adjacency=dataclasses.replace(
+        m.adjacency, masks={**m.adjacency.masks, "proposed": full}))
+    rep = check_compiler_correctness(bad)
+    assert rep.status == "FAIL"
+    assert any("masked_edges_not_dispatched" in r for r in rep.blocking_reasons)
+
+
+def test_compiler_check_catches_an_unbacked_bias_term():
+    """Refusal R08: a bias point estimate with no estimator and no bound."""
+    m = _reference()
+    bad = _mutate(m, ledger=dataclasses.replace(
+        m.ledger, unbacked_bias=("operator:couple_a_b",)))
+    rep = check_compiler_correctness(bad)
+    assert rep.status == "FAIL"
+    assert any("unbacked_bias_terms" in r for r in rep.blocking_reasons)
+
+
+def test_compiler_check_catches_a_silently_demoted_claim_class():
+    """An override moves the claim class; the artifact may not hide it."""
+    m = _reference()
+    bad = _mutate(m, provenance=dataclasses.replace(
+        m.provenance, effective_claim_class="functional"))
+    rep = check_compiler_correctness(bad)
+    assert rep.status == "FAIL"
+    assert any("was_demoted" in r for r in rep.blocking_reasons)
+    assert rep.manifest.consequence_if_failed.startswith("Fix the compiler")
+
+
+def test_compiler_check_without_a_model_or_reference_is_could_not_run():
+    rep = check_compiler_correctness(None, use_reference_example=False)
     assert rep.status == "COULD_NOT_RUN"
-    assert any("agent A" in r for r in rep.blocking_reasons)
+    assert any("no CompiledModel supplied" in r for r in rep.blocking_reasons)
+
+
+def test_reference_example_compiles_with_no_overridden_refusals():
+    """Agent A's worked example is a clean subject: nothing was overridden."""
+    m = _reference()
+    assert not m.provenance.was_overridden
+    assert not m.provenance.claim_was_demoted
 
 
 # --------------------------------------------------------------------------
@@ -267,9 +336,14 @@ def test_helmholtz_residual_is_small_for_a_plane_wave():
 
 
 def test_numerics_suite_reports_every_absent_input():
-    reports = run_numerics_suite()
-    assert {r.manifest.claim_id for r in reports} == {
+    reports = {r.manifest.claim_id: r for r in run_numerics_suite()}
+    assert set(reports) == {
         "N1_compiler_correctness", "N5_solver_suite", "N2_boundary_consistency",
         "N3_em_solver", "N4_acoustic_solver",
     }
-    assert {r.status for r in reports} == {"COULD_NOT_RUN"}
+    # N1 has a subject (agent A landed); everything else is still blocked and
+    # says so rather than passing by default.
+    assert reports["N1_compiler_correctness"].status in ("PASS", "FAIL")
+    assert {reports[k].status for k in
+            ("N5_solver_suite", "N2_boundary_consistency", "N3_em_solver",
+             "N4_acoustic_solver")} == {"COULD_NOT_RUN"}

@@ -29,6 +29,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 import numpy as np
 
+from . import adapters
 from .report import (
     ClaimManifest,
     ClaimReport,
@@ -79,22 +80,59 @@ def _manifest(claim_id: str, claim: str, falsified_by: str, consequence: str,
 # ==========================================================================
 # compiler: shape / unit / coordinate / delay / mask correctness
 # ==========================================================================
-def check_compiler_correctness(compiled: Any = None, *, schema: Any = None,
-                               seed: int = 0) -> ClaimReport:
-    """Shape, unit, coordinate, delay and mask correctness of a CompiledModel.
+def _reference_compiled():
+    """Agent A's worked example, compiled — the subject of the N1 check."""
+    return adapters.reference_compiled()
 
-    Duck-typed against ``ARCHITECTURE.md`` §2: ``.state_layout``,
-    ``.adjacency``, ``.dispatch``, ``.schedule``, ``.gradient_masks``,
-    ``.frame_graph``, ``.clock_graph``, ``.ledger``.
+
+def _dense_mask(adjacency: Any, cls: str) -> np.ndarray:
+    """Dense boolean adjacency for one evidence class, whatever the storage."""
+    m = adjacency.masks[cls]
+    if hasattr(m, "to_dense"):
+        try:
+            m = m.to_dense()
+        except Exception:  # pragma: no cover - already dense
+            pass
+    return np.asarray(m.numpy() if hasattr(m, "numpy") else m).astype(bool)
+
+
+def check_compiler_correctness(compiled: Any = None, *, schema: Any = None,
+                               use_reference_example: bool = True,
+                               seed: int = 0) -> ClaimReport:
+    """Shape, unit, coordinate, delay and mask correctness of a ``CompiledModel``.
+
+    Written against agent A's compiler API (``ARCHITECTURE.md`` §2):
+    ``.state_layout``, ``.adjacency``, ``.dispatch``, ``.schedule``,
+    ``.gradient_masks``, ``.frame_graph``, ``.clock_graph``, ``.ledger``,
+    ``.provenance``.  Every accessor is guarded, so a backend that omits one
+    structure yields ``COULD_NOT_RUN`` for that sub-check rather than a crash
+    or a free pass.
+
+    With no argument the subject is the reference three-region schema
+    (``scwbd.schema.examples.three_region``).  **That is what a PASS here
+    means**: the compiler emits an internally consistent artifact *for the
+    reference example*.  It is not a statement about a whole-brain schema,
+    and the report says so.
     """
+    subject = "caller-supplied CompiledModel"
+    if compiled is None and use_reference_example:
+        dep = _reference_compiled()
+        if dep.available:
+            compiled = dep.obj
+            subject = "reference example: scwbd.schema.examples.three_region"
+        else:
+            reference_reason = dep.reason
     man = _manifest(
         "N1_compiler_correctness",
-        "The compiler produces a model whose shapes, units, frames, delays and masks are "
-        "internally consistent.",
-        "any offset overlap, undeclared unit/frame/clock, negative or unrepresentable delay, "
-        "or a mask that does not match the declared operator set",
-        "Fix the compiler before any claim-bearing run; a numerically inconsistent compilation "
-        "invalidates every downstream gate.",
+        "The compiler produces a model whose shapes, units, frames, clocks, delays, masks "
+        "and gradient permissions are internally consistent, and whose recorded claim class "
+        "is the one it was compiled for.",
+        "any offset overlap or gap, an undeclared unit/frame/clock, a negative or "
+        "unrepresentable delay, a mask that disagrees with the dispatched operator set, a "
+        "gradient permission naming a module that does not exist, an unbacked bias term, or "
+        "a silently demoted claim class",
+        "Fix the compiler before any claim-bearing run; a numerically inconsistent "
+        "compilation invalidates every downstream gate that consumes it.",
         seed=seed,
     )
     if compiled is None:
@@ -103,8 +141,8 @@ def check_compiler_correctness(compiled: Any = None, *, schema: Any = None,
             subchecks=[
                 could_not_run(
                     "compiled_model", "A CompiledModel to inspect.",
-                    "no CompiledModel supplied (agent A's scwbd.compiler.compile has not been "
-                    "run or has not landed); compiler correctness is unverified",
+                    "no CompiledModel supplied and the reference example could not be "
+                    f"compiled: {locals().get('reference_reason', 'reference disabled')}",
                     falsified_by=man.falsified_by,
                 )
             ],
@@ -112,188 +150,366 @@ def check_compiler_correctness(compiled: Any = None, *, schema: Any = None,
         ).finalize()
 
     subs: list[SubCheck] = []
+    artifacts: dict[str, Any] = {"subject": subject}
+    schema = schema if schema is not None else getattr(compiled, "schema", None)
 
-    # -- state layout: complete, non-overlapping, shape-consistent -------
+    # -- 1. state layout: disjoint, gapless, byte-consistent --------------
     layout = getattr(compiled, "state_layout", None)
-    if layout is None:
-        subs.append(could_not_run("state_layout", "Packed state offsets per region/component.",
-                                  "CompiledModel exposes no .state_layout",
-                                  falsified_by="overlapping or incomplete state offsets"))
+    entries = tuple(getattr(layout, "entries", ()) or ())
+    if layout is None or not entries:
+        subs.append(could_not_run(
+            "state_layout", "Packed state offsets per region/component.",
+            "the compiled model exposes no .state_layout entries",
+            falsified_by="overlapping or unaddressed state"))
     else:
-        spans: list[tuple[int, int, str]] = []
-        try:
-            items = layout.items() if hasattr(layout, "items") else list(layout)
-            for key, v in (items if hasattr(layout, "items") else enumerate(items)):
-                off = getattr(v, "offset", None)
-                size = getattr(v, "size", None)
-                if off is None and isinstance(v, (tuple, list)) and len(v) >= 2:
-                    off, size = int(v[0]), int(v[1])
-                if off is None or size is None:
-                    continue
-                spans.append((int(off), int(off) + int(size), str(key)))
-        except Exception as exc:
-            spans = []
-        if not spans:
-            subs.append(could_not_run("state_layout", "Packed state offsets.",
-                                      "could not read (offset, size) pairs from .state_layout",
-                                      falsified_by="overlapping or incomplete state offsets"))
-        else:
-            spans.sort()
-            overlaps = sum(1 for a, b in zip(spans, spans[1:]) if a[1] > b[0])
-            gaps = sum(1 for a, b in zip(spans, spans[1:]) if a[1] < b[0])
-            subs.append(
-                SubCheck(
-                    name="state_layout",
-                    description="Region/component offsets are disjoint and contiguous.",
-                    metrics=[
-                        Metric(name="layout.overlaps", value=float(overlaps), kind="numerical",
-                               exact=True, threshold=0.5, direction="less_is_better"),
-                        Metric(name="layout.gaps", value=float(gaps), kind="numerical",
-                               exact=True, threshold=0.5, direction="less_is_better",
-                               note="a gap means state is allocated but unaddressed"),
-                    ],
-                    mandatory=True,
-                    falsified_by="overlapping or unaddressed state",
-                )
-            )
+        ordered = sorted(entries, key=lambda e: int(e.elem_offset))
+        overlaps = gaps = byte_mismatch = 0
+        cursor = 0
+        for e in ordered:
+            off, n = int(e.elem_offset), int(e.numel)
+            if off < cursor:
+                overlaps += 1
+            elif off > cursor:
+                gaps += 1
+            cursor = max(cursor, off + n)
+            width = int(e.nbytes) // max(n, 1)
+            if int(e.nbytes) != width * n or int(e.byte_offset) % max(width, 1) != 0:
+                byte_mismatch += 1
+        total = int(getattr(layout, "total_elements", cursor))
+        tail_gap = int(total != cursor)
+        total_bytes = int(getattr(layout, "total_bytes", 0))
+        byte_sum = sum(int(e.nbytes) for e in entries)
+        artifacts["state_layout"] = {
+            "n_entries": len(entries), "total_elements": total,
+            "total_bytes": total_bytes, "sum_entry_bytes": byte_sum,
+        }
+        subs.append(SubCheck(
+            name="state_layout",
+            description="Region/component blocks tile the state vector exactly, and the "
+                        "byte view agrees with the element view.",
+            metrics=[
+                Metric(name="layout.overlaps", value=float(overlaps), kind="numerical",
+                       exact=True, threshold=0.5, direction="less_is_better"),
+                Metric(name="layout.gaps", value=float(gaps + tail_gap), kind="numerical",
+                       exact=True, threshold=0.5, direction="less_is_better",
+                       note="state allocated but unaddressed by any region/component"),
+                Metric(name="layout.byte_view_mismatches", value=float(byte_mismatch),
+                       kind="numerical", exact=True, threshold=0.5,
+                       direction="less_is_better",
+                       note="nbytes not an integer multiple of numel, or a misaligned offset"),
+                Metric(name="layout.total_bytes_consistent",
+                       value=float(total_bytes == byte_sum), kind="numerical", exact=True,
+                       threshold=0.5, direction="greater_is_better",
+                       note=f"declared {total_bytes} vs summed {byte_sum}"),
+            ],
+            mandatory=True,
+            falsified_by="overlapping, unaddressed, or byte-inconsistent state",
+        ))
 
-    # -- units / frames / clocks declared everywhere --------------------
-    def _walk_ports(obj: Any) -> list[Any]:
-        out: list[Any] = []
-        regions = getattr(obj, "regions", None) or getattr(schema, "regions", None) or []
-        for r in regions:
-            out += list(getattr(r, "ports", []) or [])
-        return out
-
-    ports = _walk_ports(compiled) or _walk_ports(schema)
-    if not ports:
-        subs.append(could_not_run("units_frames_clocks",
-                                  "Units, frames and clocks declared on every port.",
-                                  "no ports reachable from the compiled model or schema",
-                                  falsified_by="an undeclared unit, frame or clock"))
+    # -- 2. units, frames and clocks declared and resolvable --------------
+    clock_graph = getattr(compiled, "clock_graph", None)
+    frame_graph = getattr(compiled, "frame_graph", None)
+    if not entries or clock_graph is None or frame_graph is None:
+        subs.append(could_not_run(
+            "units_frames_clocks", "Units, frames and clocks declared and resolvable.",
+            "the compiled model exposes no state entries, frame graph or clock graph",
+            falsified_by="an undeclared unit, frame or clock (refusal R01)"))
     else:
-        bad_units = bad_frames = bad_clocks = 0
-        for p in ports:
-            sup = getattr(p, "support", None)
-            tmp = getattr(p, "temporal", None)
-            if sup is None or not getattr(sup, "units", None):
-                bad_units += 1
-            if sup is None or not getattr(sup, "frame", None):
-                bad_frames += 1
-            if tmp is None or not getattr(tmp, "clock", None):
-                bad_clocks += 1
-        subs.append(
-            SubCheck(
-                name="units_frames_clocks",
-                description="Every port declares units, a frame and a clock (refusal R01).",
-                metrics=[
-                    Metric(name="ports.missing_units", value=float(bad_units), kind="numerical",
-                           exact=True, threshold=0.5, direction="less_is_better"),
-                    Metric(name="ports.missing_frame", value=float(bad_frames), kind="numerical",
-                           exact=True, threshold=0.5, direction="less_is_better"),
-                    Metric(name="ports.missing_clock", value=float(bad_clocks), kind="numerical",
-                           exact=True, threshold=0.5, direction="less_is_better"),
-                    Metric(name="ports.total", value=float(len(ports)), kind="diagnostic",
-                           exact=True),
-                ],
-                mandatory=True,
-                falsified_by="an undeclared unit, frame or clock (R01)",
-            )
-        )
+        missing_units = sum(1 for e in entries if not str(getattr(e, "units", "")).strip())
+        missing_clock = sum(1 for e in entries if not str(getattr(e, "clock", "")).strip())
+        unknown_clock = sum(1 for e in entries
+                            if getattr(e, "clock", None) and not clock_graph.has(e.clock))
+        unverified = tuple(getattr(clock_graph, "unverified", lambda: ())())
+        orphans = tuple(getattr(clock_graph, "orphans", lambda: ())())
+        # every frame the schema uses must be reachable from the graph root
+        bad_frames: list[str] = []
+        used = sorted(getattr(frame_graph, "used_frames", ()) or ())
+        root = getattr(frame_graph, "root", None)
+        for f in used:
+            if not frame_graph.has(f):
+                bad_frames.append(f)
+            elif root is not None and not frame_graph.path_is_valid(root, f):
+                bad_frames.append(f)
+        artifacts["frames"] = {"root": root, "used": used, "unreachable": bad_frames}
+        artifacts["clocks"] = {"ids": list(getattr(clock_graph, "ids", lambda: ())()),
+                               "master": getattr(clock_graph, "master", None),
+                               "unverified": list(unverified), "orphans": list(orphans)}
+        subs.append(SubCheck(
+            name="units_frames_clocks",
+            description="Every state block declares units and a known clock; every used "
+                        "frame has a valid path from the graph root (refusal R01).",
+            metrics=[
+                Metric(name="ports.missing_units", value=float(missing_units),
+                       kind="numerical", exact=True, threshold=0.5,
+                       direction="less_is_better"),
+                Metric(name="ports.missing_clock", value=float(missing_clock),
+                       kind="numerical", exact=True, threshold=0.5,
+                       direction="less_is_better"),
+                Metric(name="clocks.unknown_referenced", value=float(unknown_clock),
+                       kind="numerical", exact=True, threshold=0.5,
+                       direction="less_is_better"),
+                Metric(name="clocks.unverified_or_orphaned",
+                       value=float(len(unverified) + len(orphans)), kind="numerical",
+                       exact=True, threshold=0.5, direction="less_is_better",
+                       note=f"unverified={unverified}, orphans={orphans}"),
+                Metric(name="frames.unreachable_from_root", value=float(len(bad_frames)),
+                       kind="numerical", exact=True, threshold=0.5,
+                       direction="less_is_better",
+                       note=f"root={root}; unreachable={bad_frames}"),
+                Metric(name="state.n_blocks", value=float(len(entries)),
+                       kind="diagnostic", exact=True),
+            ],
+            mandatory=True,
+            falsified_by="an undeclared unit, an unknown clock, or an unreachable frame",
+        ))
 
-    # -- delays representable on the schedule ---------------------------
-    ops = list(getattr(compiled, "dispatch", []) or getattr(schema, "operators", []) or [])
-    sched = getattr(compiled, "schedule", None)
-    dt_min = None
-    for attr in ("dt_min", "base_dt", "dt"):
-        v = getattr(sched, attr, None)
-        if isinstance(v, (int, float)) and v > 0:
-            dt_min = float(v)
-            break
+    # -- 3. delays finite, non-negative, representable --------------------
+    dispatch = getattr(compiled, "dispatch", None)
+    schedule = getattr(compiled, "schedule", None)
+    ops = list(dispatch or [])
     if not ops:
-        subs.append(could_not_run("delays", "Delay validity against the multirate schedule.",
-                                  "no operators reachable from the compiled model or schema",
-                                  falsified_by="a negative or unrepresentable delay"))
+        subs.append(could_not_run(
+            "delays", "Delay validity against the multirate schedule.",
+            "the compiled model dispatches no operators",
+            falsified_by="a negative, non-finite or sub-step delay"))
     else:
-        neg = nonfinite = unrepresentable = 0
+        base_dt = float(getattr(schedule, "base_dt", 0.0) or 0.0)
+        hyper = float(getattr(schedule, "hyperperiod", float("inf")) or float("inf"))
+        neg = nonfinite = sub_step = beyond_hyper = 0
+        delays: list[float] = []
         for o in ops:
-            d = getattr(o, "delay", None)
-            if d is None:
-                pr = getattr(o, "delay_prior", None)
-                d = getattr(pr, "mean", None) if pr is not None else None
-            if d is None:
-                continue
             try:
-                dv = float(d)
+                d = float(o.delay_seconds())
             except Exception:
-                continue
-            if not math.isfinite(dv):
                 nonfinite += 1
-            elif dv < 0:
+                continue
+            delays.append(d)
+            if not math.isfinite(d):
+                nonfinite += 1
+            elif d < 0:
                 neg += 1
-            elif dt_min is not None and 0 < dv < dt_min:
-                unrepresentable += 1
-        subs.append(
-            SubCheck(
-                name="delays",
-                description="Delays are finite, non-negative and representable on the schedule.",
+            else:
+                if base_dt > 0 and 0 < d < base_dt:
+                    sub_step += 1
+                if d > hyper:
+                    beyond_hyper += 1
+        artifacts["delays"] = {"base_dt": base_dt, "hyperperiod": hyper,
+                               "max": max(delays) if delays else None,
+                               "n_operators": len(ops)}
+        subs.append(SubCheck(
+            name="delays",
+            description="Delays are finite, non-negative, at least one base step, and "
+                        "buffered within the schedule hyperperiod.",
+            metrics=[
+                Metric(name="delays.negative", value=float(neg), kind="numerical",
+                       exact=True, threshold=0.5, direction="less_is_better"),
+                Metric(name="delays.nonfinite", value=float(nonfinite), kind="numerical",
+                       exact=True, threshold=0.5, direction="less_is_better"),
+                Metric(name="delays.below_base_dt", value=float(sub_step), kind="numerical",
+                       exact=True, threshold=0.5, direction="less_is_better",
+                       note=f"base dt = {base_dt}s; a delay the scheduler cannot represent "
+                            "is silently rounded and the dynamics are not the declared ones"),
+                Metric(name="delays.beyond_hyperperiod", value=float(beyond_hyper),
+                       kind="numerical", exact=True, threshold=0.5,
+                       direction="less_is_better", note=f"hyperperiod = {hyper}s"),
+            ],
+            mandatory=True,
+            falsified_by="a negative, non-finite, sub-step or unbufferable delay",
+        ))
+
+    # -- 4. masks agree with the dispatched operator set ------------------
+    adjacency = getattr(compiled, "adjacency", None)
+    if adjacency is None or not getattr(adjacency, "masks", None):
+        subs.append(could_not_run(
+            "masks", "Block-sparse masks per evidence class.",
+            "the compiled model exposes no .adjacency masks",
+            falsified_by="a mask inconsistent with the dispatched operator set"))
+    else:
+        try:
+            classes = sorted(adjacency.masks)
+            dense = {c: _dense_mask(adjacency, c) for c in classes}
+            shapes = {tuple(v.shape) for v in dense.values()}
+            n_regions = len(getattr(adjacency, "region_ids", ()) or ())
+            shape_ok = len(shapes) == 1 and (not n_regions or
+                                             shapes == {(n_regions, n_regions)})
+            nonbinary = sum(1 for v in dense.values()
+                            if v.dtype != bool and not np.all(np.isin(v, (0, 1))))
+            # every dispatched operator must be present in its class's mask,
+            # and no mask may assert an edge nobody dispatches
+            unmasked = 0
+            dispatched: dict[str, set[tuple[int, int]]] = {c: set() for c in classes}
+            for o in ops:
+                cls = getattr(o, "evidence_class", None)
+                if cls not in dense:
+                    unmasked += 1
+                    continue
+                i, j = adjacency.index_of(o.src), adjacency.index_of(o.dst)
+                dispatched[cls].add((i, j))
+                if not bool(dense[cls][i, j]):
+                    unmasked += 1
+            phantom = sum(int(np.count_nonzero(dense[c])) - len(dispatched[c])
+                          for c in classes)
+            artifacts["masks"] = {
+                "classes": classes,
+                "density": {c: float(dense[c].mean()) for c in classes},
+                "n_regions": n_regions,
+            }
+            subs.append(SubCheck(
+                name="masks",
+                description="Evidence-class masks share the region shape, are binary, and "
+                            "describe exactly the operators the dispatcher will run.",
                 metrics=[
-                    Metric(name="delays.negative", value=float(neg), kind="numerical",
-                           exact=True, threshold=0.5, direction="less_is_better"),
-                    Metric(name="delays.nonfinite", value=float(nonfinite), kind="numerical",
-                           exact=True, threshold=0.5, direction="less_is_better"),
-                    Metric(name="delays.below_base_dt", value=float(unrepresentable),
+                    Metric(name="masks.consistent_shape", value=float(shape_ok),
+                           kind="numerical", exact=True, threshold=0.5,
+                           direction="greater_is_better", note=f"shapes: {shapes}"),
+                    Metric(name="masks.nonbinary_blocks", value=float(nonbinary),
                            kind="numerical", exact=True, threshold=0.5,
                            direction="less_is_better",
-                           note=f"base dt = {dt_min}" if dt_min else "no base dt exposed"),
+                           note="a soft mask is a parameter, not a mask; declare it as one"),
+                    Metric(name="masks.dispatched_edges_not_masked", value=float(unmasked),
+                           kind="numerical", exact=True, threshold=0.5,
+                           direction="less_is_better",
+                           note="an operator the mask does not permit"),
+                    Metric(name="masks.masked_edges_not_dispatched", value=float(phantom),
+                           kind="numerical", exact=True, threshold=0.5,
+                           direction="less_is_better",
+                           note="a permitted edge that no operator implements"),
                 ],
                 mandatory=True,
-                falsified_by="a negative, non-finite or sub-step delay",
-            )
-        )
+                falsified_by="masks that disagree with the dispatched operator set",
+            ))
+        except Exception as exc:
+            subs.append(could_not_run(
+                "masks", "Block-sparse masks per evidence class.",
+                f"could not inspect .adjacency: {type(exc).__name__}: {exc}",
+                falsified_by="a mask inconsistent with the dispatched operator set"))
 
-    # -- masks -----------------------------------------------------------
-    adj = getattr(compiled, "adjacency", None)
-    if adj is None:
-        subs.append(could_not_run("masks", "Block-sparse masks per evidence class.",
-                                  "CompiledModel exposes no .adjacency",
-                                  falsified_by="a mask inconsistent with the operator set"))
+    # -- 5. gradient permissions name modules that exist ------------------
+    masks_obj = getattr(compiled, "gradient_masks", None)
+    if masks_obj is None:
+        subs.append(could_not_run(
+            "gradient_permissions", "Per-source gradient masks (rule 2).",
+            "the compiled model exposes no .gradient_masks",
+            falsified_by="a source permitted to update a module that does not exist"))
     else:
         try:
-            blocks = adj.items() if hasattr(adj, "items") else {"all": adj}.items()
-            shapes, densities, nonbinary = [], [], 0
-            for name, M in blocks:
-                A = np.asarray(M)
-                shapes.append(tuple(A.shape))
-                densities.append(float((A != 0).mean()))
-                if not np.all(np.isin(A, (0, 1))) and A.dtype != bool:
-                    nonbinary += 1
-            same_shape = len(set(shapes)) <= 1
-            subs.append(
-                SubCheck(
-                    name="masks",
-                    description="Evidence-class masks share a shape and are binary.",
-                    metrics=[
-                        Metric(name="masks.consistent_shape", value=float(same_shape),
-                               kind="numerical", exact=True, threshold=0.5,
-                               direction="greater_is_better", note=f"shapes: {set(shapes)}"),
-                        Metric(name="masks.nonbinary_blocks", value=float(nonbinary),
-                               kind="numerical", exact=True, threshold=0.5,
-                               direction="less_is_better",
-                               note="a soft mask is a parameter, not a mask; declare it as one"),
-                        Metric(name="masks.density", value=float(np.mean(densities))
-                               if densities else float("nan"), kind="diagnostic", exact=True),
-                    ],
-                    mandatory=True,
-                    falsified_by="masks that disagree in shape or are silently continuous",
-                )
-            )
+            keys = tuple(masks_obj.keys())
+            declared = tuple(getattr(s, "id", getattr(s, "identity", None))
+                             for s in (getattr(schema, "sources", ()) or ()))
+            unmatched = 0
+            for k in keys:
+                unmatched += len(tuple(getattr(masks_obj[k], "unmatched_patterns", ()) or ()))
+            unreachable = tuple(getattr(masks_obj, "unreachable_groups", lambda: ())())
+            missing_sources = max(len(declared) - len(keys), 0) if declared else 0
+            artifacts["gradient_masks"] = {
+                "sources": list(keys), "unmatched_patterns": unmatched,
+                "unreachable_groups": list(unreachable),
+            }
+            subs.append(SubCheck(
+                name="gradient_permissions",
+                description="Every source card compiles to a mask, and no permission names a "
+                            "parameter group that does not exist (a silent no-op).",
+                metrics=[
+                    Metric(name="gradient.sources_without_a_mask",
+                           value=float(missing_sources), kind="numerical", exact=True,
+                           threshold=0.5, direction="less_is_better"),
+                    Metric(name="gradient.unmatched_permission_patterns",
+                           value=float(unmatched), kind="numerical", exact=True,
+                           threshold=0.5, direction="less_is_better",
+                           note="a source naming a module that does not exist updates "
+                                "nothing while appearing to be authorised"),
+                    Metric(name="gradient.unreachable_parameter_groups",
+                           value=float(len(unreachable)), kind="diagnostic", exact=True,
+                           note="groups no source may update; not an error, but they will "
+                                "never train and must not be described as learned"),
+                ],
+                mandatory=True,
+                falsified_by="a gradient permission that matches nothing",
+            ))
         except Exception as exc:
-            subs.append(could_not_run("masks", "Block-sparse masks per evidence class.",
-                                      f"could not inspect .adjacency: {type(exc).__name__}: {exc}",
-                                      falsified_by="a mask inconsistent with the operator set"))
+            subs.append(could_not_run(
+                "gradient_permissions", "Per-source gradient masks.",
+                f"could not inspect .gradient_masks: {type(exc).__name__}: {exc}",
+                falsified_by="a source permitted to update a module that does not exist"))
 
-    return ClaimReport(manifest=man, subchecks=subs, kind="numerics").finalize()
+    # -- 6. every bias term is backed (refusal R08) -----------------------
+    led = getattr(compiled, "ledger", None)
+    if led is None:
+        subs.append(could_not_run(
+            "uncertainty_ledger", "Bias status backing on every compiled object (R08).",
+            "the compiled model exposes no .ledger",
+            falsified_by="a bias point estimate with no estimator and no external bound"))
+    else:
+        unbacked = tuple(getattr(led, "unbacked_bias", ()) or ())
+        sens = tuple(getattr(led, "sensitivity_terms", lambda: ())())
+        counts = dict(getattr(led, "bias_status_counts", {}) or {})
+        artifacts["ledger"] = {"n_objects": len(led), "status_counts": counts,
+                               "unbacked": list(unbacked),
+                               "n_sensitivity_terms": len(sens)}
+        subs.append(SubCheck(
+            name="uncertainty_ledger",
+            description="Every bias term is design-estimable, externally bounded, or "
+                        "declared prior-specified sensitivity (refusal R08).",
+            metrics=[
+                Metric(name="ledger.unbacked_bias_terms", value=float(len(unbacked)),
+                       kind="numerical", exact=True, threshold=0.5,
+                       direction="less_is_better", note=f"{list(unbacked)[:5]}"),
+                Metric(name="ledger.prior_specified_sensitivity_terms",
+                       value=float(len(sens)), kind="diagnostic", exact=True,
+                       note="swept over a declared range; never advertised as empirically "
+                            "estimated"),
+            ],
+            mandatory=True,
+            falsified_by="a bias point estimate with no estimator and no external bound",
+        ))
+
+    # -- 7. the artifact carries the claim it was compiled for ------------
+    prov = getattr(compiled, "provenance", None)
+    if prov is None:
+        subs.append(could_not_run(
+            "claim_class_integrity", "Recorded claim class versus the requested one.",
+            "the compiled model exposes no .provenance",
+            falsified_by="a silently demoted or overridden claim class"))
+    else:
+        demoted = bool(getattr(prov, "claim_was_demoted", False))
+        overridden = tuple(getattr(prov, "overridden_codes", ()) or ())
+        artifacts["provenance"] = {
+            "requested": getattr(prov, "requested_claim_class", None),
+            "effective": getattr(prov, "effective_claim_class", None),
+            "overridden_codes": list(overridden),
+            "checks_passed": list(getattr(prov, "checks_passed", ()) or ()),
+            "warnings": list(getattr(prov, "warnings", ()) or ()),
+        }
+        subs.append(SubCheck(
+            name="claim_class_integrity",
+            description="No refusal was overridden, so the artifact carries the claim class "
+                        "it was compiled for.",
+            metrics=[
+                Metric(name="claim.was_demoted", value=float(demoted), kind="numerical",
+                       exact=True, threshold=0.5, direction="less_is_better",
+                       note=f"requested={getattr(prov, 'requested_claim_class', None)!r}, "
+                            f"effective={getattr(prov, 'effective_claim_class', None)!r}"),
+                Metric(name="claim.overridden_refusals", value=float(len(overridden)),
+                       kind="numerical", exact=True, threshold=0.5,
+                       direction="less_is_better", note=f"codes: {list(overridden)}"),
+                Metric(name="claim.refusal_checks_passed",
+                       value=float(len(getattr(prov, "checks_passed", ()) or ())),
+                       kind="diagnostic", exact=True),
+            ],
+            mandatory=True,
+            falsified_by="an override fired, so the artifact's claim class is weaker than "
+                         "the one the run intends to report",
+        ))
+
+    notes = [
+        f"Subject of this check: {subject}.",
+        "A PASS here means the compiler emits an internally consistent artifact for this "
+        "subject. It is not evidence about any other schema, and it is not evidence that "
+        "any compiled operator is neurally realized.",
+    ]
+    return ClaimReport(manifest=man, subchecks=subs, artifacts=artifacts, kind="numerics",
+                       notes=notes).finalize()
+
 
 
 # ==========================================================================

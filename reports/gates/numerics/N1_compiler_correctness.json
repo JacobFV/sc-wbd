@@ -2,12 +2,12 @@
   "bench_schema_version": "scwbd-bench-report/1.0.0",
   "kind": "numerics",
   "claim_id": "N1_compiler_correctness",
-  "status": "COULD_NOT_RUN",
+  "status": "PASS",
   "manifest": {
     "claim_id": "N1_compiler_correctness",
-    "claim_text": "The compiler produces a model whose shapes, units, frames, delays and masks are internally consistent.",
-    "falsified_by": "any offset overlap, undeclared unit/frame/clock, negative or unrepresentable delay, or a mask that does not match the declared operator set",
-    "consequence_if_failed": "Fix the compiler before any claim-bearing run; a numerically inconsistent compilation invalidates every downstream gate.",
+    "claim_text": "The compiler produces a model whose shapes, units, frames, clocks, delays, masks and gradient permissions are internally consistent, and whose recorded claim class is the one it was compiled for.",
+    "falsified_by": "any offset overlap or gap, an undeclared unit/frame/clock, a negative or unrepresentable delay, a mask that disagrees with the dispatched operator set, a gradient permission naming a module that does not exist, an unbacked bias term, or a silently demoted claim class",
+    "consequence_if_failed": "Fix the compiler before any claim-bearing run; a numerically inconsistent compilation invalidates every downstream gate that consumes it.",
     "thesis_version": "V6",
     "schema_version": "scwbd-schema/1.0.0",
     "bench_schema_version": "scwbd-bench-report/1.0.0",
@@ -24,26 +24,524 @@
     "preregistered": true
   },
   "consequence_applied": null,
-  "blocking_reasons": [
-    "compiled_model: could not run \u2014 no CompiledModel supplied (agent A's scwbd.compiler.compile has not been run or has not landed); compiler correctness is unverified"
-  ],
+  "blocking_reasons": [],
   "subchecks": [
     {
-      "name": "compiled_model",
-      "description": "A CompiledModel to inspect.",
-      "status": "COULD_NOT_RUN",
+      "name": "state_layout",
+      "description": "Region/component blocks tile the state vector exactly, and the byte view agrees with the element view.",
+      "status": "PASS",
       "mandatory": true,
-      "reason": "no CompiledModel supplied (agent A's scwbd.compiler.compile has not been run or has not landed); compiler correctness is unverified",
-      "falsified_by": "any offset overlap, undeclared unit/frame/clock, negative or unrepresentable delay, or a mask that does not match the declared operator set",
-      "metrics": []
+      "reason": "",
+      "falsified_by": "overlapping, unaddressed, or byte-inconsistent state",
+      "metrics": [
+        {
+          "name": "layout.overlaps",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "layout.gaps",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "state allocated but unaddressed by any region/component",
+          "passed": true
+        },
+        {
+          "name": "layout.byte_view_mismatches",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "nbytes not an integer multiple of numel, or a misaligned offset",
+          "passed": true
+        },
+        {
+          "name": "layout.total_bytes_consistent",
+          "value": 1.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "declared 72 vs summed 72",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "units_frames_clocks",
+      "description": "Every state block declares units and a known clock; every used frame has a valid path from the graph root (refusal R01).",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "an undeclared unit, an unknown clock, or an unreachable frame",
+      "metrics": [
+        {
+          "name": "ports.missing_units",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "ports.missing_clock",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "clocks.unknown_referenced",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "clocks.unverified_or_orphaned",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "unverified=(), orphans=()",
+          "passed": true
+        },
+        {
+          "name": "frames.unreachable_from_root",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "root=scanner_RAS; unreachable=[]",
+          "passed": true
+        },
+        {
+          "name": "state.n_blocks",
+          "value": 9.0,
+          "units": "dimensionless",
+          "kind": "diagnostic",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "delays",
+      "description": "Delays are finite, non-negative, at least one base step, and buffered within the schedule hyperperiod.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "a negative, non-finite, sub-step or unbufferable delay",
+      "metrics": [
+        {
+          "name": "delays.negative",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "delays.nonfinite",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "delays.below_base_dt",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "base dt = 0.001s; a delay the scheduler cannot represent is silently rounded and the dynamics are not the declared ones",
+          "passed": true
+        },
+        {
+          "name": "delays.beyond_hyperperiod",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "hyperperiod = 1.0s",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "masks",
+      "description": "Evidence-class masks share the region shape, are binary, and describe exactly the operators the dispatcher will run.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "masks that disagree with the dispatched operator set",
+      "metrics": [
+        {
+          "name": "masks.consistent_shape",
+          "value": 1.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "shapes: {(3, 3)}",
+          "passed": true
+        },
+        {
+          "name": "masks.nonbinary_blocks",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a soft mask is a parameter, not a mask; declare it as one",
+          "passed": true
+        },
+        {
+          "name": "masks.dispatched_edges_not_masked",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "an operator the mask does not permit",
+          "passed": true
+        },
+        {
+          "name": "masks.masked_edges_not_dispatched",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a permitted edge that no operator implements",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "gradient_permissions",
+      "description": "Every source card compiles to a mask, and no permission names a parameter group that does not exist (a silent no-op).",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "a gradient permission that matches nothing",
+      "metrics": [
+        {
+          "name": "gradient.sources_without_a_mask",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "gradient.unmatched_permission_patterns",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a source naming a module that does not exist updates nothing while appearing to be authorised",
+          "passed": true
+        },
+        {
+          "name": "gradient.unreachable_parameter_groups",
+          "value": 9.0,
+          "units": "dimensionless",
+          "kind": "diagnostic",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "groups no source may update; not an error, but they will never train and must not be described as learned",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "uncertainty_ledger",
+      "description": "Every bias term is design-estimable, externally bounded, or declared prior-specified sensitivity (refusal R08).",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "a bias point estimate with no estimator and no external bound",
+      "metrics": [
+        {
+          "name": "ledger.unbacked_bias_terms",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "[]",
+          "passed": true
+        },
+        {
+          "name": "ledger.prior_specified_sensitivity_terms",
+          "value": 12.0,
+          "units": "dimensionless",
+          "kind": "diagnostic",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "swept over a declared range; never advertised as empirically estimated",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "claim_class_integrity",
+      "description": "No refusal was overridden, so the artifact carries the claim class it was compiled for.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "an override fired, so the artifact's claim class is weaker than the one the run intends to report",
+      "metrics": [
+        {
+          "name": "claim.was_demoted",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "requested='effective', effective='effective'",
+          "passed": true
+        },
+        {
+          "name": "claim.overridden_refusals",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "codes: []",
+          "passed": true
+        },
+        {
+          "name": "claim.refusal_checks_passed",
+          "value": 11.0,
+          "units": "dimensionless",
+          "kind": "diagnostic",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": null
+        }
+      ]
     }
   ],
   "baselines_run": [],
-  "notes": [],
-  "artifacts": {},
+  "notes": [
+    "Subject of this check: reference example: scwbd.schema.examples.three_region.",
+    "A PASS here means the compiler emits an internally consistent artifact for this subject. It is not evidence about any other schema, and it is not evidence that any compiled operator is neurally realized."
+  ],
+  "artifacts": {
+    "subject": "reference example: scwbd.schema.examples.three_region",
+    "state_layout": {
+      "n_entries": 9,
+      "total_elements": 18,
+      "total_bytes": 72,
+      "sum_entry_bytes": 72
+    },
+    "frames": {
+      "root": "scanner_RAS",
+      "used": [
+        "eeg_cap",
+        "stim_device",
+        "subject_surface_RAS"
+      ],
+      "unreachable": []
+    },
+    "clocks": {
+      "ids": [
+        "eeg_amp",
+        "scanner_volume",
+        "sim",
+        "stim_computer"
+      ],
+      "master": "sim",
+      "unverified": [],
+      "orphans": []
+    },
+    "delays": {
+      "base_dt": 0.001,
+      "hyperperiod": 1.0,
+      "max": 0.011390222124513377,
+      "n_operators": 7
+    },
+    "masks": {
+      "classes": [
+        "hard",
+        "proposed",
+        "soft"
+      ],
+      "density": {
+        "hard": 0.5555555555555556,
+        "proposed": 0.1111111111111111,
+        "soft": 0.1111111111111111
+      },
+      "n_regions": 3
+    },
+    "gradient_masks": {
+      "sources": [
+        "eeg_sim_v1",
+        "fmri_sim_v1",
+        "impulse_sim_v1"
+      ],
+      "unmatched_patterns": 0,
+      "unreachable_groups": [
+        "frame_edge:scanner_RAS->subject_anat_RAS:calibration",
+        "frame_edge:subject_anat_RAS->subject_surface_RAS:calibration",
+        "frame_edge:subject_surface_RAS->eeg_cap:calibration",
+        "frame_edge:subject_surface_RAS->stim_device:calibration",
+        "operator:residual_b_a:residual",
+        "port:region_a.impulse_in",
+        "region:region_a:state:uncertainty",
+        "region:region_b:state:uncertainty",
+        "region:region_c:state:uncertainty"
+      ]
+    },
+    "ledger": {
+      "n_objects": 33,
+      "status_counts": {
+        "design_estimable": 11,
+        "prior_specified_sensitivity": 12,
+        "externally_bounded": 10
+      },
+      "unbacked": [],
+      "n_sensitivity_terms": 12
+    },
+    "provenance": {
+      "requested": "effective",
+      "effective": "effective",
+      "overridden_codes": [],
+      "checks_passed": [
+        "R01",
+        "R02",
+        "R03",
+        "R04",
+        "R05",
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11"
+      ],
+      "warnings": [
+        "9 parameter groups are updatable by no source and will never train: ['frame_edge:scanner_RAS->subject_anat_RAS:calibration', 'frame_edge:subject_anat_RAS->subject_surface_RAS:calibration', 'frame_edge:subject_surface_RAS->eeg_cap:calibration', 'frame_edge:subject_surface_RAS->stim_device:calibration', 'operator:residual_b_a:residual']...",
+        "12 objects carry prior-specified-sensitivity bias and must be swept, not advertised as empirically estimated"
+      ]
+    }
+  },
   "provenance": {
-    "timestamp_utc": "2026-08-06T05:59:59+00:00",
-    "git_rev": "b32ca56",
+    "timestamp_utc": "2026-08-06T06:11:53+00:00",
+    "git_rev": "1e11e49",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {

@@ -9,10 +9,11 @@ Run it with::
 
     .venv/bin/python -m scwbd.bench
 
-With no configuration every claim reports ``COULD_NOT_RUN``.  That is the
-correct output for a repository whose modelling agents have not landed their
-modules yet, and it is deliberately not softened: an unrun gate supports
-nothing.
+With no configuration, a claim reports ``COULD_NOT_RUN`` unless its subject has
+actually landed — the only current exception is ``N1``, which compiles agent
+A's reference three-region example and checks *that*.  The blank result is
+deliberately not softened: an unrun gate supports nothing, and a passing
+numerical check licenses a statement about code, never about a brain.
 """
 
 from __future__ import annotations
@@ -58,7 +59,10 @@ def _headline(rep: ClaimReport) -> str:
         m = keyed[0]
         iv = f" {m.interval}" if m.interval else ""
         return f"`{m.name}` = {m.value:.4g}{iv}"
-    return "passed with no headline metric"
+    mand = [s for s in rep.subchecks if s.mandatory]
+    tally = f"{sum(1 for s in mand if s.status == 'PASS')}/{len(mand)} mandatory sub-checks"
+    subject = rep.artifacts.get("subject")
+    return f"{tally}; subject: {subject}" if subject else tally
 
 
 def _negative_controls() -> list[str]:
@@ -68,14 +72,15 @@ def _negative_controls() -> list[str]:
     from what is actually tested.
     """
     root = Path(__file__).resolve().parents[2] / "tests" / "bench"
+    markers = ("fail", "fires", "catches", "refus")
     out: list[str] = []
-    for path in sorted(root.glob("test_*can_fail*.py")) + sorted(root.glob("test_ablations.py")):
+    for path in sorted(root.glob("test_*.py")):
         try:
             text = path.read_text(encoding="utf-8")
         except OSError:  # pragma: no cover
             continue
         for line in text.splitlines():
-            if line.startswith("def test_") and ("fail" in line or "fires" in line):
+            if line.startswith("def test_") and any(m in line for m in markers):
                 out.append(f"{path.name}::{line[4:].split('(')[0]}")
     return out or ["(no negative-control tests found — the gates are unverified)"]
 
@@ -176,8 +181,33 @@ def build_summary(
                  f"{'yes' if row['available'] else 'no'} |")
     L.append("")
 
+    # what has actually been earned, stated at its true scope
+    L.append("## 6. What is licensed so far")
+    L.append("")
+    passed = [r for r in all_reports if r.status == "PASS"]
+    if not passed:
+        L.append(
+            "**Nothing.** No claim-bearing check has passed, so no statement in this "
+            "repository is currently supported by a gate."
+        )
+    else:
+        L.append(
+            "Only the following, and only at the scope stated. A passing check licenses "
+            "exactly its own sentence — not a generalisation of it:"
+        )
+        L.append("")
+        for r in passed:
+            L.append(f"- **{r.manifest.claim_id}**: {r.manifest.claim_text}")
+            subject = r.artifacts.get("subject")
+            if subject:
+                L.append(f"  - subject: {subject}")
+            for n in r.notes:
+                if "not evidence" in n or "not a statement" in n:
+                    L.append(f"  - scope limit: {n}")
+    L.append("")
+
     # the section that matters
-    L.append("## 6. What we cannot yet claim")
+    L.append("## 7. What we cannot yet claim")
     L.append("")
     blocked = [r for r in all_reports if r.status != "PASS"]
     if not blocked:
@@ -217,7 +247,7 @@ def build_summary(
         "(ARCHITECTURE.md rule 4)."
     )
     L.append("")
-    L.append("## 7. How to change a row in this table")
+    L.append("## 8. How to change a row in this table")
     L.append("")
     L.append(
         "Supply the missing evidence to the gate, not a smaller threshold. Thresholds are "

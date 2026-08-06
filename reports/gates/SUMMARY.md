@@ -1,8 +1,8 @@
 # SC-WBD-001-beta — claim gate scoreboard
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git b32ca56 · 2026-08-06T05:59:59+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git 1e11e49 · 2026-08-06T06:11:53+00:00*
 
-**0 PASS · 0 FAIL · 32 COULD_NOT_RUN** out of 32 claim-bearing checks.
+**1 PASS · 0 FAIL · 31 COULD_NOT_RUN** out of 32 claim-bearing checks.
 
 > A gate that cannot run is **not** a gate that passed. Nothing in this repository may be claimed on the basis of a `could-not-run` row. Engineering breadth, parameter count, plausible diagrams, and in-sample fit are not substitutes for these tests (`thesis_contract.tex`).
 
@@ -10,6 +10,9 @@
 
 A gate that cannot fail is worthless. Each gate therefore ships with a negative control: a synthetic world in which its claim is false by construction, and in which the gate is required to report `FAIL`. These are the negative controls currently in `tests/bench`:
 
+- `test_ablations.py::test_ablation_refuses_to_report_without_systematic_error`
+- `test_ablations.py::test_smoothing_rule_fires_when_the_winning_arm_smoothed_away_the_effect`
+- `test_could_not_run.py::test_g2_refuses_to_invent_the_anatomy_controls`
 - `test_gates_can_fail.py::test_g1_fails_when_the_second_modality_carries_no_information`
 - `test_gates_can_fail.py::test_g1_fails_when_the_fusion_model_is_overconfident`
 - `test_gates_can_fail.py::test_g2_fails_when_anatomy_genuinely_does_not_help`
@@ -21,7 +24,30 @@ A gate that cannot fail is worthless. Each gate therefore ships with a negative 
 - `test_gates_can_fail.py::test_g4_fails_when_a_parameter_is_not_recovered`
 - `test_gates_can_fail.py::test_g5_fails_when_subjects_differ_only_by_noise`
 - `test_gates_can_fail.py::test_g5_fails_when_the_scan_is_doing_the_work`
-- `test_ablations.py::test_smoothing_rule_fires_when_the_winning_arm_smoothed_away_the_effect`
+- `test_leakage.py::test_participant_audit_catches_an_intentionally_leaked_split`
+- `test_leakage.py::test_retrieval_audit_catches_near_duplicate_records`
+- `test_leakage.py::test_tms_decision_claim_is_a_standing_refusal`
+- `test_numerics.py::test_compiler_check_catches_overlapping_state_offsets`
+- `test_numerics.py::test_compiler_check_catches_a_gap_in_the_state_vector`
+- `test_numerics.py::test_compiler_check_catches_a_missing_unit`
+- `test_numerics.py::test_compiler_check_catches_an_unknown_clock`
+- `test_numerics.py::test_compiler_check_catches_a_negative_delay`
+- `test_numerics.py::test_compiler_check_catches_a_delay_below_the_base_step`
+- `test_numerics.py::test_compiler_check_catches_a_delay_beyond_the_hyperperiod`
+- `test_numerics.py::test_compiler_check_catches_a_mask_that_omits_a_dispatched_operator`
+- `test_numerics.py::test_compiler_check_catches_a_mask_edge_no_operator_implements`
+- `test_numerics.py::test_compiler_check_catches_an_unbacked_bias_term`
+- `test_numerics.py::test_compiler_check_catches_a_silently_demoted_claim_class`
+- `test_numerics.py::test_reference_example_compiles_with_no_overridden_refusals`
+- `test_numerics.py::test_solver_convergence_check_fails_a_non_converging_solver`
+- `test_numerics.py::test_stability_check_catches_blow_up_and_nans`
+- `test_numerics.py::test_conservation_check_catches_drift`
+- `test_numerics.py::test_seed_reproducibility_catches_non_determinism_and_ignored_seeds`
+- `test_numerics.py::test_permit_is_refused_when_a_backend_produced_nothing`
+- `test_report_discipline.py::test_accuracy_without_calibration_is_refused`
+- `test_report_discipline.py::test_failure_carries_the_implementation_consequence`
+- `test_statistics.py::test_smoothing_check_fires_on_a_deliberately_oversmoothed_model`
+- `test_statistics.py::test_plot_helpers_refuse_a_point_estimate_without_an_interval`
 
 Positive controls (worlds where the effect is present, and the gate must `PASS`) live in `tests/bench/test_gates_can_pass.py`; a gate that can never pass is not a measurement either.
 
@@ -89,7 +115,7 @@ Positive controls (worlds where the effect is present, and the gate must `PASS`)
 
 | id | status | headline number or blocker | consequence if failed |
 |---|---|---|---|
-| `N1_compiler_correctness` | could-not-run | compiled_model: could not run — no CompiledModel supplied (agent A's scwbd.compiler.compile has not been run or has not landed); compiler correctness … | — |
+| `N1_compiler_correctness` | PASS | 7/7 mandatory sub-checks; subject: reference example: scwbd.schema.examples.three_region | — |
 | `N5_solver_suite` | could-not-run | solver_convergence: could not run — no solver supplied (agent E dynamics / agent G field solvers) | — |
 | `N2_boundary_consistency` | could-not-run | boundary_consistency: could not run — the fine and/or coarse boundary observable was not supplied by the backends (agent E dynamics / agent D restrict… | — |
 | `N3_em_solver` | could-not-run | em_solver: could not run — no EM solver supplied (agent G scwbd.intervene / agent F lead fields); the field model is unvalidated and no E-field claim … | — |
@@ -111,7 +137,15 @@ Positive controls (worlds where the effect is present, and the gate must `PASS`)
 | `scwbd.sources` | agent B (sources) | yes |
 | `scwbd.transforms` | agent D (transforms) | yes |
 
-## 6. What we cannot yet claim
+## 6. What is licensed so far
+
+Only the following, and only at the scope stated. A passing check licenses exactly its own sentence — not a generalisation of it:
+
+- **N1_compiler_correctness**: The compiler produces a model whose shapes, units, frames, clocks, delays, masks and gradient permissions are internally consistent, and whose recorded claim class is the one it was compiled for.
+  - subject: reference example: scwbd.schema.examples.three_region
+  - scope limit: A PASS here means the compiler emits an internally consistent artifact for this subject. It is not evidence about any other schema, and it is not evidence that any compiled operator is neurally realized.
+
+## 7. What we cannot yet claim
 
 Each line below is a claim SC-WBD-001-beta **may not make** in text, figures, abstracts, or a model card, because the gate that would license it did not pass:
 
@@ -192,8 +226,6 @@ Each line below is a claim SC-WBD-001-beta **may not make** in text, figures, ab
   - blocked by: arms[1]: could not run — missing: language_only_imitation; §11.4 names it explicitly, so the comparison cannot be declared complete without it
 - **D12_dataset_family_breadth** (did not run): Dataset-family breadth is controlled for. Primary metric: Per-family contribution, negative transfer, subgroup worst case and uncertainty coverage.
   - blocked by: per_family_contribution: could not run — no families / model factory / datasets supplied; a longer source list is not evidence, so nothing may be claimed about breadth
-- **N1_compiler_correctness** (did not run): The compiler produces a model whose shapes, units, frames, delays and masks are internally consistent.
-  - blocked by: compiled_model: could not run — no CompiledModel supplied (agent A's scwbd.compiler.compile has not been run or has not landed); compiler correctness is unverified
 - **N5_solver_suite** (did not run): Solvers converge at their advertised order, remain stable, conserve their declared invariants, and are bitwise reproducible for a fixed seed.
   - blocked by: solver_convergence: could not run — no solver supplied (agent E dynamics / agent G field solvers)
   - blocked by: solver_stability: could not run — no trajectory supplied
@@ -211,6 +243,6 @@ Each line below is a claim SC-WBD-001-beta **may not make** in text, figures, ab
 - **No mechanism claim without its gate.** A mechanistic label is earned only by predictions an equal-capacity generic surrogate misses, on a held-out perturbation.
 - **No consciousness or Phi claim.** There is no ground truth and no estimate here (ARCHITECTURE.md rule 4).
 
-## 7. How to change a row in this table
+## 8. How to change a row in this table
 
 Supply the missing evidence to the gate, not a smaller threshold. Thresholds are preregistered in each report's manifest; changing one changes the claim class and must be recorded as an override in the `ClaimManifest`, where it stays visible in the artifact's provenance.
