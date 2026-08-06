@@ -680,6 +680,41 @@ who had retracted the other two that same night.
 *"2.95 s/step over steps 200–380"* cannot borrow authority it has not earned;
 *"settled"* can.
 
+**4a. Hedges need the same sample discipline as claims.**
+
+> A **load-bearing qualifier is a claim wearing a hedge's clothes.** If a hedge is
+> the stated reason to doubt a conclusion, it must meet the evidential standard
+> of the conclusion it is restraining.
+
+Filed with 🛡️ Popper, in a document offered *before* SBC ran:
+
+> *"Increments are decelerating — +2.08 then +1.04 — so this may be asymptoting
+> rather than diverging."*
+
+The next increment was **+2.01**. The deceleration was inferred from **two
+points** — the identical short-window error that had already produced a retracted
+period claim (three points) and a retracted KL trend (five points), tonight, by
+the same author.
+
+**Why it evaded the discipline applied to the claim itself.** The trend claim was
+scrutinised, sampled properly, and stated on four block medians. The hedge
+attached to it was not, because a hedge *feels like the safe half of the
+sentence* — it argues for less, so it seems to need less. But this one was
+**load-bearing**: it was the stated reason not to read the rise as divergence, and
+a reader weighs the filing on it.
+
+**Test:** if this qualifier turned out to be false, would the claim change? If
+yes, it is doing the work of a claim and needs a claim's evidence. If no, see
+recommendation 4 — it is decoration.
+
+Note the pair: **4 catches hedges that are too weak to matter; 4a catches hedges
+that matter too much to be unsupported.** A qualifier is safe only in the narrow
+band between.
+
+**And when one fails, record the failure in place.** *A caveat which disappears
+between versions is indistinguishable from one that was never made.* The
+falsification is appended to the filed document rather than edited into it.
+
 **4c. Report the near-miss, or a reporting threshold reports only what it was
 always going to.**
 
