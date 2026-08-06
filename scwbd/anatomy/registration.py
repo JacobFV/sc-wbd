@@ -58,6 +58,7 @@ __all__ = [
     "register_epi_to_template",
     "labels_to_epi_grid",
     "parcel_coverage",
+    "parcel_fov_fraction",
 ]
 
 #: The template the shipped Schaefer volume is defined on.  Not a free choice:
@@ -462,3 +463,51 @@ def parcel_coverage(
             )
         ),
     )
+
+
+def parcel_fov_fraction(
+    chain: "TransformChain",
+    epi_shape: tuple[int, int, int],
+    epi_affine: np.ndarray,
+    voxel_labels: np.ndarray,
+    atlas_affine: np.ndarray,
+    n_parcels: int,
+) -> np.ndarray:
+    """``(P,)`` fraction of each parcel's volume lying inside the EPI array.
+
+    **Pure geometry.** No brain mask, no signal, no partial-volume sampling --
+    just "is this bit of the atlas inside the acquisition's box".
+
+    This exists because I conflated three different quantities and drew a wrong
+    conclusion twice. They are independent and only the first is FOV clipping:
+
+    1. **FOV clipping** -- is the parcel inside the acquisition box at all. This
+       function. Geometric, exact, unaffected by signal quality.
+    2. **Brain-mask coverage** -- does the EPI have brain signal there.
+       Confounded by dropout in orbitofrontal and temporal cortex.
+    3. **Partial-volume sampling** -- can a 2x2x3.8 mm grid resolve a ~3 mm
+       cortical ribbon. It cannot, fully: a ribbon voxel whose *centre* falls in
+       white matter or CSF gets no label, which costs roughly a third of every
+       parcel's nominal volume uniformly, clipped or not.
+
+    ``ParcelCoverage.fraction_observed`` mixes 2 and 3, so it cannot be read as
+    a clipping measure -- which is exactly the error that made a *more* clipped
+    subject look better covered than a less clipped one.
+    """
+    import nibabel as nib
+
+    sel = voxel_labels >= 0
+    idx = np.argwhere(sel).astype(float)
+    ids = voxel_labels[sel]
+    tpl_world = nib.affines.apply_affine(np.asarray(atlas_affine, float), idx)
+    if chain.warp is not None:
+        tpl_world = _apply_warp_to_points(chain.warp, tpl_world)
+    epi_world = nib.affines.apply_affine(chain.epi_from_template, tpl_world)
+    vox = nib.affines.apply_affine(np.linalg.inv(np.asarray(epi_affine, float)), epi_world)
+    dim = np.asarray(epi_shape, dtype=float)
+    inside = np.all((vox >= -0.5) & (vox <= dim - 0.5), axis=1)
+
+    tot = np.bincount(ids, minlength=n_parcels)[:n_parcels].astype(float)
+    ins = np.bincount(ids[inside], minlength=n_parcels)[:n_parcels].astype(float)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(tot > 0, ins / np.where(tot > 0, tot, np.nan), np.nan)
