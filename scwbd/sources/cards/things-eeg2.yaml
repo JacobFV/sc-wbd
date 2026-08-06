@@ -36,6 +36,9 @@ identity:
   file_manifest: null
 
 governance:
+  license_spdx: "UNKNOWN"
+  license_spdx_note: >-
+    the OSF project declares no licence through the OSF API.
   status: unavailable
   unavailable_reason: >-
     Reachable and openly shared - this is a time/bandwidth decision, not a

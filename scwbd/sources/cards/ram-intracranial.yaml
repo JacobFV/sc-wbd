@@ -27,6 +27,7 @@ identity:
   file_manifest: null
 
 governance:
+  license_spdx: "DUA-RAM"
   status: unavailable
   unavailable_reason: >-
     the RAM public release requires registration and acceptance of a data use agreement, and the data are human intracranial recordings with concurrent direct electrical stimulation. No registration was completed and nothing was downloaded. Even with access, the stimulation arm would be evaluation-only here: ARCHITECTURE.md forbids optimising an intervention outside an independently validated A_safe (R11).

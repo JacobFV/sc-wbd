@@ -27,6 +27,7 @@ identity:
   file_manifest: null
 
 governance:
+  license_spdx: "DUA-TUH-EEG"
   status: unavailable
   unavailable_reason: >-
     download requires a signed data use agreement and issued rsync credentials from the Neural Engineering Data Consortium. No agreement was signed and no credentials were requested, so nothing was downloaded.

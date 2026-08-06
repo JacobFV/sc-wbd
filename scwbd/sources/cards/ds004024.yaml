@@ -82,6 +82,7 @@ identity:
 # G_k  governance and consent
 # =====================================================================
 governance:
+  license_spdx: "CC0-1.0"
   status: live
   license: "CC0 1.0 Universal (public domain dedication)"
   license_url: "https://creativecommons.org/publicdomain/zero/1.0/"
@@ -175,7 +176,25 @@ population:
 # S_k(signal)  native signal and units
 # =====================================================================
 signal:
-  modalities: ["eeg", "eog", "emg", "ecg", "mri", "fmri", "dwi"]
+  # CORRECTED 2026-08-06 (Ada). This list previously read
+  #   [eeg, eog, emg, ecg, mri, fmri, dwi]
+  # and the registry entry declared modalities ("eeg","tms","mri","fmri").
+  # NEITHER fmri NOR dwi is on disk: the fetched subset holds two T1w volumes
+  # and nothing else from ses-mri. The upstream release does have BOLD and
+  # diffusion; we did not fetch them. A card that keeps them in
+  # signal.modalities reads as coverage we do not have, and
+  # scwbd.release.datasets.link_sources_to_datasets computes a checkpoint's
+  # modality set from exactly this field - so the phantom entries would have
+  # been reported as haemodynamic content of a checkpoint that never saw any.
+  # What was NOT fetched is recorded below rather than deleted.
+  modalities_upstream_not_fetched: [fmri, dwi]
+  modality_evidence:
+    eeg: {globs: ["sub-*/ses-*/eeg/*_channels.tsv"], channel_type: EEG}
+    eog: {globs: ["sub-*/ses-*/eeg/*_channels.tsv"], channel_type: EOG}
+    emg: {globs: ["sub-*/ses-*/eeg/*_channels.tsv"], channel_type: EMG}
+    ecg: {globs: ["sub-*/ses-*/eeg/*_channels.tsv"], channel_type: ECG}
+    mri: ["sub-*/ses-mri/anat/*_T1w.nii.gz"]
+  modalities: ["eeg", "eog", "emg", "ecg", "mri"]
   n_channels: 69
   channel_types: {eeg: 64, eog: 2, emg: 2, ecg: 1}
   channel_names: "extended 10/20 labels (Fp1..O2 + EOG/EMG/ECG), listed per run in channels.tsv"
