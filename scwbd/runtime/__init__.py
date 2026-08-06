@@ -34,6 +34,22 @@ any prediction here.  See ``reports/governance_authorization.md``.
 from __future__ import annotations
 
 from ._compat import SIMULATION_ONLY_NOTICE, Unresolved
+from .admission import (
+    CONSUMER_STANDING_INVARIANTS,
+    EARLIEST_CREDIBLE_REVIEW,
+    EXPORT_PURPOSES,
+    LIVE_PURPOSES,
+    AdmissionCondition,
+    AdmissionVerdict,
+    AuthorizationInvalid,
+    CheckpointClaims,
+    CheckpointRefused,
+    ConsumerInvariants,
+    ConsumerInvariantViolation,
+    ExportPurpose,
+    LiveUseAuthorization,
+    admit,
+)
 from .backends import (
     AnalyticSphericalEField,
     ChargeBEMEField,
@@ -56,6 +72,18 @@ from .compare import (
 )
 from .frames import DeclaredEdge, FrameChain, ResolvedChain
 from .head import HeadModel, spherical_phantom
+from .ports import (
+    DeclaredPort,
+    LayoutNotDeclared,
+    PortContract,
+    PortedState,
+    PortError,
+    PortValue,
+    RawStateAccessRefused,
+    SpanViolation,
+    UndeclaredPort,
+    UnexportedPort,
+)
 from .provenance import (
     MODEL_DESIGNATION,
     RUNTIME_API_VERSION,
@@ -92,6 +120,32 @@ from .types import (
 __all__ = [
     # notice
     "SIMULATION_ONLY_NOTICE",
+    # the export gate (Sec. 6): what may leave here, for what purpose
+    "admit",
+    "AdmissionCondition",
+    "AdmissionVerdict",
+    "CheckpointClaims",
+    "CheckpointRefused",
+    "ConsumerInvariants",
+    "ConsumerInvariantViolation",
+    "AuthorizationInvalid",
+    "LiveUseAuthorization",
+    "ExportPurpose",
+    "EXPORT_PURPOSES",
+    "LIVE_PURPOSES",
+    "EARLIEST_CREDIBLE_REVIEW",
+    "CONSUMER_STANDING_INVARIANTS",
+    # declared ports: the only way to read model state
+    "PortContract",
+    "DeclaredPort",
+    "PortValue",
+    "PortedState",
+    "PortError",
+    "UndeclaredPort",
+    "UnexportedPort",
+    "SpanViolation",
+    "RawStateAccessRefused",
+    "LayoutNotDeclared",
     # the tms-robotics path
     "TargetingService",
     "TargetingConfig",
