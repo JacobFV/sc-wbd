@@ -513,8 +513,8 @@ bridge.
 
 ## 11. Out of scope, stated plainly
 
-Build-order item 6 (prospective human stimulation) is out of scope for this
-release: no IRB, no consent, no participants, no device. Nothing in
+No human stimulation protocol is implemented in this release, and there is no
+device command path. Nothing in
 `scwbd/runtime/` or in `packages/tms-scwbd-bridge/` implements a human
 stimulation protocol, a dose, a device setting, a trajectory, or a joint
 command, and no code path leads to one. A `Recommend` is a statement that two

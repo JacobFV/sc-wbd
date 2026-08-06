@@ -147,7 +147,8 @@
   "notes": [
     "Induction, not conduction: this gate is what N3 does NOT cover.",
     "STANDOFF ONLY. The reference series converges like (a/R_c)**degree. At a contact geometry (a/R_c ~ 0.955 for a coil element 4 mm off an 85 mm scalp) no feasible degree brings its bound below the solver error, so this gate validates the discretisation against a STANDOFF equivalent dipole, not against a contact coil. tms-robotics positions a coil in contact; that regime is gate N8_induced_efield_contact and it has not run.",
-    "The validity domain is a metric in this report, not a footnote: a reader who checks only the headline error still sees reference.convergence_ratio."
+    "The validity domain is a metric in this report, not a footnote: a reader who checks only the headline error still sees reference.convergence_ratio.",
+    "SERVED FROM CACHE (in part): at least one solver call re-used a stored result rather than re-solving. The stored value was produced by a solver whose module source hashes identically, so the physics is the same physics -- but this run did not recompute it, and that is recorded here rather than left to be inferred from numbers that are identical either way. Clear scwbd.bench.solver_cache.CACHE_DIR to force a full re-solve."
   ],
   "artifacts": {
     "subject": "scwbd.intervene.tms.efield.charge_bem_induced_efield",
@@ -163,11 +164,31 @@
     "geometry": {
       "sphere_radius_m": 0.085,
       "a_over_Rc": 0.7727272727272728
-    }
+    },
+    "solver_cache": [
+      {
+        "solver": "scwbd.intervene.tms.efield.charge_bem_induced_efield",
+        "solver_content_hash": "ed4af814dc36e32d",
+        "hits": 1,
+        "misses": 0,
+        "uncacheable_calls": 0,
+        "served_from_cache": true,
+        "note": "a HIT means the physics was NOT recomputed on this run; the stored value was produced by a solver whose module source hashes identically. A MISS re-solved."
+      },
+      {
+        "solver": "scwbd.intervene.spectral_reference.spectral_induced_efield",
+        "solver_content_hash": "bf701daf866f8bc4",
+        "hits": 1,
+        "misses": 0,
+        "uncacheable_calls": 0,
+        "served_from_cache": true,
+        "note": "a HIT means the physics was NOT recomputed on this run; the stored value was produced by a solver whose module source hashes identically. A MISS re-solved."
+      }
+    ]
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T09:54:47+00:00",
-    "git_rev": "c0e5833",
+    "timestamp_utc": "2026-08-06T19:03:57+00:00",
+    "git_rev": "1a35a9a",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -183,19 +204,46 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/bench/adjudication.py",
-      "scwbd/bench/corpus.py",
-      "scwbd/bench/instruments.py",
-      "scwbd/bench/numerics.py",
-      "scwbd/bench/report.py",
+      "scwbd/bench/gates.py",
+      "scwbd/bench/leakage.py",
       "scwbd/bench/runner.py",
-      "scwbd/runtime/_compat.py",
-      "scwbd/runtime/backends.py",
+      "scwbd/compiler/checks.py",
+      "scwbd/compiler/compile.py",
+      "scwbd/compiler/model.py",
+      "scwbd/foundation/compiler_bridge.py",
+      "scwbd/intervene/__init__.py",
+      "scwbd/intervene/base.py",
+      "scwbd/intervene/deployment.py",
+      "scwbd/intervene/limits/a_safe.toml",
+      "scwbd/intervene/safety.py",
+      "scwbd/runtime/__init__.py",
+      "scwbd/runtime/provenance.py",
       "scwbd/runtime/targeting.py",
-      "tests/bench/test_adjudication.py",
-      "tests/bench/test_instruments.py",
+      "scwbd/runtime/types.py",
+      "scwbd/schema/__init__.py",
+      "scwbd/schema/authorization.py",
+      "scwbd/schema/claims.py",
+      "scwbd/schema/examples/three_region.py",
+      "scwbd/schema/refusals.py",
+      "scwbd/schema/sources.py",
+      "scwbd/sources/cards.py",
+      "scwbd/sources/cards/ds004024.yaml",
+      "scwbd/sources/cards/ram-intracranial.yaml",
+      "tests/bench/test_leakage.py",
       "tests/bench/test_runner.py",
-      "tests/runtime/test_field_backends.py"
+      "tests/conftest.py",
+      "tests/intervene/test_authorization_gate.py",
+      "tests/intervene/test_deployment.py",
+      "tests/intervene/test_dose_effect_separation.py",
+      "tests/intervene/test_limits_bind.py",
+      "tests/intervene/test_safety.py",
+      "tests/runtime/test_authorized_refusals.py",
+      "tests/runtime/test_decision_paths.py",
+      "tests/runtime/test_ledger_and_separation.py",
+      "tests/runtime/test_no_command_surface.py",
+      "tests/runtime/test_provenance_handshake.py",
+      "tests/schema/refusals/test_refusals.py",
+      "tests/schema/test_authorization.py"
     ],
     "source_clean": false,
     "known_uninformative_fields": {

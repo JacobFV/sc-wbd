@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** relative error above tolerance against the analytic dipole solution
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c0e5833 · 2026-08-06T09:52:41+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1a35a9a · 2026-08-06T19:02:51+00:00*
 
 ## Sub-checks
 
@@ -30,3 +30,4 @@ _none run_ — no baseline, no claim.
 - SCOPE: conduction, not induction. A PASS licenses the quasi-static conduction discretisation used for EEG lead fields. It does NOT license the magnetically induced TMS field: different source term, different boundary condition, separate gate (N6_induced_efield).
 - A verification gate is destroyed if the reference leaks into the solver. Check that the boundary data is homogeneous, not the analytic value, before reading this PASS as evidence.
 - Field accuracy, target engagement, network effect and clinical utility remain separate quantities (thesis §0.5).
+- SERVED FROM CACHE (in part): at least one solver call re-used a stored result rather than re-solving. The stored value was produced by a solver whose module source hashes identically, so the physics is the same physics -- but this run did not recompute it, and that is recorded here rather than left to be inferred from numbers that are identical either way. Clear scwbd.bench.solver_cache.CACHE_DIR to force a full re-solve.

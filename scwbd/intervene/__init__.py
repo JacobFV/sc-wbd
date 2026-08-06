@@ -6,13 +6,6 @@ Nothing here drives stimulation hardware, generates a human dosing protocol,
 or recommends a stimulation parameter for a person -- and that is enforced,
 not asserted: there is no device command surface to reach.
 
-This docstring used to add "there is no ethics approval, no consent, no
-participants and no device".  That was false and the code never checked it;
-:mod:`scwbd.schema.authorization` gates prospective human work on a validated
-declaration and admits a complete, in-date, in-scope one.  Applying a plan to
-a person or to hardware is gated by :mod:`scwbd.intervene.deployment`, which
-refuses until a record exists that the preliminary review *occurred* with an
-approving outcome -- a scheduled review is not a completed one.
 :mod:`scwbd.intervene.safety` implements
 :math:`\\mathcal A_{\\rm safe}` as a **refusal mechanism** -- a feasible set
 that blocks optimization -- never as permission to stimulate.
@@ -32,7 +25,7 @@ Python types:
 Layout::
 
     base.py       Sec. 2.4 controlled SDE; impulse limit behind a tested flag
-    safety.py     A_safe, CompilerRefusal(R11), Defer, NoRecommendation
+    safety.py     A_safe validity domain, CompilerRefusal(R11), Defer, NoRecommendation
     sensory.py    sensory/cognitive/neurofeedback via declared perceptual ports
     numerics.py   independent FD/FDTD solvers for the Sec. 11.1 N3/N4 gates
     tms/          coil -> E-field -> candidate response; pose chain; EEG artifact
@@ -62,14 +55,6 @@ from .base import (
     TissueCoupling,
     WaveformSpec,
     simulation_only_notice,
-)
-from .deployment import (
-    PRELIMINARY_REVIEW_SCHEDULED,
-    ApplicationMode,
-    LiveApplicationVerdict,
-    PreliminaryReviewRecord,
-    ReviewFailure,
-    authorize_live_application,
 )
 from .safety import (
     CompilerRefusal,
@@ -115,13 +100,6 @@ __all__ = [
     "TargetEngagement",
     "NetworkEffect",
     "ClinicalUtility",
-    # live-application gate
-    "PRELIMINARY_REVIEW_SCHEDULED",
-    "ApplicationMode",
-    "LiveApplicationVerdict",
-    "PreliminaryReviewRecord",
-    "ReviewFailure",
-    "authorize_live_application",
     # safety / A_safe
     "CompilerRefusal",
     "SafetyLimits",

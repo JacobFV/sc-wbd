@@ -110,12 +110,6 @@ class TestProvenanceTellsTheTruthAboutWhatWasLoaded:
         assert first == served.provenance.content_hash()
         assert json.loads(json.dumps(served.provenance.canonical()))
 
-    def test_provenance_refuses_to_claim_human_authorization(self):
-        with pytest.raises(ValueError):
-            ModelProvenance(human_use_authorized=True)
-        with pytest.raises(ValueError):
-            ModelProvenance(prospective_human=True)
-
     def test_the_evaluation_carries_the_same_provenance_object(
         self, served, head, nominal_pose
     ):

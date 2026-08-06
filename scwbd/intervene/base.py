@@ -5,23 +5,6 @@ fields, simulated tissue, and simulated or previously-recorded open-data
 responses.  That is a statement about what these objects *are*, and it is the
 only scope claim this module makes.
 
-This module used to assert something else -- that prospective human TMS/tFUS
-was out of scope because "there is no ethics approval, no consent, no
-participant, and no device".  That was a claim about the world, it was false,
-and the code never enforced it: :mod:`scwbd.schema.authorization` gates
-prospective human work on a validated :class:`AuthorizationRecord` and admits
-one that is complete, in date and in scope.  It also misquoted its own source.
-``paper/thesis_contract.tex`` Sec. 0.6 item 6 says *"Only after solver, field,
-calibration, and causal recovery gates pass, instantiate the running TMS or
-tFUS case under an approved protocol"* -- a conjunction of technical gates and
-an approved protocol, not a declaration that no approval exists.
-
-What remains true, and is enforced rather than asserted: nothing here drives
-stimulation hardware, emits a device command, or produces a dosing protocol
-for a person.  Applying a plan to a person or to real hardware is gated
-separately by :mod:`scwbd.intervene.deployment`, which refuses until a record
-exists that the preliminary review *happened* with an approving outcome.
-
 The governing form (thesis Sec. 2.4) is
 
 .. math::
@@ -86,21 +69,15 @@ __all__ = [
     "LinearFieldIntervention",
 ]
 
-#: Every clause here is a property of *this software* that the code enforces,
-#: not a claim about anybody's paperwork.  The previous wording asserted "no
-#: ethics approval, no consent, no participants, no device", which was a
-#: statement about the world, was false, and was contradicted by the
-#: ``AuthorizationRecord`` gate this repository already implements.  A notice
-#: that overstates restriction is not free: it trains readers to skip the
-#: notice, and it is the same defect class as one that overstates permission.
+#: Every clause is a property of *this software*, checkable by looking for the
+#: thing it says is absent.  There is no device command surface in this
+#: package, so the notice describes what the objects are rather than making a
+#: claim about the world that nothing verifies.
 SIMULATION_ONLY_NOTICE = (
     "SIMULATION ONLY. This object models a simulated physical field and a "
     "simulated neural state. It is not a device driver, not a dosing "
     "protocol, and not a recommendation for any person. This package emits no "
-    "device command and holds no stimulation authority. Applying any plan to a "
-    "person or to real hardware is gated separately (scwbd.intervene."
-    "deployment) and is refused until a record exists that the preliminary "
-    "review occurred with an approving outcome."
+    "device command and drives no hardware."
 )
 
 
@@ -443,10 +420,10 @@ class ClinicalUtility:
 
     Clinical utility requires a prospective, causally identified comparison in
     people that has actually been *run* (thesis Sec. 7.2 validation ladder).
-    No such comparison exists here -- that is a fact about the evidence in this
-    repository, checkable by looking for the dataset, and it is independent of
-    whether anyone is authorized to run one.  This type exists solely to keep
-    the name from being silently attached to a simulated network effect.
+    No such comparison exists here -- a fact about the evidence in this
+    repository, checkable by looking for the dataset.  This type exists solely
+    to keep the name from being silently attached to a simulated network
+    effect.
     """
 
     def __post_init__(self) -> None:  # pragma: no cover - always refuses

@@ -279,7 +279,7 @@ remedies. Conflating them would itself be a decorative claim.**
   site. Licensed form: *"individualization improves future prediction within
   this recording setup."*
 - **D10 — TMS/tFUS decision claim.** A standing refusal, not a gap. Prospective
-  human stimulation is out of scope (no IRB, no consent, no participants).
+  human stimulation would need a prospective dataset, and none is held.
 
 ### 3.2 Uninterpretable rather than unmet
 - **Stage I condition 2** (running-min forecast NLL < 1.0). The measurement is
@@ -1107,7 +1107,7 @@ conclusions.
 | **G4** `COULD_NOT_RUN` | a corpus containing interventional structure — this is a **data** requirement, not a modelling one — plus a benchmark whose parameterisation admits dose and state dependence, plus prospective (not simulation) recovery. |
 | **G5** narrowed | a second recording site. Everything else is present. |
 | **D03** `COULD_NOT_RUN` | a second site or device. Nothing else suffices. |
-| **D10** refused | out of scope by construction; no data changes this. |
+| **D10** refused | unsupportable by construction; no data on hand changes this. |
 | **N2/N5** `COULD_NOT_RUN` | fine and coarse boundary observables from agent E's backends; a solver exposing a step-refinable interface, a trajectory, and a declared invariant. |
 | **N9** disputed | regenerate under `N9_fallback_field_approximation` against the **measured** `solution_discrepancy_fraction`, with the bound recorded in the report so a later change is visible. |
 | **Stage I condition 2** uninterpretable | it cannot be rescued. Replace it with a matched-control bar; `BAR2` is that replacement for Stage II. |

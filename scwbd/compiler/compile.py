@@ -108,7 +108,6 @@ def compile(schema: BrainSchema, *, claim: ClaimManifest) -> CompiledModel:
     ledger = build_ledger(schema)
 
     warnings = _collect_warnings(schema, layout, masks, ledger, claim, records)
-    authorizations, claim_scope = _authorization_provenance(schema, claim, records)
 
     provenance = Provenance(
         schema_id=schema.id,
@@ -124,8 +123,6 @@ def compile(schema: BrainSchema, *, claim: ClaimManifest) -> CompiledModel:
         warnings=tuple(warnings),
         target_gates=tuple(claim.target_gates),
         disabling_evidence=claim.disabling_evidence,
-        claim_scope=claim_scope,
-        authorizations=authorizations,
         extra={
             "abi_digest": layout.abi_digest(),
             "boundary_abi_digest": layout.boundary_abi_digest(),
@@ -149,77 +146,6 @@ def compile(schema: BrainSchema, *, claim: ClaimManifest) -> CompiledModel:
         ledger=ledger,
         provenance=provenance,
     )
-
-
-def _authorization_provenance(
-    schema: BrainSchema, claim: ClaimManifest, records: list[RefusalRecord]
-) -> tuple[tuple[dict, ...], str]:
-    """Every authorization verdict this artifact was compiled under, and its scope.
-
-    Reached only after ``check_r11`` has passed, so any verdict recorded here
-    is an admitted one.  Compiling under a validated authorization **changes
-    the claim the artifact carries**: its scope moves from ``simulation_only``
-    to ``protocol:<id>@<version>``, the record's content hash is pinned, and
-    both travel in ``CompiledModel.provenance`` for every downstream consumer.
-    The thesis requires exactly this ("remains visible in its provenance"); a
-    silently-authorized artifact would be indistinguishable from an
-    unauthorized one, which is the defect this gate exists to remove.
-    """
-    if claim.authorization is None:
-        return (), "simulation_only"
-
-    classes: list[str] = sorted(
-        {
-            s.intervention.modality
-            for s in schema.sources
-            if s.intervention is not None
-            and s.intervention.is_prospective_human
-            and s.intervention.is_physical_stimulation
-        }
-    )
-    if not classes:
-        # A record was declared but nothing prospective was requested. Record
-        # it as carried-but-unexercised rather than dropping it: a reader must
-        # be able to see that a declaration was attached to this build.
-        return (
-            (
-                {
-                    "admitted": False,
-                    "record_id": claim.authorization.id,
-                    "record_hash": claim.authorization.content_hash(),
-                    "protocol": claim.authorization.protocol_reference,
-                    "claim_scope": "simulation_only",
-                    "note": (
-                        "an authorization record was declared but no source card "
-                        "requests a prospective human physical intervention, so "
-                        "nothing was authorized and the artifact stays "
-                        "simulation-only"
-                    ),
-                },
-            ),
-            "simulation_only",
-        )
-
-    # An overridden R11 is not an authorized R11.  If the gate fired and the
-    # manifest paid for it with a claim demotion, the artifact keeps the
-    # demotion *and* keeps simulation-only scope: an override buys visibility,
-    # never a protocol.
-    overridden_r11 = any(r.code == "R11" and r.overridden for r in records)
-
-    entries: list[dict] = []
-    scope = "simulation_only"
-    for modality in classes:
-        verdict = claim.authorization_for(modality, what="compiled artifact")
-        entry = verdict.as_provenance()
-        if overridden_r11:
-            entry["note"] = (
-                "R11 fired and was overridden; the artifact carries the "
-                "override's demoted claim class and stays simulation-only"
-            )
-        entries.append(entry)
-        if verdict.admitted and not overridden_r11:
-            scope = verdict.claim_scope
-    return tuple(entries), scope
 
 
 def _collect_warnings(

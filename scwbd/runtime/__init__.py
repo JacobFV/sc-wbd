@@ -21,14 +21,9 @@ transport, or a controller.  SC-WBD sits strictly upstream of the consumer's
 "registered external scalp target" node, and ``tests/runtime/`` contains an
 API-surface test that fails if a command-authority symbol ever appears.
 
-Prospective human TMS/tFUS is out of scope for SC-WBD-001-beta
-(``thesis_contract.tex`` Sec. 0.6, build-order item 6) -- as a matter of
-*capability*, not of anyone's paperwork.  Governance is gated, not assumed:
-:class:`~scwbd.schema.authorization.AuthorizationRecord` records a declared
-approval and a validated one changes ``ModelProvenance.claim_scope``.  Even
-then a targeting claim is refused, because this release serves
-``weights_status="analytic_backend"`` -- there is no trained checkpoint behind
-any prediction here.  See ``reports/governance_authorization.md``.
+A targeting claim is refused here for a capability reason: this release serves
+``weights_status="analytic_backend"``, so there is no trained checkpoint behind
+any prediction.
 """
 
 from __future__ import annotations

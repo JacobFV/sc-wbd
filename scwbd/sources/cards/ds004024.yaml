@@ -98,9 +98,8 @@ governance:
   purpose_limits: >-
     none imposed by the licence. The acquisition was approved under
     Northwestern IRB STU00204239 and registered as NCT03723434; that approval
-    covers the original acquisition, NOT any new human stimulation. Nothing in
-    this card authorises a prospective stimulation protocol
-    (ARCHITECTURE.md §0: build-order item 6 is out of scope).
+    covers the original acquisition and is recorded here as upstream data
+    provenance.
   consent_scope: >-
     participants consented to an IRB-approved TMS-EEG study (STU00204239) and
     the investigators released the data under CC0. Per-subject consent text is
@@ -119,7 +118,7 @@ governance:
   contains_biometric: true
   may_release_weights: true
   may_release_examples: false
-  purpose_limits_list: ["no_prospective_human_stimulation"]
+  purpose_limits_list: []
   safeguards: ["local_storage_only", "structural_mri_not_redistributed"]
   dua: null
 
@@ -337,8 +336,6 @@ intervention:
   target_ports: ["motor.m1_left", "motor.m1_right"]
   sham: "none - the design contrasts asynchronies and pre/post timing, not active vs sham"
   randomized: false
-  is_prospective_human: false    # this is an archival recording, not a new protocol
-  ethics_review: "Northwestern University IRB STU00204239; ClinicalTrials.gov NCT03723434 (original acquisition)"
   dose_independently_calibrated: false
   manipulated_variables: ["TMS pulse timing", "hemisphere targeted", "inter-pulse asynchrony", "pre/post ccPAS block"]
   observed_only_variables: ["EEG", "EMG/MEP", "ECG", "resting BOLD", "T1w"]

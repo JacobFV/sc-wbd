@@ -102,4 +102,4 @@ Gates unchanged and re-run green: N3 `0.0069564` · N4 `0.0125564`, Helmholtz
 `9.178e-4` · N6 `0.00214881`, order 1.694, `bound_over_measured_error` 0.00196 ·
 N8 `0.0073375`, `a_over_Rc` 0.955056, self-convergence order 2.263.
 
-Simulation only; build-order item 6 remains out of scope.
+Simulation only; no hardware is driven.

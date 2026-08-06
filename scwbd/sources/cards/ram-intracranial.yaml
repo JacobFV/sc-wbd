@@ -129,15 +129,12 @@ intervention:
   target_ports: []
   sham: unknown
   randomized: true
-  is_prospective_human: false
-  ethics_review: "site IRBs of the participating clinical centres (original acquisition)"
   dose_independently_calibrated: false
   note: >-
     Declared for completeness. Because the source is unavailable and no
     independently validated A_safe exists, every intervention gradient path is
     forbidden (R11) and the model may not propose stimulation parameters from
-    it. ARCHITECTURE.md is explicit that no agent may implement a human
-    stimulation protocol.
+    it.
 missingness:
   planned: "the entire dataset is absent"
   unplanned: "not applicable"

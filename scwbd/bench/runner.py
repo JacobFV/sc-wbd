@@ -399,8 +399,8 @@ def build_summary(
     )
     L.append(
         "- **No clinical, wellness or treatment claim.** Appendix D row `D10` is a standing "
-        "refusal: prospective human TMS/tFUS is out of scope (no IRB, no consent, no "
-        "participants), so decision validity is unmeasured and unmeasurable in this release."
+        "refusal: decision validity needs a prospective human comparison, none is held, and it "
+        "is not recoverable from offline reconstruction. Unmeasured and unmeasurable here."
     )
     L.append(
         "- **No mechanism claim without its gate.** A mechanistic label is earned only by "
