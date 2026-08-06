@@ -6,9 +6,13 @@ coupling, immediate population response, network propagation, and
 plasticity."*
 
 * :class:`EFieldBackend` -- coil pose to induced E-field.  Agent G owns the
-  real solver; until it lands the runtime uses
-  :class:`AnalyticSphericalEField`, which is a closed-form model and is
-  *labelled* as one everywhere it appears.
+  real solvers and they have landed:
+  :class:`GatedAnalyticSphereEField` (gate ``N6_induced_efield``) is the
+  default, and :class:`ChargeBEMEField` (``N6`` + ``N8_induced_efield_contact``)
+  is selectable for non-spherical geometry.
+  :class:`AnalyticSphericalEField` remains only as a fallback for when
+  ``scwbd.intervene.tms.efield`` is not importable; it is an *approximation*,
+  measurably so, and is labelled as one everywhere it appears.
 * :class:`ResponseOperator` -- E-field to drive on a named target population.
   There are several, they disagree, and the disagreement is the output.
 * :class:`NetworkPropagator` -- drive to distributed change.  Several model
@@ -17,11 +21,13 @@ plasticity."*
 
 Claim limits
 ------------
-None of these operators is claimed to be neurally realized.  The analytic field
-backend is an *effective* model of a spherically symmetric conductor; the
-response operators are *effective*/*functional*; the network propagators are
-*surrogates*.  Nothing here has been validated against a measured cortical
-field or a measured evoked response.
+None of these operators is claimed to be neurally realized.  The field backends
+model a spherically symmetric conductor and are validated *numerically* -- the
+gates compare a computation against an independent reference, which lifts a
+precondition and licenses nothing downstream.  The response operators are
+*effective*/*functional*; the network propagators are *surrogates*.  Nothing
+here has been validated against a measured cortical field or a measured evoked
+response, and a numerical gate does not make a sphere a head.
 """
 
 from __future__ import annotations
@@ -246,7 +252,7 @@ class FieldResolutionUnresolved(RuntimeError):
 
     Wraps ``ChargeBEM.assert_resolves_sources``' refusal (``R06``).  This is a
     *modelling* gap, not a placement error: the geometry is physical, the mesh
-    is too coarse to attach an error bound to it, and gate N7/N8 measured
+    is too coarse to attach an error bound to it, and gate N8_induced_efield_contact measured
     non-monotonic refinement beyond the envelope, so a coarser mesh can score
     better and a user would have no way to tell that from convergence.  The
     runtime turns this into ``Defer``, never into a number.
@@ -281,7 +287,7 @@ class FieldSolve:
     ``numerical_variance`` and ``relative_error_bound`` come **from the solver**,
     not from this module.  For the charge BEM they are
     ``bem_error_envelope(panel_to_standoff)`` evaluated on the measured
-    near-source resolution -- a step function over gate N7/N8's refinement
+    near-source resolution -- a step function over gate N8_induced_efield_contact's refinement
     table -- so the ledger cites a study rather than a constant somebody typed.
     """
 
@@ -536,9 +542,9 @@ class ChargeBEMEField:
 
     * the **calibrated numerical bound**.  ``efield_from_coil(solver="bem")``
       measures the near-source resolution of the mesh it actually used and
-      looks the relative-error bound up in gate N7/N8's refinement table.  The
-      runtime consumes that number.  There is no fixed percentage anywhere on
-      this path.
+      looks the relative-error bound up in gate
+      ``N8_induced_efield_contact``'s refinement table.  The runtime consumes
+      that number.  There is no fixed percentage anywhere on this path.
     * the **refusal**.  ``ChargeBEM.assert_resolves_sources`` refuses outside
       the validated envelope (``panel_to_standoff <= 1.0``), so the runtime
       cannot receive an unvalidated field by accident.  That refusal becomes
@@ -547,10 +553,16 @@ class ChargeBEMEField:
     The mesh is graded toward the coil, because contact geometry needs
     millimetre panels under the source and does not need them anywhere else --
     uniform refinement to that size is ~80 000 unknowns and a 53 GB dense
-    matrix.  One mesh is built per nominal pose and reused across the pose
-    Jacobian's perturbations, which move the source by 0.1 mm; the resolution
-    guard is nevertheless re-evaluated on every perturbed pose, so a
-    perturbation that leaves the envelope still refuses.
+    matrix.  Sizing the refined patch is
+    ``graded_icosphere_for_sources``' job, not this module's: it measures the
+    source distribution's own angular extent, which for a figure-eight is ~41
+    degrees of scalp because the wings carry the current and sit far off axis.
+    The runtime passes source positions and lets the solver mesh for them.
+
+    One mesh is built per nominal pose and reused across the pose Jacobian's
+    perturbations, which move the source by 0.1 mm; the resolution guard is
+    nevertheless re-evaluated on every perturbed pose, so a perturbation that
+    leaves the envelope still refuses.
 
     Claim limit: N8 validates the *discretisation* of the induced-field
     computation at contact geometry to 0.73 % against an independent reference.
@@ -578,8 +590,7 @@ class ChargeBEMEField:
         *,
         base_subdiv: int = 2,
         grading_levels: int = 2,
-        half_angle_rad: float | None = None,
-        half_angle_margin_rad: float = 0.15,
+        margin_rad: float = 0.12,
         uniform_subdiv: int | None = None,
     ) -> None:
         if _compat.efield_from_coil is None:  # pragma: no cover - agent G absent
@@ -590,14 +601,13 @@ class ChargeBEMEField:
             )
         self.base_subdiv = int(base_subdiv)
         self.grading_levels = int(grading_levels)
-        #: ``None`` measures the cap from the coil's own angular extent as seen
-        #: from the head centre.  A fixed cap is calibrated for a *concentrated*
-        #: source, and a figure-eight's wings sit ~28 degrees off axis on a
-        #: 92 mm head -- outside a 20-degree cap -- so the wing tips end up over
-        #: coarse panels and the guard refuses a mesh that is fine where the
-        #: axis is and coarse where the current actually is.
-        self.half_angle_rad = None if half_angle_rad is None else float(half_angle_rad)
-        self.half_angle_margin_rad = float(half_angle_margin_rad)
+        #: Passed through to ``graded_icosphere_for_sources``.  There is
+        #: deliberately no half-angle knob here: sizing the refined patch is the
+        #: solver's job and it does it from the sources, and a fixed cap that is
+        #: too small produces a mesh that *looks* refined -- tiny on-axis
+        #: panels, a third of the element count -- while measuring no better
+        #: than no grading at all.
+        self.margin_rad = float(margin_rad)
         #: Force a *uniform* mesh instead of a graded one. Used by the tests to
         #: construct a mesh deliberately too coarse for the source, which is
         #: how the ``Defer`` path is proved rather than asserted.
@@ -605,27 +615,14 @@ class ChargeBEMEField:
         self._cache: dict[Any, Any] = {}
 
     # -- mesh ---------------------------------------------------------------
-    def _grading_half_angle(
-        self, head: HeadModel, pose: Pose, coil: CoilSpec, direction: Tensor
-    ) -> float:
-        """Angular cap that actually covers the coil, measured from its dipoles."""
-        if self.half_angle_rad is not None:
-            return self.half_angle_rad
-        p, _ = _dipoles_in_head_frame(pose, coil)
-        v = p - head.centre
-        v = v / torch.linalg.norm(v, dim=-1, keepdim=True).clamp_min(1e-30)
-        cos_max = float((v @ direction).min().clamp(-1.0, 1.0))
-        return float(math.acos(cos_max) + self.half_angle_margin_rad)
-
     def _bem_for(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> Any:
         direction = pose.t - head.centre
         direction = direction / torch.linalg.norm(direction).clamp_min(1e-30)
-        half_angle = self._grading_half_angle(head, pose, coil, direction)
         key = (
             head.subject_id,
             float(head.scalp_radius),
             self.uniform_subdiv,
-            round(half_angle, 3),
+            round(self.margin_rad, 4),
             tuple(round(float(v), 3) for v in direction),
         )
         if key in self._cache:
@@ -634,12 +631,15 @@ class ChargeBEMEField:
             v, f = _compat.icosphere(self.uniform_subdiv)
             mesh = _compat.tri_mesh(v * float(head.scalp_radius), f)
         else:
-            mesh = _compat.graded_icosphere(
+            # the solver meshes for its own sources; the runtime supplies them
+            # and does not decide how large a patch they need
+            positions, _ = _dipoles_in_head_frame(pose, coil)
+            mesh = _compat.graded_icosphere_for_sources(
                 float(head.scalp_radius),
                 self.base_subdiv,
-                direction,
+                positions - head.centre,
                 self.grading_levels,
-                half_angle,
+                margin_rad=self.margin_rad,
             )
         sigma = float(head.conductivity_prior.get("brain_S_per_m", 0.33))
         bem = _compat.charge_bem([mesh], [sigma], [0.0])

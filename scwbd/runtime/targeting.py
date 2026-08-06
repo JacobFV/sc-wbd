@@ -164,7 +164,7 @@ class _FieldBundle:
     ``solver_variance`` and ``solver_relative_bound`` come from the solver's own
     ledger.  For the charge BEM that is
     ``bem_error_envelope(panel_to_standoff)`` evaluated on the mesh actually
-    used -- a step function over gate N7/N8's measured refinement table.  There
+    used -- a step function over gate N8_induced_efield_contact's measured refinement table.  There
     is no fixed percentage anywhere on this path.
     """
 
@@ -549,7 +549,7 @@ class TargetingService:
         #   * the *coil*'s equivalent-sheet discretisation, measured here by an
         #     actual refinement of the sheet;
         #   * the *conductor* discretisation, measured by the solver and looked
-        #     up in gate N7/N8's calibrated envelope. Never a constant.
+        #     up in gate N8_induced_efield_contact's calibrated envelope. Never a constant.
         coil_numerical = float(
             (torch.linalg.norm(bundle.nominal - bundle.coarse, dim=-1)).max()
         )
@@ -583,7 +583,7 @@ class TargetingService:
                     "the numerical term is measured, not asserted: the coil "
                     "sheet by an explicit refinement here, and the conductor "
                     "discretisation by the solver's own calibrated envelope "
-                    "(gate N7/N8). A spherical backend is "
+                    "(gate N8_induced_efield_contact). A spherical backend is "
                     "conductivity-independent and so reports no tissue-parameter "
                     "variance; its discrepancy against a subject-specific solve "
                     "is a separate, prior-specified range and a numerical gate "
@@ -672,7 +672,7 @@ class TargetingService:
                 reason=(
                     "the induced-field solver refused: its discretisation does "
                     "not resolve the near-source field at this pose, and gate "
-                    "N7/N8 measured non-monotonic refinement beyond that "
+                    "N8_induced_efield_contact measured non-monotonic refinement beyond that "
                     "envelope, so no error bound can be attached to a number "
                     f"computed here. {reason}"
                 ),

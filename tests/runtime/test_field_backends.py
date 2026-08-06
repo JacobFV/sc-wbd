@@ -5,12 +5,12 @@ Defects foreclosed:
 * **a constant standing in for a measurement.**  The numerical term on the field
   path used to be a hardcoded 2 %.  It now comes from
   ``bem_error_envelope(panel_to_standoff)`` evaluated on the mesh the solver
-  actually used -- a step function over gate N7/N8's refinement table -- and
+  actually used -- a step function over gate N8_induced_efield_contact's refinement table -- and
   this module asserts the two are the same number, and that refining the mesh
   changes it.
 * **an unvalidated field reaching a consumer.**
   ``ChargeBEM.assert_resolves_sources`` refuses outside the validated envelope,
-  where gate N7/N8 measured 16 % error with *non-monotonic* refinement -- a
+  where gate N8_induced_efield_contact measured 16 % error with *non-monotonic* refinement -- a
   coarser mesh scores better, so a user watching the error converge would be
   watching nothing.  The runtime turns that refusal into ``Defer``, never into
   an exception escaping to the bridge and never into a number.
@@ -256,7 +256,7 @@ class TestTheCalibratedBoundIsConsumed:
 @pytest.fixture(scope="module")
 def coarse_evaluation(small_head, bem_pose):
     """Deliberately too coarse: 80 panels over a 92 mm sphere, where gate
-    N7/N8 measured 106 % error and non-monotonic refinement."""
+    N8_induced_efield_contact measured 106 % error and non-monotonic refinement."""
     return TargetingService(
         efield_backend=ChargeBEMEField(uniform_subdiv=1)
     ).evaluate_pose(small_head, bem_pose)
@@ -346,3 +346,95 @@ class TestAConsumerCanDemandTheGates:
         }
         assert service.provenance.efield_backend_class == "numerical_bem"
 
+
+
+class TestTheSolverSizesItsOwnMesh:
+    """Sizing the refined patch is the solver's job, not the runtime's.
+
+    The runtime passes source positions to ``graded_icosphere_for_sources`` and
+    keeps no half-angle knob. A fixed cap that is too small produces a mesh that
+    *looks* refined -- tiny on-axis panels, a third of the element count --
+    while measuring no better than the uniform mesh it replaced. On a 92 mm head
+    it is refused outright.
+    """
+
+    def test_the_backend_exposes_no_half_angle_knob(self):
+        import inspect
+
+        names = set(inspect.signature(ChargeBEMEField.__init__).parameters)
+        assert "half_angle_rad" not in names
+        assert "margin_rad" in names
+
+    def test_the_derived_cap_covers_the_whole_coil(self, small_head, bem_pose):
+        """A figure-eight spans far more scalp than a point source does."""
+        import math
+
+        positions, _ = _dipoles_in_head_frame(
+            bem_pose.pose, CoilSpec.figure_eight()
+        )
+        _, half_angle = efield.source_angular_extent(positions - small_head.centre)
+        assert math.degrees(half_angle) > 35.0, (
+            "the coil's own extent is far wider than a 20-degree cap"
+        )
+
+    def test_source_sized_grading_beats_a_uniform_mesh_at_fewer_panels(
+        self, small_head, bem_pose, bem_evaluation
+    ):
+        uniform = TargetingService(
+            efield_backend=ChargeBEMEField(uniform_subdiv=3)
+        ).evaluate_pose(small_head, bem_pose)
+        graded_ratio = bem_evaluation.field_accuracy.near_source_resolution[
+            "panel_to_standoff"
+        ]
+        uniform_ratio = uniform.field_accuracy.near_source_resolution[
+            "panel_to_standoff"
+        ]
+        assert graded_ratio < uniform_ratio
+        assert (
+            bem_evaluation.efield.ledger.validity_domain["n_faces"]
+            < uniform.efield.ledger.validity_domain["n_faces"]
+        )
+
+
+class TestTheEnvelopeRaisesRatherThanReturningNan:
+    """An absent bound is a fact worth raising about, not a ``nan`` to propagate.
+
+    A ``nan`` meaning "no bound is available" is indistinguishable three
+    operations later from a ``nan`` meaning "something went wrong", and neither
+    announces itself.
+    """
+
+    def test_it_raises_outside_the_envelope(self):
+        with pytest.raises(efield.ImpossibleGeometry) as exc:
+            efield.bem_error_envelope(efield.MAX_PANEL_TO_STANDOFF + 1.0)
+        assert "no measured error bound exists" in str(exc.value)
+
+    def test_the_runtime_reads_that_raise_as_a_resolution_refusal(self):
+        """So it becomes Defer, not Refuse: the geometry is fine, the mesh is not."""
+        from scwbd.runtime._compat import is_resolution_refusal
+
+        try:
+            efield.bem_error_envelope(efield.MAX_PANEL_TO_STANDOFF + 1.0)
+        except efield.ImpossibleGeometry as exc:
+            assert is_resolution_refusal(exc)
+        else:  # pragma: no cover
+            pytest.fail("the envelope did not raise")
+
+    def test_a_bound_inside_the_envelope_is_still_a_number(self):
+        assert efield.bem_error_envelope(0.25) == pytest.approx(0.01)
+
+
+class TestGateNamesAreTheOnesPopperAssigned:
+    def test_nothing_still_cites_the_id_faraday_invented(self):
+        """`N7` never existed; the gate is `N8_induced_efield_contact`."""
+        from pathlib import Path
+
+        import scwbd.runtime as runtime_pkg
+
+        root = Path(runtime_pkg.__file__).parent
+        offenders = [
+            path.name
+            for path in root.glob("*.py")
+            if "N7" in path.read_text()
+        ]
+        assert not offenders, f"stale gate id N7 in {offenders}"

@@ -88,7 +88,7 @@ A new, self-contained, additive package following the repo's conventions
 
 ## 4. Refusal and defer paths proved by tests
 
-`.venv/bin/python -m pytest tests/runtime -q` → **159 passed**.
+`.venv/bin/python -m pytest tests/runtime -q` → **166 passed**.
 Consumer: `python -m pytest packages/tms-scwbd-bridge/tests -q` → **51 passed,
 32 skipped** without SC-WBD installed; **83 passed** with it. The consumer's full
 suite is unaffected: 3230 passed, 51 skipped.
@@ -104,7 +104,7 @@ suite is unaffected: 3230 passed, 51 skipped.
 | **`Refuse(code="R11")`** | coil 90 mm off the scalp sphere (`tms.coil_scalp_distance_mm` > 40 mm, Caulfield 2022); also a 120 Hz protocol axis | `TestRefuseOutsideASafe` |
 | **`UnresolvedCausalAmbiguity`** | three preregistered poses 12 mm apart under three disagreeing operators; the ranking groups them and names the discriminating measurement instead of tie-breaking | `tests/runtime/test_compare.py::TestAmbiguityIsPreservedNotBrokenArbitrarily` |
 | **Whole-study `Refuse(R11)`** | every preregistered candidate outside `A_safe` | `TestUnsafeCandidatesNeverEnterTheOrdering` |
-| **`Defer` -- the field solver's discretisation does not resolve the source** | a deliberately coarse BEM mesh (80 panels over a 92 mm sphere), where gate N7/N8 measured 106 % error and *non-monotonic* refinement; `suggested_action="no_action"`, all four quantities `Unresolved` | `tests/runtime/test_field_backends.py::TestTheResolutionRefusalBecomesDefer` |
+| **`Defer` -- the field solver's discretisation does not resolve the source** | a deliberately coarse BEM mesh (80 panels over a 92 mm sphere), where gate N8_induced_efield_contact measured 106 % error and *non-monotonic* refinement; `suggested_action="no_action"`, all four quantities `Unresolved` | `tests/runtime/test_field_backends.py::TestTheResolutionRefusalBecomesDefer` |
 | **`Refuse(code="R06")`** | a coil element inside the scalp -- the inverted coil-frame convention, or a placement that intersects the head | `TestTheCoilFrameConvention`, `TestTheResolutionRefusalBecomesDefer` |
 | **An unresolved candidate is excluded from a ranking** | a preregistered set evaluated with a mesh too coarse to resolve the source: the candidates are reported under `CandidateRanking.unresolved`, not ranked at zero, and the study defers | `test_compare.py::TestAnUnresolvedCandidateIsNeverRankedAtZero` |
 | **Provenance mismatch** | wrong schema / runtime-API / designation / checkpoint hash; demanding `weights_status=("trained",)` against the analytic fallback; too few response models; `require_efield_gates=("N8_induced_efield_contact",)` against a backend that has not passed it | `tests/runtime/test_provenance_handshake.py`, `test_field_backends.py::TestAConsumerCanDemandTheGates` |
@@ -174,7 +174,7 @@ bound, and defers outside it. Three concrete consequences, all wired:
 
 1. **No fixed error figure anywhere on the field path.** `efield_from_coil(solver="bem")`
    measures the near-source resolution of the mesh it actually used and looks
-   the relative-error bound up in gate N7/N8's refinement table
+   the relative-error bound up in gate N8_induced_efield_contact's refinement table
    (`bem_error_envelope`). The runtime consumes that number into
    `EFieldPrediction.ledger.variance["numerical"]` and
    `FieldAccuracy.solver_relative_error_bound`. A test asserts the reported
@@ -189,7 +189,8 @@ bound, and defers outside it. Three concrete consequences, all wired:
    reason; none is zero, and `PoseEvaluation` refuses to carry a `Recommend`
    while any quantity is unresolved.
 3. **A clinical figure-eight is comfortably inside the envelope, not at its
-   edge.** Faraday measured a real figure-eight at 4 mm scalp standoff and
+   edge.** (This is about *standoff*; the coil's angular *extent* is separately
+   large, which is why the mesh must be sized from the sources -- see below.) Faraday measured a real figure-eight at 4 mm scalp standoff and
    found its nearest *winding* stands 9.2 mm off the scalp, because the coil is
    flat and the head is curved -- `a/R_c = 0.902`, **easier** than the 0.955
    case N8 validated. This runtime reproduces it: on the shipped 92 mm phantom
@@ -230,6 +231,23 @@ approximation, given a wider declared discrepancy, and carries no gate evidence.
 It exists only so the runtime's structure -- ledgers, covariance propagation,
 refusals -- stays exercisable when `scwbd.intervene.tms.efield` is absent.
 
+⚡ Faraday is building a reference for it from the axial machinery in
+`spectral_reference.py`, which already covers that geometry. When that gate
+lands the fallback becomes validated rather than merely labelled, and the last
+unvalidated physics leaves the runtime path. Until then it stays labelled.
+
+### The general lesson, from Faraday, worth recording
+
+Their geometry guard caught a bug it was not built for. `assert_sources_exterior`
+checks *"no source is inside the conductor"* -- a precondition the field
+equations actually require -- rather than *"the standoff the probe used"*. An
+unrelated **orientation** error violated that precondition and was caught. The
+rule: **key a guard on the physical precondition, not on the symptom that
+motivated it.** `CoilFrameBinding` refusing a self-contradicting declaration or
+a reflection is the same principle applied to a frame convention: it checks
+that the three declarations are mutually consistent and that the map is a
+proper rotation, not that some particular pose came out looking sensible.
+
 ### Also wired
 
 * `ProvenanceExpectation.require_efield_gates` -- a consumer lane that positions
@@ -239,13 +257,32 @@ refusals -- stays exercisable when `scwbd.intervene.tms.efield` is absent.
 * `ModelProvenance.efield_gate_evidence` and `efield_backend_class="numerical_bem"`.
 * `FieldAccuracy.validation_status` rises to `cross_solver` only when the
   backend names a gate that compared it against an *independent* reference.
-* The grading half-angle is measured from the coil's own angular extent rather
-  than fixed. Faraday's default 0.35 rad cap is calibrated for a concentrated
-  source; a figure-eight's wings sit ~28 degrees off axis on a 92 mm head, so a
-  20-degree cap leaves the wing tips over coarse panels and the guard -- rightly
-  -- refuses a mesh that is fine where the axis is and coarse where the current
-  is. Measuring the cap gives 0.487 panel-to-standoff at 1094 panels, better
-  than uniform subdivision 3 at 1280.
+* The BEM mesh is sized **by the solver, from the sources**:
+  `graded_icosphere_for_sources(radius, base_subdiv, dipole_pos, levels)`. The
+  runtime passes source positions and keeps no half-angle knob, because sizing
+  a refined patch is the solver's business and a wrong cap is invisible. A
+  figure-eight measured to its outermost *winding* spans **41.2 degrees** on an
+  85 mm head, so a fixed 20-degree cap excludes most of the current:
+
+  | head | mesh | panels | `panel_to_standoff` |
+  |---|---|---|---|
+  | 85 mm | uniform subdiv 3 | 1280 | 0.951 |
+  | 85 mm | graded, fixed 0.35 rad | 446 | 0.979 |
+  | 85 mm | graded, derived 0.84 rad | 1103 | **0.492** |
+  | 92 mm | graded, fixed 0.35 rad | 446 | 1.036 (refused) |
+
+  At 85 mm the fixed cap scores *worse than the uniform mesh it replaces*, and
+  at 92 mm `assert_resolves_sources()` refuses it outright. Faraday's framing,
+  which is the general lesson: it produces a mesh that **looks** refined -- tiny
+  on-axis panels, a third of the element count -- while measuring no better.
+  Worse than no grading, because it reads as progress. On the shipped 92 mm
+  phantom the derived cap is 46.1 degrees and reaches 0.487 in 1010 panels
+  against 0.959 in 1280 uniform.
+* `bem_error_envelope()` now **raises** `ImpossibleGeometry` outside the
+  envelope instead of returning `nan`. The runtime's refusal discriminator
+  reads that raise as a *resolution* refusal -- its `offending_object` carries
+  `panel_to_standoff` -- so it becomes `Defer`, not `Refuse`: the geometry is
+  fine, the mesh is not.
 
 ## 7. What backs the numbers today, and what does not
 
@@ -365,26 +402,19 @@ about neither on its own, which is precisely why the comparison should be run
 before a targeting claim is made from either. Neither repository currently has
 the fixture to do it.
 
-**R5 — the grading half-angle should follow the source's angular extent.**
-`graded_icosphere`'s default `half_angle_rad = 0.35` is calibrated for a
-concentrated source. A figure-eight coil's wings sit ~28 degrees off axis on a
-92 mm head, outside a 20-degree cap, so the wing tips end up over coarse panels
-and `assert_resolves_sources` refuses a mesh that is fine where the axis is and
-coarse where the current actually is. The runtime works around it by measuring
-the cap from the coil's own dipole positions
-(`ChargeBEMEField(half_angle_rad=None)`, the default), which gives 0.487
-panel-to-standoff at 1094 panels versus 0.959 at 1280 for uniform subdivision 3.
-**Suggested:** either default `graded_icosphere`'s cap to the source extent, or
-document that the 0.35 default is for concentrated sources only. Handed back to
-⚡ Faraday rather than changed, since `scwbd/intervene/**` is theirs.
+**R5 — grading half-angle should follow the source's angular extent. ADOPTED.**
+`source_angular_extent()` and `graded_icosphere_for_sources()` have landed in
+`scwbd/intervene/tms/efield.py`; `graded_icosphere`'s `half_angle_rad` now has
+no default, deliberately, since there is no safe one. The runtime's own
+half-angle computation is deleted and it passes source positions instead.
+Faraday's measurement was worse than the one this report originally carried:
+measuring to the outermost *winding* rather than the wing centre, the coil spans
+41.2 degrees, so the fixed cap was excluding most of the current and scored
+worse than the uniform mesh it replaced. See §6b.
 
-**R6 — `bem_error_envelope` returns `nan` outside the envelope.**
-That is defensible (there is no bound to report), but it means a caller who
-skips `assert_resolves_sources` and reads the ledger gets a `nan` variance
-rather than a refusal. The runtime never takes that path -- `efield_from_coil`
-calls the guard first -- but a `nan` in a variance field is the kind of thing
-that propagates silently. **Suggested:** consider raising from
-`bem_error_envelope` itself. Also Faraday's call.
+**R6 — `bem_error_envelope` returned `nan` outside the envelope. ADOPTED.**
+It now raises `ImpossibleGeometry` (R06) naming the ratio, the envelope and the
+remedy. The runtime classifies that raise as a resolution refusal and defers.
 
 **R7 — the bridge's default handshake accepts an analytic-backend model.**
 This is deliberate: refusing outright would tempt a caller to build a local

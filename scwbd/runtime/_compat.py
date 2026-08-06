@@ -59,7 +59,8 @@ __all__ = [
     "spherical_head_model",
     "charge_bem",
     "layered_sphere_bem",
-    "graded_icosphere",
+    "graded_icosphere_for_sources",
+    "source_angular_extent",
     "tri_mesh",
     "icosphere",
     "bem_error_envelope",
@@ -156,7 +157,10 @@ efield_from_coil = optional("scwbd.intervene.tms.efield", "efield_from_coil")
 spherical_head_model = optional("scwbd.intervene.tms.efield", "SphericalHeadModel")
 charge_bem = optional("scwbd.intervene.tms.efield", "ChargeBEM")
 layered_sphere_bem = optional("scwbd.intervene.tms.efield", "LayeredSphereBEM")
-graded_icosphere = optional("scwbd.intervene.tms.efield", "graded_icosphere")
+graded_icosphere_for_sources = optional(
+    "scwbd.intervene.tms.efield", "graded_icosphere_for_sources"
+)
+source_angular_extent = optional("scwbd.intervene.tms.efield", "source_angular_extent")
 tri_mesh = optional("scwbd.intervene.tms.efield", "TriMesh")
 icosphere = optional("scwbd.intervene.tms.efield", "icosphere")
 bem_error_envelope = optional("scwbd.intervene.tms.efield", "bem_error_envelope")
