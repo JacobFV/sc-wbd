@@ -5,13 +5,11 @@ paper/output/
 .venv/
 
 # large, hash-manifest-tracked artifacts (ARCHITECTURE.md sec. 1)
-#
-# Both forms of each name. A trailing slash matches a DIRECTORY only, and in
-# every worktree these are SYMLINKS into /data/scwbd -- so `assets/` did not
-# match `assets` and a `git add -A` committed the symlink. Checking that blob
-# out in the main repo replaced its `assets` symlink with one pointing at
-# itself, and every worktree that resolves through the main repo then got
-# ELOOP out of `load_anatomy`. See reports/dynamics/family_state.md.
+# Both forms of each name are required. A trailing slash matches a DIRECTORY
+# ONLY -- it does not match a symlink of the same name, so `assets/` alone left
+# the `assets` symlink trackable and one `git add -A` committed it. The blob's
+# target string was a worktree-local path; checking it out in the main repo made
+# assets point at itself and every worktree resolving through it got ELOOP.
 assets
 assets/
 data

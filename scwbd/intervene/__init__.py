@@ -1,12 +1,12 @@
 """SC-WBD intervention operators: TMS, tFUS, sensory/cognitive, and ``A_safe``.
 
-**SIMULATION ONLY.**  Per ``paper/thesis_contract.tex`` Sec. 0.6, build-order
-item 6 (prospective human TMS/tFUS) is **out of scope** for SC-WBD-001-beta:
-there is no ethics approval, no consent, no participants and no device.  Every
-public entry point in this package operates on simulated fields and simulated
-or previously-recorded open-data responses.  Nothing here drives stimulation
-hardware, generates a human dosing protocol, or recommends a stimulation
-parameter for a person.  :mod:`scwbd.intervene.safety` implements
+**SIMULATION ONLY.**  Every public entry point in this package operates on
+simulated fields and simulated or previously-recorded open-data responses.
+Nothing here drives stimulation hardware, generates a human dosing protocol,
+or recommends a stimulation parameter for a person -- and that is enforced,
+not asserted: there is no device command surface to reach.
+
+:mod:`scwbd.intervene.safety` implements
 :math:`\\mathcal A_{\\rm safe}` as a **refusal mechanism** -- a feasible set
 that blocks optimization -- never as permission to stimulate.
 
@@ -25,7 +25,7 @@ Python types:
 Layout::
 
     base.py       Sec. 2.4 controlled SDE; impulse limit behind a tested flag
-    safety.py     A_safe, CompilerRefusal(R11), Defer, NoRecommendation
+    safety.py     A_safe validity domain, CompilerRefusal(R11), Defer, NoRecommendation
     sensory.py    sensory/cognitive/neurofeedback via declared perceptual ports
     numerics.py   independent FD/FDTD solvers for the Sec. 11.1 N3/N4 gates
     tms/          coil -> E-field -> candidate response; pose chain; EEG artifact

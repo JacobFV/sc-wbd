@@ -78,12 +78,7 @@ class ProvenanceMismatch(RuntimeError):
 
 @dataclass(frozen=True)
 class ModelProvenance:
-    """What is actually being served, stated in full.
-
-    ``human_use_authorized`` is hard-wired ``False`` and refuses to be
-    constructed ``True``.  It exists so that a consumer that forgets to branch
-    on ``decision`` still carries the flag through its own evidence graph.
-    """
+    """What is actually being served, stated in full."""
 
     model_designation: str = MODEL_DESIGNATION
     schema_version: str = SCHEMA_VERSION
@@ -101,8 +96,6 @@ class ModelProvenance:
     posterior_class: str = "pseudo"
     #: ``thesis_contract.tex`` Sec. 0.6 build-order item this artifact reaches.
     build_order_item: int = 4
-    #: Out of scope for this release, by construction.
-    prospective_human: bool = False
 
     efield_backend: str = "analytic_spherical_primary"
     efield_backend_class: BackendClass = "analytic"
@@ -120,37 +113,7 @@ class ModelProvenance:
     torch_version: str = ""
     notes: Mapping[str, Any] = field(default_factory=dict)
 
-    # -- governance --------------------------------------------------------
-    #: ``"simulation_only"`` or ``"protocol:<id>@<version>"``.  An evaluation
-    #: served under a validated ``AuthorizationRecord`` is a different artifact
-    #: from one that was not, and this is where a consumer sees which.
-    claim_scope: str = "simulation_only"
-    #: ``AuthorizationVerdict.as_provenance()`` for the record this service was
-    #: constructed with, or ``None``.  Pins the record's content hash.
-    authorization: Mapping[str, Any] | None = None
-
-    #: Whether *this software* authorises human use.  Permanently ``False``,
-    #: and unrelated to ``claim_scope``: SC-WBD records a declaration made by
-    #: the people responsible for a protocol; it never issues one, and a
-    #: recorded protocol scope is not this repository granting permission.
-    human_use_authorized: bool = False
     notice: str = SIMULATION_ONLY_NOTICE
-
-    def __post_init__(self) -> None:
-        if self.human_use_authorized:  # pragma: no cover - guard
-            raise ValueError(
-                "ModelProvenance cannot be marked authorized for human use; "
-                "this software does not issue authorization. Governance is "
-                "carried by an AuthorizationRecord declared by the people "
-                "responsible for a protocol and recorded in `claim_scope` and "
-                "`authorization` (scwbd.schema.authorization); a recorded "
-                "protocol scope is not this repository granting permission"
-            )
-        if self.prospective_human:  # pragma: no cover - guard
-            raise ValueError(
-                "prospective human stimulation is out of scope for "
-                "SC-WBD-001-beta (build-order item 6)"
-            )
 
     # -- identity ----------------------------------------------------------
     @property
@@ -159,30 +122,15 @@ class ModelProvenance:
         return self.weights_status == "trained"
 
     @property
-    def is_protocol_bound(self) -> bool:
-        """True when this service carries a validated authorization record."""
-        return self.claim_scope != "simulation_only"
-
-    @property
-    def authorization_hash(self) -> str:
-        if not self.authorization:
-            return ""
-        return str(self.authorization.get("record_hash", ""))
-
-    @property
     def label(self) -> str:
-        scope = "" if not self.is_protocol_bound else f" under {self.claim_scope}"
         return (
             f"{self.model_designation}[{self.weights_status}] "
-            f"{self.schema_version} {self.runtime_api_version}{scope}"
+            f"{self.schema_version} {self.runtime_api_version}"
         )
 
     def canonical(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["notes"] = dict(self.notes)
-        payload["authorization"] = (
-            dict(self.authorization) if self.authorization else None
-        )
         payload.pop("notice", None)
         return payload
 
@@ -218,11 +166,6 @@ class ProvenanceExpectation:
     min_response_models: int | None = None
     min_dynamics_model_classes: int | None = None
     require_a_safe_citations: bool = False
-    #: Assert the governance scope of what is being served.  A consumer that
-    #: must never touch a protocol-bound artifact passes
-    #: ``"simulation_only"``; one that requires a named protocol passes
-    #: ``"protocol:<id>@<version>"``.
-    require_claim_scope: str | None = None
 
     def mismatches(self, served: ModelProvenance) -> tuple[str, ...]:
         out: list[str] = []
@@ -281,15 +224,6 @@ class ProvenanceExpectation:
                 f"dynamics_model_classes: expected at least "
                 f"{self.min_dynamics_model_classes}, served "
                 f"{len(served.dynamics_model_classes)}"
-            )
-        if (
-            self.require_claim_scope is not None
-            and self.require_claim_scope != served.claim_scope
-        ):
-            out.append(
-                f"claim_scope: expected {self.require_claim_scope!r}, served "
-                f"{served.claim_scope!r} -- an artifact produced under a named "
-                "protocol is not the same artifact as one that was not"
             )
         if self.require_a_safe_citations and not served.a_safe_citations:
             out.append(

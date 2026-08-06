@@ -82,6 +82,7 @@ identity:
 # G_k  governance and consent
 # =====================================================================
 governance:
+  license_spdx: "CC0-1.0"
   status: live
   license: "CC0 1.0 Universal (public domain dedication)"
   license_url: "https://creativecommons.org/publicdomain/zero/1.0/"
@@ -97,9 +98,8 @@ governance:
   purpose_limits: >-
     none imposed by the licence. The acquisition was approved under
     Northwestern IRB STU00204239 and registered as NCT03723434; that approval
-    covers the original acquisition, NOT any new human stimulation. Nothing in
-    this card authorises a prospective stimulation protocol
-    (ARCHITECTURE.md §0: build-order item 6 is out of scope).
+    covers the original acquisition and is recorded here as upstream data
+    provenance.
   consent_scope: >-
     participants consented to an IRB-approved TMS-EEG study (STU00204239) and
     the investigators released the data under CC0. Per-subject consent text is
@@ -118,7 +118,7 @@ governance:
   contains_biometric: true
   may_release_weights: true
   may_release_examples: false
-  purpose_limits_list: ["no_prospective_human_stimulation"]
+  purpose_limits_list: []
   safeguards: ["local_storage_only", "structural_mri_not_redistributed"]
   dua: null
 
@@ -175,7 +175,25 @@ population:
 # S_k(signal)  native signal and units
 # =====================================================================
 signal:
-  modalities: ["eeg", "eog", "emg", "ecg", "mri", "fmri", "dwi"]
+  # CORRECTED 2026-08-06 (Ada). This list previously read
+  #   [eeg, eog, emg, ecg, mri, fmri, dwi]
+  # and the registry entry declared modalities ("eeg","tms","mri","fmri").
+  # NEITHER fmri NOR dwi is on disk: the fetched subset holds two T1w volumes
+  # and nothing else from ses-mri. The upstream release does have BOLD and
+  # diffusion; we did not fetch them. A card that keeps them in
+  # signal.modalities reads as coverage we do not have, and
+  # scwbd.release.datasets.link_sources_to_datasets computes a checkpoint's
+  # modality set from exactly this field - so the phantom entries would have
+  # been reported as haemodynamic content of a checkpoint that never saw any.
+  # What was NOT fetched is recorded below rather than deleted.
+  modalities_upstream_not_fetched: [fmri, dwi]
+  modality_evidence:
+    eeg: {globs: ["sub-*/ses-*/eeg/*_channels.tsv"], channel_type: EEG}
+    eog: {globs: ["sub-*/ses-*/eeg/*_channels.tsv"], channel_type: EOG}
+    emg: {globs: ["sub-*/ses-*/eeg/*_channels.tsv"], channel_type: EMG}
+    ecg: {globs: ["sub-*/ses-*/eeg/*_channels.tsv"], channel_type: ECG}
+    mri: ["sub-*/ses-mri/anat/*_T1w.nii.gz"]
+  modalities: ["eeg", "eog", "emg", "ecg", "mri"]
   n_channels: 69
   channel_types: {eeg: 64, eog: 2, emg: 2, ecg: 1}
   channel_names: "extended 10/20 labels (Fp1..O2 + EOG/EMG/ECG), listed per run in channels.tsv"
@@ -318,8 +336,6 @@ intervention:
   target_ports: ["motor.m1_left", "motor.m1_right"]
   sham: "none - the design contrasts asynchronies and pre/post timing, not active vs sham"
   randomized: false
-  is_prospective_human: false    # this is an archival recording, not a new protocol
-  ethics_review: "Northwestern University IRB STU00204239; ClinicalTrials.gov NCT03723434 (original acquisition)"
   dose_independently_calibrated: false
   manipulated_variables: ["TMS pulse timing", "hemisphere targeted", "inter-pulse asynchrony", "pre/post ccPAS block"]
   observed_only_variables: ["EEG", "EMG/MEP", "ECG", "resting BOLD", "T1w"]

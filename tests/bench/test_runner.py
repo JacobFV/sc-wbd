@@ -81,11 +81,11 @@ def test_reports_are_written_as_json_and_markdown(tmp_path, bare):
     assert "This gate did **not** pass" in mp.read_text()
 
 
-def test_every_gate_declares_the_out_of_scope_non_goals(bare):
+def test_every_gate_declares_its_non_goals(bare):
     for r in bare["gates"]:
         joined = " ".join(r.manifest.non_goals)
         assert "digital twin" in joined
-        assert "no IRB" in joined
+        assert "no device command path" in joined
 
 
 def test_summary_names_the_modality_additivity_tautology(bare):

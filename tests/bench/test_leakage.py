@@ -174,12 +174,12 @@ def test_dataset_family_breadth_detects_negative_transfer():
 
 
 def test_tms_decision_claim_is_a_standing_refusal():
-    """No inputs can make this run: item 6 is out of scope."""
+    """No inputs can make this run: the dataset it needs is not held."""
     rep = audit_tms_tfus_decision_claim(seed=0, anything="supplied", more_data=[1, 2, 3])
     assert rep.status == "COULD_NOT_RUN"
     reason = " ".join(rep.blocking_reasons)
-    assert "OUT OF SCOPE BY CONSTRUCTION" in reason
-    assert "no IRB" in reason
+    assert "UNSUPPORTABLE BY CONSTRUCTION" in reason
+    assert "No such dataset is held" in reason
     assert "not wellness or treatment efficacy" in " ".join(rep.notes)
 
 

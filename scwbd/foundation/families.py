@@ -523,7 +523,7 @@ def _from_anatomy_partition(anat) -> tuple[tuple[str, ...], dict[str, Any]] | No
 
     Duck-typed on purpose — this module must not import ``scwbd.anatomy``.
     """
-    part = getattr(anat, "family_partition", None)
+    part = getattr(anat, "families", None) or getattr(anat, "family_partition", None)
     if part is None:
         return None
     fams = getattr(part, "families", None)
@@ -636,15 +636,25 @@ def _declared_families(anat) -> tuple[tuple[str, ...], dict[str, Any]] | None:
     return None
 
 
-_YEO = re.compile(r"^\d*Networks?_(LH|RH)_([A-Za-z]+)")
-
-
 def _cortical_key(label: str, system: int) -> tuple[str, str]:
-    """(family name, discriminator) for a cortical parcel."""
-    m = _YEO.match(label)
-    if m:
-        return f"cortex_{m.group(2).lower()}", "Yeo network token in the parcel label"
-    return f"cortex_system{int(system):02d}", "AnatomyPrior.system integer (labels carry no network token)"
+    """(family name, discriminator) for a cortical parcel: **one** cortical family.
+
+    This used to split the cortex by Yeo-7 network.  🧠 Cajal tested exactly that
+    under a Váša spin null on a measured regional profile: it separates only 6 of
+    21 pairs (``SomMot vs Vis`` at q=0.49/0.78), so it is not a partition.  The
+    evidence supports unimodal/association and nothing finer, and that split is a
+    *measurement* which belongs in the anatomy prior, not a string match on a
+    parcel label which belongs nowhere.
+
+    Emitting the rejected split here would have been the worse of the two
+    failures: nothing downstream can tell a fabricated partition from a measured
+    one, so every per-family operator would have bound to it silently.  So the
+    fallback now emits the coarsest thing that is certainly true — the cortex is
+    the cortex — and labels it.  It produces an artifact rather than refusing to
+    (ARCHITECTURE.md §7a), and the artifact does not claim a structure nobody
+    measured.
+    """
+    return "cortex", "AnatomyPrior.division == 'cortex' (single undifferentiated cortical family)"
 
 
 def _subcortical_key(label: str) -> tuple[str, str]:
@@ -729,7 +739,7 @@ def derive_families(
     d_grid: int = 12,
     d_context: int = 4,
     d_prediction: int = 8,
-    allow_derived: bool = False,
+    allow_derived: bool = True,
 ) -> FamilyPartition:
     """Partition the prior's regions into families **using only what it declares or distinguishes**.
 
@@ -828,28 +838,14 @@ def derive_families(
                 "families the prior marks as carrying NO regional data (narrowing N-4 -- "
                 "initialised from the prior and declared untrained): " + ", ".join(untrained)
             )
-    elif not allow_derived:
-        raise ValueError(
-            "the anatomy prior declares no family partition, and the fallback derivation is "
-            "REFUSED by default.\n\n"
-            "The fallback splits cortex by Yeo-7 network. Agent C tested exactly that under a "
-            "Vasa spin null and it separates only 6 of 21 pairs -- it is not a partition. The "
-            "evidence supports a unimodal/association split and nothing finer. A fallback that "
-            "produces a partition the evidence rejects is worse than no fallback, because it "
-            "produces one silently and everything downstream binds operators to it.\n\n"
-            "Remedies, in order of preference:\n"
-            "  1. install/repair `scwbd.anatomy` so `derive_families(prior)` supplies the "
-            "     partition -- `AnatomyPrior.family_partition` carries it through;\n"
-            "  2. supply a partition yourself on the prior (`family` / `family_id`+`family_names`);\n"
-            "  3. pass allow_derived=True to state EXPLICITLY that this run uses a partition the "
-            "     spin test rejects. Tests of the fallback itself do this; a training run must not."
-        )
     else:
         notes.append(
-            "PARTITION DERIVED BY FALLBACK, NOT DECLARED. The cortical split is Yeo-7, which "
-            "agent C's Vasa spin null REJECTS as a partition (6 of 21 pairs separate). Reached "
-            "only via allow_derived=True. No operator assignment resting on this split is "
-            "supported by the anatomical evidence."
+            "PARTITION DERIVED HERE, NOT DECLARED by the anatomy prior. The cortex is ONE "
+            "undifferentiated family: the Yeo-7 split this fallback used to emit is rejected by "
+            "agent C's Vasa spin null (6 of 21 pairs separate) and has been removed. Any claim "
+            "of cortical regional heterogeneity from this partition is unsupported -- it is the "
+            "§11.4 pooled-vector control for the cortex, with the subcortex separated by atlas "
+            "identity. Install scwbd.anatomy for the measured partition."
         )
     for i in (range(n) if declared is None else ()):
         d = division[i]

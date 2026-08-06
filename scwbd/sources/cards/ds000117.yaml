@@ -61,6 +61,7 @@ identity:
 # G_k  governance and consent
 # =====================================================================
 governance:
+  license_spdx: "CC0-1.0"
   status: partial
   status_reason: >-
     live and usable for the two fetched participants; 'partial' because 14 of
@@ -140,6 +141,21 @@ population:
 # S_k(signal)  native signal and units
 # =====================================================================
 signal:
+  # Every modality below is backed by files under the dataset root. The globs
+  # are checked by scwbd.sources.audit (A4): a modality with no matching file
+  # is a FINDING, not a silent pass.
+  #
+  # eog/ecg are NOT separable in the FIFF header - it reports 74 undifferentiated
+  # 'eeg' channels. The separation exists only in the BIDS channels.tsv, so that
+  # is the file the claim points at, and the audit reads its `type` column.
+  modality_evidence:
+    meg:  {globs: ["sub-*/ses-meg/meg/*_meg.fif"], channel_type: [MAG, GRAD]}
+    eeg:  {globs: ["sub-*/ses-meg/meg/*_meg.fif"], channel_type: EEG}
+    eog:  {globs: ["sub-*/ses-meg/*_channels.tsv"], channel_type: [HEOG, VEOG, EOG]}
+    ecg:  {globs: ["sub-*/ses-meg/*_channels.tsv"], channel_type: ECG}
+    mri:  ["sub-*/ses-mri/anat/*.nii.gz"]
+    fmri: ["sub-*/ses-mri/func/*_bold.nii.gz"]
+    dwi:  ["sub-*/ses-mri/dwi/*_dwi.nii.gz"]
   modalities: ["meg", "eeg", "eog", "ecg", "mri", "fmri", "dwi"]
   n_channels: 376                 # 102 magnetometers + 204 planar gradiometers + 70 EEG
   channel_types: {mag: 102, grad: 204, eeg: 70}
@@ -181,7 +197,32 @@ spatial:
     T1w and multi-echo FLASH for BEM), which is the reason this dataset is in
     the register at all - but the forward operator must be computed and
     registered by agent F before the lead-field gradient path opens.
-  extent: null
+  # FILLED 2026-08-06 (🗄️ Ada) from the NIfTI headers of the 18 BOLD runs on
+  # disk; this field was previously `null`, which was honest but said nothing.
+  # `null` is safe on a card nobody reads for coverage and dangerous on one
+  # that now has a BOLD reader pointed at it, because "unstated" reads as
+  # "whole brain" to anyone building a per-parcel likelihood.
+  extent: "a 124 mm slab, NOT established as whole-brain"
+  coverage:
+    slab_mm: 124
+    n_slices: 33
+    slice_thickness_mm: 3.75
+    in_plane: "64 x 64 @ 3.0 mm"
+    whole_brain: unknown
+    evidence: >-
+      Re-derived from the NIfTI headers of the 18 BOLD runs on disk: 33 slices
+      x 3.75 mm = 124 mm (the sub-02 runs are 3.9 mm, giving 129 mm - the two
+      participants were NOT acquired identically). Whether either slab contains
+      the whole brain is unmeasured. This field was previously `null`, which
+      was honest; it is now a measured number, which is better.
+    consequence: >-
+      Parcels lying outside the slab have NO measurement in this source, in
+      every subject, by acquisition rather than by chance. That is a support
+      fact, not a missing-data problem: rule 1 forbids imputing it, so the
+      haemodynamic likelihood must carry a DECLARED PER-PARCEL COVERAGE MASK
+      and contribute no term where the mask is empty. Establishing that mask
+      needs the registration N-4a describes, so it does not exist yet, and
+      until it does no claim from this source may be stated per parcel.
   n_elements: 376
   positions_are_digitised: true
   positions_source: >-
@@ -279,6 +320,16 @@ missingness:
     covariance cannot be estimated from an empty-room recording for this
     source.
   unplanned: "MEG/EEG .fif fetched for 2 of 2 participants (sub-01, sub-02); BOLD present for 2. The absent MEG binaries are a deliberate, recorded subset - not missing data in the statistical sense - and the unfetched participants are excluded from MEG likelihood terms rather than imputed."
+  spatial_coverage: >-
+    THE ACQUISITION IS A SLAB, NOT A HEAD. See spatial.coverage. Parcels
+    outside it have no measurement in any subject, systematically, by
+    acquisition. This is missing-by-design at the level of the SUPPORT, which
+    is a different object from a dropped run: a dropped run is excluded, an
+    uncovered parcel has no observation operator at all. Rule 1 forbids
+    imputing it as zero or as an average brain, so the haemodynamic likelihood
+    must carry a declared per-parcel coverage mask and contribute NO term where
+    that mask is empty. The mask needs the registration N-4a describes and does
+    not exist yet.
   artifact_rejection: "none by the provider (raw fif) and none here; SQUID jumps, blinks, cardiac artefact and head movement are all present"
   dropout: "three participants present in the pre-BIDS release were removed upstream without a stated reason"
   attrition: "not applicable: two sessions, both completed for the released participants"

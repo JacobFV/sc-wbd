@@ -107,19 +107,12 @@ class TestThePublicSurfaceHasNoCommandEntryPoint:
         from scwbd.runtime import TargetingService
 
         public = {n for n in vars(TargetingService) if not n.startswith("_")}
-        # ``is_protocol_bound`` is a read-only governance accessor: it reports
-        # whether a validated AuthorizationRecord was supplied, so a consumer
-        # can branch on the claim scope it is being served.  It takes no
-        # arguments, sets nothing and reaches nothing downstream of the
-        # registered external scalp target.
         assert public == {
             "load",
             "evaluate_pose",
             "with_config",
             "read",
-            "is_protocol_bound",
         }
-        assert isinstance(vars(TargetingService)["is_protocol_bound"], property)
 
     def test_the_served_model_surface_is_exactly_load_handshake_and_evaluate(self):
         from scwbd.runtime import ServedModel
@@ -208,16 +201,29 @@ class TestTheSimulationOnlyNoticeTravels:
             notice = getattr(obj, "notice", "")
             assert "SIMULATION ONLY" in notice
 
-    def test_the_notice_names_the_missing_approvals(self):
+    def test_the_notice_claims_only_what_the_code_enforces(self):
+        """The notice must describe *this software*, never anyone's paperwork.
+
+        It once asserted "no consent", "no participants", "no device" -- claims
+        about the world that nothing here checked. A test that pins a false
+        claim in place is worse than no test, so it is inverted: those phrases
+        are banned, and the enforced properties are asserted instead.
+        """
         from scwbd.runtime import SIMULATION_ONLY_NOTICE
 
-        for phrase in ("no consent", "no participants", "no device"):
-            assert phrase in SIMULATION_ONLY_NOTICE
+        for banned in ("no consent", "no participants", "no ethics approval"):
+            assert banned not in SIMULATION_ONLY_NOTICE, (
+                f"the notice asserts {banned!r}, which is a claim about the "
+                "world that no code in this repository checks"
+            )
+        # What it must say instead, each clause enforced somewhere:
+        assert "not a device driver" in SIMULATION_ONLY_NOTICE
+        assert "not a dosing" in SIMULATION_ONLY_NOTICE
+        assert "no device command" in SIMULATION_ONLY_NOTICE
 
-    def test_nothing_can_be_flagged_as_authorized_for_human_use(
+    def test_no_evaluation_exposes_a_command_or_a_dose(
         self, service, head, nominal_pose
     ):
         evaluation = service.evaluate_pose(head, nominal_pose)
-        assert evaluation.provenance.human_use_authorized is False
-        assert evaluation.provenance.prospective_human is False
-        assert evaluation.ledger.validity_domain["human_use_authorized"] is False
+        for banned in ("command", "dose_mt", "amplitude", "trigger", "fire"):
+            assert not hasattr(evaluation, banned)

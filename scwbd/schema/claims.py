@@ -17,13 +17,8 @@ from typing import Literal
 
 from pydantic import Field, JsonValue, model_validator
 
-from .authorization import (
-    AuthorizationRecord,
-    AuthorizationVerdict,
-    validate_authorization,
-)
 from .base import SchemaModel
-from .refusals import REFUSAL_CODES, RefusalCode
+from .refusals import NON_OVERRIDABLE_CODES, REFUSAL_CODES, REFUSALS, RefusalCode
 
 __all__ = [
     "ClaimClass",
@@ -73,6 +68,13 @@ class ClaimOverride(SchemaModel):
             raise ValueError(f"override of {self.code} requires a justification")
         if not self.approved_by.strip():
             raise ValueError(f"override of {self.code} requires an approver")
+        if self.code in NON_OVERRIDABLE_CODES:
+            raise ValueError(
+                f"{self.code} is not overridable. An override buys visibility by "
+                f"demoting the claim class, but {self.code} is about what the "
+                "artifact is *called*, and a demoted claim class does not rename "
+                f"it. Remedy: {REFUSALS[self.code].remedy}"
+            )
         return self
 
 
@@ -87,22 +89,6 @@ class ClaimManifest(SchemaModel):
     requires_global_section: bool = False
     #: Request optimization over intervention parameters (drives R11).
     optimizes_intervention: bool = False
-    #: Whether prospective human stimulation is intended.  R11 refuses this
-    #: *unless* a validated :class:`~scwbd.schema.authorization.\
-    #: AuthorizationRecord` below admits the requested intervention class at
-    #: :attr:`request_time_s` -- and continues to refuse for every other reason
-    #: (no A_safe, uncalibrated dose, uncertainty dominating the benefit, no
-    #: trained model, unresolved field solve).
-    prospective_human: bool = False
-    #: The recorded claim of ethics/consent/regulatory authorization this
-    #: artifact is compiled under, if any.  Its content hash and the resulting
-    #: claim scope are written into ``CompiledModel.provenance``: an artifact
-    #: compiled under a protocol can never be mistaken for one that was not.
-    authorization: AuthorizationRecord | None = None
-    #: The time the request applies to, on the ``wall`` clock.  Required for a
-    #: prospective request, because approvals expire and an undated request
-    #: cannot be checked against a validity window.
-    request_time_s: float | None = None
     #: Claim gates (G1..G5) this artifact is meant to be evaluated against.
     target_gates: tuple[str, ...] = ()
     #: Which refusals are overridden, and at what cost.
@@ -139,31 +125,6 @@ class ClaimManifest(SchemaModel):
 
     def overridden_codes(self) -> tuple[str, ...]:
         return tuple(sorted(o.code for o in self.overrides))
-
-    def authorization_for(
-        self,
-        intervention_class: str,
-        *,
-        a_safe_id: str | None = None,
-        required_a_safe_axes: tuple[str, ...] = (),
-        what: str = "claim manifest",
-    ) -> "AuthorizationVerdict":
-        """Check this manifest's declared authorization against one request.
-
-        Never raises for an invalid record; returns a verdict naming every
-        specific failure.  A manifest carrying no record yields a verdict whose
-        single failure is ``AUTH_ABSENT`` -- still a refusal, but one that
-        names a missing, supplyable artifact instead of asserting a belief
-        about the world.
-        """
-        return validate_authorization(
-            self.authorization,
-            intervention_class=intervention_class,
-            at_time_s=self.request_time_s,
-            a_safe_id=a_safe_id,
-            required_a_safe_axes=required_a_safe_axes,
-            what=what,
-        )
 
     def effective_claim_class(self) -> str:
         """Claim class after every override is applied (the weakest wins)."""

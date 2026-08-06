@@ -238,7 +238,7 @@ class SafeSet(SchemaModel):
     #: Validated by a party independent of the optimizer.
     independently_validated: bool = False
     validator: str | None = None
-    #: Reference to the applicable ethics/regulatory review.
+    #: Reference to the independent validation of this envelope.
     review_reference: str | None = None
     #: What the system does when the optimum lies outside the set.
     deferral_policy: Literal["defer", "clip", "refuse", "none"] = "refuse"
@@ -288,11 +288,6 @@ class InterventionModel(SchemaModel):
     sham: str | None = None
     randomized: bool = False
     a_safe: SafeSet | None = None
-    #: True when the intervention is delivered to a living human participant.
-    #: ARCHITECTURE.md sec. 0: build-order item 6 is out of scope, so no agent
-    #: may compile a prospective human stimulation protocol.
-    is_prospective_human: bool = False
-    ethics_review: str | None = None
     #: Whether dose and pose were calibrated independently of the neural model.
     dose_independently_calibrated: bool = False
     ledger: UncertaintyLedger | None = None

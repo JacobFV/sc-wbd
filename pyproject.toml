@@ -29,6 +29,14 @@ dependencies = [
   "matplotlib>=3.9",
   "rich>=13.0",
   "tqdm>=4.66",
+  # Image registration (EPI -> T1w affine, T1w -> MNI SyN, and the inverse warp
+  # the native-space direction needs).  dipy, not antspyx: antspyx 0.6.3 ships
+  # arm64 wheels for macOS only, so on this aarch64 box it would build ITK+ANTs
+  # from sdist.  dipy ships cp312-manylinux_2_17_aarch64 and was verified here.
+  # Provenance note: this is SyN (Avants 2008) as implemented in dipy; the
+  # Klein 2009 evaluation covers ANTs' implementation, not this one.
+  "dipy>=1.12",
+  "nibabel>=5.2",
 ]
 
 [project.optional-dependencies]

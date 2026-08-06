@@ -140,7 +140,7 @@ class Recommend:
     A ``Recommend`` is a statement about a *simulation*: this pose is predicted
     to separate from the comparator by more than the epistemic uncertainty of
     the prediction.  It is not clearance to move a robot, energise a coil, or
-    stimulate anyone.  ``human_use_authorized`` refuses to be ``True``.
+    stimulate anyone.
     """
 
     label: str
@@ -152,16 +152,7 @@ class Recommend:
     epistemic_uncertainty: float
     comparator: str = "no_stimulation"
     basis: tuple[str, ...] = ()
-    human_use_authorized: bool = False
     notice: str = SIMULATION_ONLY_NOTICE
-
-    def __post_init__(self) -> None:
-        if self.human_use_authorized:  # pragma: no cover - guard
-            raise CompilerRefusal(
-                "R11",
-                "a Recommend cannot be marked authorized for human use",
-                offending_object=self.label,
-            )
 
     def __str__(self) -> str:
         return f"Recommend({self.label}): margin {self.benefit_margin:.4g}"

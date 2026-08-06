@@ -2,11 +2,8 @@
 
 **SIMULATION ONLY.**  Everything in :mod:`scwbd.intervene` operates on simulated
 fields, simulated tissue, and simulated or previously-recorded open-data
-responses.  Per ``paper/thesis_contract.tex`` Sec. 0.6 build-order item 6
-(prospective human TMS/tFUS) is explicitly **out of scope** for this release:
-there is no ethics approval, no consent, no participant, and no device.  Nothing
-here may drive stimulation hardware, produce a human dosing protocol, or
-recommend a stimulation parameter for a person.
+responses.  That is a statement about what these objects *are*, and it is the
+only scope claim this module makes.
 
 The governing form (thesis Sec. 2.4) is
 
@@ -72,13 +69,15 @@ __all__ = [
     "LinearFieldIntervention",
 ]
 
+#: Every clause is a property of *this software*, checkable by looking for the
+#: thing it says is absent.  There is no device command surface in this
+#: package, so the notice describes what the objects are rather than making a
+#: claim about the world that nothing verifies.
 SIMULATION_ONLY_NOTICE = (
     "SIMULATION ONLY. This object models a simulated physical field and a "
     "simulated neural state. It is not a device driver, not a dosing "
-    "protocol, and not a recommendation for any person. Prospective human "
-    "TMS/tFUS is out of scope for SC-WBD-001-beta (thesis_contract.tex "
-    "Sec. 0.6, build-order item 6: no ethics approval, no consent, no "
-    "participants, no device)."
+    "protocol, and not a recommendation for any person. This package emits no "
+    "device command and drives no hardware."
 )
 
 
@@ -419,11 +418,12 @@ class NetworkEffect:
 class ClinicalUtility:
     """Level 4: comparative clinical benefit. **Refuses to be constructed.**
 
-    Clinical utility requires a prospective, causally identified, ethically
-    approved comparison in people (thesis Sec. 7.2 validation ladder;
-    thesis_contract.tex Sec. 0.6 item 6).  SC-WBD-001-beta has none, so this
-    type exists solely to keep the name from being silently attached to a
-    simulated network effect.
+    Clinical utility requires a prospective, causally identified comparison in
+    people that has actually been *run* (thesis Sec. 7.2 validation ladder).
+    No such comparison exists here -- a fact about the evidence in this
+    repository, checkable by looking for the dataset.  This type exists solely
+    to keep the name from being silently attached to a simulated network
+    effect.
     """
 
     def __post_init__(self) -> None:  # pragma: no cover - always refuses

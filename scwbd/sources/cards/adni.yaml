@@ -27,6 +27,9 @@ identity:
   file_manifest: null
 
 governance:
+  license_spdx: "DUA-ADNI"
+  license_spdx_note: >-
+    not an open licence: an application-reviewed Data Use Agreement. Routed as DUA-*, which the checkpoint policy must treat as unknown-and-unusable, never as permissive.
   status: unavailable
   unavailable_reason: >-
     access requires an application reviewed by the ADNI Data Sharing and Publications Committee and a signed Data Use Agreement via LONI/IDA. No application was submitted, so nothing was downloaded.

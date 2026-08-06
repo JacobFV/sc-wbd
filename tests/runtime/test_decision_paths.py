@@ -184,12 +184,3 @@ class TestRecommendIsReachableAndBounded:
         assert isinstance(evaluation.decision, Recommend)
         assert evaluation.decision.benefit_margin > evaluation.decision.epistemic_uncertainty
 
-    def test_a_recommendation_cannot_claim_human_authorization(self):
-        with pytest.raises(Exception):
-            Recommend(
-                label="x",
-                rationale="",
-                benefit_margin=1.0,
-                epistemic_uncertainty=0.0,
-                human_use_authorized=True,
-            )

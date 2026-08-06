@@ -1192,8 +1192,6 @@ def _impulse_source() -> SourceCard:
                 review_reference="not applicable: simulated cohort, no human participants",
                 deferral_policy="refuse",
             ),
-            is_prospective_human=False,
-            ethics_review=None,
             dose_independently_calibrated=True,
             ledger=_bounded(
                 "A/m^2", source="field_solver_phantom", bias=(-0.05, 0.05), measurement=0.01
@@ -1273,7 +1271,6 @@ def build_three_region_claim() -> ClaimManifest:
         posterior_class="calibrated_bayesian",
         requires_global_section=False,
         optimizes_intervention=False,
-        prospective_human=False,
         target_gates=("G1", "G4"),
         overrides=(),
         disabling_evidence=(

@@ -1,0 +1,502 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# I_k  identity and lineage
+# =====================================================================
+identity:
+  id: ds000113
+  name: "StudyForrest: retinotopy, object categories, movie and audio-movie fMRI"
+  version: "1.3.0"
+  release_date: "2018-09-23"      # OpenNeuro snapshot 1.3.0 creation date
+  doi: "10.18112/openneuro.ds000113.v1.3.0"
+  citation: >-
+    Hanke M, Baumgartner FJ, Ibe P, Kaule FR, Pollmann S, Speck O, Zinke W,
+    Stadler J (2014). A high-resolution 7-Tesla fMRI dataset from complex
+    natural stimulation with an audio movie. Scientific Data 1:140003,
+    doi:10.1038/sdata.2014.3. Extension studies: Sengupta A et al. (2016),
+    Sci Data 3:160092 (retinotopy); Hanke M et al. (2016), Sci Data 3:160092
+    (movie/eyegaze). OpenNeuro dataset ds000113 v1.3.0,
+    doi:10.18112/openneuro.ds000113.v1.3.0.
+  source_url: "https://openneuro.org/datasets/ds000113/versions/1.3.0"
+  download_url: "https://openneuro.org/crn/datasets/ds000113/snapshots/1.3.0/files/"
+  download_method: >-
+    Pinned snapshot endpoint (scwbd.sources.download.OpenNeuroSnapshotFetcher,
+    tag 1.3.0). The s3://openneuro.org mirror was compared against snapshot
+    1.3.0 before use and REJECTED as the source of record: the two agree on
+    6,409 of 6,410 objects, but the mirror carries an extra `annex-uuid` and a
+    dataset_description.json of a DIFFERENT SIZE from the snapshot's - i.e. the
+    mirror is again serving the mutable draft (the same defect recorded for
+    ds000117). Every byte on disk came from the snapshot endpoint. The file
+    list is pinned in scwbd/sources/subsets/ds000113__1.3.0.tsv.
+  retrieved_utc: "2026-08-06T18:46:11+00:00"
+  parent_dataset: >-
+    OpenfMRI ds000113 + ds000113b + ds000113c + ds000113d, combined and
+    re-released in BIDS form by the studyforrest project
+  derived_from: null
+  subset_note: >-
+    0.55 GB of the 453 GB release, 332 files, every one of them verified
+    byte-length-identical to snapshot 1.3.0. What is on disk covers sub-01 to
+    sub-04 and the top-level metadata: the ses-localizer session (retinotopic
+    mapping ccw/clw/expanding/contracting, object categories, movie localizer)
+    with its cardiac/respiratory physio, part of ses-movie with eye-gaze physio,
+    part of ses-auditoryperception, and the T1w/T2w anatomy.
+
+    WHY IT STOPPED THERE, measured, and partly my own fault. The target was
+    16.7 GB (ses-localizer + ses-movie for the 15 participants who have them,
+    ses-auditoryperception for four, anatomy for all 20). The OpenNeuro
+    snapshot endpoint served ds002336 at 9.4 MB/s but served this dataset at
+    ~0.6 MB/s with three files and eight ranges in flight. I raised that to
+    eight files and sixteen ranges to compensate; throughput fell to ~0.1 MB/s
+    and then to zero - a bare `curl` for a single 5 MB range subsequently timed
+    out at 30 s with no bytes. That is a rate limit, and I triggered it. The
+    fetch was stopped rather than retried harder: ARCHITECTURE.md's rule is to
+    respect a provider's terms and say so, not to work around a limiter.
+
+    The pinned subset in scwbd/sources/subsets/ds000113__1.3.0.tsv was
+    REGENERATED FROM DISK afterwards, so it lists exactly the 332 files we hold
+    and `python -m scwbd.sources.download ds000113` reproduces this tree rather
+    than a tree we failed to get. Extending it is a matter of re-running with
+    modest concurrency after the limiter has reset.
+
+    NOT FETCHED, and why: the 7 T ses-forrestgump functional runs (~250 GB);
+    the derivatives tree (192 GB of alignments and templates - we compute our
+    own); sourcedata; dwi; angio; the veno/SWI volumes; and the remaining 16
+    participants. None of it is a licence barrier. Under the 414-parcel anatomy
+    prior, which declares no auditory family, the auditory sessions are also no
+    longer the priority they were when this subset was chosen - the retinotopy,
+    which is on disk, is what maps onto the unimodal-cortex family.
+  software: "nibabel 5.4.2 (NIfTI reader), numpy (physio TSV reader)"
+  container_hash: unknown
+  local_path: "/home/brandonin/Documents/scwbd-wt/ada/data/ds000113/1.3.0"
+  file_manifest:
+    algorithm: sha256
+    n_files: 332
+    total_bytes: 550458275
+    manifest_sha256: f2ea37c7bd785feb9229e768c59437ee401ab55bf119e7fef0150a318e7ccd3a
+    manifest_path: scwbd/sources/manifests/ds000113__1.3.0.json
+    exemplars:
+      .bidsignore: fbd085cd0a39e10888c7837171b6aeb56378a428b5e3b2c4ea000adacfc468f9
+      .datalad/.gitattributes: 84890900c3a64c90b3f3db5366717517d376aa246a01d2885ca22269e4510e78
+      .datalad/config: e7cb18dfee87feea57900fef4a3092a96b493580a9aae8ee989218300c801d11
+      sub-01/ses-forrestgump/anat/sub-01_ses-forrestgump_T2w.nii.gz: 652248cb57ccbca27778660960b005e9206a9281811ea8480cae6fb3eb2652d2
+      sub-02/ses-forrestgump/anat/sub-02_ses-forrestgump_T1w.nii.gz: caa695b28428a30f536b9240167cd40e767c6c469bb477e248d6a676e475221f
+      sub-02/ses-forrestgump/anat/sub-02_ses-forrestgump_T2w.nii.gz: 76db0ffeff02afd6fc10640eea9aeb31556bb302c2f852aecee2c49e43ca5161
+
+# =====================================================================
+# G_k  governance
+# =====================================================================
+governance:
+  license_spdx: "UNKNOWN"
+  status: partial
+  status_reason: >-
+    live and usable for what is on disk, but 'partial' on two counts that must
+    not be blurred: (i) only a subset of sessions and participants was fetched,
+    so no population-level claim may cite this source's n; (ii) THE LICENCE IS
+    UNRESOLVED (see below), so this source may not enter any artifact whose
+    licence must be provable.
+  license: >-
+    unknown - verified absent from the distributed artifact. snapshot 1.3.0
+    ships no LICENSE file, dataset_description.json has NO "License" key
+    (checked: the object has exactly BIDSVersion, Name, Authors and
+    ReferencesAndLinks), and the 23,818-byte README contains no occurrence of
+    "licen", "PDDL", "CC0", "public domain" or "Creative Commons". The
+    studyforrest project's own website is documented elsewhere as releasing
+    under the ODC PDDL, but (a) that statement is not in the bytes we hold and
+    (b) studyforrest.org did not resolve from this host on 2026-08-06, so it
+    could not be verified either. Recorded as unknown rather than as PDDL:
+    a licence asserted in a brief and absent from the artifact is exactly the
+    "hardening into fact by repetition" that scwbd.release.licence exists to
+    prevent.
+  license_url: "https://openneuro.org/datasets/ds000113/versions/1.3.0"
+  license_text_excerpt: >-
+    unknown - no licence text accompanies the snapshot (verified: no LICENSE,
+    no COPYING, no License field in dataset_description.json, no licence
+    sentence in the README).
+  dua_required: false
+  credentials_required: false
+  registration_required: false
+  purpose_limits: >-
+    unknown in law. Treated here as local research use with citation of the
+    Scientific Data papers. The acquisition was approved by the ethics
+    committee of Otto-von-Guericke University Magdeburg and participants gave
+    written informed consent (stated in the primary paper, not in the files).
+  consent_scope: >-
+    unknown at the record level - no consent document is distributed.
+  redistribution: >-
+    unknown; treated as NOT permitted. may_release_examples is false in
+    consequence.
+  redistribution_class: unknown
+  withdrawal: "no withdrawal mechanism is published for this release"
+  withdrawal_status: none_pending
+  privacy: >-
+    defaced structural volumes, with the defacemask distributed alongside each
+    functional run. participant_id is a bare two-digit code. NOTE:
+    participants.tsv is unusually rich - 93 columns including age band, gender,
+    handedness, language competences, musical training history, listening
+    preferences, named favourite artists and prior exposure to the film. At
+    n = 20 several of those columns are close to unique per participant. That
+    is a re-identification surface, and it is the reason this card does not
+    permit example release.
+  privacy_class: pseudonymized
+  contains_biometric: true
+  safeguards: ["local_storage_only", "structural_mri_not_redistributed", "examples_not_released_licence_unresolved", "rich_participants_tsv_not_redistributed"]
+  dua: null
+  retention: "indefinite, hosted by OpenNeuro"
+  may_release_weights: true
+  may_release_examples: false
+
+# =====================================================================
+# P_k  population
+# =====================================================================
+population:
+  n_participants: 4
+  participant_ids:
+    - sub-01
+    - sub-02
+    - sub-03
+    - sub-04
+  participants_with_bold:
+    - sub-01
+    - sub-02
+    - sub-03
+    - sub-04
+  families: "none declared; participants treated as unrelated singletons"
+  sites: 1
+  site_ids: ["openneuro:ds000113:ovgu_magdeburg"]
+  devices: 1
+  device_ids: ["Siemens_3T_TIM_Trio"]      # the 3 T sessions; the 7 T runs were not fetched
+  sessions_per_participant: >-
+    up to 4 upstream (forrestgump 7T, auditoryperception, localizer, movie);
+    on disk: localizer + movie for 15 participants, auditoryperception for 4,
+    anatomy for all 20
+  runs_per_session: >-
+    ses-localizer: 4 retinotopic mapping + 4 object-category + 1 movie
+    localizer; ses-movie: 8; ses-auditoryperception: 8
+  trials_per_run: >-
+    retinotopy is a continuous periodic stimulus (no trials); object categories
+    is a block design; the movie and audio-movie runs are continuous
+    naturalistic stimulation with a per-frame annotation stream
+  demographics: >-
+    German-speaking adults, age reported in 5-year bands, handedness and
+    extensive musical/linguistic background in participants.tsv. n is too small
+    for any subgroup claim and none is made.
+  selection_mechanism: >-
+    volunteers recruited in Magdeburg for a naturalistic-stimulation study; no
+    population sampling frame. The participants of the retinotopy and movie
+    extensions are a SUBSET of the original 20, chosen by availability, so the
+    15 with ses-localizer are not a random sample of the 20.
+  grouping_keys: ["participant"]
+  min_subgroup_n: 4
+
+# =====================================================================
+# S_k  signal
+# =====================================================================
+signal:
+  # Enforced by scwbd.sources.audit (A4). `cardiac` and `resp` are separate
+  # modalities rather than one "physio" because they are different organs on
+  # the same clock, and body.tex 6.1 asks for them by name.
+  modality_evidence:
+    fmri:     ["sub-*/ses-*/func/*_bold.nii.gz"]
+    mri:      ["sub-*/ses-*/anat/*_T1w.nii.gz", "sub-*/ses-*/anat/*_T2w.nii.gz"]
+    cardiac:  ["sub-*/ses-*/func/*recording-cardresp_physio.tsv.gz"]
+    resp:     ["sub-*/ses-*/func/*recording-cardresp_physio.tsv.gz"]
+    eyetrack: ["sub-*/ses-movie/func/*recording-eyegaze_physio.tsv.gz"]
+  modalities: ["fmri", "mri", "cardiac", "resp", "eyetrack"]
+  modality_classification_note: >-
+    scwbd.release.datasets.MEASURED_MODALITIES does not currently classify
+    `cardiac` or `eyetrack`, so this source will surface them under
+    `unknown_modalities` in a release manifest. That is the correct behaviour
+    of that field (a modality nobody recognised should be visible as one) and
+    it is a real gap in the release table, not in this card. Flagged for the
+    owner of scwbd/release/**; renaming cardiac to `ecg` to make it classify
+    would be false - the channel is a PULSE OXIMETER trace, not an ECG.
+  n_channels: >-
+    3 physio channels (trigger, cardiac, respiratory) and 4 eyegaze channels
+    (x, y, pupil_dil, movieframe_idx); BOLD has no channel axis
+  channel_types: {stim: 1, cardiac: 1, resp: 1, eyetrack: 4}
+  channel_names: >-
+    from the BIDS physio sidecars, which are the only statement of them - a
+    physio TSV has no header row: ["trigger", "cardiac", "respiratory"] and
+    ["x", "y", "pupil_dil", "movieframe_idx"]
+  units: "BOLD: arbitrary scanner-native intensity, uncalibrated. Physio: arbitrary amplifier units - BIDS states no unit for either trace and inventing one would be a calibration claim nobody made. Eyegaze x/y are normalised to the movie frame (0,0 at top-left, excluding the letterbox bars)."
+  # `unknown`, deliberately, not a per-modality dict: NOTHING in this release
+  # states an SI unit for any of its channels. BOLD intensity is scanner-native
+  # and uncalibrated, the physio traces are raw amplifier counts, and the
+  # eye-gaze x/y are normalised frame coordinates. Writing a dict of the word
+  # "arbitrary" would satisfy the schema while asserting a unit system nobody
+  # established; `unknown` disables the gradient paths that require
+  # signal.si_units, which is the correct consequence.
+  si_units: unknown
+  reference: "not applicable"
+  dynamic_range: unknown
+  si_dynamic_range: unknown
+  saturation: >-
+    eye-gaze samples are missing during blinks and track loss; the file marks
+    them and they are NOT interpolated by the loader
+  si_saturation: unknown
+  quantization: unknown
+  si_quantization: unknown
+  bold_acquisition:
+    scanner: "Siemens 3T TIM Trio (the fetched sessions)"
+    repetition_time_s: 2.0
+    repetition_time_source: >-
+      THE NIFTI HEADER, NOT A SIDECAR. This release's *_bold.json files are
+      dcmmeta dumps (keys: global, time, dcmmeta_shape, dcmmeta_affine, ...)
+      and carry NO BIDS RepetitionTime. The loader therefore falls back to
+      pixdim[4], which reads 2.0000007 s, and RECORDS that the TR came from
+      the header rather than from a sidecar (meta["tr_source"]). There is no
+      second, independent statement of the TR for this dataset, so the
+      corroboration check that guards ds000117 and ds002336 cannot run here.
+      That is a weaker evidential position and it is written down as one.
+    voxel_size_mm: [3.0, 3.0, 3.3]
+    frame: "scanner_anat_RAS (NIfTI sform), read per file"
+  measured_run_lengths:
+    note: >-
+      Re-derived from the NIfTI headers on disk, not from the papers:
+      retmap{ccw,clw,exp,con} 90 volumes = 180 s each; movielocalizer 48
+      volumes = 96 s; objectcategories 156 volumes = 312 s. Per-run values for
+      every fetched file are regenerated by reports/sources/inventory.md.
+
+# =====================================================================
+# X_k  spatial support
+# =====================================================================
+spatial:
+  kind: voxel
+  kind_note: "3-D voxel grid (BOLD, T1w, T2w); this source has no sensor array"
+  frame: scanner_anat_RAS
+  frame_note: >-
+    read per file from the NIfTI sform by
+    scwbd.sources.loaders.bids_bold.frame_from_nifti, never assumed. Every
+    functional run on disk reports sform_code 1 (scanner_anat_RAS); a file
+    reporting code 0 would be read as `unknown` and not given a default.
+  units: "mm"
+  psf: >-
+    unknown as an instrument spec; the effective haemodynamic point spread is
+    larger than the voxel and is not published for this release
+  # CORRECTED 2026-08-06 (🗄️ Ada). This field previously read 'whole brain'.
+  # I wrote that; nothing in the release supports it. The dataset's own README
+  # states "FOV = see the dataset README" and "N of slices: 35" and never claims whole-brain
+  # coverage, and the BIDS sidecars carry SliceThickness/SpacingBetweenSlices
+  # and no coverage field at all. Re-derived from the NIfTI headers on disk:
+  # 35 slices x 3.3 mm = 116 mm nominal slab. A card that implies
+  # whole-brain coverage for a slab is the same defect as ds004024 declaring
+  # `dwi` - it reads as coverage we do not have.
+  extent: "a 116 mm slab, NOT established as whole-brain"
+  coverage:
+    slab_mm: 116
+    n_slices: 35
+    slice_thickness_mm: 3.3
+    in_plane: "80 x 80 @ 3.0 mm"
+    whole_brain: unknown
+    evidence: >-
+      Re-derived from the NIfTI headers of the 20 functional runs on disk:
+      35 slices x 3.3 mm = 116 mm. Whether that contains each subject's whole
+      brain is UNMEASURED here - the per-slice and T1w-extent checks were run
+      for ds002336, not for this dataset, and stating a result for one source
+      from a measurement on another is exactly the relayed number this
+      register keeps being burned by. 116 mm is on the low side for whole-brain
+      coverage, so the honest value is unknown, not true.
+    consequence: >-
+      Parcels lying outside the slab have NO measurement in this source, in
+      every subject, by acquisition rather than by chance. That is a support
+      fact, not a missing-data problem: rule 1 forbids imputing it, so the
+      haemodynamic likelihood must carry a DECLARED PER-PARCEL COVERAGE MASK
+      and contribute no term where the mask is empty. Establishing that mask
+      needs the registration N-4a describes, so it does not exist yet, and
+      until it does no claim from this source may be stated per parcel.
+  n_elements: "BOLD voxel grid read per file from the NIfTI header. 20 functional runs on disk across 4 participants."
+
+# =====================================================================
+# T_k  temporal support
+# =====================================================================
+temporal:
+  clock: ds000113.eyetracker          # the fastest clock; see clocks_note
+  clocks: ["ds000113.mri_scanner", "ds000113.physio_amp", "ds000113.eyetracker"]
+  clocks_note: >-
+    THREE clocks, none merged. The scanner clock (TR = 2 s), the physio
+    amplifier clock (500 Hz cardiac/respiratory), and the eye tracker
+    (1000 Hz). The loaders return them as separate objects with distinct
+    clock_id values; the physio `trigger` column is what relates the physio
+    clock to the scanner clock, and it is recorded rather than assumed. The
+    scalar `clock` above names the fastest one because the typed projection
+    takes a single id - it is NOT a claim that the three were merged.
+  # Fastest group as a float (see the same note on ds002336); the per-clock
+  # picture is below. THREE clocks here, not two.
+  dt: 0.001
+  sfreq_hz: 1000.0
+  dt_by_clock: {mri_scanner: 2.0, physio_amp: 0.002, eyetracker: 0.001}
+  sfreq_hz_by_clock: {mri_scanner: 0.5, physio_amp: 500.0, eyetracker: 1000.0}
+  secondary_sfreq_hz: 500.0
+  integration_window: "one TR per volume (BOLD)"
+  group_delay: >-
+    the haemodynamic lag (seconds) is a property of the observation operator,
+    not a device delay, and is not calibrated here
+  jitter_sd: unknown
+  event_clock: >-
+    per-run events.tsv (object categories, movie annotations) in seconds from
+    run onset. The movie runs additionally carry a per-frame index in the
+    eyegaze file (`movieframe_idx`), which is a fourth alignment to the
+    stimulus clock.
+  offset_drift: unknown
+
+# =====================================================================
+# C_k  calibration
+# =====================================================================
+calibration:
+  frames: ["scanner_anat_RAS"]
+  fiducials: "not distributed"
+  transforms: >-
+    none fetched. The upstream derivatives tree contains within-subject and
+    group alignments; we did not fetch it and do not use it, so no
+    normalisation to a template is assumed anywhere.
+  calibration_points: 0
+  residuals: unknown
+  device_pose: "NIfTI sform per file"
+  raw_metadata: "dcmmeta JSON sidecars, BIDS physio sidecars, participants.tsv, events.tsv"
+  head_model: "none distributed"
+
+# =====================================================================
+# O_k  observation operator
+# =====================================================================
+observation:
+  operator: >-
+    a haemodynamic response convolved with neural activity, sampled on the
+    scanner voxel grid at 0.5 Hz - slow, nonlinear, spatially smoothed, with
+    unknown parameters. The physio traces are direct peripheral measurements
+    and are NOT an observation of brain state; they are a boundary condition
+    for the interoceptive interfaces.
+  operator_status: unresolved
+  noise_model: >-
+    not estimated. Physiological noise (cardiac and respiratory) IS separately
+    measured here, which is unusual and is the main reason this source is worth
+    holding for a haemodynamic observation model.
+  forward_available: false
+
+# =====================================================================
+# U_k  intervention
+# =====================================================================
+intervention: null    # sensory stimulation only; nothing is manipulated in the brain
+
+# =====================================================================
+# M_k  missingness
+# =====================================================================
+missingness:
+  planned: >-
+    ses-localizer and ses-movie exist for 15 of the 20 participants upstream;
+    ses-auditoryperception was fetched for 4 of 20 (a bandwidth decision).
+  unplanned: "BOLD on disk per session: ses-localizer for 4 participants. Physiological recordings: 37 cardiac/respiratory files and 24 eye-gaze files are readable; 32 further physio files carry no `recording-` entity and no sidecar exists for them at any level, so their rate and columns are unstated and load_physio refuses them."
+  spatial_coverage: >-
+    THE ACQUISITION IS A SLAB, NOT A HEAD. See spatial.coverage. Parcels
+    outside it have no measurement in any subject, systematically, by
+    acquisition. This is missing-by-design at the level of the SUPPORT, which
+    is a different object from a dropped run: a dropped run is excluded, an
+    uncovered parcel has no observation operator at all. Rule 1 forbids
+    imputing it as zero or as an average brain, so the haemodynamic likelihood
+    must carry a declared per-parcel coverage mask and contribute NO term where
+    that mask is empty. The mask needs the registration N-4a describes and does
+    not exist yet.
+  artifact_rejection: "none applied; raw NIfTI as released"
+  dropout: >-
+    eye-gaze track loss during blinks and large saccades. Marked in the file,
+    never interpolated.
+  attrition: unknown
+  policy: "absent runs are excluded, never imputed (rule 1)"
+  mechanism: mar
+  mechanism_note: >-
+    MAR by design for the unfetched sessions and for the rate-limited fetch.
+    The participants without ses-localizer are missing UPSTREAM, by
+    availability rather than by outcome. Treat as MAR; do NOT claim MCAR.
+  handling: drop_episode
+  known_sidecar_gap: >-
+    The ses-auditoryperception physio files carry no `recording-` entity and no
+    matching sidecar exists at any level of the tree, so their sampling rate
+    and column names are unstated. `load_physio` REFUSES those files rather
+    than assuming they match the cardresp sidecar. 96 physio files on disk are
+    therefore unreadable, and that is recorded here rather than papered over.
+
+# =====================================================================
+# L_k  ledger
+# =====================================================================
+ledger:
+  variance:
+    measurement: unknown
+    session: unknown
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: unknown
+  bias_status: unknown
+  bias_bound_justification: >-
+    The dominant systematic errors are haemodynamic-response mis-specification
+    and susceptibility dropout in ventral temporal and orbitofrontal cortex.
+    Neither is bounded for this release. `unknown` disables every gradient path
+    that requires the ledger, which is the intended consequence.
+  model_discrepancy: null
+  validity_domain:
+    population: "German-speaking adults, n <= 20, one site"
+    state: "supine, awake, attending a visual or auditory stimulus"
+    frequency_band_hz: [0.0, 0.25]      # Nyquist of a 2 s TR
+    spatial_scale: "3 x 3 x 3.3 mm voxel; parcel scale only after a registration we have not performed"
+
+# =====================================================================
+# A_k  gradient permission
+# =====================================================================
+gradient_permission:
+  allow:
+    - target: dynamics.early_visual.retinotopic_response
+      scales: ["voxel"]
+      requires: ["temporal.sfreq_hz", "spatial.frame", "signal.bold_acquisition", "spatial.coverage.whole_brain"]
+    - target: dynamics.auditory.spectrotemporal_response
+      scales: ["voxel"]
+      requires: ["temporal.sfreq_hz", "temporal.event_clock"]
+    - target: observe.bold.haemodynamic_response
+      scales: ["voxel"]
+      requires: ["temporal.sfreq_hz", "signal.bold_acquisition", "spatial.coverage.whole_brain"]
+    - target: dynamics.interoceptive.cardiorespiratory_boundary
+      scales: ["boundary"]
+      requires: ["temporal.sfreq_hz", "signal.channel_names"]
+  frozen:
+    - anatomy.connectome_prior
+    - observe.eeg.lead_field
+  forbid:
+    - release.redistribute_examples     # licence unresolved; see governance
+    - infer.population_effect           # 15-20 volunteers at one site
+  evaluation_only: false
+
+# =====================================================================
+# R_k  role and split policy
+# =====================================================================
+role: likelihood
+
+split_policy:
+  grouping_keys: ["participant"]
+  grouping_note: >-
+    All sessions and runs of a participant stay in one fold. The same 20 people
+    appear across the original 7 T study and both extensions, so a split by
+    session would put a person in train and test (R10).
+  temporal_holdout: >-
+    available: ses-localizer precedes ses-movie for every participant who has
+    both, and run order within a session is recorded in the file names.
+  temporal_holdout_spec: null
+  stimulus_holdout: >-
+    THE discriminating test for this source. Retinotopy has four stimulus
+    conditions (ccw, clw, expanding, contracting) that are the same map
+    traversed differently; holding out `clw` and predicting it from `ccw`
+    separates a model that learned retinotopic structure from one that learned
+    a stimulus template. For the movie runs, holding out whole runs holds out
+    unseen film segments.
+  site_holdout: "not available: one site"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: true
+  stimuli_note: >-
+    The film is the SAME stimulus for every participant, so a run-level split
+    shares stimulus content across folds unless whole runs are held out. Any
+    encoding-model score computed without holding out the run is measuring
+    stimulus memorisation, not generalisation.
+  notes: >-
+    This is the only source in the register that speaks to the early-visual and
+    auditory families of body.tex 6.1 at all, and the only one carrying
+    interoceptive (cardiac, respiratory) series. Its weakness is equally
+    specific: the licence is unresolved, so it may not enter an artifact whose
+    licence must be provable, and the TR has only one witness.

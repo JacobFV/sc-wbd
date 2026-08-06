@@ -1,0 +1,79 @@
+# Simultaneous EEG + fMRI, motor-imagery neurofeedback (Lioi et al., XP1).
+# Dataset card: scwbd/sources/cards/ds002336.yaml   Licence: CC0-1.0.
+#
+# WHY THIS IS A PER-DATASET CARD AND NOT A "haemodynamic_real" CARD.
+# ---------------------------------------------------------------------------
+# It was written as one combined card first, and that was a LICENCE DEFECT.
+# scwbd.release.datasets.link_sources_to_datasets maps ONE mixture id to at
+# most one dataset card, by normalising the id (`<x>_real` -> `<x>`) and
+# matching it against scwbd/sources/cards/. A combined `haemodynamic_real`
+# matched nothing, so `licence_terms()` bound it to UNKNOWN_TERM -- and the
+# checkpoint would have carried "unknown" instead of the obligations of the two
+# datasets it actually trained on. Verified by calling build_manifest() and
+# reading the link, not by reading the code.
+#
+# Splitting per dataset also keeps the two licences apart, which matters here:
+# ds002336 is CC0 and ds000113's licence is UNRESOLVED. Combined, the union
+# would have made the CC0 half unknown too, for no reason.
+#
+# DISABLED: declared narrowing N-4a. The BOLD is in scanner space; the model's
+# state is indexed by Schaefer parcels; no registration between them has been
+# run. See ARCHITECTURE.md §5b N-4a and reports/sources/inventory.md §3.
+# SECOND BLOCKER, added 2026-08-06 after 🧠 Cajal's D9 slab finding. The EPI is
+# a 128 mm slab, not a head, and whether it contains each subject's whole
+# brain is UNKNOWN (no segmentation tool is installed to settle it). Parcels
+# outside the slab have no measurement in any subject, systematically, by
+# acquisition. Enabling this card before a declared per-parcel coverage mask
+# exists would contribute a likelihood term for regions with no observation
+# operator at all -- an imputation, and rule 1 forbids it.
+#
+# This is enforced, not just written here: `spatial.coverage.whole_brain` is
+# `unknown` on the dataset card and is named in the `requires` of every
+# BOLD-facing gradient target, so Appendix B disables those paths by itself.
+# Setting `enabled: true` on this file is NOT sufficient to train `bold.*`.
+
+id: ds002336_real
+role: likelihood
+enabled: false
+is_simulated: false
+losses: [likelihood, forecast]
+
+gradient_permission:
+  - "bold.*"          # the observation head only a haemodynamic source may calibrate
+  - "coupling.*"
+  - "local.*"
+  - "readout.*"
+frozen:
+  - "eeg.*"           # the raw EEG here is gradient-artefact dominated; it may
+                      # not calibrate a scalp montage. Use the eeg_pp derivatives
+                      # through a separate, declared source if that is wanted.
+  - "individualizer.*"
+
+# Regenerated from disk (`python -m scwbd.sources.inventory ds002336`):
+# 10 participants, 55 BOLD runs, 54 EEG runs, 5.22 h BOLD, 5.81 h EEG.
+# n_eff is PARTICIPANTS. n_rows is runs, for audit only.
+n_eff: 10.0
+n_rows: 55.0
+n_participants: 10
+n_sites: 1
+hierarchy_depth: 2
+
+# null, not a number: neither the release nor the paper bounds BOLD measurement
+# variance or haemodynamic mis-specification for this acquisition. A None
+# disables the dependent path; a plausible-looking float would not.
+measurement_variance: null
+bias_halfwidth: null
+bias_status: unknown
+model_discrepancy: null
+validity_overlap: 1.0
+leakage_audited: false
+
+compiler_permission:
+  - "port:*.bold_out"
+  - "observation:ds002336_real:nuisance"
+
+notes: >-
+  The only fully paired episode in the register (body.tex 6.4): EEG at 5000 Hz
+  and BOLD at 0.5 Hz on the same subject in the same 20 s block, a 10,000:1
+  rate ratio. Pairing is complete for 53 of 56 (subject, task) runs; the three
+  unpaired runs are excluded from cross-modal terms, never half-imputed.

@@ -4,8 +4,7 @@
 :math:`\\mathcal A_{\\rm safe}` here is a *feasible set that blocks a simulated
 optimizer*.  Passing every check in this module means only that the optimizer
 was not blocked on those axes; it does not mean an intervention is safe,
-approved, or applicable to a person.  Prospective human TMS/tFUS is out of
-scope for SC-WBD-001-beta (``thesis_contract.tex`` Sec. 0.6 item 6).
+approved, or applicable to a person.
 
 Design, following thesis Sec. 7.4:
 
@@ -21,28 +20,6 @@ Design, following thesis Sec. 7.4:
   do so when model disagreement or transform uncertainty dominates the
   estimated benefit difference.
 * :class:`NoRecommendation` is a first-class outcome.
-
-Governance (added with the R11 gate)
-------------------------------------
-:class:`AuthorizationGate` admits a request only when a validated
-:class:`~scwbd.schema.authorization.AuthorizationRecord` covers the requested
-intervention class at the requested time **and** the proposal is inside
-:math:`\\mathcal A_{\\rm safe}`.  The ordering matters and is one-way:
-
-* an authorization **never widens** :math:`\\mathcal A_{\\rm safe}`.  The
-  feasible set is loaded from the same declarative, citable file either way,
-  and :meth:`FeasibleSet.contains` does not take an authorization argument, so
-  there is no code path by which a record could relax a bound.  What an
-  authorization does is permit operating *within* limits the protocol itself
-  declares;
-* an authorized proposal outside :math:`\\mathcal A_{\\rm safe}` still refuses
-  ``R11``.  ``tests/intervene/test_authorization_gate.py`` proves this
-  explicitly, because a gate nobody has seen refuse is indistinguishable from
-  one that cannot.
-
-A validated record is a *recorded declaration* of authorization, never
-verification that one exists; see
-:mod:`scwbd.schema.authorization` for the full claim limit.
 """
 
 from __future__ import annotations
@@ -56,21 +33,9 @@ from typing import Any, Callable, Iterable, Literal, Mapping, Sequence
 import torch
 from torch import Tensor
 
-from ..schema.authorization import (
-    AUTHORIZATION_DECLARATION_NOTICE,
-    AuthorizationRecord,
-    AuthorizationVerdict,
-    validate_authorization,
-)
 from .base import SIMULATION_ONLY_NOTICE, InterventionRefusal, Ledger
 
 __all__ = [
-    "AUTHORIZATION_DECLARATION_NOTICE",
-    "AuthorizationGate",
-    "AuthorizationRecord",
-    "AuthorizationVerdict",
-    "AuthorizedRequest",
-    "AuthorizedProposal",
     "CompilerRefusal",
     "SafetyLimits",
     "LimitSpec",
@@ -102,8 +67,8 @@ class CompilerRefusal(InterventionRefusal):
         message: str = "intervention optimization outside A_safe",
         *,
         remedy: str = (
-            "restrict the search to A_safe, obtain independent safety review, "
-            "and the applicable ethics and regulatory approval"
+            "restrict the search to A_safe, and have the envelope validated "
+            "independently of the optimizer"
         ),
         offending_object: Any = None,
         violations: Sequence["Violation"] = (),
@@ -150,9 +115,21 @@ class LimitSpec:
 class Violation:
     limit: LimitSpec
     value: float
-    kind: Literal["below_minimum", "above_maximum", "missing", "unknown_axis"]
+    kind: Literal[
+        "below_minimum",
+        "above_maximum",
+        "missing",
+        "unknown_axis",
+        "undeclared_by_proposal",
+    ]
 
     def __str__(self) -> str:
+        if self.kind == "undeclared_by_proposal":
+            return (
+                f"{self.limit.key} is a declared limit that this proposal "
+                f"supplies no value for, so it was never checked "
+                f"({self.limit.citation})"
+            )
         bound = self.limit.minimum if self.kind == "below_minimum" else self.limit.maximum
         return (
             f"{self.limit.key} = {self.value:g} {self.limit.units} violates "
@@ -208,35 +185,36 @@ class SafetyLimits:
             k: v for k, v in raw.items() if not isinstance(v, dict)
         }
         meta["source_path"] = str(p)
-        if meta.get("human_use_authorized", False):
-            # This refusal stays exactly as strict under a valid
-            # AuthorizationRecord.  A limits file is where *bounds* are
-            # declared; it is not where authorization lives, and a file that
-            # asserts its own authorization is asserting something no limits
-            # file is in a position to know.  Authorization is carried by an
-            # AuthorizationRecord, validated against a specific request, and
-            # recorded in provenance -- see scwbd.schema.authorization.
-            raise CompilerRefusal(
-                "R11",
-                "limits file declares human_use_authorized=true; a declarative "
-                "bounds file cannot authorise anything, and A_safe is never "
-                "widened by an authorization",
-                remedy=(
-                    "remove the flag; carry authorization in an "
-                    "AuthorizationRecord validated against the specific request"
-                ),
-                offending_object=str(p),
-            )
-
         limits: dict[str, LimitSpec] = {}
         for modality, block in raw.items():
             if not isinstance(block, dict):
+                continue
+            if modality == "decision":
+                # The one namespace that is explicitly rules-for-the-controller
+                # rather than bounds-on-an-exposure.  Read into meta below.
                 continue
             for quantity, entry in block.items():
                 if not isinstance(entry, dict):
                     continue
                 if "min" not in entry and "max" not in entry:
-                    continue  # a declarative rule, not a numeric bound
+                    # Previously this was `continue`, and it is how
+                    # `protocol.reversibility` sat in this file for the whole
+                    # project without ever becoming a LimitSpec: declared,
+                    # cited, never loaded, never checkable, never able to fail.
+                    # A bound nothing can check is decoration
+                    # (reports/decorative_guards.md).  Refuse it at load so the
+                    # failure is at startup rather than invisible forever.
+                    raise CompilerRefusal(
+                        "R11",
+                        f"limit {modality}.{quantity} declares neither `min` nor "
+                        "`max`, so nothing can ever check it; a bound that "
+                        "cannot fire is not a bound",
+                        remedy=(
+                            "give it a numeric `min`/`max`, or move it under "
+                            "[decision] where controller rules live"
+                        ),
+                        offending_object=f"{modality}.{quantity}",
+                    )
                 if not entry.get("citation"):
                     raise CompilerRefusal(
                         "R11",
@@ -280,6 +258,15 @@ class SafetyLimits:
                 offending_object=key,
             ) from exc
 
+    def all_specs(self) -> tuple[LimitSpec, ...]:
+        """Every loaded bound.
+
+        Exists so a test can sweep the file rather than a hardcoded list: a
+        bound added tomorrow is covered tomorrow, and one that cannot be made
+        to fire fails the suite instead of passing it quietly.
+        """
+        return tuple(v for _, v in sorted(self._limits.items()))  # type: ignore[attr-defined]
+
     def for_modality(self, modality: str) -> tuple[LimitSpec, ...]:
         return tuple(
             v for k, v in sorted(self._limits.items())  # type: ignore[attr-defined]
@@ -316,6 +303,7 @@ class ProposedIntervention:
     ``exposure`` maps declared axis names (``"tms.peak_efield_v_per_m"``, ...)
     to simulated values.  ``pose_certified`` records whether the pose passed
     :mod:`scwbd.intervene.tms.pose` (a scalp label alone is not a pose).
+
     """
 
     label: str
@@ -357,9 +345,15 @@ class FeasibleSet:
         limits: SafetyLimits | None = None,
         *,
         require_pose_certification: bool = True,
+        require_complete_coverage: bool = False,
     ) -> None:
         self.limits = limits or SafetyLimits.load()
         self.require_pose_certification = require_pose_certification
+        #: When set, an axis declared for this modality that the proposal does
+        #: not supply is a violation rather than a note.  Off by default
+        #: because most axes have no producer for most proposals; on, it is how
+        #: a caller says "check the whole envelope, not the part I supplied".
+        self.require_complete_coverage = require_complete_coverage
 
     def contains(self, proposal: ProposedIntervention) -> SafetyVerdict:
         violations: list[Violation] = []
@@ -375,6 +369,20 @@ class FeasibleSet:
                 violations.append(v)
 
         unchecked = tuple(sorted(declared - set(checked)))
+
+        # A declared axis the proposal simply omits is reported, not violated
+        # -- for a simulated study that is right, because most axes have no
+        # producer for most proposals.  For a *live* plan it is exactly wrong:
+        # a plan could pass by supplying the three axes it is comfortable with
+        # and omitting the thermal ones.  `tfus.cem43_minutes` and
+        # `tfus.temperature_rise_c` have no producer anywhere in `scwbd`, so
+        # under the old rule a live tFUS plan was silently unchecked on
+        # thermal dose. Requiring complete coverage turns that silence into a
+        # refusal that names the missing axes.
+        if self.require_complete_coverage and unchecked:
+            for axis in unchecked:
+                spec = self.limits.get(axis)
+                violations.append(Violation(spec, float("nan"), "undeclared_by_proposal"))
 
         if self.require_pose_certification and not proposal.pose_certified:
             violations.append(
@@ -433,174 +441,6 @@ class FeasibleSet:
 
 
 # ---------------------------------------------------------------------------
-# the governance gate
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class AuthorizedRequest:
-    """A request to compare hypotheses *under a named protocol*.
-
-    Carries the declaration, what is being asked for, and when.  All three are
-    needed: a record authorising ``tms`` does not admit a ``tfus`` request, and
-    an approval that has expired does not admit a request today.
-    """
-
-    record: AuthorizationRecord | None
-    intervention_class: str
-    at_time_s: float | None
-    purpose: str = "offline hypothesis comparison"
-
-    def __str__(self) -> str:
-        rid = self.record.id if self.record is not None else "<no record>"
-        return f"AuthorizedRequest({self.intervention_class} under {rid})"
-
-
-@dataclass(frozen=True)
-class AuthorizedProposal:
-    """A proposal that passed *both* gates, with the provenance it now carries.
-
-    Existence of one of these means: a declaration validated for this class at
-    this time, **and** the exposure was inside :math:`\\mathcal A_{\\rm safe}`.
-    It is still not permission to stimulate anybody -- this repository builds
-    no stimulation controller, no device command path and no dosing
-    computation.  It is an offline hypothesis comparison labelled with the
-    protocol it was performed under.
-    """
-
-    proposal: ProposedIntervention
-    verdict: SafetyVerdict
-    authorization: AuthorizationVerdict
-    notice: str = SIMULATION_ONLY_NOTICE
-
-    @property
-    def claim_scope(self) -> str:
-        return self.authorization.claim_scope
-
-    def provenance(self) -> dict[str, Any]:
-        """What any emitted artifact must record about this comparison."""
-        return {
-            "claim_scope": self.claim_scope,
-            "authorization": self.authorization.as_provenance(),
-            "a_safe_axes_checked": list(self.verdict.checked_axes),
-            "a_safe_axes_unchecked": list(self.verdict.unchecked_declared_axes),
-            "proposal_label": self.proposal.label,
-            "modality": self.proposal.modality,
-            "notice": self.notice,
-            "authorization_notice": AUTHORIZATION_DECLARATION_NOTICE,
-        }
-
-
-class AuthorizationGate:
-    """Two gates in series, in this order, neither able to excuse the other.
-
-    1. **Governance.** A validated :class:`AuthorizationRecord` must cover the
-       requested intervention class at the requested time, with consent that
-       covers that class, a declared device regulatory status, a declared
-       enrollment scope, a named responsible investigator, and an ``A_safe``
-       attributable to *that* protocol.  Anything missing, expired or
-       out-of-scope refuses ``R11`` with its own specific reason.
-    2. **:math:`\\mathcal A_{\\rm safe}`.** The proposal must be inside the
-       independently declared feasible set.  This check is *identical* whether
-       or not an authorization is present -- :meth:`FeasibleSet.contains` is
-       not passed the record and could not use it -- so an authorized request
-       outside the set refuses exactly as an unauthorized one does.
-
-    What this gate cannot do, stated so nobody has to infer it: it cannot
-    verify an IRB approval exists, it cannot make a limit safe, and it cannot
-    turn a simulation into evidence about a person.
-    """
-
-    def __init__(
-        self,
-        feasible_set: FeasibleSet | None = None,
-        *,
-        a_safe_id: str | None = None,
-    ) -> None:
-        self.feasible_set = feasible_set or FeasibleSet()
-        #: When set, the record's A_safe attribution must name this feasible
-        #: set, so "we are approved" cannot inherit a generic default's bounds.
-        self.a_safe_id = a_safe_id
-
-    # -- governance only ----------------------------------------------------
-    def check_authorization(
-        self, request: AuthorizedRequest, *, required_axes: Sequence[str] = ()
-    ) -> AuthorizationVerdict:
-        """Validate the declaration. Returns a verdict; never raises for invalidity."""
-        return validate_authorization(
-            request.record,
-            intervention_class=request.intervention_class,
-            at_time_s=request.at_time_s,
-            a_safe_id=self.a_safe_id,
-            required_a_safe_axes=tuple(required_axes),
-            what=request.purpose,
-        )
-
-    # -- both gates ---------------------------------------------------------
-    def admit(
-        self, proposal: ProposedIntervention, request: AuthorizedRequest
-    ) -> AuthorizedProposal:
-        """Admit, or raise ``CompilerRefusal(code="R11")`` naming which gate refused.
-
-        Governance is checked first so that an unauthorized request is refused
-        for being unauthorized rather than for whatever else happens to be
-        wrong with it; the feasible set is then checked unconditionally.
-        """
-        if proposal.modality != request.intervention_class:
-            raise CompilerRefusal(
-                "R11",
-                (
-                    f"proposal modality {proposal.modality!r} does not match the "
-                    f"authorized request class {request.intervention_class!r}; an "
-                    "authorization is checked against the class actually proposed"
-                ),
-                remedy="request the class you propose",
-                offending_object=proposal.label,
-            )
-
-        verdict = self.check_authorization(
-            request, required_axes=tuple(sorted(proposal.exposure))
-        )
-        if not verdict.admitted:
-            # Raised as this module's R11 flavour so that a caller catching
-            # ``scwbd.intervene.safety.CompilerRefusal`` sees the governance
-            # refusal and the A_safe refusal through the same door, each
-            # carrying its own specific reason.
-            raise CompilerRefusal(
-                "R11",
-                (
-                    f"no validated authorization admits a "
-                    f"{request.intervention_class} request: {verdict.reason()}"
-                ),
-                remedy=(
-                    "supply a complete, in-date AuthorizationRecord whose consent "
-                    "scope covers the requested intervention class and whose "
-                    "A_safe is attributable to the named protocol; "
-                    + "; ".join(f.remedy for f in verdict.failures if f.remedy)
-                ),
-                offending_object=proposal.label,
-                evidence={
-                    "authorization_failures": [
-                        f.model_dump(mode="json") for f in verdict.failures
-                    ],
-                    "authorization_failure_codes": list(verdict.failure_codes),
-                    "authorization_record_id": verdict.record_id,
-                    "authorization_record_hash": verdict.record_hash,
-                    "intervention_class": request.intervention_class,
-                    "claim_scope": verdict.claim_scope,
-                },
-            )
-
-        # A_safe second, and identically to the unauthorized path.
-        safety = self.feasible_set.contains(proposal)
-        safety.raise_if_infeasible(offending=proposal.label)
-
-        return AuthorizedProposal(
-            proposal=proposal, verdict=safety, authorization=verdict
-        )
-
-
-# ---------------------------------------------------------------------------
 # controller outcomes
 # ---------------------------------------------------------------------------
 
@@ -631,11 +471,7 @@ class NoRecommendation:
 
 @dataclass(frozen=True)
 class SimulatedRanking:
-    """A ranking over *simulated* candidates. Never a protocol for a person.
-
-    ``human_use_authorized`` is hard-wired ``False``; the field exists so that
-    any consumer that forgets to check it will at least carry the flag.
-    """
+    """A ranking over *simulated* candidates. Never a protocol for a person."""
 
     ordered_labels: tuple[str, ...]
     objective_values: Tensor
@@ -643,16 +479,7 @@ class SimulatedRanking:
     epistemic_uncertainty: float
     limits_citations: tuple[str, ...]
     ledger: Ledger = field(default_factory=Ledger)
-    human_use_authorized: bool = False
     notice: str = SIMULATION_ONLY_NOTICE
-
-    def __post_init__(self) -> None:
-        if self.human_use_authorized:  # pragma: no cover - guard
-            raise CompilerRefusal(
-                "R11",
-                "SimulatedRanking cannot be marked authorized for human use",
-                offending_object=self.ordered_labels,
-            )
 
 
 Decision = SimulatedRanking | Defer | NoRecommendation

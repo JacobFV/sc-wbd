@@ -62,6 +62,42 @@
 #     mid-stage stop replays that stage from step 1 with a fresh cycle
 #     (reports/decorative_guards.md). Stop only at stage boundaries.
 
+# ---------------------------------------------------------------------------
+# WHICH ARM THIS IS (refusal R12)
+# ---------------------------------------------------------------------------
+# Run 2 changes the anatomy, the corpus and the curriculum ordering.
+# `model.local_core` below is still one operator for all 414 regions, so run 2
+# is another instance of the same control arm for body.tex sec. 11.4's first
+# ablation, and must be declared as one or R12 refuses its checkpoints.
+#
+# The compiled poset is no longer single-node: `compiler_bridge._poset()` emits
+# the one validated fine/coarse pair of ARCHITECTURE.md sec. 5b N-12 with
+# measured residuals (reports/transforms/resolution_pair.md). Read that with
+# two facts or it will be over-read:
+#   * DECLARED, not APPLIED -- run 2's state lives entirely at the coarse node
+#     and the forward pass never calls R or P (narrowing N-13);
+#   * measured NOT to validate at its boundary -- the parcel support carries
+#     5.6% of the whitened EEG lead field.
+# Making run 2 the treatment arm still needs `model.local_cores` (per-family
+# backends). See ARCHITECTURE.md sec. 5 and sec. 5b N-8/N-12/N-13.
+#
+# `model.scale_prolongations` is LEFT EMPTY deliberately, pending 📜 Noether's
+# ruling: setting it was measured to stop R12 firing on undeclared
+# single-backend configs, because R12's control test requires BOTH a constant
+# operator assignment and no prolongation. See the same note in
+# configs/scwbd_001_beta.yaml.
+arm:
+  role: control
+  controls_for: "11.4:structured_regional_state"
+  justification: >
+    Run 2 changes anatomy, corpus and curriculum ordering but keeps one learned
+    operator for all regions, so it is a second instance of the equal-capacity
+    generic control rather than the model. The single fine/coarse pair the
+    compiled poset carries is declared and measured but never applied in the
+    forward pass (N-13), and does not validate at its boundary, so it does not
+    make run 2 the treatment arm. Stated here so no run-2 measurement is read
+    as a measurement of the thesis.
+
 model:
   # DECORATIVE FIELD -- read this before trusting it.
   #
