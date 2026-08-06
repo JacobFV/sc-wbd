@@ -38,6 +38,7 @@ __all__ = [
     "list_backends",
     "resolve_prior_field",
     "sample_prior_list",
+    "map_fragility",
 ]
 
 CouplingKind = str  # "additive" | "phase_difference"
@@ -341,6 +342,12 @@ class DynamicsBackend(nn.Module, abc.ABC):
                     ),
                     "centre": centre,
                     "sampled_per_batch_element": True,
+                    # NMDA and GABA-A are the two route-fragile maps in the panel
+                    # and are exactly what this contrast is built from; if the
+                    # ledger says the per-parcel sign is not robust, that travels
+                    # with the parameter instead of being left upstream.
+                    "route_fragility": map_fragility(brain_prior, "ei_proxy")
+                    or {"disclosed": False, "note": "prior exposes no ledger for ei_proxy"},
                     **_provenance_index(priors),
                 }
 
@@ -491,6 +498,45 @@ def _clamp_to_support(
     n = int(outside.sum())
     x.clamp_(min=lo, max=hi)
     return lo, hi, n
+
+
+def map_fragility(brain_prior: Any, map_name: str) -> dict[str, Any]:
+    """Route-fragility disclosure for the anatomy map a parameter leans on.
+
+    Agent C's ledgers record ``validity_domain["route_fragile_ingredients"]`` --
+    maps whose value depends on how the PET volume was sampled into parcels --
+    and a ``forbidden_inference`` string.  For ``ei_proxy`` the fragile
+    ingredients are NMDA and GABA-A, which are exactly the two markers the E/I
+    contrast is built from, and the ledger states that the *sign* of the contrast
+    in a given parcel is not robust to a defensible change of route.
+
+    We propagate that rather than re-deriving it: a regional E/I pattern whose
+    sign may flip must not reach the training corpus looking like a measurement.
+    Returns ``{}`` when the prior exposes no ledger (older BrainPrior objects),
+    which is a silence we report, not a clean bill of health.
+    """
+    maps = getattr(brain_prior, "maps", None)
+    if maps is None:
+        return {}
+    try:
+        m = maps[map_name]
+    except Exception:
+        return {}
+    led = getattr(m, "ledger", None)
+    if led is None:
+        return {}
+    vd = getattr(led, "validity_domain", None) or {}
+    out: dict[str, Any] = {}
+    frag = vd.get("route_fragile_ingredients") if hasattr(vd, "get") else None
+    if frag:
+        out["route_fragile_ingredients"] = dict(frag)
+    forb = getattr(led, "forbidden_inference", None)
+    if forb:
+        out["forbidden_inference"] = str(forb)
+    interp = vd.get("interpretation") if hasattr(vd, "get") else None
+    if interp:
+        out["interpretation"] = str(interp)
+    return out
 
 
 def _provenance_index(priors: Any) -> dict[str, Any]:

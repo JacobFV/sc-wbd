@@ -18,7 +18,17 @@ import pytest
 import torch
 
 from scwbd.dynamics import LinearGaussian, ReducedWongWang, WilsonCowan
+from scwbd.dynamics.base import map_fragility
 from scwbd.schema.priors import LogNormalPrior
+
+#: Mirrors agent C's ei_proxy ledger: the two markers the E/I contrast is built
+#: from are the two least route-stable maps in the receptor panel.
+_ROUTE_FRAGILE = {"NMDA": 0.590, "GABAa": 0.685}
+_FORBIDDEN = (
+    "Not a measurement of excitation/inhibition balance. NMDA (route r=0.59), "
+    "GABAa (route r=0.69) disagree between the surface-sampling and volumetric-join "
+    "routes, so the sign of this contrast in any given parcel is not robust."
+)
 
 BACKENDS_WITH_EI = (WilsonCowan, ReducedWongWang)
 ALL_BACKENDS = (WilsonCowan, ReducedWongWang, LinearGaussian)
@@ -29,10 +39,23 @@ _EI_MU = (-0.6, -0.2, 0.2, 0.6)
 _TAU_S = (0.05, 0.09, 0.15, 0.25, 0.35, 0.15)
 
 
+class _Ledger:
+    forbidden_inference = _FORBIDDEN
+    validity_domain = {
+        "route_fragile_ingredients": _ROUTE_FRAGILE,
+        "interpretation": "relative, rank-meaningful only; zero is the cortical mean",
+    }
+
+
+class _Map:
+    ledger = _Ledger()
+
+
 class FakeBrainPrior:
     """Duck-typed stand-in for ``scwbd.anatomy.BrainPrior``."""
 
     n_parcels = 6
+    maps = {"ei_proxy": _Map()}
 
     def ei_ratio_prior(self):
         covered = [
@@ -222,6 +245,45 @@ def test_no_coverage_parcels_stay_distinguishable(cls, prior):
     uncovered = [i for i, t in enumerate(rec["distinct_provenance"]) if "NO RECEPTOR COVERAGE" in t]
     assert uncovered, "the ignorance branch must survive as its own provenance entry"
     assert (idx == uncovered[0]).sum() == 2
+
+
+@pytest.mark.parametrize("cls", BACKENDS_WITH_EI)
+def test_route_fragility_of_the_ei_maps_is_propagated(cls, prior):
+    """NMDA/GABA-A are route-fragile and are exactly what the E/I contrast uses.
+
+    The ledger says the per-parcel *sign* of the contrast is not robust to a
+    defensible change in how the PET volume is read.  A regional E/I pattern that
+    might flip sign must not reach the training corpus looking like a
+    measurement, so the disclosure travels with the parameter.
+    """
+    be = cls.from_prior(prior)
+    theta = be.theta_from_prior(prior, batch=4, seed=0, device="cpu")
+    frag = theta.provenance["ei_ratio"]["route_fragility"]
+    assert frag["route_fragile_ingredients"] == _ROUTE_FRAGILE
+    assert "not robust" in frag["forbidden_inference"]
+
+
+def test_absent_ledger_is_reported_as_undisclosed_not_as_safe(prior):
+    """Silence about fragility must not read as a clean bill of health."""
+
+    class NoLedger(FakeBrainPrior):
+        maps: dict = {}
+
+    be = WilsonCowan.from_prior(NoLedger())
+    theta = be.theta_from_prior(NoLedger(), batch=4, seed=0, device="cpu")
+    frag = theta.provenance["ei_ratio"]["route_fragility"]
+    assert frag["disclosed"] is False
+    assert "no ledger" in frag["note"]
+
+
+def test_map_fragility_is_defensive_about_shapes():
+    assert map_fragility(object(), "ei_proxy") == {}
+
+    class Weird:
+        maps = {"ei_proxy": object()}
+
+    assert map_fragility(Weird(), "ei_proxy") == {}
+    assert map_fragility(FakeBrainPrior(), "no_such_map") == {}
 
 
 @pytest.mark.parametrize("cls", ALL_BACKENDS)
