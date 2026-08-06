@@ -24,9 +24,11 @@ Nothing here decides whether a claim gate passes.  The numbers go to agent J.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import time
+from collections import defaultdict
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
@@ -84,6 +86,7 @@ def _scwbd_scores(
     ess: list[np.ndarray] = []
     top_mass: list[np.ndarray] = []
     subs: list[str] = []
+    seen_pids: set[int] = set()
 
     def _score(th: Tensor, y: Tensor) -> tuple[Tensor, Tensor]:
         """Return (per-element NLL summed over the window, mean prediction)."""
@@ -116,6 +119,14 @@ def _scwbd_scores(
         # deterministic. It is estimated, not exact -- see `theta_mean_samples`.
         th_bar = trainer.posterior.sample(ctx_e, n_mean_samples).mean(dim=1)
         th_bar = th_bar[:, : len(THETA_NAMES)]
+        # B5a: train and eval must run the SAME forward pass. train.real_losses
+        # applies the individualizer; this did not, so an individualised
+        # checkpoint and a population checkpoint produced the same number.
+        _ind = getattr(trainer, "individualizer", None)
+        if _ind is not None:
+            _pid = trainer.participant_index(list(batch.get("subject", [])))
+            th_bar = _ind(participant=_pid, base=th_bar)
+            seen_pids.update(int(v) for v in _pid.detach().cpu().tolist())
         nll_el, m_bar = _score(th_bar, y)
         nll_pw = nll_el.mean(dim=(1, 2))
         nlls.append(nll_pw.cpu().numpy())
@@ -159,6 +170,41 @@ def _scwbd_scores(
             "the target's own per-window std and is NOT comparable to the baselines."
         ),
     }
+    # The null case must WRITE SOMETHING. An individualiser that is applied but
+    # sits at initialisation for every scored participant is indistinguishable in
+    # the score from one that was never applied; these fields make the difference
+    # visible in the output instead of inferable only from a checkpoint diff.
+    _ind = getattr(trainer, "individualizer", None)
+    if _ind is None:
+        out["individualization"] = {
+            "applied": False,
+            "reason": "no individualizer on the trainer (population model)",
+        }
+    else:
+        z = _ind.state_dict().get("z_person")
+        fitted = 0
+        at_init = 0
+        if z is not None:
+            for i in sorted(seen_pids):
+                if i >= z.shape[0]:
+                    continue
+                if float(z[i].abs().max()) > 0.0:
+                    fitted += 1
+                else:
+                    at_init += 1
+        out["individualization"] = {
+            "applied": True,
+            "n_participants_scored": len(seen_pids),
+            "n_individualised_participants": int(fitted),
+            "n_at_initialisation": int(at_init),
+            "note": (
+                "n_at_initialisation counts scored participants whose person effect "
+                "was never fitted. Their z_person row is exactly zero, so "
+                "individualization contributes nothing for them and any G5-style "
+                "claim over them is measuring the population model. A participant-"
+                "disjoint holdout puts EVERY test participant in this column."
+            ),
+        }
     if marg:
         m = np.concatenate(marg)
         mh = np.concatenate(marg_half)
@@ -183,14 +229,62 @@ def _scwbd_scores(
     return out
 
 
+
+def _window_subject(ds, idx: int) -> str:
+    """Subject id of one window, from metadata only (no signal I/O)."""
+    rec_idx, _ = ds.window_index[int(idx)]
+    return str(ds.recordings[rec_idx]["subject"])
+
+
+def _participant_stratified(ds, split_indices, per_participant: int, *, fold: str) -> list[int]:
+    """Evenly spaced windows per participant.
+
+    **The budget is fixed by participants, not batches.** A window budget
+    (`max_batches`) re-creates the one-participant-per-side defect the moment the
+    corpus grows or the fold ordering changes: 40 batches of 16 drew 640 windows
+    from participant-ordered folds of ~2,650, so every baseline was fit on one
+    person and every model scored on one different person.
+    """
+    by_sub: dict[str, list[int]] = defaultdict(list)
+    for i in split_indices:
+        by_sub[_window_subject(ds, i)].append(int(i))
+    if len(by_sub) < 2:
+        raise ValueError(
+            f"{fold} fold resolves to {len(by_sub)} participant(s); a "
+            "participant-clustered interval is undefined below 2 and the "
+            "comparison would not be a holdout."
+        )
+    out: list[int] = []
+    for sub in sorted(by_sub):
+        idxs = by_sub[sub]
+        k = int(min(per_participant, len(idxs)))
+        sel = np.linspace(0, len(idxs) - 1, k).round().astype(int)
+        out.extend(idxs[j] for j in dict.fromkeys(sel.tolist()))
+    return out
+
+
+def split_fingerprint(ds, split: Mapping[str, Sequence[int]]) -> dict[str, Any]:
+    """Participant **ids** per fold plus a sha256 over them.
+
+    Ids rather than indices: indices are meaningless if the corpus is rebuilt, so
+    an index-based fingerprint would silently pass on a different dataset.
+    """
+    folds = {
+        name: sorted({_window_subject(ds, i) for i in idxs}) for name, idxs in split.items()
+    }
+    blob = json.dumps(folds, sort_keys=True).encode()
+    return {"participants_per_fold": folds, "sha256": hashlib.sha256(blob).hexdigest()}
+
+
 def real_eeg_holdout(
     trainer,
     *,
-    max_batches: int | None = 40,
     n_boot: int = 2000,
     seed: int = 0,
     n_theta_samples: int = 32,
     n_mean_samples: int = 256,
+    per_test_participant: int = 40,
+    per_train_participant: int = 30,
 ) -> dict[str, Any]:
     """SC-WBD vs every required baseline on a participant-level holdout.
 
@@ -201,6 +295,7 @@ def real_eeg_holdout(
     """
     from .baselines import (
         ARBaseline,
+        _paired_ci,
         DenseNeuralBaseline,
         PersistenceBaseline,
         PopulationGaussianBaseline,
@@ -213,21 +308,40 @@ def real_eeg_holdout(
         return {"available": False, "reason": "no measured EEG holdout available"}
     cfg = trainer.cfg
     c = cfg.data.context
-    bs = max(8, cfg.data.batch // 4)
-    test_loader = torch.utils.data.DataLoader(trainer.real_test, batch_size=bs, shuffle=False, num_workers=2)
-    train_loader = torch.utils.data.DataLoader(trainer.real_train, batch_size=bs, shuffle=False, num_workers=2)
+    ds = trainer.real_dataset
+    split = trainer.real_split
 
-    def collect(loader, limit):
+    # B4: the split is rebuilt at evaluation time and must be proven identical to
+    # the one that trained the checkpoint. Participant IDS, not indices.
+    fp = split_fingerprint(ds, split)
+    recorded = getattr(trainer, "_recorded_split_fingerprint", None)
+    if recorded is not None and recorded.get("sha256") != fp["sha256"]:
+        raise RuntimeError(
+            "real-EEG split does not match the checkpoint's: recorded sha256 "
+            f"{recorded.get('sha256')}, recomputed {fp['sha256']}. Evaluating would "
+            "score a model on participants it may have trained on."
+        )
+
+    # B1: budget in PARTICIPANTS, not batches.
+    te_idx = _participant_stratified(ds, split["test"], per_test_participant, fold="test")
+    tr_idx = _participant_stratified(ds, split["train"], per_train_participant, fold="train")
+    bs = max(8, cfg.data.batch // 4)
+    test_loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(ds, te_idx), batch_size=bs, shuffle=False, num_workers=2
+    )
+    train_loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(ds, tr_idx), batch_size=bs, shuffle=False, num_workers=2
+    )
+
+    def collect(loader):
         xs, ss = [], []
-        for i, b in enumerate(loader):
-            if limit is not None and i >= limit:
-                break
+        for b in loader:
             xs.append(b["eeg"])
             ss.extend(list(b["subject"]))
         return (torch.cat(xs) if xs else torch.zeros(0), ss)
 
-    tr_x, tr_s = collect(train_loader, max_batches)
-    te_x, te_s = collect(test_loader, max_batches)
+    tr_x, tr_s = collect(train_loader)
+    te_x, te_s = collect(test_loader)
     if te_x.numel() == 0:
         return {"available": False, "reason": "empty holdout"}
     dev = trainer.device
@@ -237,7 +351,6 @@ def real_eeg_holdout(
     scw = _scwbd_scores(
         trainer,
         test_loader,
-        max_batches=max_batches,
         n_theta_samples=n_theta_samples,
         n_mean_samples=n_mean_samples,
     )
@@ -252,6 +365,7 @@ def real_eeg_holdout(
         "dense_neural": DenseNeuralBaseline(target_parameters=n_model_params, steps=400, seed=seed),
     }
     rows: dict[str, Any] = {}
+    per_window: dict[str, np.ndarray] = {}
     for name, m in models.items():
         t0 = time.time()
         try:
@@ -267,6 +381,7 @@ def real_eeg_holdout(
                 "fit_seconds": round(time.time() - t0, 2),
                 "describe": m.describe() if hasattr(m, "describe") else {},
             }
+            per_window[name] = per
         except Exception as exc:  # noqa: BLE001 - a baseline that cannot run is reported, not hidden
             rows[name] = {"error": f"{type(exc).__name__}: {exc}"}
 
@@ -278,30 +393,65 @@ def real_eeg_holdout(
         "n_parameters": int(n_model_params),
         "describe": {"name": "SC-WBD-001-beta", "structured_state": True, "connectome_masked": True},
     }
+    # B6: the verdict rests on the PAIRED participant-clustered interval of the
+    # per-window difference, not on two marginal intervals or two point estimates.
+    # `_paired_ci` shares bootstrap draws across models, so the comparison is
+    # paired in the draws as well as in the windows.
     ref = rows["scwbd_001_beta"]["nll_per_sample"]
+    scw_pw = np.asarray(scw["nll_per_window"], dtype=float)
+    groups = np.asarray(scw["subjects"])
+    paired: dict[str, Any] = {}
+    beaten_by: list[str] = []
+    inconclusive: list[str] = []
+    for name, per in per_window.items():
+        if per.size != scw_pw.size:
+            paired[name] = {"error": f"length mismatch {per.size} vs {scw_pw.size}"}
+            continue
+        # positive delta => SC-WBD scores WORSE (higher NLL) than the baseline
+        d = _paired_ci(scw_pw - per, groups, n_boot=n_boot, alpha=0.05, seed=seed)
+        paired[name] = d
+        if d["excludes_zero"] and d["delta"] > 0:
+            beaten_by.append(name)
+        elif not d["excludes_zero"]:
+            inconclusive.append(name)
     ranking = sorted(
         [(k, v["nll_per_sample"]) for k, v in rows.items() if "nll_per_sample" in v], key=lambda kv: kv[1]
     )
-    beaten_by = [k for k, v in ranking if v < ref]
     return {
         "available": True,
         "n_test_windows": int(te_x.shape[0]),
         "n_test_participants": int(len(set(te_s))),
         "n_train_windows": int(tr_x.shape[0]),
         "n_train_participants": int(len(set(tr_s))),
+        "windows_per_test_participant": int(per_test_participant),
+        "windows_per_train_participant": int(per_train_participant),
+        "sampling": (
+            "participant-stratified, evenly spaced within participant; budget fixed "
+            "by participants, not batches"
+        ),
+        "real_split": fp,
+        "individualization": scw.get("individualization"),
         "metric": "gaussian NLL, nats per channel per sample, sensor space, participant-clustered 95% CI",
+        "estimator": scw.get("estimator"),
         "results": rows,
         "ranking_best_first": ranking,
+        "paired_vs_scwbd": paired,
         "scwbd_beaten_by": beaten_by,
+        "inconclusive_vs_scwbd": inconclusive,
         "verdict": (
-            "SC-WBD-001-beta is NOT the best model on this holdout"
+            "SC-WBD-001-beta is beaten by "
+            + ", ".join(beaten_by)
+            + " on the paired participant-clustered 95% interval of the per-window NLL difference"
             if beaten_by
-            else "SC-WBD-001-beta has the lowest point estimate on this holdout"
+            else "No baseline beats SC-WBD-001-beta on the paired participant-clustered 95% "
+            "interval of the per-window NLL difference"
         ),
         "interpretation": (
-            "A lower point estimate is not a claim. Overlapping participant-clustered intervals mean "
-            "the comparison is inconclusive at this sample size. Window-level generalisation is not "
-            "individual generalisation."
+            "The verdict is the PAIRED interval, not the ranking: two overlapping marginal "
+            "intervals can still admit a decisive paired difference, and a lower point estimate "
+            "is not a claim. Models listed in `inconclusive_vs_scwbd` are neither better nor "
+            "worse at this sample size. Window-level generalisation is not individual "
+            "generalisation."
         ),
     }
 
@@ -490,7 +640,19 @@ def evaluate_model(
         trainer, n_datasets=128 if quick else 512, n_samples=64 if quick else 256
     )
     rep["backend_comparison"] = backend_comparison(trainer, max_batches=2 if quick else 6)
-    rep["real_eeg_holdout"] = real_eeg_holdout(trainer, max_batches=6 if quick else 40)
+    if quick:
+        # A cost flag may reduce precision; it must never redefine the claim.
+        # A shrunken holdout is not a cheaper version of this result, it is a
+        # different and unstated one.
+        rep["real_eeg_holdout"] = {
+            "available": False,
+            "reason": (
+                "--quick refuses the real-EEG holdout. A reduced-cost variant would "
+                "silently change the participant set the claim rests on."
+            ),
+        }
+    else:
+        rep["real_eeg_holdout"] = real_eeg_holdout(trainer, seed=seed)
     rep["sim_val_nll"] = _sim_val_nll(trainer, max_batches=2 if quick else 8)
     rep["wall_seconds"] = t.elapsed
     if out:
@@ -522,12 +684,32 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
     a = p.parse_args(argv)
     cfg = load_config(a.config)
     tr = FoundationTrainer(cfg, resume=False, quick=a.quick)
+    # Data first: the individualizer's row count comes from the participant list.
+    tr.build_data()
     ckpt = a.checkpoint or str(Path(cfg.train.out_dir) / "last.pt")
     if Path(ckpt).exists():
         from .checkpoint import CheckpointError, load_checkpoint
 
+        # B5a: an individualised checkpoint must be loaded WITH its individualizer,
+        # or the evaluation silently scores the population model.
+        import torch as _torch
+
+        _peek = _torch.load(ckpt, map_location="cpu", weights_only=False)
+        if _peek.get("individualizer") is not None and tr.individualizer is None:
+            from .individual import Individualizer
+
+            _np = max(len(tr._participant_ids()), 1)
+            tr.individualizer = Individualizer(
+                len(THETA_NAMES), n_groups=2, n_participants=_np, n_sessions=max(_np * 4, 1)
+            ).to(tr.device)
+        del _peek
         payload = load_checkpoint(
-            ckpt, model=tr.model, posterior=tr.posterior, map_location=str(tr.device), strict=False
+            ckpt,
+            model=tr.model,
+            posterior=tr.posterior,
+            individualizer=tr.individualizer,
+            map_location=str(tr.device),
+            strict=False,
         )
         # `strict=False` is needed because the posterior/individualizer may be
         # absent, but load_checkpoint RECORDS what it dropped and the caller used
@@ -566,6 +748,15 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
                 "checkpoint was written by a compiled model and this process did not "
                 "compile. Evaluating anyway would score randomly-initialised weights "
                 "for those modules and report the result as the model's."
+            )
+        # B4: hand the checkpoint's recorded split to the holdout for verification.
+        tr._recorded_split_fingerprint = (payload.get("extra") or {}).get("real_split")
+        if tr._recorded_split_fingerprint is None:
+            print(
+                f"[warn] {ckpt} records no real_split fingerprint (written before the "
+                "field existed): the evaluation split CANNOT be proven identical to "
+                "the one that trained it.",
+                flush=True,
             )
         print(f"loaded {ckpt} ({len(payload.get('model', {}))} model tensors, no key mismatch)", flush=True)
     else:

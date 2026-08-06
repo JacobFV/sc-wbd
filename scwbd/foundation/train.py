@@ -736,6 +736,27 @@ class FoundationTrainer:
             step = max(1, len(ds) // 500)
             return sorted({str(ds[i]["subject"]) for i in range(0, len(ds), step)})
 
+    def real_split_fingerprint(self) -> dict[str, Any] | None:
+        """Participant **ids** per fold plus a sha256, recorded in every checkpoint.
+
+        Ids rather than indices: indices are meaningless if the corpus is rebuilt,
+        so an index-based fingerprint would pass silently on a different dataset.
+        Evaluation recomputes this and refuses to score on a mismatch.
+        """
+        ds = getattr(self, "real_dataset", None)
+        split = getattr(self, "real_split", None)
+        if ds is None or not split:
+            return None
+        import hashlib
+
+        def _sub(i: int) -> str:
+            rec_idx, _ = ds.window_index[int(i)]
+            return str(ds.recordings[rec_idx]["subject"])
+
+        folds = {k: sorted({_sub(i) for i in v}) for k, v in split.items()}
+        blob = json.dumps(folds, sort_keys=True).encode()
+        return {"participants_per_fold": folds, "sha256": hashlib.sha256(blob).hexdigest()}
+
     def participant_index(self, subjects: Sequence[str]) -> Tensor:
         """Map subject ids to Individualizer rows; unknown ids map to row 0.
 
@@ -769,6 +790,7 @@ class FoundationTrainer:
                 "anatomy": self.anat.summary(),
                 "lead_field": self.model.eeg.lead_field_meta,
                 "sensor_to_parcel": self.sensor_to_parcel.summary(),
+                "real_split": self.real_split_fingerprint(),
                 "theta_names": list(THETA_NAMES),
                 "theta_prior": self.theta_prior.as_dict(),
                 "parameter_report": self.model.parameter_report(),
