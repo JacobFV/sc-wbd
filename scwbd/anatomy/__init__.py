@@ -44,6 +44,16 @@ from .connectome import (
     load_structural_prior,
 )
 from .controls import CONTROL_NAMES, anatomy_adjacency, control_report, graph_controls
+from .families import (
+    EVIDENCE_TIERS,
+    FAMILY_FIELDS,
+    FIELD_STATUS,
+    TRAINING_STATUS,
+    FamilyPartition,
+    FieldProvenance,
+    RegionFamily,
+    derive_families,
+)
 from .geometry import ParcelGeometry, Surface, SurfaceGeometry, load_surface, parcel_geometry
 from .manifest import Manifest
 from .maps import MapSet, RegionalMap, available_maps, load_maps, receptor_matrix
@@ -78,4 +88,12 @@ __all__ = [
     "receptor_matrix",
     "BrainPrior",
     "Manifest",
+    "RegionFamily",
+    "FamilyPartition",
+    "FieldProvenance",
+    "derive_families",
+    "EVIDENCE_TIERS",
+    "FIELD_STATUS",
+    "TRAINING_STATUS",
+    "FAMILY_FIELDS",
 ]
