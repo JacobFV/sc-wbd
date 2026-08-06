@@ -79,6 +79,14 @@ reports/        # J  generated claim reports + figures
 
 Runtime data root: `/data/scwbd` (symlinked as `data/`). Assets: `assets/`.
 
+> **After merging `master` into a worktree, run `./scripts/link_data.sh`.**
+> `assets` and `data` are git-ignored symlinks, so the commits that untracked
+> them **delete them from every working tree on merge** and nothing restores
+> them. It presents as a *missing dataset* rather than a broken link, which has
+> now misdiagnosed three agents. The script is idempotent, replaces a stale
+> real directory (a test run can regenerate `assets` as an 89 MB tree), and
+> verifies the target resolves rather than trusting `ln`.
+
 ---
 
 ## 2. Core contract types (`scwbd.schema`) — agent A owns, all others import
