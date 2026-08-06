@@ -11,3 +11,41 @@
   joint_resampled_exactmodel       rank=9 cond=12.4 lmin_nonprior=2.55e-08 (25s)
   joint_native_impulse_matched     rank=8 cond=9.64e+03 lmin_nonprior=9.868e-11 (54s)
 [regime weak_coupling_long_delay]
+  eeg_only                         rank=6 cond=1.43e+03 lmin_nonprior=0 (217s)
+  fmri_only                        rank=7 cond=13.3 lmin_nonprior=-2.179e-22 (115s)
+  joint_native                     rank=8 cond=1.43e+03 lmin_nonprior=2.545e-08 (275s)
+  joint_resampled                  rank=9 cond=13.4 lmin_nonprior=2.52e-08 (32s)
+  joint_native_impulse             rank=8 cond=1.11e+04 lmin_nonprior=6.755e-08 (235s)
+  joint_resampled_exactmodel       rank=9 cond=13.4 lmin_nonprior=2.52e-08 (6s)
+  joint_native_impulse_matched     rank=8 cond=1.2e+04 lmin_nonprior=5.317e-11 (13s)
+[regime low_snr_short_delay]
+  eeg_only                         rank=6 cond=471 lmin_nonprior=0 (215s)
+  fmri_only                        rank=7 cond=3.29 lmin_nonprior=1.903e-22 (104s)
+  joint_native                     rank=8 cond=471 lmin_nonprior=3.671e-09 (307s)
+  joint_resampled                  rank=9 cond=3.7 lmin_nonprior=3.614e-09 (64s)
+  joint_native_impulse             rank=8 cond=2.67e+03 lmin_nonprior=8.026e-09 (365s)
+  joint_resampled_exactmodel       rank=9 cond=3.7 lmin_nonprior=3.614e-09 (6s)
+  joint_native_impulse_matched     rank=8 cond=2.81e+03 lmin_nonprior=1.499e-11 (13s)
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/infer/cli.py", line 141, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/infer/cli.py", line 137, in main
+    return args.func(args)
+           ^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/infer/cli.py", line 70, in cmd_benchmark
+    figs = make_figures(res, out)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/infer/report.py", line 446, in make_figures
+    ax.errorbar(xs, ys, yerr=[lo, hi], fmt="o", ms=3, lw=1, capsize=2, label=d)
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/matplotlib/_api/deprecation.py", line 453, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/matplotlib/__init__.py", line 1524, in inner
+    return func(
+           ^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/matplotlib/axes/_axes.py", line 3825, in errorbar
+    raise ValueError(
+ValueError: 'yerr' must not contain negative values

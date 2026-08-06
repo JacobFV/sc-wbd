@@ -268,7 +268,32 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
                 cov_ok = cov_ok and bool(c["nominal_inside_wilson95"])
         else:
             cov_ok = None                 # not evaluated, not failed
-        c4 = None if cov_ok is None else bool(cov_ok)
+        c4_raw = None if cov_ok is None else bool(cov_ok)
+
+        # --- POST HOC validity gate, disclosed as such -----------------------
+        # A coverage statistic produced by an optimiser that demonstrably has
+        # not reached the MAP measures the optimiser, not the design.  The
+        # median Newton decrement is the remaining distance to the optimum in
+        # posterior standard deviations; above ~2 the reported interval is not
+        # centred on the estimate it claims.  Where that happens C4/C5 are
+        # marked NOT EVALUATED rather than counted as failures.  This gate was
+        # added after observing non-convergence in two regimes and is reported
+        # separately from the preregistered criteria it guards.
+        decr = {
+            k: float((v.get("optimiser") or {}).get("median_newton_decrement", 0.0) or 0.0)
+            for k, v in rec.items() if v
+        }
+        GATE = 2.0
+        # C4 is a statement about joint_native only; C5 compares it with the two
+        # single-modality designs.  Gate each on exactly the designs it uses.
+        decr_c4 = decr.get("joint_native", 0.0)
+        decr_c5 = max(
+            (decr[k] for k in ({"joint_native", "eeg_only", "fmri_only"} & set(decr))),
+            default=0.0,
+        )
+        worst_decr = max(decr.values(), default=0.0)
+        converged = decr_c4 <= GATE
+        c4 = c4_raw if decr_c4 <= GATE else None
 
         def theta_rmse(k):
             r = rec.get(k)
@@ -277,14 +302,15 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
             return float(np.mean([r["rmse_in_prior_sd"][p] for p in PREREGISTERED_SUBSET]))
 
         if not {"joint_native", "eeg_only", "fmri_only"} <= have_rec:
-            c5 = None                     # not evaluated, not failed
+            c5_raw = None                 # not evaluated, not failed
         else:
-            c5 = bool(
+            c5_raw = bool(
                 theta_rmse("joint_native")
                 <= min(theta_rmse("eeg_only"), theta_rmse("fmri_only")) + 1e-12
                 and delay_rmse("joint_native")
                 <= min(delay_rmse("eeg_only"), delay_rmse("fmri_only")) + 1e-12
             )
+        c5 = c5_raw if decr_c5 <= GATE else None
         per_regime[rname] = {
             "theta_profile_min_eigenvalue_nonprior": lmin,
             "best_single_modality": best_single,
@@ -298,6 +324,14 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
             "C3_intervention_information": c3,
             "C4_calibrated_recovery": c4,
             "C5_recovery_improvement": c5,
+            "C4_calibrated_recovery_ungated": c4_raw,
+            "C5_recovery_improvement_ungated": c5_raw,
+            "optimiser_converged_joint_native": converged,
+            "median_newton_decrement_by_design": decr,
+            "median_newton_decrement_gating_C4": decr_c4,
+            "median_newton_decrement_gating_C5": decr_c5,
+            "worst_median_newton_decrement": worst_decr,
+            "convergence_gate_threshold_posterior_sd": GATE,
             # A design that learns *nothing* about tau leaves it at the prior
             # mean.  Where tau_true happens to equal the prior mean, that scores
             # a perfect delay error, so the delay comparison cannot discriminate
@@ -356,14 +390,23 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
         "criteria_all_regimes": C,
         "unevaluated_criteria": unevaluated,
         "regimes_evaluated": list(per_regime),
+        "convergence_gated_regimes": [
+            k for k, v in per_regime.items()
+            if not v.get("optimiser_converged_joint_native")
+        ],
         "delay_degenerate_regimes": [
             k for k, v in per_regime.items() if v.get("delay_comparison_degenerate")
         ],
         "per_regime": per_regime,
         "consequence": (
-            "One or more preregistered criteria were NOT EVALUATED (missing "
-            f"inputs: {unevaluated}); no verdict on the central premise is "
-            "claimed from this run."
+            "Criteria "
+            f"{[k for k, v in C.items() if v is False]} were fully evaluated and "
+            f"FAILED; criteria {unevaluated} could not be evaluated in every "
+            "regime and are reported as NOT EVALUATED rather than as failures. "
+            "On the evidence that was evaluable, the claim that cross-method "
+            "integration resolves these dynamics must be narrowed; the compiler "
+            "may still be useful as a provenance system "
+            "(thesis_contract.tex sec. 0.3)."
             if verdict == "INCOMPLETE"
             else "The shared latent fusion claim stands at the scope tested."
             if verdict == "SUPPORTED"
@@ -441,8 +484,10 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
             for i, p_ in enumerate(PREREGISTERED_SUBSET):
                 c = rec["coverage"][p_]
                 xs.append(i + 0.08 * j); ys.append(c["empirical"])
-                lo.append(c["empirical"] - c["wilson95_lo"])
-                hi.append(c["wilson95_hi"] - c["empirical"])
+                # Wilson bounds are clipped to [0,1] and can round to the point
+                # estimate; a negative whisker is a rounding artefact, not data.
+                lo.append(max(c["empirical"] - c["wilson95_lo"], 0.0))
+                hi.append(max(c["wilson95_hi"] - c["empirical"], 0.0))
             ax.errorbar(xs, ys, yerr=[lo, hi], fmt="o", ms=3, lw=1, capsize=2, label=d)
         ax.axhline(0.95, color="k", ls="--", lw=1)
         ax.set_xticks(range(len(PREREGISTERED_SUBSET)))
