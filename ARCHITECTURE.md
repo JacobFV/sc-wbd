@@ -291,6 +291,50 @@ it makes the narrowing visible so it can be challenged.
 
 ---
 
+## 5c. Standing rulings
+
+Arbitrations that bind more than one agent. Each is a decision, not a fact —
+argue with it before implementing against it, not after.
+
+**RL-1 — the uncertainty channel is state-derived; horizon dependence follows
+from it.** `X_i^uncertainty` (§2.1) is integrated forward by the operator, so
+predictive log-variance grows with horizon step because the *state* says it
+should, differently per family and per parcel. An explicit `horizon=h`
+embedding in the heads is permitted only as a declared residual on top, and
+only if an ablation shows it adds beyond the state-derived term.
+
+*Why:* `horizon=h` alone produces h-dependence whether or not the model knows
+anything. That gives A1 a variance channel varying for reasons unrelated to
+the structured state A1 exists to measure — the decorative-guard failure
+reproduced inside the repair. See `reports/scope_gap.md` §6.
+
+**RL-2 — the instrument noise floor is not state-dependent, and is
+separately parameterised.** Electrode impedance is genuinely not a function of
+neural state. `lv = floor + proj(state_term)`, with `floor` and `proj` distinct
+parameters so the floor cannot silently absorb the structure.
+
+**RL-3 — both measured-data heads are fixed together.** `EEGHead` and
+`BOLDHead` both carry constant predictive variance. They are exactly the two
+heads facing measured data and therefore the two entering the scored NLL.
+Fixing one leaves the ablation half-broken, which is harder to detect than
+fully broken. `BehaviourHead` and `SCWBD.readout` are already state-dependent.
+
+**RL-4 — heads read declared out-ports, never a shared state slice.** Mean and
+variance cross the same typed interface. A shared-slice view silently narrowed
+the treatment arm's EEG mean path to 2 exported dims against the control's 18;
+that would have concluded heterogeneous state does not help, with a green
+harness. `SCWBD.observation` is `None` on the control arm so the §11.4 control
+is untouched.
+
+**RL-5 — one refusal definition, one enforcement point.** R12's *definition*
+lives with R01–R11 in the schema/compiler refusal set (Noether). Its
+*enforcement* is the checkpoint-emission call site (Hodgkin). A refusal defined
+inside the module it polices is a self-assessment, not a refusal — and R12
+exists precisely because `foundation` emitted a control-arm artifact under the
+model's name with nothing outside it able to object.
+
+---
+
 ## 6. Downstream consumer: `~/Documents/robotics` (`tms-robotics`)
 
 The consumer is **not** a general robot needing a brain. It is `tms-robotics`:
