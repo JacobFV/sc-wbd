@@ -1,0 +1,332 @@
+{
+ "verdict": {
+  "log_G": [
+   "wilson_cowan",
+   "jansen_rit",
+   "wong_wang",
+   "stuart_landau",
+   "linear_gaussian"
+  ],
+  "log_velocity": [],
+  "ei_global": [
+   "wilson_cowan",
+   "jansen_rit",
+   "wong_wang",
+   "stuart_landau",
+   "linear_gaussian"
+  ],
+  "ei_gradient": [
+   "wilson_cowan",
+   "jansen_rit",
+   "wong_wang",
+   "stuart_landau",
+   "linear_gaussian"
+  ],
+  "log_sigma": [
+   "wilson_cowan",
+   "jansen_rit",
+   "wong_wang",
+   "stuart_landau",
+   "linear_gaussian"
+  ],
+  "drive": [
+   "wilson_cowan",
+   "jansen_rit",
+   "wong_wang",
+   "stuart_landau",
+   "linear_gaussian"
+  ]
+ },
+ "detail": {
+  "wilson_cowan": {
+   "log_G": {
+    "g_coupling": [
+     1.0,
+     1.9735099077224731
+    ]
+   },
+   "log_velocity": {},
+   "ei_global": {
+    "ei_ratio": [
+     0.7772777080535889,
+     0.6451520919799805
+    ]
+   },
+   "ei_gradient": {
+    "ei_ratio": [
+     0.965334415435791,
+     1.3264485597610474
+    ]
+   },
+   "log_sigma": {
+    "sigma": [
+     1.0,
+     1.9344267845153809
+    ]
+   },
+   "drive": {
+    "P": [
+     1.0,
+     1.066666841506958
+    ]
+   }
+  },
+  "jansen_rit": {
+   "log_G": {
+    "g_coupling": [
+     1.0,
+     1.9735106229782104
+    ]
+   },
+   "log_velocity": {},
+   "ei_global": {
+    "c4_f": [
+     0.7687103748321533,
+     0.440774530172348
+    ]
+   },
+   "ei_gradient": {
+    "c4_f": [
+     0.965334415435791,
+     1.3226224184036255
+    ]
+   },
+   "log_sigma": {
+    "sigma": [
+     1.0,
+     1.9473683834075928
+    ]
+   },
+   "drive": {
+    "p_mean": [
+     1.0,
+     0.9056603908538818
+    ]
+   }
+  },
+  "wong_wang": {
+   "log_G": {
+    "G": [
+     1.0,
+     1.9735099077224731
+    ]
+   },
+   "log_velocity": {},
+   "ei_global": {
+    "w_plus": [
+     0.6777060627937317,
+     0.4050035774707794
+    ],
+    "ei_ratio": [
+     0.7772777080535889,
+     0.6451520919799805
+    ]
+   },
+   "ei_gradient": {
+    "w_plus": [
+     0.9538421034812927,
+     0.8917495608329773
+    ],
+    "ei_ratio": [
+     0.965334415435791,
+     1.3264485597610474
+    ]
+   },
+   "log_sigma": {
+    "sigma": [
+     1.0,
+     1.9473683834075928
+    ]
+   },
+   "drive": {
+    "I_ext": [
+     1.0,
+     2.0
+    ]
+   }
+  },
+  "stuart_landau": {
+   "log_G": {
+    "G": [
+     1.0,
+     1.968253254890442
+    ]
+   },
+   "log_velocity": {},
+   "ei_global": {
+    "f": [
+     0.6325388550758362,
+     0.6358575820922852
+    ]
+   },
+   "ei_gradient": {
+    "f": [
+     0.7309216260910034,
+     1.212733268737793
+    ]
+   },
+   "log_sigma": {
+    "sigma": [
+     1.0,
+     1.8709690570831299
+    ]
+   },
+   "drive": {
+    "a": [
+     1.0,
+     2.0
+    ]
+   }
+  },
+  "linear_gaussian": {
+   "log_G": {
+    "G": [
+     1.0,
+     1.9735095500946045
+    ]
+   },
+   "log_velocity": {},
+   "ei_global": {
+    "self_gain": [
+     0.7451785206794739,
+     0.9814961552619934
+    ]
+   },
+   "ei_gradient": {
+    "self_gain": [
+     0.9605223536491394,
+     1.900912880897522
+    ]
+   },
+   "log_sigma": {
+    "sigma": [
+     1.0,
+     1.829785704612732
+    ]
+   },
+   "drive": {
+    "tau": [
+     0.8405796885490417,
+     0.49965351819992065
+    ]
+   }
+  },
+  "thalamic_relay": {
+   "log_G": {
+    "G": [
+     1.0,
+     1.9735099077224731
+    ]
+   },
+   "log_velocity": {},
+   "ei_global": {
+    "ei_ratio": [
+     0.7772777080535889,
+     0.6451520919799805
+    ]
+   },
+   "ei_gradient": {
+    "ei_ratio": [
+     0.965334415435791,
+     1.3264485597610474
+    ]
+   },
+   "log_sigma": {
+    "sigma": [
+     1.0,
+     1.9473679065704346
+    ]
+   },
+   "drive": {}
+  },
+  "basal_ganglia_gate": {
+   "log_G": {
+    "G": [
+     1.0,
+     1.968253254890442
+    ]
+   },
+   "log_velocity": {},
+   "ei_global": {
+    "ei_ratio": [
+     0.7772777080535889,
+     0.6451520919799805
+    ]
+   },
+   "ei_gradient": {
+    "ei_ratio": [
+     0.965334415435791,
+     1.3264485597610474
+    ]
+   },
+   "log_sigma": {
+    "sigma": [
+     1.0,
+     1.9473679065704346
+    ]
+   },
+   "drive": {
+    "dopamine": [
+     1.0,
+     2.0
+    ]
+   }
+  },
+  "hippocampal_code": {
+   "log_G": {
+    "G": [
+     1.0,
+     1.964321494102478
+    ]
+   },
+   "log_velocity": {},
+   "ei_global": {
+    "beta": [
+     0.7772777080535889,
+     0.6451520919799805
+    ]
+   },
+   "ei_gradient": {
+    "beta": [
+     0.965334415435791,
+     1.3264485597610474
+    ]
+   },
+   "log_sigma": {
+    "sigma": [
+     1.0,
+     1.9473679065704346
+    ]
+   },
+   "drive": {}
+  },
+  "cerebellar_forward_model": {
+   "log_G": {
+    "G": [
+     1.0,
+     1.9721946716308594
+    ]
+   },
+   "log_velocity": {},
+   "ei_global": {
+    "gain": [
+     0.7555480003356934,
+     0.5717495679855347
+    ]
+   },
+   "ei_gradient": {
+    "gain": [
+     0.9624565839767456,
+     1.2522451877593994
+    ]
+   },
+   "log_sigma": {
+    "sigma": [
+     1.0,
+     1.9473679065704346
+    ]
+   },
+   "drive": {}
+  }
+ }
+}
