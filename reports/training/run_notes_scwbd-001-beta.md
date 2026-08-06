@@ -51,6 +51,68 @@ was written to prevent.
 
 The near-miss stays on the record even though it no longer affects the artifact.
 
+### What the rescaled run showed, including a correction to my diagnosis
+
+Early comparison at matched steps (same seed, so the same data order):
+
+| step | old lr | old loss | new lr | new loss |
+|---|---|---|---|---|
+| 20 | 8.01e-5 | 0.509 | 4.62e-5 | **0.469** |
+| 40 | 2.27e-4 | 0.331 | 1.31e-4 | **0.225** |
+| 60 | 4.06e-4 | 0.339 | 2.34e-4 | **0.256** |
+| 80 | 5.49e-4 | 3.717 | 3.17e-4 | **2.447** |
+
+The floor improved at every matched step, which is the result the rescale was
+predicted to produce.
+
+**But the spike recurs at exactly step 80 in both runs.** `set_determinism(seed)`
+fixes the shuffle, so step 80 draws the *same batch* in both. The spike is
+therefore substantially **data-driven — a reproducible hard batch — not purely a
+learning-rate instability.** Lowering the rate reduced its magnitude (3.717 →
+2.447), as a smaller step into a bad direction should, but did not remove it.
+
+This refines the diagnosis rather than overturning the decision. The rescale was
+justified on two other grounds that still hold — the a-priori batch/lr scaling
+argument, and the loss *floor* rising as lr crossed ~5e-4 — and the floors above
+confirm it. But "the spikes were caused by too high an lr" was too strong, and
+the corrected statement is: *the spikes mark a specific hard batch, and lr sets
+how badly the model is thrown by it.*
+
+Worth checking at the end of Stage I whether step 80's batch is anomalous in the
+mixture (e.g. a shard boundary or a `linear_gaussian` block), since that would be
+a corpus property rather than an optimisation one.
+
+## Provenance of the artifact
+
+Branch **`wt/turing`**. The run's commit is **`4be98fc`**
+(`4be98fce8683654071e887b67f32bd3e90a09b3f`), recorded in
+`checkpoints/scwbd-001-beta/provenance.json` at the step-150 checkpoint together
+with the rescaled learning rates in the accompanying `config.yaml`.
+
+The `-dirty` suffix on the stamp is a known artifact and does **not** indicate
+modified source: the run writes to two *tracked* files
+(`reports/training/train_main.log`, `…_train.jsonl`), so the flag is always set
+during a run. See `reports/decorative_guards.md` row 4.
+
+To check that no training source changed after the run began, diff **two
+immutable SHAs** — both on `wt/turing`:
+
+```
+git diff --stat 4be98fc <sha-of-the-commit-being-checked> -- scwbd configs
+```
+
+**Corrected from an earlier, defective form of this claim.** It was previously
+written as `git diff --stat 7f18528 HEAD -- scwbd configs`, which 🛡️ Popper could
+not reproduce — correctly, because `HEAD` is a moving, worktree-local symbol and
+`7f18528` is not an ancestor of `master` (merge base `4d617af`). Evaluated in
+another worktree the diff is dominated by unmerged work on both sides and the
+claim reads false. It was true where written and false where checked, and its
+text did not say so. A verification claim has to name every referent immutably or
+it is not checkable; see `reports/decorative_guards.md` row 6.
+
+Note also that `7f18528` is the **superseded** run, not this one. The artifact is
+`4be98fc`.
+
 ## Reading the outputs
 
 **`reports/training/train_main.log` is the live source of truth, not the JSONL.**

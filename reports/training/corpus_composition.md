@@ -18,32 +18,78 @@ built (its generation settings caused the 2026-08-05 OOM and were not retried).
 
 Control graphs: `none` on 35 shards, `local_only` on 2.
 
-## Limitation 1 — regional timescale heterogeneity is partly sampler-limited
+## Limitation 1 — regional timescale is not drawn from the anatomy prior in ~40 % of the corpus
 
-🌊 Hodgkin's `from_prior()` work established that `ReducedWongWang` **clamps
-47.5 %** of regional timescale draws against its declared `param_support`: NMDA
-kinetics (~10 ms synaptic constant) are far narrower than the intrinsic-timescale
-prior (50–350 ms autocorrelation), so nearly half of all sampled regional
-timescales land on the boundary. Wilson–Cowan clamps 6.1 %.
+**Two distinct mechanisms.** They are stated separately because they have
+different causes, different remedies, and only one of them is visible in the
+provenance records.
 
-Applied to this corpus:
+### Mechanism A — the prior arrives but is clamped to the support boundary (19.07 %)
 
-- ≈ 0.324 × 0.475 ≈ **15.4 %** of trajectories carry RWW-clamped regional timescales
-- ≈ 0.405 × 0.061 ≈ **2.5 %** more from Wilson–Cowan
-- ≈ **18 %** of the corpus overall has regional timescales pinned to a support
-  boundary rather than drawn from the prior
+Rates re-derived on master against 🧠 Cajal's corrected 431-parcel prior
+(seed 0, batch 256). `timescale_prior()` maps parcel rank onto a hard-coded
+`TIMESCALE_RANGE_MS = (20.0, 250.0)` at fixed `sigma=0.5`, so the clamp fraction
+is set by that fixed range against each backend's declared `param_support` — not
+by which receptor map supplies the ordering. Cajal's fix changed the maps and
+`ei_ratio`, and correctly did **not** move these numbers.
+
+| backend | corpus share | clamp rate | contribution |
+|---|---|---|---|
+| `wong_wang` | 32.43 % | 48.04 % | **15.58 %** |
+| `wilson_cowan` | 40.54 % | 6.37 % | 2.58 % |
+| `linear_gaussian` | 5.41 % | 16.79 % | 0.91 % |
+| | | **total** | **19.07 %** |
+
+RWW is the dominant contributor: its NMDA kinetics (~10 ms synaptic constant)
+are far narrower than the intrinsic-timescale prior (50–350 ms autocorrelation),
+so nearly half its draws land on a boundary.
+
+*(An earlier version of this file reported 18 %, scoring `linear_gaussian` as
+zero. Crediting its measured 16.79 % is correct and raises the figure to 19.07 %.)*
+
+### Mechanism B — the prior never reaches the backend at all (21.62 %)
+
+`DynamicsBackend.timescale_params = ("tau_E", "tau_e", "tau_s", "tau")`.
+`StuartLandau` parameterises its timescale as a frequency (`f = 10.0` Hz) and
+`JansenRit` as rate constants (`a = 100.0`, `b = 50.0`). Neither spells its
+timescale with any name in that tuple, so `theta_from_prior` resolves
+`key = None` and **silently skips the block, writing no provenance entry.**
+
+| backend | corpus share | prior keys actually applied |
+|---|---|---|
+| `stuart_landau` | 13.51 % | `['velocity']` |
+| `jansen_rit` | 8.11 % | `['velocity']` |
+| | **total 21.62 %** | |
+
+These trajectories are **anatomically flat in timescale and carry no
+`ei_ratio`**. Their 0 % clamp rate means *the prior never arrived*, not *the
+prior fit the support* — the two are indistinguishable in the records as
+currently written, which is why this went unnoticed.
+
+### Combined
+
+The mechanisms are disjoint by backend, so they add: **40.69 %** of the corpus
+has regional timescale that was not drawn from the anatomy prior.
 
 **Consequence for the claim, stated plainly:** where this model appears to have
-learned that regions are homogeneous in timescale, roughly a fifth of its
-training signal could have taught it that *regardless of the brain*, because the
-sampler could not express the prior. This bears directly on Stage I regional
-phenotype pretraining and on any statement that the model captures regional
+learned that regions are homogeneous in timescale, roughly **40 %** of its
+training signal could have taught it that *regardless of the brain* — about half
+because the sampler could not express the prior within the backend's support,
+and about half because the prior never reached that backend at all.
+
+This bears directly on **Stage I regional phenotype pretraining**, on **gate G3**,
+and on **ablation A1**, and on any statement that the model captures regional
 heterogeneity.
 
-RWW does **not** dominate — at 32.4 % the corpus is genuinely backend-diverse,
-which is the mitigating fact. But a third of it comes from the one backend that
-cannot represent the tail of the timescale prior, and that must be reported
-alongside any heterogeneity result rather than discovered afterwards.
+The mitigating facts, stated without using them to wave the limitation away:
+the corpus is genuinely backend-diverse (no backend exceeds 41 %), `velocity`
+reaches every backend, and Mechanism B is a fixable mapping defect rather than a
+property of the dynamics. 🌊 Hodgkin is adding a provenance record when the key
+is unresolvable and deciding whether SL's `f` and JR's `a`/`b` should receive the
+prior at all — a real question about inverse timescales, not a rename.
+
+**Fixing either mechanism requires regenerating the corpus**, so neither is
+addressed in SC-WBD-001-beta. This is a property of the artifact as trained.
 
 ## Limitation 2 — almost no interventional diversity
 
