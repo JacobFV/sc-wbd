@@ -509,6 +509,34 @@ def _declared_families(anat) -> tuple[tuple[str, ...], dict[str, Any]] | None:
     n = int(anat.n_regions)
     prov = dict(getattr(anat, "family_provenance", None) or {})
 
+    # `scwbd.anatomy.families.FamilyPartition` -- the real prior's declaration.
+    # It is a partition OBJECT, not a per-parcel label array: iterating it yields
+    # one `RegionFamily` per family, so the length check below sees 9 (or however
+    # many families the atlas has) against 414 parcels and reads a complete
+    # declaration as a partial one. It carries exactly what is needed --
+    # `family_index()` is `(n_regions,)` int and validates exhaustive-and-disjoint
+    # before returning -- so it is adapted here rather than reformatted upstream.
+    for attr in ("families", "family_partition", "family"):
+        p = getattr(anat, attr, None)
+        if p is None or not (hasattr(p, "family_index") and hasattr(p, "family_ids")):
+            continue
+        ids = tuple(str(x) for x in p.family_ids)
+        idx = p.family_index()  # validates; raises if not a partition of n
+        if len(idx) != n:
+            raise ValueError(
+                f"AnatomyPrior.{attr}.family_index() has length {len(idx)} for {n} parcels"
+            )
+        names = tuple(ids[int(i)] for i in idx)
+        meta = {
+            "source": f"AnatomyPrior.{attr} (FamilyPartition)",
+            "per_family": prov or dict(getattr(p, "separation_evidence", {}) or {}),
+            "atlas": getattr(p, "atlas", None),
+            "partition_provenance": getattr(p, "provenance", None),
+            "declared_absent": dict(getattr(p, "declared_absent", {}) or {}),
+            "is_biological": bool(p.is_biological()) if hasattr(p, "is_biological") else None,
+        }
+        return names, meta
+
     for attr in ("family", "families", "family_name", "family_names_per_parcel"):
         v = getattr(anat, attr, None)
         if v is None:

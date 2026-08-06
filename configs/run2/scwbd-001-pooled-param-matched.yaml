@@ -1,0 +1,75 @@
+# SC-WBD-001 RUN 2 -- `pooled_vector_per_region@param_matched`.
+#
+# PREREG_A1_run2 §3.2 B1: the equal-PARAMETER pooled-vector control. One learned
+# operator and one pooled state vector for all 414 parcels, at a width chosen so
+# the parameter count matches the treatment arm rather than at whatever width the
+# base file happened to carry.
+#
+# MEASURED, not asserted -- built both models against the real 414-parcel prior
+# and counted `SCWBD.parameter_report()`:
+#
+#   treatment (scwbd-001-families.yaml)   1,858,597
+#   this file  (hidden: 314)              1,863,600     +0.27%
+#   base file  (hidden: 288)              1,715,040     -7.72%
+#
+# +0.27% is inside `scwbd.dynamics.assert_equal_capacity`'s 10% tolerance with
+# three orders of margin. The base file at 288 is not: it hands the treatment arm
+# a 7.7% capacity advantage, and a win at those two numbers would be
+# unattributable between structure and size.
+#
+# NOTE the numbers in `scwbd-001-families.yaml`'s own header (2,376,452 vs
+# 1,675,373, "1.42x") are STALE. They predate the real 414-parcel prior, the
+# nine-family partition it actually produces, and Hodgkin's observation
+# interface. Corrected there in the same commit as this file. Regenerate before
+# quoting: the ratio is 1.084, not 1.42.
+#
+# THIS IS ONE OF TWO CAPACITY MATCHES AND CANNOT BE THE ONLY ONE.
+# §3.2 requires B1 (parameters) and B2 (total state width) BOTH, because they
+# cannot be satisfied simultaneously -- matching parameters leaves the state
+# widths different and vice versa. Choosing whichever one flatters the result
+# after the fact is the failure the two-arm requirement exists to prevent.
+# `pooled_vector_per_region@state_matched` is NOT in this directory yet and A1
+# is incomplete without it.
+#
+# WHAT IS HELD IDENTICAL TO THE TREATMENT ARM (§3.6, binding design ruling):
+#   * operator assignment -- `local_core: learned` for every parcel in both arms.
+#     A1's arms differ ONLY in state structure. Letting this arm also vary the
+#     operator family would confound A1 with A5 and neither would be testable.
+#   * corpus, anatomy, curriculum, seed, stage schedule, optimiser steps (B3).
+#   * `state_dependent_variance: true` -- ARCHITECTURE.md §5b RL-4. BOTH arms
+#     build the observation interface. Making the state-dependent variance path
+#     a property of which arm you are in would silently widen one arm, which is
+#     the same class of defect as the narrowing Hodgkin found on the mean path.
+
+base: scwbd-001.yaml
+
+arm:
+  role: control
+  controls_for: "11.4:structured_regional_state"
+  # NOTE: `match: parameters` belongs here and there is no field for it --
+  # ArmConfig declares only role/controls_for/justification, so which of §3.2's
+  # two incompatible capacity matches an arm implements is currently expressible
+  # only as prose. That is a gap in R12's schema (📜 Noether's), not in this
+  # file: a B1-matched and a B2-matched control are different controls and a
+  # registry that cannot tell them apart cannot enforce that both were run.
+  justification: >
+    Equal-parameter (B1) pooled-vector control for A1. One operator and one pooled
+    state vector for all 414 parcels at hidden=314, giving 1,863,600 parameters
+    against the treatment arm's 1,858,597 (+0.27%, measured, not asserted).
+    Operator assignment is identical to the treatment arm, so the only thing
+    that varies is state structure. This is the B1 match only; the B2
+    state-width match is a separate arm and A1 needs both.
+
+model:
+  family_state: false
+  hidden: 314
+
+train:
+  run_name: scwbd-001-pooled-param-matched
+  out_dir: checkpoints/scwbd-001-pooled-param-matched
+
+notes: >-
+  Equal-parameter generic-operator control arm for body.tex §11.4's first
+  required ablation. Paired with configs/run2/scwbd-001-families.yaml. Capacity
+  match measured at +0.27%; see this file's header for the counts and for why
+  the base file's hidden=288 is not an acceptable control. Not yet trained.
