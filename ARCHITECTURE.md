@@ -761,6 +761,43 @@ inside the module it polices is a self-assessment, not a refusal — and R12
 exists precisely because `foundation` emitted a control-arm artifact under the
 model's name with nothing outside it able to object.
 
+**RL-12 — the type owns the refusal; the model owns the physics.** 🌊
+Hodgkin's split, adopted for the O-2/O-5 interface and general beyond it.
+`Support`/`ElementSpec` make an invalid combination *unrepresentable*; the
+model layer implements the transform. Concretely:
+
+- `ElementSpec(rank, dim, frame, units, basis)` is a **struct, not flat
+  fields**, so `rank`/`units`/`frame` are enforced together in one
+  `__post_init__` rather than by a validator somewhere else.
+- **`frame` is mandatory for `rank ≥ 1` and forbidden for `rank == 0`.** A
+  vector without a frame is the defect, not a missing feature — `E·n̂` in one
+  frame and a dipole in another compose silently to nonsense.
+- **Units differ by rank.** A dipole moment is `Hz·m`, not `Hz`. `rank=1,
+  units="Hz"` must be refused at construction, or O-2's algebra will add a rate
+  to a moment.
+- **`basis` distinguishes "3 numbers in xyz" from "1 number along a declared
+  normal"** — same physical content, different storage, and the
+  restriction/prolongation dispatch needs to know which it holds.
+
+*Why the split:* the refinement operators are not shape-agnostic — scalar→vector
+is `s·n̂·coherence`, vector→scalar is `v·n̂` and **loses information** (exactly
+Gauss's 0.517 → 0.056), vector→vector across frames is a rotation. Type errors
+should be impossible to represent; physics should live in one place and be
+testable.
+
+**RL-13 — partial definedness is declared in the type; the mask is data.**
+`AnatomyPrior.normal` is `NaN` on the 14 subcortical parcels, and
+`isnan(normal).any(-1)` is exactly `~normal_covered`. That is the right design —
+absent is visible rather than silently zero — and it is a live hazard: any
+unguarded `state * normal` propagates `NaN` across the whole batch through the
+lead field.
+
+So **`Support` declares whether it is `total` or `partial`**, which keeps schema
+objects frozen and hashable, and the **mask itself is an annotation** (O-3)
+resolved at compile time. When a support declares `partial`, the compiler
+**refuses** an operator that does not handle undefined elements. Coverage is
+part of the contract, never a caller's responsibility to remember.
+
 **RL-11 — a guard earns its keep by asserting a claim the world can
 falsify, not by reporting a number it computes itself.** 🔥 Turing's, and it is
 the design rule behind every guard that has worked here. The four that fired —
