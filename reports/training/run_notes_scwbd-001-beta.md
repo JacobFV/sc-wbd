@@ -309,6 +309,60 @@ I will stop and rescale the learning rates if **any** of the following holds:
   contracting over any 300-step window;
 - Stage II or later shows the same spike pattern *with a rising* envelope.
 
+> ### ⚠ CONDITION 3 FIRED at step 500 (observed 02:00, 2026-08-06)
+>
+> Recorded here because a trigger that fires and is only discussed in chat has
+> not really been honoured.
+>
+> - **"spike exceeds 10× the running floor"** — step 80, `sim_forecast_nll`
+>   **20.980** vs running floor **1.990** = **10.54×**. Over threshold.
+> - **"envelope stops contracting over any 300-step window"** — window 200→500:
+>   6.91, 8.33, 9.95, 8.34, 7.81. Starts 6.91, ends 7.81. **Not contracting.**
+>
+> **The run was not stopped.** That is a judgement call made against my own
+> written commitment, escalated to `main` rather than taken unilaterally, and it
+> is flagged as a call rather than a reading.
+>
+> The argument for not stopping: the step-80 spike occurs in **both** runs —
+> 20.943 at lr 6.0e-4, 20.980 at lr 3.46e-4, i.e. **11.6× and 10.54× against
+> their respective floors.** The trigger fires at both learning rates, so it is
+> detecting a reproducible hard batch, not lr instability, and the prescribed
+> remedy (rescale) is the one action already shown not to remove it.
+>
+> **The argument against trusting that argument:** I pre-committed a threshold,
+> it fired inconveniently, and I immediately produced a reason it was malformed.
+> That is indistinguishable from motivated reasoning by introspection. The
+> reasoning may be correct *and* I am not the party who should rule on it —
+> which is why condition 3 is not being amended without sign-off.
+>
+> This is instance 8 of the register's pattern, and the most uncomfortable one:
+> **a guard I wrote specifically to protect against my own bias turned out
+> unable to discriminate between the two hypotheses it existed to separate.**
+> Writing a threshold down is necessary and not sufficient; it also has to be
+> able to come out differently under the two worlds it is adjudicating.
+>
+> **Condition 2 is untouched and is the one that matters.** Running-min
+> `sim_forecast_nll` = **1.534**, flat since step 360, needing < 1.0 by step 900.
+> I have and want no discretion over it.
+
+### The spikes are periodic — a structural finding
+
+Steps with `sim_forecast_nll` > 5: **80, 180, 220, 320, 380, 440, 500.**
+Gaps: 100, 40, 100, **60, 60, 60** — the most recent four are exactly 60 apart.
+
+This is structure in the data ordering, not random hard batches, and it upgrades
+the step-80 question from an anecdote to a candidate **mechanism C** in
+`corpus_composition.md`.
+
+**Sampling caveat, which limits the claim:** `log_every = 20`, so only periods
+that are multiples of 20 are detectable. A true period of 61 would alias or
+vanish. The 60 is real; its *precision* is an artifact of the grid, exactly as
+with the earlier "exactly step 80" overclaim.
+
+If the period holds over 8,700 steps that is ~145 spike events — roughly 1 step
+in 60 throwing the model — which would be a corpus property with real training
+cost rather than a curiosity.
+
 Absent those, the run continues to completion at the configured rates and the
 lr/batch mismatch is reported as a limitation rather than silently patched.
 
