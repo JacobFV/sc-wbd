@@ -238,6 +238,47 @@ This is recommendation 7 again — prefer a mechanism to an instruction. A proto
 aimed at claims ("what would falsify this?") cannot catch a defect one level
 below the claim.
 
+#### Sub-case: a descriptive range that becomes a threshold by drift
+
+A threshold can arrive **without anyone deciding to set one.**
+
+KL was ruled a **diagnostic, not a criterion** — report the trajectory, do not
+threshold it, because no reference class exists to justify a value. I then
+observed the series oscillating and wrote *"I will not report KL again unless it
+leaves the 5–14 band."* The band was **descriptive**: a range I had seen.
+
+Attaching a reporting decision to it made it a **criterion**. Nobody decided to
+threshold KL; the threshold assembled itself out of an observation plus a
+commitment. When a sample later came in at 14.08 — **one of 50, 0.6 % over an
+edge chosen by eye, in a series with no trend** — the proxy fired where the
+governing condition ("rises without turning over") did not.
+
+> **A descriptive range with a decision attached to it is a threshold, however it
+> was arrived at.** Drift produces the same object as decision, minus the
+> justification.
+
+Two rules follow:
+
+1. **Report the trajectory, not the band.** *"KL oscillates in 12.4–14.1 across
+   50 samples, no trend"* is the finding. It states the shape, commits to no
+   value, and cannot fire.
+2. **When a proxy and the condition it proxies disagree, the condition governs** —
+   that is what makes it a proxy. Noticing the disagreement is the moment to
+   retire the proxy, not to adjudicate it.
+
+**And the visibility point, which is separable from the call itself.** The failure
+mode is not *wrongly ignoring a trigger* — it is **silently** deciding a trigger
+did not count, because the silence is what makes the decision unreviewable. State
+the call and the reasoning, so a second party can disagree. Here one could have,
+and did not; but the disagreement had to be *possible* for the agreement to mean
+anything.
+
+Note the contrast with instance 8: **condition 3 was preregistered with a declared
+remedy and it fired, so it was honoured, escalated, and superseded on the record.**
+This band was descriptive from the start. Treating the two identically would be
+its own error — the register's patterns are heuristics for finding defects, not a
+rule that every instance carries equal weight.
+
 #### Sub-case: a true explanation that does not exhaust the cause
 
 Distinct from the rows above. Those are true propositions that do not establish
@@ -639,6 +680,78 @@ who had retracted the other two that same night.
 *"2.95 s/step over steps 200–380"* cannot borrow authority it has not earned;
 *"settled"* can.
 
+**4a. Hedges need the same sample discipline as claims.**
+
+> A **load-bearing qualifier is a claim wearing a hedge's clothes.** If a hedge is
+> the stated reason to doubt a conclusion, it must meet the evidential standard
+> of the conclusion it is restraining.
+
+Filed with 🛡️ Popper, in a document offered *before* SBC ran:
+
+> *"Increments are decelerating — +2.08 then +1.04 — so this may be asymptoting
+> rather than diverging."*
+
+The next increment was **+2.01**. The deceleration was inferred from **two
+points** — the identical short-window error that had already produced a retracted
+period claim (three points) and a retracted KL trend (five points), tonight, by
+the same author.
+
+**Why it evaded the discipline applied to the claim itself.** The trend claim was
+scrutinised, sampled properly, and stated on four block medians. The hedge
+attached to it was not, because a hedge *feels like the safe half of the
+sentence* — it argues for less, so it seems to need less. But this one was
+**load-bearing**: it was the stated reason not to read the rise as divergence, and
+a reader weighs the filing on it.
+
+**Test:** if this qualifier turned out to be false, would the claim change? If
+yes, it is doing the work of a claim and needs a claim's evidence. If no, see
+recommendation 4 — it is decoration.
+
+Note the pair: **4 catches hedges that are too weak to matter; 4a catches hedges
+that matter too much to be unsupported.** A qualifier is safe only in the narrow
+band between.
+
+**And when one fails, record the failure in place.** *A caveat which disappears
+between versions is indistinguishable from one that was never made.* The
+falsification is appended to the filed document rather than edited into it.
+
+**4c. Report the near-miss, or a reporting threshold reports only what it was
+always going to.**
+
+> **A commitment to report above X manufactures a silent zone immediately beneath
+> X** — and the silence is invisible *precisely because the rule was honoured.*
+
+Committed to report if the step rate degraded past **4.04 s/step**. It came in at
+**3.94**. The commitment did not fire, and a scrupulous agent following its own
+rule would have said nothing — while the number sat 2.5 % under a bound it was
+plainly tracking toward.
+
+Nothing about that is a violation. That is what makes it dangerous: **the rule
+worked, and the information still did not arrive.** A threshold does not merely
+fail to report the near-miss; it supplies a *justification* for not reporting it.
+
+Report the near-miss and say it is one. If a value is close enough that its
+proximity is itself informative, proximity is the finding.
+
+**4d. Beware overcorrection: having been wrong once in a direction makes the next
+*true* claim in that direction harder to state.**
+
+A KL trend was claimed from five points inside an activation transient, and
+retracted. When the same quantity later showed a **real** trend — three block
+medians of ~20 samples each, across 1180 steps, well past activation — the
+retraction made it *harder* to report, because reporting it looked like repeating
+a mistake.
+
+**Overcorrection is less visible than the original error, because it looks like
+caution.** An unmade claim leaves no artifact to audit; a wrong claim does.
+
+The remedy is to state *why the new evidence differs from the old*, explicitly,
+at the moment of claiming — "five consecutive samples inside a transient cannot
+separate trend from transient; three block medians past activation can." That
+converts a claim that would look like backsliding into one carrying its own
+justification, and it forces the author to check that the difference is real
+rather than merely asserted.
+
 **5. Treat a perfect score as a reason to check the metric, not to adopt the
 candidate.**
 
@@ -725,6 +838,56 @@ Anywhere a check and the thing it guards live in different spaces:
 - **time (binding moment)** — see below
 
 Assume decorative until it has failed for you on demand.
+
+## A defect chain is not a defect list
+
+The anatomy adapter had **five** defects. Only the first was visible, and each
+fix is what exposed the next:
+
+| # | defect | revealed by |
+|---|---|---|
+| 1 | looks for `obj.weights`; real object exposes `obj.structural.weights` | the original symptom |
+| 2 | looks for `ei_prior`; real object exposes `ei_ratio_prior` — and it returns **`None` rather than raising** | fixing #1 |
+| 3 | `ei_ratio_prior`/`timescale_prior`/`coupling_mask` are **methods returning `list[PriorBase]`**, not attributes — a rename hands `torch.as_tensor` a list of pydantic models | fixing #2 |
+| 4 | three `x or default` idioms on numpy arrays → *"truth value of an array is ambiguous"* | fixing #3 |
+| 5 | `network` holds strings; `torch.as_tensor(..., dtype=long)` rejects them | fixing #4 |
+
+A brief saying *"align these two names"* was a reasonable description of the
+**visible** defect and an underestimate of the work by a factor of five.
+
+**Two consequences worth carrying:**
+
+1. **Estimating a fix from its first visible failure systematically
+   underestimates it**, because downstream defects are *masked* by the upstream
+   one — nothing exercised the code past the first raise. The estimate is not
+   merely uncertain, it is **biased low by construction**.
+2. **Do not read repeated failures as evidence the approach is wrong.** After the
+   third failure the natural conclusion is "this adapter is not salvageable". The
+   discriminating question is: **is each new failure *downstream* of the fix I
+   just made, or is it the same failure recurring?** Downstream means progress;
+   recurring means the approach is wrong. Here all five were strictly
+   downstream — each occurred later in the same function than the last.
+
+The general form: **an unexercised code path has no bug count, only a bug count
+lower bound of one.** Everything after the first failure is unmeasured, and
+"unmeasured" reads as "absent" until something runs.
+
+### And the tests written to verify this fix contained the register's own pattern
+
+Eight tests were written to fail against the pre-fix code. **Three passed it.**
+They asserted the E/I prior was non-constant — which the **synthetic** prior also
+satisfies, since it builds a smooth gradient by construction. They could not
+discriminate between the two worlds they existed to separate: exactly
+recommendation 3, inside tests written to verify a fix for this document's own
+pattern.
+
+Repaired by guarding each on `is_biological()` and re-verifying **both**
+directions — all eight fail pre-fix, all eight pass post-fix.
+
+The lesson is not "write better tests". It is that **"watch it fail" must be run
+on every test, not on the ones whose failure you expect.** The five that failed
+correctly were never in doubt; the check earned its cost on the three that did
+not.
 
 ## Documented-by-implementation behaviour: the rule nobody wrote down
 
@@ -829,3 +992,228 @@ Two things make this the most instructive entry in the register:
 it, rather than recalled it?** And prefer rules that cannot be complied with
 approximately — the real fix here is to capture the SHA at process start, so the
 binding moment is not a race against the author's own good intentions.
+
+---
+
+## Entry: a documented failure mode is not a check
+
+`scwbd/foundation/anatomy.py`. Found by 🗺️ Ptolemy, in my file, after I had
+already declared the anatomy adapter fixed.
+
+`_from_agent_c` looked up the principal gradient under three attribute names, and
+on miss substituted `torch.zeros(n)`. The real `BrainPrior` keeps it in
+`maps["fc_gradient1"]`, so the lookup always missed. Downstream,
+`ei = theta[:,2] * ei_prior * (1 + theta[:,3] * grad)` — a zero gradient cancels
+`theta[:,3]` algebraically, making `ei_gradient` **unidentifiable by
+construction** on all five backends (verified: `max|Δparam| = 0.000000` for each).
+
+**Eleven lines above it, I had written:** *"A prior that is absent must not
+silently become a constant: that is how the connectome defect would have survived
+a rename-only fix."* I applied that rule to E/I and to timescale, made both raise,
+and left the third case doing exactly what the comment forbids.
+
+`simulate.py`'s `ParameterMappingError` docstring also names this failure mode
+explicitly. **The guard was written and the case it describes was left live one
+line away.**
+
+Two lessons, and the second is the one that generalises:
+
+1. **A comment stating a rule is evidence the author knew the rule, not evidence
+   the code follows it.** Both artefacts here — my comment and the
+   `ParameterMappingError` docstring — read as protection while providing none.
+   Grep for the *pattern* the rule forbids (`else torch.zeros`), not for the rule.
+2. **Fixing N−1 instances of a defect class feels like fixing the class.** I found
+   three silent-constant substitutions, fixed two, and reported the adapter fixed.
+   The completed work supplied the sense of completion. When a defect has a
+   *shape*, enumerate every site mechanically before declaring it closed — the
+   count is the deliverable, not the fix.
+
+**Related near-miss, recorded because it cuts the other way:** main relayed this
+as explaining one of my six bad SBC parameters. It explains none — this run used
+the synthetic fallback, whose gradient is a genuine z-scored map (std 1.000). An
+exculpation that does not apply is not a smaller comfort than one that does; it is
+a false one, and it is harder to refuse because refusing costs you something.
+
+---
+
+## Entry: `strict=False` plus a discarded load report is the binding blocker again
+
+`scwbd/foundation/evaluate.py:405`, found while statically checking the harness
+that will produce this run's final numbers.
+
+`main()` loads the checkpoint with `strict=False` and **throws away the return
+value.** `load_checkpoint` does populate `payload["load_report"]["missing"]` and
+`["unexpected"]` when `strict=False` — the information exists and nothing reads it.
+
+The mismatch is not hypothetical. **29 of 85 model keys carry a `_orig_mod.`
+prefix** from `torch.compile` (`local._orig_mod.embed`, …), and `FoundationTrainer`
+compiles only when `cfg.model.compile and device.type == "cuda"`. So evaluating on
+**CPU** — the obvious thing to do to avoid contending with a running job, and
+exactly what I did for the SBC diagnostic — drops all 29 silently and scores the
+`local` operator at **random initialisation**, while printing `loaded {ckpt}`.
+
+**This is the same defect class I was brought in to fix.** The original brief:
+*"the compiler is the authority on which source may touch which parameter; if the
+binding is incomplete the gradient masks are decorative."* Here: if the load is
+incomplete, **the evaluation is decorative.** Same shape, different file — a
+permissive interface plus an unread diagnostic, reporting success either way.
+
+`train.py:765` (resume) has the identical pattern. This run was never exposed —
+every resume ran on CUDA with `compile: true`, so the keys matched — but the guard
+is absent there too.
+
+**What made it findable:** not suspicion of that line, but asking "what would make
+the final numbers wrong while looking normal?" The `_orig_mod` prefix was already
+known to me — I wrote `logical_param_name()` to strip it for the binding fix. **I
+had the fact and did not connect it to the loader**, because I had filed it under
+"parameter naming" rather than "state-dict identity."
+
+**A fact you already know does not protect you until you ask the question it
+answers.**
+
+**Not exposed by luck:** the SBC diagnostic loads with the default `strict=True`,
+so a posterior key mismatch would have raised rather than passed. That was not
+foresight — it was the default — which is the argument for defaults that fail
+closed.
+
+---
+
+## Entry: normalising one side of a comparison
+
+`scwbd/foundation/evaluate.py:_scwbd_scores`, found while reviewing the harness for
+this run's actual deliverable — held-out real EEG against baselines.
+
+SC-WBD's NLL was computed on the target divided by the target's own per-window
+standard deviation, with the matching Jacobian on the log-variance. The baselines'
+NLL was computed on the raw target. Identical formulae, different random variables:
+`NLL_scwbd = NLL_raw − log s`. On the real test split **mean log s = 0.598**, so
+SC-WBD carried a ~0.6-nat unearned advantage in a metric where real differences
+between models run well under 0.1. MSE was worse — off by `1/s²`, about 4×.
+
+**The rescale is not a careless line. It reads as hygiene**, and it is the same
+operation applied correctly three lines above to the *input* (`src`), where nothing
+downstream compares it to anything. The defect is not normalisation; it is
+**normalising one side of a comparison**.
+
+Two generalisations:
+
+1. **A transformation that is correct for one purpose is not thereby correct for
+   the adjacent one.** Both call sites normalise per window; one is right and one
+   silently rigs a ranking. Proximity to a correct use is a reason to look harder,
+   not a reason to trust.
+2. **Ask of every comparison: are both sides the same random variable?** Not "is
+   each side computed correctly" — each side *was* computed correctly. The error
+   lived in the space between two individually-correct computations, which is
+   where no unit test looks.
+
+**Found by asking of the deliverable "what would make this number wrong while
+looking normal?" rather than by auditing the file.** That question has now produced
+three defects in one session (this, the `strict=False` loader, the backend-biased
+sample) where reading the code did not.
+
+---
+
+## Entry: a correctly measured mechanism does not license an unmeasured consequence
+
+Found by ⚖️ Neyman, in my own filing.
+
+I measured the units offset exactly right — `NLL_scaled = NLL_raw − log s`, mean
+log s = 0.598, independently confirmed at 0.5926/0.5932/0.5694/0.5834. Then I wrote:
+*"SC-WBD would have beaten every baseline on units alone."*
+
+**I never computed that.** The counterfactual was one subtraction away: SC-WBD raw
+**2.7847**, best baseline **2.0119**, so a win required raw < 2.595. The defect
+moves SC-WBD from 7th of 7 to **5th of 7** — past persistence and nothing else.
+
+The mechanism was real, the arithmetic was right, and the consequence I asserted was
+false. **Having verified the hard part carefully, I asserted the easy part for
+free.** Rigour spent on a derivation does not transfer to the claim built on top of
+it, and the claim is usually the part that gets quoted.
+
+Note the direction: the overreach made my *own artifact* look worse. It was not
+motivated reasoning, which is precisely why it slipped through — I was not watching
+for bias in the direction of self-criticism. **A claim against yourself still needs
+evidence.**
+
+---
+
+## Entry: verifying a component is not verifying its inputs
+
+Same audit, and this one is worse because I had just written the lesson.
+
+I audited `bootstrap_ci`, confirmed it is genuinely a participant cluster bootstrap,
+traced the resampling, checked that the group vectors were aligned, and filed:
+**"CLEAN — this was the item I most expected to find broken."**
+
+It was receiving **one cluster**. `real_eeg_holdout` collects 640 windows from
+participant-ordered folds of ~2,650 windows each, so every baseline was fit on
+**S001** alone and every model scored on **S008** alone. `bootstrap_ci` takes its
+`n_clusters < 2` branch and returns `nan, nan`. **Every interval in the report was
+`[nan, nan]`** while the prose discussed them overlapping.
+
+I verified the function was correct and never asked what it was called with.
+
+**One message earlier I had written, about the units defect:** *"Each side was
+computed correctly; the error lived in the space between two individually-correct
+computations, where no unit test looks."* I then committed exactly that error, in
+the same audit, having just articulated it.
+
+**Writing down a lesson does not install it.** The register is not a defence; it is
+a record. The operational form of this one: for every component you certify, name
+its inputs and check a real sample of them — `n_clusters`, `n_participants`,
+`n_backends`. **A correctness proof about a function is worthless without a claim
+about its domain.**
+
+---
+
+## Entry: a pipeline's exit code is its last stage's
+
+Contributed by ⚖️ Neyman after I filed a false claim built on one.
+
+I ran `pytest ... -x -q 2>&1 | tail -12`, read exit 0, and wrote "tests/foundation
+passes" into commit `2e70ecd`. The suite exits **1**. The 0 was `tail`'s.
+
+`| tail`, `| head`, `| grep`, `| tee` all launder a failure into a success, because
+the shell reports only the final stage. This is the *same shape* as the two defects
+I had catalogued that morning — `strict=False` with a discarded load report, and a
+conflict policy whose decisions were logged rather than enforced. **A success signal
+that structurally cannot report failure.** I wrote both entries and then trusted a
+piped exit code within the hour.
+
+Operational forms:
+- `set -o pipefail`, or read `${PIPESTATUS[0]}`;
+- or simply do not pipe the command whose status you are about to believe — redirect
+  to a file and read the file.
+
+**The general rule this is the third instance of: before believing a green signal,
+ask what red would have looked like.** If you cannot describe the failure mode
+concretely, you are not reading a result — you are reading the absence of one.
+
+---
+
+## Entry: second instance — a constraint violated within one section, by two parties
+
+The row *"writing down a lesson does not install it"* now has a second instance and
+a second author, and the pair is stronger than either alone.
+
+⚖️ Neyman established the like-for-like constraint while ruling on the units defect:
+both sides of a comparison must be the same random variable. **One section later
+they endorsed my separation of patch 4** — marginalising SC-WBD over θ while every
+baseline stays plug-in — **without applying their own rule to it.** I wrote patch 4
+with that constraint already on the page and did not apply it either. Cost: 0.0377
+nats, 7× the gap that decides a rank.
+
+My own first instance was the same distance: I wrote *"the error lived in the space
+between two individually-correct computations"* and then certified `bootstrap_ci`
+correct in isolation without checking it was receiving a single cluster.
+
+**Two independent authors violated a freshly written constraint within one section
+of writing it.** That is a much stronger claim about rules than one author doing it
+twice — it rules out the comfortable reading that this is a personal failing rather
+than a property of how written rules work.
+
+The operational form is unchanged but now better evidenced: **a rule is installed
+when something mechanically checks it, not when it has been articulated well.** The
+correct response to writing a constraint down is to ask immediately *"what in this
+change set does it forbid?"* — and to run that check against your own next artifact
+before anyone else's.

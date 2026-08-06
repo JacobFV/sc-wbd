@@ -1,0 +1,41 @@
+Fix for the headline real-EEG comparison -- DO NOT APPLY WHILE TRAINING IS LIVE.
+Apply after Stage V, BEFORE evaluate.py runs.
+
+Scores SC-WBD in the same units as the baselines. Keeps the normalised variant as
+a separately-labelled secondary metric.
+
+--- a/scwbd/foundation/evaluate.py
++++ b/scwbd/foundation/evaluate.py
+@@ _scwbd_scores
+-        scale = tgt_e.std(dim=(1, 2), keepdim=True).clamp_min(1e-8)
+-        y = (tgt_e / scale).float()
+-        m = (mu.float() / scale).float()
+-        v = (lv.float() - 2 * torch.log(scale)).clamp(-14, 14)
+-        nll = 0.5 * (math.log(2 * math.pi) + v + (y - m) ** 2 * torch.exp(-v))
+-        nlls.append(nll.mean(dim=(1, 2)).cpu().numpy())
+-        mses.append(((y - m) ** 2).mean(dim=(1, 2)).cpu().numpy())
++        # RAW units -- baselines score the raw target via baselines._gaussian_nll,
++        # so scoring a rescaled variable here compares densities of two different
++        # random variables. NLL_scwbd = NLL_raw - log(s), and mean log(s) = 0.598
++        # on the real test split, which is larger than any plausible real gap.
++        y = tgt_e.float()
++        m = mu.float()
++        v = lv.float().clamp(-14, 14)
++        nll = 0.5 * (math.log(2 * math.pi) + v + (y - m) ** 2 * torch.exp(-v))
++        nlls.append(nll.mean(dim=(1, 2)).cpu().numpy())
++        mses.append(((y - m) ** 2).mean(dim=(1, 2)).cpu().numpy())
++        # secondary, clearly labelled: per-window amplitude-normalised score.
++        s_ = tgt_e.std(dim=(1, 2), keepdim=True).clamp_min(1e-8)
++        vn = (lv.float() - 2 * torch.log(s_)).clamp(-14, 14)
++        nll_n = 0.5 * (math.log(2 * math.pi) + vn + ((y - m) / s_) ** 2 * torch.exp(-vn))
++        nlls_norm.append(nll_n.mean(dim=(1, 2)).cpu().numpy())
+@@
+     return {
+         "nll_per_window": np.concatenate(nlls) if nlls else np.zeros(0),
++        "nll_per_window_amplitude_normalised": (
++            np.concatenate(nlls_norm) if nlls_norm else np.zeros(0)
++        ),
++        "units_note": (
++            "nll_per_window is in RAW data units, matching baselines._gaussian_nll. "
++            "The amplitude-normalised variant is NOT comparable to the baselines."
++        ),

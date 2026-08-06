@@ -21,6 +21,7 @@ TRIBE v2 distillation is **off by default** and is never a subject likelihood.
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import math
 import os
@@ -175,7 +176,25 @@ class FoundationTrainer:
         self.report_dir = Path(cfg.train.report_dir)
         self.report_dir.mkdir(parents=True, exist_ok=True)
 
-        self.anat = (anat or load_anatomy(device=self.device, n_cortex=400)).to(self.device)
+        self.anat = (
+            anat
+            or load_anatomy(
+                device=self.device,
+                n_cortex=400,
+                force_fallback=cfg.train.anatomy_force_fallback,
+            )
+        ).to(self.device)
+        if not self.anat.is_biological():
+            # Loud, every run, in the log the operator actually reads -- the
+            # provenance field said this correctly all along and nobody looked.
+            print(
+                "[anatomy] WARNING: prior is SYNTHETIC "
+                f"(provenance={self.anat.provenance!r}, n_regions={self.anat.n_regions}). "
+                "This model carries NO biological content: G2 is void, and no claim "
+                "about connectome-masked coupling, receptor-derived E/I or anatomical "
+                "regional heterogeneity is supportable from it.",
+                flush=True,
+            )
         self.theta_prior = ThetaPrior()
         self.model = SCWBD(cfg.model, self.anat).to(self.device)
         self.posterior = AmortizedPosterior(
@@ -308,7 +327,27 @@ class FoundationTrainer:
             if allow == ("*",):
                 perm = s.gradient_permission
             else:
-                perm = tuple(p for p in s.gradient_permission if p == "*" or any(_glob_overlap(p, a) for a in allow))
+                # "Restrict only" means the RESULT must be no broader than either
+                # side. Where a card pattern and an allowlist entry overlap, keep
+                # the NARROWER of the two. Keeping the card's pattern -- the
+                # previous behaviour -- silently widened the stage: `eeg.*`
+                # survived against an allowlist naming only `eeg.log_gain`,
+                # `eeg.offset`, `eeg.log_noise`, `eeg.nuisance*`, which let
+                # Stage V train `eeg.source_proj.*` (1,281 params) undeclared.
+                narrowed: list[str] = []
+                for p in s.gradient_permission:
+                    if p == "*":
+                        continue  # handled by the "*" branch below
+                    for a in allow:
+                        if not _glob_overlap(p, a):
+                            continue
+                        if fnmatch.fnmatch(a, p):
+                            narrowed.append(a)  # allowlist entry is the narrower
+                        elif fnmatch.fnmatch(p, a):
+                            narrowed.append(p)  # card pattern is the narrower
+                        else:
+                            narrowed.append(a)  # incomparable: prefer the stage
+                perm = tuple(dict.fromkeys(narrowed))
                 if "*" in s.gradient_permission:
                     perm = allow
             out[sid] = SourceSpec(**{**s.as_dict(), "gradient_permission": perm})
@@ -697,6 +736,27 @@ class FoundationTrainer:
             step = max(1, len(ds) // 500)
             return sorted({str(ds[i]["subject"]) for i in range(0, len(ds), step)})
 
+    def real_split_fingerprint(self) -> dict[str, Any] | None:
+        """Participant **ids** per fold plus a sha256, recorded in every checkpoint.
+
+        Ids rather than indices: indices are meaningless if the corpus is rebuilt,
+        so an index-based fingerprint would pass silently on a different dataset.
+        Evaluation recomputes this and refuses to score on a mismatch.
+        """
+        ds = getattr(self, "real_dataset", None)
+        split = getattr(self, "real_split", None)
+        if ds is None or not split:
+            return None
+        import hashlib
+
+        def _sub(i: int) -> str:
+            rec_idx, _ = ds.window_index[int(i)]
+            return str(ds.recordings[rec_idx]["subject"])
+
+        folds = {k: sorted({_sub(i) for i in v}) for k, v in split.items()}
+        blob = json.dumps(folds, sort_keys=True).encode()
+        return {"participants_per_fold": folds, "sha256": hashlib.sha256(blob).hexdigest()}
+
     def participant_index(self, subjects: Sequence[str]) -> Tensor:
         """Map subject ids to Individualizer rows; unknown ids map to row 0.
 
@@ -730,6 +790,7 @@ class FoundationTrainer:
                 "anatomy": self.anat.summary(),
                 "lead_field": self.model.eeg.lead_field_meta,
                 "sensor_to_parcel": self.sensor_to_parcel.summary(),
+                "real_split": self.real_split_fingerprint(),
                 "theta_names": list(THETA_NAMES),
                 "theta_prior": self.theta_prior.as_dict(),
                 "parameter_report": self.model.parameter_report(),

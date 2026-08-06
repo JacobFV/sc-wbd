@@ -155,10 +155,21 @@ def load_checkpoint(
         optimizer.load_state_dict(payload["optimizer"])
     if scheduler is not None and payload.get("scheduler"):
         scheduler.load_state_dict(payload["scheduler"])
-    if posterior is not None and payload.get("posterior"):
-        posterior.load_state_dict(payload["posterior"], strict=strict)
-    if individualizer is not None and payload.get("individualizer"):
-        individualizer.load_state_dict(payload["individualizer"], strict=strict)
+    # The load report must cover every module it appears to cover, and must
+    # distinguish "loaded cleanly" from "was not there". A caller that gates on
+    # load_report otherwise reads absence as success -- the silent-load failure,
+    # one level up.
+    for name, mod in (("posterior", posterior), ("individualizer", individualizer)):
+        if mod is None:
+            continue
+        if not payload.get(name):
+            payload.setdefault("load_report", {})[f"{name}_absent"] = True
+            continue
+        miss, unexp = mod.load_state_dict(payload[name], strict=strict)
+        if not strict and (miss or unexp):
+            rep = payload.setdefault("load_report", {})
+            rep[f"{name}_missing"] = list(miss)
+            rep[f"{name}_unexpected"] = list(unexp)
     if restore_rng and payload.get("rng"):
         _set_rng_state(payload["rng"])
     return payload

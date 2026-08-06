@@ -1036,3 +1036,77 @@ negative log-density, which goes below zero where density exceeds 1).
 
 Recorded as a diagnostic observation. **No threshold invoked, because none was
 declared** — and an undeclared metric is not a silent pass.
+
+### KL reporting — the 5–14 band is RETIRED
+
+I had written *"I will not report KL again unless it leaves the 5–14 band."* That
+band was **descriptive** — a range observed, not a criterion derived — and
+attaching a reporting decision to it turned it into a threshold by drift. KL was
+ruled a **diagnostic, not a criterion**, so a threshold arriving that way is the
+same object the ruling forbids, minus the justification.
+
+**Retired.** The replacement is a trajectory statement, which commits to no value
+and cannot fire:
+
+> **KL over Stage III: step change at activation (−2.4 → ~+10 by step 80), then
+> oscillation in 12.4–14.1 across 50 samples with no trend.** Median of the last
+> ten 13.32; one sample at 14.08.
+
+**SBC uniformity carries the verdict**, as ruled. KL's trajectory is evidence
+about *why* if SBC fails, and nothing on its own if SBC passes.
+
+For the final report the form is fixed: *"KL rose during Stage III; SBC was/was
+not uniform at the end,"* second clause carrying the verdict.
+
+---
+
+# Correct step accounting — and a figure I mis-stated all night
+
+I repeatedly reported progress as "global N **of 8700**". **That denominator was
+never right**, and main relayed it onward. Correcting the record.
+
+## What actually ran
+
+| stage | planned | reached | global at end | status |
+|---|---|---|---|---|
+| I_regional | 900 | 900 | 900 | complete |
+| II_interface | 700 | 620 | 1520 | **aborted, rolled back** |
+| II_interface | 700 | 700 | 2200 | complete |
+| III_sliced | 2600 | 1 | 2201 | **aborted, rolled back** |
+| II_interface | 700 | 1 | 2201 | **aborted, rolled back** |
+| III_sliced | 2600 | 2600 | 4800 | complete |
+| IV_assembly | 3600 | 3600 | 8400 | complete |
+| V_individual | 900 | 900 | 9300 | complete |
+
+## The numbers that are true
+
+- **8,700 productive optimiser steps.** All five stages completed their full planned
+  counts: 900 + 700 + 2600 + 3600 + 900. This is the number that describes the
+  trained artifact.
+- **Final `global_step` = 9,300.** The counter is **600 higher** than the planned
+  total because it also counts steps from aborted attempts that were later rolled
+  back to a checkpoint and re-run.
+- So **"of 8700" was wrong as a denominator for `global_step`**: the two quantities
+  count different things. `global_step` is not bounded by the plan.
+
+## A residual I have not reconciled, stated as unreconciled
+
+Summing the last *logged* step of every segment gives **9,322**, not 9,300. The
+likely explanation is logging granularity: the log writes every 20 steps, and a
+resume restores the last *checkpoint*, so steps executed after the final checkpoint
+but before the abort are discarded and never enter the counter. That would put the
+Stage II abort at step 600 (global 1500) with steps 601–620 executed and thrown
+away, and 1500 + 700 = 2200 matches.
+
+**That is a plausible reconciliation, not a verified one.** I have not traced the
+resume bookkeeping to confirm it, and after today I am not going to assert an
+arithmetic consequence I have not checked. The 22-step gap is bookkeeping, not
+training: it cannot affect the artifact, because any step it refers to was discarded
+by the resume.
+
+## For the next run
+
+Log `global_step` alongside an explicit `planned_total`, and record aborted-and-
+rolled-back steps in a separate counter. A progress figure whose numerator and
+denominator count different things is worse than no progress figure, because it
+reads as precise.

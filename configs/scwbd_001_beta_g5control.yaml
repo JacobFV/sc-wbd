@@ -76,9 +76,9 @@ data:
   seed: 20260805
 
 train:
-  run_name: scwbd-001-beta
-  out_dir: checkpoints/scwbd-001-beta
-  report_dir: reports/training
+  run_name: scwbd-001-beta-g5control
+  out_dir: checkpoints/scwbd-001-beta-g5control
+  report_dir: reports/training/g5control
   seed: 20260805
   device: cuda
   # TRUE because this run was ALREADY trained on the synthetic prior -- the
