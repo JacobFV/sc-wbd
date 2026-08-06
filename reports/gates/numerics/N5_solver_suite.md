@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** an observed order below the advertised order, non-finite or unbounded state, invariant drift beyond tolerance, or non-determinism at a fixed seed
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 4d617af · 2026-08-06T07:56:41+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1996fba · 2026-08-06T08:36:42+00:00*
 
 ## Could not run
 

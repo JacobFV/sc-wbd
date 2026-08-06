@@ -1,0 +1,114 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N8_induced_efield_contact",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "N8_induced_efield_contact",
+    "claim_text": "The induced-field solver is validated in the CONTACT regime (a coil element at clinical standoff from the scalp, a/R_c >= 0.95) to a preregistered tolerance \u2014 the geometry the downstream targeting consumer actually uses.",
+    "falsified_by": "no reference or self-convergence study achieves a defensible tolerance at contact geometry, or the solver's error there exceeds the preregistered tolerance",
+    "consequence_if_failed": "Targeting in the contact regime is UNVALIDATED. scwbd.runtime must surface that as Unresolved/Defer rather than returning a confident E-field or engagement number, and no pose ranking may be reported as validated at contact geometry.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "min_contact_ratio": 0.95,
+      "relative_tol": null,
+      "expected_order": 1.5
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "contact_regime: could not run \u2014 missing: induced-field solver at contact geometry (agent Faraday); either an independent contact-regime reference (e.g. boundary-integral with graded panels) or a Richardson self-convergence study of the solver under refinement; the N6 spectral reference does NOT extend here, since its series bound at a/R_c ~ 0.955 exceeds the solver error it would be measuring; the geometry ratio a/R_c, so the gate can confirm it was handed CONTACT geometry rather than a standoff case relabelled; a preregistered tolerance (chosen before seeing the error)"
+  ],
+  "subchecks": [
+    {
+      "name": "contact_regime",
+      "description": "Induced field validated where the coil actually sits.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: induced-field solver at contact geometry (agent Faraday); either an independent contact-regime reference (e.g. boundary-integral with graded panels) or a Richardson self-convergence study of the solver under refinement; the N6 spectral reference does NOT extend here, since its series bound at a/R_c ~ 0.955 exceeds the solver error it would be measuring; the geometry ratio a/R_c, so the gate can confirm it was handed CONTACT geometry rather than a standoff case relabelled; a preregistered tolerance (chosen before seeing the error)",
+      "falsified_by": "no reference or self-convergence study achieves a defensible tolerance at contact geometry, or the solver's error there exceeds the preregistered tolerance",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "Opened at agent J's request after agent Faraday disclosed the validity domain of the N6 reference. Visible and unrun beats implicit."
+  ],
+  "artifacts": {
+    "subject": "not yet run \u2014 contract stated in the docstring",
+    "why_this_row_exists": "N6's reference is accurate only for standoff geometry (a/R_c = 0.7727). The consumer uses contact geometry (a/R_c ~ 0.955). Folding this into N6 would let a standoff PASS be read as covering contact."
+  },
+  "provenance": {
+    "timestamp_utc": "2026-08-06T08:38:08+00:00",
+    "git_rev": "1996fba",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/bench/ablations.py",
+      "scwbd/bench/adapters.py",
+      "scwbd/bench/corpus.py",
+      "scwbd/bench/gates.py",
+      "scwbd/bench/instruments.py",
+      "scwbd/bench/numerics.py",
+      "scwbd/bench/runner.py",
+      "scwbd/dynamics/base.py",
+      "scwbd/infer/cli.py",
+      "scwbd/infer/filters.py",
+      "scwbd/infer/fisher.py",
+      "scwbd/infer/identifiability.py",
+      "scwbd/infer/linear_gaussian.py",
+      "scwbd/infer/report.py",
+      "scwbd/infer/sbi.py",
+      "scwbd/infer/synthetic_slice.py",
+      "scwbd/infer/types.py",
+      "tests/bench/test_could_not_run.py",
+      "tests/bench/test_gates_can_fail.py",
+      "tests/bench/test_instruments.py",
+      "tests/bench/test_numerics.py",
+      "tests/bench/test_runner.py",
+      "tests/infer/conftest.py",
+      "tests/infer/test_device_parity.py",
+      "tests/infer/test_filters.py",
+      "tests/infer/test_fisher.py",
+      "tests/infer/test_model_comparison.py",
+      "tests/infer/test_multirate.py",
+      "tests/infer/test_recovery.py",
+      "tests/infer/test_sbi.py",
+      "tests/infer/test_synthetic_slice.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
+  }
+}

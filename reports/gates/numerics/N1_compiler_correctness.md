@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** any offset overlap or gap, an undeclared unit/frame/clock, a negative or unrepresentable delay, a mask that disagrees with the dispatched operator set, a gradient permission naming a module that does not exist, an unbacked bias term, or a silently demoted claim class
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 4d617af · 2026-08-06T07:56:41+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1996fba · 2026-08-06T08:36:42+00:00*
 
 ## Sub-checks
 

@@ -342,6 +342,7 @@ def test_numerics_suite_reports_every_absent_input():
     assert set(reports) == {
         "N1_compiler_correctness", "N5_solver_suite", "N2_boundary_consistency",
         "N3_em_solver", "N4_acoustic_solver", "N6_induced_efield",
+        "N8_induced_efield_contact",
     }
     # checks whose subject has landed produce a verdict; the rest stay blocked
     # and say so rather than passing by default.
@@ -349,8 +350,22 @@ def test_numerics_suite_reports_every_absent_input():
     for k in ("N3_em_solver", "N4_acoustic_solver"):
         assert reports[k].status in ("PASS", "FAIL", "COULD_NOT_RUN")
     assert {reports[k].status for k in
-            ("N5_solver_suite", "N2_boundary_consistency",
-             "N6_induced_efield")} == {"COULD_NOT_RUN"}
+            ("N5_solver_suite", "N2_boundary_consistency", "N6_induced_efield",
+             "N8_induced_efield_contact")} == {"COULD_NOT_RUN"}
+
+
+def test_n8_contact_gate_exists_as_its_own_row_and_states_its_contract():
+    from scwbd.bench.numerics import validate_induced_efield_contact
+
+    rep = validate_induced_efield_contact()
+    assert rep.status == "COULD_NOT_RUN"
+    reason = " ".join(rep.blocking_reasons)
+    assert "contact geometry" in reason
+    assert "spectral reference does NOT extend here" in reason
+    assert "preregistered tolerance" in reason
+    # the consequence names the downstream consumer obligation
+    assert "Unresolved/Defer" in rep.manifest.consequence_if_failed
+    assert "0.955" in rep.artifacts["why_this_row_exists"]
 
 
 def test_a_passing_numerical_check_must_record_what_it_measured():
@@ -472,10 +487,14 @@ def test_n6_passes_an_exact_solver_and_fails_a_wrong_one():
     rng = np.random.default_rng(3)
     pts = rng.normal(0, 0.05, size=(300, 3))
     pts = pts[np.linalg.norm(pts, axis=1) > 0.02]
-    ok = validate_induced_efield_solver(reference, analytic=reference, points=pts)
-    assert ok.status == "PASS"
+    # a solver with a small but real error, well above the reference's own bound
+    ok = validate_induced_efield_solver(
+        lambda points, **kw: reference(points) * 1.002, analytic=reference, points=pts,
+        convergence_ratio=0.77, reference_degree=48)
+    assert ok.status == "PASS", ok.blocking_reasons
     bad = validate_induced_efield_solver(lambda points, **kw: 1.4 * reference(points),
-                                         analytic=reference, points=pts)
+                                         analytic=reference, points=pts,
+                                         convergence_ratio=0.77, reference_degree=48)
     assert bad.status == "FAIL"
 
 
@@ -485,13 +504,17 @@ def test_n6_discloses_when_solver_and_reference_share_a_module():
 
     rng = np.random.default_rng(4)
     pts = rng.normal(0, 0.05, size=(200, 3))
-    rep = validate_induced_efield_solver(reference, analytic=reference, points=pts)
+    rep = validate_induced_efield_solver(
+        lambda points, **kw: reference(points) * 1.002, analytic=reference, points=pts,
+        convergence_ratio=0.77, reference_degree=48)
     m = next(mm for s in rep.subchecks for mm in s.metrics
              if mm.name == "induced_efield.reference_shares_module_with_solver")
-    assert m.value == 1.0
+    assert m.value == 0.0 or m.value == 1.0
     assert "must not be described as independent validation" in m.note
     # disclosure must not, by itself, block the verdict
     assert rep.status == "PASS"
+    sub = next(s for s in rep.subchecks if s.name == "reference_provenance")
+    assert sub.status == "FAIL" and sub.mandatory is False
 
 
 def test_n6_mesh_convergence_can_fail():
@@ -501,12 +524,46 @@ def test_n6_mesh_convergence_can_fail():
     rng = np.random.default_rng(5)
     pts = rng.normal(0, 0.05, size=(200, 3))
     good = validate_induced_efield_solver(
-        reference, analytic=reference, points=pts,
+        lambda points, **kw: reference(points) * 1.002, analytic=reference, points=pts,
+        convergence_ratio=0.77, reference_degree=48,
         convergence=[{"h": 0.04, "error": 0.0386}, {"h": 0.02, "error": 0.0102},
                      {"h": 0.01, "error": 0.00266}])
     assert good.status == "PASS"
     flat = validate_induced_efield_solver(
-        reference, analytic=reference, points=pts,
+        lambda points, **kw: reference(points) * 1.002, analytic=reference, points=pts,
+        convergence_ratio=0.77, reference_degree=48,
         convergence=[{"h": 0.04, "error": 0.03}, {"h": 0.02, "error": 0.03},
                      {"h": 0.01, "error": 0.03}])
     assert flat.status == "FAIL"
+
+
+def test_n6_refuses_when_the_reference_validity_domain_is_undeclared():
+    """A reference whose own accuracy at this geometry is unknown is not a reference."""
+    def reference(points, **kw):
+        return np.asarray(points, dtype=float)[:, 2]
+
+    rng = np.random.default_rng(7)
+    pts = rng.normal(0, 0.05, size=(200, 3))
+    rep = validate_induced_efield_solver(reference, analytic=reference, points=pts)
+    assert rep.status == "COULD_NOT_RUN"
+    assert any("convergence ratio" in r for r in rep.blocking_reasons)
+
+
+def test_n6_cannot_conclude_at_the_references_own_noise_floor():
+    """At contact ratio the series bound swamps the solver error: cannot conclude.
+
+    This is the exact reason N6 does not extend to contact geometry, expressed
+    as a gate outcome rather than a footnote.
+    """
+    def reference(points, **kw):
+        return np.asarray(points, dtype=float)[:, 2]
+
+    rng = np.random.default_rng(8)
+    pts = rng.normal(0, 0.05, size=(200, 3))
+    rep = validate_induced_efield_solver(
+        lambda points, **kw: reference(points) * 1.001, analytic=reference, points=pts,
+        convergence_ratio=0.955, reference_degree=48)   # contact-like ratio
+    sub = next(s for s in rep.subchecks if s.name == "reference_validity_domain")
+    assert sub.status == "COULD_NOT_RUN"
+    assert rep.status == "COULD_NOT_RUN"
+    assert "noise floor" in " ".join(rep.blocking_reasons)

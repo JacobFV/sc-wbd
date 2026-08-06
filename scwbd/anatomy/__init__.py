@@ -17,6 +17,8 @@ Entry points
     Geodesic and Euclidean inter-parcel distances, adjacency.
 :func:`~scwbd.anatomy.connectome.load_structural_prior`
     The connectome as a typed topology prior plus the five G2 controls.
+:func:`~scwbd.anatomy.controls.graph_controls`
+    The five G2 null graphs as plain adjacency arrays, for ``scwbd.bench``.
 :func:`~scwbd.anatomy.maps.load_maps`
     Receptor, myelin, thickness, gradient and timescale maps.
 :class:`~scwbd.anatomy.priors.BrainPrior`
@@ -41,6 +43,7 @@ from .connectome import (
     StructuralPrior,
     load_structural_prior,
 )
+from .controls import CONTROL_NAMES, anatomy_adjacency, control_report, graph_controls
 from .geometry import ParcelGeometry, Surface, SurfaceGeometry, load_surface, parcel_geometry
 from .manifest import Manifest
 from .maps import MapSet, RegionalMap, available_maps, load_maps, receptor_matrix
@@ -64,6 +67,10 @@ __all__ = [
     "CONDUCTION_VELOCITY_PRIOR",
     "TORTUOSITY_PRIOR",
     "EDR_LAMBDA_PRIOR",
+    "graph_controls",
+    "anatomy_adjacency",
+    "control_report",
+    "CONTROL_NAMES",
     "RegionalMap",
     "MapSet",
     "load_maps",

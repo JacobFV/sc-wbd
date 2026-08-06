@@ -51,7 +51,8 @@ from .statistics import (
     stratified_bias,
     systematic_error,
 )
-from .gates import Thresholds, _NON_GOALS
+from .corpus import limitations_for
+from .gates import Thresholds, _NON_GOALS, _corpus_subchecks
 
 __all__ = [
     "AblationSpec",
@@ -259,6 +260,7 @@ def run_ablation(
     mechanism_holdout: Mapping[str, Dataset] | None = None,
     external_bias_bounds: Mapping[str, tuple[float, float]] | None = None,
     retention_floor: float = 0.5,
+    artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     refuse_group_overlap: bool = True,
@@ -290,6 +292,7 @@ def run_ablation(
     )
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {"thesis_clause": spec.thesis_clause}
+    subs.extend(_corpus_subchecks(spec.id, artifact, artifacts))
 
     if spec.quarantined and not enable_quarantined:
         subs.append(
