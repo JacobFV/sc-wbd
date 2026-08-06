@@ -89,6 +89,11 @@ class ReducedWongWang(DynamicsBackend):
         "G": 1.0,  # global coupling
         "sigma": 0.01,  # nA
         "I_ext": 0.0,  # nA
+        # NB: a gain on the *inhibitory* current (``-J_i * ei_ratio * S_I``), so
+        # it varies INVERSELY with a conventional excitation/inhibition ratio:
+        # >1 means more inhibition.  ``theta_from_prior`` inverts the anatomy
+        # prior's E/I ratio before writing it here; do not assign that prior to
+        # this key directly.
         "ei_ratio": 1.0,
     }
     param_priors: ClassVar[Mapping[str, Prior]] = {
@@ -99,6 +104,13 @@ class ReducedWongWang(DynamicsBackend):
         "I_0": Prior("I_0", 0.382, 0.02, "normal", "nA", low=0.2),
     }
     regional_params: ClassVar[tuple[str, ...]] = ("w_plus",)
+    #: NMDA and GABA decay constants.  Kept out of ``param_priors`` so that
+    #: ``sample_theta`` continues to hold them at their literature values; these
+    #: bounds only constrain values pushed in from an external prior.
+    param_support: ClassVar[Mapping[str, tuple[float | None, float | None]]] = {
+        "tau_E": (0.050, 0.200),
+        "tau_I": (0.005, 0.030),
+    }
 
     #: FIC target for ``a_E I_E - b_E`` in Hz-equivalent units (Deco 2014)
     FIC_TARGET_CURRENT_OFFSET: ClassVar[float] = -0.026  # nA relative to b_E/a_E

@@ -58,6 +58,11 @@ class WilsonCowan(DynamicsBackend):
         "Q": 0.0,
         "g_coupling": 1.0,
         "sigma": 0.01,
+        # NB: despite the name this is a gain on the *inhibitory* term
+        # (``c_ei * ei_ratio`` below), so it varies INVERSELY with a conventional
+        # excitation/inhibition ratio: >1 means more inhibition, not more
+        # excitation.  ``theta_from_prior`` inverts the anatomy prior's E/I ratio
+        # before writing it here; do not assign that prior to this key directly.
         "ei_ratio": 1.0,
     }
     param_priors: ClassVar[Mapping[str, Prior]] = {
@@ -72,6 +77,15 @@ class WilsonCowan(DynamicsBackend):
         "tau_i": Prior("tau_i", 0.020, 0.004, "normal", "s", low=0.004),
     }
     regional_params: ClassVar[tuple[str, ...]] = ("P", "c_ei")
+    #: Wilson-Cowan population time constants are a few to a few tens of ms.
+    #: Below ~2 ms an explicit solver at dt=1 ms rings; above ~50 ms the model is
+    #: no longer the fast E-I loop it is calibrated as.  Bounds externally
+    #: supplied values (e.g. the anatomy timescale prior, whose intrinsic
+    #: autocorrelation range is far wider than this synaptic one).
+    param_support: ClassVar[Mapping[str, tuple[float | None, float | None]]] = {
+        "tau_e": (0.002, 0.050),
+        "tau_i": (0.004, 0.100),
+    }
 
     @property
     def state_dim(self) -> int:
