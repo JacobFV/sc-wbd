@@ -102,11 +102,33 @@ def test_g4_without_agent_h_fisher_cannot_run():
     assert "will not reimplement it" in joined
 
 
-def test_g4_without_the_parameter_partition_cannot_run():
+def test_g4_resolves_the_partition_from_agent_h_even_for_a_bound_fisher():
+    """Regression: the partition probe must not be gated on how fisher arrived.
+
+    A caller passing a BOUND fisher map — the only usable form, since bare
+    expected_fisher needs u/cfg/proto — used to skip the probe entirely and get
+    a COULD_NOT_RUN whose stated reason was not the actual reason. Found by
+    agent Fisher running the gate end to end.
+    """
     f = SyntheticFisher()
     rep = run_g4(fisher=f, seed=0)
-    assert rep.status == "COULD_NOT_RUN"
-    assert any("nuisance" in r for r in rep.blocking_reasons)
+    reasons = " ".join(rep.blocking_reasons)
+    # the partition WAS resolved: we get past it to a real, specific complaint
+    assert "theta_index / nuisance_index not supplied" not in reasons
+    assert "fisher_information" in reasons
+    # and the mismatch it does report is the true one
+    assert "partition indexes 9 parameters but the information matrix is 6x6" in reasons
+
+
+def test_g4_reaches_fisher_information_with_a_bound_map_and_matching_partition():
+    """The end-to-end path agent Fisher exercises must not regress."""
+    f = SyntheticFisher()
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 seed=0)
+    names = {s.name for s in rep.subchecks}
+    assert "fisher_rank_and_eigenvalue" in names
+    sub = next(s for s in rep.subchecks if s.name == "fisher_rank_and_eigenvalue")
+    assert sub.status == "PASS"
 
 
 def test_g5_without_a_mandatory_baseline_cannot_run():

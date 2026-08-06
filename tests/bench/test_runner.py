@@ -122,7 +122,8 @@ def test_summary_names_the_instruments_that_cannot_discriminate(bare):
     md = build_summary(bare["gates"], bare["ablations"], bare["leakage"],
                        bare["numerics"], bare.get("instruments", []))
     assert "## 4b. Instruments that cannot discriminate" in md
-    assert "four** times in this project" in md
+    assert "five** times in this project" in md
+    assert "in this bench's own G4" in md
     assert "inside the mechanism built to catch stale artifacts" in md
     # the standing rule, stated as a rule
     assert "there must exist an input under which it reads differently" in md
@@ -138,3 +139,13 @@ def test_no_check_passes_on_an_uninformative_field(bare):
         prov = r._provenance
         assert "git_dirty_whole_tree" in prov["known_uninformative_fields"]
         assert prov["not_gated_on"]
+
+
+def test_summary_states_that_g4_cannot_pass_in_this_release(bare):
+    md = build_summary(bare["gates"], bare["ablations"], bare["leakage"],
+                       bare["numerics"], bare.get("instruments", []))
+    assert "G4 cannot reach an overall PASS in this release" in md
+    assert "control_graph: none" in md
+    assert "absent rather than fabricated" in md
+    assert "simulation" in md and "not a held-out perturbation" in md
+    assert "It is not one." in md   # the end-to-end inference a reader might make

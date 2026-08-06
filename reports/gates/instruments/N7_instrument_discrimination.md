@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** an instrument that returns the same reading on every input it was given — it is structurally incapable of reporting the discrimination it is consulted for
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 19c4acc · 2026-08-06T08:21:17+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1996fba · 2026-08-06T08:38:08+00:00*
 
 ## Sub-checks
 

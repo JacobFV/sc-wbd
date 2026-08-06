@@ -26,6 +26,7 @@ from typing import Any, Iterable, Mapping, Sequence
 from . import adapters
 from .ablations import ABLATIONS, run_all_ablations
 from .gates import CLAIMS, run_all_gates
+from .corpus import CORPUS_LIMITATIONS
 from .instruments import KNOWN_UNINFORMATIVE, audit_instruments
 from .leakage import APPENDIX_D_ROWS, run_all_audits
 from .numerics import run_numerics_suite
@@ -211,6 +212,46 @@ def build_summary(
     )
     L.append("")
 
+    L.append("### What the training corpus can and cannot support")
+    L.append("")
+    L.append(
+        "A gate measures a model; a model can only carry what its training signal "
+        "contained. Agent Turing's audit of the SC-WBD-001-beta corpus "
+        "(`reports/training/corpus_composition.md`) bounds what any gate can conclude from "
+        "that artifact:"
+    )
+    L.append("")
+    L.append("| measured | consequence for the claims |")
+    L.append("|---|---|")
+    for lim in CORPUS_LIMITATIONS:
+        blocks = ", ".join(f"`{b}`" for b in lim.blocks) or "—"
+        L.append(
+            f"| {lim.measured.replace('|', '/')} | {lim.consequence.replace('|', '/')} "
+            f"(blocks: {blocks}) |"
+        )
+    L.append("")
+    L.append(
+        "**G4 cannot reach an overall PASS in this release, and a reader must not infer "
+        "otherwise from partial progress.** Two of its sub-checks now pass against agent "
+        "Fisher's binding — `fisher_rank_and_eigenvalue` and "
+        "`modality_additivity_declaration` — which is the first movement on a scientific "
+        "claim gate in this project and is worth reporting as such. But `dose` and "
+        "`state_dependence` are unavailable by construction in a linear-Gaussian benchmark "
+        "and are recorded as **absent rather than fabricated**; `delay` is **simulation "
+        "recovery** (recovered from held-out simulated records at the true parameter), which "
+        "is not a held-out perturbation in the sense of §11.3; and 35 of 37 corpus shards "
+        "carry `control_graph: none`. The gate's actual claim — that perturbation reduces "
+        "non-identifiability — remains **unexercised**. A trained whole-brain model sitting "
+        "beside a passing N3/N4/N6 field stack looks like an end-to-end intervention path. "
+        "It is not one."
+    )
+    L.append("")
+    L.append(
+        "This is what the thesis's build order predicts for a release that stops at item 5. "
+        "It is a statement about scope, not about the model."
+    )
+    L.append("")
+
     L += _table(list(ablations), title="2. Required ablations (`body.tex` §11.4)",
                 describe={k: v.thesis_clause for k, v in ABLATIONS.items()})
     L += _table(list(audits), title="3. Leakage and evaluation audits (Appendix D, "
@@ -225,8 +266,10 @@ def build_summary(
     L.append("")
     L.append(
         "A green reading from an instrument that is structurally incapable of reading any "
-        "other way is not evidence. This has now happened **four** times in this project, "
-        "and the fourth was inside the mechanism built to catch stale artifacts:"
+        "other way is not evidence. This has now happened **five** times in this project. "
+        "The fourth was inside the mechanism built to catch stale artifacts; the fifth was "
+        "in this bench's own G4, which reported a reason that was not the actual reason — a "
+        "discrimination failure about causes rather than values:"
     )
     L.append("")
     L.append("| field | what it reads | why it cannot discriminate | remedy | found by |")
@@ -292,7 +335,7 @@ def build_summary(
             for n in r.notes:
                 if any(k in n for k in ("not evidence", "not a statement", "SCOPE:",
                                         "does NOT license", "does not cover",
-                                        "REFINEMENT RULE:")):
+                                        "STANDOFF ONLY", "REFINEMENT RULE:")):
                     L.append(f"  - scope limit: {n}")
     L.append("")
 

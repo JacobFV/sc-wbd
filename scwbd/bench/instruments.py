@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Four times in this project an
+The generalisation was forced by evidence.  Five times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -20,11 +20,17 @@ and every one of them looked green:
 4. ``git_sha()`` appended ``-dirty`` whenever the whole tree was dirty — which
    it always is during a run, because the run writes tracked logs — so every
    checkpoint ever produced carried the same flag, and it could not
-   distinguish modified source from a run writing its own output.
+   distinguish modified source from a run writing its own output;
+5. **this module's own owner did it too**: ``run_g4`` gated its parameter-partition
+   probe on how the Fisher map arrived, so a caller passing a bound map got a
+   ``COULD_NOT_RUN`` whose stated reason was not the actual reason.
 
-The fourth appeared *inside the mechanism built to catch stale artifacts*,
-which is the sharpest possible argument that this belongs in the falsification
-machinery rather than in a comment.
+The fourth appeared *inside the mechanism built to catch stale artifacts*, and
+the fifth inside the gate machinery itself — which is the sharpest possible
+argument that this belongs in the falsification machinery rather than in a
+comment.  A variant worth naming: an instrument can also fail by reporting a
+**reason that is not the actual reason**, which is a discrimination failure
+about causes rather than about values.
 
 The rule this module enforces:
 
@@ -111,6 +117,25 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         ),
         found_by="agent Turing",
         owner="training (agent I)",
+        still_reported=False,
+    ),
+    UninformativeField(
+        name="run_g4 parameter_partition COULD_NOT_RUN reason (agent J's own bug)",
+        reads="'theta_index / nuisance_index not supplied' whenever fisher was passed bound",
+        why_it_cannot_discriminate=(
+            "the partition probe was gated on auto_probed, which is only set when fisher is "
+            "None; a caller passing a BOUND fisher map -- the only usable form, since bare "
+            "expected_fisher needs u/cfg/proto -- skipped the probe entirely, so the gate "
+            "reported a reason that was not the actual reason and never reached "
+            "fisher_information at all"
+        ),
+        remedy=(
+            "drop the auto_probed guard: the probe returns a Dependency that reports its own "
+            "unavailability, so nothing is lost. Regression-tested by "
+            "test_g4_resolves_the_partition_from_agent_h_even_for_a_bound_fisher"
+        ),
+        found_by="agent Fisher (running the gate end to end)",
+        owner="bench (agent J)",
         still_reported=False,
     ),
     UninformativeField(

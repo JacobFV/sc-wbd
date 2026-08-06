@@ -2,7 +2,7 @@
   "bench_schema_version": "scwbd-bench-report/1.0.0",
   "kind": "numerics",
   "claim_id": "N6_induced_efield",
-  "status": "COULD_NOT_RUN",
+  "status": "PASS",
   "manifest": {
     "claim_id": "N6_induced_efield",
     "claim_text": "The magnetically induced E-field solver reproduces the closed-form (Sarvas / Heller-van Hulsteyn) solution for a spherically symmetric conductor, validated independently of any neural-response model.",
@@ -27,28 +27,191 @@
     "preregistered": true
   },
   "consequence_applied": null,
-  "blocking_reasons": [
-    "induced_efield: could not run \u2014 missing: induced-field solver (agent Faraday: scwbd.intervene.tms.efield); closed-form reference (Sarvas / Heller-van Hulsteyn); agent J does not implement induction physics and will not substitute the conduction reference from N3, which is a different problem"
-  ],
+  "blocking_reasons": [],
   "subchecks": [
     {
       "name": "induced_efield",
-      "description": "Induced E-field versus the closed form.",
-      "status": "COULD_NOT_RUN",
+      "description": "Relative error against a closed-form solution, with no neural model in the loop.",
+      "status": "PASS",
       "mandatory": true,
-      "reason": "missing: induced-field solver (agent Faraday: scwbd.intervene.tms.efield); closed-form reference (Sarvas / Heller-van Hulsteyn); agent J does not implement induction physics and will not substitute the conduction reference from N3, which is a different problem",
-      "falsified_by": "relative error above tolerance against the closed form, or a mesh-refinement study that does not converge at the advertised order",
-      "metrics": []
+      "reason": "",
+      "falsified_by": "relative error above tolerance against the analytic solution",
+      "metrics": [
+        {
+          "name": "induced_efield.mean_relative_error",
+          "value": 0.0021488122575394337,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": {
+            "lo": 0.0019072521524113454,
+            "hi": 0.0024228459154883642,
+            "level": 0.95,
+            "method": "bootstrap-percentile"
+          },
+          "threshold": 0.05,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": true,
+          "exact": false,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "induced_efield.max_relative_error",
+          "value": 0.07921446472171476,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": null,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "reference_provenance",
+      "description": "Does the closed-form reference come from the same module as the solver?",
+      "status": "PASS",
+      "mandatory": false,
+      "reason": "",
+      "falsified_by": "",
+      "metrics": [
+        {
+          "name": "induced_efield.reference_shares_module_with_solver",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "solver=scwbd.intervene.tms.efield, reference=scwbd.intervene.spectral_reference; shared provenance is not disqualifying, but it is a weaker test than an independent implementation and must not be described as independent validation",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "reference_validity_domain",
+      "description": "The multipole/series reference converges like ratio**degree. Its a-priori error bound at this geometry must sit well below the solver error being measured, or the gate is measuring the reference.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the reference is no more accurate than the solver it measures",
+      "metrics": [
+        {
+          "name": "reference.convergence_ratio",
+          "value": 0.7727272727272728,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.9,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a/R_c at the validated geometry; the series converges like ratio**degree, so a ratio approaching 1 is not fixable by raising the degree",
+          "passed": true
+        },
+        {
+          "name": "reference.a_priori_bound",
+          "value": 4.2194859653233165e-06,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "ratio**degree with degree=48",
+          "passed": null
+        },
+        {
+          "name": "reference.bound_over_measured_error",
+          "value": 0.0019636363998383807,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.1,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a-priori reference bound 4.22e-06 / measured solver error 0.00215; the reference must be the more accurate of the two by a clear margin",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "mesh_convergence",
+      "description": "Observed order of the induced-field discretisation.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "refinement does not converge at the advertised order",
+      "metrics": [
+        {
+          "name": "induced_efield.observed_order",
+          "value": 1.6944341765404731,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 1.5,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "errors ['0.139', '0.0394', '0.0147', '0.00385']",
+          "passed": true
+        }
+      ]
     }
   ],
   "baselines_run": [],
   "notes": [
-    "Opened because N3 passed for CONDUCTION only. Any claim that depends on the induced TMS field remains suspended until this gate runs."
+    "Induction, not conduction: this gate is what N3 does NOT cover.",
+    "STANDOFF ONLY. The reference series converges like (a/R_c)**degree. At a contact geometry (a/R_c ~ 0.955 for a coil element 4 mm off an 85 mm scalp) no feasible degree brings its bound below the solver error, so this gate validates the discretisation against a STANDOFF equivalent dipole, not against a contact coil. tms-robotics positions a coil in contact; that regime is gate N8_induced_efield_contact and it has not run.",
+    "The validity domain is a metric in this report, not a footnote: a reader who checks only the headline error still sees reference.convergence_ratio.",
+    "Mesh order is the FOUR-POINT fit (1.694), not the asymptotic pair (1.91): agent Faraday reported the fit including the pre-asymptotic meshes because selecting the asymptotic range would have given a prettier number for a worse reason. This gate records the conservative choice.",
+    "The reference is independent in DERIVATION, not merely in file location: surface-charge BEM (5120 panels, linear solve) versus a spectral interior Neumann solution (2400 multipole coefficients, degree 48, autograd gradient). No shared function, no shared formula.",
+    "Solver provenance: agent Faraday, branch wt/faraday @ 915fcad."
   ],
-  "artifacts": {},
+  "artifacts": {
+    "subject": "scwbd.intervene.tms.efield.charge_bem_induced_efield",
+    "reference": "scwbd.intervene.spectral_reference.spectral_induced_efield",
+    "reference_validity_domain": {
+      "convergence_ratio": 0.7727272727272728,
+      "reference_degree": 48,
+      "a_priori_bound": 4.2194859653233165e-06,
+      "measured_solver_error": 0.0021488122575394337,
+      "bound_over_measured_error": 0.0019636363998383807,
+      "does_not_cover": "contact geometry. A coil element in contact with the scalp has a/R_c ~ 0.955, where no feasible degree brings the series bound below the solver error. This gate validates a STANDOFF equivalent dipole; the contact regime is gate N8_induced_efield_contact and has not run."
+    },
+    "geometry": {
+      "sphere_radius_m": 0.085,
+      "dipole_pos_m": [
+        [
+          0.0,
+          0.0,
+          0.11
+        ]
+      ],
+      "cortex_radius_m": 0.07,
+      "a_over_Rc": 0.7727272727272728
+    },
+    "solver_provenance": {
+      "solver_module": "scwbd.intervene.numerics (agent Faraday)",
+      "solver_source_file": "/home/brandonin/Documents/scwbd-wt/faraday/scwbd/intervene/numerics.py",
+      "solver_branch": "wt/faraday",
+      "solver_commit": "915fcad",
+      "merged_into_master": false,
+      "verdict_owner": "agent J (bench); gate code from master, unmodified",
+      "reproduce": "python -m scwbd.intervene.run_field_gates --out reports/intervene",
+      "independent_rerun": "agent J re-ran both gates from master's scwbd.bench.numerics against these solvers rather than adopting agent Faraday's JSON; point estimates and bootstrap intervals reproduced (N3 0.0069564 [0.00589, 0.00828]; N4 0.0125564 [0.01175, 0.01334]; Helmholtz 9.13e-4 vs their 9.18e-4 on an independent march)"
+    }
+  },
   "provenance": {
-    "timestamp_utc": "2026-08-06T08:21:17+00:00",
-    "git_rev": "19c4acc",
+    "timestamp_utc": "2026-08-06T08:38:24+00:00",
+    "git_rev": "1996fba",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -64,9 +227,14 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
+      "scwbd/bench/ablations.py",
+      "scwbd/bench/adapters.py",
+      "scwbd/bench/corpus.py",
+      "scwbd/bench/gates.py",
       "scwbd/bench/instruments.py",
-      "scwbd/bench/report.py",
+      "scwbd/bench/numerics.py",
       "scwbd/bench/runner.py",
+      "scwbd/dynamics/base.py",
       "scwbd/infer/cli.py",
       "scwbd/infer/filters.py",
       "scwbd/infer/fisher.py",
@@ -76,10 +244,16 @@
       "scwbd/infer/sbi.py",
       "scwbd/infer/synthetic_slice.py",
       "scwbd/infer/types.py",
+      "tests/bench/test_could_not_run.py",
+      "tests/bench/test_gates_can_fail.py",
       "tests/bench/test_instruments.py",
+      "tests/bench/test_numerics.py",
       "tests/bench/test_runner.py",
       "tests/infer/conftest.py",
       "tests/infer/test_device_parity.py",
+      "tests/infer/test_filters.py",
+      "tests/infer/test_fisher.py",
+      "tests/infer/test_model_comparison.py",
       "tests/infer/test_multirate.py",
       "tests/infer/test_recovery.py",
       "tests/infer/test_sbi.py",

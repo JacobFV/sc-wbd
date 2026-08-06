@@ -1,8 +1,8 @@
 # SC-WBD-001-beta — claim gate scoreboard
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git 19c4acc · 2026-08-06T08:21:19+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · git 1996fba · 2026-08-06T08:38:24+00:00*
 
-**4 PASS · 0 FAIL · 30 COULD_NOT_RUN** out of 34 claim-bearing checks.
+**5 PASS · 0 FAIL · 30 COULD_NOT_RUN** out of 35 claim-bearing checks.
 
 > A gate that cannot run is **not** a gate that passed. Nothing in this repository may be claimed on the basis of a `could-not-run` row. Engineering breadth, parameter count, plausible diagrams, and in-sample fit are not substitutes for these tests (`thesis_contract.tex`).
 
@@ -48,6 +48,7 @@ A gate that cannot fail is worthless. Each gate therefore ships with a negative 
 - `test_numerics.py::test_n6_refuses_to_reuse_the_conduction_reference`
 - `test_numerics.py::test_n6_passes_an_exact_solver_and_fails_a_wrong_one`
 - `test_numerics.py::test_n6_mesh_convergence_can_fail`
+- `test_numerics.py::test_n6_refuses_when_the_reference_validity_domain_is_undeclared`
 - `test_report_discipline.py::test_accuracy_without_calibration_is_refused`
 - `test_report_discipline.py::test_failure_carries_the_implementation_consequence`
 - `test_statistics.py::test_smoothing_check_fires_on_a_deliberately_oversmoothed_model`
@@ -62,7 +63,7 @@ Positive controls (worlds where the effect is present, and the gate must `PASS`)
 | id | status | headline number or blocker | consequence if failed |
 |---|---|---|---|
 | `G1` | could-not-run | inputs[0]: could not run — missing: typed fusion candidate (agent I / agent E) | — |
-| `G2` | could-not-run | graph_controls: could not run — scwbd.anatomy.graph_controls unavailable (owner: agent C (anatomy)) — agent C has not landed the randomized / distance… | — |
+| `G2` | could-not-run | inputs[0]: could not run — missing: model_for_graph(adjacency) factory (agent E / agent I) | — |
 | `G3` | could-not-run | inputs[0]: could not run — missing: multiresolution candidate (agent E/I) | — |
 | `G4` | could-not-run | fisher_information: could not run — agent H's scwbd.infer.fisher.expected_fisher is present but is not a design -> information map (it raised TypeErro… | — |
 | `G5` | could-not-run | inputs[0]: could not run — missing: individualized candidate model | — |
@@ -97,6 +98,21 @@ The comparisons that **can** fail, and which therefore carry the claims:
 
 Every eigenvalue and condition number in a G4 report travels with its basis (default `prior_standardised`, in which `I_prior` is the identity). A condition number without a declared basis is not interpretable.
 
+### What the training corpus can and cannot support
+
+A gate measures a model; a model can only carry what its training signal contained. Agent Turing's audit of the SC-WBD-001-beta corpus (`reports/training/corpus_composition.md`) bounds what any gate can conclude from that artifact:
+
+| measured | consequence for the claims |
+|---|---|
+| 35 of 37 corpus shards carry control_graph: none; the remaining 2 are local_only | The corpus supports no claim about response to intervention or perturbation beyond the local case. Anything stronger is extrapolation from observational simulation. G4 therefore CANNOT BE SATISFIED by this artifact — not because the model failed, but because its training signal contains essentially no interventional structure. This reads COULD_NOT_RUN with the corpus named; it is not a model FAIL and it is certainly not a pass. (blocks: `G4`, `A10_correlation_vs_perturbation`, `A5_typed_operators`, `D08_operator_mechanism_claim`) |
+| ~18% of the corpus has regional timescales pinned to a support boundary rather than drawn from the prior (backend mix wilson_cowan 40.5%, wong_wang 32.4%, stuart_landau 13.5%, jansen_rit 8.1%, linear_gaussian 5.4%; measured clamp rates 47.5% RWW, 6.1% WC) | Where this model appears to have learned that regions are homogeneous in timescale, roughly a fifth of its training signal could have taught it that regardless of the brain, because the sampler could not express the prior. Any gate or ablation touching regional heterogeneity must disclose this rather than read homogeneity as a finding. (blocks: —) |
+| the slow tier was never built; the model sees only fast-tier dynamics | No claim about slow dynamics, and this compounds the timescale-clamping limitation above: the corpus is narrow in exactly the axis a multirate claim would need to be broad in. (blocks: —) |
+| the corpus was generated through agent Hodgkin's backends as shipped, NOT via a direct name-match on ei_ratio | Recorded as a NEGATIVE RESULT rather than an assumption: the E/I inversion agent Hodgkin caught did not contaminate this corpus. Registered so that the check is known to have been made, not merely believed. (blocks: —) |
+
+**G4 cannot reach an overall PASS in this release, and a reader must not infer otherwise from partial progress.** Two of its sub-checks now pass against agent Fisher's binding — `fisher_rank_and_eigenvalue` and `modality_additivity_declaration` — which is the first movement on a scientific claim gate in this project and is worth reporting as such. But `dose` and `state_dependence` are unavailable by construction in a linear-Gaussian benchmark and are recorded as **absent rather than fabricated**; `delay` is **simulation recovery** (recovered from held-out simulated records at the true parameter), which is not a held-out perturbation in the sense of §11.3; and 35 of 37 corpus shards carry `control_graph: none`. The gate's actual claim — that perturbation reduces non-identifiability — remains **unexercised**. A trained whole-brain model sitting beside a passing N3/N4/N6 field stack looks like an end-to-end intervention path. It is not one.
+
+This is what the thesis's build order predicts for a release that stops at item 5. It is a statement about scope, not about the model.
+
 ## 2. Required ablations (`body.tex` §11.4)
 
 | id | status | headline number or blocker | consequence if failed |
@@ -122,7 +138,7 @@ Every eigenvalue and condition number in a G4 report travels with its basis (def
 | `D04_derived_data_duplication` | could-not-run | hash_lineage_audit: could not run — no lineage records supplied | — |
 | `D05_scale_hallucination` | could-not-run | inputs[0]: could not run — missing: multiresolution candidate (agent E/I) | — |
 | `D06_teacher_simulator_domination` | could-not-run | quarantine: could not run — TRIBE v2 distillation stays OFF by default and is never a subject likelihood (ARCHITECTURE.md rule 5). With the teacher di… | — |
-| `D07_connectome_prior_value` | could-not-run | graph_controls: could not run — scwbd.anatomy.graph_controls unavailable (owner: agent C (anatomy)) — agent C has not landed the randomized / distance… | — |
+| `D07_connectome_prior_value` | could-not-run | inputs[0]: could not run — missing: model_for_graph(adjacency) factory (agent E / agent I) | — |
 | `D08_operator_mechanism_claim` | could-not-run | arms[0]: could not run — missing: typed_operators; §11.4 names it explicitly, so the comparison cannot be declared complete without it | — |
 | `D09_individualization_claim` | could-not-run | inputs[0]: could not run — missing: individualized candidate model | — |
 | `D10_tms_tfus_decision_claim` | could-not-run | prospective_decision_comparison: could not run — OUT OF SCOPE BY CONSTRUCTION: the build order stops at item 5 (empirical subsystem); item 6 (prospect… | — |
@@ -138,15 +154,17 @@ Every eigenvalue and condition number in a G4 report travels with its basis (def
 | `N2_boundary_consistency` | could-not-run | boundary_consistency: could not run — the fine and/or coarse boundary observable was not supplied by the backends (agent E dynamics / agent D restrict… | — |
 | `N3_em_solver` | PASS | 1/1 mandatory sub-checks; subject: scwbd.intervene.numerics.quasistatic_dipole_potential_fd | — |
 | `N4_acoustic_solver` | PASS | 2/2 mandatory sub-checks; subject: scwbd.intervene.numerics.free_field_monopole_fdtd | — |
-| `N6_induced_efield` | could-not-run | induced_efield: could not run — missing: induced-field solver (agent Faraday: scwbd.intervene.tms.efield); closed-form reference (Sarvas / Heller-van … | — |
+| `N8_induced_efield_contact` | could-not-run | contact_regime: could not run — missing: induced-field solver at contact geometry (agent Faraday); either an independent contact-regime reference (e.g… | — |
+| `N6_induced_efield` | PASS | 3/3 mandatory sub-checks; subject: scwbd.intervene.tms.efield.charge_bem_induced_efield | — |
 
 ## 4b. Instruments that cannot discriminate
 
-A green reading from an instrument that is structurally incapable of reading any other way is not evidence. This has now happened **four** times in this project, and the fourth was inside the mechanism built to catch stale artifacts:
+A green reading from an instrument that is structurally incapable of reading any other way is not evidence. This has now happened **five** times in this project. The fourth was inside the mechanism built to catch stale artifacts; the fifth was in this bench's own G4, which reported a reason that was not the actual reason — a discrimination failure about causes rather than values:
 
 | field | what it reads | why it cannot discriminate | remedy | found by |
 |---|---|---|---|---|
 | `git_sha() -dirty suffix (whole-tree scope)` | always '-dirty' during any run | the run writes tracked output (reports/training/train_main.log, reports/training/scwbd-001-beta_train.jsonl), so git status --porcelain is never empty while a run is in flight; the flag therefore cannot separate 'source was modified' from 'the run wrote its own log', and every checkpoint the project has produced carries it | scope the check to source paths and record the offending PATHS rather than a boolean: scwbd.bench.report.source_dirty_entries(SOURCE_PATHS) | agent Turing |
+| `run_g4 parameter_partition COULD_NOT_RUN reason (agent J's own bug)` | 'theta_index / nuisance_index not supplied' whenever fisher was passed bound | the partition probe was gated on auto_probed, which is only set when fisher is None; a caller passing a BOUND fisher map -- the only usable form, since bare expected_fisher needs u/cfg/proto -- skipped the probe entirely, so the gate reported a reason that was not the actual reason and never reached fisher_information at all | drop the auto_probed guard: the probe returns a Dependency that reports its own unavailability, so nothing is lost. Regression-tested by test_g4_resolves_the_partition_from_agent_h_even_for_a_bound_fisher | agent Fisher (running the gate end to end) |
 | `exact-name gradient permission matching under torch.compile` | 'permission matched' on CPU, silently matches nothing on CUDA | torch.compile renames parameters, so a permission keyed on an exact parameter name matches an empty set and the source appears authorised while updating nothing | N1's gradient.unmatched_permission_patterns metric fails when a permission pattern matches nothing; run it against the compiled module, not only the eager one | agent Turing |
 | `systemd-run MemoryMax against CUDA unified memory` | memory.current ~8 GB against a 40 GB cap | CUDA allocations on unified memory are not charged to the cgroup, so the cap is not binding and the reassuring number is measuring the wrong pool | measure the allocator's own accounting, and prove the cap binds by exceeding it | agent Turing |
 | `'allocated by PyTorch' at OOM` | always equal to the ceiling | at the moment of OOM the allocated figure is pinned to the limit by construction, so it cannot distinguish batch-linear from batch-independent growth — the question the number was consulted to answer | sweep batch size and fit the growth curve; a single reading at OOM cannot | agent Turing |
@@ -190,6 +208,9 @@ Only the following, and only at the scope stated. A passing check licenses exact
 - **N4_acoustic_solver**: The acoustic solver reproduces free-field spreading and satisfies the Helmholtz equation, validated independently of any neural-response model.
   - subject: scwbd.intervene.numerics.free_field_monopole_fdtd
   - scope limit: REFINEMENT RULE: the Helmholtz residual here is set by TEMPORAL dispersion, not by h. Measured with the scheme's own Laplacian the spatial error cancels, leaving (omega*dt)^2/12. Refining h at fixed dt leaves the residual flat, which reads like a failure and is not one. Refine dt with h at fixed CFL.
+- **N6_induced_efield**: The magnetically induced E-field solver reproduces the closed-form (Sarvas / Heller-van Hulsteyn) solution for a spherically symmetric conductor, validated independently of any neural-response model.
+  - subject: scwbd.intervene.tms.efield.charge_bem_induced_efield
+  - scope limit: STANDOFF ONLY. The reference series converges like (a/R_c)**degree. At a contact geometry (a/R_c ~ 0.955 for a coil element 4 mm off an 85 mm scalp) no feasible degree brings its bound below the solver error, so this gate validates the discretisation against a STANDOFF equivalent dipole, not against a contact coil. tms-robotics positions a coil in contact; that regime is gate N8_induced_efield_contact and it has not run.
 - **N7_instrument_discrimination**: Every guard and provenance field this bench relies on has an input under which it reads differently, so a green reading is evidence rather than decoration.
   - subject: the guards and provenance fields of scwbd.bench
   - scope limit: A green reading from an instrument that cannot vary is not evidence. Four such instruments have already been found in this project; the fourth was inside the mechanism built to catch stale artifacts.
@@ -202,8 +223,8 @@ Each line below is a claim SC-WBD-001-beta **may not make** in text, figures, ab
   - blocked by: inputs[0]: could not run — missing: typed fusion candidate (agent I / agent E)
   - blocked by: inputs[1]: could not run — missing: held-out train/test datasets (agent B source cards)
 - **G2** (did not run): Anatomical topology improves inference.
-  - blocked by: graph_controls: could not run — scwbd.anatomy.graph_controls unavailable (owner: agent C (anatomy)) — agent C has not landed the randomized / distance-matched / dense graph controls; agent J will not fabricate them, because the control is the experiment
   - blocked by: inputs[0]: could not run — missing: model_for_graph(adjacency) factory (agent E / agent I)
+  - blocked by: inputs[1]: could not run — missing: anatomical adjacency (agent C)
 - **G3** (did not run): Multiresolution state adds information rather than decoration.
   - blocked by: inputs[0]: could not run — missing: multiresolution candidate (agent E/I)
   - blocked by: inputs[1]: could not run — missing: coarse-only baseline
@@ -260,8 +281,8 @@ Each line below is a claim SC-WBD-001-beta **may not make** in text, figures, ab
 - **D06_teacher_simulator_domination** (did not run): Teacher/simulator domination is controlled for. Primary metric: Measured held-out data likelihood and calibration, never teacher agreement alone.
   - blocked by: quarantine: could not run — TRIBE v2 distillation stays OFF by default and is never a subject likelihood (ARCHITECTURE.md rule 5). With the teacher disabled there is no distillation contribution to audit, and none may be claimed.
 - **D07_connectome_prior_value** (did not run): Connectome prior value is controlled for. Primary metric: Data efficiency, causal forecast, calibration and out-of-domain behavior.
-  - blocked by: graph_controls: could not run — scwbd.anatomy.graph_controls unavailable (owner: agent C (anatomy)) — agent C has not landed the randomized / distance-matched / dense graph controls; agent J will not fabricate them, because the control is the experiment
   - blocked by: inputs[0]: could not run — missing: model_for_graph(adjacency) factory (agent E / agent I)
+  - blocked by: inputs[1]: could not run — missing: anatomical adjacency (agent C)
 - **D08_operator_mechanism_claim** (did not run): Operator / mechanism claim is controlled for. Primary metric: Timing, direction, dose/state dependence and unique intervention forecast.
   - blocked by: arms[0]: could not run — missing: typed_operators; §11.4 names it explicitly, so the comparison cannot be declared complete without it
   - blocked by: arms[1]: could not run — missing: generic_equal_parameter; §11.4 names it explicitly, so the comparison cannot be declared complete without it
@@ -280,8 +301,8 @@ Each line below is a claim SC-WBD-001-beta **may not make** in text, figures, ab
   - blocked by: solver_stability: could not run — no trajectory supplied
 - **N2_boundary_consistency** (did not run): Fine and coarse regional backends agree within the declared tolerance on boundary observables, so adaptive resolution may be used for inference.
   - blocked by: boundary_consistency: could not run — the fine and/or coarse boundary observable was not supplied by the backends (agent E dynamics / agent D restriction maps); adaptive resolution may not be used for inference until both produce it (§11.1)
-- **N6_induced_efield** (did not run): The magnetically induced E-field solver reproduces the closed-form (Sarvas / Heller-van Hulsteyn) solution for a spherically symmetric conductor, validated independently of any neural-response model.
-  - blocked by: induced_efield: could not run — missing: induced-field solver (agent Faraday: scwbd.intervene.tms.efield); closed-form reference (Sarvas / Heller-van Hulsteyn); agent J does not implement induction physics and will not substitute the conduction reference from N3, which is a different problem
+- **N8_induced_efield_contact** (did not run): The induced-field solver is validated in the CONTACT regime (a coil element at clinical standoff from the scalp, a/R_c >= 0.95) to a preregistered tolerance — the geometry the downstream targeting consumer actually uses.
+  - blocked by: contact_regime: could not run — missing: induced-field solver at contact geometry (agent Faraday); either an independent contact-regime reference (e.g. boundary-integral with graded panels) or a Richardson self-convergence study of the solver under refinement; the N6 spectral reference does NOT extend here, since its series bound at a/R_c ~ 0.955 exceeds the solver error it would be measuring; the geometry ratio a/R_c, so the gate can confirm it was handed CONTACT geometry rather than a standoff case relabelled; a preregistered tolerance (chosen before seeing the error)
 
 ### What a passing numerical gate does and does not unblock
 

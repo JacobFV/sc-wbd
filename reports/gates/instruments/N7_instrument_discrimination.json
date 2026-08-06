@@ -206,6 +206,15 @@
         "still_reported": false
       },
       {
+        "name": "run_g4 parameter_partition COULD_NOT_RUN reason (agent J's own bug)",
+        "reads": "'theta_index / nuisance_index not supplied' whenever fisher was passed bound",
+        "why_it_cannot_discriminate": "the partition probe was gated on auto_probed, which is only set when fisher is None; a caller passing a BOUND fisher map -- the only usable form, since bare expected_fisher needs u/cfg/proto -- skipped the probe entirely, so the gate reported a reason that was not the actual reason and never reached fisher_information at all",
+        "remedy": "drop the auto_probed guard: the probe returns a Dependency that reports its own unavailability, so nothing is lost. Regression-tested by test_g4_resolves_the_partition_from_agent_h_even_for_a_bound_fisher",
+        "found_by": "agent Fisher (running the gate end to end)",
+        "owner": "bench (agent J)",
+        "still_reported": false
+      },
+      {
         "name": "exact-name gradient permission matching under torch.compile",
         "reads": "'permission matched' on CPU, silently matches nothing on CUDA",
         "why_it_cannot_discriminate": "torch.compile renames parameters, so a permission keyed on an exact parameter name matches an empty set and the source appears authorised while updating nothing",
@@ -235,8 +244,8 @@
     ]
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T08:21:17+00:00",
-    "git_rev": "19c4acc",
+    "timestamp_utc": "2026-08-06T08:38:08+00:00",
+    "git_rev": "1996fba",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -252,9 +261,14 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
+      "scwbd/bench/ablations.py",
+      "scwbd/bench/adapters.py",
+      "scwbd/bench/corpus.py",
+      "scwbd/bench/gates.py",
       "scwbd/bench/instruments.py",
-      "scwbd/bench/report.py",
+      "scwbd/bench/numerics.py",
       "scwbd/bench/runner.py",
+      "scwbd/dynamics/base.py",
       "scwbd/infer/cli.py",
       "scwbd/infer/filters.py",
       "scwbd/infer/fisher.py",
@@ -264,10 +278,16 @@
       "scwbd/infer/sbi.py",
       "scwbd/infer/synthetic_slice.py",
       "scwbd/infer/types.py",
+      "tests/bench/test_could_not_run.py",
+      "tests/bench/test_gates_can_fail.py",
       "tests/bench/test_instruments.py",
+      "tests/bench/test_numerics.py",
       "tests/bench/test_runner.py",
       "tests/infer/conftest.py",
       "tests/infer/test_device_parity.py",
+      "tests/infer/test_filters.py",
+      "tests/infer/test_fisher.py",
+      "tests/infer/test_model_comparison.py",
       "tests/infer/test_multirate.py",
       "tests/infer/test_recovery.py",
       "tests/infer/test_sbi.py",

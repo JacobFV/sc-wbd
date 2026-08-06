@@ -30,6 +30,7 @@ from typing import Any, Callable, Mapping, Sequence
 import numpy as np
 
 from . import adapters
+from .corpus import blocking_limitation, limitations_for
 from .harness import Arm, Dataset, EvalResult, as_factory, evaluate
 from .matching import budget_of, check_matched, matched_subcheck
 from .report import (
@@ -422,6 +423,7 @@ def run_g1(
     delay_true: float | None = None,
     delay_estimates: Mapping[str, Sequence[float] | float] | None = None,
     intervention: Mapping[str, Dataset] | None = None,
+    artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     source_cards: Sequence[str] = (),
@@ -443,6 +445,7 @@ def run_g1(
     subs: list[SubCheck] = []
     rows: list[BaselineResult] = []
     artifacts: dict[str, Any] = {}
+    subs.extend(_corpus_subchecks("G1", artifact, artifacts))
 
     missing: list[str] = []
     if candidate is None:
@@ -622,6 +625,45 @@ def run_g1(
 # ==========================================================================
 # G2 -- anatomy improves inference
 # ==========================================================================
+def _corpus_subchecks(claim_id: str, artifact: str | None,
+                      artifacts: dict[str, Any]) -> list[SubCheck]:
+    """Precondition: can this artifact's TRAINING SIGNAL support this claim?
+
+    A model cannot demonstrate what its corpus never contained. When it cannot,
+    the honest verdict is COULD_NOT_RUN with the corpus named — not a FAIL of
+    the model, and never a pass.
+    """
+    if artifact is None:
+        return []
+    blocking, disclose = limitations_for(claim_id, artifact)
+    out: list[SubCheck] = []
+    for lim in blocking:
+        out.append(could_not_run(
+            f"training_signal[{lim.id}]",
+            "Does the training corpus contain the structure this claim requires?",
+            f"corpus limitation of artifact {artifact!r}: {lim.measured}. {lim.consequence} "
+            f"(measured by {lim.found_by}, {lim.source})",
+            mandatory=True,
+            falsified_by="the corpus contains no signal of the kind the claim is about",
+        ))
+    for lim in disclose:
+        out.append(SubCheck(
+            name=f"corpus_disclosure[{lim.id}]",
+            description="Measured corpus limitation that bounds how this result may be read.",
+            metrics=[Metric(name=f"corpus.{lim.id}", value=1.0, kind="diagnostic",
+                            exact=True, note=f"{lim.measured} -> {lim.consequence}")],
+            mandatory=False,
+            reason=lim.mitigating_fact or "disclosure only",
+        ))
+    if blocking or disclose:
+        artifacts["corpus_limitations"] = {
+            "artifact": artifact,
+            "blocking": [l.as_dict() for l in blocking],
+            "disclosed": [l.as_dict() for l in disclose],
+        }
+    return out
+
+
 def _prior_fragility_subcheck(prior: Any, artifacts: dict[str, Any]) -> SubCheck:
     """Disclose route-fragile inputs and forbidden inferences of the anatomy prior.
 
@@ -697,6 +739,7 @@ def run_g2(
     data_efficiency_sizes: Sequence[int] | None = None,
     n_efficiency_seeds: int = 3,
     corrupt_fraction: float = 0.5,
+    artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     source_cards: Sequence[str] = (),
@@ -718,6 +761,7 @@ def run_g2(
     )
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {}
+    subs.extend(_corpus_subchecks("G2", artifact, artifacts))
 
     if controls is None:
         dep = adapters.anatomy_controls()
@@ -1038,6 +1082,7 @@ def run_g3(
     fine_evidence_block: str = "fine_evidence",
     compute_full_fine: float | None = None,
     compute_adaptive: float | None = None,
+    artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     source_cards: Sequence[str] = (),
@@ -1059,6 +1104,7 @@ def run_g3(
     )
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {}
+    subs.extend(_corpus_subchecks("G3", artifact, artifacts))
 
     missing: list[str] = []
     if multires_model is None:
@@ -1370,6 +1416,7 @@ def run_g4(
     model_evidence: Mapping[str, Mapping[str, float]] | None = None,
     fisher_whitened: Callable[[str], Any] | None = None,
     single_modality_designs: Sequence[str] = ("eeg", "fmri"),
+    artifact: str | None = None,
     basis: str = "prior_standardised",
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
@@ -1410,8 +1457,15 @@ def run_g4(
     man.acceptance_thresholds["basis"] = basis
     man.acceptance_thresholds["baseline_design"] = baseline_design
     man.acceptance_thresholds["intervention_design"] = intervention_design
+    man.acceptance_thresholds["artifact"] = artifact
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {}
+
+    # A model cannot demonstrate what its corpus never contained. Checked before
+    # anything is measured, so a trained artifact cannot pass this gate on the
+    # strength of Fisher inputs its training signal never exercised.
+    corpus_subs = _corpus_subchecks("G4", artifact, artifacts)
+    subs.extend(corpus_subs)
 
     auto_probed = False
     probed_name = ""
@@ -1431,8 +1485,14 @@ def run_g4(
                     falsified_by=CLAIMS["G4"]["falsified_by"],
                 )
             )
-    if (theta_index is None or nuisance_index is None) and auto_probed:
-        # agent H may declare the partition itself; consume it rather than guess
+    if theta_index is None or nuisance_index is None:
+        # Agent H declares the partition; consume it rather than guess.
+        # NOTE: this must NOT be gated on auto_probed. A caller passing a BOUND
+        # fisher map (the only usable form, since bare expected_fisher needs
+        # u/cfg/proto) would otherwise skip the probe and get a COULD_NOT_RUN
+        # whose stated reason is not the actual reason -- a check reporting the
+        # wrong cause is the same failure family as a guard that cannot fire.
+        # Found by agent Fisher running this gate end to end.
         dep = adapters.theta_partition()
         if dep.available:
             theta_names, all_names = dep.obj
@@ -1715,8 +1775,27 @@ def run_g4(
         )
     else:
         metrics: list[Metric] = []
+        absent: list[str] = []
+        simulation_only: list[str] = []
+        populated: list[str] = []
         for k in needed:
             r = recovery[k]
+            # A slot the benchmark cannot express must be recorded as ABSENT,
+            # never fabricated. Three populated slots and two named as
+            # unavailable-by-construction is a more informative result than five
+            # filled slots of which two are fiction.
+            if r.get("unavailable_by_construction"):
+                absent.append(k)
+                metrics.append(Metric(
+                    name=f"recovery.{k}.unavailable_by_construction", value=1.0,
+                    kind="diagnostic", exact=True,
+                    note=str(r["unavailable_by_construction"])))
+                continue
+            kind = str(r.get("recovery_kind", "prospective_perturbation"))
+            if kind != "prospective_perturbation":
+                simulation_only.append(k)
+            else:
+                populated.append(k)
             true = float(r["true"])
             est = float(r["estimate"])
             lo, hi = float(r.get("lo", est)), float(r.get("hi", est))
@@ -1739,17 +1818,53 @@ def run_g4(
                     name=f"recovery.{k}.interval_covers_truth",
                     value=float(covered), kind="calibration", exact=True,
                     threshold=0.5, direction="greater_is_better",
+                    note=f"recovery_kind={kind}",
                 )
             )
-        subs.append(
-            SubCheck(
-                name="prospective_recovery",
-                description="Held-out perturbation recovery of all five named quantities.",
-                metrics=metrics,
-                mandatory=True,
+        artifacts["recovery"] = {
+            "prospective_perturbation": populated,
+            "simulation_recovery_only": simulation_only,
+            "unavailable_by_construction": absent,
+        }
+        if absent or simulation_only or len(populated) < len(needed):
+            bits = []
+            if absent:
+                bits.append(
+                    f"{sorted(absent)} are unavailable by construction in this benchmark "
+                    "(recorded as absent, not fabricated)")
+            if simulation_only:
+                bits.append(
+                    f"{sorted(simulation_only)} are SIMULATION RECOVERY — recovered from "
+                    "held-out simulated records at the true parameter, which is not a "
+                    "held-out perturbation in the sense of thesis §11.3")
+            subs.append(could_not_run(
+                "prospective_recovery",
+                "Held-out perturbation recovery of all five named quantities.",
+                "the recovery table is not a prospective perturbational result: "
+                + "; ".join(bits) + ". Only "
+                f"{len(populated)}/{len(needed)} slots carry prospective perturbational "
+                "recovery, so this component of the claim is unexercised.",
                 falsified_by="parameters not recovered prospectively, or intervals miss truth",
+            ))
+            subs.append(SubCheck(
+                name="recovery_measurements_reported",
+                description=(
+                    "The recovery numbers that DO exist, reported without being counted as "
+                    "prospective perturbational validation."
+                ),
+                metrics=metrics, mandatory=False,
+            ))
+        else:
+            subs.append(
+                SubCheck(
+                    name="prospective_recovery",
+                    description="Held-out perturbation recovery of all five named quantities.",
+                    metrics=metrics,
+                    mandatory=True,
+                    falsified_by=("parameters not recovered prospectively, or intervals "
+                                  "miss truth"),
+                )
             )
-        )
 
     # model discrimination under intervention
     if not model_evidence or baseline_design not in model_evidence or \
@@ -1827,6 +1942,7 @@ def run_g5(
     candidate: Any = None,
     baselines: Mapping[str, Any] | None = None,
     utility: Mapping[str, Any] | None = None,
+    artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     source_cards: Sequence[str] = (),
@@ -1853,6 +1969,7 @@ def run_g5(
     )
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {}
+    subs.extend(_corpus_subchecks("G5", artifact, artifacts))
 
     missing: list[str] = []
     if candidate is None:

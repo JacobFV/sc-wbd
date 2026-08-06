@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** The mandatory control (No-teacher/no-simulator, generic-feature, shuffled, parameter-perturbed and empirical-only ablations) shows the result survives only without it.
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 19c4acc · 2026-08-06T08:19:51+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1996fba · 2026-08-06T08:36:42+00:00*
 
 ## Could not run
 

@@ -75,8 +75,8 @@ def test_source_scoped_status_is_a_path_list_not_a_boolean():
     assert all(isinstance(x, str) for x in mine)
 
 
-def test_the_four_known_uninformative_fields_are_registered_with_remedies():
-    assert len(KNOWN_UNINFORMATIVE) == 4
+def test_known_uninformative_fields_are_registered_with_remedies():
+    assert len(KNOWN_UNINFORMATIVE) >= 5
     for u in KNOWN_UNINFORMATIVE:
         assert u.remedy and u.why_it_cannot_discriminate and u.found_by
     names = " ".join(u.name for u in KNOWN_UNINFORMATIVE)
@@ -84,6 +84,9 @@ def test_the_four_known_uninformative_fields_are_registered_with_remedies():
     assert "torch.compile" in names
     assert "MemoryMax" in names
     assert "OOM" in names
+    # the bench's own bug is registered too, not quietly fixed
+    mine = [u for u in KNOWN_UNINFORMATIVE if u.owner.startswith("bench")]
+    assert mine and "not the actual reason" in mine[0].why_it_cannot_discriminate
 
 
 def test_default_instruments_all_declare_a_consequence():

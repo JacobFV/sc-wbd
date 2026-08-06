@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** relative error above tolerance against the analytic dipole solution
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 19c4acc · 2026-08-06T08:19:53+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1996fba · 2026-08-06T08:36:43+00:00*
 
 ## Sub-checks
 
