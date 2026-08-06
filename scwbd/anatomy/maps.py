@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 import os
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
@@ -108,6 +108,13 @@ class MapSet:
     density: str
     maps: dict[str, RegionalMap]
     receptor_names: tuple[str, ...] = ()
+    #: ``{map_name: reason}`` for every map that was *expected* here and could
+    #: not be built.  A map that silently vanishes from the artifact is a map
+    #: nobody can audit: the Schaefer300/400 receptor panels shipped without
+    #: ``receptor_5HT4`` for exactly that reason, and nothing in the file said
+    #: so.  An empty dict therefore means "nothing was dropped", not "nobody
+    #: looked".
+    unavailable: dict[str, str] = field(default_factory=dict)
 
     def __getitem__(self, k: str) -> RegionalMap:
         if k not in self.maps:
@@ -139,6 +146,7 @@ class MapSet:
             "space": self.space,
             "density": self.density,
             "receptor_names": list(self.receptor_names),
+            "unavailable": dict(self.unavailable),
             "maps": {},
         }
         for k, m in self.maps.items():
@@ -178,6 +186,9 @@ class MapSet:
             density=meta["density"],
             maps=maps,
             receptor_names=tuple(meta["receptor_names"]),
+            # artifacts written before the field existed carry no record, which
+            # is itself the thing being fixed; they load as "unknown", not "none"
+            unavailable=dict(meta.get("unavailable", {})),
         )
 
 
@@ -331,15 +342,27 @@ def _fetch_surface_annotation(spec: dict[str, Any]) -> dict[str, np.ndarray]:
 def _parcellate_surface(
     parc: Parcellation, per_hemi: dict[str, np.ndarray], src_den: str
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Area-weighted mean of a fsLR vertex map within each parcel."""
+    """Area-weighted mean of a fsLR vertex map within each parcel.
+
+    A hemisphere absent from ``per_hemi`` leaves that hemisphere's parcels
+    *uncovered* rather than aborting the map.  Some upstream annotations really
+    are one-sided -- neuromaps redistributes the Hill 2010 expansion maps as
+    right hemisphere only -- and dropping the whole map on that account throws
+    away the hemisphere that does exist.  Per the module docstring, missing data
+    is carried in ``coverage``, never imputed.
+    """
     from .geometry import load_surface
 
     if parc.space != "fsLR":
         raise ValueError("surface annotations are parcellated on fsLR only")
+    if not per_hemi:
+        raise ValueError("annotation has no hemispheres")
     n = parc.n_parcels
     num = np.zeros(n)
     den = np.zeros(n)
     for h in ("L", "R"):
+        if h not in per_hemi:
+            continue
         surf = load_surface(parc.space, parc.density, "midthickness", h)
         v = _resample_fslr(per_hemi[h], src_den, parc.density, h)
         if v.shape[0] != surf.n_vertices:
@@ -480,13 +503,15 @@ def _hansen_nifti_files() -> dict[str, list[Path]]:
     return out
 
 
-def _receptor_maps(parc: Parcellation) -> tuple[dict[str, RegionalMap], tuple[str, ...]]:
+def _receptor_maps(
+    parc: Parcellation,
+) -> tuple[dict[str, RegionalMap], tuple[str, ...], dict[str, str]]:
     # Surface parcellations sample the PET volume directly at their own
     # vertices; volumetric parcellations average it over their own voxels.
     # Neither route reindexes one atlas through another.
     if parc.is_surface():
         if parc.space != "fsLR":
-            return {}, ()
+            return {}, (), {"receptors": f"no PET route for surface space {parc.space!r}"}
         route = "surface_sampling"
         sampler = lambda p: _sample_volume_on_surface(parc, p)  # noqa: E731
     else:
@@ -494,11 +519,20 @@ def _receptor_maps(parc: Parcellation) -> tuple[dict[str, RegionalMap], tuple[st
         sampler = lambda p: _parcellate_volume(parc, p)  # noqa: E731
     files = _hansen_nifti_files()
     if not files:
-        return {}, ()
+        return {}, (), {"receptors": "the Hansen PET volumes are not on disk"}
+    # How well does the shipped fast route agree with the volumetric join?
+    # ``None`` means nobody has measured it for this parcellation, which is
+    # recorded as unmeasured rather than passed off as agreement.
+    from .route_check import FRAGILE_BELOW, load_route_agreement
+
+    _rep = load_route_agreement(parc.name, parc.space, parc.density)
+    route_report = (_rep or {}).get("per_target", {})
     maps: dict[str, RegionalMap] = {}
+    unavailable: dict[str, str] = {}
     for target, paths in sorted(files.items()):
         per_tracer, cov_any = [], None
         n_hc = 0
+        dropped_tracers: list[str] = []
         for p in paths:
             try:
                 v, c = sampler(p)
@@ -507,9 +541,12 @@ def _receptor_maps(parc: Parcellation) -> tuple[dict[str, RegionalMap], tuple[st
                 # panel, so say so.
                 warnings.warn(f"PET volume {p.name} could not be parcellated: {exc!r}",
                               stacklevel=2)
+                dropped_tracers.append(f"{p.name}: {exc!r}")
                 continue
             m = c & np.isfinite(v)
             if m.sum() < 2:
+                dropped_tracers.append(
+                    f"{p.name}: only {int(m.sum())} parcels covered, need >= 2")
                 continue
             z = np.full(v.shape, np.nan)
             z[m] = (v[m] - v[m].mean()) / v[m].std(ddof=1)
@@ -519,7 +556,20 @@ def _receptor_maps(parc: Parcellation) -> tuple[dict[str, RegionalMap], tuple[st
                 if tok.startswith("hc") and tok[2:].isdigit():
                     n_hc += int(tok[2:])
         if not per_tracer:
+            # Targets with a single tracer -- 5HT4, NMDA, A4B2, CB1, M1, H3 --
+            # are lost entirely when that one file fails, so the loss must be
+            # recorded rather than inferred later from a short panel.
+            unavailable[f"receptor_{target}"] = (
+                "every tracer failed: " + "; ".join(dropped_tracers)
+                if dropped_tracers
+                else "no usable tracer volume"
+            )
             continue
+        if dropped_tracers:
+            unavailable[f"receptor_{target}__partial"] = (
+                f"built from {len(per_tracer)}/{len(paths)} tracers; dropped: "
+                + "; ".join(dropped_tracers)
+            )
         stack = np.stack(per_tracer)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
@@ -527,11 +577,23 @@ def _receptor_maps(parc: Parcellation) -> tuple[dict[str, RegionalMap], tuple[st
             spread = np.nanstd(stack, axis=0, ddof=0) if stack.shape[0] > 1 else np.zeros(vals.shape)
         cov = np.asarray(cov_any, dtype=bool)
         vals[~cov] = np.nan
+        # Between-route disagreement is a *second* empirical handle on sampling
+        # bias, independent of tracer-to-tracer spread: a map that changes when
+        # you change how the volume is read into parcels is a map whose value
+        # is partly a property of the reader.  It widens the swept interval.
+        rr = route_report.get(target)
+        route_r = rr["r_route"] if rr else None
+        route_fragile = bool(rr["route_fragile"]) if rr else None
+        half = max(float(np.nanmax(spread)), 0.5)
+        if route_r is not None:
+            # 1 - r is the fraction of between-parcel variance the two routes
+            # do not share; charge it to the interval rather than hiding it.
+            half = max(half, 0.5 + (1.0 - float(route_r)))
         led = group_average_ledger(
             units="zscore",
             # tracer-to-tracer disagreement is the only empirical handle we have
             # on this bias; it is a lower bound, not the bias itself
-            bias_interval=(-max(float(np.nanmax(spread)), 0.5), max(float(np.nanmax(spread)), 0.5)),
+            bias_interval=(-half, half),
             variance={
                 "measurement": float(np.nanmean(spread**2)) if stack.shape[0] > 1 else 0.0,
                 "model_class": 0.25,
@@ -553,9 +615,22 @@ def _receptor_maps(parc: Parcellation) -> tuple[dict[str, RegionalMap], tuple[st
                     else "MNI152 PET volume averaged over the parcel's own voxels"
                 ),
                 "license": S.SRC["hansen_receptors"]["license"],
+                # None => nobody measured it for this parcellation. Not "fine".
+                "route_agreement_r": route_r,
+                "route_fragile": route_fragile,
+                "route_agreement_threshold": FRAGILE_BELOW,
             },
             notes=(
                 S.SRC["hansen_receptors"]["bias"]
+                + (
+                    f" ROUTE-FRAGILE: surface sampling and volumetric averaging "
+                    f"of this tracer agree at only r={route_r:.2f} across cortical "
+                    "parcels, so this map's parcel values depend materially on how "
+                    "the PET volume was read into parcels. See "
+                    "scwbd.anatomy.route_check and reports/anatomy_prior.md S1.6."
+                    if route_fragile
+                    else ""
+                )
                 + (
                     " Volume-to-surface sampling incurs fsLR/MNI152 alignment "
                     "error of a millimetre or two and mixes the cortical ribbon "
@@ -595,7 +670,7 @@ def _receptor_maps(parc: Parcellation) -> tuple[dict[str, RegionalMap], tuple[st
             if k.replace("receptor_", "") not in _NON_RECEPTOR_TARGETS
         )
     )
-    return maps, names
+    return maps, names, unavailable
 
 
 def receptor_matrix(parc: Parcellation) -> tuple[np.ndarray, tuple[str, ...], np.ndarray]:
@@ -623,23 +698,53 @@ def _ei_proxy(maps: dict[str, RegionalMap], parc: Parcellation) -> RegionalMap |
     -- one identical neural mass per parcel -- is the failure mode the thesis
     names explicitly.
 
-    A measured caveat, not a hypothetical one.  On Schaefer-100 the ingredient
-    maps co-vary strongly (NMDA-GABA-A r = 0.73, mGluR5-GABA-A r = 0.46): most
-    of the between-parcel variance in receptor density is a *shared* gradient,
-    plausibly overall synaptic or neuronal density, not an excitation/
-    inhibition contrast.  Differencing removes that shared component, so the
-    residual has about two thirds the spread of its ingredients and is
-    dominated by mGluR5 against GABA-A rather than by NMDA (the NMDA
-    contribution largely cancels against GABA-A).  The residual does track the
-    sensorimotor-association axis in the expected direction (r ~ 0.43), so it
-    is not noise -- but it is a weak second-order contrast, and a model that
-    depends heavily on it is depending on the small part of a PET signal that
-    two tracers disagree about.
+    A measured caveat, not a hypothetical one -- and note that it *changed* when
+    the receptor maps were rebuilt through the surface-sampling route.  The
+    cached artifacts this claim was first measured on had been produced by the
+    older volumetric-join route, and reported NMDA-GABA-A r = 0.73 with the NMDA
+    contribution cancelling out (r(E/I, NMDA) ~ 0.00).  Neither number survives
+    the route that is actually shipped.
+
+    Measured on the surface-sampled maps (Schaefer-100 / Schaefer-400):
+
+    ==========================  ==============  ==============
+    quantity                    Schaefer-100    Schaefer-400
+    ==========================  ==============  ==============
+    NMDA - GABA-A                       +0.264          +0.346
+    mGluR5 - GABA-A                     +0.275          +0.500
+    r(E/I, NMDA)                        +0.510          +0.536
+    r(E/I, GABA-A)                      -0.617          -0.516
+    r(E/I, S-A axis)                    +0.404          +0.303
+    sd(E/I) / mean sd(ingredients)        1.10            0.95
+    ==========================  ==============  ==============
+
+    So the ingredients co-vary only *moderately*, the contrast keeps essentially
+    the full spread of its ingredients rather than two thirds of it, and NMDA is
+    now a substantial contributor rather than a cancelling one.  The proxy is
+    less degenerate than previously documented.
+
+    That is not straightforwardly good news.  The contrast's largest single
+    contributor is NMDA, and NMDA is the *least route-stable* map in the panel
+    (surface vs volumetric r = 0.59; see :mod:`scwbd.anatomy.route_check`).  The
+    E/I proxy is therefore not a weak contrast built on strong ingredients -- it
+    is a reasonably strong contrast built on the two ingredients whose values
+    depend most on how the PET volume was read into parcels.  Both facts travel
+    in the ledger: ``validity_domain["route_fragile_ingredients"]`` names them
+    and ``forbidden_inference`` spells out the consequence.
     """
     exc = [maps[f"receptor_{r}"] for r in RECEPTOR_GROUPS["excitatory"] if f"receptor_{r}" in maps]
     inh = [maps[f"receptor_{r}"] for r in RECEPTOR_GROUPS["inhibitory"] if f"receptor_{r}" in maps]
     if not exc or not inh:
         return None
+    # Which ingredients are route-fragile?  The E/I contrast is the one place
+    # where NMDA and GABA-A are load-bearing, and those are precisely the two
+    # maps whose value depends most on how the PET volume was read.  That fact
+    # travels with the number instead of living only in a report.
+    fragile = {
+        m.name.replace("receptor_", ""): m.ledger.validity_domain.get("route_agreement_r")
+        for m in exc + inh
+        if m.ledger.validity_domain.get("route_fragile")
+    }
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
         e = np.nanmean(np.stack([m.values for m in exc]), axis=0)
@@ -649,18 +754,30 @@ def _ei_proxy(maps: dict[str, RegionalMap], parc: Parcellation) -> RegionalMap |
     v[cov] = (e - i)[cov]
     led = group_average_ledger(
         units="zscore",
-        bias_interval=(-1.5, 1.5),
-        variance={"measurement": 0.5, "model_class": 1.0},
+        # widened from +/-1.5 when an ingredient is route-fragile: the contrast
+        # inherits its ingredients' sampling bias and cannot be tighter than them
+        bias_interval=(-1.5 - 0.5 * len(fragile), 1.5 + 0.5 * len(fragile)),
+        variance={"measurement": 0.5 + 0.25 * len(fragile), "model_class": 1.0},
         forbidden_inference=(
             "Not a measurement of excitation/inhibition balance. PET binding "
             "potential is not receptor count, receptor count is not synaptic "
             "conductance, and this contrast uses two glutamatergic markers "
             "against one GABA-A benzodiazepine-site marker."
+            + (
+                " Additionally, "
+                + ", ".join(f"{k} (route r={v:.2f})" for k, v in sorted(fragile.items()))
+                + " disagree between the surface-sampling and volumetric-join "
+                "routes, so the sign of this contrast in any given parcel is not "
+                "robust to a defensible change in how the PET volume is read."
+                if fragile
+                else ""
+            )
         ),
         validity_domain={
             "excitatory_markers": list(RECEPTOR_GROUPS["excitatory"]),
             "inhibitory_markers": list(RECEPTOR_GROUPS["inhibitory"]),
             "interpretation": "relative, rank-meaningful only; zero is the cortical mean",
+            "route_fragile_ingredients": {k: v for k, v in sorted(fragile.items())},
         },
         notes=(
             "Model-class variance is set as large as the measurement variance "
@@ -702,6 +819,7 @@ def load_maps(parc: Parcellation, *, rebuild: bool = False) -> MapSet:
         return MapSet.load(cache)
 
     maps: dict[str, RegionalMap] = {}
+    unavailable: dict[str, str] = {}
 
     # -- surface annotations ------------------------------------------
     if parc.is_surface() and parc.space == "fsLR":
@@ -711,6 +829,7 @@ def load_maps(parc: Parcellation, *, rebuild: bool = False) -> MapSet:
                 vals, cov = _parcellate_surface(parc, per_hemi, spec["den"])
             except Exception as exc:  # noqa: BLE001
                 warnings.warn(f"map {name!r} unavailable for {parc.name}: {exc!r}", stacklevel=2)
+                unavailable[name] = repr(exc)
                 continue
             src = S.SRC[spec["key"]]
             resampled = spec["den"] != parc.density
@@ -725,6 +844,7 @@ def load_maps(parc: Parcellation, *, rebuild: bool = False) -> MapSet:
                     "native_density": spec["den"],
                     "resampled_to": parc.density if resampled else None,
                     "population": "healthy adults, group average",
+                    "hemispheres": sorted(per_hemi),
                 },
                 notes=(
                     src["bias"]
@@ -732,6 +852,15 @@ def load_maps(parc: Parcellation, *, rebuild: bool = False) -> MapSet:
                         f" Nearest-neighbour resampled fsLR-{spec['den']} -> "
                         f"fsLR-{parc.density} on the spherical registration."
                         if resampled
+                        else ""
+                    )
+                    + (
+                        " SINGLE-HEMISPHERE: upstream redistributes only "
+                        f"{'/'.join(sorted(per_hemi))}, so the opposite hemisphere's "
+                        "parcels are uncovered. Do not mirror this across the "
+                        "midline -- cortical asymmetry is exactly what that would "
+                        "fabricate."
+                        if len(per_hemi) < 2
                         else ""
                     )
                 ),
@@ -748,12 +877,18 @@ def load_maps(parc: Parcellation, *, rebuild: bool = False) -> MapSet:
             )
 
     # -- receptors (volumetric PET) -------------------------------------
-    rec, rec_names = _receptor_maps(parc)
+    rec, rec_names, rec_unavailable = _receptor_maps(parc)
     maps.update(rec)
+    unavailable.update(rec_unavailable)
 
     ei = _ei_proxy(maps, parc)
     if ei is not None:
         maps["ei_proxy"] = ei
+    else:
+        unavailable["ei_proxy"] = (
+            "the E/I proxy needs receptor_NMDA, receptor_mGluR5 and receptor_GABAa; "
+            f"available receptors: {list(rec_names)}"
+        )
 
     ms = MapSet(
         parcellation_name=parc.name,
@@ -761,6 +896,7 @@ def load_maps(parc: Parcellation, *, rebuild: bool = False) -> MapSet:
         density=parc.density,
         maps=maps,
         receptor_names=rec_names,
+        unavailable=unavailable,
     )
     ms.save(cache)
     return ms

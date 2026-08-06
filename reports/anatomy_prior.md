@@ -26,6 +26,37 @@ termination. Every object carries an `UncertaintyLedger` with
 `validity_domain["forbidden_inference"]` sentence stating the inference it does
 not license.
 
+### 0.1 Corrections made in this pass
+
+This revision fixes real errors in the previous one. Listing them rather than
+quietly overwriting them:
+
+1. **The cached receptor maps were built by a different route than the code
+   documents.** The artifacts on disk came from the volumetric-join route; the
+   module had since moved to surface sampling and was never rebuilt. Code and
+   cache disagreed, silently, and every receptor statistic in the previous
+   report was measured on the stale side. (§1.6, §5.1)
+2. **The E/I caveat was therefore wrong.** NMDA–GABA-A is 0.26–0.35, not 0.73,
+   and NMDA contributes to the contrast rather than cancelling out of it. The
+   proxy is *less* degenerate than claimed — but its two main ingredients are
+   the two least route-stable maps in the panel. (§5.1)
+3. **Three map gaps were invisible in the artifacts**: `receptor_5HT4` missing
+   at Schaefer-300/400, *all* receptors missing from Desikan-Killiany and
+   Glasser-360, and `developmental_expansion` failing everywhere. All three now
+   build; anything that cannot build is recorded in `MapSet.unavailable` with a
+   reason and fails a test. (§1.5)
+4. **Route disagreement was diagnosed, not just measured.** It is governed by
+   the tracer's radial profile (ρ = +0.57, p = 1×10⁻⁴), and it affects five
+   maps — two more than previously identified. (§1.6)
+5. **Ten of twelve connectomes did not exist.** All six covered atlases now
+   build with and without subcortex. (§1.4)
+
+The general lesson, which is a process finding rather than a scientific one: a
+cached artifact that records *no* route, *no* provenance for what it omitted,
+and *no* link to the code version that produced it cannot be audited, and three
+separate errors hid in exactly that gap. `assets/MANIFEST.json` plus
+`MapSet.unavailable` plus `validity_domain["route_*"]` are the response.
+
 ---
 
 ## 1. What was obtained
@@ -79,7 +110,28 @@ geodesic/Euclidean ratio within hemisphere ≈ 1.39; maximum Euclidean separatio
 ### 1.4 Structural connectome
 
 `StructuralPrior` for Desikan-Killiany, Glasser-360 and Schaefer 100/200/300/400,
-with and without the 14 subcortical structures.
+with and without the 14 subcortical structures — **12 artifacts, all now built**
+(previously only Schaefer-100 and Schaefer-400 existed on disk). These six are
+exactly the parcellations the ENIGMA/HCP release covers; `load_structural_prior`
+raises rather than synthesising a connectome for any other atlas, and that
+refusal is deliberate.
+
+Edge-class counts (with subcortex):
+
+| atlas | hard | soft | proposed | absent |
+|---|---|---|---|---|
+| DesikanKilliany | 231 | 959 | 6 | 2 125 |
+| Glasser360 | **0** | 5 669 | 244 | 63 838 |
+| Schaefer100x7 | 197 | 1 489 | 44 | 4 711 |
+| Schaefer200x7 | 760 | 2 470 | 116 | 19 445 |
+| Schaefer300x7 | 1 560 | 3 120 | 235 | 44 226 |
+| Schaefer400x7 | 2 675 | 3 462 | 332 | 79 022 |
+
+**Glasser-360 has zero `hard` edges.** `hard` requires corroboration by an
+independent stream, and no second Glasser-parcellated connectome is available
+here, so every edge stays `soft`. That is the evidence grammar working, not a
+build failure — but a model trained on Glasser-360 has no `hard` anatomy at all,
+which is worth knowing before choosing that atlas.
 
 Provenance, recorded verbatim in every artifact:
 **cohort** 207 unrelated healthy young adults, HCP S1200, age 22–37 (count from
@@ -103,7 +155,121 @@ MEG intrinsic timescale (Shafiei/HCP); evolutionary and developmental cortical
 expansion; cross-species FC homology; CBF and CMRglc. Plus one derived map:
 the receptor-based E/I proxy.
 
-**32 maps per cortical parcellation.**
+**33 maps and the full 19-receptor panel on all seven cortical parcellations**
+(Schaefer 100/200/300/400, Desikan-Killiany, Glasser-360, Economo-Koskinas).
+
+This is a correction. What was previously on disk was incomplete in three ways,
+all of them invisible from the artifacts themselves:
+
+- `receptor_5HT4` was absent from Schaefer-300 and Schaefer-400 (31 maps, not
+  32) — a single-tracer target, so one caught exception erased the whole map;
+- **Desikan-Killiany and Glasser-360 had *no receptor maps at all*** (11 maps,
+  0 receptors), which the earlier pass had not noticed;
+- `developmental_expansion` failed on **every** parcellation with
+  `KeyError('L')` and had never appeared in any count.
+
+None of these left a trace in the `.npz`. They do now: `MapSet.unavailable`
+records `{map_name: reason}` for anything expected and not built, the build logs
+it, and `tests/anatomy/test_maps.py` fails if a PET target on disk is neither
+built nor explained. An empty `unavailable` means *nothing was dropped*, not
+*nobody looked*.
+
+`developmental_expansion` turned out not to be a bug at all: neuromaps
+redistributes the Hill 2010 expansion maps as **right hemisphere only**. Dropping
+the map discarded the hemisphere that does exist. It now builds with the left
+hemisphere marked *uncovered*, `validity_domain["hemispheres"] == ["R"]`, and a
+note forbidding mirroring across the midline — cortical asymmetry being exactly
+what mirroring would fabricate.
+
+### 1.6 The two PET routes, and where they disagree
+
+A PET volume in MNI152 can reach a surface parcellation two ways, and they are
+not equivalent:
+
+| route | what it does | cost |
+|---|---|---|
+| `surface_sampling` **(shipped)** | trilinear sample at each fsLR midthickness vertex, area-weighted mean per parcel | 0.16 s/map |
+| `voxel_average` | mean over the voxels of the *volumetric* release of the same atlas, joined to surface parcels by label name | 22.3 s/map |
+
+The fast route is **139× cheaper**, which is a good enough reason to check
+whether it is also defensible rather than merely convenient.
+`scwbd/anatomy/route_check.py` recomputes the whole comparison; the reports live
+in `assets/derived/route_check/`.
+
+**Agreement is not uniform.** On Schaefer400x7, across cortical parcels:
+
+| target | *r* (surface vs volume) | tracers | |
+|---|---|---|---|
+| α4β2 | **0.569** | 1 | route-fragile |
+| NMDA | **0.590** | 1 | route-fragile |
+| 5-HT6 | **0.657** | 1 | route-fragile |
+| GABA-A | **0.685** | 2 | route-fragile |
+| 5-HT4 | **0.714** | 1 | route-fragile |
+| M1, FDOPA, NAT, D2 | 0.83 – 0.86 | 1–4 | |
+| H3, D1, VAChT, 5-HT1b, 5-HT2a, CB1, mGluR5, DAT, MOR, 5-HTT, 5-HT1a | 0.90 – 0.965 | 1–3 | |
+
+The same five are fragile on Schaefer100x7 (5-HT6 0.540, α4β2 0.559, NMDA 0.578,
+GABA-A 0.718, 5-HT4 0.784), so this is a property of the tracer, not of the
+parcellation. Note that two of them — **α4β2 and 5-HT6 — were not previously
+flagged at all**; the first pass looked only at a hand-picked subset.
+
+#### Why they disagree
+
+Not a bug in either route: **the routes estimate different quantities whenever
+the tracer's binding varies with cortical depth.** The surface route samples one
+depth; the volumetric route averages the whole ribbon plus whatever white matter
+and CSF the volumetric parcel includes.
+
+Measuring this across all 39 tracer volumes (per-tracer, Schaefer400x7):
+
+- **depth stability** — correlation between the parcel map at midthickness and
+  the same map sampled 3 mm inward — predicts route agreement at
+  **Spearman ρ = +0.573, p = 1×10⁻⁴**;
+- absolute ribbon contrast predicts it more weakly (ρ = −0.347, p = 0.03).
+
+The two maps the E/I prior depends on fail in *different* ways:
+
+- **GABA-A** (flumazenil, Nørgaard): the volumetric value is reproduced better by
+  sampling the surface **2 mm inward** (*r* = 0.701) than at midthickness
+  (*r* = 0.539). The volumetric parcel average is **white-matter diluted**. Here
+  the surface route is sampling the right compartment and the volumetric route
+  is the biased one.
+- **NMDA** (GE-179, single tracer, *n* = 29): the extreme case. Its ribbon
+  contrast is **1.89, the highest of all 39 volumes**, and its midthickness map
+  is **essentially uncorrelated with its own 3 mm-inward map (*r* = 0.019)**. No
+  depth reproduces the volumetric value (best *r* = 0.590, at midthickness). The
+  two routes are **irreconcilable for this tracer** — the parcel-level NMDA map
+  is largely a statement about where in the ribbon you chose to look.
+
+A secondary failure mode exists: α4β2, 5-HT6 and D2-raclopride are depth-*stable*
+(0.83–0.93) yet still disagree, and all three are best matched 2 mm **outward**,
+which is the signature of a systematic registration offset or of a low-dynamic-range
+map, not of a radial gradient.
+
+#### What was decided
+
+**The fast surface route is kept, and the reason is anatomical, not economic.**
+The prior claims to describe the cortical ribbon; midthickness sampling targets
+that compartment, and the GABA-A result shows the volumetric route is
+depth-biased away from it. Paying 22 s/map to get a *worse-targeted* number
+would be a false economy in the other direction.
+
+But the disagreement is not swept up:
+
+1. Every receptor ledger now carries `route_agreement_r`, `route_fragile` and the
+   threshold used. A parcellation nobody has route-checked carries `None`, which
+   means **unmeasured, not agreeing**.
+2. Route-fragile maps have their swept bias interval **widened by (1 − r)**.
+   Between-route disagreement is a second empirical handle on sampling bias,
+   independent of tracer-to-tracer spread, and it is charged to the interval.
+3. `ei_proxy` names its fragile ingredients in `forbidden_inference` and widens
+   its own interval per fragile ingredient — so **the E/I prior cannot be used
+   without being told that NMDA and GABA-A are its two least route-stable
+   inputs.** See §5.1.
+
+The honest one-line summary: *the receptor panel is route-stable except for five
+maps, two of which are exactly the maps the E/I contrast is built from, and that
+is stated in the artifact rather than only here.*
 
 ---
 
@@ -210,6 +376,78 @@ beats `randomized` but not `distance_matched` has learned geometry, not
 anatomy**, and per ARCHITECTURE.md §4 that is a result to report, not a bug to
 tune away.
 
+#### Verified on the parcellation the foundation model uses
+
+All five run on the real `Schaefer400x7` prior (414 nodes with subcortex, 6 137
+edges, seed 1234). `StructuralPrior.controls(seed)` returns all five in one call.
+
+| control | edges | degree seq. preserved | Σw | *r*(w, distance) | *r*(w, empirical w) |
+|---|---|---|---|---|---|
+| *empirical* | 6 137 | — | 36 901.7 | −0.323 | 1.000 |
+| `randomized` | 6 137 | **exact** | 36 901.7 | −0.163 | **0.083** |
+| `distance_matched` | 6 137 | **exact** | 36 901.7 | **−0.313** | 0.911 |
+| `dense` | 85 491 | n/a (complete) | 36 901.7 | −0.000 | −0.000 |
+| `local_only(40 mm)` | 3 769 | n/a (deletion) | 24 241.8 | −0.481 | 0.826 |
+| `graph_only` | 6 137 | **exact** | 36 901.7 | n/a (constant) | 0.947 |
+
+Reading the table: `randomized` preserves degree and the weight multiset exactly
+while destroying both topology (*r* = 0.083 with the empirical weights) and
+distance dependence (−0.323 → −0.163). `distance_matched` destroys topology while
+**keeping** the distance decay almost intact (−0.313 vs −0.323) — which is why it
+retains *r* = 0.911 with the empirical weights and is by far the strictest of the
+five. `graph_only`'s *r*(w, distance) is undefined because every present edge
+carries the same weight; that is the control working, not a failure.
+
+`tests/anatomy/test_controls.py` holds **30 tests** over these properties —
+degree preservation, weight-multiset preservation, strength rank, edge-length
+distribution, determinism under seed, evidence downgrade, and save/load
+round-trip. All pass.
+
+#### Why G2 was blocked, and what actually unblocked it
+
+The controls were implemented and tested the whole time. What was missing was
+the *symbol the gate looks for*. `scwbd.bench.adapters.anatomy_controls()`
+probes `scwbd.anatomy.controls.graph_controls`; the controls existed only as
+`StructuralPrior.controls()`, a **method returning priors**, while `run_g2`
+wants a module-level function returning `{name: adjacency array}`. The probe
+failed, so G2 and Appendix-D row D07 reported `COULD_NOT_RUN` against a
+capability that was already present.
+
+`scwbd/anatomy/controls.py` supplies that interface:
+
+```python
+from scwbd.anatomy import anatomy_adjacency, graph_controls, control_report
+
+run_g2(anatomy=anatomy_adjacency("Schaefer400x7"),
+       controls=graph_controls("Schaefer400x7", seed=0), ...)
+```
+
+`anatomy_adjacency` and `graph_controls` are built from the *same* loaded prior,
+so the adjacency and its nulls always share a parcellation and node order —
+mixing an adjacency from one atlas with controls from another is the failure
+this pairing exists to prevent. `control_report()` returns the table above as
+JSON for the gate manifest, because G2's verdict is not interpretable unless the
+reader can check that `distance_matched` really did keep the distance decay.
+
+Note that `run_g2` **probes but does not auto-load**: the caller must pass
+`anatomy=` and `controls=` explicitly. With them supplied, both agent-C inputs
+resolve; G2 now waits only on `model_for_graph` (agent E / I) and the train/test
+datasets. **Both agent-C blockers on G2 and D07 are cleared.**
+
+> **Handoff to 🛡️ Popper — one assertion in `tests/bench/` now needs updating.**
+> `tests/bench/test_could_not_run.py::test_g2_refuses_to_invent_the_anatomy_controls`
+> asserts that G2's refusal message contains the phrase
+> *"control is the experiment"*. That phrase lived in the
+> `adapters.anatomy_controls()` **fallback** blocker — the branch taken only when
+> the probe fails — and it is now unreachable, because the probe succeeds.
+>
+> The test's *intent* still holds and is still enforced: called with
+> `controls=None`, G2 still returns `COULD_NOT_RUN`, now with
+> `"missing: graph controls (agent C): dense, randomized, distance_matched"`.
+> Only the wording changed. Asserting on `"graph controls (agent C)"` restores
+> it. That file is Popper's, so it is flagged here rather than edited.
+> Current state: `tests/bench` 120 passed, 1 failed (this one).
+
 ---
 
 ## 5. Regional heterogeneity
@@ -227,21 +465,44 @@ therefore returns **one distribution per parcel**, not one global number:
   hierarchy map mapped log-linearly onto 20–250 ms (Murray et al. 2014;
   Gao et al. 2020), σ = 0.5 in log space.
 
-### 5.1 A measured caveat on the E/I proxy
+### 5.1 A measured caveat on the E/I proxy — **corrected**
 
-On Schaefer-100 the ingredient maps co-vary strongly: NMDA-GABA-A *r* = 0.73,
-mGluR5-GABA-A *r* = 0.46. Most between-parcel variance in receptor density is a
-**shared** gradient — plausibly overall synaptic or neuronal density — not an
-excitation/inhibition contrast. Differencing removes that shared component, so
-the residual has about two-thirds the spread of its ingredients and is
-dominated by mGluR5-against-GABA-A; the NMDA contribution largely cancels
-(*r*(E/I, NMDA) ≈ 0.00). The residual does run along the sensorimotor-association
-axis in the expected direction (*r* ≈ 0.43), so it is not noise, but it is a
-weak second-order contrast, and a model that leans hard on it is leaning on the
-part of a PET signal that two tracers disagree about. This is why `ei_proxy`
-carries `mechanistic_status="surrogate"` and a model-class variance as large as
-its measurement variance. `tests/anatomy/test_maps.py` pins the property so it
-cannot silently change.
+⚠️ **The previous version of this section was measured on the wrong artifacts.**
+It reported NMDA-GABA-A *r* = 0.73 with the NMDA contribution cancelling out
+(*r*(E/I, NMDA) ≈ 0.00), and concluded that the E/I proxy was a weak,
+heavily-cancelling second-order residual. Those numbers came from cached maps
+built by the **volumetric-join** route, while the module documents and ships the
+**surface-sampling** route (§1.6). The artifacts were never rebuilt after the
+route changed, so code and cache disagreed silently. Rebuilt correctly:
+
+| quantity | Schaefer-100 | Schaefer-400 |
+|---|---|---|
+| NMDA – GABA-A | **+0.264** | **+0.346** |
+| mGluR5 – GABA-A | +0.275 | +0.500 |
+| *r*(E/I, NMDA) | **+0.510** | **+0.536** |
+| *r*(E/I, GABA-A) | −0.617 | −0.516 |
+| *r*(E/I, S-A axis) | +0.404 | +0.303 |
+| sd(E/I) / mean sd(ingredients) | **1.10** | **0.95** |
+
+The ingredients co-vary only **moderately**, the contrast retains essentially the
+full spread of its ingredients rather than two-thirds of it, and **NMDA is a
+substantial contributor rather than a cancelling one**. The E/I proxy is
+materially *less* degenerate than this report previously claimed.
+
+That is not simply good news. The contrast's largest single contributor is NMDA,
+and NMDA is the **least route-stable map in the whole panel** (*r* = 0.59
+between routes, §1.6). GABA-A is the fourth-least (0.685). So:
+
+> The E/I proxy is not a weak contrast built on solid ingredients. It is a
+> reasonably strong contrast built on precisely the two ingredients whose
+> parcel values depend most on how the PET volume was read.
+
+`ei_proxy` therefore keeps `mechanistic_status="surrogate"`, names its fragile
+ingredients in `validity_domain["route_fragile_ingredients"]`, widens its swept
+interval by 0.5 per fragile ingredient, and states the consequence in
+`forbidden_inference`. `tests/anatomy/test_maps.py` pins the corrected band
+(0.1 < *r* < 0.6) two-sided, so neither a drift back toward degeneracy nor a
+silent route change can pass unnoticed.
 
 Parcels with no receptor or hierarchy coverage — subcortical, cerebellar — get
 the **same centre with a doubled width**, and the provenance string says
@@ -371,7 +632,34 @@ python -m scwbd.anatomy.build            # build what is missing
 python -m scwbd.anatomy.build --rebuild  # rebuild everything from upstream
 python -m scwbd.anatomy.build --verify   # re-hash every manifest entry
 pytest tests/anatomy -q
+
+# the route comparison of S1.6 (slow: the volumetric arm is ~22 s per tracer)
+python -m scwbd.anatomy.route_check --atlas Schaefer400x7 --atlas Schaefer100x7
 ```
+
+**Rebuild the maps whenever the sampling route changes.** The cached `.npz`
+files do not know which route produced them, and a stale cache silently served
+volumetric-route values against surface-route code for an entire revision
+(§0.1). `--verify` catches a corrupted artifact; it does **not** catch an
+artifact that is intact but was built by superseded code. Delete
+`assets/derived/maps/*.npz` and rebuild if in doubt.
+
+**Do not run two builds concurrently.** The incomplete artifacts described in
+§0.1 and §1.5 were produced by overlapping build processes under memory
+pressure: `load_maps` catches per-map exceptions and continues, so a build that
+loses a race degrades quietly rather than failing. Serial builds are cheap.
+
+Cost and memory, measured (GB10, unified memory, one 14 GB cgroup):
+
+| step | wall clock | peak RSS |
+|---|---|---|
+| `load_maps(Schaefer400x7, rebuild=True)` — 39 PET volumes, surface route | 11.2 s | 0.79 GB |
+| single volumetric-route tracer (1 mm resample + parcel means) | 3.5 s | 0.79 GB |
+| `pytest tests/anatomy` (220 tests) | 3.9 s | 1.15 GB |
+| `route_check` two atlases, 39 tracers each | ~28 min | < 1 GB |
+
+Nothing here approaches the cap; the volumetric route is slow because it
+resamples a 1 mm MNI152 volume per tracer, not because it is large in memory.
 
 ```python
 from scwbd.anatomy import BrainPrior
