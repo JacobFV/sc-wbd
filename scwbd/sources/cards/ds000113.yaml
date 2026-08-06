@@ -273,7 +273,37 @@ spatial:
   psf: >-
     unknown as an instrument spec; the effective haemodynamic point spread is
     larger than the voxel and is not published for this release
-  extent: "whole brain"
+  # CORRECTED 2026-08-06 (🗄️ Ada). This field previously read 'whole brain'.
+  # I wrote that; nothing in the release supports it. The dataset's own README
+  # states "FOV = see the dataset README" and "N of slices: 35" and never claims whole-brain
+  # coverage, and the BIDS sidecars carry SliceThickness/SpacingBetweenSlices
+  # and no coverage field at all. Re-derived from the NIfTI headers on disk:
+  # 35 slices x 3.3 mm = 116 mm nominal slab. A card that implies
+  # whole-brain coverage for a slab is the same defect as ds004024 declaring
+  # `dwi` - it reads as coverage we do not have.
+  extent: "a 116 mm slab, NOT established as whole-brain"
+  coverage:
+    slab_mm: 116
+    n_slices: 35
+    slice_thickness_mm: 3.3
+    in_plane: "80 x 80 @ 3.0 mm"
+    whole_brain: unknown
+    evidence: >-
+      Re-derived from the NIfTI headers of the 20 functional runs on disk:
+      35 slices x 3.3 mm = 116 mm. Whether that contains each subject's whole
+      brain is UNMEASURED here - the per-slice and T1w-extent checks were run
+      for ds002336, not for this dataset, and stating a result for one source
+      from a measurement on another is exactly the relayed number this
+      register keeps being burned by. 116 mm is on the low side for whole-brain
+      coverage, so the honest value is unknown, not true.
+    consequence: >-
+      Parcels lying outside the slab have NO measurement in this source, in
+      every subject, by acquisition rather than by chance. That is a support
+      fact, not a missing-data problem: rule 1 forbids imputing it, so the
+      haemodynamic likelihood must carry a DECLARED PER-PARCEL COVERAGE MASK
+      and contribute no term where the mask is empty. Establishing that mask
+      needs the registration N-4a describes, so it does not exist yet, and
+      until it does no claim from this source may be stated per parcel.
   n_elements: "BOLD voxel grid read per file from the NIfTI header. 20 functional runs on disk across 4 participants."
 
 # =====================================================================
@@ -355,6 +385,16 @@ missingness:
     ses-localizer and ses-movie exist for 15 of the 20 participants upstream;
     ses-auditoryperception was fetched for 4 of 20 (a bandwidth decision).
   unplanned: "BOLD on disk per session: ses-localizer for 4 participants. Physiological recordings: 37 cardiac/respiratory files and 24 eye-gaze files are readable; 32 further physio files carry no `recording-` entity and no sidecar exists for them at any level, so their rate and columns are unstated and load_physio refuses them."
+  spatial_coverage: >-
+    THE ACQUISITION IS A SLAB, NOT A HEAD. See spatial.coverage. Parcels
+    outside it have no measurement in any subject, systematically, by
+    acquisition. This is missing-by-design at the level of the SUPPORT, which
+    is a different object from a dropped run: a dropped run is excluded, an
+    uncovered parcel has no observation operator at all. Rule 1 forbids
+    imputing it as zero or as an average brain, so the haemodynamic likelihood
+    must carry a declared per-parcel coverage mask and contribute NO term where
+    that mask is empty. The mask needs the registration N-4a describes and does
+    not exist yet.
   artifact_rejection: "none applied; raw NIfTI as released"
   dropout: >-
     eye-gaze track loss during blinks and large saccades. Marked in the file,
@@ -405,13 +445,13 @@ gradient_permission:
   allow:
     - target: dynamics.early_visual.retinotopic_response
       scales: ["voxel"]
-      requires: ["temporal.sfreq_hz", "spatial.frame", "signal.bold_acquisition"]
+      requires: ["temporal.sfreq_hz", "spatial.frame", "signal.bold_acquisition", "spatial.coverage.whole_brain"]
     - target: dynamics.auditory.spectrotemporal_response
       scales: ["voxel"]
       requires: ["temporal.sfreq_hz", "temporal.event_clock"]
     - target: observe.bold.haemodynamic_response
       scales: ["voxel"]
-      requires: ["temporal.sfreq_hz", "signal.bold_acquisition"]
+      requires: ["temporal.sfreq_hz", "signal.bold_acquisition", "spatial.coverage.whole_brain"]
     - target: dynamics.interoceptive.cardiorespiratory_boundary
       scales: ["boundary"]
       requires: ["temporal.sfreq_hz", "signal.channel_names"]

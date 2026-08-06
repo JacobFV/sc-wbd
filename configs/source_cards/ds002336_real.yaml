@@ -19,6 +19,19 @@
 # DISABLED: declared narrowing N-4a. The BOLD is in scanner space; the model's
 # state is indexed by Schaefer parcels; no registration between them has been
 # run. See ARCHITECTURE.md §5b N-4a and reports/sources/inventory.md §3.
+# SECOND BLOCKER, added 2026-08-06 after 🧠 Cajal's D9 slab finding. The EPI is
+# a 128 mm slab, not a head, and whether it contains each subject's whole
+# brain is UNKNOWN (no segmentation tool is installed to settle it). Parcels
+# outside the slab have no measurement in any subject, systematically, by
+# acquisition. Enabling this card before a declared per-parcel coverage mask
+# exists would contribute a likelihood term for regions with no observation
+# operator at all -- an imputation, and rule 1 forbids it.
+#
+# This is enforced, not just written here: `spatial.coverage.whole_brain` is
+# `unknown` on the dataset card and is named in the `requires` of every
+# BOLD-facing gradient target, so Appendix B disables those paths by itself.
+# Setting `enabled: true` on this file is NOT sufficient to train `bold.*`.
+
 id: ds002336_real
 role: likelihood
 enabled: false

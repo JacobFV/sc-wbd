@@ -10,7 +10,7 @@ it.  A card that reads as coverage we do not have is worse than a missing
 card — it is the exact failure catalogued in ``reports/decorative_guards.md``,
 where ~26 guards looked green and could not fire.
 
-This module is the check that fires.  Five claims are re-derived from the
+This module is the check that fires.  Six claims are re-derived from the
 filesystem, never from the manifest and never from another report:
 
 ``A1 status``
@@ -38,6 +38,14 @@ filesystem, never from the manifest and never from another report:
     pass: silence is how a phantom modality survives.  An optional
     ``channel_type`` narrows the claim further by reading one file's header.
 
+``A6 spatial coverage``
+    Every functional acquisition we hold is a **slab** — 116-129 mm along the
+    slice normal against a head 190-207 mm deep — and a card whose ``spatial``
+    text says "whole brain" is claiming that parcels outside it were measured.
+    ``spatial.coverage.slab_mm`` is re-derived from a real NIfTI header, and an
+    affirmative ``whole_brain`` needs evidence behind it.  ``unknown`` is
+    always acceptable; it is the honest answer until a brain mask exists.
+
 ``A5 licence``
     The free-text ``governance.license`` is classified by
     ``scwbd.release.licence`` and must agree with the card's own declared
@@ -48,13 +56,18 @@ filesystem, never from the manifest and never from another report:
 **What this module does not do.**  A glob is evidence that a *file* exists, not
 proof of what is inside it.  ``channel_type`` closes that for header-bearing
 formats (FIFF, EDF, BrainVision) and nothing closes it for NIfTI, where the
-declared modality is carried by the BIDS suffix and not by the bytes.  Stated
-because an audit that overclaims its own reach is the thing it exists to stop.
+declared modality is carried by the BIDS suffix and not by the bytes.  A6
+likewise checks the *geometry* of a slab, not whether that slab contains a
+brain — separating scalp from superior cortex needs a segmentation tool that is
+not installed, which is why ``whole_brain: unknown`` is a real answer here and
+not a placeholder.  Stated because an audit that overclaims its own reach is
+the thing it exists to stop.
 """
 
 from __future__ import annotations
 
 import fnmatch
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -347,6 +360,10 @@ def audit_card(card: SourceCardDoc | str | Path, root: Path | str | None = None)
                         f"{len(present)} on disk")
             )
 
+    # ---- A6 spatial coverage --------------------------------------------
+    audit.checks_run.append("A6_spatial_coverage")
+    _audit_coverage(card, audit, rels, root)
+
     # ---- A4 modality evidence -------------------------------------------
     audit.checks_run.append("A4_modality_evidence")
     sig = card.data.get("signal", {}) or {}
@@ -425,6 +442,112 @@ def audit_card(card: SourceCardDoc | str | Path, root: Path | str | None = None)
                         "evidence without a declaration is as misleading as the reverse")
             )
     return audit
+
+
+#: "whole brain" preceded by an explicit denial is a *disclaimer*, not a claim.
+#: ``scwbd/release/licence.py`` records being burned by exactly this: a licence
+#: field written to be helpful ("no non-commercial or share-alike term") was
+#: classified NC because the classifier matched the phrase and not the
+#: sentence. The same trap is here, and it caught this check on its first run
+#: against the very cards it was written to fix, whose extent reads "NOT
+#: established as whole-brain". Narrow by design: it suppresses a match only
+#: when a denial immediately precedes the phrase.
+_WHOLE_BRAIN = re.compile(r"whole[-\s]?brain", re.I)
+_DENIAL = re.compile(r"\b(not|no|never|un)\w*\s+(\w+\s+){0,3}$", re.I)
+
+
+def _claims_whole_brain(text: str) -> bool:
+    """True only for an AFFIRMATIVE whole-brain claim."""
+    for m in _WHOLE_BRAIN.finditer(text):
+        if not _DENIAL.search(text[: m.start()]):
+            return True
+    return False
+
+
+def _audit_coverage(
+    card: SourceCardDoc, audit: CardAudit, rels: Sequence[str], root: Path
+) -> None:
+    """A volumetric source may not imply coverage its FOV does not have.
+
+    Every functional acquisition we hold is a **slab**: 116-129 mm along the
+    slice normal against a head 190-207 mm deep.  A card whose ``spatial``
+    block says "whole brain" is claiming that parcels outside the slab were
+    measured, and the haemodynamic likelihood would then contribute a term for
+    regions with no observation operator at all.  That is the ds004024 defect
+    in a different field — coverage asserted rather than measured.
+
+    So: a card with BOLD on disk must carry ``spatial.coverage``, its
+    ``slab_mm`` must match ``n_slices x slice_thickness_mm`` **re-derived from
+    a real NIfTI header**, and ``whole_brain`` may be ``true`` only with
+    ``coverage.evidence`` behind it.  ``unknown`` is always acceptable; it is
+    the honest answer until a brain mask and a registration exist.
+    """
+    cid = card.id
+    spa = card.data.get("spatial", {}) or {}
+    bold = [r for r in rels if r.endswith(("_bold.nii.gz", "_bold.nii"))
+            and "derivatives" not in Path(r).parts]
+    cov = spa.get("coverage")
+    if not bold:
+        if isinstance(cov, dict):
+            audit.findings.append(
+                Finding(cid, "A6_spatial_coverage", "a spatial.coverage block",
+                        "no BOLD on disk to have coverage of")
+            )
+        else:
+            audit.skipped.append("A6_spatial_coverage(no volumetric data)")
+        return
+
+    text = " ".join(str(spa.get(k, "")) for k in ("extent", "kind", "kind_note")).lower()
+    claims_whole = _claims_whole_brain(text)
+    if not isinstance(cov, dict):
+        audit.findings.append(
+            Finding(cid, "A6_spatial_coverage", f"{len(bold)} BOLD runs on disk",
+                    "no spatial.coverage block",
+                    "a volumetric source must state its slab; without one, "
+                    "'whole brain' is the reading a downstream consumer will take")
+        )
+        return
+
+    wb = cov.get("whole_brain")
+    if wb is True and not str(cov.get("evidence", "")).strip():
+        audit.findings.append(
+            Finding(cid, "A6_spatial_coverage", "whole_brain: true",
+                    "no coverage.evidence", "whole-brain coverage must be measured")
+        )
+    if wb is not True and claims_whole:
+        audit.findings.append(
+            Finding(cid, "A6_spatial_coverage",
+                    f"spatial text says 'whole brain' while whole_brain={wb!r}",
+                    "the two disagree",
+                    "prose and the machine-readable field must not contradict")
+        )
+
+    # Re-derive the slab from a real header rather than trusting the arithmetic.
+    try:
+        import nibabel as nib
+
+        img = nib.load(root / bold[0])
+        n_sl = int(img.shape[2])
+        th = float(img.header.get_zooms()[2])
+    except Exception as exc:  # pragma: no cover - unreadable volume
+        audit.findings.append(
+            Finding(cid, "A6_spatial_coverage", "a checkable slab",
+                    f"{bold[0]} unreadable: {exc}")
+        )
+        return
+    for key, got in (("n_slices", n_sl), ("slice_thickness_mm", th)):
+        want = cov.get(key)
+        if want is not None and abs(float(want) - got) > 1e-3:
+            audit.findings.append(
+                Finding(cid, "A6_spatial_coverage", f"{key}={want}",
+                        f"{got} in {bold[0]}")
+            )
+    want_slab = cov.get("slab_mm")
+    if want_slab is not None and abs(float(want_slab) - n_sl * th) > 0.5:
+        audit.findings.append(
+            Finding(cid, "A6_spatial_coverage", f"slab_mm={want_slab}",
+                    f"{n_sl * th:.1f} mm re-derived from {bold[0]}")
+        )
 
 
 def _audit_licence(card: SourceCardDoc, audit: CardAudit) -> None:

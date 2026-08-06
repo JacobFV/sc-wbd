@@ -29,7 +29,22 @@ are out of scope). §6 and §11 are the parts the narrowed scope makes
 load-bearing. Nothing was withdrawn; §4 is re-scoped by the anatomy prior's
 nine declared families rather than by §6.1's six.
 
-Four findings, in order of consequence.
+Six findings, in order of consequence.
+
+0a. **My own filed number was wrong, and 🧠 Cajal's was right.** I filed
+   23.25 mm as the ds002336 affine spread; it is **28.77 mm**. Mine was a max
+   over affine matrix *entries*, not a distance (§12.2). Cajal's companion
+   claim — that voxel sizes vary across subjects — does **not** reproduce: all
+   55 runs are identically 1.981×1.981×4.000 mm, and their range is
+   `np.diag(affine)`, which on an oblique acquisition is the voxel size times
+   the cosine of head tilt. Both corrections are in §12.2 with the method
+   stated alongside each figure.
+
+0b. **The acquisitions are slabs and two of my cards said "whole brain."**
+   128 mm (ds002336), 124 mm (ds000117), 116 mm (ds000113) against a head
+   191–207 mm deep. Nothing in either release claims whole-brain coverage; I
+   wrote it. Corrected, and the BOLD-facing gradient paths now **disable
+   themselves** while coverage is unknown (§13).
 
 0. **The licence route was populated but not read, and I found it by running
    it.** A combined `haemodynamic_real` mixture card linked to **no** dataset
@@ -902,17 +917,66 @@ mri_vol2vol ABSENT   recon-all    ABSENT   3dAllineate  ABSENT
 antspy MISSING       nipype       MISSING
 ```
 
-And there is no shortcut, because the data are genuinely in native space —
-measured by comparing the BOLD affines of the ten ds002336 subjects against
-each other:
+And there is no shortcut, because the data are genuinely in native space.
+
+**Corrected figure.** I first filed **23.25 mm**. 🧠 Cajal filed **28.77 mm**.
+Re-derived, with the method stated:
+
+| method | figure | what it is |
+|---|---:|---|
+| mine, as filed | 23.25 | `max abs(A_i − A_ref)` over all 16 **matrix entries**, referenced to one subject |
+| Cajal's | **28.77 mm** | max **pairwise Euclidean distance** between FOV centres in world coordinates |
+
+**Cajal's is right and mine was wrong.** 23.25 is a maximum over affine matrix
+*entries* — it mixes the unitless rotation/scale block with the translation
+column, is referenced to one arbitrary subject rather than pairwise, and is not
+a distance at all. Calling it "mm" was the error. `reports/sources/inventory.md`
+and `ARCHITECTURE.md` §5b now both carry 28.77 mm, reproduced exactly:
 
 ```
-sub-xp101 … sub-xp110   frame=scanner_anat_RAS   max|A - A_ref| up to 23.25 mm
+max pairwise FOV-centre distance = 28.77 mm  (sub-xp108 vs sub-xp110)
+per-axis spread: x 13.4   y 20.3   z 27.8 mm
 ```
 
-23 mm of disagreement is most of a lobe. ds000113's retinotopy is
-`scanner_anat_RAS` too, and ds000117's BOLD is `aligned_anat_RAS` — aligned to
-another scan of the *same subject*, still not to a template.
+ds000113's retinotopy is `scanner_anat_RAS` too, and ds000117's BOLD is
+`aligned_anat_RAS` — aligned to another scan of the *same subject*, still not
+to a template.
+
+**And the second half of Cajal's argument does not survive re-derivation.**
+They report voxel sizes varying across subjects (y 1.76–1.96 mm, z 3.56–3.98
+mm) as an *acquisition-grounds* argument for per-subject transforms,
+independent of head position. Measured from the headers, every one of the 55
+ds002336 BOLD runs has **identical** voxel dimensions:
+
+```
+sub-xp101 … sub-xp110   1.981 x 1.981 x 4.000 mm   (all 55 runs, all tasks)
+ds000113  3.0 x 3.0 x 3.3 mm (20/20 runs)
+ds000117  3.0 x 3.0 x 3.75 mm (9 runs) and 3.0 x 3.0 x 3.90 mm (9 runs)
+```
+
+Their range reproduces exactly — as `np.diag(affine)`:
+
+```
+diag(A) range across the ten subjects:  y 1.76-1.96   z 3.56-3.98
+Cajal reported:                         y 1.76-1.96   z 3.56-3.98
+```
+
+On an oblique acquisition the affine diagonal is **not** the voxel size; the
+column norms are (`nibabel.header.get_zooms()`). The diagonal is the true size
+times the cosine of the tilt, so it understates the voxel and varies with head
+position — 7.7° to 27.1° across these ten subjects. So the "voxel size
+variation" is *the same head-position confound* Cajal correctly identified in
+the affine-spread argument, entering through a different door. It does not
+supply the independent acquisition-grounds argument they were reaching for, and
+I am not folding it in as one.
+
+**What does survive is better than either.** ds000117 genuinely varies within
+itself — 3.75 mm slices for sub-01 and 3.90 mm for sub-02, nine runs each. Two
+participants, not acquired identically. That is a real acquisition difference,
+and it is the honest form of the point: per-subject transforms are forced by
+obliquity that differs per subject (7.7°–27.1°, which no rigid-body-in-a-common-grid
+assumption survives), and by genuine per-subject acquisition differences where
+they exist.
 
 I checked the one path that would have avoided writing registration at all:
 StudyForrest ships `linear_anatomical_alignment` transforms upstream (158
@@ -980,3 +1044,112 @@ native supports, which `bids_bold` and `bids_eeg` already return. It does
 **not** need the parcellation: a restriction operator between two temporal
 resolutions is a different object from a spatial parcel map. That work is not
 blocked by N-4a and should not wait for it.
+
+---
+
+## 13. The acquisitions are slabs, and my cards said otherwise
+
+🧠 Cajal's D9 raised a crude indication that `ds002336`'s EPI is a partial-brain
+slab. It reaches me because a source card describes what we hold, and a card
+implying whole-brain coverage for a slab is the `ds004024`-declaring-`dwi`
+defect in a different field.
+
+### 13.1 What the cards said, and whose error it was
+
+```
+ds002336   extent: "whole head (EEG); whole brain (BOLD, 4 mm slices)"
+ds000113   extent: "whole brain"
+```
+
+**Both were mine, and nothing in either release supports them.** `ds002336`'s
+own README states `FOV = 210×210mm2`, `N of slices: 32`, `No slice gap`, and
+**never claims whole-brain coverage**; the BIDS sidecars carry `SliceThickness`
+and `SpacingBetweenSlices` and no coverage field at all. I wrote "whole brain"
+from habit. These two were also the *only* cards in the register with a non-null
+`extent` — every pre-existing card left it `null`, which was honest. I
+introduced this defect twice while adding the sources.
+
+### 13.2 Measured
+
+| dataset | slices × thickness | slab | in-plane |
+|---|---|---:|---|
+| `ds002336` | 32 × 4.00 mm | **128 mm** | 106×106 @ 1.98 mm |
+| `ds000117` | 33 × 3.75 mm (sub-02: 3.90) | **124 mm** (129) | 64×64 @ 3.0 mm |
+| `ds000113` | 35 × 3.30 mm | **116 mm** | 80×80 @ 3.0 mm |
+
+For `ds002336`, against each subject's **own T1w** projected onto that run's
+slice normal:
+
+- head extent along the slice normal: **191–207 mm** against a 128 mm slab;
+- head tissue **above** the slab in **9 of 10** subjects, 0.0–20.7 mm;
+- slice 0 holds **6.6–27.9 %** of the peak slice's in-brain voxel count, slice
+  31 holds **0.5–13.6 %** — a slab containing the whole brain tapers to near
+  zero at both ends. Cajal's 10–36 % is the same measurement with a different
+  threshold, and the conclusion is the same.
+
+**This is strong evidence of clipping and it is not proof.** No brain
+segmentation tool is installed, so "head tissue above the slab" cannot yet be
+separated into scalp versus superior cortex — 20 mm is more than scalp, 3 mm is
+not. Cajal was right to call their check crude and right to confirm it before
+any registration work. I have not resolved it either, and the cards say
+`whole_brain: unknown` rather than picking a direction.
+
+### 13.3 What the cards say now
+
+`spatial.extent` corrected on all three, and a machine-readable
+`spatial.coverage` block added: `slab_mm`, `n_slices`, `slice_thickness_mm`,
+`whole_brain: unknown`, and the evidence. Plus a `missingness.spatial_coverage`
+entry stating that an uncovered parcel is missing **at the level of the
+support** — a different object from a dropped run. A dropped run is excluded; an
+uncovered parcel has no observation operator at all, so rule 1 forbids imputing
+it and the haemodynamic likelihood must carry a declared per-parcel coverage
+mask and contribute no term where that mask is empty.
+
+### 13.4 The part that is enforced rather than written down
+
+`spatial.coverage.whole_brain: unknown` is named in the `requires` of every
+BOLD-facing gradient target, so **Appendix B disables those paths by itself**:
+
+```
+ds002336  DISABLED  observe.bold.haemodynamic_response
+                    prerequisite field(s) unknown -> spatial.coverage.whole_brain
+ds000113  DISABLED  dynamics.early_visual.retinotopic_response
+          DISABLED  observe.bold.haemodynamic_response
+```
+
+That is N-4a enforced by machinery instead of by `enabled: false` in a config
+file, and it is strictly better: a future agent who enables the mixture card
+still cannot train `bold.*` until coverage is established. Pinned by
+`test_the_haemodynamic_gradient_path_is_disabled_while_coverage_is_unknown`.
+
+### 13.5 New audit check A6
+
+A volumetric source must state its slab; `slab_mm` is re-derived from a real
+NIfTI header; an affirmative `whole_brain` needs evidence; and prose must not
+contradict the machine-readable field. Six negative controls in
+`tests/sources/test_audit.py`.
+
+A6 **fired on its first run against the very cards it was written to fix** —
+their corrected extent reads "NOT established as whole-brain" and the substring
+matched. That is the trap `scwbd/release/licence.py` documents having been
+caught by (a helpful field, "no non-commercial term", classified as asserting
+NC). Fixed with the same narrow negation guard, and
+`test_A6_does_not_fire_on_a_negated_mention` is there so the fix cannot rot.
+
+### 13.6 Does this reduce what `ds002336` is worth?
+
+Somewhat, and in a bounded way that is worth stating precisely.
+
+- **The pairing is untouched.** Simultaneous 5000 Hz EEG and TR-2 s BOLD on the
+  same subject in the same 20 s block does not depend on how much brain the
+  slab covers. It remains the only fully paired episode we hold.
+- **The motor claim is untouched.** The slab is positioned for a motor-imagery
+  neurofeedback study; precentral and supplementary-motor parcels are the
+  parcels it was aimed at.
+- **Whole-brain claims from this source are gone**, and they should never have
+  been available: any statement over all 414 parcels from a 128 mm slab would
+  have been an imputation over regions with no measurement, in every subject,
+  systematically. That is a *better* outcome than discovering it after training.
+- **The coverage mask is now a required deliverable of registration**, not an
+  afterthought — which is the right sequencing, and is why Cajal confirming the
+  slab before starting registration is the correct order.
