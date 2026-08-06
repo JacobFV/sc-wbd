@@ -138,3 +138,20 @@ def test_the_variance_variant_is_registered_with_the_retraction():
     # the criterion between repairing an instrument and accommodating a failure
     assert "leave it red" in row.remedy
     assert "seed_stability" in row.remedy
+
+
+def test_bench_never_reads_a_provenance_ASSERTION_of_a_property_it_audits():
+    """The rule that kept bench clean when leakage_checked=True was hard-coded.
+
+    An audit must RECOMPUTE the property, never read a field asserting it.
+    scwbd.bench.leakage re-derives grouping from immutable lineage records on
+    every run and consumes no provenance flag.
+    """
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parents[2] / "scwbd" / "bench"
+    for path in root.glob("*.py"):
+        src = path.read_text(encoding="utf-8")
+        assert "leakage_checked" not in src, f"{path.name} reads a leakage ASSERTION"
+    leak = (root / "leakage.py").read_text(encoding="utf-8")
+    assert "GroupedSplitter" in leak and "leakage_audit" in leak

@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Fifteen times in this project an
+The generalisation was forced by evidence.  Seventeen times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -181,6 +181,60 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         found_by="agent Turing (self-reported, unprompted)",
         owner="training (agent I) / bench (agent J) adjudicates",
         still_reported=True,
+    ),
+    UninformativeField(
+        name="leakage_checked=True, hard-coded on every source card",
+        reads="'the leakage audit passed' -- identically to 'no audit ever ran'",
+        why_it_cannot_discriminate=(
+            "THE ABSENCE VARIANT IN THE PROVENANCE LAYER, and it is worse than the cached- "
+            "artifact cases above. compiler_bridge.py:1351 sets leakage_checked=True "
+            "unconditionally on every observation SourceCard, with no reference to whether "
+            "any audit ran -- and the trainer never ran one: train.py:335 calls "
+            "participant_split directly and never calls leakage_check, while the correct "
+            "routine in realdata.py splits, audits and RAISES on failure. So the field "
+            "asserts a property nothing established, and the schema resolves the ambiguity "
+            "in the FAVOURABLE direction by construction. "
+            "The lesson is not carelessness: leakage_checked=True was TRUE WHEN WRITTEN, for "
+            "a pipeline that later stopped guaranteeing it, and nothing forced "
+            "re-examination. That is staleness in an ASSERTION rather than in an artifact, "
+            "and it is the worse case -- a stale artifact can be re-derived, a stale "
+            "assertion has no source to re-derive from"
+        ),
+        remedy=(
+            "POLICY, and it is what kept bench clean here: AN AUDIT MUST RECOMPUTE THE "
+            "PROPERTY, NEVER READ AN ASSERTION OF IT. scwbd.bench.leakage consumes agent "
+            "Ada's GroupedSplitter and leakage_audit and re-derives grouping from immutable "
+            "lineage records on every run; it reads no provenance flag anywhere. The same "
+            "idea one layer up is finalize()'s refusal to let a numerical check PASS without "
+            "recording what it measured"
+        ),
+        found_by="agent Turing (gating Stage III before real EEG entered any loss)",
+        owner="foundation (agent I) + compiler bridge; bench audited itself and is unaffected",
+        still_reported=False,
+        recurrence=(
+            "BENCH IMPACT: NONE. leakage_checked appears nowhere in scwbd/bench/** or "
+            "tests/bench/**; no gate, ablation or Appendix-D audit consumes it, and no PASS "
+            "verdict depends on it. All twelve Appendix D rows are additionally "
+            "COULD_NOT_RUN for want of records, so there is no leakage verdict on the "
+            "scoreboard to requalify in either direction"
+        ),
+    ),
+    UninformativeField(
+        name="a degraded path that records its degradation in a field nobody reads",
+        reads="normal operation, with the degradation noted where it will not be seen",
+        why_it_cannot_discriminate=(
+            "participant_split falls back to a deterministic HASH split when Ada's splitter "
+            "fails to import or adapt, setting participant_split_backend accordingly but not "
+            "warning loudly. A hash split is not lineage-aware grouping -- R10 requires "
+            "grouping by immutable lineage BEFORE splitting -- so the fallback silently "
+            "violates the refusal the split exists to honour, and records that fact only in "
+            "a field nobody reads. A degraded path whose degradation is invisible is "
+            "functionally a silent one"
+        ),
+        remedy="refuse rather than warn; a fallback that cannot honour R10 must not run",
+        found_by="agent Turing",
+        owner="foundation (agent I)",
+        still_reported=False,
     ),
     UninformativeField(
         name="a gate whose threshold is read from the artifact it judges",
