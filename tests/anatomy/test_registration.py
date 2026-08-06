@@ -126,3 +126,22 @@ def test_coverage_counts_zero_as_unobserved(atlas):
     assert cov.n_voxels[7] == 1
     assert cov.summary()["n_uncovered"] == 399
     assert "impute" in cov.notes.lower()
+
+
+def test_anatomy_prior_declares_the_frame_it_is_actually_in():
+    """The declared frame must come from the atlas, not a hardcoded default.
+
+    Mutation this catches: restoring ``frame=str(getattr(obj, "frame",
+    "MNI152NLin2009cAsym_RAS"))``. BrainPrior exposes no ``frame`` attribute, so
+    that default won on every load and asserted a template the data is not in --
+    a *declared* wrong frame, which downstream registration would trust, rather
+    than an unknown one that R01 would refuse.
+    """
+    from scwbd.foundation.anatomy import load_anatomy
+
+    a = load_anatomy(device="cpu")
+    assert "fsLR" in a.frame and "conte69" in a.frame
+    assert "NLin2009cAsym" not in a.frame, (
+        "the prior is declaring MNI152NLin2009cAsym again; its support is the "
+        "fsLR-32k/conte69 surface and its volumetric atlas is MNI152NLin6Asym"
+    )
