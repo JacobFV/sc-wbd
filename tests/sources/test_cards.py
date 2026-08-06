@@ -194,6 +194,38 @@ def test_bias_interval_is_ordered_and_bias_status_declared(cards):
         }, cid
 
 
+def test_unknown_bias_never_projects_as_a_zero_bias_claim(cards):
+    """An unknown ledger must reach the typed schema as *unbacked*, not as zero bias.
+
+    ``scwbd.schema.UncertaintyLedger`` has no ``unknown`` value for
+    ``bias_interval``: it is a required ``tuple[float, float]``.  The projection
+    therefore falls back to ``(0.0, 0.0)`` + ``prior_specified_sensitivity``,
+    which is exactly what agent A's own ``UncertaintyLedger.unknown()``
+    constructor produces.  That is only honest because the degenerate interval
+    makes ``has_estimator()`` False, so R08 refuses the source downstream
+    instead of reading a zero-width interval as a confident zero-bias claim.
+
+    This test pins that coupling.  If the schema ever gains a real ``unknown``
+    representation, or if ``has_estimator`` stops keying off the degenerate
+    interval, the projection must be revisited rather than left to coincide.
+    """
+    pytest.importorskip("scwbd.schema")
+    from scwbd.schema import SourceCard  # noqa: F401
+
+    doc = next(d for d in cards.values() if d.status != "unavailable")
+    payload = copy.deepcopy(doc.to_typed_payload())
+    # what a live card with an unresolved ledger would project to
+    payload["ledger"]["bias_interval"] = (0.0, 0.0)
+    payload["ledger"]["bias_status"] = "prior_specified_sensitivity"
+    payload["ledger"].pop("external_bound_source", None)
+    typed = SourceCard.model_validate(payload)
+    assert typed.ledger.is_bias_point_estimate
+    assert not typed.ledger.has_estimator(), (
+        "an unknown bias projected as (0,0) must remain unbacked evidence (R08); "
+        "it is now reading as a supported point estimate"
+    )
+
+
 def test_no_variance_entry_is_silently_zero(cards):
     """A zero variance is a reliability claim; unknown must stay unknown."""
     for cid, doc in cards.items():
