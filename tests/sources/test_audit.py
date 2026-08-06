@@ -317,3 +317,98 @@ def test_every_card_declares_a_routable_licence_field(cards):
             f"{cid}: no governance.license_spdx; the checkpoint policy would have "
             f"only free text to route on"
         )
+
+
+# ---------------------------------------------------------------------------
+# A6: a slab may not be described as a brain
+# ---------------------------------------------------------------------------
+def test_A6_runs_on_every_source_that_has_bold():
+    audits = audit_all()
+    for did in ("ds002336", "ds000113", "ds000117"):
+        if not registry.get(did).local_path.exists():
+            continue
+        assert "A6_spatial_coverage" in audits[did].checks_run
+
+
+def test_A6_fires_on_an_affirmative_whole_brain_claim(tmp_path):
+    """The defect this check exists for, reconstructed.
+
+    Both cards I wrote for the new haemodynamic sources originally said
+    "whole brain". Every functional acquisition we hold is a slab.
+    """
+    root = _real_root("ds002336")
+
+    def mutate(d):
+        d["spatial"]["extent"] = "whole brain coverage in every subject"
+
+    a = audit_card(_write_card(tmp_path, "ds002336", mutate), root=root)
+    assert "A6_spatial_coverage" in _checks(a)
+
+
+def test_A6_does_not_fire_on_a_negated_mention(tmp_path):
+    """"NOT established as whole-brain" is a disclaimer, not a claim.
+
+    `scwbd/release/licence.py` records being burned by exactly this shape --
+    a helpful field ("no non-commercial term") classified as asserting the
+    thing it denied. This check hit the same trap on its first run, against
+    the very cards it was written to fix.
+    """
+    root = _real_root("ds002336")
+
+    def mutate(d):
+        d["spatial"]["extent"] = "a 128 mm slab, NOT established as whole-brain"
+
+    a = audit_card(_write_card(tmp_path, "ds002336", mutate), root=root)
+    assert "A6_spatial_coverage" not in _checks(a)
+
+
+def test_A6_fires_when_the_declared_slab_contradicts_the_header(tmp_path):
+    root = _real_root("ds002336")
+
+    def mutate(d):
+        d["spatial"]["coverage"]["slab_mm"] = 180        # a whole head
+
+    a = audit_card(_write_card(tmp_path, "ds002336", mutate), root=root)
+    assert any(f.check == "A6_spatial_coverage" and "slab_mm" in f.claim for f in a.findings)
+
+
+def test_A6_fires_on_whole_brain_true_without_evidence(tmp_path):
+    root = _real_root("ds002336")
+
+    def mutate(d):
+        d["spatial"]["coverage"]["whole_brain"] = True
+        d["spatial"]["coverage"]["evidence"] = ""
+
+    a = audit_card(_write_card(tmp_path, "ds002336", mutate), root=root)
+    assert any(f.check == "A6_spatial_coverage" and "whole_brain" in f.claim
+               for f in a.findings)
+
+
+def test_A6_fires_when_a_volumetric_source_states_no_coverage_at_all(tmp_path):
+    """Silence reads as whole-brain downstream, so silence is a finding."""
+    root = _real_root("ds000117")
+
+    def mutate(d):
+        d["spatial"].pop("coverage", None)
+
+    a = audit_card(_write_card(tmp_path, "ds000117", mutate), root=root)
+    assert any(f.check == "A6_spatial_coverage" and "no spatial.coverage" in f.on_disk
+               for f in a.findings)
+
+
+def test_the_haemodynamic_gradient_path_is_disabled_while_coverage_is_unknown():
+    """Appendix B enforcing N-4a, instead of a comment in a config file.
+
+    `spatial.coverage.whole_brain: unknown` is named in the `requires` of every
+    BOLD-facing gradient target, so the path disables itself. This is what
+    stops the haemodynamic likelihood contributing a term for parcels that may
+    have no observation operator at all.
+    """
+    for cid in ("ds002336", "ds000113"):
+        doc = load_card(registry.get(cid).card_path)
+        bold = [d for d in doc.gradient_decisions()
+                if "bold" in d.target or "retinotop" in d.target]
+        assert bold, f"{cid}: no BOLD-facing gradient target to check"
+        for dec in bold:
+            assert not dec.enabled, f"{cid}: {dec.target} is enabled despite unknown coverage"
+            assert "spatial.coverage.whole_brain" in dec.reason

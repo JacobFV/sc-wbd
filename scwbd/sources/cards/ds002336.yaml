@@ -236,7 +236,40 @@ spatial:
     `kind` names); the BOLD and T1w voxel grids are in millimetres, read per
     file from the NIfTI header.
   psf: unknown
-  extent: "whole head (EEG); whole brain (BOLD, 4 mm slices)"
+  # CORRECTED 2026-08-06 (🗄️ Ada). This field previously read 'whole head (EEG); whole brain (BOLD, 4 mm slices)'.
+  # I wrote that; nothing in the release supports it. The dataset's own README
+  # states "FOV = 210x210mm2" and "N of slices: 32" and never claims whole-brain
+  # coverage, and the BIDS sidecars carry SliceThickness/SpacingBetweenSlices
+  # and no coverage field at all. Re-derived from the NIfTI headers on disk:
+  # 32 slices x 4.0 mm = 128 mm nominal slab. A card that implies
+  # whole-brain coverage for a slab is the same defect as ds004024 declaring
+  # `dwi` - it reads as coverage we do not have.
+  extent: "scalp-wide (EEG); a 128 mm axial-oblique slab, NOT established as whole-brain (BOLD)"
+  coverage:
+    slab_mm: 128
+    n_slices: 32
+    slice_thickness_mm: 4.0
+    in_plane: "106 x 106 @ 1.981 mm"
+    whole_brain: unknown
+    evidence: >-
+      Measured on all ten subjects' task-motorloc runs. The slab is 128 mm
+      (124 mm between outermost slice centres) against a T1w head extent of
+      191-207 mm along the same axis. Head tissue lies ABOVE the slab in 9 of
+      10 subjects (0.0-20.7 mm). The in-brain voxel count of slice 0 is
+      6.6-27.9 percent of the peak slice and slice 31 is 0.5-13.6 percent - a
+      slab that contained the whole brain would taper to near zero at both
+      ends. This is strong evidence of clipping and it is NOT proof: no brain
+      segmentation tool is installed, so 'head tissue above the slab' cannot
+      yet be separated into scalp versus superior cortex. Recorded as
+      `whole_brain: unknown` rather than resolved in either direction.
+    consequence: >-
+      Parcels lying outside the slab have NO measurement in this source, in
+      every subject, by acquisition rather than by chance. That is a support
+      fact, not a missing-data problem: rule 1 forbids imputing it, so the
+      haemodynamic likelihood must carry a DECLARED PER-PARCEL COVERAGE MASK
+      and contribute no term where the mask is empty. Establishing that mask
+      needs the registration N-4a describes, so it does not exist yet, and
+      until it does no claim from this source may be stated per parcel.
   n_elements: "64 EEG sensors; BOLD voxel grid per run (read from the NIfTI header, not assumed). 54 EEG runs and 55 BOLD runs on disk."
   coregistration_note: >-
     EEG and MRI are acquired in the same session on the same head, but NO
@@ -336,6 +369,16 @@ missingness:
     The NF-score .mat derivatives and the QA .tiff figures were deliberately
     not fetched. Everything else in the raw tree is on disk.
   unplanned: "raw EEG present for 10, BOLD for 10, and both for 10 of 10 participants. AT RUN LEVEL the pairing is incomplete: 53 of 56 (subject, task) runs have both arms; 1 are EEG-only (sub-xp102/eegNF) and 2 are BOLD-only (sub-xp109/MIpost, sub-xp109/MIpre). An unpaired run is excluded from cross-modal terms rather than half-imputed; it remains usable as a single-modality record."
+  spatial_coverage: >-
+    THE ACQUISITION IS A SLAB, NOT A HEAD. See spatial.coverage. Parcels
+    outside it have no measurement in any subject, systematically, by
+    acquisition. This is missing-by-design at the level of the SUPPORT, which
+    is a different object from a dropped run: a dropped run is excluded, an
+    uncovered parcel has no observation operator at all. Rule 1 forbids
+    imputing it as zero or as an average brain, so the haemodynamic likelihood
+    must carry a declared per-parcel coverage mask and contribute NO term where
+    that mask is empty. The mask needs the registration N-4a describes and does
+    not exist yet.
   artifact_rejection: >-
     none applied by us. The producers' eeg_pp derivatives have had gradient and
     pulse artefacts removed by their pipeline; the parameters of that pipeline
@@ -382,7 +425,7 @@ gradient_permission:
       requires: ["temporal.sfreq_hz", "signal.si_units", "ledger.bias_status"]
     - target: observe.bold.haemodynamic_response
       scales: ["voxel"]
-      requires: ["temporal.sfreq_hz", "signal.bold_acquisition"]
+      requires: ["temporal.sfreq_hz", "signal.bold_acquisition", "spatial.coverage.whole_brain"]
     - target: transforms.clock_graph.eeg_to_scanner
       scales: ["clock"]
       requires: ["temporal.event_clock"]
