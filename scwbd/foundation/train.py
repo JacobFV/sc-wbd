@@ -144,6 +144,32 @@ class FoundationTrainer:
         cap_cuda_reserve(self.device, cfg.train.cuda_reserve_gb)
         set_determinism(cfg.train.seed)
         torch.backends.cuda.matmul.allow_tf32 = False  # solvers stay fp32 (ARCH §3)
+        if cfg.model.compile:
+            # torch.compile's donated-buffer optimisation frees backward
+            # intermediates it believes are dead, which requires
+            # retain_graph=False on every backward.  The mixture takes one
+            # backward **per source** (`mixture.step` -> `gate.grads`, with
+            # `retain_graph=(more sources) or measure_conflict`) so that each
+            # source's gradient is restricted to the parameters its card permits,
+            # and so that per-source gradient conflict can be measured at all
+            # (Appendix D: "gradient conflict is measured by module and source").
+            #
+            # Those are requirements, so the allocator optimisation gives way --
+            # not the other way round.  Summing the losses into a single backward
+            # would fix the crash and silently delete both the per-source
+            # permission enforcement and the conflict measurement.
+            #
+            # It surfaced only at Stage III because that is the first stage with
+            # two sources live at once (simulated + measured); Stages I and II
+            # take a single backward, so the incompatibility could not appear.
+            # NB: import the submodule explicitly. ``torch._functorch.config``
+            # is not reachable by attribute access from a bare ``import torch``,
+            # and I verified the knob's existence through a different import
+            # form than the one the code used -- so the check passed and the
+            # code raised AttributeError on the next launch.
+            import torch._functorch.config as _functorch_config
+
+            _functorch_config.donated_buffer = False
         self.out_dir = Path(cfg.train.out_dir)
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self.report_dir = Path(cfg.train.report_dir)
