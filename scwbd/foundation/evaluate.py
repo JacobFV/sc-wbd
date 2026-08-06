@@ -53,7 +53,6 @@ def _scwbd_scores(
     trainer,
     loader,
     *,
-    max_batches: int | None = None,
     n_theta_samples: int = 32,
     n_mean_samples: int = 256,
 ) -> dict[str, Any]:
@@ -101,9 +100,7 @@ def _scwbd_scores(
         nll_el = 0.5 * (math.log(2 * math.pi) + v_k + (y - m_k) ** 2 * torch.exp(-v_k))
         return nll_el, m_k
 
-    for bi, batch in enumerate(loader):
-        if max_batches is not None and bi >= max_batches:
-            break
+    for batch in loader:
         eeg = batch["eeg"].to(trainer.device)
         ctx_e, tgt_e = eeg[:, :c], eeg[:, c:]
         src = trainer.sensor_to_parcel(ctx_e)
@@ -273,7 +270,20 @@ def split_fingerprint(ds, split: Mapping[str, Sequence[int]]) -> dict[str, Any]:
         name: sorted({_window_subject(ds, i) for i in idxs}) for name, idxs in split.items()
     }
     blob = json.dumps(folds, sort_keys=True).encode()
-    return {"participants_per_fold": folds, "sha256": hashlib.sha256(blob).hexdigest()}
+    # `verified` defaults to False and is flipped only by an actual comparison
+    # against a recorded fingerprint. A reader of evaluation.json must not be able
+    # to mistake a recomputed sha256 for a checked one: an authoritative-looking
+    # hash that was never compared is the failure this field exists to prevent.
+    return {
+        "participants_per_fold": folds,
+        "sha256": hashlib.sha256(blob).hexdigest(),
+        "verified": False,
+        "verification": (
+            "RECOMPUTED ONLY, NOT VERIFIED: no recorded fingerprint was compared "
+            "against. This split has not been proven identical to the one that "
+            "trained the checkpoint."
+        ),
+    }
 
 
 def real_eeg_holdout(
@@ -315,12 +325,24 @@ def real_eeg_holdout(
     # the one that trained the checkpoint. Participant IDS, not indices.
     fp = split_fingerprint(ds, split)
     recorded = getattr(trainer, "_recorded_split_fingerprint", None)
-    if recorded is not None and recorded.get("sha256") != fp["sha256"]:
+    if recorded is None:
+        # Carried in the ARTIFACT, not printed to stdout: evaluate_model() and
+        # real_eeg_holdout() are both public and bypass main()'s warning.
+        fp["verification"] = (
+            "NOT VERIFIED: the checkpoint records no real_split fingerprint (written "
+            "before the field existed). The evaluation split CANNOT be proven "
+            "identical to the one that trained this checkpoint, and every number "
+            "below rests on that unproven assumption."
+        )
+    elif recorded.get("sha256") != fp["sha256"]:
         raise RuntimeError(
             "real-EEG split does not match the checkpoint's: recorded sha256 "
             f"{recorded.get('sha256')}, recomputed {fp['sha256']}. Evaluating would "
             "score a model on participants it may have trained on."
         )
+    else:
+        fp["verified"] = True
+        fp["verification"] = "verified against the fingerprint recorded in the checkpoint"
 
     # B1: budget in PARTICIPANTS, not batches.
     te_idx = _participant_stratified(ds, split["test"], per_test_participant, fold="test")
@@ -476,29 +498,81 @@ def _accepts_groups(fn) -> bool:
 # ======================================================================
 # posterior calibration
 # ======================================================================
+
+def _sim_backend_labels(ds) -> list[str]:
+    """Backend name per window, from the corpus index (metadata only)."""
+    by_path = {sh["path"]: sh["backend"] for sh in ds.index.shards}
+    return [by_path[it[0]] for it in ds.items]
+
+
+def _sim_stratified(
+    ds, *, mode: str, total: int | None = None, per_backend: int | None = None,
+    min_per_backend: int = 30, require_all: bool = False, caller: str = "",
+) -> tuple[list[int], dict[str, int]]:
+    """Backend-stratified window selection over a simulated corpus.
+
+    Taking the first N windows from a `shuffle=False` loader is backend-biased:
+    the val corpus is ordered by shard, so the first 512 of 1888 contained ZERO
+    samples from two of the five backends.  `mode="equal"` gives every backend the
+    same weight (for a per-backend table); `mode="proportional"` preserves the
+    corpus mixture (for a single pooled number), with a floor so a rare backend
+    still contributes a usable count.
+    """
+    labels = _sim_backend_labels(ds)
+    by: dict[str, list[int]] = defaultdict(list)
+    for i, b in enumerate(labels):
+        by[b].append(i)
+    if require_all:
+        missing = [n for n in ds.backend_names if not by.get(n)]
+        if missing:
+            raise ValueError(
+                f"{caller}: backends {missing} have zero windows in this fold. This "
+                "function exists to produce a per-backend row; emitting None for a "
+                "backend is honest and insufficient, because a reader cannot tell a "
+                "backend that failed from one that was never sampled."
+            )
+    chosen: list[int] = []
+    counts: dict[str, int] = {}
+    for name in sorted(by):
+        idxs = by[name]
+        if mode == "equal":
+            k = min(int(per_backend or min_per_backend), len(idxs))
+        else:
+            share = int(round((total or 0) * len(idxs) / max(len(labels), 1)))
+            k = min(max(share, min_per_backend), len(idxs))
+        sel = np.linspace(0, len(idxs) - 1, max(k, 1)).round().astype(int)
+        picked = [idxs[j] for j in dict.fromkeys(sel.tolist())]
+        chosen.extend(picked)
+        counts[name] = len(picked)
+    return chosen, counts
+
+
 def posterior_calibration(trainer, *, n_datasets: int = 512, n_samples: int = 256) -> dict[str, Any]:
     """SBC + expected coverage on held-out simulated trajectories."""
     from .posterior import posterior_report
 
-    loader = torch.utils.data.DataLoader(trainer.sim_val, batch_size=64, shuffle=False, num_workers=2)
+    idx, counts = _sim_stratified(
+        trainer.sim_val, mode="proportional", total=n_datasets, caller="posterior_calibration"
+    )
+    loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(trainer.sim_val, idx), batch_size=64, shuffle=False, num_workers=2
+    )
     ys, ths = [], []
-    n = 0
     c = trainer.cfg.data.context
     for b in loader:
-        y = b["activity"][:, :c].to(trainer.device)
-        ys.append(y)
+        ys.append(b["activity"][:, :c].to(trainer.device))
         ths.append(b["theta"].to(trainer.device))
-        n += y.shape[0]
-        if n >= n_datasets:
-            break
     if not ys:
         return {"available": False, "reason": "no simulated validation trajectories"}
-    y = torch.cat(ys)[:n_datasets]
-    th = torch.cat(ths)[:n_datasets]
+    y = torch.cat(ys)
+    th = torch.cat(ths)
     trainer.posterior.eval()
     rep = posterior_report(trainer.posterior, y, th, param_names=THETA_NAMES, n_samples=n_samples)
     trainer.posterior.train()
     rep["available"] = True
+    rep["n_datasets"] = int(y.shape[0])
+    rep["backend_counts"] = counts
+    rep["sampling"] = "backend-stratified, fold-proportional with a floor per backend"
     return rep
 
 
@@ -553,14 +627,17 @@ def source_ablation(trainer, *, steps: int = 120, seed: int = 0) -> dict[str, An
 
 
 @torch.no_grad()
-def _sim_val_nll(trainer, *, max_batches: int = 8) -> float:
-    loader = torch.utils.data.DataLoader(trainer.sim_val, batch_size=64, shuffle=False, num_workers=2)
+def _sim_val_nll(trainer, *, n_windows: int = 512) -> float:
+    idx, _ = _sim_stratified(
+        trainer.sim_val, mode="proportional", total=n_windows, caller="_sim_val_nll"
+    )
+    loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(trainer.sim_val, idx), batch_size=64, shuffle=False, num_workers=2
+    )
     c = trainer.cfg.data.context
     tot, n = 0.0, 0
     trainer.model.eval()
-    for i, b in enumerate(loader):
-        if i >= max_batches:
-            break
+    for b in loader:
         act = b["activity"].to(trainer.device)
         th = b["theta"].to(trainer.device)
         ctx, tgt = act[:, :c], act[:, c:]
@@ -576,21 +653,25 @@ def _sim_val_nll(trainer, *, max_batches: int = 8) -> float:
 # backend comparison
 # ======================================================================
 @torch.no_grad()
-def backend_comparison(trainer, *, max_batches: int = 6) -> dict[str, Any]:
+def backend_comparison(trainer, *, per_backend: int = 64) -> dict[str, Any]:
     """Per-backend held-out forecast NLL of the learned operator.
 
     The simulated validation set carries a backend label, so this reports where
     the single learned operator succeeds and fails **across mechanistic
     families**.  It is not a claim that any family is neurally realized.
     """
-    loader = torch.utils.data.DataLoader(trainer.sim_val, batch_size=64, shuffle=False, num_workers=2)
+    idx, counts = _sim_stratified(
+        trainer.sim_val, mode="equal", per_backend=per_backend,
+        require_all=True, caller="backend_comparison",
+    )
+    loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(trainer.sim_val, idx), batch_size=64, shuffle=False, num_workers=2
+    )
     c = trainer.cfg.data.context
     names = trainer.sim_val.backend_names
     acc: dict[str, list[float]] = {n: [] for n in names}
     trainer.model.eval()
-    for i, b in enumerate(loader):
-        if i >= max_batches:
-            break
+    for b in loader:
         act = b["activity"].to(trainer.device)
         th = b["theta"].to(trainer.device)
         ctx, tgt = act[:, :c], act[:, c:]
@@ -604,6 +685,8 @@ def backend_comparison(trainer, *, max_batches: int = 6) -> dict[str, Any]:
     return {
         "per_backend_nll": {k: (float(np.mean(v)) if v else None) for k, v in acc.items()},
         "per_backend_n": {k: len(v) for k, v in acc.items()},
+        "sampling": "backend-stratified, equal windows per backend",
+        "windows_selected_per_backend": counts,
         "note": (
             "The learned operator is the equal-capacity control for every mechanistic claim "
             "(Appendix D). Matching a family's trajectories is not evidence that the family is "
@@ -639,7 +722,7 @@ def evaluate_model(
     rep["posterior_calibration"] = posterior_calibration(
         trainer, n_datasets=128 if quick else 512, n_samples=64 if quick else 256
     )
-    rep["backend_comparison"] = backend_comparison(trainer, max_batches=2 if quick else 6)
+    rep["backend_comparison"] = backend_comparison(trainer, per_backend=16 if quick else 64)
     if quick:
         # A cost flag may reduce precision; it must never redefine the claim.
         # A shrunken holdout is not a cheaper version of this result, it is a
@@ -653,7 +736,7 @@ def evaluate_model(
         }
     else:
         rep["real_eeg_holdout"] = real_eeg_holdout(trainer, seed=seed)
-    rep["sim_val_nll"] = _sim_val_nll(trainer, max_batches=2 if quick else 8)
+    rep["sim_val_nll"] = _sim_val_nll(trainer, n_windows=128 if quick else 512)
     rep["wall_seconds"] = t.elapsed
     if out:
         Path(out).parent.mkdir(parents=True, exist_ok=True)
