@@ -112,8 +112,23 @@ class ModelProvenance:
     exported_ports: tuple[str, ...] = ()
     #: ``thesis_contract.tex`` Sec. 0.6 build-order item this artifact reaches.
     build_order_item: int = 4
-    #: Out of scope for this release, by construction.
+    #: Whether this service is being served for prospective human application.
+    #:
+    #: This used to raise unconditionally, with the reason "out of scope for
+    #: SC-WBD-001-beta (build-order item 6)".  That was the mirror of the stale
+    #: strings ``scwbd.intervene`` used to carry: a restriction asserted in
+    #: source that no record could ever satisfy, which made the authorization
+    #: mechanism structurally unreachable from the consumer -- the gate could
+    #: only ever be closed, so it could not discriminate, so it was not a gate.
+    #: It is now decided by
+    #: :func:`~scwbd.intervene.deployment.authorize_live_application` via
+    #: :attr:`live_application`, so the refusal has a reason that can be
+    #: satisfied.  It still refuses by default and on every incomplete record.
     prospective_human: bool = False
+    #: ``LiveApplicationVerdict.as_provenance()`` for this service, or ``None``.
+    #: Required to be present and admitting whenever
+    #: :attr:`prospective_human` is ``True``.
+    live_application: Mapping[str, Any] | None = None
 
     efield_backend: str = "analytic_spherical_primary"
     efield_backend_class: BackendClass = "analytic"
@@ -148,7 +163,13 @@ class ModelProvenance:
     notice: str = SIMULATION_ONLY_NOTICE
 
     def __post_init__(self) -> None:
-        if self.human_use_authorized:  # pragma: no cover - guard
+        if self.human_use_authorized:
+            # This one stays unconditional, and the asymmetry is deliberate.
+            # `prospective_human` is a statement about what is being attempted,
+            # which a record can answer.  `human_use_authorized` is a statement
+            # that *this repository* issued an authorization, which is never
+            # true whatever any record says -- SC-WBD records declarations made
+            # by the people responsible for a protocol; it does not make them.
             raise ValueError(
                 "ModelProvenance cannot be marked authorized for human use; "
                 "this software does not issue authorization. Governance is "
@@ -157,11 +178,28 @@ class ModelProvenance:
                 "`authorization` (scwbd.schema.authorization); a recorded "
                 "protocol scope is not this repository granting permission"
             )
-        if self.prospective_human:  # pragma: no cover - guard
-            raise ValueError(
-                "prospective human stimulation is out of scope for "
-                "SC-WBD-001-beta (build-order item 6)"
-            )
+        if self.prospective_human:
+            verdict = self.live_application
+            admitted = bool(verdict) and bool(verdict.get("admitted"))
+            live = bool(verdict) and verdict.get("application_mode") == "live"
+            if not (admitted and live):
+                why = (
+                    "no live-application verdict was recorded"
+                    if not verdict
+                    else "; ".join(verdict.get("failure_codes") or ())
+                    or f"application_mode={verdict.get('application_mode')!r}"
+                )
+                raise ValueError(
+                    "prospective human application requires an admitting "
+                    "live-application verdict in `live_application`, produced by "
+                    "scwbd.intervene.deployment.authorize_live_application with "
+                    f"mode='live'. Refused: {why}. This refusal is satisfiable: "
+                    "supply a PreliminaryReviewRecord recording that the review "
+                    "occurred with an approving outcome, together with a "
+                    "validated AuthorizationRecord covering the intervention "
+                    "class -- the authorization alone is necessary and not "
+                    "sufficient"
+                )
 
     # -- identity ----------------------------------------------------------
     @property

@@ -16,26 +16,31 @@ refusal cannot tell the two apart.
 
 from __future__ import annotations
 
-import json
-from datetime import date, timedelta
-
 import pytest
 
+from scwbd.intervene.deployment import (
+    PRELIMINARY_REVIEW_SCHEDULED,
+    PreliminaryReviewRecord,
+)
 from scwbd.runtime.admission import (
     CONSUMER_STANDING_INVARIANTS,
-    EARLIEST_CREDIBLE_REVIEW,
     EXPORT_PURPOSES,
     LIVE_PURPOSES,
-    AuthorizationInvalid,
+    MODE_OF_PURPOSE,
     CheckpointClaims,
     CheckpointRefused,
     ConsumerInvariants,
     ConsumerInvariantViolation,
-    LiveUseAuthorization,
     admit,
 )
+from scwbd.schema.authorization import epoch_seconds
 
-AFTER = EARLIEST_CREDIBLE_REVIEW + timedelta(days=1)
+#: The review date, derived from the one constant and never restated.
+REVIEW_DAY = PRELIMINARY_REVIEW_SCHEDULED.isoformat()
+#: A time after the review could have happened.
+AFTER_S = epoch_seconds(REVIEW_DAY) + 86400.0
+#: Years later. Used to show the date is not an unlock at *this* call site too.
+LONG_AFTER_S = epoch_seconds("2027-12-31")
 
 
 def clean_claims(**overrides) -> CheckpointClaims:
@@ -56,26 +61,36 @@ def clean_claims(**overrides) -> CheckpointClaims:
     return CheckpointClaims(**base)
 
 
-def approving_record(**overrides) -> LiveUseAuthorization:
+def approving_review(**overrides) -> PreliminaryReviewRecord:
+    """A *fictional* record that the review happened and passed."""
     base = dict(
-        review_body="UT Arlington IRB",
-        reference="2026-0817",
+        review_body="Example University preliminary review panel",
+        identifier="PRELIM-2026-0001",
+        occurred_on=REVIEW_DAY,
         outcome="approved",
-        reviewed_on=AFTER,
-        scope=("live_hardware", "patient_directed"),
-        recorded_by="pi",
+        covered_intervention_classes=("tms",),
+        declared_by="test fixture",
     )
     base.update(overrides)
-    return LiveUseAuthorization(**base)
+    return PreliminaryReviewRecord(**base)
 
 
-def refusal(claims, *, purpose="live_hardware", auth=None, as_of=None):
+#: Sentinel so that ``as_of=None`` can be passed *deliberately* and reach the
+#: gate as None. Defaulting it to "now" here would have hidden the undated-
+#: request refusal behind the helper.
+_UNSET = object()
+
+
+def refusal(claims, *, purpose="live_hardware", review=None, authorization=None,
+            as_of=_UNSET, **kw):
     with pytest.raises(CheckpointRefused) as exc:
         admit(
             claims,
             purpose=purpose,
-            live_use_authorization=auth,
-            as_of=as_of or AFTER + timedelta(days=30),
+            review=review,
+            authorization=authorization,
+            as_of=AFTER_S if as_of is _UNSET else as_of,
+            **kw,
         )
     return exc.value
 
@@ -87,20 +102,23 @@ def refusal(claims, *, purpose="live_hardware", auth=None, as_of=None):
 class TestTheGateCanOpen:
     """Without this, every refusal below is unfalsifiable."""
 
-    def test_a_clean_checkpoint_with_an_approving_record_is_admitted(self):
+    def test_a_clean_checkpoint_with_an_approving_record_is_admitted(self, authorization):
         v = admit(
             clean_claims(),
             purpose="live_hardware",
-            live_use_authorization=approving_record(),
-            as_of=AFTER + timedelta(days=30),
+            review=approving_review(),
+            authorization=authorization,
+            as_of=AFTER_S,
         )
         assert v.admitted
         assert v.failed == ()
         assert {c.code for c in v.conditions} == {"A0", "A1", "A2", "A3", "A4", "A5", "A6"}
+        assert v.live_application.admitted
+        assert v.live_application.mode == "live"
 
     def test_simulation_asks_nothing_of_the_checkpoint(self):
         """A simulation reported as a simulation needs no artifact to be valid."""
-        v = admit(CheckpointClaims.absent(), purpose="simulation", as_of=AFTER)
+        v = admit(CheckpointClaims.absent(), purpose="simulation", as_of=AFTER_S)
         assert v.admitted
         # ...but every non-required condition is still *recorded* as having
         # failed, so the verdict shows what was not asked rather than hiding it.
@@ -109,9 +127,10 @@ class TestTheGateCanOpen:
         assert not all(c.passed for c in v.conditions)
 
     def test_the_admission_record_is_content_hashed(self):
-        a = admit(clean_claims(), purpose="research_offline", as_of=AFTER)
-        b = admit(clean_claims(), purpose="research_offline", as_of=AFTER)
-        c = admit(clean_claims(manifest_id="other"), purpose="research_offline", as_of=AFTER)
+        a = admit(clean_claims(), purpose="research_offline", as_of=AFTER_S)
+        b = admit(clean_claims(), purpose="research_offline", as_of=AFTER_S)
+        c = admit(clean_claims(manifest_id="other"), purpose="research_offline",
+                  as_of=AFTER_S)
         assert a.content_hash() == b.content_hash()
         assert a.content_hash() != c.content_hash()
 
@@ -130,13 +149,14 @@ class TestA0StandingInvariants:
     def test_the_default_is_all_false(self):
         assert ConsumerInvariants().as_dict() == dict(CONSUMER_STANDING_INVARIANTS)
 
-    def test_an_approving_review_does_not_relax_them(self):
-        """The IRB boundary and the promotion boundary are unrelated."""
+    def test_an_approving_review_does_not_relax_them(self, authorization):
+        """The review boundary and the promotion boundary are unrelated."""
         v = admit(
             clean_claims(),
             purpose="patient_directed",
-            live_use_authorization=approving_record(),
-            as_of=AFTER + timedelta(days=30),
+            review=approving_review(),
+            authorization=authorization,
+            as_of=AFTER_S,
         )
         assert v.admitted
         assert v.invariants.as_dict() == {
@@ -148,9 +168,10 @@ class TestA0StandingInvariants:
             admit(
                 clean_claims(),
                 purpose="patient_directed",
-                live_use_authorization=approving_record(),
+                review=approving_review(),
+                authorization=authorization,
                 invariants=ConsumerInvariants(promotion_eligible=True),
-                as_of=AFTER + timedelta(days=30),
+                as_of=AFTER_S,
             )
 
 
@@ -169,7 +190,7 @@ class TestA1ManifestPresent:
         assert e.codes == ("A1",)
 
     def test_a_stated_manifest_passes_A1(self):
-        v = admit(clean_claims(), purpose="research_offline", as_of=AFTER)
+        v = admit(clean_claims(), purpose="research_offline", as_of=AFTER_S)
         assert v.admitted
 
 
@@ -247,139 +268,114 @@ class TestA5TrainedWeights:
 # A6 -- live-use authorization, by record and never by date
 # ---------------------------------------------------------------------------
 
-class TestA6LiveUseAuthorization:
+class TestA6DelegatesToTheOneLiveApplicationGate:
+    """A6 has no logic of its own: it asks Faraday's predicate and records it.
+
+    ``scwbd.intervene.deployment`` owns the rule and
+    ``tests/intervene/test_deployment.py`` proves it.  What these tests prove is
+    the thing that file cannot: that the *runtime* call site asks the same
+    question, with the mode derived from the purpose rather than the caller.
+    """
+
     @pytest.mark.parametrize("purpose", sorted(LIVE_PURPOSES))
-    def test_no_record_refuses_every_live_purpose(self, purpose):
-        e = refusal(clean_claims(), purpose=purpose, auth=None)
+    def test_no_review_record_refuses_every_live_purpose(self, purpose, authorization):
+        e = refusal(clean_claims(), purpose=purpose, review=None,
+                    authorization=authorization)
         assert e.codes == ("A6",)
-        assert "no LiveUseAuthorization" in str(e)
+        assert "REVIEW_ABSENT" in str(e) or "no preliminary review record" in str(e)
 
     @pytest.mark.parametrize(
         "purpose", [p for p in EXPORT_PURPOSES if p not in LIVE_PURPOSES]
     )
-    def test_non_live_purposes_do_not_require_a_record(self, purpose):
-        v = admit(clean_claims(), purpose=purpose, as_of=AFTER)
+    def test_non_live_purposes_are_not_gated_on_a_review(self, purpose):
+        v = admit(clean_claims(), purpose=purpose, as_of=AFTER_S)
         assert v.admitted
+        assert v.live_application.mode == "computational"
 
-    def test_the_gate_does_not_open_when_the_date_passes(self):
-        """The whole point. Ten years of waiting admits nothing."""
-        for as_of in (
-            EARLIEST_CREDIBLE_REVIEW,
-            EARLIEST_CREDIBLE_REVIEW + timedelta(days=1),
-            EARLIEST_CREDIBLE_REVIEW + timedelta(days=3650),
-        ):
-            e = refusal(clean_claims(), auth=None, as_of=as_of)
-            assert e.codes == ("A6",)
-        assert "not the passing of" in str(e)
+    def test_the_mode_is_derived_from_the_purpose_not_the_caller(self):
+        """A caller cannot get a live purpose checked as computational."""
+        assert MODE_OF_PURPOSE == {
+            "simulation": "computational",
+            "research_offline": "computational",
+            "live_hardware": "live",
+            "patient_directed": "live",
+        }
+        for purpose in EXPORT_PURPOSES:
+            v = admit(
+                clean_claims(), purpose=purpose, as_of=AFTER_S,
+                raise_on_refusal=False,
+            )
+            assert v.live_application.mode == MODE_OF_PURPOSE[purpose]
 
-    @pytest.mark.parametrize(
-        "outcome", ["pending", "scheduled", "deferred", "disapproved", "not_yet_reviewed"]
-    )
-    def test_a_non_approving_outcome_is_refused(self, outcome):
-        rec = LiveUseAuthorization(
-            review_body="UT Arlington IRB",
-            reference="2026-0817",
-            outcome=outcome,
-            reviewed_on=AFTER,
-            scope=("live_hardware",),
-            recorded_by="pi",
-        )
-        e = refusal(clean_claims(), auth=rec)
-        assert "A6" in e.codes
-        assert outcome in str(e)
+    def test_the_date_is_not_an_unlock_at_this_call_site_either(self, authorization):
+        """Years past the scheduled review, with no record: still refused."""
+        e = refusal(clean_claims(), review=None, authorization=authorization,
+                    as_of=LONG_AFTER_S)
+        assert e.codes == ("A6",)
 
-    def test_a_record_dated_in_the_future_is_refused(self):
-        rec = approving_record(reviewed_on=AFTER + timedelta(days=365))
-        e = refusal(clean_claims(), auth=rec, as_of=AFTER + timedelta(days=30))
-        assert "A6" in e.codes
-        assert "has not happened yet" in str(e)
-
-    def test_an_expired_record_is_refused(self):
-        rec = approving_record(expires_on=AFTER + timedelta(days=10))
-        e = refusal(clean_claims(), auth=rec, as_of=AFTER + timedelta(days=90))
-        assert "A6" in e.codes
-        assert "expired" in str(e)
-
-    def test_approval_of_one_purpose_is_not_approval_of_another(self):
-        rec = approving_record(scope=("live_hardware",))
-        e = refusal(clean_claims(), purpose="patient_directed", auth=rec)
-        assert "A6" in e.codes
-        assert "not in the record's scope" in str(e)
-        # ...and the purpose it *does* cover is admitted.
+    def test_an_authorization_alone_is_necessary_and_not_sufficient(self, authorization):
+        with_auth = refusal(clean_claims(), review=None, authorization=authorization)
+        assert with_auth.codes == ("A6",)
+        # ...and adding the review is what admits it.
         assert admit(
-            clean_claims(),
-            purpose="live_hardware",
-            live_use_authorization=rec,
-            as_of=AFTER + timedelta(days=30),
+            clean_claims(), purpose="live_hardware", review=approving_review(),
+            authorization=authorization, as_of=AFTER_S,
         ).admitted
 
-    def test_an_approval_predating_the_review_cannot_be_constructed(self):
-        with pytest.raises(AuthorizationInvalid) as exc:
-            approving_record(reviewed_on=EARLIEST_CREDIBLE_REVIEW - timedelta(days=1))
-        assert "could not have concluded before" in str(exc.value)
-        assert "not a date on which anything becomes permitted" in str(exc.value)
-
-    def test_a_non_approving_outcome_may_predate_the_review_floor(self):
-        """The floor guards approvals, not the existence of earlier records."""
-        rec = LiveUseAuthorization(
-            review_body="UT Arlington IRB",
-            reference="2026-0817",
-            outcome="not_yet_reviewed",
-            reviewed_on=date(2026, 8, 1),
-            scope=("live_hardware",),
-            recorded_by="pi",
-        )
-        assert rec.outcome == "not_yet_reviewed"
+    def test_a_review_without_an_authorization_also_refuses(self):
+        e = refusal(clean_claims(), review=approving_review(), authorization=None)
+        assert e.codes == ("A6",)
 
     @pytest.mark.parametrize(
-        "kwargs, fragment",
-        [
-            ({"review_body": ""}, "reviewing body"),
-            ({"reference": ""}, "reviewing body"),
-            ({"recorded_by": ""}, "who recorded it"),
-            ({"scope": ()}, "purposes it covers"),
-            ({"scope": ("teleoperation",)}, "unknown purposes"),
-            (
-                {"outcome": "approved_with_conditions"},
-                "no conditions listed",
-            ),
-        ],
+        "outcome", ["pending", "deferred", "disapproved", "undeclared"]
     )
-    def test_an_underspecified_record_cannot_be_constructed(self, kwargs, fragment):
-        with pytest.raises(AuthorizationInvalid) as exc:
-            approving_record(**kwargs)
-        assert fragment in str(exc.value)
-
-    def test_approved_with_conditions_admits_when_conditions_are_listed(self):
-        rec = approving_record(
-            outcome="approved_with_conditions",
-            conditions=("no operator-free sessions", "log every pose"),
-        )
-        v = admit(
+    def test_a_non_approving_outcome_is_refused(self, outcome, authorization):
+        e = refusal(
             clean_claims(),
-            purpose="live_hardware",
-            live_use_authorization=rec,
-            as_of=AFTER + timedelta(days=30),
+            review=approving_review(outcome=outcome),
+            authorization=authorization,
         )
-        assert v.admitted
-        assert v.authorization.conditions
+        assert e.codes == ("A6",)
 
-    def test_the_record_is_content_hashed(self):
-        assert approving_record().record_hash() == approving_record().record_hash()
-        assert (
-            approving_record().record_hash()
-            != approving_record(reference="other").record_hash()
+    def test_a_tms_review_does_not_clear_a_tfus_export(self, authorization):
+        tms_review = approving_review(covered_intervention_classes=("tms",))
+        # the runtime's default intervention_class is tms, so this admits...
+        assert admit(
+            clean_claims(), purpose="live_hardware", review=tms_review,
+            authorization=authorization, as_of=AFTER_S,
+        ).admitted
+        # ...and the same record asked about tfus does not.
+        e = refusal(
+            clean_claims(), review=tms_review, authorization=authorization,
+            intervention_class="tfus",
         )
+        assert e.codes == ("A6",)
 
-    def test_round_trips_through_json(self):
-        rec = approving_record(expires_on=AFTER + timedelta(days=365))
-        again = LiveUseAuthorization.from_dict(json.loads(json.dumps(rec.canonical())))
-        assert again.record_hash() == rec.record_hash()
+    def test_an_undated_request_cannot_be_checked_and_is_refused(self, authorization):
+        """``as_of=None`` is not silently replaced with the wall clock."""
+        e = refusal(clean_claims(), review=approving_review(),
+                    authorization=authorization, as_of=None)
+        assert e.codes == ("A6",)
 
+    def test_as_of_accepts_a_date_an_iso_string_or_epoch_seconds(self, authorization):
+        from datetime import date as _date
 
-# ---------------------------------------------------------------------------
-# refusals compose, and name every failing condition
-# ---------------------------------------------------------------------------
+        results = [
+            admit(clean_claims(), purpose="live_hardware", review=approving_review(),
+                  authorization=authorization, as_of=v).admitted
+            for v in (AFTER_S, REVIEW_DAY, _date.fromisoformat(REVIEW_DAY))
+        ]
+        assert results == [True, True, True]
+
+    def test_the_verdict_carries_the_shared_provenance_object(self, authorization):
+        v = admit(clean_claims(), purpose="live_hardware", review=approving_review(),
+                  authorization=authorization, as_of=AFTER_S)
+        prov = v.canonical()["live_application"]
+        assert prov["application_mode"] == "live"
+        assert prov["review"]["identifier"] == "PRELIM-2026-0001"
+        # the one date, reported from the one place that owns it
+        assert prov["scheduled_review_date"] == REVIEW_DAY
+
 
 class TestRefusalsCompose:
     def test_the_run_one_artifact_fails_five_conditions_at_once(self):
@@ -414,7 +410,7 @@ class TestRefusalsCompose:
         v = admit(
             CheckpointClaims.absent(),
             purpose="live_hardware",
-            as_of=AFTER,
+            as_of=AFTER_S,
             raise_on_refusal=False,
         )
         assert v.admitted is False

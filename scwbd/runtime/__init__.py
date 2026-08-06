@@ -36,18 +36,16 @@ from __future__ import annotations
 from ._compat import SIMULATION_ONLY_NOTICE, Unresolved
 from .admission import (
     CONSUMER_STANDING_INVARIANTS,
-    EARLIEST_CREDIBLE_REVIEW,
     EXPORT_PURPOSES,
     LIVE_PURPOSES,
+    MODE_OF_PURPOSE,
     AdmissionCondition,
     AdmissionVerdict,
-    AuthorizationInvalid,
     CheckpointClaims,
     CheckpointRefused,
     ConsumerInvariants,
     ConsumerInvariantViolation,
     ExportPurpose,
-    LiveUseAuthorization,
     admit,
 )
 from .backends import (
@@ -128,12 +126,10 @@ __all__ = [
     "CheckpointRefused",
     "ConsumerInvariants",
     "ConsumerInvariantViolation",
-    "AuthorizationInvalid",
-    "LiveUseAuthorization",
     "ExportPurpose",
     "EXPORT_PURPOSES",
     "LIVE_PURPOSES",
-    "EARLIEST_CREDIBLE_REVIEW",
+    "MODE_OF_PURPOSE",
     "CONSUMER_STANDING_INVARIANTS",
     # declared ports: the only way to read model state
     "PortContract",

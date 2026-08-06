@@ -44,7 +44,6 @@ from .admission import (
     CheckpointRefused,
     ConsumerInvariants,
     ExportPurpose,
-    LiveUseAuthorization,
     admit,
 )
 from .backends import CoilSpec
@@ -269,7 +268,9 @@ class ServedModel:
         checkpoint_root: Path | str = DEFAULT_CHECKPOINT_ROOT,
         require_checkpoint: bool = False,
         purpose: ExportPurpose = "simulation",
-        live_use_authorization: LiveUseAuthorization | None = None,
+        review: Any = None,
+        authorization: Any = None,
+        intervention_class: str = "tms",
         invariants: ConsumerInvariants | None = None,
         as_of: Any = None,
         head_default: HeadModel | None = None,
@@ -303,7 +304,9 @@ class ServedModel:
         verdict = admit(
             record.admission_claims(),
             purpose=purpose,
-            live_use_authorization=live_use_authorization,
+            review=review,
+            authorization=authorization,
+            intervention_class=intervention_class,
             invariants=invariants,
             as_of=as_of,
             designation=f"{MODEL_DESIGNATION} ({model})",

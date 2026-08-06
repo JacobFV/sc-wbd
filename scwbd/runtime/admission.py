@@ -18,16 +18,23 @@ Two independent things are checked here and both must pass:
     intervention physics, planning against simulated or recorded open data,
     training, benchmarks -- is approved work and is **not** gated here.  What is
     gated is *live application*: driving real hardware, or informing a real
-    person's stimulation, in production in the consumer repository.  That is
-    pending a preliminary review.
+    person's stimulation, in production in the consumer repository.
 
-    The gate does **not** open on a date.  A calendar comparison encodes "the
-    review was scheduled", and a scheduled review is not a completed one; such
-    a check also silently opens on its own the day after.  What opens this gate
-    is a :class:`LiveUseAuthorization` -- a record that a review *occurred* and
-    what its *outcome* was.  :data:`EARLIEST_CREDIBLE_REVIEW` is a floor on
-    when such a record could exist, used only to reject records that claim an
-    outcome from before the review could have happened.  It is not the gate.
+    That question is **not answered here.**  It is answered by
+    :func:`scwbd.intervene.deployment.authorize_live_application`, which this
+    module calls.  One implementation, two call sites: ``scwbd.intervene`` gates
+    a proposed intervention, ``scwbd.runtime`` gates a checkpoint leaving for a
+    consumer, and both ask the same predicate the same question.  A second
+    implementation here would be a second place for the rule to drift, and the
+    gap between two partial gates is how a hole opens.
+
+    Its properties are inherited, not restated: a live application refuses
+    unless a :class:`~scwbd.intervene.deployment.PreliminaryReviewRecord`
+    records that the review *occurred* with an approving outcome, an
+    :class:`~scwbd.schema.authorization.AuthorizationRecord` is necessary and
+    structurally not sufficient, and the scheduled review date appears only as
+    a lower bound on a record -- never as an unlock.  Nothing opens because a
+    date passed.  This module therefore contains no date at all.
 
 Orthogonality, stated because it will otherwise be misread
 ----------------------------------------------------------
@@ -55,16 +62,22 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Literal, Mapping, Sequence
 
+from scwbd.intervene.deployment import (
+    ApplicationMode,
+    LiveApplicationVerdict,
+    PreliminaryReviewRecord,
+    authorize_live_application,
+)
+from scwbd.schema.authorization import AuthorizationRecord, epoch_seconds
+
 __all__ = [
     "ExportPurpose",
     "EXPORT_PURPOSES",
     "LIVE_PURPOSES",
-    "EARLIEST_CREDIBLE_REVIEW",
+    "MODE_OF_PURPOSE",
     "CONSUMER_STANDING_INVARIANTS",
     "ConsumerInvariants",
     "ConsumerInvariantViolation",
-    "LiveUseAuthorization",
-    "AuthorizationInvalid",
     "AdmissionCondition",
     "AdmissionVerdict",
     "CheckpointRefused",
@@ -97,16 +110,22 @@ EXPORT_PURPOSES: tuple[ExportPurpose, ...] = (
     "patient_directed",
 )
 
-#: Purposes that constitute *live application* and therefore require a
-#: :class:`LiveUseAuthorization`.
-LIVE_PURPOSES: frozenset[str] = frozenset({"live_hardware", "patient_directed"})
+#: How each purpose maps onto
+#: :func:`~scwbd.intervene.deployment.authorize_live_application`'s mode.  This
+#: mapping is the *whole* of this module's opinion about live use; everything
+#: downstream of it is Faraday's predicate.
+MODE_OF_PURPOSE: Mapping[str, ApplicationMode] = {
+    "simulation": "computational",
+    "research_offline": "computational",
+    "live_hardware": "live",
+    "patient_directed": "live",
+}
 
-#: The earliest date on which a record of the pending preliminary review could
-#: exist.  **This is a floor, not the gate.**  A record dated before this did
-#: not come from that review; a record dated after it still only admits
-#: anything if its ``outcome`` is approving.  Nothing opens because this date
-#: passes.
-EARLIEST_CREDIBLE_REVIEW = date(2026, 8, 25)
+#: Purposes that constitute *live application*.  Derived from
+#: :data:`MODE_OF_PURPOSE` rather than restated, so the two cannot disagree.
+LIVE_PURPOSES: frozenset[str] = frozenset(
+    p for p, m in MODE_OF_PURPOSE.items() if m == "live"
+)
 
 #: The consumer's standing invariants.  Unconditional, and unrelated to any
 #: authorization recorded here.
@@ -156,143 +175,6 @@ class ConsumerInvariants:
 
     def as_dict(self) -> dict[str, bool]:
         return dict(asdict(self))
-
-
-# --------------------------------------------------------------------------
-# live-use authorization
-# --------------------------------------------------------------------------
-
-class AuthorizationInvalid(RuntimeError):
-    """A live-use record that does not establish what it claims."""
-
-
-#: Outcomes that admit live application.  Everything else -- including
-#: ``"pending"``, ``"scheduled"`` and ``"deferred"`` -- does not.
-APPROVING_OUTCOMES: frozenset[str] = frozenset(
-    {"approved", "approved_with_conditions"}
-)
-
-
-@dataclass(frozen=True)
-class LiveUseAuthorization:
-    """A record that a review **occurred**, and what it decided.
-
-    The point of the type is that there is no way to express "the date has
-    passed" in it.  It carries a body, a reference, an outcome, the date the
-    outcome was reached, the purposes it covers, and who recorded it.  A
-    consumer cannot manufacture admission by waiting.
-    """
-
-    review_body: str
-    reference: str
-    outcome: str
-    reviewed_on: date
-    #: Which :data:`EXPORT_PURPOSES` this record covers.  A record approving
-    #: ``live_hardware`` does not thereby approve ``patient_directed``.
-    scope: tuple[str, ...]
-    recorded_by: str
-    #: Conditions attached to an ``approved_with_conditions`` outcome.  Recorded
-    #: so that they travel with the artifact; this module does not verify them.
-    conditions: tuple[str, ...] = ()
-    expires_on: date | None = None
-    notes: Mapping[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        if not self.review_body or not self.reference:
-            raise AuthorizationInvalid(
-                "a live-use authorization must name the reviewing body and its "
-                "reference; an unattributed approval is not a record of one"
-            )
-        if not self.recorded_by:
-            raise AuthorizationInvalid(
-                "a live-use authorization must name who recorded it"
-            )
-        if not self.scope:
-            raise AuthorizationInvalid(
-                "a live-use authorization must name the purposes it covers; an "
-                "unscoped approval would admit every purpose, which is not "
-                "what any review grants"
-            )
-        bad = [s for s in self.scope if s not in EXPORT_PURPOSES]
-        if bad:
-            raise AuthorizationInvalid(
-                f"unknown purposes in scope: {bad}; known: {list(EXPORT_PURPOSES)}"
-            )
-        if self.outcome in APPROVING_OUTCOMES and self.reviewed_on < EARLIEST_CREDIBLE_REVIEW:
-            raise AuthorizationInvalid(
-                f"record claims outcome {self.outcome!r} reached on "
-                f"{self.reviewed_on.isoformat()}, but the preliminary review it "
-                f"would have to come from could not have concluded before "
-                f"{EARLIEST_CREDIBLE_REVIEW.isoformat()}. This is a floor on "
-                "when such a record could exist, not a date on which anything "
-                "becomes permitted"
-            )
-        if self.outcome == "approved_with_conditions" and not self.conditions:
-            raise AuthorizationInvalid(
-                "outcome 'approved_with_conditions' with no conditions listed; "
-                "the conditions are the substance of that outcome"
-            )
-
-    # -- the question the gate asks ----------------------------------------
-    def refusal_for(self, purpose: str, *, as_of: date) -> str | None:
-        """``None`` if this record admits ``purpose`` on ``as_of``, else why not."""
-        if self.outcome not in APPROVING_OUTCOMES:
-            return (
-                f"the recorded outcome of {self.review_body} {self.reference} is "
-                f"{self.outcome!r}, which does not approve live application "
-                f"(approving outcomes: {sorted(APPROVING_OUTCOMES)})"
-            )
-        if self.reviewed_on > as_of:
-            return (
-                f"the record is dated {self.reviewed_on.isoformat()}, which is "
-                f"after the date being evaluated ({as_of.isoformat()}): it "
-                "describes a review that has not happened yet"
-            )
-        if self.expires_on is not None and self.expires_on < as_of:
-            return (
-                f"the authorization expired on {self.expires_on.isoformat()} "
-                f"(evaluating as of {as_of.isoformat()})"
-            )
-        if purpose not in self.scope:
-            return (
-                f"purpose {purpose!r} is not in the record's scope "
-                f"{list(self.scope)}; approval of one purpose is not approval "
-                "of another"
-            )
-        return None
-
-    def canonical(self) -> dict[str, Any]:
-        return {
-            "review_body": self.review_body,
-            "reference": self.reference,
-            "outcome": self.outcome,
-            "reviewed_on": self.reviewed_on.isoformat(),
-            "scope": list(self.scope),
-            "recorded_by": self.recorded_by,
-            "conditions": list(self.conditions),
-            "expires_on": self.expires_on.isoformat() if self.expires_on else None,
-            "notes": dict(self.notes),
-        }
-
-    def record_hash(self) -> str:
-        return hashlib.sha256(
-            json.dumps(self.canonical(), sort_keys=True, separators=(",", ":")).encode()
-        ).hexdigest()
-
-    @classmethod
-    def from_dict(cls, raw: Mapping[str, Any]) -> "LiveUseAuthorization":
-        exp = raw.get("expires_on")
-        return cls(
-            review_body=str(raw["review_body"]),
-            reference=str(raw["reference"]),
-            outcome=str(raw["outcome"]),
-            reviewed_on=date.fromisoformat(str(raw["reviewed_on"])),
-            scope=tuple(str(s) for s in raw.get("scope", ())),
-            recorded_by=str(raw["recorded_by"]),
-            conditions=tuple(str(c) for c in raw.get("conditions", ())),
-            expires_on=date.fromisoformat(str(exp)) if exp else None,
-            notes=dict(raw.get("notes", {})),
-        )
 
 
 # --------------------------------------------------------------------------
@@ -428,8 +310,12 @@ class AdmissionVerdict:
     conditions: tuple[AdmissionCondition, ...]
     claims: CheckpointClaims
     invariants: ConsumerInvariants
-    authorization: LiveUseAuthorization | None
-    as_of: date
+    #: Verbatim verdict from
+    #: :func:`~scwbd.intervene.deployment.authorize_live_application`.  Carried
+    #: rather than summarised, so a consumer records the same object the
+    #: intervention path records.
+    live_application: LiveApplicationVerdict | None
+    at_time_s: float | None
 
     @property
     def failed(self) -> tuple[AdmissionCondition, ...]:
@@ -439,15 +325,14 @@ class AdmissionVerdict:
         return {
             "purpose": self.purpose,
             "admitted": self.admitted,
-            "as_of": self.as_of.isoformat(),
+            "at_time_s": self.at_time_s,
             "conditions": [c.as_dict() for c in self.conditions],
             "manifest_id": self.claims.manifest_id,
             "invariants": self.invariants.as_dict(),
-            "authorization": (
-                self.authorization.canonical() if self.authorization else None
-            ),
-            "authorization_hash": (
-                self.authorization.record_hash() if self.authorization else ""
+            "live_application": (
+                self.live_application.as_provenance()
+                if self.live_application
+                else None
             ),
         }
 
@@ -474,17 +359,42 @@ _REQUIRED_BY_PURPOSE: Mapping[str, frozenset[str]] = {
 }
 
 
+def _as_epoch_seconds(when: Any) -> float | None:
+    """Accept a ``date``, an ISO string, or epoch seconds.  ``None`` stays None.
+
+    ``None`` is *not* replaced with "now".  An undated request cannot be
+    checked against a dated record, and
+    :func:`~scwbd.intervene.deployment.authorize_live_application` refuses it
+    for exactly that reason; substituting the wall clock here would convert a
+    refusal into a pass.
+    """
+    if when is None:
+        return None
+    if isinstance(when, (int, float)):
+        return float(when)
+    if isinstance(when, date):
+        return epoch_seconds(when.isoformat())
+    return epoch_seconds(str(when))
+
+
 def admit(
     claims: CheckpointClaims,
     *,
     purpose: str,
-    live_use_authorization: LiveUseAuthorization | None = None,
+    review: PreliminaryReviewRecord | None = None,
+    authorization: AuthorizationRecord | None = None,
+    intervention_class: str = "tms",
     invariants: ConsumerInvariants | None = None,
-    as_of: date | None = None,
+    as_of: Any = None,
     designation: str = "",
     raise_on_refusal: bool = True,
 ) -> AdmissionVerdict:
     """Decide whether ``claims`` may be served for ``purpose``.
+
+    ``review`` and ``authorization`` are handed straight to
+    :func:`~scwbd.intervene.deployment.authorize_live_application`; this module
+    forms no opinion of its own about either.  ``as_of`` may be a ``date``, an
+    ISO string, or epoch seconds, and is **not** defaulted to now.
 
     Refuses by raising :class:`CheckpointRefused` unless ``raise_on_refusal``
     is ``False``, in which case the verdict is returned with
@@ -497,7 +407,7 @@ def admit(
             f"unknown export purpose {purpose!r}; known: {list(EXPORT_PURPOSES)}. "
             "The runtime will not admit a purpose it has no rules for"
         )
-    as_of = as_of or date.today()
+    at_time_s = _as_epoch_seconds(as_of)
     inv = invariants if invariants is not None else ConsumerInvariants()
     required = _REQUIRED_BY_PURPOSE[purpose]
 
@@ -620,28 +530,23 @@ def admit(
         )
     )
 
-    # A6 -- live application is authorized, by record and not by date.
-    if live_use_authorization is None:
-        a6_pass, a6_detail = False, (
-            f"purpose {purpose!r} is live application and no LiveUseAuthorization "
-            "was supplied. Live use in the consumer repository is pending a "
-            "preliminary review; what opens this gate is a record that the "
-            "review occurred with an approving outcome, not the passing of "
-            f"{EARLIEST_CREDIBLE_REVIEW.isoformat()}"
-        )
-    else:
-        why = live_use_authorization.refusal_for(purpose, as_of=as_of)
-        a6_pass = why is None
-        a6_detail = why or (
-            f"{live_use_authorization.review_body} "
-            f"{live_use_authorization.reference}: outcome "
-            f"{live_use_authorization.outcome!r} recorded "
-            f"{live_use_authorization.reviewed_on.isoformat()}, scope "
-            f"{list(live_use_authorization.scope)}"
-        )
+    # A6 -- live application, decided entirely by Faraday's predicate.
+    #
+    # Note the mode is derived from the purpose, not from the caller: a caller
+    # cannot ask for "patient_directed" and have it checked as computational.
+    live = authorize_live_application(
+        mode=MODE_OF_PURPOSE[purpose],
+        intervention_class=intervention_class,
+        at_time_s=at_time_s,
+        review=review,
+        authorization=authorization,
+    )
     conditions.append(
         AdmissionCondition(
-            "A6", "live application authorized by record", a6_pass, a6_detail,
+            "A6",
+            "live application authorized by record",
+            live.admitted,
+            live.reason(),
             required="A6" in required,
         )
     )
@@ -652,8 +557,8 @@ def admit(
         conditions=tuple(conditions),
         claims=claims,
         invariants=inv,
-        authorization=live_use_authorization,
-        as_of=as_of,
+        live_application=live,
+        at_time_s=at_time_s,
     )
     if raise_on_refusal:
         verdict.raise_if_refused(designation)

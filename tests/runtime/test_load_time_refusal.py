@@ -17,23 +17,25 @@ finding in itself.
 from __future__ import annotations
 
 import json
-from datetime import timedelta
 from pathlib import Path
 
 import pytest
 
-from scwbd.runtime.admission import (
-    EARLIEST_CREDIBLE_REVIEW,
-    CheckpointRefused,
-    LiveUseAuthorization,
+from scwbd.intervene.deployment import (
+    PRELIMINARY_REVIEW_SCHEDULED,
+    PreliminaryReviewRecord,
 )
+from scwbd.runtime.admission import CheckpointRefused
+from scwbd.schema.authorization import epoch_seconds
 from scwbd.runtime.provenance import ProvenanceExpectation, ProvenanceMismatch
 from scwbd.runtime.serving import ServedModel, discover_checkpoint
 
 from test_ports import RUN1_LAYOUT, RUN2_LAYOUT
 
-AFTER = EARLIEST_CREDIBLE_REVIEW + timedelta(days=1)
-AS_OF = AFTER + timedelta(days=30)
+REVIEW_DAY = PRELIMINARY_REVIEW_SCHEDULED.isoformat()
+AS_OF = epoch_seconds(REVIEW_DAY) + 86400.0
+#: Years past the scheduled review. Used to show the date is not an unlock.
+LONG_AFTER_S = epoch_seconds("2027-12-31")
 
 #: The real run-1 artifact, written by agent Turing's training run.
 REAL_RUN1 = Path("/home/brandonin/Documents/scwbd-wt/turing/checkpoints")
@@ -76,14 +78,15 @@ def clean_manifest() -> dict:
     }
 
 
-def approving() -> LiveUseAuthorization:
-    return LiveUseAuthorization(
-        review_body="UT Arlington IRB",
-        reference="2026-0817",
+def approving() -> PreliminaryReviewRecord:
+    """A *fictional* record that the review happened and passed."""
+    return PreliminaryReviewRecord(
+        review_body="Example University preliminary review panel",
+        identifier="PRELIM-2026-0001",
+        occurred_on=REVIEW_DAY,
         outcome="approved",
-        reviewed_on=AFTER,
-        scope=("live_hardware",),
-        recorded_by="pi",
+        covered_intervention_classes=("tms",),
+        declared_by="test fixture",
     )
 
 
@@ -117,7 +120,7 @@ class TestCheckpointDiscoveryIsNotBlindToTheTrainersFilenames:
 # ---------------------------------------------------------------------------
 
 class TestLoadRefusesBeforeAServiceExists:
-    def test_the_control_arm_is_refused_for_live_hardware(self, tmp_path):
+    def test_the_control_arm_is_refused_for_live_hardware(self, tmp_path, authorization):
         write_checkpoint(tmp_path, "scwbd-001-beta", run1_manifest())
         with pytest.raises(CheckpointRefused) as exc:
             ServedModel.load(
@@ -125,7 +128,8 @@ class TestLoadRefusesBeforeAServiceExists:
                 device="cpu",
                 checkpoint_root=tmp_path,
                 purpose="live_hardware",
-                live_use_authorization=approving(),
+                review=approving(),
+            authorization=authorization,
                 as_of=AS_OF,
             )
         assert set(exc.value.codes) == {"A2", "A3", "A4"}
@@ -159,7 +163,7 @@ class TestLoadRefusesBeforeAServiceExists:
             ServedModel.load(
                 "clean", device="cpu", checkpoint_root=tmp_path,
                 purpose="patient_directed",
-                as_of=EARLIEST_CREDIBLE_REVIEW + timedelta(days=3650),
+                as_of=LONG_AFTER_S,
             )
         assert exc.value.codes == ("A6",)
 
@@ -173,13 +177,14 @@ class TestLoadRefusesBeforeAServiceExists:
         assert served.admission.admitted
         assert served.admission.purpose == "simulation"
 
-    def test_a_clean_checkpoint_with_a_record_loads_for_live_hardware(self, tmp_path):
+    def test_a_clean_checkpoint_with_a_record_loads_for_live_hardware(self, tmp_path, authorization):
         """Paired with every refusal above: the gate is not stuck closed."""
         write_checkpoint(tmp_path, "clean", clean_manifest())
         served = ServedModel.load(
             "clean", device="cpu", checkpoint_root=tmp_path,
             purpose="live_hardware",
-            live_use_authorization=approving(),
+            review=approving(),
+            authorization=authorization,
             as_of=AS_OF,
         )
         assert served.admission.admitted
@@ -191,14 +196,15 @@ class TestLoadRefusesBeforeAServiceExists:
             "robot_command_authority": False,
         }
 
-    def test_the_refusal_happens_before_any_service_object_exists(self, tmp_path):
+    def test_the_refusal_happens_before_any_service_object_exists(self, tmp_path, authorization):
         """There is no window in which an inadmissible checkpoint is usable."""
         write_checkpoint(tmp_path, "scwbd-001-beta", run1_manifest())
         served = None
         try:
             served = ServedModel.load(
                 "scwbd-001-beta", device="cpu", checkpoint_root=tmp_path,
-                purpose="patient_directed", live_use_authorization=approving(),
+                purpose="patient_directed", review=approving(),
+                authorization=authorization,
                 as_of=AS_OF,
             )
         except CheckpointRefused:
@@ -293,11 +299,12 @@ class TestAgainstTheRealRunOneArtifact:
     @pytest.mark.parametrize(
         "purpose", ["research_offline", "live_hardware", "patient_directed"]
     )
-    def test_no_purpose_beyond_simulation_admits_it(self, purpose):
+    def test_no_purpose_beyond_simulation_admits_it(self, purpose, authorization):
         with pytest.raises(CheckpointRefused) as exc:
             ServedModel.load(
                 "scwbd-001-beta", device="cpu", checkpoint_root=REAL_RUN1,
-                purpose=purpose, live_use_authorization=approving(), as_of=AS_OF,
+                purpose=purpose, review=approving(),
+                authorization=authorization, as_of=AS_OF,
             )
         assert "A1" in exc.value.codes
 
@@ -307,3 +314,78 @@ class TestAgainstTheRealRunOneArtifact:
                 "scwbd-001-beta-g5control", device="cpu", checkpoint_root=REAL_RUN1,
                 purpose="research_offline", as_of=AS_OF,
             )
+
+
+# ---------------------------------------------------------------------------
+# the unconditional refusal that could not discriminate
+# ---------------------------------------------------------------------------
+
+class TestProspectiveHumanIsGatedNotHardcoded:
+    """``ModelProvenance.prospective_human`` used to raise regardless of any
+    record, with the reason "out of scope for SC-WBD-001-beta (build-order item
+    6)".  Both of its guards carried ``# pragma: no cover`` and neither was
+    fired by any test.  An unconditional refusal cannot discriminate, and it
+    made the authorization mechanism unreachable from the consumer -- the same
+    defect as a stale permission string, pointed the safe way.
+
+    It now routes through the one live-application gate, so it refuses with a
+    reason that a record can satisfy.
+    """
+
+    def _verdict(self, authorization, **over):
+        from scwbd.intervene.deployment import authorize_live_application
+
+        kw = dict(
+            mode="live", intervention_class="tms", at_time_s=AS_OF,
+            review=approving(), authorization=authorization,
+        )
+        kw.update(over)
+        return authorize_live_application(**kw).as_provenance()
+
+    def test_it_refuses_with_no_verdict_at_all(self):
+        from scwbd.runtime.provenance import ModelProvenance
+
+        with pytest.raises(ValueError) as exc:
+            ModelProvenance(prospective_human=True)
+        assert "no live-application verdict was recorded" in str(exc.value)
+        assert "This refusal is satisfiable" in str(exc.value)
+
+    def test_it_refuses_on_a_refusing_verdict_and_names_the_failure(self, authorization):
+        from scwbd.runtime.provenance import ModelProvenance
+
+        with pytest.raises(ValueError) as exc:
+            ModelProvenance(
+                prospective_human=True,
+                live_application=self._verdict(authorization, review=None),
+            )
+        assert "REVIEW_ABSENT" in str(exc.value)
+
+    def test_a_computational_verdict_does_not_admit_a_prospective_human_claim(
+        self, authorization
+    ):
+        from scwbd.runtime.provenance import ModelProvenance
+
+        v = self._verdict(authorization, mode="computational")
+        assert v["admitted"] is True  # it *is* admitted, as computational
+        with pytest.raises(ValueError) as exc:
+            ModelProvenance(prospective_human=True, live_application=v)
+        assert "application_mode='computational'" in str(exc.value)
+
+    def test_an_admitting_live_verdict_permits_it(self, authorization):
+        """The pair that proves the guard discriminates rather than always fires."""
+        from scwbd.runtime.provenance import ModelProvenance
+
+        prov = ModelProvenance(
+            prospective_human=True,
+            live_application=self._verdict(authorization),
+        )
+        assert prov.prospective_human is True
+        assert prov.live_application["admitted"] is True
+
+    def test_human_use_authorized_stays_unconditional_and_now_fires(self):
+        """The asymmetry is deliberate: this one no record can satisfy."""
+        from scwbd.runtime.provenance import ModelProvenance
+
+        with pytest.raises(ValueError) as exc:
+            ModelProvenance(human_use_authorized=True)
+        assert "this software does not issue authorization" in str(exc.value)
