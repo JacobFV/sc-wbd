@@ -64,13 +64,13 @@
     "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
   },
   "per_source_contribution": {
-    "anatomical_prior": 0.13138595787763466,
-    "sim_wholebrain": 0.8686140421223654
+    "anatomical_prior": 0.1306325123863469,
+    "sim_wholebrain": 0.869367487613653
   },
   "gradient_permission_audit": {
     "anatomical_prior": {
       "n_permitted": 3,
-      "n_blocked": 101,
+      "n_blocked": 110,
       "patterns": [
         "coupling.gain_*",
         "coupling.global_scale"
@@ -97,7 +97,7 @@
     },
     "eegmmidb_real": {
       "n_permitted": 7,
-      "n_blocked": 97,
+      "n_blocked": 106,
       "patterns": [
         "coupling.*",
         "msg_proj.*",
@@ -123,7 +123,7 @@
     },
     "montage_calibration": {
       "n_permitted": 0,
-      "n_blocked": 104,
+      "n_blocked": 113,
       "patterns": [],
       "frozen": [
         "local.*",
@@ -150,7 +150,7 @@
     },
     "negative_control_shuffled": {
       "n_permitted": 0,
-      "n_blocked": 104,
+      "n_blocked": 113,
       "patterns": [],
       "frozen": [
         "*"
@@ -172,7 +172,7 @@
     },
     "sim_wholebrain": {
       "n_permitted": 11,
-      "n_blocked": 93,
+      "n_blocked": 102,
       "patterns": [
         "coupling.*",
         "msg_proj.*",

@@ -64,14 +64,14 @@
     "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
   },
   "per_source_contribution": {
-    "anatomical_prior": 0.027746564598447303,
-    "eegmmidb_real": 0.7873472136987261,
-    "sim_wholebrain": 0.18490622170282667
+    "anatomical_prior": 0.02717568007616599,
+    "eegmmidb_real": 0.7950667279172285,
+    "sim_wholebrain": 0.17775759200660537
   },
   "gradient_permission_audit": {
     "anatomical_prior": {
-      "n_permitted": 10,
-      "n_blocked": 94,
+      "n_permitted": 11,
+      "n_blocked": 102,
       "patterns": [
         "coupling.gain_*",
         "coupling.global_scale",
@@ -98,8 +98,8 @@
       ]
     },
     "eegmmidb_real": {
-      "n_permitted": 54,
-      "n_blocked": 50,
+      "n_permitted": 55,
+      "n_blocked": 58,
       "patterns": [
         "local.*",
         "residual.*",
@@ -120,19 +120,19 @@
         "readout.0.bias",
         "readout.2.weight",
         "readout.2.bias",
-        "bold.log_kappa",
-        "bold.log_gamma",
-        "bold.log_tau",
-        "bold.alpha",
-        "bold.rho",
-        "bold.neural_gain",
-        "bold.log_noise",
-        "behaviour.pool"
+        "observation.head.w",
+        "observation.head.b",
+        "uncertainty_propagator.log_decay",
+        "uncertainty_propagator.net.0.weight",
+        "uncertainty_propagator.net.0.bias",
+        "uncertainty_propagator.net.2.weight",
+        "uncertainty_propagator.net.2.bias",
+        "bold.log_kappa"
       ]
     },
     "montage_calibration": {
       "n_permitted": 6,
-      "n_blocked": 98,
+      "n_blocked": 107,
       "patterns": [
         "eeg.log_gain",
         "eeg.offset",
@@ -164,7 +164,7 @@
     },
     "negative_control_shuffled": {
       "n_permitted": 0,
-      "n_blocked": 104,
+      "n_blocked": 113,
       "patterns": [],
       "frozen": [
         "*"
@@ -185,8 +185,8 @@
       ]
     },
     "sim_wholebrain": {
-      "n_permitted": 89,
-      "n_blocked": 15,
+      "n_permitted": 90,
+      "n_blocked": 23,
       "patterns": [
         "local.*",
         "residual.*",
@@ -205,18 +205,18 @@
         "individualizer.*"
       ],
       "blocked_sample": [
+        "observation.head.w",
+        "observation.head.b",
+        "uncertainty_propagator.log_decay",
+        "uncertainty_propagator.net.0.weight",
+        "uncertainty_propagator.net.0.bias",
+        "uncertainty_propagator.net.2.weight",
+        "uncertainty_propagator.net.2.bias",
         "eeg.log_gain",
         "eeg.offset",
         "eeg.log_noise",
-        "eeg.nuisance",
-        "eeg.source_proj.0.weight",
-        "eeg.source_proj.0.bias",
-        "eeg.source_proj.2.weight",
-        "eeg.source_proj.2.bias",
-        "eeg.nuisance_drive.weight",
-        "eeg.nuisance_drive.bias",
-        "behaviour.pool",
-        "behaviour.net.0.weight"
+        "eeg.logvar_mix",
+        "eeg.nuisance"
       ]
     }
   },

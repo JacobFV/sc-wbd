@@ -64,13 +64,13 @@
     "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
   },
   "per_source_contribution": {
-    "anatomical_prior": 0.12910857721013283,
-    "sim_wholebrain": 0.8708914227898673
+    "anatomical_prior": 0.13009638710028257,
+    "sim_wholebrain": 0.8699036128997175
   },
   "gradient_permission_audit": {
     "anatomical_prior": {
       "n_permitted": 0,
-      "n_blocked": 104,
+      "n_blocked": 113,
       "patterns": [],
       "frozen": [
         "eeg.*",
@@ -94,7 +94,7 @@
     },
     "eegmmidb_real": {
       "n_permitted": 37,
-      "n_blocked": 67,
+      "n_blocked": 76,
       "patterns": [
         "local.*",
         "residual.*",
@@ -117,12 +117,12 @@
         "readout.0.bias",
         "readout.2.weight",
         "readout.2.bias",
-        "eeg.log_gain"
+        "observation.head.w"
       ]
     },
     "montage_calibration": {
       "n_permitted": 0,
-      "n_blocked": 104,
+      "n_blocked": 113,
       "patterns": [],
       "frozen": [
         "local.*",
@@ -149,7 +149,7 @@
     },
     "negative_control_shuffled": {
       "n_permitted": 0,
-      "n_blocked": 104,
+      "n_blocked": 113,
       "patterns": [],
       "frozen": [
         "*"
@@ -171,7 +171,7 @@
     },
     "sim_wholebrain": {
       "n_permitted": 41,
-      "n_blocked": 63,
+      "n_blocked": 72,
       "patterns": [
         "local.*",
         "residual.*",
@@ -192,11 +192,11 @@
         "msg_proj.bias",
         "msg_readin.0.weight",
         "msg_readin.0.bias",
-        "eeg.log_gain",
-        "eeg.offset",
-        "eeg.log_noise",
-        "eeg.nuisance",
-        "eeg.source_proj.0.weight"
+        "observation.head.w",
+        "observation.head.b",
+        "uncertainty_propagator.log_decay",
+        "uncertainty_propagator.net.0.weight",
+        "uncertainty_propagator.net.0.bias"
       ]
     }
   },

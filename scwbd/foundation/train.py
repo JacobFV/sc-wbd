@@ -811,10 +811,98 @@ class FoundationTrainer:
         self.completed_stages = list(payload.get("metrics", {}).get("completed_stages", []))
         print(f"resumed from {p} at step {self.global_step}; completed stages: {self.completed_stages}", flush=True)
 
+    def _corpus_sha(self) -> str | None:
+        """The simulated corpus index's own sha -- provenance that discriminates.
+
+        `git_sha()` is `-dirty` for every checkpoint this project has produced,
+        so it cannot distinguish two runs. The corpus index records the sha of
+        the code that generated it and changes when the corpus changes.
+        """
+        try:
+            with open(self.cfg.data.sim_index_fast) as fh:
+                return json.load(fh).get("git_sha")
+        except Exception:  # noqa: BLE001 - provenance is recorded or absent, never fabricated
+            return None
+
+    @torch.no_grad()
+    def calibrate_noise_floor(self, *, max_batches: int = 8, tag: str = "") -> dict[str, Any]:
+        """Set ``eeg.log_noise`` to its closed form on held-out measured windows.
+
+        **This is the repair for the whole of run 1's FAIL**
+        (`reports/training/p0_variance_channel.md`). `eeg.log_noise` was
+        trainable in stage V only; stage V ran 900 steps at lr 5.77e-5 for 134
+        seconds, and the parameter travelled 20% of the way to an optimum that
+        has a closed form. The model shipped asserting predictive variance 1.31
+        against a realised 3.97 -- overconfident by 3.0x -- which cost +0.4467
+        nats, 1.62x its entire deficit to persistence.
+
+        The Gaussian NLL is stationary in ``log_noise`` at ``log(mean residual
+        variance)``. It is computed here instead of searched for.
+
+        Run on the **val** fold: the mean must not be fitted on the windows the
+        variance is calibrated on, or the residuals are optimistic and the floor
+        is set too low -- which is the direction that caused the original defect.
+        """
+        val = getattr(self, "real_val", None)
+        if val is None or len(val) == 0 or not hasattr(self.model.eeg, "calibrate_noise_floor"):
+            return {
+                "applied": False,
+                "reason": "no held-out measured val fold, or head predates the repair",
+            }
+        loader = torch.utils.data.DataLoader(
+            val, batch_size=max(8, self.cfg.data.batch // 4), shuffle=False, num_workers=0
+        )
+        was_training = self.model.training
+        self.model.eval()
+        c = self.cfg.data.context
+        resid: list[Tensor] = []
+        states: list[Tensor] = []
+        for i, batch in enumerate(loader):
+            if i >= max_batches:
+                break
+            eeg = batch["eeg"].to(self.device, non_blocking=True)
+            ctx_e, tgt_e = eeg[:, :c], eeg[:, c:]
+            src = self.sensor_to_parcel(ctx_e)
+            src = src / src.std(dim=(1, 2), keepdim=True).clamp_min(1e-6)
+            th = self.posterior.sample(ctx_e, 1)[:, 0][:, : len(THETA_NAMES)]
+            if self.individualizer is not None:
+                th = self.individualizer(participant=self.participant_index(batch.get("subject", [])), base=th)
+            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
+                roll = self.model.rollout(y_context=src, theta=th, n_steps=tgt_e.shape[1], enforce_r05=False)
+                mu, _ = self.model.eeg(roll.state)
+            resid.append((tgt_e.float() - mu.float()).cpu())
+            states.append(roll.state.float().cpu())
+        if was_training:
+            self.model.train()
+        if not resid:
+            return {"applied": False, "reason": "held-out loader yielded no batches"}
+        r = torch.cat(resid)
+        s = torch.cat(states)
+        rep = self.model.eeg.calibrate_noise_floor(r.to(self.device), state=s.to(self.device))
+        rep["applied"] = True
+        rep["tag"] = tag
+        rep["realised_residual_variance"] = float(r.pow(2).mean())
+        print(
+            f"[noise-floor {tag}] log_noise {rep['log_noise_before_mean']:+.4f} -> "
+            f"{rep['log_noise_after_mean']:+.4f}  (variance {rep['implied_variance_before']:.4f} -> "
+            f"{rep['implied_variance_after']:.4f}, realised {rep['realised_residual_variance']:.4f})",
+            flush=True,
+        )
+        return rep
+
     def train(self) -> dict[str, Any]:
+        # The init calibration needs the val fold. `main()` builds data first,
+        # but `train()` is public and was reachable without it -- in which case
+        # the init call silently returned `applied: False` and the run lost the
+        # one calibration it most needed. Idempotent; `build_data` guards itself.
+        if not getattr(self, "_data_ready", False):
+            self.build_data()
         self.maybe_resume()
         deadline = time.time() + self.cfg.train.max_wall_seconds
         results = []
+        # Closed form BEFORE the first step, so the head does not spend the run
+        # climbing toward a number it could have been handed.
+        noise_floor_calibrations = [self.calibrate_noise_floor(tag="init")]
         for stage in self.cfg.train.stages:
             if stage.name in self.completed_stages:
                 print(f"skipping completed stage {stage.name}", flush=True)
@@ -824,11 +912,31 @@ class FoundationTrainer:
                 break
             print(f"\n=== Stage {stage.name}: {stage.steps} steps, lr={stage.lr} ===", flush=True)
             results.append(self.run_stage(stage, deadline=deadline))
+            # Re-solve at every stage boundary. The optimum MOVES: it is
+            # log(residual variance), and the residual shrinks as the mean path
+            # improves, so a floor calibrated once at init is stale by the end.
+            noise_floor_calibrations.append(self.calibrate_noise_floor(tag=f"after:{stage.name}"))
         summary = {
             "run_name": self.cfg.train.run_name,
+            # `git_sha()` carries `-dirty` on every checkpoint this project has
+            # produced, because the run writes to tracked files. It distinguishes
+            # nothing (reports/decorative_guards.md #4) and is retained only so
+            # its uselessness stays visible. Provenance that DOES discriminate:
+            # the corpus index sha and the split fingerprint, below.
             "git_sha": git_sha(),
+            "corpus_git_sha": self._corpus_sha(),
             "environment": env_fingerprint(),
             "stages": results,
+            "noise_floor_calibrations": noise_floor_calibrations,
+            # Whether the heads were ever fitted, stated rather than inferable.
+            "noise_floor_report": {
+                "eeg": self.model.eeg.noise_floor_report()
+                if hasattr(self.model.eeg, "noise_floor_report")
+                else {},
+                "bold": self.model.bold.noise_floor_report()
+                if hasattr(self.model.bold, "noise_floor_report")
+                else {},
+            },
             "total_wall_seconds": self.timer.elapsed,
             "global_steps": self.global_step,
             "model_parameters": self.model.parameter_report(),
