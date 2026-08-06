@@ -490,7 +490,7 @@ One enforced gate beats two partial ones.
 | suite | tests | result |
 |---|---|---|
 | `tests/intervene/` (pre-existing, before the new files) | 224 | **pass**, unchanged by this work |
-| `tests/intervene/test_limits_bind.py` + `test_deployment.py` (new) | 126 | **pass** |
+| `tests/intervene/test_limits_bind.py` + `test_deployment.py` (new) | 128 | **pass** |
 | the 8-file limit/decision set + the 2 new files | 130 | **pass**, `exitstatus: 0` |
 | `tests/schema/` + `tests/compiler/` | 248 (1 skip) | **pass** |
 | `tests/schema/` + `tests/compiler/` + `tests/bench/` | 442 (1 skip) | **pass** |
