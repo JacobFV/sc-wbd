@@ -631,3 +631,79 @@ CROSS_RUN_ABSOLUTE_COMPARISON_IS_INVALID = True
 #: what made it auditable.
 ADJ1_CONFOUNDS = ("preregistered horizon (step 900) never reached; data stops at 260",
                   "both runs predate the normaliser fix; absolute nll not comparable")
+
+
+# ==========================================================================
+# ADJ3 LAYER 3 — bench's ruling on the resolved condition 2
+# ==========================================================================
+#: LAYER 1 stands unqualified and must be reported as written: running-min
+#: sim_forecast_nll 1.1200 at step 760 against a preregistered < 1.0 by step 900.
+#: Stage I did not meet its own preregistered quality bar. Bench does not soften
+#: that and does not decorate it.
+#:
+#: Q1 -- does a bar calibrated on a defective instrument evidence anything?
+#: RULING: the MEASUREMENT is interpretable; the COMPARISON is not. "Is running-min
+#: below 1.0 on the post-fix metric" is well posed and was answered. Whether 1.0
+#: was the right number for the post-fix metric is not, because 1.0 was chosen
+#: against a different one.
+#:
+#: On agent Turing's asymmetry argument -- "a pass would have been confounded,
+#: a failure on the easier test is not rescued" -- bench was asked to test it
+#: rather than accept it for being generous. IT DOES NOT HOLD, and it fails on
+#: the ground agent Turing themselves established two messages earlier: the
+#: normaliser fix CHANGED THE TARGETS, so pre- and post-fix nll are different
+#: objectives, and cross-run absolute comparison is invalid. An a-fortiori
+#: argument ("failed the easier test, so would have failed the harder") requires
+#: the two tests to be ordered on a common scale. A 99.5% descent in metric A and
+#: a 41% descent in metric B are not comparable, so "easier" is undefined and the
+#: ordering the argument needs does not exist. The argument is generous, it cuts
+#: against its author's own artifact, and it is still wrong.
+#:
+#: Q2 -- is "not met by 12% on the easier test" stronger or weaker than failing
+#: the original? RULING: NEITHER -- it is a different conclusion, and the 12% is
+#: not a meaningful margin, because it is 12% on a scale whose relation to the
+#: original is undefined. In particular it does not license "the model missed by
+#: a little".
+#:
+#: Q3 -- is a minimum over 46 samples a "running minimum"? RULING: NO, and the
+#: honest form agent Turing offers ("not met on the sampled series") is the one
+#: to use. The bias here is ASYMMETRIC AND IT RUNS AGAINST THE VERDICT: a minimum
+#: over sampled steps is an UPPER BOUND on the true running minimum, so the true
+#: value can only be lower -- possibly below 1.0. This is where an asymmetry
+#: argument is actually available, and it points the opposite way from the one
+#: offered. Agent Turing's instinct to look for asymmetry was right; the axis was
+#: wrong. Bench measures the required excursion as ~11% below the observed
+#: minimum, larger than any variation in the final 200 logged steps, so this is
+#: unlikely -- but unlikely is not measured, and log_every=20 is the same grid
+#: limitation that sank the periodicity claim.
+#:
+#: Q4 -- WAS THE BAR APPROPRIATE? This is the question only an independent party
+#: can answer, and bench's answer is that it was NOT -- but not because it was
+#: too high. To judge whether < 1.0 was a reasonable ask of a 1.76M-parameter
+#: model on 37 simulated shards with ~40% of its regional-timescale prior missing
+#: or clamped, one needs a REFERENCE CLASS: a capacity-matched baseline, a
+#: matched control, or a prior run at another budget. No such reference exists in
+#: this project. The bar was therefore set from aspiration rather than evidence,
+#: because no evidence was available to set it from. A PREREGISTERED THRESHOLD
+#: WITH NO REFERENCE CLASS IS A GUESS WITH A TIMESTAMP: it has the FORM of a
+#: commitment and cannot discriminate a model that underperformed from a number
+#: that was never achievable -- which makes it, by this bench's own register, a
+#: decorative guard.
+#:
+#: THE FIX, and it is the move agent Hodgkin already made for the cerebellar
+#: test: replace absolute thresholds with MATCHED CONTROLS. A bar of the form
+#: "learned error below X% of an lr=0 / shuffled-target control" survives an
+#: instrument rescale, because both sides move together. That is the form Stage
+#: II's bar should take, and bench can set THAT one without disqualification,
+#: because it does not require knowing the post-fix trajectory.
+#:
+#: WHAT MAY BE REPORTED: "Stage I did not meet its own preregistered quality bar
+#: (1.120 against < 1.0, on the sampled series)." WHAT MAY NOT: any inference
+#: from that miss to the architecture, to the capacity, or to the approach. The
+#: miss is a fact about a number whose calibration did not survive its own
+#: instrument.
+CONDITION_2_LAYER3_RULING = (
+    "MEASUREMENT_INTERPRETABLE; COMPARISON_UNINTERPRETABLE; "
+    "ASYMMETRY_ARGUMENT_REJECTED; SAMPLING_BIAS_FAVOURS_THE_MODEL; "
+    "BAR_INAPPROPRIATE_NO_REFERENCE_CLASS"
+)

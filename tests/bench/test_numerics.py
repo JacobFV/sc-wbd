@@ -347,11 +347,25 @@ def test_numerics_suite_reports_every_absent_input():
     # checks whose subject has landed produce a verdict; the rest stay blocked
     # and say so rather than passing by default.
     assert reports["N1_compiler_correctness"].status in ("PASS", "FAIL")
-    for k in ("N3_em_solver", "N4_acoustic_solver"):
+    # field gates auto-wire to agent Faraday's solvers once those are importable,
+    # so they produce a verdict rather than silently reverting to COULD_NOT_RUN
+    for k in ("N3_em_solver", "N4_acoustic_solver", "N6_induced_efield",
+              "N8_induced_efield_contact"):
         assert reports[k].status in ("PASS", "FAIL", "COULD_NOT_RUN")
+    # these have no subject at all and must stay blocked
     assert {reports[k].status for k in
-            ("N5_solver_suite", "N2_boundary_consistency", "N6_induced_efield",
-             "N8_induced_efield_contact")} == {"COULD_NOT_RUN"}
+            ("N5_solver_suite", "N2_boundary_consistency")} == {"COULD_NOT_RUN"}
+
+
+def test_field_gates_do_not_silently_revert_once_their_solvers_exist():
+    """A default run must reproduce a verdict, not overwrite it with COULD_NOT_RUN."""
+    from scwbd.bench.adapters import induced_field_solver
+
+    if not induced_field_solver().available:
+        pytest.skip("agent Faraday's induced-field solver is not importable here")
+    reports = {r.manifest.claim_id: r for r in run_numerics_suite()}
+    assert reports["N6_induced_efield"].status != "COULD_NOT_RUN"
+    assert reports["N8_induced_efield_contact"].status != "COULD_NOT_RUN"
 
 
 def test_n8_contact_gate_exists_as_its_own_row_and_states_its_contract():

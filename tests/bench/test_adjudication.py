@@ -208,3 +208,26 @@ def test_adj1_double_confound_is_recorded():
     assert len(ADJ1_CONFOUNDS) == 2
     assert any("never reached" in c for c in ADJ1_CONFOUNDS)
     assert any("predate the normaliser fix" in c for c in ADJ1_CONFOUNDS)
+
+
+def test_layer3_ruling_rejects_the_asymmetry_argument_on_stated_grounds():
+    import scwbd.bench.adjudication as adj
+
+    src = open(adj.__file__, encoding="utf-8").read()
+    assert "ASYMMETRY_ARGUMENT_REJECTED" in adj.CONDITION_2_LAYER3_RULING
+    assert "CHANGED THE TARGETS" in src          # the ground it fails on
+    assert '"easier" is undefined' in src
+    # and the axis where an asymmetry IS available runs the other way
+    assert "SAMPLING_BIAS_FAVOURS_THE_MODEL" in adj.CONDITION_2_LAYER3_RULING
+    assert "UPPER BOUND on the true running minimum" in src
+
+
+def test_layer3_ruling_separates_a_bad_bar_from_a_bad_model():
+    import scwbd.bench.adjudication as adj
+
+    src = open(adj.__file__, encoding="utf-8").read()
+    assert "BAR_INAPPROPRIATE_NO_REFERENCE_CLASS" in adj.CONDITION_2_LAYER3_RULING
+    assert "A GUESS WITH A TIMESTAMP" in src
+    assert "matched controls" in src.lower()
+    # layer 1 is not softened
+    assert "does not soften" in src
