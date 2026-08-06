@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three ways to break a density — SC-WBD</title>
+<meta name="description" content="A normalizing flow reported -log q of 4.489e9 from the first step. Three separate causes, each invisible to the others&#x27; tests, and a fourth claim withdrawn.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Three ways to break a density — SC-WBD">
+<meta property="og:description" content="A normalizing flow reported -log q of 4.489e9 from the first step. Three separate causes, each invisible to the others&#x27; tests, and a fourth claim withdrawn.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+<script>
+/* Applied before paint so an explicit theme choice does not flash. */
+(function () {
+  try {
+    var t = localStorage.getItem("scwbd-theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body class="">
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="../index.html">SC&#8209;WBD</a>
+    <nav>
+        <a href="../index.html">Overview</a>
+        <a href="../engineering/index.html" class="active">Engineering</a>
+        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../attribution.html">Attribution</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="pagehead">
+      <p class="kicker">Engineering · 07</p>
+      <h1>Three ways to break a density</h1>
+      <p class="standfirst">A density reported -log q of 4.489e9, bit-identical across independent runs, from the very first step. Fixing it took three separate changes, and what found all three was a counter rather than a bound.</p>
+    </div>
+<div class="prose">
+
+<h2>What the guard was for</h2>
+
+<p>The first response was defensive: bound the loss to the envelope the flow's
+own construction implies. The coupling scale is <code>tanh</code>-bounded to
+±2.5 and <code>to_unconstrained</code> clamps before <code>atanh</code>, so
+there is a computable ceiling on <code>-log q</code>. Anything past it is a
+pathological batch, not a hard example.</p>
+
+<p>The important half was not the bound. It was this:</p>
+
+<pre><code>npe_rejected: int = 0
+npe_seen_max: float = 0.0</code></pre>
+
+<p>A guard that rejects and reports nothing is a mask. A guard that rejects and
+reports a <em>rate</em> is a diagnostic. The first diagnosis — "a single
+degenerate batch" — was wrong, and the counter is what disproved it:</p>
+
+<pre><code>step   1   npe 0   rejected   1
+step 400   npe 0   rejected 400</code></pre>
+
+<p>400 rejections in 400 steps is not a rare event. Without the counter, the
+posterior loss would have been silently zeroed for an entire run and the model
+would have shipped with an amortized posterior that never trained, under a
+green log.</p>
+
+<h2>Cause one: the conditioning, not the input</h2>
+
+<p>An instrumented dump on the first real rejection:</p>
+
+<pre><code>REJ#0 all=True kept=0/64 per=[1.5e7, 1.3e8, 3.3e7, ...]
+      y|max=19.34  c|max=13.18  u|max=3.962 u_fin=True  th|max=6.144</code></pre>
+
+<p><code>u</code> is bounded and finite, so the flow's <em>input</em> was never
+the problem. The conditioning was: <code>|c|max ≈ 13–18</code> in training
+against ~0.4 for the same network on unmasked corpus data. A coupling's
+<em>scale</em> is <code>tanh</code>-bounded; its <em>translation</em> is linear
+in its input far from the origin. A conditioning vector of 13 drives
+<code>z</code> far enough that <code>-½z²</code> reaches −4.5e9.</p>
+
+<p>A <code>LayerNorm</code> on the conditioning, applied in
+<code>log_prob</code> and <code>sample</code> alike so density and samples
+cannot disagree, bounds <code>-log q</code> at 17.04 across a 200× input
+range.</p>
+
+<h2>Cause two: a point mass</h2>
+
+<p>The loss became finite and stayed absurd — around 4000 for an eight-dimensional
+flow. The configuration said <code>nuisance_dim: 2</code>, which accurately
+describes an intent to estimate EEG gain and sensor noise. The trainer passed
+<code>torch.zeros</code>.</p>
+
+<p>So two of the flow's eight target dimensions were a <em>constant at the
+origin</em>. No normalizing flow can represent a point mass with finite
+density, and the attempt dominated everything else.</p>
+
+<table>
+<thead><tr><th>configuration</th><th>final −log q</th><th>rejected</th></tr></thead>
+<tbody>
+<tr><td><code>nuisance_dim = 0</code></td><td>5.3034</td><td>0 / 120</td></tr>
+<tr><td><code>nuisance_dim = 2</code></td><td>does not converge</td><td>continuous</td></tr>
+</tbody>
+</table>
+
+<p>Nothing in the config was wrong. The defect was that the intent had never
+been implemented and the placeholder standing in for it was silently
+pathological.</p>
+
+<h2>Cause three: one learning rate for two different objects</h2>
+
+<pre><code>step  80   npe    8.449   rejected 0
+step 100   npe  110.1
+step 140   npe 1229</code></pre>
+
+<p>Stable through the warmup, climbing at exactly the point the one-cycle
+schedule reached its maximum — while the forecast head kept improving
+throughout. A step size that is merely large for a residual block is
+destabilising for a density, for the same reason as cause one: the translation
+is linear in its input. The posterior now trains in its own parameter group at
+0.1× the stage rate.</p>
+
+<h2>A fourth claim, withdrawn</h2>
+
+<p>The obvious next move was to bound the translation the way the scale already
+is. That was committed as "the root cause, not a delay" — before the comparison
+finished. It finished:</p>
+
+<pre><code>UNBOUNDED      final 7.3007  worst 9.2648  rejected 0/600
+T_BOUND=12.0   final 7.3006  worst 9.2643  rejected 0/600</code></pre>
+
+<p>The unbounded arm did not diverge, so the test cannot confirm the bound
+fixes anything. It establishes only that the bound costs nothing measurable, so
+it stays as free insurance against a mechanism that is real in principle and
+unproven here.</p>
+
+<p>The honest summary: three fixes moved the onset from step 1 to step 800, the
+fourth is free, and the training run remains the only test that has ever
+reproduced the failure.</p>
+
+<h2>What generalises</h2>
+
+<p>Each cause was invisible to the others' tests. The conditioning bug passed
+every isolation test because the summary network is scale-robust on unmasked
+data. The nuisance bug needed a converging flow before it became the dominant
+term. The learning-rate bug could not be reached until the first two were
+fixed.</p>
+
+<p>Three sequential failures, each masking the next — and a rate, rather than a
+boolean, is what made them separable at all.</p>
+</div>
+
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p><strong>SC-WBD-001 series.</strong> A research programme, not a product.
+    Nothing on this site is a medical device, a clinical claim, or advice.
+    No trained model here has been shown to beat its baselines.</p>
+    <p>Data sources carry their own licences, several of them non-commercial and
+    share-alike. See <a href="../attribution.html">attribution</a>.</p>
+    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+  </div>
+</footer>
+
+<script>
+document.getElementById("theme-toggle").addEventListener("click", function () {
+  var el = document.documentElement;
+  var cur = el.getAttribute("data-theme");
+  if (!cur) {
+    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  var next = cur === "dark" ? "light" : "dark";
+  el.setAttribute("data-theme", next);
+  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
+});
+</script>
+
+</body>
+</html>
