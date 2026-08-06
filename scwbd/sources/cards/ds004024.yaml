@@ -346,8 +346,30 @@ missingness:
     What the fetched bytes DO support: per dataset_description.json, spTMS runs
     01-06 are the complete 100% rMT probe design - spTMS-Before, spTMS-After10
     and spTMS-After60, crossed with left/right M1 - and are collected in all
-    sessions. So the pre/post ccPAS *effect* contrast in split_policy is fully
-    supported by what is on disk at the 14 ms asynchrony.
+    sessions.
+
+    CORRECTED 2026-08-06 (agent Galvani, by loading the bytes rather than
+    reading this table): the pre/post ccPAS effect contrast is NOT supported,
+    because the design's per-run LABELS are not distributed. The runs are on
+    disk; which run is "Before" and which is "After10"/"After60" is not. Four
+    independent places where that label could have lived are all empty:
+      - the per-run *_eeg.json sidecars carry TaskName "spTMS" and nothing else
+        that distinguishes runs;
+      - *_scans.tsv has an acq_time column whose value is "n/a" in every row;
+      - the .vmrk marker files were rewritten by pybv 0.6.0 with an EMPTY date
+        field, so mne reports meas_date None and the wall clock is gone;
+      - events.tsv contains only Stimulus/A and Out/A markers, structurally
+        identical across all six runs.
+    The only remaining discriminator is the run INDEX, and mapping index to
+    design cell is a convention, not a record. It is also measurably imperfect:
+    the hemisphere factor, which IS recoverable from the lateralised MEP,
+    alternates left/right exactly as the convention predicts in 11 of 12 loaded
+    runs and contradicts it in one (sub-CON006 run-06). Inferring the timepoint
+    from the MEP amplitude and then testing a ccPAS effect on that amplitude
+    would be circular. The pre/post contrast is therefore recorded as
+    UNAVAILABLE on this snapshot, and fetching more subjects does not fix it -
+    the missing labels are a property of the upstream release's metadata, not
+    of our subject subset.
 
     What they do NOT support: (a) the ccPAS induction stimulus itself is absent,
     so nothing here constrains a model of the paired-pulse induction; (b) with
@@ -355,8 +377,50 @@ missingness:
     plasticity test named in split_policy.stimulus_holdout CANNOT be run on this
     snapshot; (c) intervention.dose declares 110% rMT but no 110% rMT bytes were
     fetched, so any intensity contrast is unevaluable here.
-  unplanned: "EEG binaries fetched for 2 of 13 participants (sub-CON001, sub-CON006); BIDS metadata (channels, electrodes, events, sidecars) is present for all participants. Unfetched runs are excluded, never interpolated."
-  artifact_rejection: "none applied by the provider or here; the TMS pulse artefact is present in the raw data and must be handled by the consumer with a declared operator"
+  unplanned: >-
+    EEG binaries fetched for 2 of 13 participants (sub-CON001, sub-CON006);
+    BIDS metadata (channels, electrodes, events, sidecars) is present for all
+    participants. Unfetched runs are excluded, never interpolated.
+
+    VERIFIED BY LOADING 2026-08-06 (agent Galvani), not by directory listing:
+    all 12 spTMS runs (2 participants x runs 01-06) open with
+    mne.io.read_raw_brainvision and yield real signal. All 36 associated
+    .eeg/.vhdr/.vmrk files match their manifest sha256 and byte length exactly.
+    This specifically closes the sub-CON006 hazard in known_issues.md ISSUE-003,
+    where interrupted multipart temp files had previously made that subject look
+    populated while holding zero recoverable signal: no temp files remain, and
+    the binaries load and produce lateralised MEPs.
+
+    Measured per run: 20000 Hz, 69 channels (64 EEG + 2 EOG + 2 EMG + 1 ECG per
+    channels.tsv - note the BrainVision header itself carries no channel types,
+    so a reader that skips channels.tsv will mistype all 69 as EEG), 402-418 s
+    duration, 80 TMS pulses at a 5.000 s inter-pulse interval (sd 0.000 s).
+    The single exception is sub-CON006 run-05: 82 pulses, ISI max 8.322 s,
+    sd 0.367 s. Electrodes: 64 of 69 rows carry numeric CapTrak coordinates
+    (median radius 0.110 m); the 5 peripheral channels carry no position and are
+    recorded as absent rather than zero.
+  artifact_rejection: >-
+    none applied by the provider or here; the TMS pulse artefact is present in
+    the raw data and must be handled by the consumer with a declared operator.
+
+    MEASURED 2026-08-06 (agent Galvani, scwbd.sources.perturbation.ds004024.
+    measure_saturation, 40 pulses per run over 6 runs): the amplifier is driven
+    to a rail of 0.44-0.53 V, i.e. roughly 5000x a physiological scalp potential,
+    and the samples in hard contact with that rail end by 0.30 ms (median) and
+    0.35 ms (max) after the pulse. signal.saturation was previously "unknown";
+    the rail is not declarable from the file format - the samples are IEEE
+    float32, so no clipping value is recoverable from the header - but it is
+    measurable from the data, and now has been.
+
+    This 0.35 ms figure bounds HARD SATURATION ONLY. It does NOT bound the
+    slower decay, amplifier recovery, muscle and recharge artefacts, and it must
+    not be quoted as an artefact-free horizon. The loader's default exclusion
+    window therefore remains the 10 ms declared in ledger.validity_domain, which
+    is wider than the measurement, and the measured saturation is carried
+    alongside it rather than replacing it. A defensible bound on the slow decay
+    was NOT established here: two candidate recovery metrics were discarded
+    because they read identically (the window edge) for all 12 runs and so could
+    not discriminate.
   dropout: "participants attended different numbers of asynchrony sessions (13/11/7 for 14/4/9 ms)"
   attrition: "session attendance is unbalanced by design and by drop-out; the release does not distinguish the two"
   policy: >-
@@ -482,10 +546,19 @@ split_policy:
     and any derived tractogram or parcellation, stay in one fold. Four
     sessions of one person are not four subjects (R10).
   temporal_holdout: >-
-    available within participant: sessions are at least one week apart and the
-    pre/post-ccPAS blocks are ordered within a session. A ccPAS plasticity
-    claim must predict the *post* block from the *pre* block, never the
-    reverse.
+    NOT AVAILABLE on this snapshot. This field previously read "available within
+    participant: sessions are at least one week apart and the pre/post-ccPAS
+    blocks are ordered within a session". Corrected 2026-08-06 (agent Galvani):
+    the blocks were ordered during acquisition, but the ORDER IS NOT
+    DISTRIBUTED. scans.tsv acq_time is "n/a" throughout, pybv 0.6.0 stripped the
+    marker dates so meas_date is None, and no sidecar names a block. There is
+    therefore no recorded within-session time axis to hold out on, and the rule
+    "predict the post block from the pre block" cannot be enforced because
+    neither block can be identified. See identity.subset_note.
+
+    A ccPAS plasticity claim remains the right claim to want from this source;
+    it is simply not evaluable until the per-run block labels are obtained from
+    upstream (they are not in the released metadata) or from the authors.
   temporal_holdout_spec: null
   stimulus_holdout: >-
     the manipulated variable is the stimulation protocol (hemisphere,
