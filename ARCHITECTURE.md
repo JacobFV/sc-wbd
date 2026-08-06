@@ -602,6 +602,31 @@ inside the module it polices is a self-assessment, not a refusal — and R12
 exists precisely because `foundation` emitted a control-arm artifact under the
 model's name with nothing outside it able to object.
 
+**RL-11 — a guard earns its keep by asserting a claim the world can
+falsify, not by reporting a number it computes itself.** 🔥 Turing's, and it is
+the design rule behind every guard that has worked here. The four that fired —
+`BindingDriftError` ("every declared pattern matches a real tensor"),
+`SpanViolation` ("θ was bound before rollout"), the weight-movement check
+("tensors actually moved"), the mutation-verified family partition — each
+states something about the world that can turn out false. The twelve decorative
+entries all report a self-computed quantity, which is why none of them could
+ever disagree with anything.
+
+*Corollary — a fix verified on the arm that does not exercise it is not
+verified.* The control arm has no mechanistic families, so it passes the
+`SpanViolation` path regardless. Smoke-test **both** arms, through the rollout
+and not merely the constructor: all three launch-blocking defects this cycle
+were constructor- or first-rollout-time failures found by launching into a log
+nobody was watching.
+
+**RL-10 amended (Turing): merge before staging *or measuring*.** Stale
+measurements are the more dangerous half. Stale code fails loudly; a stale
+capacity match produces a number that looks right — a control matched at
+`hidden=314` against a treatment arm 34 commits old was **−25.83%**, presented
+in its own header as **+0.27%**, because `X_i^uncertainty` and the per-family
+propagator grew the treatment arm ~35% in between. Had it launched, A1 would
+have measured capacity and called it structure.
+
 **RL-9 — check the thing, not the report of the thing.** ⚡ Faraday's, and the
 sharpest verification rule this project has produced. A `strict=False` load
 with a captured-but-unchecked `load_report` will report success while loading
