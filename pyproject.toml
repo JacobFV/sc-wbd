@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "SC-WBD-001-beta: compiled, multiresolution, multirate whole-brain modeling"
 readme = "ARCHITECTURE.md"
 requires-python = ">=3.12"
-license = { text = "Proprietary" }
+license = { text = "CC-BY-NC-SA-4.0" }
 authors = [{ name = "SuperCognition Labs" }]
 keywords = ["neuroscience", "whole-brain-modeling", "multimodal", "uncertainty"]
 classifiers = [
