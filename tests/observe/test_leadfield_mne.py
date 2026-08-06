@@ -28,7 +28,9 @@ from .conftest import (
     HEAD_RADIUS,
     MNE_SPHERE_RELATIVE_RADII,
     MNE_SPHERE_SIGMAS,
+    fsaverage_dir,
     mne_sample_path,
+    requires_fsaverage,
     requires_mne_sample,
 )
 
@@ -256,13 +258,67 @@ def test_precomputed_sample_forward_round_trips():
     assert lf.ledger.bias_by_name("coregistration") is not None
 
 
-@requires_mne_sample
-def test_spherical_model_and_subject_bem_agree_in_gross_topography():
-    """A sphere is a geometry model, not the subject's head -- quantify the gap.
+def _matched_vs_null(G: torch.Tensor, S: torch.Tensor) -> dict[str, float]:
+    """Matched vs permuted-null topography agreement, amplitude-normalised."""
+    a = G / G.norm(dim=0, keepdim=True)
+    b = S / S.norm(dim=0, keepdim=True)
+    C = (a.T @ b).abs()
+    matched = torch.diagonal(C)
+    off = C[~torch.eye(C.shape[0], dtype=torch.bool)]
+    sgn = torch.sign((a * b).sum(0))
+    rdm = (a - b * sgn).norm(dim=0)
+    return {
+        "matched_median_r": float(matched.median()),
+        "null_median_r": float(off.median()),
+        "null_p95_r": float(off.quantile(0.95)),
+        "frac_above_null_p95": float((matched > off.quantile(0.95)).to(torch.float64).mean()),
+        "median_rdm": float(rdm.median()),
+    }
 
-    This test *records* the discrepancy that the ledger's
-    ``spherical_geometry_discrepancy`` bias term claims to bound, rather than
-    asserting the two agree.
+
+def _sphere_vs_bem(fwd, n_sources: int = 300) -> dict[str, float]:
+    from scwbd.observe.leadfield import SphericalHeadModel
+
+    fixed = mne.convert_forward_solution(fwd, force_fixed=True, verbose="error")
+    lf = BEMLeadField.from_mne_forward(fixed)
+    G = lf.as_matrix().to(torch.float64)
+    G = G - G.mean(0, keepdim=True)
+    sensor_pos = lf.sensor_positions.to(torch.float64)
+    src_pos = lf.source_positions.to(torch.float64)
+
+    head = SphericalHeadModel.fitted_to(sensor_pos)
+    centre = torch.tensor(head.center, dtype=torch.float64)
+    depth = (src_pos - centre).norm(dim=-1)
+    keep = (depth < head.radii[0] * 0.97).nonzero().flatten()
+    if keep.numel() < 50:
+        pytest.skip("too few sources inside the fitted brain sphere")
+    keep = keep[torch.linspace(0, keep.numel() - 1, min(n_sources, keep.numel())).long()]
+
+    normals = src_pos[keep] - centre
+    normals = normals / normals.norm(dim=-1, keepdim=True)
+    S = torch.einsum("esk,sk->es", head.potential(src_pos[keep], sensor_pos), normals)
+    S = S - S.mean(0, keepdim=True)
+    stats = _matched_vs_null(G[:, keep], S)
+    stats["fitted_radius_m"] = head.R
+    stats["n_sources"] = float(keep.numel())
+    return stats
+
+
+@requires_mne_sample
+def test_sphere_does_not_substitute_for_a_subject_bem(capsys):
+    """NEGATIVE RESULT, recorded rather than tuned away.
+
+    On the MNE sample subject's own BEM forward, a least-squares fitted
+    four-layer sphere reproduces single-source scalp topographies only weakly:
+    matched |r| is above a permutation null, so the sphere is not noise, but the
+    median RDM is of order 1 and only a small minority of sources beat the
+    null's 95th percentile.  The published 10-30 % sphere-vs-BEM figures do not
+    bound this use.
+
+    The assertions therefore encode what was measured, not a hoped-for level:
+    the sphere carries *some* geometric information, it is decisively *not* a
+    substitute head model, and the discrepancy it produces must fall inside the
+    interval the sphere's own ledger declares.
     """
     root = mne_sample_path()
     fwd_path = root / "MEG" / "sample" / "sample_audvis-meg-eeg-oct-6-fwd.fif"
@@ -270,41 +326,165 @@ def test_spherical_model_and_subject_bem_agree_in_gross_topography():
         pytest.skip(f"{fwd_path} not present")
     fwd = mne.read_forward_solution(str(fwd_path), verbose="error")
     fwd = mne.pick_types_forward(fwd, meg=False, eeg=True)
+    stats = _sphere_vs_bem(fwd)
+    with capsys.disabled():
+        print(f"\n  sphere vs sample-subject BEM: {stats}")
+
+    # 1. the sphere is not noise: matched agreement beats the permutation null
+    assert stats["matched_median_r"] > stats["null_median_r"], (
+        f"a fitted sphere carries no source-specific information at all: {stats}"
+    )
+    # 2. it is nonetheless not a substitute: most sources do not beat the null
+    assert stats["frac_above_null_p95"] < 0.5, (
+        "the sphere reproduced the subject BEM well enough that the "
+        "spherical_geometry_discrepancy bias term would be overstated -- "
+        f"re-derive the bound rather than keeping a stale one: {stats}"
+    )
+    assert stats["median_rdm"] > 0.3, f"unexpectedly small discrepancy: {stats}"
+
+    # 3. the ledger must already declare an interval that covers what we measured
+    from scwbd.observe.leadfield import SphericalHeadModel
+
+    lf = BEMLeadField.from_mne_forward(fwd)
+    head = SphericalHeadModel.fitted_to(lf.sensor_positions.to(torch.float64))
+    sphere_lf = head.lead_field(
+        torch.tensor([[0.0, 0.0, 0.04]], dtype=torch.float64) + torch.tensor(head.center),
+        lf.sensor_positions.to(torch.float64),
+    )
+    term = sphere_lf.ledger.bias_by_name("spherical_geometry_discrepancy")
+    assert term is not None
+    assert term.half_width >= stats["median_rdm"] / 2.0, (
+        f"the declared relative bias interval {term.interval} does not cover the "
+        f"measured median RDM {stats['median_rdm']:.3f}; the ledger is optimistic"
+    )
+
+
+@requires_mne_sample
+def test_subject_bem_forward_amplitudes_are_physiological():
+    root = mne_sample_path()
+    fwd_path = root / "MEG" / "sample" / "sample_audvis-meg-eeg-oct-6-fwd.fif"
+    if not fwd_path.exists():
+        pytest.skip(f"{fwd_path} not present")
+    fwd = mne.read_forward_solution(str(fwd_path), verbose="error")
+    fwd = mne.pick_types_forward(fwd, meg=False, eeg=True)
     fwd = mne.convert_forward_solution(fwd, force_fixed=True, verbose="error")
-
-    bem_lf = BEMLeadField.from_mne_forward(fwd, frame="sample_subject_head")
-    G = bem_lf.as_matrix().to(torch.float64)
+    G = torch.from_numpy(np.asarray(fwd["sol"]["data"], dtype=np.float64))
     G = G - G.mean(0, keepdim=True)
-
-    sensor_pos = bem_lf.sensor_positions.to(torch.float64)
-    src_pos = bem_lf.source_positions.to(torch.float64)
-    centre = sensor_pos.mean(0)
-    R = float((sensor_pos - centre).norm(dim=-1).mean())
-
-    from scwbd.observe.leadfield import ITIS_CONDUCTIVITY, SphericalHeadModel
-
-    head = SphericalHeadModel.adult_four_layer(
-        R, ITIS_CONDUCTIVITY, center=tuple(float(c) for c in centre)
+    peak = float((G * 10e-9).abs().max(0).values.median())
+    assert 1e-7 < peak < 5e-5, (
+        f"median peak scalp potential from a 10 nA*m dipole on the sample "
+        f"subject is {peak * 1e6:.2f} uV, outside the physiological band"
     )
-    keep = ((src_pos - centre).norm(dim=-1) < head.radii[0] * 0.97).nonzero().flatten()[:200]
-    if keep.numel() == 0:
-        pytest.skip("no sources inside the fitted brain sphere")
-    normals = (src_pos[keep] - centre)
-    normals = normals / normals.norm(dim=-1, keepdim=True)
-    S = head.potential(src_pos[keep], sensor_pos)
-    S = torch.einsum("esk,sk->es", S, normals)
-    S = S - S.mean(0, keepdim=True)
 
-    Gk = G[:, keep]
-    corr = torch.stack(
-        [
-            torch.corrcoef(torch.stack([Gk[:, i], S[:, i]]))[0, 1].abs()
-            for i in range(keep.numel())
-        ]
+
+def test_least_squares_sphere_fit_recovers_a_known_sphere():
+    from scwbd.observe.leadfield import SphericalHeadModel
+
+    g = torch.Generator().manual_seed(31)
+    c_true = torch.tensor([0.004, -0.011, 0.031], dtype=torch.float64)
+    R_true = 0.0917
+    u = torch.randn((200, 3), generator=g, dtype=torch.float64)
+    u = u / u.norm(dim=-1, keepdim=True)
+    pts = c_true + R_true * u
+    c, R = SphericalHeadModel.fit_sphere(pts)
+    assert R == pytest.approx(R_true, abs=1e-9)
+    assert torch.allclose(torch.tensor(c, dtype=torch.float64), c_true, atol=1e-9)
+
+
+# --------------------------------------------------------------------------
+# realistic head: fsaverage BEM surfaces
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def fsaverage_forward():
+    """A real three-layer BEM forward: 64 electrodes on anatomy-derived surfaces."""
+    root = fsaverage_dir()
+    if root is None:
+        pytest.skip("fsaverage not downloaded")
+    subj = root / "fsaverage"
+    bem_sol = subj / "bem" / "fsaverage-5120-5120-5120-bem-sol.fif"
+    src_file = subj / "bem" / "fsaverage-ico-5-src.fif"
+    trans = subj / "bem" / "fsaverage-trans.fif"
+    for f in (bem_sol, src_file, trans):
+        if not f.exists():
+            pytest.skip(f"{f} missing")
+
+    montage = mne.channels.make_standard_montage("standard_1020")
+    names = montage.ch_names[:64]
+    info = mne.create_info(names, 1000.0, ch_types="eeg")
+    info.set_montage(montage, on_missing="ignore")
+    src = mne.read_source_spaces(str(src_file), verbose="error")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fwd = mne.make_forward_solution(
+            info,
+            trans=str(trans),
+            src=src,
+            bem=str(bem_sol),
+            eeg=True,
+            meg=False,
+            mindist=5.0,
+            verbose="error",
+        )
+    return fwd
+
+
+@requires_fsaverage
+def test_bem_wrapper_is_lossless_on_a_realistic_head(fsaverage_forward):
+    """The realistic-head path, end to end, with no numerical drift in the wrap."""
+    fwd = fsaverage_forward
+    lf = BEMLeadField.from_mne_forward(fwd, frame="fsaverage_head_RAS")
+    assert lf.modality == "eeg"
+    assert lf.sensor_units == "V"
+    assert lf.orientation == "free"
+    assert lf.n_sensors == fwd["nchan"] == 64
+    assert lf.n_sources == fwd["nsource"]
+    np.testing.assert_array_equal(
+        lf.as_matrix().numpy(), np.asarray(fwd["sol"]["data"], dtype=np.float64)
     )
-    assert float(corr.median()) > 0.5, (
-        "sphere and subject BEM topographies are unrelated; the sphere model is "
-        f"not usable even as an approximation (median |r| = {float(corr.median()):.3f})"
+    # ... and the support it emits is the lead field, not an electrode label
+    support = lf.as_support()
+    assert support.psf is not None and support.psf.kind == "leadfield"
+    assert support.psf.matrix.shape == (64, 3 * fwd["nsource"])
+    assert support.labels == tuple(fwd["sol"]["row_names"])
+    assert lf.ledger is not None
+    assert lf.ledger.bias_by_name("segmentation_surface_error") is not None
+    for units, led in lf.ledger.to_schema_all().items():
+        assert led.has_estimator(), f"realistic-head ledger[{units}] fails R08"
+
+
+@requires_fsaverage
+def test_realistic_head_amplitudes_are_physiological(fsaverage_forward):
+    """A 10 nA*m cortical dipole on a real head gives microvolt scalp potentials."""
+    fixed = mne.convert_forward_solution(
+        fsaverage_forward, force_fixed=True, verbose="error"
     )
-    # and the residual is large enough that the ledger's discrepancy flag is honest
-    assert float(corr.median()) < 0.999
+    G = torch.from_numpy(np.asarray(fixed["sol"]["data"], dtype=np.float64))
+    G = G - G.mean(0, keepdim=True)
+    peak = float((G * 10e-9).abs().max(0).values.median())
+    assert 1e-7 < peak < 5e-5, (
+        f"median peak scalp potential from a 10 nA*m dipole is {peak * 1e6:.2f} uV, "
+        "outside the physiological 0.1-50 uV band"
+    )
+
+
+@requires_fsaverage
+def test_sphere_vs_fsaverage_bem_is_measured_not_asserted(fsaverage_forward, capsys):
+    """The same measurement on a template head, for comparison with the subject.
+
+    fsaverage is more sphere-like than the sample subject, so this is the
+    *favourable* case; recording both numbers is what makes the sphere ledger's
+    bias bound defensible rather than a citation.
+    """
+    stats = _sphere_vs_bem(fsaverage_forward)
+    with capsys.disabled():
+        print(f"\n  sphere vs fsaverage BEM: {stats}")
+    assert stats["matched_median_r"] > stats["null_median_r"], (
+        f"even on a template head the sphere carries no source-specific "
+        f"information: {stats}"
+    )
+    assert stats["median_rdm"] > 0.2, (
+        "sphere and BEM agree essentially perfectly, which would mean the "
+        f"spherical_geometry_discrepancy bias term is fictitious: {stats}"
+    )

@@ -102,3 +102,27 @@ requires_mne_sample = pytest.mark.skipif(
     mne_sample_path() is None,
     reason="MNE sample dataset not present yet (agent B is downloading it)",
 )
+
+
+def fsaverage_dir() -> Path | None:
+    """Locate a downloaded fsaverage template with real BEM surfaces.
+
+    fsaverage is a *template* head, not a subject, but its BEM surfaces are real
+    anatomy-derived meshes, so it exercises the full realistic-head path
+    (surfaces -> BEM solution -> forward) without waiting for subject data.
+    """
+    for root in (
+        Path("/data/scwbd/assets/mne"),
+        Path("/data/scwbd/mne"),
+        Path.home() / "mne_data" / "MNE-fsaverage-data",
+        Path.home() / "mne_data",
+    ):
+        if (root / "fsaverage" / "bem").is_dir():
+            return root
+    return None
+
+
+requires_fsaverage = pytest.mark.skipif(
+    fsaverage_dir() is None,
+    reason="fsaverage template with BEM surfaces not downloaded",
+)

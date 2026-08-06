@@ -399,6 +399,33 @@ class SphericalHeadModel:
             center=center,
         )
 
+    @staticmethod
+    def fit_sphere(points: torch.Tensor) -> tuple[tuple[float, float, float], float]:
+        """Least-squares sphere through a point cloud -> ``(centre, radius)``.
+
+        Solves ``|p|^2 = 2 c.p + (R^2 - |c|^2)`` linearly in ``(c, R^2 - |c|^2)``.
+        Fitting the centre as well as the radius matters: taking the electrode
+        centroid as the centre biases the fitted radius by ~10 % on a real head
+        and makes the sphere approximation worse than it needs to be.
+        """
+        p = points.to(torch.float64)
+        A = torch.cat([2.0 * p, torch.ones(p.shape[0], 1, dtype=torch.float64)], dim=1)
+        b = (p**2).sum(1, keepdim=True)
+        sol = torch.linalg.lstsq(A, b).solution.flatten()
+        c = sol[:3]
+        R = float(torch.sqrt((sol[3] + (c**2).sum()).clamp_min(1e-12)))
+        return (float(c[0]), float(c[1]), float(c[2])), R
+
+    @classmethod
+    def fitted_to(
+        cls,
+        sensor_positions: torch.Tensor,
+        conductivity: TissueConductivityPriors = ITIS_CONDUCTIVITY,
+    ) -> "SphericalHeadModel":
+        """Four-layer sphere least-squares fitted to a digitised montage."""
+        centre, R = cls.fit_sphere(sensor_positions)
+        return cls.adult_four_layer(R, conductivity, center=centre)
+
     @classmethod
     def adult_three_layer(
         cls,
@@ -608,14 +635,22 @@ class SphericalHeadModel:
         bias = [
             BiasTerm(
                 name="spherical_geometry_discrepancy",
-                interval=(-0.30, 0.30),
+                interval=(-1.0, 1.0),
                 status="externally_bounded",
                 units=DIMENSIONLESS,
-                external_bound="published sphere-vs-BEM/FEM comparisons report "
-                "relative topography errors of order 10-30 % for realistic adult "
-                "heads (Vatta et al. 2010; Vorwerk et al. 2014)",
-                note="relative multiplicative bias; a sphere is a geometry model, "
-                "not the subject's head",
+                external_bound="measured in tests/observe/test_leadfield_mne.py "
+                "against the MNE sample subject's own BEM forward (60 EEG "
+                "channels, oct-6 source space) after a least-squares sphere fit: "
+                "median single-source RDM ~1.0 on unit-normalised topographies, "
+                "matched |r| ~0.49 against a permutation null of ~0.37, with only "
+                "~22 % of sources exceeding the null's 95th percentile",
+                note="NEGATIVE RESULT, reported rather than tuned away: on a real "
+                "subject a fitted concentric sphere does not reproduce "
+                "single-source scalp topographies. The published 10-30 % figures "
+                "(Vatta et al. 2010; Vorwerk et al. 2014) describe aggregate or "
+                "favourably-posed comparisons and do not bound this use. Treat "
+                "the sphere as a physics regression target and an order-of-"
+                "magnitude sanity check, not as a substitute head model.",
             ),
             BiasTerm(
                 name="sensor_radial_projection",
