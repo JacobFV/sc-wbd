@@ -190,9 +190,25 @@ class ConditionalFlow(nn.Module):
                 m[perm[: dim // 2]] = 1.0
             masks.append(m)
         self.layers = nn.ModuleList(_Coupling(dim, cond_dim, hidden, m) for m in masks)
+        # Normalise the conditioning before it reaches any coupling net.
+        #
+        # The coupling *scale* is tanh-bounded to +-2.5, but its *translation*
+        # is not: t = net([z*m, c]) is linear in c far from the origin.  Run 2's
+        # pilot fed c with |c|max ~ 13-18 (against ~0.4 for the same network on
+        # unmasked corpus data), which drove |z| large enough that the base term
+        # -0.5*z^2 reached -4.5e9 and every batch was rejected -- from step 1, on
+        # every run, bit-identically.  Measured, not inferred: the rejection dump
+        # reports u|max = 3.96 and finite, so the flow's *input* was never the
+        # problem; the conditioning was.
+        #
+        # LayerNorm makes the flow conditioning-scale invariant without changing
+        # what it can represent, and it is applied in log_prob and sample alike
+        # so density and samples cannot disagree.
+        self.cond_norm = nn.LayerNorm(cond_dim)
 
     def log_prob(self, theta_u: Tensor, c: Tensor) -> Tensor:
         """``theta_u`` in unconstrained space -> log q(theta_u | c)."""
+        c = self.cond_norm(c)
         z = theta_u
         ld = torch.zeros(theta_u.shape[0], device=theta_u.device, dtype=theta_u.dtype)
         for layer in reversed(self.layers):
@@ -202,6 +218,7 @@ class ConditionalFlow(nn.Module):
         return base + ld
 
     def sample(self, c: Tensor, n: int = 1) -> Tensor:
+        c = self.cond_norm(c)
         B = c.shape[0]
         z = torch.randn(B * n, self.dim, device=c.device, dtype=c.dtype)
         cc = c.repeat_interleave(n, dim=0)
@@ -291,7 +308,28 @@ class AmortizedPosterior(nn.Module):
         with torch.no_grad():
             m = float(per[finite].abs().max()) if bool(finite.any()) else float("inf")
             type(self).npe_seen_max = max(type(self).npe_seen_max, m)
+        if type(self).npe_rejected < 3:  # dump the first few, whichever branch
+            with torch.no_grad():
+                print(
+                    f"[npe] REJ#{type(self).npe_rejected} all={not bool(keep.any())} "
+                    f"kept={int(keep.sum())}/{keep.numel()} "
+                    f"per={[round(float(v), 3) for v in per[:6]]} "
+                    f"y|max={float(y.abs().max()):.4g} c|max={float(c.abs().max()):.4g} "
+                    f"u|max={float(u.abs().max()):.4g} u_fin={bool(torch.isfinite(u).all())} "
+                    f"th|max={float(theta.abs().max()):.4g}",
+                    flush=True,
+                )
         if not bool(keep.any()):
+            if False:  # superseded by the dump above
+                with torch.no_grad():
+                    print(
+                        f"[npe] FIRST REJECTION  per[:4]={[round(float(v), 4) for v in per[:4]]}  "
+                        f"y|max={float(y.abs().max()):.4g} y|mean={float(y.mean()):.4g} "
+                        f"c|max={float(c.abs().max()):.4g} c_finite={bool(torch.isfinite(c).all())} "
+                        f"u|max={float(u.abs().max()):.4g} u_finite={bool(torch.isfinite(u).all())} "
+                        f"theta|max={float(theta.abs().max()):.4g} theta[0]={[round(float(v), 4) for v in theta[0]]}",
+                        flush=True,
+                    )
             type(self).npe_rejected += 1
             return per.new_zeros(())
         if not bool(keep.all()):
