@@ -1,0 +1,71 @@
+# RUN 2 PILOT -- treatment arm (heterogeneous per-family state).
+#
+# ============================ WHAT THIS IS NOT ============================
+# **The pilot's numbers are NOT the A1 endpoint and may not be reported as one.**
+# Architect's ruling, pre-committed 2026-08-06 BEFORE either design ran, with
+# both designs and both roles fixed in advance:
+#
+#   1. PILOT (this file)  test_fraction 0.50 -> 54 test / 11 val / 44 train,
+#                         single fold, ~12 h for the two arms. De-risking only.
+#   2. A1 ENDPOINT        4-fold participant CV, 109 scored, 82 trained per
+#                         fold. Starts when the pilot finishes. This is the
+#                         endpoint REGARDLESS of what the pilot says.
+#
+# This is not adaptivity. Adaptivity is choosing the design after seeing a
+# result; both designs are fixed here, in writing, with their roles assigned,
+# before either has run. The pilot exists so that a broken family layout, a
+# broken observation interface or a bad capacity match costs 12 h rather than
+# 47. Nothing in the pilot can promote itself to the endpoint, and no A1 verdict
+# may cite this run.
+#
+# ============================ THE SPLIT ============================
+# `real_test_fraction: 0.50` with the trainer's fixed `val_fraction=0.1` over
+# 109 participants, through `_assign_groups`' round-then-slice:
+#
+#     n_test = round(0.50 * 109) = 54      (banker's rounding on 54.5)
+#     n_val  = round(0.10 * 109) = 11
+#     train  = 109 - 54 - 11     = 44
+#
+# MDE approximately 0.0993 nats against run 1's 0.1404 at 27 test participants,
+# scaling as 1/sqrt(participants). It clears the state term of the run-1
+# variance defect (0.19-0.26) with margin; it does NOT clear the
+# matched-calibration gain (0.1025-0.1249), which stays invisible at this design
+# and is one reason the endpoint is CV rather than this.
+#
+# THE COST, STATED: 44 training participants against run 1's 71, a 38% cut. That
+# is the trade this design makes and it is why it is the pilot and not the
+# endpoint. The CV endpoint trains on 82 per fold -- MORE than run 1 -- and is
+# the only design here that buys participants without spending training data.
+# It spends wall clock instead, on a machine we own.
+#
+# 109 test participants is NOT a configuration and was never available:
+# `participant_split` raises on `test_fraction + val_fraction >= 1.0` ("must
+# leave a training fold"). The 109 row in PREREG_A1_run2 §3.6.3's table is the
+# theoretical limit of the 1/sqrt(n) scaling, and that section's own sentence --
+# "recommendation, not a requirement, because it trades against training data"
+# -- is the qualifier that must travel with the number.
+
+base: scwbd-001-families.yaml
+
+data:
+  real_test_fraction: 0.50
+
+train:
+  # 20 GB, NOT the base file's 40. `cuda_reserve_gb` drives
+  # `torch.cuda.set_per_process_memory_fraction`, so 40.0 permits 0.329 of the
+  # ONE ~121 GB unified pool shared with eight concurrent agents -- double the
+  # agreed budget. systemd's MemoryMax does NOT bound CUDA allocations, so the
+  # scope wrapper is not a second line of defence here; this field is the only
+  # one. Caught two minutes into the first launch and fixed there rather than at
+  # hour three, which is when it would otherwise have taken the box down.
+  cuda_reserve_gb: 20.0
+  run_name: scwbd-001-pilot-families
+  out_dir: checkpoints/scwbd-001-pilot-families
+
+notes: >-
+  RUN 2 PILOT, treatment arm. De-risking run at 54 test / 44 train, single fold.
+  NOT the A1 endpoint -- the endpoint is 4-fold participant CV and starts when
+  this finishes. No A1 verdict may cite this run. Paired with
+  configs/run2/pilot-pooled-param-matched.yaml, which is capacity-matched to
+  this file at +0.27% (1,863,600 vs 1,858,597, measured against the real
+  414-parcel prior).

@@ -336,14 +336,34 @@ def _deep_update(base: dict, over: dict) -> dict:
     return out
 
 
+def _resolve_base(path: Path, _seen: tuple[Path, ...] = ()) -> dict[str, Any]:
+    """Load a YAML config and apply ``base:`` inheritance **transitively**.
+
+    Resolution used to stop after one level: the parent was read raw, so if it
+    declared its own ``base`` that key survived the merge and ``from_dict``
+    rejected it with ``unknown config key 'base'``. Any two-level hierarchy --
+    e.g. a pilot override on top of an arm config on top of a run config --
+    was therefore unbuildable, and the failure named the symptom rather than
+    the cause.
+
+    Cycles raise instead of recursing until the stack ends.
+    """
+    path = path.resolve()
+    if path in _seen:
+        chain = " -> ".join(p.name for p in (*_seen, path))
+        raise ValueError(f"cyclic config inheritance: {chain}")
+    payload = yaml.safe_load(path.read_text()) or {}
+    base_ref = payload.pop("base", None)
+    if base_ref is None:
+        return payload
+    base = _resolve_base(path.parent / base_ref, (*_seen, path))
+    return _deep_update(base, payload)
+
+
 def load_config(path: str | Path, **overrides: Any) -> FoundationConfig:
     """Load a YAML config, applying ``base:`` inheritance and CLI overrides."""
     p = Path(path)
-    payload = yaml.safe_load(p.read_text()) or {}
-    if "base" in payload:
-        base_path = (p.parent / payload.pop("base")).resolve()
-        base = yaml.safe_load(Path(base_path).read_text()) or {}
-        payload = _deep_update(base, payload)
+    payload = _resolve_base(p)
     for dotted, val in overrides.items():
         node = payload
         parts = dotted.split(".")

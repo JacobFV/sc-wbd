@@ -1,0 +1,55 @@
+[mem] CUDA reserve capped at 20.0 GB (fraction=0.164 of 121.6 GB unified pool)
+{
+  "parameters": {
+    "coupling": 3,
+    "msg_proj": 36,
+    "msg_readin": 1872,
+    "context": 17792,
+    "family_local": 1812212,
+    "family_residual": 364772,
+    "family_readout": 26082,
+    "assimilate": 234587,
+    "observation": 2001,
+    "eeg": 27481,
+    "bold": 3312,
+    "behaviour": 22342,
+    "TOTAL": 2512492
+  },
+  "posterior": 1694976
+}
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=44/11/54 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 290673 windows, train/val/test = 117639/29274/143760
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 997, in <module>
+    main()
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 993, in main
+    return t.train()
+           ^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 905, in train
+    noise_floor_calibrations = [self.calibrate_noise_floor(tag="init")]
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 871, in calibrate_noise_floor
+    roll = self.model.rollout(y_context=src, theta=th, n_steps=tgt_e.shape[1], enforce_r05=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/model.py", line 763, in rollout
+    x, msg, me, re_ = self.step(
+                      ^^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/model.py", line 676, in step
+    f_mech = self.family_local(x, cpl, film, packs=getattr(self, "_family_packs", None))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/family_ops.py", line 275, in forward
+    raise SpanViolation(
+scwbd.foundation.families.SpanViolation: family 'subcortex_accumb' has mechanistic backend 'basal_ganglia_gate' but no ParamPack was bound; call SCWBD.set_mechanistic_theta before rolling out. Running it on backend defaults would silently drop the anatomical conditioning.
