@@ -21,8 +21,19 @@ individual parameters.
 **Is not:** a validated digital twin of any specific person, a clinical device,
 or evidence that any admitted operator is neurally realized. Per
 `thesis_contract.tex` §0.6 the build order stops at item 5 (empirical
-subsystem). **Item 6 (prospective human TMS/tFUS) is out of scope: no IRB, no
-consent, no participants. No agent may implement a human stimulation protocol.**
+subsystem). **Item 6 (prospective human TMS/tFUS) is out of scope for this
+artifact, and no agent may implement a stimulation controller, a device command
+path, or a dosing computation for a person.**
+
+The reason is *capability*, not a hard-coded belief about anyone's paperwork.
+Governance is declared, recorded and carried in provenance: R11 admits a
+prospective request only when a validated `AuthorizationRecord`
+(`scwbd/schema/authorization.py`) covers the requested intervention class at
+the requested time, and the resulting artifact carries
+`claim_scope="protocol:<id>@<version>"` in its provenance. Even with a fully
+valid authorization this release still refuses a targeting claim, because there
+is no trained checkpoint, G4 is unexercisable on this corpus, and the impulse's
+energy-matched information gain is ~1. See `reports/governance_authorization.md`.
 
 The word "beta" is load-bearing: this release targets build-order items 1–5 with
 claim-bearing gates, not a whole-brain prediction claim.
@@ -166,6 +177,14 @@ order:
 
 An override is possible only via `ClaimManifest.overrides` and **changes the
 claim class recorded in the artifact's provenance**.
+
+R11 additionally gates on governance rather than asserting it: a prospective
+human intervention is refused unless `ClaimManifest.authorization` is an
+`AuthorizationRecord` that validates for the requested intervention class at
+`ClaimManifest.request_time_s`. Admission **changes the claim scope recorded in
+provenance** (`simulation_only` → `protocol:<id>@<version>`) and pins the
+record's content hash; an *overridden* R11 never grants a protocol scope.
+Validation checks a declaration; it does not verify that an approval exists.
 
 ---
 

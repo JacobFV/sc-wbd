@@ -7,6 +7,25 @@ names and signatures are the binding interface contract.
 
 from __future__ import annotations
 
+from .authorization import (
+    AUTHORIZATION_DECLARATION_NOTICE,
+    ASafeAttribution,
+    AuthorizationFailure,
+    AuthorizationFailureCode,
+    AuthorizationRecord,
+    AuthorizationVerdict,
+    ConsentScope,
+    EnrollmentScope,
+    INTERVENTION_CLASSES,
+    InterventionClass,
+    RegulatoryStatus,
+    ResponsibleInvestigator,
+    ValidityWindow,
+    authorize_or_refuse,
+    epoch_seconds,
+    no_authorization_verdict,
+    validate_authorization,
+)
 from .base import SchemaModel, canonical_json, content_hash_of
 from .claims import (
     CLAIM_STRENGTH,
@@ -255,4 +274,22 @@ __all__ = [
     "REFUSALS",
     "REFUSAL_CODES",
     "remedy_for",
+    # governance authorization (R11 gate)
+    "AuthorizationRecord",
+    "AuthorizationVerdict",
+    "AuthorizationFailure",
+    "AuthorizationFailureCode",
+    "ASafeAttribution",
+    "ConsentScope",
+    "EnrollmentScope",
+    "RegulatoryStatus",
+    "ResponsibleInvestigator",
+    "ValidityWindow",
+    "InterventionClass",
+    "INTERVENTION_CLASSES",
+    "AUTHORIZATION_DECLARATION_NOTICE",
+    "validate_authorization",
+    "authorize_or_refuse",
+    "no_authorization_verdict",
+    "epoch_seconds",
 ]

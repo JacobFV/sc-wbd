@@ -21,6 +21,28 @@ Design, following thesis Sec. 7.4:
   do so when model disagreement or transform uncertainty dominates the
   estimated benefit difference.
 * :class:`NoRecommendation` is a first-class outcome.
+
+Governance (added with the R11 gate)
+------------------------------------
+:class:`AuthorizationGate` admits a request only when a validated
+:class:`~scwbd.schema.authorization.AuthorizationRecord` covers the requested
+intervention class at the requested time **and** the proposal is inside
+:math:`\\mathcal A_{\\rm safe}`.  The ordering matters and is one-way:
+
+* an authorization **never widens** :math:`\\mathcal A_{\\rm safe}`.  The
+  feasible set is loaded from the same declarative, citable file either way,
+  and :meth:`FeasibleSet.contains` does not take an authorization argument, so
+  there is no code path by which a record could relax a bound.  What an
+  authorization does is permit operating *within* limits the protocol itself
+  declares;
+* an authorized proposal outside :math:`\\mathcal A_{\\rm safe}` still refuses
+  ``R11``.  ``tests/intervene/test_authorization_gate.py`` proves this
+  explicitly, because a gate nobody has seen refuse is indistinguishable from
+  one that cannot.
+
+A validated record is a *recorded declaration* of authorization, never
+verification that one exists; see
+:mod:`scwbd.schema.authorization` for the full claim limit.
 """
 
 from __future__ import annotations
@@ -34,9 +56,21 @@ from typing import Any, Callable, Iterable, Literal, Mapping, Sequence
 import torch
 from torch import Tensor
 
+from ..schema.authorization import (
+    AUTHORIZATION_DECLARATION_NOTICE,
+    AuthorizationRecord,
+    AuthorizationVerdict,
+    validate_authorization,
+)
 from .base import SIMULATION_ONLY_NOTICE, InterventionRefusal, Ledger
 
 __all__ = [
+    "AUTHORIZATION_DECLARATION_NOTICE",
+    "AuthorizationGate",
+    "AuthorizationRecord",
+    "AuthorizationVerdict",
+    "AuthorizedRequest",
+    "AuthorizedProposal",
     "CompilerRefusal",
     "SafetyLimits",
     "LimitSpec",
@@ -73,9 +107,14 @@ class CompilerRefusal(InterventionRefusal):
         ),
         offending_object: Any = None,
         violations: Sequence["Violation"] = (),
+        evidence: Mapping[str, Any] | None = None,
     ) -> None:
         super().__init__(code, message, remedy=remedy, offending_object=offending_object)
         self.violations = tuple(violations)
+        #: Structured detail a consumer can branch on.  The governance gate
+        #: puts the specific ``AUTH_*`` failures here so that "expired" and
+        #: "wrong modality" are never the same message.
+        self.evidence: dict[str, Any] = dict(evidence or {})
 
 
 # ---------------------------------------------------------------------------
@@ -170,11 +209,22 @@ class SafetyLimits:
         }
         meta["source_path"] = str(p)
         if meta.get("human_use_authorized", False):
+            # This refusal stays exactly as strict under a valid
+            # AuthorizationRecord.  A limits file is where *bounds* are
+            # declared; it is not where authorization lives, and a file that
+            # asserts its own authorization is asserting something no limits
+            # file is in a position to know.  Authorization is carried by an
+            # AuthorizationRecord, validated against a specific request, and
+            # recorded in provenance -- see scwbd.schema.authorization.
             raise CompilerRefusal(
                 "R11",
-                "limits file declares human_use_authorized=true; SC-WBD-001-beta "
-                "has no ethics approval, no consent, no participants and no device",
-                remedy="this release is simulation-only (thesis_contract Sec. 0.6)",
+                "limits file declares human_use_authorized=true; a declarative "
+                "bounds file cannot authorise anything, and A_safe is never "
+                "widened by an authorization",
+                remedy=(
+                    "remove the flag; carry authorization in an "
+                    "AuthorizationRecord validated against the specific request"
+                ),
                 offending_object=str(p),
             )
 
@@ -380,6 +430,174 @@ class FeasibleSet:
         assert last is not None
         last.raise_if_infeasible(offending="optimizer proposal")
         raise AssertionError("unreachable")
+
+
+# ---------------------------------------------------------------------------
+# the governance gate
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class AuthorizedRequest:
+    """A request to compare hypotheses *under a named protocol*.
+
+    Carries the declaration, what is being asked for, and when.  All three are
+    needed: a record authorising ``tms`` does not admit a ``tfus`` request, and
+    an approval that has expired does not admit a request today.
+    """
+
+    record: AuthorizationRecord | None
+    intervention_class: str
+    at_time_s: float | None
+    purpose: str = "offline hypothesis comparison"
+
+    def __str__(self) -> str:
+        rid = self.record.id if self.record is not None else "<no record>"
+        return f"AuthorizedRequest({self.intervention_class} under {rid})"
+
+
+@dataclass(frozen=True)
+class AuthorizedProposal:
+    """A proposal that passed *both* gates, with the provenance it now carries.
+
+    Existence of one of these means: a declaration validated for this class at
+    this time, **and** the exposure was inside :math:`\\mathcal A_{\\rm safe}`.
+    It is still not permission to stimulate anybody -- this repository builds
+    no stimulation controller, no device command path and no dosing
+    computation.  It is an offline hypothesis comparison labelled with the
+    protocol it was performed under.
+    """
+
+    proposal: ProposedIntervention
+    verdict: SafetyVerdict
+    authorization: AuthorizationVerdict
+    notice: str = SIMULATION_ONLY_NOTICE
+
+    @property
+    def claim_scope(self) -> str:
+        return self.authorization.claim_scope
+
+    def provenance(self) -> dict[str, Any]:
+        """What any emitted artifact must record about this comparison."""
+        return {
+            "claim_scope": self.claim_scope,
+            "authorization": self.authorization.as_provenance(),
+            "a_safe_axes_checked": list(self.verdict.checked_axes),
+            "a_safe_axes_unchecked": list(self.verdict.unchecked_declared_axes),
+            "proposal_label": self.proposal.label,
+            "modality": self.proposal.modality,
+            "notice": self.notice,
+            "authorization_notice": AUTHORIZATION_DECLARATION_NOTICE,
+        }
+
+
+class AuthorizationGate:
+    """Two gates in series, in this order, neither able to excuse the other.
+
+    1. **Governance.** A validated :class:`AuthorizationRecord` must cover the
+       requested intervention class at the requested time, with consent that
+       covers that class, a declared device regulatory status, a declared
+       enrollment scope, a named responsible investigator, and an ``A_safe``
+       attributable to *that* protocol.  Anything missing, expired or
+       out-of-scope refuses ``R11`` with its own specific reason.
+    2. **:math:`\\mathcal A_{\\rm safe}`.** The proposal must be inside the
+       independently declared feasible set.  This check is *identical* whether
+       or not an authorization is present -- :meth:`FeasibleSet.contains` is
+       not passed the record and could not use it -- so an authorized request
+       outside the set refuses exactly as an unauthorized one does.
+
+    What this gate cannot do, stated so nobody has to infer it: it cannot
+    verify an IRB approval exists, it cannot make a limit safe, and it cannot
+    turn a simulation into evidence about a person.
+    """
+
+    def __init__(
+        self,
+        feasible_set: FeasibleSet | None = None,
+        *,
+        a_safe_id: str | None = None,
+    ) -> None:
+        self.feasible_set = feasible_set or FeasibleSet()
+        #: When set, the record's A_safe attribution must name this feasible
+        #: set, so "we are approved" cannot inherit a generic default's bounds.
+        self.a_safe_id = a_safe_id
+
+    # -- governance only ----------------------------------------------------
+    def check_authorization(
+        self, request: AuthorizedRequest, *, required_axes: Sequence[str] = ()
+    ) -> AuthorizationVerdict:
+        """Validate the declaration. Returns a verdict; never raises for invalidity."""
+        return validate_authorization(
+            request.record,
+            intervention_class=request.intervention_class,
+            at_time_s=request.at_time_s,
+            a_safe_id=self.a_safe_id,
+            required_a_safe_axes=tuple(required_axes),
+            what=request.purpose,
+        )
+
+    # -- both gates ---------------------------------------------------------
+    def admit(
+        self, proposal: ProposedIntervention, request: AuthorizedRequest
+    ) -> AuthorizedProposal:
+        """Admit, or raise ``CompilerRefusal(code="R11")`` naming which gate refused.
+
+        Governance is checked first so that an unauthorized request is refused
+        for being unauthorized rather than for whatever else happens to be
+        wrong with it; the feasible set is then checked unconditionally.
+        """
+        if proposal.modality != request.intervention_class:
+            raise CompilerRefusal(
+                "R11",
+                (
+                    f"proposal modality {proposal.modality!r} does not match the "
+                    f"authorized request class {request.intervention_class!r}; an "
+                    "authorization is checked against the class actually proposed"
+                ),
+                remedy="request the class you propose",
+                offending_object=proposal.label,
+            )
+
+        verdict = self.check_authorization(
+            request, required_axes=tuple(sorted(proposal.exposure))
+        )
+        if not verdict.admitted:
+            # Raised as this module's R11 flavour so that a caller catching
+            # ``scwbd.intervene.safety.CompilerRefusal`` sees the governance
+            # refusal and the A_safe refusal through the same door, each
+            # carrying its own specific reason.
+            raise CompilerRefusal(
+                "R11",
+                (
+                    f"no validated authorization admits a "
+                    f"{request.intervention_class} request: {verdict.reason()}"
+                ),
+                remedy=(
+                    "supply a complete, in-date AuthorizationRecord whose consent "
+                    "scope covers the requested intervention class and whose "
+                    "A_safe is attributable to the named protocol; "
+                    + "; ".join(f.remedy for f in verdict.failures if f.remedy)
+                ),
+                offending_object=proposal.label,
+                evidence={
+                    "authorization_failures": [
+                        f.model_dump(mode="json") for f in verdict.failures
+                    ],
+                    "authorization_failure_codes": list(verdict.failure_codes),
+                    "authorization_record_id": verdict.record_id,
+                    "authorization_record_hash": verdict.record_hash,
+                    "intervention_class": request.intervention_class,
+                    "claim_scope": verdict.claim_scope,
+                },
+            )
+
+        # A_safe second, and identically to the unauthorized path.
+        safety = self.feasible_set.contains(proposal)
+        safety.raise_if_infeasible(offending=proposal.label)
+
+        return AuthorizedProposal(
+            proposal=proposal, verdict=safety, authorization=verdict
+        )
 
 
 # ---------------------------------------------------------------------------

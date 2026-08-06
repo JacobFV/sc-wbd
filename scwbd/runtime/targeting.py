@@ -40,6 +40,23 @@ The three refusal paths, and why each exists
     uncertainty asks for calibration, model disagreement asks for a reversible
     probe.
 
+Governance
+----------
+The service may be constructed with an
+:class:`~scwbd.schema.authorization.AuthorizationRecord`.  A record that does
+not validate for TMS at the declared time refuses ``R11`` *at construction*, so
+a protocol-bound service cannot exist on an expired or out-of-scope
+declaration.  A record that does validate changes what the service serves:
+``provenance.claim_scope`` becomes ``protocol:<id>@<version>``, the record's
+content hash is pinned, and every evaluation carries both.
+
+It does **not** change what the service can support.  Under a validated
+authorization the bar goes *up*, not down: a protocol-bound request asks for a
+targeting claim about a named participant cohort, and this release has no
+trained checkpoint, so ``Recommend`` is replaced by ``Refuse(code="R11")``
+naming ``weights_status``.  Governance being unblocked is not capability being
+established, and the two must never be read as one.
+
 Claim limits (every public function in this module inherits these)
 ------------------------------------------------------------------
 The predictions are simulations of an analytic phantom or of whatever head
@@ -60,6 +77,11 @@ from typing import Any, Mapping, Sequence
 import torch
 from torch import Tensor
 
+from ..schema.authorization import (
+    AuthorizationRecord,
+    AuthorizationVerdict,
+    validate_authorization,
+)
 from ._compat import (
     Defer,
     FeasibleSet,
@@ -207,6 +229,8 @@ class TargetingService:
         config: TargetingConfig | None = None,
         provenance: ModelProvenance | None = None,
         device: str = "cpu",
+        authorization: AuthorizationRecord | None = None,
+        request_time_s: float | None = None,
     ) -> None:
         self.config = config or TargetingConfig()
         self.coil = coil or CoilSpec.figure_eight()
@@ -218,7 +242,51 @@ class TargetingService:
         self.device = device
         if not self.response_operators or not self.propagators:
             raise ValueError("at least one response operator and propagator are required")
+        self.authorization = authorization
+        self.request_time_s = request_time_s
+        self.authorization_verdict = self._validate_authorization()
         self.provenance = provenance or self._default_provenance()
+
+    # -- governance ---------------------------------------------------------
+    def _checked_exposure_axes(self) -> tuple[str, ...]:
+        """The A_safe axes every evaluation is checked on, named in advance.
+
+        A protocol that authorises operating "within limits" must declare
+        limits on the axes actually checked, otherwise the record is attached
+        to a different feasible set than the one in force.
+        """
+        return tuple(
+            sorted(
+                {
+                    "tms.peak_efield_v_per_m",
+                    "tms.coil_scalp_distance_mm",
+                    *self.config.protocol.exposure_axes(),
+                }
+            )
+        )
+
+    def _validate_authorization(self) -> AuthorizationVerdict | None:
+        """Refuse ``R11`` at construction if the declaration does not admit TMS.
+
+        Constructing the service is where the declaration is checked, so a
+        protocol-bound service cannot exist on an expired, out-of-scope or
+        incomplete record.  ``None`` (no record) is the ordinary case and is
+        not an error here: it simply leaves the service simulation-only, and
+        any prospective claim is refused downstream for lack of authorization.
+
+        Claim limit: this validates a recorded declaration.  It does not
+        establish that an ethics approval exists.
+        """
+        if self.authorization is None:
+            return None
+        verdict = validate_authorization(
+            self.authorization,
+            intervention_class="tms",
+            at_time_s=self.request_time_s,
+            required_a_safe_axes=self._checked_exposure_axes(),
+            what="targeting service",
+        )
+        return verdict.raise_if_refused(offending_object=self.authorization.id)
 
     # -- construction -------------------------------------------------------
     @classmethod
@@ -255,6 +323,16 @@ class TargetingService:
             dynamics_model_classes=tuple(p.name for p in self.propagators),
             a_safe_source=str(limits.meta.get("source_path", "")),
             a_safe_citations=limits.citations(),
+            claim_scope=(
+                self.authorization_verdict.claim_scope
+                if self.authorization_verdict is not None
+                else "simulation_only"
+            ),
+            authorization=(
+                self.authorization_verdict.as_provenance()
+                if self.authorization_verdict is not None
+                else None
+            ),
             device=self.device,
             torch_version=torch.__version__,
             notes={
@@ -1156,6 +1234,34 @@ class TargetingService:
                 },
             )
 
+        # Everything below this line would have been a Recommend.  A
+        # protocol-bound request asks for a targeting claim about a named
+        # cohort under a named protocol, and authorization raises that bar
+        # rather than lowering it: this release has no trained checkpoint, so
+        # the honest answer is a refusal naming the missing artifact, not a
+        # simulation dressed as advice.  The uncertainty and A_safe branches
+        # above still fire first, because they are more specific.
+        if self.is_protocol_bound and self.provenance.weights_status != "trained":
+            return Refuse(
+                code="R11",
+                reason=(
+                    "a targeting claim was requested under protocol "
+                    f"{self.provenance.claim_scope.removeprefix('protocol:')} but "
+                    f"weights_status is {self.provenance.weights_status!r}: there "
+                    "is no trained SC-WBD-001-beta checkpoint behind this "
+                    "prediction, only an analytic backend and prior-specified "
+                    "surrogates. Authorization removes a governance obstacle; it "
+                    "does not supply a model"
+                ),
+                remedy=(
+                    "train and validate a checkpoint against held-out subjects, "
+                    "or request a simulation-only comparison carrying no "
+                    "protocol scope"
+                ),
+                offending=name,
+                violations=(f"weights_status={self.provenance.weights_status}",),
+            )
+
         return Recommend(
             label=name,
             rationale=(
@@ -1170,8 +1276,21 @@ class TargetingService:
         )
 
     # -- misc ---------------------------------------------------------------
+    @property
+    def is_protocol_bound(self) -> bool:
+        """True when a validated authorization record was supplied."""
+        return (
+            self.authorization_verdict is not None
+            and self.authorization_verdict.admitted
+        )
+
     def with_config(self, **kwargs: Any) -> "TargetingService":
-        """A copy with a modified :class:`TargetingConfig`. Never mutates."""
+        """A copy with a modified :class:`TargetingConfig`. Never mutates.
+
+        The authorization travels with the copy and is re-validated, so a
+        config change that alters the checked exposure axes cannot silently
+        keep a protocol scope the new axes are no longer covered by.
+        """
         return TargetingService(
             head_default=self.head_default,
             coil=self.coil,
@@ -1182,6 +1301,8 @@ class TargetingService:
             config=replace(self.config, **kwargs),
             provenance=self.provenance,
             device=self.device,
+            authorization=self.authorization,
+            request_time_s=self.request_time_s,
         )
 
     def read(self, name: str) -> Unresolved:
