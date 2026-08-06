@@ -53,10 +53,48 @@ Every instance below was green, plausible, and load-bearing.
 | 8 | **my own pre-committed stop trigger**, "spike > 10× the running floor" | that the learning rate had destabilised training | the spike is **rate-invariant** — 11.6× at lr 6.0e-4, 10.54× at 3.46e-4. It fires identically under both hypotheses it existed to separate, and prescribes a remedy already applied once without effect. | it fired, and checking whether the *other* run would also have fired it |
 | 9 | **window z-std** as the metric for choosing a normaliser | which candidate bounds the tail | for the `rms` candidate `std(z) = std(x)/rms(sd) ≡ 1` **by construction**. It scored a perfect 1.00 at p50/p90/p95/p99/max — a number it could not have failed to produce. | the perfect score itself looking wrong, and re-validating on `max|z|` |
 
+| 10 | `EEGHead`'s **"heteroscedastic noise model"** (`heads.py:219`, and the module docstring's "Every head returns … a heteroscedastic log-variance", `heads.py:11`) | that the model's predictive uncertainty responds to the brain state it is modelling | `lv = self.log_noise.expand_as(y)` where `log_noise = nn.Parameter(torch.zeros(n_ch))`. It is a per-channel constant. It never reads `x`. It has no horizon axis, so a 48-step-ahead prediction claims exactly the confidence of a 1-step-ahead one. `body.tex` §2.1 lists `X^uncertainty` as a state component; the head could not have read it. Cost: **+0.4467 nats** excess NLL, 1.62× the entire deficit to persistence, and the whole of run 1's FAIL. | 🔥 Turing, asking what `lv` was a function of |
+| 11 | `BOLDHead.log_noise` (`heads.py:286`/`:323`) | a fitted haemodynamic noise model | same broadcast defect, *and* the parameter is at **exactly `-4.0` across all 454 regions, sd exactly `0.0`** in the shipped checkpoint. It never received a gradient, because no measured BOLD ever entered the corpus. Nothing was scored on it — which is why nobody noticed, and exactly why it is dangerous: the moment 🗄️ Ada lands haemodynamic data, an unfitted noise model is presented as a fitted one. | 🔥 Turing, reading the checkpoint's parameters rather than its report |
+| 12 | SC-WBD's `describe()` in the holdout table (`evaluate.py`) | that the arm's entry was comparable with the baselines' | three keys — `name`, `structured_state`, `connectome_masked` — and none of them `variance_calibration`, which all six baselines carry. The instrument reported no difference **because it had no field in which a difference could appear.** The two arms with no *held-out* calibration were exactly the two with positive excess NLL. | 🛡️ Popper, diffing the two `describe()` shapes |
+
 Number 4 is the sharpest: it sits *inside the mechanism built to catch stale
 artifacts*, and it was about to be handed to a brand-new provenance enforcement
 gate that would have consumed a field structurally incapable of ever reading
 clean.
+
+Numbers 10–12 are the most expensive. They are one defect seen from three
+angles: a channel that could not vary (10), a parameter that was never fitted
+(11), and a comparison table with no column in which either could show up (12).
+Together they produced a filed FAIL — *"beaten by five of six baselines"* — for a
+model that has the **lowest MSE of all seven arms**. The forecast was the best in
+the table. Only the confidence attached to it was wrong, and nothing in the
+instrument could say so.
+
+The general form is worth having, because it is not about variance:
+
+> **A constant is the most convincing possible measurement.** It is perfectly
+> reproducible, it has zero variance across runs, and it never contradicts
+> itself. Every property that makes a number trustworthy is maximised by a
+> number that cannot move.
+
+The operational check that finds this class in one pass, and the one that found
+10 and 11: **for every quantity the code names as varying, ask what it is a
+function of, and read the answer off the expression rather than the docstring.**
+If the expression's free variables do not include the thing it claims to depend
+on, it is decorative — before any run, before any data. `lv =
+self.log_noise.expand_as(y)` fails that check by inspection.
+
+The repair carries its own trap, and it is worth recording because 🌊 Hodgkin hit
+it independently on the state side the same day. The natural way to add a
+state-dependent term is to zero-initialise its output projection so the module
+"starts as a no-op". That reproduces the defect exactly: the quantity is constant
+at step 0, a firing test passes while measuring nothing, and heteroscedasticity
+appears only if training happens to find it — a shape, not a mechanism. Both
+repairs are therefore initialised **non-zero and from the physics**
+(`EEGHead.logvar_mix` from the row-normalised lead field; Hodgkin's
+`init_state_gain=0.05`), and `tests/foundation/test_head_variance.py` asserts the
+un-repaired arm's spread is **exactly `0.0`** rather than describing it as
+constant. Asserting the dead case is what makes the live case evidence.
 
 ### The absence variant (4 and 5)
 
