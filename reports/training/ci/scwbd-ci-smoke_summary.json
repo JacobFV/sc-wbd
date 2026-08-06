@@ -1,11 +1,11 @@
 {
   "run_name": "scwbd-ci-smoke",
-  "git_sha": "c9b2ff9a7cb376d7404ba1699d0bab7c12932bbb-dirty",
+  "git_sha": "670cb92dc03a94299baaaec1b16958e6331e1c06-dirty",
   "environment": {
     "python": "3.12.13",
     "torch": "2.13.0+cu130",
     "cuda_available": true,
-    "git_sha": "c9b2ff9a7cb376d7404ba1699d0bab7c12932bbb-dirty",
+    "git_sha": "670cb92dc03a94299baaaec1b16958e6331e1c06-dirty",
     "device": "NVIDIA GB10",
     "capability": "12.1",
     "total_memory_gb": 130.6,
@@ -15,9 +15,9 @@
     {
       "stage": "I_regional",
       "steps": 4,
-      "wall_seconds": 3.0128061771392822,
+      "wall_seconds": 1.933542013168335,
       "best_loss": 0.9964302574308773,
-      "steps_per_second": 1.3276658918025976,
+      "steps_per_second": 2.068742221662684,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -233,9 +233,9 @@
     {
       "stage": "II_interface",
       "steps": 4,
-      "wall_seconds": 1.396270513534546,
+      "wall_seconds": 0.9915921688079834,
       "best_loss": 0.9987801243417873,
-      "steps_per_second": 2.864774383779203,
+      "steps_per_second": 4.033916488881205,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -450,9 +450,9 @@
     {
       "stage": "III_sliced",
       "steps": 4,
-      "wall_seconds": 2.0452136993408203,
+      "wall_seconds": 1.057682752609253,
       "best_loss": 0.4675720263948109,
-      "steps_per_second": 1.9557858434496183,
+      "steps_per_second": 3.7818523466816405,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -688,9 +688,9 @@
     {
       "stage": "IV_assembly",
       "steps": 4,
-      "wall_seconds": 2.114039659500122,
+      "wall_seconds": 1.3927230834960938,
       "best_loss": 0.949369702298739,
-      "steps_per_second": 1.8921120907191613,
+      "steps_per_second": 2.8720713021851907,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -926,9 +926,9 @@
     {
       "stage": "V_individual",
       "steps": 3,
-      "wall_seconds": 0.303739070892334,
+      "wall_seconds": 0.3343780040740967,
       "best_loss": 0.9337448477745056,
-      "steps_per_second": 9.876898586627357,
+      "steps_per_second": 8.971882012117081,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -1139,7 +1139,7 @@
       }
     }
   ],
-  "total_wall_seconds": 11.211552381515503,
+  "total_wall_seconds": 6.912365198135376,
   "global_steps": 19,
   "model_parameters": {
     "log_dt_scale": 454,

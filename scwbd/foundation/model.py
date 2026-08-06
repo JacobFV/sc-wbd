@@ -487,7 +487,14 @@ class SCWBD(nn.Module):
             )
         self.assimilate = Assimilator(L, self.n_regions, cfg)
         self.register_buffer("tau_prior", anat.timescale_prior.float().clone())
-        self.log_dt_scale = nn.Parameter(torch.zeros(self.n_regions))
+        # Only the control arm uses this: with families on, each learned operator
+        # group carries its own `family_local.log_dt`. Building it anyway would
+        # leave a per-region parameter that receives weight decay, never a
+        # gradient, and no governing binding -- which is exactly what
+        # compiler_bridge.audit_binding calls an ungoverned parameter.
+        self.log_dt_scale = (
+            nn.Parameter(torch.zeros(self.n_regions)) if self.family_layout is None else None
+        )
 
         # -- the typed observation boundary (body.tex §2.1 X_i^uncertainty) ---
         # Built for BOTH §11.4 arms. Giving the treatment arm a state-dependent
