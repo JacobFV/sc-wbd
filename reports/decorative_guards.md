@@ -614,6 +614,54 @@ Anywhere a check and the thing it guards live in different spaces:
 
 Assume decorative until it has failed for you on demand.
 
+## Documented-by-implementation behaviour: the rule nobody wrote down
+
+Three defects this project hit share a form distinct from the numbered rows.
+Nothing lied and no instrument misread. **A behaviour was defined only by its
+implementation, nobody had reason to examine it, and it silently redefined a
+commitment.**
+
+| behaviour | what it silently redefined |
+|---|---|
+| `git_sha()` caches lazily, on first call | *which commit* an artifact claims — a race against the author's own commits |
+| resume granularity is **stage-level** | a stopped stage's **LR schedule**, replayed from step 1 with a fresh cycle |
+| `deadline = time.time() + max_wall_seconds` recomputed **per resume** | a 12 h **total** budget into a 12 h **per-segment** budget |
+
+None is a bug. Each is the natural reading of its code. All three were invisible
+until they changed an artifact, because **nobody writes a test for a property
+they have not noticed they depend on.**
+
+### The cost-model consequence, which is the sharp part
+
+Stage-level resume means **any mid-stage stop silently rewrites that stage's
+schedule.** So *"resume is cheap"* — the premise under **every** stop/resume
+decision taken during this run, by both the agent and the coordinator — was
+**false for anything stopped mid-stage.**
+
+It happens not to have mattered: the one mid-stage stop landed in Stage II, where
+extra interface training is harmless. Had it landed in Stage V, individualisation
+would have been silently re-trained through a second LR cycle and **G5 would have
+been measured on a model nobody intended.**
+
+> **That is luck about where the boundary fell, not evidence that the cost model
+> was sound.**
+
+The same sentence was written earlier about the leakage barrier turning out to be
+sound, and it applies identically here — to a decision made by the party who
+wrote it. **A cost model that yields a good outcome through a fact you did not
+know is not a validated cost model.**
+
+### Remedies — queued work, not proposals
+
+1. **Step-level resume**, so a stopped stage continues its schedule rather than
+   replaying it; or
+2. **stops only at stage boundaries**, making the cheap case the only case.
+
+And generally: **when an operational commitment (a budget, a schedule, an
+identity) is enforced by code, check what the code does at every boundary the
+commitment does not mention** — resume, retry, restart, crash. That is where an
+implementation quietly rewrites a promise.
+
 ## The fifth space: when does the artifact fix its identity?
 
 `git_sha()` is not wrong. The defect is that **the moment at which an artifact

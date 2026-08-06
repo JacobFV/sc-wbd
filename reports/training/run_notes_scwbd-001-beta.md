@@ -399,9 +399,42 @@ step 100  lr 2.310e-04      <- back to the Stage II maximum
 
 Also: `global_step` went **backwards** (1520 → 1501) and re-counts, so steps
 1501–1520 appear twice in the log and `global_step` is no longer a clean index.
-And the wall deadline is **recomputed on resume** (`train.py:719`), so the 12 h
-budget restarted at 04:03. **Not treated as licence** — remaining work finishes
-well inside the original 02:22 + 12 h = 14:22 deadline, which is the one held to.
+### ⏱ The wall deadline is BINDING at 14:22, not the recomputed one
+
+`deadline = time.time() + max_wall_seconds` is recomputed on every resume
+(`train.py:719`), so the 12 h budget silently restarted at 04:03 and would expire
+at 16:03.
+
+**That is an implementation artifact, not a grant.** The binding deadline is the
+original **02:22 + 12 h = 14:22**, ruled by `main` and settled now rather than at
+14:00 with two stages left. Remaining work projects to 09:30–11:40, so this costs
+nothing — which is exactly why it is the right moment to fix it, while it is free.
+
+A deadline that resets each time you stop is not a deadline; it is a per-segment
+budget wearing one. Same shape as the resume granularity below: **an
+implementation detail quietly redefining a commitment.**
+
+### What this is a deviation *from* — corrected, in my own disfavour
+
+I first wrote that the artifact "is no longer exactly SC-WBD-001-beta as
+specified." **That overstates it, and the correction was `main`'s.**
+
+Checked rather than accepted: `ARCHITECTURE.md` contains **no training step
+counts at all** — `grep -E "[0-9]{3,4} steps|steps: *[0-9]|8700|max_wall"` returns
+nothing. It specifies the model, its state, coupling, backends, heads, training
+mixture and amortised posterior. **The 8700 came from `configs/scwbd_001_beta.yaml`
+— my file.**
+
+So this is a deviation from **my own config**, not from the architecture
+contract. That is still a real deviation and is reported without softening — but
+*"the artifact departs from its own config"* is a materially smaller claim than
+*"the artifact departs from spec,"* and conflating them would overstate a fault
+against the work. **Accuracy runs in both directions**; the same discipline that
+forbids flattering the artifact forbids indicting it beyond the evidence.
+
+The properties the architecture *does* constrain are intact: all five stages run,
+each properly annealed, and Stage V — where individualisation lives and without
+which **G5 cannot be tested at all** — is unaffected.
 
 ### Why this was not restarted a fourth time
 

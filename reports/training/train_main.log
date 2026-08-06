@@ -100,3 +100,41 @@ stage=II_interface  step=560  global_step=1460  loss=1.025  lr=2.926e-05  wall_s
 stage=II_interface  step=580  global_step=1480  loss=0.9985  lr=2.171e-05  wall_s=1618  traj_s_per_s=8.8  gpu_reserved_gb=33.31  sim_forecast_nll=1.213  npe_loss=9.438  kl=-2.667  rho=0.00549
 stage=II_interface  step=600  global_step=1500  loss=0.9591  lr=1.517e-05  wall_s=1660  traj_s_per_s=8.9  gpu_reserved_gb=33.31  sim_forecast_nll=1.157  npe_loss=9.719  kl=-2.626  rho=0.005495
 stage=II_interface  step=620  global_step=1520  loss=0.9988  lr=9.742e-06  wall_s=1714  traj_s_per_s=8.9  gpu_reserved_gb=33.31  sim_forecast_nll=1.218  npe_loss=9.699  kl=-2.589  rho=0.005317
+[mem] CUDA reserve capped at 40.0 GB (fraction=0.329 of 121.6 GB unified pool)
+{
+  "parameters": {
+    "log_dt_scale": 454,
+    "coupling": 3,
+    "msg_proj": 228,
+    "msg_readin": 1872,
+    "context": 17792,
+    "local": 1303036,
+    "residual": 107261,
+    "assimilate": 229468,
+    "readout": 3026,
+    "eeg": 2137,
+    "bold": 3178,
+    "behaviour": 89158,
+    "TOTAL": 1757613
+  },
+  "posterior": 1694976
+}
+resumed from checkpoints/scwbd-001-beta/last.pt at step 1500; completed stages: ['I_regional']
+skipping completed stage I_regional
+
+=== Stage II_interface: 700 steps, lr=0.000231 ===
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=71/11/27 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 290673 windows, train/val/test = 189765/29238/71670
+stage=II_interface  step=1  global_step=1501  loss=1  lr=9.296e-06  wall_s=5  traj_s_per_s=5  gpu_reserved_gb=17.56  sim_forecast_nll=1.178  npe_loss=9.814  kl=-2.611  rho=0.005733
+stage=II_interface  step=20  global_step=1520  loss=0.9679  lr=3.083e-05  wall_s=52.9  traj_s_per_s=9.3  gpu_reserved_gb=32.77  sim_forecast_nll=1.139  npe_loss=9.828  kl=-2.589  rho=0.00554
+stage=II_interface  step=40  global_step=1540  loss=1.022  lr=8.72e-05  wall_s=114.3  traj_s_per_s=8.6  gpu_reserved_gb=32.78  sim_forecast_nll=1.237  npe_loss=9.586  kl=-2.769  rho=0.005972
+stage=II_interface  step=60  global_step=1560  loss=0.9552  lr=0.0001564  wall_s=156.6  traj_s_per_s=9.4  gpu_reserved_gb=32.78  sim_forecast_nll=1.153  npe_loss=9.649  kl=-2.891  rho=0.00564
+stage=II_interface  step=80  global_step=1580  loss=0.988  lr=0.0002114  wall_s=206.6  traj_s_per_s=9.5  gpu_reserved_gb=32.78  sim_forecast_nll=1.193  npe_loss=9.954  kl=-2.928  rho=0.005402
+stage=II_interface  step=100  global_step=1600  loss=1.032  lr=0.000231  wall_s=285  traj_s_per_s=8.6  gpu_reserved_gb=32.78  sim_forecast_nll=1.241  npe_loss=9.974  kl=-2.771  rho=0.005714
+stage=II_interface  step=120  global_step=1620  loss=0.9919  lr=0.0002303  wall_s=315.3  traj_s_per_s=9.4  gpu_reserved_gb=32.78  sim_forecast_nll=1.196  npe_loss=10.17  kl=-3.011  rho=0.005352
+stage=II_interface  step=140  global_step=1640  loss=1.007  lr=0.0002283  wall_s=344.4  traj_s_per_s=10  gpu_reserved_gb=32.78  sim_forecast_nll=1.221  npe_loss=9.527  kl=-2.551  rho=0.005543
+stage=II_interface  step=160  global_step=1660  loss=1.003  lr=0.0002252  wall_s=374.5  traj_s_per_s=10.5  gpu_reserved_gb=32.78  sim_forecast_nll=1.224  npe_loss=10.01  kl=-2.819  rho=0.005644
+stage=II_interface  step=180  global_step=1680  loss=0.9466  lr=0.0002208  wall_s=435.9  traj_s_per_s=10.1  gpu_reserved_gb=32.78  sim_forecast_nll=1.148  npe_loss=9.589  kl=-2.598  rho=0.005368
+stage=II_interface  step=200  global_step=1700  loss=0.975  lr=0.0002152  wall_s=500.4  traj_s_per_s=9.8  gpu_reserved_gb=32.78  sim_forecast_nll=1.193  npe_loss=9.782  kl=-2.599  rho=0.005842
