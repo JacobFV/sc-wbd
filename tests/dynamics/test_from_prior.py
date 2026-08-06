@@ -270,6 +270,87 @@ def test_route_fragility_of_the_ei_maps_is_propagated(cls, prior):
     assert "not robust" in frag["forbidden_inference"]
 
 
+class _PlainMap:
+    """A map with a ledger that carries no route-fragility entry.
+
+    Native surface annotations are like this: the route check is defined for
+    PET volumes only, so there is no such number to carry.
+    """
+
+    class ledger:  # noqa: N801
+        forbidden_inference = "T1w/T2w is a myelin proxy, not a myelin concentration."
+        validity_domain = {"interpretation": "relative, rank-meaningful only"}
+
+
+class FakeBrainPriorWithOrdering(FakeBrainPrior):
+    """A prior that exposes ``ei_ordering`` -- i.e. the shape shipped since
+    2026-08-06. The suite previously only had ``FakeBrainPrior``, which does
+    not, so every fragility test ran down the legacy branch and the new one was
+    unexercised (``reports/decorative_guards.md``: verifying through a different
+    path than production uses).
+    """
+
+    maps = {"ei_proxy": _Map(), "myelin_t1t2": _PlainMap(), "cortical_thickness": _PlainMap()}
+
+    def ei_ordering(self, source=None):
+        rec = {
+            "ordering": "hcp_hierarchy",
+            "maps_used": [
+                {"map": "myelin_t1t2", "source_key": "hcps1200_maps"},
+                {"map": "cortical_thickness", "source_key": "hcps1200_maps"},
+            ],
+            "licence_keys": ["hcps1200_maps"],
+            "degraded": False,
+            "missing": {},
+        }
+        return None, rec
+
+
+@pytest.mark.parametrize("cls", BACKENDS_WITH_EI)
+def test_disclosure_follows_the_chosen_ordering_not_a_hardcoded_map(cls):
+    """The fragility disclosed must be that of the maps actually read.
+
+    Watched fail by restoring ``map_fragility(brain_prior, "ei_proxy")``: the
+    record then reports NMDA/GABA-A route fragility for a prior built from
+    myelin and thickness -- true of a map, and of no map this prior read.
+    """
+    bp = FakeBrainPriorWithOrdering()
+    be = cls.from_prior(bp)
+    theta = be.theta_from_prior(bp, batch=4, seed=0, device="cpu")
+    rec = theta.provenance["ei_ratio"]
+    assert rec["ei_ordering"]["disclosed"] is True
+    assert rec["ei_ordering"]["ordering"] == "hcp_hierarchy"
+    assert rec["ei_ordering"]["maps_used"] == ["myelin_t1t2", "cortical_thickness"]
+    assert rec["ei_ordering"]["licence_keys"] == ["hcps1200_maps"]
+    frag = rec["route_fragility"]
+    assert "route_fragile_ingredients" not in frag, (
+        "the receptor contrast's fragility must not be attributed to maps that "
+        "were not read"
+    )
+    assert frag["disclosed"] is False
+    assert "unmeasured, not clean" in frag["note"]
+    # the maps' own forbidden_inference strings are kept, just not filed as
+    # route fragility
+    assert "myelin_t1t2" in rec["ei_ordering"]["forbidden_inference"]
+
+
+def test_a_degraded_ordering_is_visible_in_the_parameter_record():
+    """A prior built from two of three declared maps must not look complete."""
+
+    class Degraded(FakeBrainPriorWithOrdering):
+        def ei_ordering(self, source=None):
+            _, rec = FakeBrainPriorWithOrdering.ei_ordering(self, source)
+            rec["degraded"] = True
+            rec["missing"] = {"intrinsic_timescale_meg": "removed by a test"}
+            return None, rec
+
+    bp = Degraded()
+    theta = WilsonCowan.from_prior(bp).theta_from_prior(bp, batch=2, seed=0, device="cpu")
+    rec = theta.provenance["ei_ratio"]["ei_ordering"]
+    assert rec["degraded"] is True
+    assert "intrinsic_timescale_meg" in rec["missing"]
+
+
 def test_absent_ledger_is_reported_as_undisclosed_not_as_safe(prior):
     """Silence about fragility must not read as a clean bill of health."""
 

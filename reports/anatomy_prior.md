@@ -456,11 +456,24 @@ ARCHITECTURE.md §5 and thesis §6.1 name the failure mode: *one neural mass per
 parcel, identical everywhere, erasing regional phenotype*. `BrainPrior`
 therefore returns **one distribution per parcel**, not one global number:
 
-- `ei_ratio_prior()` — log-normal per parcel, centred on
-  `exp(0.35 · z_EI)` where `z_EI` = mean z(NMDA, mGluR5) − z(GABA-A). Roughly a
-  factor-2 span across cortex, calibrated to the hierarchical E/I gradients
-  used by Demirtaş et al. 2019 and Wang 2020. σ is as wide as the between-parcel
-  spread, because the proxy orders parcels far better than it scales them.
+- `ei_ratio_prior()` — log-normal per parcel, centred on `exp(0.35 · z)` where
+  `z` is a cortical **ordering**. Roughly a factor-2 span across cortex,
+  calibrated to the hierarchical E/I gradients used by Demirtaş et al. 2019 and
+  Wang 2020. σ is as wide as the between-parcel spread, because the ordering
+  orders parcels far better than it scales them.
+
+  > **Changed 2026-08-06 (🍃 Mendel).** `z` was `z_EI` = mean z(NMDA, mGluR5) −
+  > z(GABA-A), from the CC-BY-NC-SA-4.0 Hansen atlas. The **default** is now
+  > `hcp_hierarchy`: the mean of three z-scored HCP S1200 maps (inverted
+  > `myelin_t1t2`, `cortical_thickness`, `intrinsic_timescale_meg`), which
+  > carries no share-alike term. The receptor ordering remains available as
+  > `ei_ratio_prior("hansen_receptors")` and records the licence choice in every
+  > parcel's provenance. **The two orderings agree at Spearman ρ = +0.358 over
+  > 400 parcels — this is a different prior, not a re-derivation of the same
+  > one.** Criterion, full comparison and the defects it exposed:
+  > `reports/ei_ordering_substitution.md`. Licence consequences, including the
+  > non-commercial term that survives the change:
+  > `reports/licence_audit.md`.
 - `timescale_prior()` — log-normal per parcel, rank on the best available
   hierarchy map mapped log-linearly onto 20–250 ms (Murray et al. 2014;
   Gao et al. 2020), σ = 0.5 in log space.

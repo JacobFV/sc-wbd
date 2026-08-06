@@ -380,12 +380,13 @@ class DynamicsBackend(nn.Module, abc.ABC):
                     ),
                     "centre": centre,
                     "sampled_per_batch_element": True,
-                    # NMDA and GABA-A are the two route-fragile maps in the panel
-                    # and are exactly what this contrast is built from; if the
-                    # ledger says the per-parcel sign is not robust, that travels
-                    # with the parameter instead of being left upstream.
-                    "route_fragility": map_fragility(brain_prior, "ei_proxy")
-                    or {"disclosed": False, "note": "prior exposes no ledger for ei_proxy"},
+                    # Which maps the E/I prior actually reads is now a choice
+                    # (BrainPrior.ei_ordering), so this disclosure must follow
+                    # that choice. It used to be hardcoded to "ei_proxy" and
+                    # would have kept reporting the receptor contrast's route
+                    # fragility for a prior built from HCP surface maps --
+                    # a true statement about a map nobody read.
+                    **_ei_ordering_disclosure(brain_prior),
                     **_provenance_index(priors),
                 }
 
@@ -615,6 +616,79 @@ def map_fragility(brain_prior: Any, map_name: str) -> dict[str, Any]:
     if interp:
         out["interpretation"] = str(interp)
     return out
+
+
+def _ei_ordering_disclosure(brain_prior: Any) -> dict[str, Any]:
+    """What the E/I prior was built from, and the fragility of *those* maps.
+
+    ``BrainPrior.ei_ordering()`` returns a record naming the maps actually
+    consulted and the ``sources.SRC`` keys behind them. We ask each of those
+    maps for its route fragility rather than assuming the answer is
+    ``ei_proxy``'s -- which stopped being true when the default E/I ordering
+    stopped being the receptor contrast (2026-08-06,
+    ``reports/ei_ordering_substitution.md``).
+
+    A prior that exposes no ``ei_ordering`` at all is reported as
+    ``{"disclosed": False, ...}``: absent provenance is recorded, never read as
+    clean.
+    """
+    fn = getattr(brain_prior, "ei_ordering", None)
+    if not callable(fn):
+        return {
+            "ei_ordering": {
+                "disclosed": False,
+                "note": (
+                    "prior exposes no ei_ordering(); the maps behind its E/I "
+                    "values are unknown to this record"
+                ),
+            },
+            # keep the legacy key populated so a consumer that reads it does
+            # not silently see nothing
+            "route_fragility": map_fragility(brain_prior, "ei_proxy")
+            or {"disclosed": False, "note": "prior exposes no ledger for ei_proxy"},
+        }
+    try:
+        _, rec = fn()
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "ei_ordering": {"disclosed": False, "note": f"ei_ordering() raised {exc!r}"},
+            "route_fragility": {"disclosed": False, "note": "ordering unavailable"},
+        }
+    per_map = {
+        u["map"]: map_fragility(brain_prior, u["map"]) for u in rec.get("maps_used", ())
+    }
+    # Only maps that carry an actual route-fragility entry belong under
+    # ``route_fragility``. A map with a ``forbidden_inference`` and no route
+    # number is not "fragility unknown to be zero"; it is a map for which the
+    # measurement does not exist, and filing it here would let the key read as
+    # populated when nothing was measured.
+    frag = {k: v for k, v in per_map.items() if v.get("route_fragile_ingredients")}
+    return {
+        "ei_ordering": {
+            "disclosed": True,
+            "ordering": rec.get("ordering"),
+            "maps_used": [u["map"] for u in rec.get("maps_used", ())],
+            "licence_keys": rec.get("licence_keys"),
+            "degraded": rec.get("degraded"),
+            "missing": rec.get("missing"),
+            "forbidden_inference": {
+                k: v["forbidden_inference"]
+                for k, v in per_map.items()
+                if v.get("forbidden_inference")
+            },
+        },
+        "route_fragility": frag
+        or {
+            "disclosed": False,
+            "note": (
+                "none of the maps behind this ordering carries a route-fragility "
+                "ledger entry -- which means unmeasured, not clean. The route "
+                "check (scwbd.anatomy.route_check) is defined for PET volumes "
+                "only; native surface annotations never take that route and so "
+                "have no such number."
+            ),
+        },
+    }
 
 
 def _provenance_index(priors: Any) -> dict[str, Any]:

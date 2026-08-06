@@ -57,7 +57,93 @@ from .geometry import ParcelGeometry, parcel_geometry
 from .maps import MapSet, RECEPTOR_GROUPS, load_maps
 from .paths import derived_dir
 
-__all__ = ["BrainPrior", "TIMESCALE_RANGE_MS", "EI_LOG_RANGE"]
+__all__ = [
+    "BrainPrior",
+    "TIMESCALE_RANGE_MS",
+    "EI_LOG_RANGE",
+    "EI_ORDERING_SOURCES",
+    "DEFAULT_EI_ORDERING",
+]
+
+#: Named sources for the **cortical ordering** the E/I prior is built from.
+#:
+#: Each entry is ``(map_name, orientation)`` pairs plus how they are combined.
+#: ``orientation`` is ``+1`` when the map increases from sensorimotor toward
+#: association cortex and ``-1`` when it runs the other way; the convention is
+#: fixed a priori from Demirtas et al. (2019) Neuron 101:1181 and Wang (2020)
+#: Nat Rev Neurosci 21:169 -- the same two papers :data:`EI_LOG_RANGE` is
+#: calibrated against -- and **not** from any correlation measured here.  Getting
+#: it wrong inverts the cortical E/I gradient end to end and still looks
+#: entirely plausible, which is why it is a declared constant with a test
+#: (``tests/anatomy/test_ei_ordering.py``) rather than a runtime `sign()`.
+#:
+#: ``licence_key`` is the ``scwbd.anatomy.sources.SRC`` entry every ingredient
+#: comes from.  It is here so the choice of ordering carries its own licence
+#: consequence instead of that being discoverable only by reading the maps.
+#:
+#: ``combine`` is ``"zscore"`` everywhere, and that is a **corrected** choice.
+#: The composite was first built as a mean of rank-normalised maps, which is
+#: the more robust statistic and which *ties parcels*: ranks are multiples of
+#: ``1/(n-1)``, so averaging three of them collides.  68 of 400 Schaefer-400
+#: parcels shared a value with another parcel (332 distinct), and 16 of 100 at
+#: Schaefer-100 -- which is thesis S6.1's named failure mode, parcels made
+#: identical, arriving through the fix rather than the thing being fixed.  It
+#: was caught by ``test_ei_priors_actually_differ_across_parcels``, an
+#: invariant that predates this substitution.  Averaging z-scores is tie-free
+#: (400/400 distinct), agrees with the receptor ordering indistinguishably
+#: (Spearman +0.358 vs +0.369, inside the criterion's 0.05 band) and is
+#: marginally *more* cross-scale stable (+0.9613 vs +0.9592).
+EI_ORDERING_SOURCES: dict[str, dict[str, Any]] = {
+    "hcp_hierarchy": {
+        "ingredients": (
+            ("myelin_t1t2", -1),
+            ("cortical_thickness", +1),
+            ("intrinsic_timescale_meg", +1),
+        ),
+        "combine": "zscore",
+        "licence_keys": ("hcps1200_maps",),
+        "description": (
+            "Mean of three z-scored HCP S1200 group maps, oriented so the "
+            "composite increases toward association cortex. Selected by the "
+            "pre-committed criterion in reports/ei_ordering_substitution.md S1."
+        ),
+    },
+    "myelin_t1t2": {
+        "ingredients": (("myelin_t1t2", -1),),
+        "combine": "zscore",
+        "licence_keys": ("hcps1200_maps",),
+        "description": "Inverted T1w/T2w myelin z-score alone.",
+    },
+    "sa_axis": {
+        "ingredients": (("sa_axis", +1),),
+        "combine": "zscore",
+        "licence_keys": ("sydnor2021",),
+        "description": (
+            "Sensorimotor-association axis z-score alone. NOTE: sydnor2021's licence "
+            "field states 'As distributed via neuromaps', which names no terms; "
+            "this source is offered but is not the default for that reason."
+        ),
+    },
+    "hansen_receptors": {
+        "ingredients": (("ei_proxy", +1),),
+        "combine": "zscore",
+        "licence_keys": ("hansen_receptors",),
+        "description": (
+            "The receptor-derived E/I contrast (NMDA + mGluR5 versus GABA-A) from "
+            "the Hansen PET atlas. CC-BY-NC-SA-4.0: NON-COMMERCIAL AND SHARE-ALIKE. "
+            "Opt-in only. Nothing else in this package substitutes for receptor "
+            "identity, which is why it is retained rather than deleted (thesis S5 "
+            "neuromodulator-specific control fields)."
+        ),
+    },
+}
+
+#: The ordering used when the caller does not choose one.  Permissive by
+#: construction: every ingredient is an HCP S1200 group map under HCP
+#: open-access data-use terms, which is the *same* regime the structural
+#: connectome (``enigma_hcp_sc``) already carries, so the default path adds no
+#: licence surface at all.
+DEFAULT_EI_ORDERING: str = "hcp_hierarchy"
 
 #: Plausible span of cortical intrinsic timescales, in milliseconds.
 #:
@@ -221,7 +307,13 @@ class BrainPrior:
         if cerebellar_atlas and not include_cerebellum:
             pass
 
-        return cls(
+        # What the *object* carries and what the *default priors consume* are
+        # different sets, and conflating them is how a licence audit goes wrong
+        # in either direction. ``sources`` is the first (a superset: load_maps
+        # builds every map it finds on disk, receptor maps included);
+        # ``ei_ordering`` is the second.
+        map_source_keys = sorted({m.source_key for m in ms.maps.values()})
+        obj = cls(
             atlas=atlas,
             parcellation=parc,
             labels=labels,
@@ -245,15 +337,32 @@ class BrainPrior:
                 "length": length,
                 "sources": {
                     k: {kk: S.SRC[k][kk] for kk in ("name", "url", "license", "citation")}
-                    for k in (
-                        "schaefer2018" if atlas.startswith("Schaefer") else "desikan2006",
-                        "enigma_hcp_sc",
-                        "hansen_receptors",
-                        "neuromaps",
+                    for k in dict.fromkeys(
+                        [
+                            "schaefer2018" if atlas.startswith("Schaefer") else "desikan2006",
+                            "enigma_hcp_sc",
+                            "neuromaps",
+                        ]
+                        # the parcellation used for subcortex is a real input and
+                        # was previously unlisted -- see reports/licence_audit.md
+                        + (["harvardoxford"] if include_subcortex else [])
+                        + (["buckner2011"] if include_cerebellum else [])
+                        + [k for k in map_source_keys if k in S.SRC]
                     )
                 },
+                "sources_note": (
+                    "This is what the assembled object CARRIES, which is a superset "
+                    "of what any one prior CONSUMES. load_maps builds every map "
+                    "present on disk, so hansen_receptors appears here whenever the "
+                    "PET volumes are installed -- including when no prior reads "
+                    "them. For the E/I prior specifically, read 'ei_ordering'."
+                ),
             },
         )
+        # Recorded on the object, from the object, so a consumer never has to
+        # re-derive which sources the default E/I prior actually reads.
+        obj.provenance["ei_ordering"] = obj.ei_ordering()[1]
+        return obj
 
     # -- coupling --------------------------------------------------------
     def coupling_mask(self, min_class: str = "soft") -> np.ndarray:
@@ -275,37 +384,182 @@ class BrainPrior:
     def _cortical_slice(self) -> np.ndarray:
         return self.structure == "cortex"
 
-    def ei_ratio_prior(self) -> list[PriorBase]:
+    def ei_ordering(
+        self, source: str | None = None
+    ) -> tuple[np.ndarray, dict[str, Any]]:
+        """The cortical ordering the E/I prior is built from, and its record.
+
+        Returns ``(z, record)``.  ``z`` is ``(n_parcels,)``, roughly unit
+        variance over the parcels it covers and ``nan`` elsewhere.  ``record``
+        is machine-readable provenance: which maps were consulted, which
+        registry sources they came from, their licences, and — this is the part
+        that matters — **what was missing**.
+
+        The absent case writes something.  A missing ingredient produces an
+        entry in ``record["missing"]`` and a ``record["degraded"] = True``, so
+        an ordering built from two of three maps cannot be mistaken for one
+        built from three (``reports/decorative_guards.md``, the absence
+        variant).  If *nothing* is available, ``z`` is all-``nan`` and
+        ``record["available"]`` is ``False`` — which the prior then reports as
+        ignorance rather than as a flat cortex.
+
+        ``record["licence_keys"]`` is the load-bearing field for
+        ``scwbd.release``: it names exactly the ``sources.SRC`` entries this
+        object's E/I prior depends on, for this call, and is the honest answer
+        to "does the default path touch Hansen?".
+        """
+        name = source or DEFAULT_EI_ORDERING
+        if name not in EI_ORDERING_SOURCES:
+            raise KeyError(
+                f"unknown E/I ordering {name!r}; have "
+                f"{sorted(EI_ORDERING_SOURCES)}"
+            )
+        spec = EI_ORDERING_SOURCES[name]
+        n = self.n_parcels
+        z = np.full(n, np.nan)
+        used: list[dict[str, Any]] = []
+        missing: dict[str, str] = {}
+        degenerate: str | None = None
+        stack: list[np.ndarray] = []
+        for map_name, orient in spec["ingredients"]:
+            if map_name not in self.maps:
+                missing[map_name] = (
+                    self.maps.unavailable.get(map_name)
+                    or f"{map_name!r} is not in this MapSet"
+                )
+                continue
+            m = self.maps[map_name]
+            v = m.rank() if spec["combine"] == "mean_rank" else m.zscored()
+            g = np.full(n, np.nan)
+            k = min(v.size, n)
+            g[:k] = orient * v[:k]
+            stack.append(g)
+            used.append(
+                {
+                    "map": map_name,
+                    "orientation": int(orient),
+                    "source_key": m.source_key,
+                    "licence": S.SRC.get(m.source_key, {}).get("license", "unknown"),
+                    "n_covered": int(m.n_covered),
+                }
+            )
+        if stack:
+            import warnings as _w
+
+            with _w.catch_warnings():
+                # an all-nan parcel is expected (subcortex); nanmean says so
+                # loudly and the coverage mask already carries the fact
+                _w.simplefilter("ignore", RuntimeWarning)
+                comb = np.nanmean(np.stack(stack), axis=0)
+            fin = np.isfinite(comb)
+            if int(fin.sum()) >= 2 and float(comb[fin].std(ddof=1)) > 0:
+                z[fin] = (comb[fin] - comb[fin].mean()) / comb[fin].std(ddof=1)
+            else:
+                # A composite with no between-parcel variance cannot order
+                # anything. Centring it on zero would hand the caller a
+                # confidently narrow prior that is identical in every parcel --
+                # thesis S6.1's failure mode wearing a coverage mask. Leave it
+                # nan so every parcel falls to the wide ignorance branch, and
+                # say why. (Found by mutation M7; the branch had no test.)
+                degenerate = (
+                    f"the '{name}' composite has no between-parcel variance "
+                    f"({int(fin.sum())} finite parcels, sd="
+                    f"{float(comb[fin].std(ddof=1)) if int(fin.sum()) > 1 else float('nan'):.3g}), "
+                    "so it orders nothing and was not used"
+                )
+        record: dict[str, Any] = {
+            "ordering": name,
+            "is_default": name == DEFAULT_EI_ORDERING,
+            "description": spec["description"],
+            "combine": spec["combine"],
+            "maps_used": used,
+            # keys are what a licence union must consume; empty means nothing
+            # was read, not that nothing applies
+            "licence_keys": sorted({u["source_key"] for u in used}),
+            "declared_licence_keys": list(spec["licence_keys"]),
+            "missing": missing,
+            "degenerate": degenerate,
+            "degraded": bool(missing) and bool(used),
+            "available": bool(used) and degenerate is None,
+            "n_covered": int(np.isfinite(z).sum()),
+            "n_parcels": n,
+            "selection": (
+                "reports/ei_ordering_substitution.md -- criterion pre-committed "
+                "at 97086e7, measurement at the following commit"
+            ),
+        }
+        if not record["available"]:
+            record["consequence"] = (
+                (degenerate + ". ") if degenerate else ""
+            ) + (
+                "No usable ingredient of this ordering is present, so the E/I prior "
+                "carries NO regional heterogeneity: every parcel falls to the "
+                "no-coverage branch. This is stated rather than silently "
+                "producing a flat cortex."
+            )
+        return z, record
+
+    def ei_ratio_prior(self, source: str | None = None) -> list[PriorBase]:
         """Per-parcel excitation/inhibition ratio prior.
 
-        Cortical parcels get a log-normal centred on
-        ``exp(EI_LOG_RANGE * z_ei)`` where ``z_ei`` is the receptor-derived E/I
-        proxy scaled to roughly unit variance, so the ratio is 1.0 at the
-        cortical mean and spans about a factor of two across cortex.  Sigma is
-        deliberately as large as the between-parcel spread: the proxy orders
-        parcels far better than it scales them.
+        Cortical parcels get a log-normal centred on ``exp(EI_LOG_RANGE * z)``
+        where ``z`` is a cortical **ordering** scaled to roughly unit variance,
+        so the ratio is 1.0 at the cortical mean and spans about a factor of two
+        across cortex.  Sigma is deliberately as large as the between-parcel
+        spread: the ordering orders parcels far better than it scales them.
 
-        Parcels without receptor coverage -- subcortical and cerebellar --
+        Parcels the ordering does not cover -- subcortical and cerebellar --
         receive the *same* log-normal centred on 1.0 with a wider sigma.  That
         is not an imputed value: it is an explicit statement that we do not know
         their E/I balance, and it is visible as a wider prior rather than hidden
         as a filled-in number.
+
+        Which ordering
+        --------------
+        ``source`` selects an entry of :data:`EI_ORDERING_SOURCES`; the default
+        is :data:`DEFAULT_EI_ORDERING` (``"hcp_hierarchy"``), a composite of
+        three HCP S1200 group maps under HCP open-access data-use terms.
+
+        ``source="hansen_receptors"`` restores the receptor-derived contrast
+        that used to be the only option.  It is **CC-BY-NC-SA-4.0**: choosing it
+        makes the artifact non-commercial *and* share-alike, and the choice
+        records itself in every parcel's provenance string and in
+        :meth:`ei_ordering`'s record.  It is retained because nothing else here
+        substitutes for receptor identity -- thesis S5's neuromodulator-specific
+        control fields need the tracers, not a hierarchy rank.
+
+        What the substitution cost, measured
+        ------------------------------------
+        The default and the Hansen ordering agree at Spearman ``rho = +0.358``
+        over 400 cortical parcels (Schaefer400x7, one cached build,
+        2026-08-06; ``+0.444`` over 100 parcels at Schaefer100x7).  **That is
+        not a reproduction of the old ordering**; it is
+        a different one, and anything previously conditioned on the receptor E/I
+        pattern changes.  See ``reports/ei_ordering_substitution.md`` S2 for the
+        full comparison, including the finding that ``ei_proxy`` itself is only
+        weakly aligned (``rho = +0.230``) to the cortical hierarchy the
+        permissive maps carry, which is why no permissive map reproduces it.
         """
         n = self.n_parcels
         out: list[PriorBase] = []
-        z = np.full(n, np.nan)
-        if "ei_proxy" in self.maps:
-            m = self.maps["ei_proxy"]
-            k = min(m.values.size, n)
-            z[:k] = m.zscored()[:k]
+        z, rec = self.ei_ordering(source)
+        lic = ", ".join(
+            f"{u['source_key']} ({u['licence']})" for u in rec["maps_used"]
+        ) or "none -- no ingredient available"
         cite = (
-            "Receptor-derived E/I proxy (NMDA + mGluR5 versus GABA-A) from the "
-            "Hansen PET atlas; span calibrated to the hierarchical E/I gradients "
+            f"E/I ordering '{rec['ordering']}': {rec['description']} "
+            f"Inputs: {lic}. Span calibrated to the hierarchical E/I gradients "
             "used by Demirtas M. et al. (2019) Neuron 101:1181-1194 and "
             "Wang X.-J. (2020) Nat Rev Neurosci 21:169-178. PROXY, NOT A "
-            "MEASUREMENT: PET binding potential is not synaptic conductance, and "
+            "MEASUREMENT: none of these maps measures synaptic conductance, and "
             "a subject's E/I balance is not inferable from an atlas value."
         )
+        if rec["missing"]:
+            cite += (
+                " DEGRADED: the following declared ingredients were absent and "
+                "the ordering was built without them -- "
+                + "; ".join(f"{k}: {v}" for k, v in sorted(rec["missing"].items()))
+            )
         for i in range(n):
             if np.isfinite(z[i]):
                 out.append(
@@ -324,10 +578,11 @@ class BrainPrior:
                         units="dimensionless",
                         provenance=(
                             cite
-                            + " NO RECEPTOR COVERAGE for this parcel (subcortical or "
-                            "cerebellar): the prior is centred on the cortical mean "
-                            "with double the width, which states ignorance rather "
-                            "than imputing a value."
+                            + " NO ORDERING COVERAGE for this parcel (subcortical or "
+                            "cerebellar -- every ingredient of every available "
+                            "ordering is a cortical map): the prior is centred on "
+                            "the cortical mean with double the width, which states "
+                            "ignorance rather than imputing a value."
                         ),
                     )
                 )
