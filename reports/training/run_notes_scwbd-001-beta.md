@@ -345,23 +345,98 @@ I will stop and rescale the learning rates if **any** of the following holds:
 > `sim_forecast_nll` = **1.534**, flat since step 360, needing < 1.0 by step 900.
 > I have and want no discretion over it.
 
-### The spikes are periodic — a structural finding
+### Disposition of condition 3 — fired, overridden, superseded
 
-Steps with `sim_forecast_nll` > 5: **80, 180, 220, 320, 380, 440, 500.**
-Gaps: 100, 40, 100, **60, 60, 60** — the most recent four are exactly 60 apart.
+Recorded in this order deliberately. **The old trigger is not amended.** A
+trigger that quietly becomes a better trigger the moment it fires is worthless,
+however good the replacement is.
 
-This is structure in the data ordering, not random hard batches, and it upgrades
-the step-80 question from an anecdote to a candidate **mechanism C** in
-`corpus_composition.md`.
+1. **Condition 3 FIRED at step ~500.** No qualifier.
+2. **The prescribed response (stop and rescale) was overridden by the
+   coordinator.** This is an override, not a re-reading of the text. `main` made
+   the call and holds the error if it is wrong.
+3. **Reason: the trigger is rate-invariant and therefore cannot detect what it
+   was written to detect.** The step-80 spike is 11.6× the floor at lr 6.0e-4 and
+   10.54× at lr 3.46e-4 — it fires at both rates, so it does not discriminate lr
+   instability from a reproducible hard batch, and the remedy it prescribes has
+   already been applied once without removing it. **This is verifiable by a third
+   party from two runs' logs, which is precisely why it is admissible as grounds
+   for override.** An argument that rested on my judgement would not be.
+4. **Condition 3b applies from step 500 forward** (supersedes, does not replace):
 
-**Sampling caveat, which limits the claim:** `log_every = 20`, so only periods
-that are multiples of 20 are detectable. A true period of 61 would alias or
-vanish. The 60 is real; its *precision* is an artifact of the grid, exactly as
-with the earlier "exactly step 80" overclaim.
+   > A spike is evidence of learning-rate instability only if its magnitude
+   > differs **between runs at matched steps**. Absolute multiples of the running
+   > floor are not admissible, because they are rate-invariant here. Compare
+   > `sim_forecast_nll` at matched steps across the two LR configurations; if the
+   > rescaled run's spikes are systematically larger, that is instability.
 
-If the period holds over 8,700 steps that is ~145 spike events — roughly 1 step
-in 60 throwing the model — which would be a corpus property with real training
-cost rather than a curiosity.
+**Standard for any future amendment**, from `main`'s ruling and worth keeping:
+an argument for superseding a fired trigger is admissible only if it is
+**checkable by someone else against data the author did not choose.** "It fired
+and I think it is malformed" is never sufficient on its own.
+
+### Condition 2 — and the coordinator's pre-committed response
+
+Condition 2 stands exactly as written: running-min `sim_forecast_nll` < 1.0 by
+step 900. Currently **1.534**, flat since step 360. I have no discretion over it.
+
+`main` has pre-committed the response **before it resolves**, so neither party
+can choose after the fact:
+
+- If condition 2 **fails**, we do **not** rescale. Rate-invariance is
+  established, and a third application of the same remedy would be the reflex
+  already named in this file.
+- **Training continues through Stages II–V regardless.** A complete artifact with
+  a documented Stage I failure is more useful than a truncated one, and **G5
+  cannot be tested at all without Stage V.**
+- The final report states plainly that **Stage I did not meet its own
+  preregistered quality bar**, with the number. That is a finding about *this
+  model, this corpus and this budget* — **not a verdict on the architecture**,
+  and it must not be written as one.
+- 🛡️ Popper adjudicates whether the bar was appropriate in the first place.
+  Neither I nor `main` rules on that.
+
+### ~~The spikes are periodic~~ — RETRACTED, failed its first out-of-sample test
+
+**Claimed and withdrawn within four minutes.** Kept visible rather than deleted,
+because this is the third time in one session I have overclaimed in the same
+direction and the pattern matters more than the claim.
+
+The claim was: spikes at 80, 180, 220, 320, 380, 440, 500, gaps
+100, 40, 100, **60, 60, 60**, therefore periodic with period 60 — "structure in
+the data ordering, not random hard batches".
+
+**The test.** Period 60 from step 320 predicts the next spike at **560**.
+Observed: a spike at **540**, and none at 560. The prediction failed at the first
+opportunity.
+
+**What the data actually says.** Over sampled steps ≥ 60: **8 spikes in 26
+samples = 31 % of sampled steps** have `sim_forecast_nll` > 5. Gaps are
+100, 40, 100, 60, 60, 60, 40 — mean 65.7, range 40–100, and every gap is a
+multiple of 20 *by construction* because that is the logging grid. At a per-sample
+spike probability of 0.31, a run of three equal gaps is entirely unremarkable.
+**I fitted a period to a run of three, then called it structure.**
+
+**The finding that survives, and it is still worth having:** spikes are
+**frequent and irregular**, not periodic. Roughly **a third of logged steps** show
+forecast NLL more than 3× the running floor. That is a real property of training
+on this mixture and it does have a training cost — but it is a *rate*, not a
+*period*, and it does not imply the ordering structure I claimed.
+
+Whether it belongs in `corpus_composition.md` as mechanism C now depends on the
+batch-composition analysis, not on the timing pattern. Deferred to that, per the
+pre-commitment.
+
+**The methodological point I keep relearning:** the aliasing caveat I attached
+was correct and insufficient. I noted the grid could not resolve the period, and
+then reported the period anyway. **A caveat that does not change the claim is
+decoration.** The thing that actually settled it was a forward prediction with a
+falsifiable target, which cost four minutes and should have come first.
+
+Per `main`'s ruling, the honest instrument change if this is worth resolving is
+to **log every step for a bounded window** rather than infer sub-grid structure
+from a grid-limited series. Not done on this run — it would require restarting a
+job that is now 500+ steps in, for a question that is not blocking.
 
 Absent those, the run continues to completion at the configured rates and the
 lr/batch mismatch is reported as a limitation rather than silently patched.

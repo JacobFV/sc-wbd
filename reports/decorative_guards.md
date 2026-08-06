@@ -23,6 +23,7 @@ Every instance below was green, plausible, and load-bearing.
 | 5 | a backend's **0 % timescale clamp rate** | that the anatomy prior fit inside that backend's support | `theta_from_prior` resolves `key = None` when a backend spells its timescale differently (`StuartLandau` uses `f`, `JansenRit` uses `a`/`b`), then **skips the block silently, writing no provenance entry**. 0 % meant the prior never arrived. 21.62 % of the corpus. | re-deriving a percentage post-merge and asking why two backends scored a perfect zero |
 | 6 | `git diff 7f18528 HEAD -- scwbd configs` reported as a **verification claim** | that training source was unmodified during the run | `HEAD` is a **moving, worktree-local symbol**. The claim was true in `wt/turing` when written and false in 🛡️ Popper's worktree, where `7f18528` is not an ancestor of `master` (merge base `4d617af`) so the diff is dominated by unmerged work on both sides. | Popper trying to reproduce it and getting the opposite answer |
 | 7 | the **composite training loss** as the comparison metric | whether a change improved the model | it is a weighted sum whose terms move for unrelated reasons. It reported a large step-80 difference between two runs (3.717 vs 2.447) where `sim_forecast_nll` said **20.943 vs 20.980** — indistinguishable — and an early advantage that reversed by step 160. | comparing the same two runs on the interpretable metric instead |
+| 8 | **my own pre-committed stop trigger**, "spike > 10× the running floor" | that the learning rate had destabilised training | the spike is **rate-invariant** — 11.6× at lr 6.0e-4, 10.54× at 3.46e-4. It fires identically under both hypotheses it existed to separate, and prescribes a remedy already applied once without effect. | it fired, and checking whether the *other* run would also have fired it |
 
 Number 4 is the sharpest: it sits *inside the mechanism built to catch stale
 artifacts*, and it was about to be handed to a brand-new provenance enforcement
@@ -134,6 +135,45 @@ Countermeasures, in order of how much they are worth:
 
 *A conclusion nobody is trying to break is not a finding. It is a consensus.*
 
+### The sharpest instance (8): a guard against one's own bias, that could not discriminate
+
+Row 8 is the one to remember, because of who wrote it and why.
+
+I authored that trigger **specifically to bind myself against motivated
+reasoning** — thresholds fixed in the repository, before the data existed,
+precisely so that my judgement at 4 a.m. would not be the thing deciding. It was
+the right instinct and I still got it wrong: **the threshold could not come out
+differently under the two worlds it was adjudicating.** A spike exceeding 10× the
+floor happens at 6.0e-4 and at 3.46e-4 alike, so the guard fires whether or not
+the hypothesis it tests is true.
+
+**Writing a threshold down in advance is necessary and not sufficient.** It must
+also be *discriminating*: there has to be a state of the world in which it does
+not fire. Pre-commitment protects against choosing the metric after seeing the
+data; it does nothing about choosing a metric that was never able to answer the
+question. Those are different failures and only the first is fixed by writing it
+down early.
+
+The test that would have caught it, and which costs nothing:
+
+> Before committing a threshold, ask what it would read **in the world where the
+> hypothesis is false.** If the answer is "the same", it is not a trigger, it is a
+> tripwire across a corridor everyone walks down.
+
+There is a second-order trap immediately behind it, which I also walked into: the
+trigger fired inconveniently and I produced, within minutes, a correct argument
+that it was malformed. Correct — and indistinguishable by introspection from
+motivated reasoning. The resolution is not to trust the argument because it feels
+sound but to require that **grounds for superseding a fired guard be checkable by
+someone else against data the author did not choose.** Here that test is passed:
+the two runs' logs show rate-invariance to anyone who looks. Had the argument
+rested on my judgement, it should have been refused.
+
+And the procedural rule that follows: **you may not amend a fired trigger; you
+may supersede it going forward, with both versions visible.** A guard that
+quietly becomes a better guard the moment it fires is worth nothing, however good
+the replacement.
+
 And the operating principle behind all four:
 
 > I would rather hand you a decision whose support I have just falsified than let
@@ -151,6 +191,7 @@ the question:
 - prior fit the support, and prior never arrived (5)
 - the worktree it was written in, and any other (6)
 - a real change in forecast quality, and a reweighting of unrelated terms (7)
+- an unstable learning rate, and a reproducible hard batch (8)
 
 If you cannot name a state of the world that would make the reading come out
 differently, you do not have a measurement.
