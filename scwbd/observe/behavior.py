@@ -32,8 +32,8 @@ The module supplies:
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field, replace
-from typing import Any, Literal, Mapping, Sequence
+from dataclasses import dataclass
+from typing import Literal, Sequence
 
 import torch
 
@@ -44,7 +44,6 @@ from .base import (
     BiasTerm,
     ObservationOperator,
     ObservationRead,
-    ObservationRefusal,
     Prior,
     Provenance,
     RefusalR08,

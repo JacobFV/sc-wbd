@@ -47,7 +47,6 @@ def test_two_distinct_sources_give_the_same_sensor_data(dense_lead_field, noise_
     n_sens, n_src = L.shape
     assert n_src > n_sens, "the fixture must be underdetermined to make the point"
 
-    g = torch.Generator().manual_seed(3)
     x_true = torch.zeros((n_src, 1), dtype=torch.float64)
     x_true[7] = 20e-9
     y = L @ x_true

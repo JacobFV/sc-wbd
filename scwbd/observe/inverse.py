@@ -26,21 +26,17 @@ makes the epistemic claim explicit at every call site.
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 from typing import Any, Literal, Mapping, Sequence
 
 import torch
 
 from .base import (
-    AMPERE_METER,
     DIMENSIONLESS,
     UNKNOWN,
     BiasTerm,
     ObservationRefusal,
-    PSF,
     Provenance,
-    Support,
     UncertaintyLedger,
     VarianceDecomposition,
 )

@@ -34,8 +34,8 @@ Physics implemented here
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
-from typing import Any, Literal, Mapping, Sequence
+from dataclasses import dataclass
+from typing import Mapping, Sequence
 
 import torch
 

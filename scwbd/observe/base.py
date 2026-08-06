@@ -27,7 +27,7 @@ from __future__ import annotations
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, replace
-from typing import Any, Callable, Iterable, Literal, Mapping, Sequence
+from typing import Any, Literal, Mapping, Sequence
 
 import torch
 

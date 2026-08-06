@@ -30,7 +30,7 @@ alternative display unit with an exact round trip (tested).
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from typing import Any, Literal, Mapping, Protocol, Sequence
 
 import torch
@@ -751,7 +751,6 @@ class BOLDObservationOperator(ObservationOperator):
         dt_l = latent_temporal.dt
         x = latent.to(torch.float64)
         h = h_obj.kernel(dt_l)
-        n_h = h.numel()
         # causal convolution on the latent clock
         conv = _causal_convolve(x, h) * dt_l
 

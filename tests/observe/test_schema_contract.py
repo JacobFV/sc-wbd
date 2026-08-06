@@ -20,7 +20,6 @@ import pytest
 import torch
 
 from scwbd.observe.base import (
-    UNKNOWN,
     BiasTerm,
     Provenance,
     RefusalR08,
@@ -29,7 +28,6 @@ from scwbd.observe.base import (
     to_schema_ledger,
     to_schema_ledgers,
     to_schema_support,
-    to_schema_temporal,
 )
 
 from .test_ledger import _all_reads

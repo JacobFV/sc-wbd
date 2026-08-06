@@ -8,12 +8,10 @@ principles rather than by trusting the string.
 
 from __future__ import annotations
 
-import math
-
 import pytest
 import torch
 
-from scwbd.observe.base import ObservationRefusal, TemporalSupport, validate_unit
+from scwbd.observe.base import ObservationRefusal, validate_unit
 from scwbd.observe.bold import (
     BOLDObservationOperator,
     CanonicalHRF,
@@ -21,7 +19,7 @@ from scwbd.observe.bold import (
     percent_to_fraction,
 )
 from scwbd.observe.eeg import EEGNoiseModel, EEGObservationOperator
-from scwbd.observe.leadfield import meg_lead_field, sarvas_meg
+from scwbd.observe.leadfield import meg_lead_field
 
 torch.set_default_dtype(torch.float64)
 

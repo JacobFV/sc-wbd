@@ -22,13 +22,12 @@ current dipole moments in A*m (or A*m/parcel for a parcel-level state).
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field, replace
-from typing import Any, Literal, Mapping, Sequence
+from dataclasses import dataclass, replace
+from typing import Sequence
 
 import torch
 
 from .base import (
-    AMPERE_METER,
     DIMENSIONLESS,
     UNKNOWN,
     VOLT,

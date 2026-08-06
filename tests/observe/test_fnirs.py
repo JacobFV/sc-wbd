@@ -13,12 +13,7 @@ import pytest
 import torch
 
 from scwbd.observe.base import ObservationRefusal
-from scwbd.observe.fnirs import (
-    EXTINCTION_COEFF,
-    ExtracerebralModel,
-    FNIRSObservationOperator,
-    PhotonPathModel,
-)
+from scwbd.observe.fnirs import FNIRSObservationOperator, PhotonPathModel
 
 torch.set_default_dtype(torch.float64)
 

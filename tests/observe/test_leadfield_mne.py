@@ -16,7 +16,6 @@ Three levels, with honest tolerances:
 
 from __future__ import annotations
 
-import math
 import warnings
 
 import numpy as np

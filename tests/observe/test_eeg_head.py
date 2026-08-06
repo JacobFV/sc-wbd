@@ -4,12 +4,10 @@ and the propagation of electrode-position covariance into sensor variance.
 
 from __future__ import annotations
 
-import math
-
 import pytest
 import torch
 
-from scwbd.observe.base import ObservationRefusal, TemporalSupport
+from scwbd.observe.base import ObservationRefusal
 from scwbd.observe.eeg import (
     ArtifactModel,
     EEGNoiseModel,
@@ -164,7 +162,6 @@ def test_line_noise_appears_at_the_declared_frequency(fixed_lf, latent_temporal)
 def test_electrode_position_covariance_propagates_with_cross_terms(
     four_layer_head, sensor_positions, source_positions
 ):
-    lf = four_layer_head.lead_field(source_positions, sensor_positions)
     sub_sens = sensor_positions[:8]
     lf8 = four_layer_head.lead_field(source_positions[:3], sub_sens)
 
