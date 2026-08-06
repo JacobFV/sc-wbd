@@ -100,3 +100,61 @@ Not proposing run-2 changes off the Stage III diagnostic. Not tuning anything on
 its basis. Fixing item 1 is a correction to a **measurement instrument**, not to
 the model, and I could not predict whether it would make my result look better or
 worse — which is the test I applied before touching it.
+
+---
+
+# Results of attacking my own list (2026-08-06, during Stage IV)
+
+I said item 2 and item 3 were where I would start if I were trying to break my own
+numbers. So I started there. **Items 2, 3 and 4 are clear — verified, not asserted.**
+
+## Item 2 — ties / mass at prior bounds: CLEAR
+
+Measured on the Stage III checkpoint, 256 datasets × 256 samples:
+
+| param | duplicate-sample fraction | sample min/max |
+|---|---|---|
+| log_G | 0.0000 | −3.905 / 1.098 |
+| log_velocity | 0.0000 | 0.406 / 2.482 |
+| ei_global | 0.0001 | 0.600 / 1.599 |
+| ei_gradient | 0.0000 | −0.449 / 0.450 |
+| log_sigma | **0.0000** | −6.211 / −1.898 |
+| drive | 0.0000 | 0.300 / 1.900 |
+
+No ties anywhere; exact-equal-to-truth fraction 0.000000 for every parameter.
+Samples *approach* the support bounds (the round numbers above are the squashed
+prior range) but **do not pile up on them**.
+
+**Consequence:** `log_sigma`'s mean rank of 0.266 is a **real bias, not a tie
+artefact.** The strict `<` in `sbc_ranks` is harmless here. This was the item most
+likely to have overturned my worst result, and it does not.
+
+## Item 3 — silent dimension truncation: CLEAR
+
+Posterior sample dim **8** = `len(THETA_NAMES)` **6** + `nuisance_dim` **2**;
+theta batch dim **6**; `p = min(...)` truncates to **6**. Aligned. The columns
+labelled `THETA_NAMES` are the columns being compared.
+
+## Item 4 — val/train disjointness: CLEAR
+
+Compared the realised splits directly rather than trusting the seed. Train 36,000
+windows, val 1,888 windows, **overlap of `(file, trajectory)` keys = 0**. One
+window per trajectory; 36,000 + 1,888 = 37,888 = `total_trajectories` in the corpus
+index, and 1888/37888 = 4.98% ≈ the configured `val_fraction`.
+
+Note this item could only ever have made my recovery numbers **optimistic**, and
+they are already bad — so it was never a threat to the conclusion. Checked anyway,
+because "it can only hurt the other side" is a reason to be *more* careful, not
+less.
+
+## Still open for you
+
+**Item 5** (normalisation/numerics train-vs-eval) and **item 6** (the
+same-simulator caveat, which is not a bug). And **item 1 is the one that actually
+bit** — I found it myself, but only *after* escalating numbers from the biased
+sample. That is the honest record: three of my four suspicions were wrong, and the
+defect was somewhere I had not thought to look until I sat down to write this list.
+
+**Which is the argument for writing the list at all.** Item 1 surfaced because I
+was enumerating attack surface for someone else, not because I doubted that
+particular line.
