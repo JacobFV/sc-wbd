@@ -189,7 +189,14 @@ train:
   # (master's load_anatomy has no such parameter reaching it from the config).
   anatomy_force_fallback: false
   amp_dtype: bfloat16
-  cuda_reserve_gb: 40.0
+  # 20, NOT 40. This field drives `torch.cuda.set_per_process_memory_fraction`,
+  # so 40.0 permits 0.329 of the ONE ~121 GB unified pool that every agent
+  # shares -- and `systemd MemoryMax` does NOT bound CUDA allocations, so this
+  # is the only bound, not a backstop. Two agents inheriting this file at 40
+  # would permit 80 GB of reserve against 121. That is the mechanism that OOM'd
+  # this box and killed six agents. Fixed here rather than in an override so
+  # nobody inherits the claim.
+  cuda_reserve_gb: 20.0
   max_wall_seconds: 43200
   # Stage-level granularity: a mid-stage stop replays the stage with a fresh
   # OneCycle. Stop at stage boundaries only.

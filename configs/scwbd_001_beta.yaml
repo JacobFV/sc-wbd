@@ -146,7 +146,11 @@ train:
   # not charge device allocations, so MemoryMax reported 8.17 GB while this run
   # held 97.9 GB and took the machine to 8 GB free. See
   # reports/training/platform_memory_limits.md.
-  cuda_reserve_gb: 40.0
+  # 20, NOT 40. Drives `torch.cuda.set_per_process_memory_fraction` against ONE
+  # ~121 GB unified pool shared by every agent; `systemd MemoryMax` does not
+  # bound CUDA allocations, so this field is the only bound. See the same note
+  # in configs/run2/scwbd-001.yaml.
+  cuda_reserve_gb: 20.0
   # 12 h. Measured 4.3-4.7 s/step at batch 64 on a quiet machine, so the
   # designed 8,700-step curriculum needs ~10.5-11.3 h. At the old 5 h cap the
   # run stopped around step 3,860: Stages I-III only, with Stage IV assembly
