@@ -196,7 +196,10 @@ the question:
 If you cannot name a state of the world that would make the reading come out
 differently, you do not have a measurement.
 
-## Two habits that catch it
+## Standing recommendations
+
+Five habits, in the order they are worth. The first two are general; the last
+three were each bought with a specific mistake in this project.
 
 **1. Make the guard fail on purpose before trusting it.**
 Not "write a test that passes when things are fine" — that is what all four had.
@@ -217,6 +220,46 @@ what turned #3 around: `gpu_reserved_gb` sampled at step 1, *before* the
 allocator has grown to fill whatever room it is given, does vary with batch —
 0.27 GB/sample, growing ~1.86× to plateau, which then reproduced the uncapped
 run's 97.9 GB at batch 192 exactly.
+
+**3. Before committing a threshold, ask what it would read in the world where
+the hypothesis is false.**
+
+> If the answer is "the same", it is not a trigger — it is a **tripwire across a
+> corridor everyone walks down.**
+
+Promoted here from instance 8, where a stop-trigger written specifically to bind
+its author against motivated reasoning fired identically at both learning rates
+it was meant to distinguish. Pre-commitment stops you choosing the metric *after*
+seeing the data. It does nothing about choosing a metric that could never have
+answered the question. Those are different failures and only the first is fixed
+by writing it down early.
+
+**4. Ask of every caveat: if this were true, would the claim change?**
+
+> If not, the caveat is **ornament and the claim is unearned.**
+
+This is the one that looks most like rigour from every angle. The periodicity
+claim (retracted) carried an accurate, freely-volunteered aliasing caveat —
+*"`log_every = 20`, so only periods that are multiples of 20 are detectable; a
+true period of 61 would be invisible"* — and then asserted the period anyway. The
+caveat was correct, prominent, and load-bearing on nothing. **A caveat that does
+not change the claim is decoration**, and it buys unearned credibility precisely
+because it signals awareness of the limitation it fails to apply.
+
+Operational test: state the caveat, then state the claim *as if the caveat were
+binding*. If the claim survives unchanged, one of the two is wrong.
+
+**5. Prefer a forward prediction to a retrospective fit.**
+
+Fitting a pattern to observed data costs nothing and proves nothing. Naming what
+the pattern predicts *next*, then checking, is cheap and decisive: the period-60
+claim predicted a spike at step 560, observed one at 540 and none at 560, and
+died **four minutes after it was made**. It had been fitted to a run of three
+equal gaps at a 31 % per-sample event rate, where such runs are unremarkable.
+
+Corollary: **check the mechanism before claiming the pattern.** Stage I draws
+only from the sim loader, whose epoch is ~560 batches — nowhere near 60. That
+check cost nothing, was available before the claim, and would have killed it.
 
 ## A corollary about fixing things
 

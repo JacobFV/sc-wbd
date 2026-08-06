@@ -205,3 +205,73 @@ corpus (EEGMMIDB) with participant-level splits.
 - `theta.provenance` now carries `route_fragile_ingredients` and
   `forbidden_inference`, and an undisclosed ledger records
   `{"disclosed": false}` so silence does not read as safe.
+
+## Mechanism C — the per-window normaliser inflates ~6 % of windows by 10–700×
+
+**Different in kind from A and B.** Those are baked into the corpus and need
+regeneration. This is a **loader transform** (`SimCorpus.__getitem__`) and is
+fixable in code without touching a byte of the corpus.
+
+`scale = median_over_regions(std_over_time)`, floored at `1e-6`. When many
+regions are near-silent within a window, the *median* collapses while the *max*
+does not, so dividing by it inflates the whole window.
+
+| | normal windows | extreme windows (z-std > 10× median) |
+|---|---|---|
+| median regional sd | 7.48e-2 | **6.74e-4** (111× smaller) |
+| max regional sd | 1.48e-1 | 1.68e-1 — *essentially unchanged* |
+| fraction of regions ~silent | 1.0 % | **12.6 %** |
+
+Extremes are **not louder windows**; they are windows whose *denominator* fell out.
+
+Measured over 888 windows (24 per shard, 72 samples each):
+
+- **5.9 %** of windows exceed 10× the median z-std
+- distribution: p50 1.05, p90 1.60, **p95 26.3**, **p99 201**, **max 767**
+- by backend: **`wilson_cowan` 11.7 %**, `wong_wang` 3.5 %,
+  `stuart_landau` / `jansen_rit` / `linear_gaussian` **0 %**
+- the `1e-6` floor binds in only 1.1 % of windows, so the floor is not the cause
+
+Reproduce with `reports/training/probe_normaliser.py`.
+
+### Why this lands on the signal that matters
+
+Normalisation **reverses** which backends dominate the objective. Raw std spans
+421× (`jansen_rit` 3.51 → `linear_gaussian` 0.0083), but post-normalisation:
+
+| backend | trajectory share | share of batch variance |
+|---|---|---|
+| `wilson_cowan` | 40.5 % | **76.3 %** |
+| `wong_wang` | 32.4 % | 23.1 % |
+| `jansen_rit` | 8.1 % | 0.4 % |
+| `stuart_landau` | 13.5 % | 0.1 % |
+| `linear_gaussian` | 5.4 % | 0.1 % |
+
+So the corruption concentrates in Wilson–Cowan, which supplies three quarters of
+the forecast signal.
+
+### A mitigation of A and B — flagged because it favours the artifact
+
+The prior-missing backends (SL, JR, LG — **27 % of trajectories**) contribute
+**0.6 %** of forecast-loss variance. Mechanisms A and B are therefore much less
+damaging to the *forecast* objective than their trajectory-count shares imply.
+
+Three caveats that keep this from being overclaimed:
+
+1. **Variance share is a proxy for gradient share, not the same quantity.**
+2. **The `npe_loss` / θ-posterior term weights every trajectory equally**,
+   regardless of amplitude — the prior gaps hit that term at full strength.
+3. Measured at fixed window offsets, not the loader's random ones.
+
+**Share-by-count and share-by-influence are different numbers.** Everything above
+mechanism C in this file reports the first; a claim about what the model learned
+needs the second.
+
+### What is *not* claimed
+
+That mechanism C causes the observed ~31 % spike rate in `sim_forecast_nll`. A
+"batch contains ≥1 extreme window" model predicts **98 %**, not 31 %. The rate can
+be matched by tuning the extremeness threshold to roughly the top 0.5 % — which
+is precisely the retrospective fitting that produced the retracted period-60
+claim, so it is not being done. **The defect is measured; its link to the spikes
+is unestablished.**
