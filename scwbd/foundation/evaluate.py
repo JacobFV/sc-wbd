@@ -48,16 +48,56 @@ __all__ = ["evaluate_model", "real_eeg_holdout", "posterior_calibration", "sourc
 # ======================================================================
 @torch.no_grad()
 def _scwbd_scores(
-    trainer, loader, *, max_batches: int | None = None, n_theta_samples: int = 32
+    trainer,
+    loader,
+    *,
+    max_batches: int | None = None,
+    n_theta_samples: int = 32,
+    n_mean_samples: int = 256,
 ) -> dict[str, Any]:
-    """Per-window sensor-space NLL and MSE of the foundation model."""
+    """Per-window sensor-space NLL and MSE of the foundation model.
+
+    **Headline is PLUG-IN at the posterior mean, matching the baselines.**
+
+    Every baseline is a plug-in estimator: ``ARBaseline`` and friends score at
+    point-estimated coefficients and do not integrate over coefficient
+    uncertainty.  Marginalising SC-WBD over theta while the baselines stay
+    plug-in breaks like-for-like in exactly the way the units mismatch did --
+    worth **0.0377 nats**, 7x the gap that decides a rank and larger than the
+    whole 0.035-nat spread between the non-trivial baselines.
+
+    The marginal is retained as a **separately labelled secondary** with its
+    diagnostics, because on this posterior it is not a converged predictive:
+    median effective sample size is ~1 of 64 draws, the best draw carries ~98%
+    of the mass, and the estimate still drifts with K.  A genuine
+    predictive-vs-predictive comparison needs coefficient uncertainty on the
+    baselines, which is a project rather than a patch.
+    """
     model, cfg = trainer.model, trainer.cfg
     model.eval()
     c = cfg.data.context
     nlls: list[np.ndarray] = []
     nlls_norm: list[np.ndarray] = []
     mses: list[np.ndarray] = []
+    marg: list[np.ndarray] = []
+    marg_half: list[np.ndarray] = []
+    ess: list[np.ndarray] = []
+    top_mass: list[np.ndarray] = []
     subs: list[str] = []
+
+    def _score(th: Tensor, y: Tensor) -> tuple[Tensor, Tensor]:
+        """Return (per-element NLL summed over the window, mean prediction)."""
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=cfg.model.use_bf16):
+            roll = model.rollout(y_context=src, theta=th, n_steps=y.shape[1], enforce_r05=False)
+            mu, lv = model.eeg(roll.state)
+        m_k = mu.float()
+        v_k = lv.float().clamp(-14, 14)
+        # RAW data units, matching baselines._gaussian_nll. Rescaling by the
+        # target's own per-window std would compare densities of two DIFFERENT
+        # random variables (NLL_scaled = NLL_raw - log s).
+        nll_el = 0.5 * (math.log(2 * math.pi) + v_k + (y - m_k) ** 2 * torch.exp(-v_k))
+        return nll_el, m_k
+
     for bi, batch in enumerate(loader):
         if max_batches is not None and bi >= max_batches:
             break
@@ -65,61 +105,82 @@ def _scwbd_scores(
         ctx_e, tgt_e = eeg[:, :c], eeg[:, c:]
         src = trainer.sensor_to_parcel(ctx_e)
         src = src / src.std(dim=(1, 2), keepdim=True).clamp_min(1e-6)
-        # MARGINALISE over the posterior rather than scoring one draw. The metric
-        # names a predictive density, p(y | context) = E_theta[p(y | theta)], and a
-        # single sample is a plug-in estimator of a different quantity. With a wide,
-        # weakly-informative posterior (Stage III: z_sd 1.0-1.4, R^2 <= 0.21) one
-        # draw is materially worse than the distribution it came from.
         y = tgt_e.float()
         n_elem = float(y.shape[1] * y.shape[2])
-        th_all = trainer.posterior.sample(ctx_e, n_theta_samples)  # (B, K, P)
-        joint_ll: list[Tensor] = []
-        mu_sum = None
-        for k in range(n_theta_samples):
-            th = th_all[:, k][:, : len(THETA_NAMES)]
-            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=cfg.model.use_bf16):
-                roll = model.rollout(
-                    y_context=src, theta=th, n_steps=tgt_e.shape[1], enforce_r05=False
-                )
-                mu, lv = model.eeg(roll.state)
-            m_k = mu.float()
-            v_k = lv.float().clamp(-14, 14)
-            # RAW data units: the baselines score the raw target through
-            # baselines._gaussian_nll, so rescaling by the target's own per-window
-            # std would compare densities of two DIFFERENT random variables
-            # (NLL_scaled = NLL_raw - log s; mean log s = 0.598 here, ~17x the
-            # 0.035-nat spread between the non-trivial baselines).
-            nll_el = 0.5 * (math.log(2 * math.pi) + v_k + (y - m_k) ** 2 * torch.exp(-v_k))
-            joint_ll.append(-nll_el.sum(dim=(1, 2)))  # (B,) log p(y | theta_k)
-            mu_sum = m_k if mu_sum is None else mu_sum + m_k
-        # log (1/K) sum_k p(y | theta_k), then back to nats per channel per sample
-        L = torch.stack(joint_ll, dim=1)  # (B, K)
-        logp = torch.logsumexp(L, dim=1) - math.log(float(n_theta_samples))
-        nlls.append((-logp / n_elem).cpu().numpy())
-        m_bar = mu_sum / float(n_theta_samples)
-        mses.append(((y - m_bar) ** 2).mean(dim=(1, 2)).cpu().numpy())
-        # Secondary, separately labelled: amplitude-normalised score. Defensible as
-        # *a* metric; NOT comparable to the baselines. Change of variables by a
-        # constant per window, so it is the marginal score shifted by log s.
         s_ = tgt_e.std(dim=(1, 2), keepdim=True).clamp_min(1e-8).float()
-        nlls_norm.append(
-            ((-logp / n_elem) - torch.log(s_).reshape(-1)).cpu().numpy()
-        )
+
+        # -- HEADLINE: plug-in at the posterior mean ------------------------
+        # Sampling theta is cheap (one posterior forward); only the rollout is
+        # expensive. So the mean is estimated from many draws and spent on ONE
+        # rollout, which makes it stable and, with the evaluation seeded,
+        # deterministic. It is estimated, not exact -- see `theta_mean_samples`.
+        th_bar = trainer.posterior.sample(ctx_e, n_mean_samples).mean(dim=1)
+        th_bar = th_bar[:, : len(THETA_NAMES)]
+        nll_el, m_bar = _score(th_bar, y)
+        nll_pw = nll_el.mean(dim=(1, 2))
+        nlls.append(nll_pw.cpu().numpy())
+        mses.append(((y - m_bar) ** 2).mean(dim=(1, 2)).cpu().numpy())
+        nlls_norm.append((nll_pw - torch.log(s_).reshape(-1)).cpu().numpy())
+
+        # -- SECONDARY: marginal over K draws, with diagnostics -------------
+        if n_theta_samples and n_theta_samples > 0:
+            th_all = trainer.posterior.sample(ctx_e, n_theta_samples)
+            joint_ll: list[Tensor] = []
+            for k in range(n_theta_samples):
+                nll_k, _ = _score(th_all[:, k][:, : len(THETA_NAMES)], y)
+                joint_ll.append(-nll_k.sum(dim=(1, 2)))
+            L = torch.stack(joint_ll, dim=1)  # (B, K) log p(y | theta_k)
+            logp = torch.logsumexp(L, dim=1) - math.log(float(n_theta_samples))
+            marg.append((-logp / n_elem).cpu().numpy())
+            # K/2 -> K drift: if the marginal has converged this is ~0.
+            half = max(1, n_theta_samples // 2)
+            logp_h = torch.logsumexp(L[:, :half], dim=1) - math.log(float(half))
+            marg_half.append((-logp_h / n_elem).cpu().numpy())
+            # Self-normalised effective sample size of the K likelihood weights.
+            w = torch.softmax(L, dim=1)
+            ess.append((1.0 / (w**2).sum(dim=1)).cpu().numpy())
+            top_mass.append(w.max(dim=1).values.cpu().numpy())
+
         subs.extend(list(batch["subject"]))
     model.train()
-    return {
+
+    out: dict[str, Any] = {
         "nll_per_window": np.concatenate(nlls) if nlls else np.zeros(0),
+        "mse_per_window": np.concatenate(mses) if mses else np.zeros(0),
         "nll_per_window_amplitude_normalised": (
             np.concatenate(nlls_norm) if nlls_norm else np.zeros(0)
         ),
-        "mse_per_window": np.concatenate(mses) if mses else np.zeros(0),
         "subjects": subs,
+        "estimator": "plug-in at posterior mean (matches the baselines' plug-in form)",
+        "theta_mean_samples": int(n_mean_samples),
         "units_note": (
             "nll_per_window and mse_per_window are in RAW data units, matching "
             "baselines._gaussian_nll. nll_per_window_amplitude_normalised divides by "
             "the target's own per-window std and is NOT comparable to the baselines."
         ),
     }
+    if marg:
+        m = np.concatenate(marg)
+        mh = np.concatenate(marg_half)
+        e = np.concatenate(ess)
+        tm = np.concatenate(top_mass)
+        out["nll_per_window_marginal"] = m
+        out["marginal_diagnostics"] = {
+            "K": int(n_theta_samples),
+            "ess_median": float(np.median(e)),
+            "ess_mean": float(e.mean()),
+            "frac_windows_ess_below_2": float((e < 2.0).mean()),
+            "top_draw_weight_median": float(np.median(tm)),
+            "drift_khalf_to_k_nats": float(m.mean() - mh.mean()),
+            "note": (
+                "SECONDARY, NOT COMPARABLE TO THE BASELINES: they are plug-in "
+                "estimators. Also not a converged predictive on this posterior -- "
+                "with ESS near 1 the logsumexp is effectively a best-of-K, and the "
+                "estimate drifts with K rather than converging. Report K, ESS and "
+                "the drift with any use of this number."
+            ),
+        }
+    return out
 
 
 def real_eeg_holdout(
@@ -129,6 +190,7 @@ def real_eeg_holdout(
     n_boot: int = 2000,
     seed: int = 0,
     n_theta_samples: int = 32,
+    n_mean_samples: int = 256,
 ) -> dict[str, Any]:
     """SC-WBD vs every required baseline on a participant-level holdout.
 
@@ -173,7 +235,11 @@ def real_eeg_holdout(
     ctx, tgt = te_x[:, :c], te_x[:, c:]
 
     scw = _scwbd_scores(
-        trainer, test_loader, max_batches=max_batches, n_theta_samples=n_theta_samples
+        trainer,
+        test_loader,
+        max_batches=max_batches,
+        n_theta_samples=n_theta_samples,
+        n_mean_samples=n_mean_samples,
     )
     n_model_params = sum(p.numel() for p in trainer.model.parameters())
 
@@ -470,7 +536,26 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
         # evaluating on CPU silently dropped 80.2% of the parameter mass (all of
         # `local` + `residual`) and scored RANDOM WEIGHTS while printing "loaded".
         report = payload.get("load_report", {})
-        missing, unexpected = report.get("missing", []), report.get("unexpected", [])
+        missing = [
+            *report.get("missing", []),
+            *report.get("posterior_missing", []),
+            *report.get("individualizer_missing", []),
+        ]
+        unexpected = [
+            *report.get("unexpected", []),
+            *report.get("posterior_unexpected", []),
+            *report.get("individualizer_unexpected", []),
+        ]
+        # Absence is not a mismatch, but it must not read as a clean load either:
+        # that is the silent-load failure one level up. Loud, recorded, not fatal --
+        # a population checkpoint legitimately carries no individualizer.
+        for _m in ("posterior", "individualizer"):
+            if report.get(f"{_m}_absent"):
+                print(
+                    f"[warn] {ckpt} contains no {_m}: it was NOT loaded, and any "
+                    f"metric that depends on it describes a model without one.",
+                    flush=True,
+                )
         if missing or unexpected:
             raise CheckpointError(
                 f"{ckpt} did not load cleanly: {len(missing)} missing, "

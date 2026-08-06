@@ -1163,3 +1163,28 @@ a record. The operational form of this one: for every component you certify, nam
 its inputs and check a real sample of them — `n_clusters`, `n_participants`,
 `n_backends`. **A correctness proof about a function is worthless without a claim
 about its domain.**
+
+---
+
+## Entry: a pipeline's exit code is its last stage's
+
+Contributed by ⚖️ Neyman after I filed a false claim built on one.
+
+I ran `pytest ... -x -q 2>&1 | tail -12`, read exit 0, and wrote "tests/foundation
+passes" into commit `2e70ecd`. The suite exits **1**. The 0 was `tail`'s.
+
+`| tail`, `| head`, `| grep`, `| tee` all launder a failure into a success, because
+the shell reports only the final stage. This is the *same shape* as the two defects
+I had catalogued that morning — `strict=False` with a discarded load report, and a
+conflict policy whose decisions were logged rather than enforced. **A success signal
+that structurally cannot report failure.** I wrote both entries and then trusted a
+piped exit code within the hour.
+
+Operational forms:
+- `set -o pipefail`, or read `${PIPESTATUS[0]}`;
+- or simply do not pipe the command whose status you are about to believe — redirect
+  to a file and read the file.
+
+**The general rule this is the third instance of: before believing a green signal,
+ask what red would have looked like.** If you cannot describe the failure mode
+concretely, you are not reading a result — you are reading the absence of one.
