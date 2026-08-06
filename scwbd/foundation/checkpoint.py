@@ -88,6 +88,11 @@ def save_checkpoint(
         "environment": env_fingerprint(),
         "config": config.as_dict(),
         "state_layout": model.layout.as_dict() if hasattr(model, "layout") else None,
+        # Which arm of body.tex §11.4 this artifact is, as a machine-readable
+        # property of the weights rather than a sentence in a report. Refusal
+        # R12 reads it; run 1 had nowhere to put it and was described as the
+        # treatment arm while being the control (reports/scope_gap.md).
+        "regional_state": model.family_report() if hasattr(model, "family_report") else None,
         "model": model.state_dict(),
         "optimizer": optimizer.state_dict() if optimizer is not None else None,
         "scheduler": scheduler.state_dict() if scheduler is not None else None,
@@ -119,6 +124,8 @@ def save_checkpoint(
         )
     )
     if manifest is not None:
+        if payload["regional_state"] is not None:
+            manifest.declare_regional_state(payload["regional_state"])
         manifest.git_sha = payload["git_sha"]
         manifest.weights_hash = hash_file(p)
         manifest.environment = payload["environment"]

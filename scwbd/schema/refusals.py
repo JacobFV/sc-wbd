@@ -1,11 +1,20 @@
-"""The eleven mandatory modeling refusals.
+"""The eleven mandatory modeling refusals, plus this repository's local ones.
 
-Verbatim from ``paper/thesis_contract.tex`` Table ``tab:compiler-refusals``,
-in table order as fixed by ARCHITECTURE.md sec. 2.  "These are compiler and
-runtime errors, not optional governance prose."
+R01-R11 are verbatim from ``paper/thesis_contract.tex`` Table
+``tab:compiler-refusals``, in table order as fixed by ARCHITECTURE.md sec. 2.
+"These are compiler and runtime errors, not optional governance prose."
 
-Every refusal carries the *exact* remedy text from the thesis so that a user who
-hits one is told what the thesis requires, not what an implementer paraphrased.
+Every thesis refusal carries the *exact* remedy text from the thesis so that a
+user who hits one is told what the thesis requires, not what an implementer
+paraphrased.
+
+**Local refusals** (currently R12) are *not* in the thesis table.  They are
+refusals this repository added because it made a specific mistake and does not
+intend to make it twice.  They are marked ``origin="local"`` so that no reader
+and no report can mistake them for thesis authority, and they are excluded from
+:data:`REFUSAL_CODES` -- the compiler's table-order check list -- because the
+compiler's contract is "fail closed on all 11 refusals in the thesis table".
+Use :data:`ALL_REFUSAL_CODES` when you mean every refusal this codebase raises.
 """
 
 from __future__ import annotations
@@ -18,30 +27,56 @@ from .base import SchemaModel
 
 __all__ = [
     "RefusalCode",
+    "RefusalOrigin",
     "RefusalSpec",
     "REFUSALS",
     "REFUSAL_CODES",
+    "THESIS_REFUSAL_CODES",
+    "LOCAL_REFUSAL_CODES",
+    "ALL_REFUSAL_CODES",
+    "NON_OVERRIDABLE_CODES",
     "CompilerRefusal",
     "RefusalRecord",
     "remedy_for",
+    "r12_predicate",
 ]
 
 RefusalCode = Literal[
-    "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11"
+    "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11",
+    "R12",
 ]
 
+#: Where a refusal's authority comes from.  ``"thesis"`` means the row exists in
+#: Table tab:compiler-refusals and its remedy text is quoted, not written.
+RefusalOrigin = Literal["thesis", "local"]
+
+#: The thesis table, in table order.  This is the list the compiler driver walks
+#: and the list ``tests/schema/refusals`` requires a failing fixture for.
 REFUSAL_CODES: tuple[str, ...] = (
     "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11",
 )
+THESIS_REFUSAL_CODES: tuple[str, ...] = REFUSAL_CODES
+
+#: Refusals this repository added.  Not thesis rows; see the module docstring.
+LOCAL_REFUSAL_CODES: tuple[str, ...] = ("R12",)
+
+#: Every refusal any part of this codebase may raise.
+ALL_REFUSAL_CODES: tuple[str, ...] = REFUSAL_CODES + LOCAL_REFUSAL_CODES
 
 
 class RefusalSpec(SchemaModel):
-    """One row of Table tab:compiler-refusals."""
+    """One row of Table tab:compiler-refusals, or one local refusal."""
 
     code: RefusalCode
     rejected: str
     why: str
     remedy: str
+    origin: RefusalOrigin = "thesis"
+    #: Whether ``ClaimManifest.overrides`` may buy past this refusal in exchange
+    #: for a demoted claim class.  A refusal about *what an artifact is called*
+    #: is not overridable: demoting the claim class does not change the name,
+    #: so an override would leave the mislabelling in place.
+    overridable: bool = True
 
 
 REFUSALS: dict[str, RefusalSpec] = {
@@ -162,18 +197,75 @@ REFUSALS: dict[str, RefusalSpec] = {
                 "applicable ethics and regulatory review"
             ),
         ),
+        RefusalSpec(
+            code="R12",
+            origin="local",
+            overridable=False,
+            rejected=(
+                "A checkpoint emitted under the SC-WBD designation whose regional "
+                "operator assignment is constant across all regions and whose "
+                "resolution poset declares no prolongation"
+            ),
+            why=(
+                "That artifact is the equal-capacity generic control arm of "
+                "body.tex sec. 11.4's first ablation, and under the model's name "
+                "its measurements read as measurements of the model"
+            ),
+            remedy=(
+                "Assign operators per regional family and declare a validated "
+                "restriction/prolongation pair; or declare the run a control "
+                "(arm.role='control' naming the ablation it is the control for), "
+                "which keeps it runnable under a control designation instead of "
+                "the model's"
+            ),
+        ),
     )
 }
 
-assert tuple(REFUSALS) == REFUSAL_CODES, "refusal table must stay in thesis order"
+#: Codes an override may never buy past.
+NON_OVERRIDABLE_CODES: frozenset[str] = frozenset(
+    code for code, spec in REFUSALS.items() if not spec.overridable
+)
+
+assert (
+    tuple(c for c, s in REFUSALS.items() if s.origin == "thesis") == REFUSAL_CODES
+), "refusal table must stay in thesis order"
+assert (
+    tuple(c for c, s in REFUSALS.items() if s.origin == "local") == LOCAL_REFUSAL_CODES
+), "local refusals must be declared after the thesis table, in code order"
+assert tuple(REFUSALS) == ALL_REFUSAL_CODES
 
 
 def remedy_for(code: str) -> str:
-    """Exact remedy text from Table tab:compiler-refusals."""
+    """Exact remedy text from Table tab:compiler-refusals (or a local refusal)."""
     try:
         return REFUSALS[code].remedy
     except KeyError:  # pragma: no cover - programming error
-        raise KeyError(f"unknown refusal code {code!r}; expected one of {REFUSAL_CODES}")
+        raise KeyError(
+            f"unknown refusal code {code!r}; expected one of {ALL_REFUSAL_CODES}"
+        )
+
+
+def r12_predicate(manifest: Any, config: Any = None) -> None:
+    """The canonical R12 predicate.  Raises ``CompilerRefusal(code="R12")``.
+
+    **This is the ownership seam.**  ``scwbd.foundation.manifest.ClaimManifest``
+    ``.refuse_r12`` looks this name up on this module and delegates to it; the
+    enforcement point (checkpoint emission) stays in ``foundation``, and the
+    definition stays here with R01-R11.  A refusal defined inside the module it
+    polices is a self-assessment, and self-assessment is what let run 1 emit the
+    control arm under the model's name.
+
+    ``config`` is optional and should be passed whenever the caller has one --
+    ``save_checkpoint`` does.  Without it R12 can check the operator assignment
+    and the claim prose but not the prolongation half, because nothing in the
+    manifest records the resolution poset.
+
+    Imported lazily: :mod:`scwbd.schema.designation` imports this module.
+    """
+    from .designation import check_manifest_r12
+
+    check_manifest_r12(manifest, config)
 
 
 def _describe(obj: Any) -> str:

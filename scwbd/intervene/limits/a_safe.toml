@@ -16,14 +16,19 @@
 #   3. Limits are used only to REFUSE. Satisfying every limit here does not
 #      make an intervention safe, approved, or applicable to a person; it only
 #      means the simulated optimizer was not blocked on this axis.
-#   4. Prospective human use additionally requires ethics/IRB review, consent,
-#      device regulatory status, and clinician oversight, none of which exist
-#      for SC-WBD-001-beta (thesis_contract.tex Sec. 0.6 item 6).
+#   4. This file is not an authorization and cannot become one. Governance is
+#      declared separately, per protocol, in an `AuthorizationRecord`
+#      (scwbd.schema.authorization); applying a plan to a person or to real
+#      hardware is gated again by scwbd.intervene.deployment. Setting
+#      `human_use_authorized = true` here is refused at load, by design.
+#   5. Every entry below must be enforceable: `SafetyLimits.load` refuses an
+#      entry that declares neither `min` nor `max`, because a bound nothing can
+#      check is decoration (see reports/decorative_guards.md).
 
 schema_version = "scwbd-a_safe/1.0.0"
 scope = "simulation_only"
 human_use_authorized = false
-authority = "none -- research simulation study; no IRB, no consent, no device"
+authority = "this file is a declarative feasible set, not a permission; it confers no authority over any person or device"
 
 # --------------------------------------------------------------------------
 # Generic protocol axes (apply to every modality)
@@ -33,11 +38,6 @@ max = 3600.0
 units = "s"
 basis = "study protocol ceiling for a single simulated session"
 citation = "thesis_contract.tex Sec. 0.5 (bounded preregistered pose set)"
-
-[protocol.reversibility]
-required = true
-basis = "controller must be able to choose a reversible probe (thesis Sec. 7.4)"
-citation = "body.tex Sec. 7.4"
 
 # --------------------------------------------------------------------------
 # TMS -- electromagnetic exposure axes
@@ -154,6 +154,18 @@ basis = """If model disagreement or transform uncertainty dominates the
 estimated benefit difference between candidate interventions, the output is
 another calibration measurement, a reversible probe, or no recommendation."""
 citation = "thesis_contract.tex Sec. 0.5 step 6; body.tex Sec. 7.4"
+
+[decision.reversibility]
+# Moved here from `[protocol.reversibility]`, where it declared `required =
+# true` with no `min`/`max` and was therefore skipped by `SafetyLimits.load`
+# and never enforced by anything. It is a rule about what the *controller* may
+# recommend, not a bound on an exposure, so this is where it belongs -- and
+# here it is read, by `SafetyLimits.require_reversible_for_live()`.
+require_for_live_application = true
+basis = """A plan intended for a person or for real hardware must be
+reversible: the controller must always retain the option of a reversible probe
+or a safer measurement instead of the intervention."""
+citation = "body.tex Sec. 7.4; thesis_contract.tex Sec. 0.5 step 6"
 
 [decision.epistemic]
 min_candidate_models = 2

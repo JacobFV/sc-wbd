@@ -92,10 +92,13 @@
       ]
     },
     "eegmmidb_real": {
-      "n_permitted": 16,
-      "n_blocked": 94,
+      "n_permitted": 12,
+      "n_blocked": 98,
       "patterns": [
-        "eeg.*",
+        "eeg.log_gain",
+        "eeg.offset",
+        "eeg.log_noise",
+        "eeg.nuisance*",
         "individualizer.*"
       ],
       "frozen": [
