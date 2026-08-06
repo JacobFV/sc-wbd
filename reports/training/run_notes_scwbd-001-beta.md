@@ -82,14 +82,63 @@ The rescale rested on two legs. **Only one survives.**
   elevated readings appear at the same sampled steps in both runs because the
   same batches are drawn there.
 
-What vindicates the rescale is therefore **outcome evidence, not the diagnosis**:
-floors improved at every matched step (0.331 → 0.225, 0.339 → 0.256,
-1.015 → 0.802, 0.632 → 0.627). The intervention was right; half its stated
-justification was not.
+**Correction, ~40 minutes later: the outcome evidence does not survive either.**
+
+I wrote that floors "improved at every matched step" on a partial series that
+stopped at step 140. Extending it to step 200, and comparing `sim_forecast_nll`
+— the physically interpretable quantity — rather than the composite `loss`:
+
+| step | old loss | new loss | old nll | new nll | Δnll |
+|---|---|---|---|---|---|
+| 40 | 0.3315 | 0.2248 | 2.877 | 2.793 | −0.084 |
+| 60 | 0.3387 | 0.2555 | 1.803 | 1.990 | +0.187 |
+| 80 | 3.7173 | 2.4470 | **20.943** | **20.980** | **+0.037** |
+| 100 | 1.0154 | 0.8018 | 3.784 | 3.800 | +0.016 |
+| 120 | 0.8417 | 0.7569 | 2.616 | 2.637 | +0.021 |
+| 140 | 0.6321 | 0.6271 | 1.728 | 1.768 | +0.040 |
+| 160 | 0.5939 | **0.6150** | 1.515 | 1.544 | +0.029 |
+| 180 | 1.8306 | **1.9600** | 7.186 | 7.229 | +0.043 |
+| 200 | 0.6002 | **0.6497** | 2.175 | 2.214 | +0.039 |
+
+Two things follow, both against the rescale.
+
+**1. The composite-loss advantage reversed.** Better at 7 matched steps, worse at
+4 — and the 4 are the most recent 3 plus step 1. The early gap was warmup
+transient, not learning.
+
+**2. On `sim_forecast_nll` the two runs are nearly identical, with the rescaled
+run consistently and very slightly worse** (+0.02 to +0.04 at every point from
+step 100 on). Across a **1.73× difference in learning rate**, forecast quality
+differs by under 2 %.
+
+The step-80 row is the sharpest: `sim_forecast_nll` is **20.943 vs 20.980** —
+indistinguishable. So my claim that lr "sets how badly the model is thrown by"
+the hard batch was also wrong; it was read off the composite `loss` (3.717 vs
+2.447), while the forecast NLL says the throw is *the same size at both rates*.
+Whatever the composite-loss difference at step 80 is, it is not forecast quality.
+
+### Where that leaves the decision
+
+- The **a-priori scaling argument** is still the only surviving justification:
+  rates written for batch 192, run at batch 64, is a real mismatch.
+- The **diagnosis** (floor rose because lr crossed ~5e-4) was wrong.
+- The **outcome evidence** does not support the rescale either. At 200 steps of
+  8,700 it is roughly neutral, trending marginally negative on the metric that
+  means something.
+
+**Honest status: the rescale is not yet vindicated by anything measured.** It is
+justified by an argument from first principles and is so far neither helping nor
+meaningfully hurting. 200 steps is warmup and far too early to conclude it was
+wrong — but it is also far too early to have called it right, which I did.
 
 Recorded this way deliberately. **A decision written up as fully justified, when
-half its support later failed, is itself an uninformative instrument** — it reads
-the same whether the reasoning was sound or lucky. This one was half lucky.
+its support later failed, is itself an uninformative instrument** — it reads the
+same whether the reasoning was sound or lucky. I have now overclaimed the
+justification for this decision twice, in the same direction, within an hour: the
+tell is that both times I reached for the reading that made the last action look
+correct. The metric to judge this on is `sim_forecast_nll` at the end of Stage I,
+not the composite loss during warmup, and I am fixing that comparison now so it
+cannot be chosen after the fact.
 
 ### A precision caveat on "exactly step 80"
 
