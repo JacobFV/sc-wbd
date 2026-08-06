@@ -28,8 +28,51 @@ __all__ = [
 @dataclass
 class ModelConfig:
     n_regions: int = 454
-    #: which operator supplies F_local: "learned" or a mechanistic backend name
+    #: which operator supplies F_local: "learned" or a mechanistic backend name.
+    #:
+    #: **One string for the whole brain.**  Kept, and kept working, because it is
+    #: the equal-capacity generic-operator arm of body.tex §11.4's first required
+    #: ablation ("structured regional state versus one scalar or pooled vector
+    #: per region").  It is a *control*, not the model: see ``family_state``.
     local_core: str = "learned"
+    #: Region-indexed state (body.tex §2.1, ARCHITECTURE.md §5).  When True the
+    #: model partitions regions into families derived from the anatomy prior,
+    #: each with its own component list, dimension, backend and ports.
+    #:
+    #: ``False`` is the §11.4 **control** arm and must be declared as such: R12
+    #: refuses to emit a checkpoint that claims heterogeneous regional state
+    #: while this is off.
+    family_state: bool = False
+    #: family name -> backend name.  Families not listed take
+    #: ``families.DEFAULT_FAMILY_CORES`` for their kind, and cortical families
+    #: fall through to ``local_core``.  Assigning a backend to a family the
+    #: anatomy prior does not produce raises rather than silently doing nothing.
+    family_cores: dict[str, str] = field(default_factory=dict)
+    #: hippocampal H_t = {k,v,g,c,rho} widths (body.tex §5.1).  These set the
+    #: padded dimension D for the whole state, so they are the price of N-1 --
+    #: ``FamilyStateLayout.padding_fraction()`` reports it.
+    d_key: int = 16
+    d_value: int = 16
+    d_grid: int = 12
+    d_context: int = 4
+    #: cerebellar forward-model / error / eligibility width
+    d_prediction: int = 8
+    #: Drive ``X_i^uncertainty`` (body.tex §2.1) with an integrated innovation /
+    #: decay law and expose it to the observation heads as a **state-dependent**
+    #: predictive log-variance.
+    #:
+    #: ``False`` restores the run-1 behaviour: ``SCWBD.observation is None`` and
+    #: ``heads.py`` falls back to its broadcast ``log_noise`` parameter — the
+    #: variance that is constant in state, time, horizon, window, participant and
+    #: condition, and that cost run 1 its NLL.  Retained as a switch **only** so
+    #: the repair itself can be ablated; it is not a supported configuration.
+    #:
+    #: Applies to BOTH §11.4 arms on purpose.  Giving the treatment arm a
+    #: state-dependent variance and leaving the control arm on a broadcast
+    #: constant would make A1 measure the variance path instead of the structured
+    #: state -- the same class of error as an interface that silently narrows one
+    #: arm.  See reports/dynamics/family_state.md §10.
+    state_dependent_variance: bool = True
     hidden: int = 320
     n_local_layers: int = 3
     region_embed: int = 96
@@ -178,6 +221,20 @@ class FoundationConfig:
     train: TrainConfig = field(default_factory=TrainConfig)
     mixture_cards: str = "configs/source_cards"
     notes: str = ""
+
+    # -- §11.4 arm --------------------------------------------------------
+    def ablation_arm(self) -> str:
+        """Which arm of body.tex §11.4's first ablation this config *is*.
+
+        ``"control"``   one operator and one state dimension for every parcel —
+                        the equal-capacity generic arm.
+        ``"treatment"`` heterogeneous region-indexed state with per-family
+                        operators.
+
+        This is a property of the config, not of what anyone wrote in a report.
+        ``manifest.refuse_r12`` reads it.
+        """
+        return "treatment" if self.model.family_state else "control"
 
     # -- serialisation ----------------------------------------------------
     def as_dict(self) -> dict[str, Any]:
