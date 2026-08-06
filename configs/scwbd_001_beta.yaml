@@ -12,12 +12,12 @@
 #
 # The second differentiator is in a state that needs saying precisely.
 # `compiler_bridge._poset()` now emits the one validated fine/coarse pair of
-# ARCHITECTURE.md sec. 5b N-3 with measured residuals
+# ARCHITECTURE.md sec. 5b N-12 with measured residuals
 # (reports/transforms/resolution_pair.md), so the compiled poset is no longer
 # single-node. That does NOT make this the treatment arm:
 #
 #   * the pair is DECLARED, not APPLIED -- all state still lives at the coarse
-#     node and the forward pass never calls R or P (narrowing N-12);
+#     node and the forward pass never calls R or P (narrowing N-13);
 #   * it is measured NOT to validate at its boundary -- the parcel support
 #     carries 5.6% of the whitened EEG lead field.
 #
@@ -51,7 +51,7 @@ arm:
     be measured. Everything else -- corpus, curriculum, parameter budget, seed,
     clocks -- is held at the treatment arm's values. The one fine/coarse pair
     the compiled poset now carries does not change the arm: it is declared and
-    measured but never applied in the forward pass (N-12), and it is measured
+    measured but never applied in the forward pass (N-13), and it is measured
     not to preserve the EEG observable at its boundary.
 
 model:

@@ -1,4 +1,4 @@
-"""The one declared fine/coarse resolution pair -- thesis §4.2, narrowing N-3.
+"""The one declared fine/coarse resolution pair -- thesis §4.2, narrowing N-12.
 
     "Where the resolution poset admits the relationship, SC-WBD learns and
      validates paired restriction and prolongation operators [...] where R_i

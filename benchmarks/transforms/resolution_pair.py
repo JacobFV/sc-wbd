@@ -1,4 +1,4 @@
-"""Measure the declared fine/coarse resolution pair -- thesis §4.2, N-3.
+"""Measure the declared fine/coarse resolution pair -- thesis §4.2, N-12.
 
 Writes ``reports/transforms/resolution_pair.json``.  Every number in
 ``reports/transforms/resolution_pair.md`` comes from one run of this script and

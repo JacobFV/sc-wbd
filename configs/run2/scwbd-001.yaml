@@ -71,15 +71,15 @@
 # ablation, and must be declared as one or R12 refuses its checkpoints.
 #
 # The compiled poset is no longer single-node: `compiler_bridge._poset()` emits
-# the one validated fine/coarse pair of ARCHITECTURE.md sec. 5b N-3 with
+# the one validated fine/coarse pair of ARCHITECTURE.md sec. 5b N-12 with
 # measured residuals (reports/transforms/resolution_pair.md). Read that with
 # two facts or it will be over-read:
 #   * DECLARED, not APPLIED -- run 2's state lives entirely at the coarse node
-#     and the forward pass never calls R or P (narrowing N-12);
+#     and the forward pass never calls R or P (narrowing N-13);
 #   * measured NOT to validate at its boundary -- the parcel support carries
 #     5.6% of the whitened EEG lead field.
 # Making run 2 the treatment arm still needs `model.local_cores` (per-family
-# backends). See ARCHITECTURE.md sec. 5 and sec. 5b N-2/N-3/N-12.
+# backends). See ARCHITECTURE.md sec. 5 and sec. 5b N-8/N-12/N-13.
 #
 # `model.scale_prolongations` is LEFT EMPTY deliberately, pending 📜 Noether's
 # ruling: setting it was measured to stop R12 firing on undeclared
@@ -94,7 +94,7 @@ arm:
     operator for all regions, so it is a second instance of the equal-capacity
     generic control rather than the model. The single fine/coarse pair the
     compiled poset carries is declared and measured but never applied in the
-    forward pass (N-12), and does not validate at its boundary, so it does not
+    forward pass (N-13), and does not validate at its boundary, so it does not
     make run 2 the treatment arm. Stated here so no run-2 measurement is read
     as a measurement of the thesis.
 
