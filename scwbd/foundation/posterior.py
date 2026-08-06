@@ -258,11 +258,45 @@ class AmortizedPosterior(nn.Module):
         lp = self.flow.log_prob(u.float(), c.float())
         return lp - logdet.float() if in_theta_space else lp
 
+    #: Per-sample ``-log q`` beyond which a batch is treated as pathological.
+    #: The flow's coupling scale is ``tanh``-bounded to +-2.5, so with
+    #: ``n_layers`` layers over ``dim`` dimensions the log-determinant cannot
+    #: exceed ``2.5 * n_layers * dim``; the base term is bounded by the
+    #: ``atanh`` clamp in :meth:`to_unconstrained`.  A value far outside that
+    #: envelope is a degenerate batch, not a hard example.
+    NPE_REJECT_ABOVE: float = 1e4
+
+    #: How many batches :meth:`loss` has rejected, and the largest value seen.
+    #: Read by the trainer -- a rejection *rate* is the diagnostic; a boolean
+    #: "did it ever fire" is not.
+    npe_rejected: int = 0
+    npe_seen_max: float = 0.0
+
     def loss(self, y: Tensor, theta: Tensor) -> Tensor:
-        """NPE objective: ``-E log q(theta | Y)`` in unconstrained space."""
+        """NPE objective: ``-E log q(theta | Y)`` in unconstrained space.
+
+        Rejects a batch whose per-sample ``-log q`` leaves the envelope the
+        flow's own bounds imply.  Run 2's first pilot trained stably for 140
+        steps and then jumped seven orders of magnitude in one step, which is
+        the signature of a single degenerate batch rather than a diverging
+        optimiser -- the gradient was already clipped at 1.0.  Rejecting keeps
+        that batch from destroying the run **and counts it**, so the rate is
+        measurable instead of the failure being invisible until it is fatal.
+        """
         c = self.summary(y)
         u, _ = self.to_unconstrained(theta)
-        return -self.flow.log_prob(u.float(), c.float()).mean()
+        per = -self.flow.log_prob(u.float(), c.float())
+        finite = torch.isfinite(per)
+        keep = finite & (per.abs() < self.NPE_REJECT_ABOVE)
+        with torch.no_grad():
+            m = float(per[finite].abs().max()) if bool(finite.any()) else float("inf")
+            type(self).npe_seen_max = max(type(self).npe_seen_max, m)
+        if not bool(keep.any()):
+            type(self).npe_rejected += 1
+            return per.new_zeros(())
+        if not bool(keep.all()):
+            type(self).npe_rejected += 1
+        return per[keep].mean()
 
     @torch.no_grad()
     def sample(self, y: Tensor, n: int = 512) -> Tensor:

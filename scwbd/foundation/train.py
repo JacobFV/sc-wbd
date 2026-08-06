@@ -583,6 +583,8 @@ class FoundationTrainer:
         diag.update(
             sim_forecast_nll=float(forecast.detach()),
             npe_loss=float(npe.detach()),
+            npe_rejected=int(type(self.posterior).npe_rejected),
+            npe_seen_max=float(type(self.posterior).npe_seen_max),
             kl=float(kl.detach()),
             rho=float(roll.rho.detach()),
             observed_fraction=float(obs_mask.mean()),
