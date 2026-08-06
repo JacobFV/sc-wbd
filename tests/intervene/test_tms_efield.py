@@ -30,6 +30,8 @@ from scwbd.intervene.tms.efield import (
     ImpossibleGeometry,
     bem_error_envelope,
     graded_icosphere,
+    graded_icosphere_for_sources,
+    source_angular_extent,
     LayeredSphereBEM,
     SphericalHeadModel,
     TriMesh,
@@ -419,8 +421,8 @@ def _contact_source():
 def test_graded_icosphere_is_a_closed_surface_refined_only_where_asked():
     head = SphericalHeadModel()
     u = _contact_source()[0] / _contact_source()[0].norm()
-    coarse = graded_icosphere(head.radius, 3, u, 0)
-    graded = graded_icosphere(head.radius, 3, u, 2)
+    coarse = graded_icosphere(head.radius, 3, u, 0, 0.35)
+    graded = graded_icosphere(head.radius, 3, u, 2, 0.35)
     assert graded.n_faces > coarse.n_faces
     # still closed: enclosed volume within the flat-panel error of the sphere
     exact = 4 / 3 * math.pi * head.radius**3
@@ -445,7 +447,7 @@ def test_the_resolution_guard_refuses_a_mesh_that_cannot_resolve_the_source():
         coarse.assert_resolves_sources(pos)
 
     u = pos[0] / pos[0].norm()
-    graded = ChargeBEM([graded_icosphere(head.radius, 4, u, 2)], [0.33], [0.0])
+    graded = ChargeBEM([graded_icosphere(head.radius, 4, u, 2, 0.35)], [0.33], [0.0])
     ok = graded.assert_resolves_sources(pos)
     assert ok["panel_to_standoff"] < 0.3
 
@@ -454,10 +456,48 @@ def test_the_error_envelope_is_a_measured_step_not_a_guess():
     assert bem_error_envelope(0.2) == 0.01
     assert bem_error_envelope(0.5) == 0.02
     assert bem_error_envelope(0.95) == 0.04
-    assert math.isnan(bem_error_envelope(1.5))  # outside: no bound is claimed
     # monotone in the resolution ratio
     vals = [bem_error_envelope(r) for r in (0.1, 0.4, 0.8)]
     assert vals == sorted(vals)
+
+
+def test_no_bound_available_raises_rather_than_returning_nan():
+    """A nan meaning 'no bound' is indistinguishable from a nan meaning 'broke'.
+
+    Three operations downstream neither announces itself, and a variance field
+    is exactly where a quiet nan does the most damage.
+    """
+    with pytest.raises(ImpossibleGeometry, match="no measured error bound"):
+        bem_error_envelope(1.5)
+
+
+def test_grading_is_sized_from_the_source_not_from_a_fixed_cap():
+    """A figure-eight spans ~48 deg; a 20 deg cap refines where the current is not."""
+    head = SphericalHeadModel()
+    coil, pulse = FigureEightCoil(n_azimuth=32, n_radial=4), biphasic()
+    pose = _pose_at_scalp_distance(head, 0.004)
+    pos, _ = coil_dipoles_in_head_frame(coil, pose.matrix(), float(pulse.peak_didt))
+
+    direction, half_angle = source_angular_extent(pos)
+    assert math.degrees(half_angle) > 40.0
+
+    fixed = ChargeBEM(
+        [graded_icosphere(head.radius, 2, direction, 2, 0.35)], [0.33], [0.0]
+    )
+    derived = ChargeBEM(
+        [graded_icosphere_for_sources(head.radius, 2, pos, 2)], [0.33], [0.0]
+    )
+    r_fixed = fixed.near_source_resolution(pos)["panel_to_standoff"]
+    r_derived = derived.near_source_resolution(pos)["panel_to_standoff"]
+    # the fixed cap buys essentially nothing: the wings sit outside the patch
+    assert r_fixed > 0.9, r_fixed
+    assert r_derived < 0.6, r_derived
+    # and it is not a panel-count trade: fewer panels than a uniform mesh that
+    # scores worse
+    v, f = icosphere(3)
+    uniform = ChargeBEM([TriMesh(v * head.radius, f)], [0.33], [0.0])
+    assert derived.n_faces < uniform.n_faces
+    assert r_derived < uniform.near_source_resolution(pos)["panel_to_standoff"]
 
 
 @pytest.mark.slow

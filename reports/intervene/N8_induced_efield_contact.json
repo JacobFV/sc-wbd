@@ -195,8 +195,8 @@
     "uniform_mesh_refinement_is_monotone": false
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T08:53:08+00:00",
-    "git_rev": "f233f77",
+    "timestamp_utc": "2026-08-06T09:47:48+00:00",
+    "git_rev": "fd466a9",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -212,10 +212,7 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/intervene/run_field_gates.py",
-      "scwbd/intervene/spectral_reference.py",
       "scwbd/intervene/tms/efield.py",
-      "tests/intervene/test_spectral_reference.py",
       "tests/intervene/test_tms_efield.py"
     ],
     "source_clean": false,
