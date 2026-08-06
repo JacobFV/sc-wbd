@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "n_fine": 7498,
+  "n_coarse": 68,
+  "membership_digest": "460be9f07a40bd1c9b7603cd51213f2e",
+  "authority_policy": "fine_authoritative",
+  "coarse_roundtrip_residual": 4.440892098500626e-16,
+  "coarse_roundtrip_tolerance": 1e-09,
+  "heldout_fine_residual": 2.57120286296686e-10,
+  "declared_prior_sd_unresolved": 2.603128104635438e-10,
+  "landmark_coverage": 0.9399908054781217,
+  "required_coverage": 0.8,
+  "lead_field_energy_retained": 0.05607833240153656,
+  "fine_characteristic_scale_m": 0.00494247750235809,
+  "coarse_characteristic_scale_m": 0.05031816160541229,
+  "boundary": [
+    {
+      "ensemble": "evoked:Left Auditory",
+      "description": "MNE source estimate of the real evoked response, 0-300 ms (split used to set prior sd)",
+      "observable": {
+        "relative_error": 0.9690355963821887,
+        "unwhitened_relative_error": 0.8546971691639227,
+        "residual_sd_per_channel_mean": 1.8450819357325938,
+        "residual_sd_per_channel_max": 1.8774699689773693,
+        "signal_sd_per_channel_mean": 1.9039947940868636,
+        "signal_sd_per_channel_max": 1.9445383653070307,
+        "n_samples": 181
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "evoked:Right Auditory",
+      "description": "MNE source estimate of the real evoked response, 0-300 ms (held out)",
+      "observable": {
+        "relative_error": 0.9679467826740515,
+        "unwhitened_relative_error": 0.8518726144084694,
+        "residual_sd_per_channel_mean": 1.8574007140783775,
+        "residual_sd_per_channel_max": 1.8911919193776303,
+        "signal_sd_per_channel_mean": 1.9188968356950868,
+        "signal_sd_per_channel_max": 1.9542972638710001,
+        "n_samples": 181
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "evoked:Left visual",
+      "description": "MNE source estimate of the real evoked response, 0-300 ms (split used to set prior sd)",
+      "observable": {
+        "relative_error": 0.9649013326372649,
+        "unwhitened_relative_error": 0.8418408110360428,
+        "residual_sd_per_channel_mean": 1.9037740366831628,
+        "residual_sd_per_channel_max": 1.978764580799933,
+        "signal_sd_per_channel_mean": 1.9729511022807815,
+        "signal_sd_per_channel_max": 2.058365813994669,
+        "n_samples": 181
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "evoked:Right visual",
+      "description": "MNE source estimate of the real evoked response, 0-300 ms (held out)",
+      "observable": {
+        "relative_error": 0.9656137762512691,
+        "unwhitened_relative_error": 0.8520485023471172,
+        "residual_sd_per_channel_mean": 1.857644876971186,
+        "residual_sd_per_channel_max": 1.9104833553756075,
+        "signal_sd_per_channel_mean": 1.9238226822858344,
+        "signal_sd_per_channel_max": 1.9776758262008318,
+        "n_samples": 181
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "patch:5mm",
+      "description": "120 same-signed focal geodesic patches of radius 5 mm, scaled to the peak held-out evoked field",
+      "observable": {
+        "relative_error": 0.9284488549181656,
+        "unwhitened_relative_error": 0.8855849910942687,
+        "residual_sd_per_channel_mean": 1.7911592204641122,
+        "residual_sd_per_channel_max": 2.769759333271176,
+        "signal_sd_per_channel_mean": 1.977675826200832,
+        "signal_sd_per_channel_max": 1.9776758262008332,
+        "n_samples": 120
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "patch:10mm",
+      "description": "120 same-signed focal geodesic patches of radius 10 mm, scaled to the peak held-out evoked field",
+      "observable": {
+        "relative_error": 0.9147788422536978,
+        "unwhitened_relative_error": 0.8607056770945244,
+        "residual_sd_per_channel_mean": 1.7504607278046456,
+        "residual_sd_per_channel_max": 3.1067725160260755,
+        "signal_sd_per_channel_mean": 1.9776758262008316,
+        "signal_sd_per_channel_max": 1.9776758262008338,
+        "n_samples": 120
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "patch:20mm",
+      "description": "120 same-signed focal geodesic patches of radius 20 mm, scaled to the peak held-out evoked field",
+      "observable": {
+        "relative_error": 0.8318059249292631,
+        "unwhitened_relative_error": 0.7265225521116704,
+        "residual_sd_per_channel_mean": 1.531672091190093,
+        "residual_sd_per_channel_max": 3.7967033273050923,
+        "signal_sd_per_channel_mean": 1.977675826200832,
+        "signal_sd_per_channel_max": 1.9776758262008338,
+        "n_samples": 120
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "patch:40mm",
+      "description": "120 same-signed focal geodesic patches of radius 40 mm, scaled to the peak held-out evoked field",
+      "observable": {
+        "relative_error": 0.7959305227254565,
+        "unwhitened_relative_error": 0.710803881192481,
+        "residual_sd_per_channel_mean": 1.4289178480856053,
+        "residual_sd_per_channel_max": 4.172871808834882,
+        "signal_sd_per_channel_mean": 1.977675826200832,
+        "signal_sd_per_channel_max": 1.9776758262008336,
+        "n_samples": 120
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "grf:5mm",
+      "description": "20 geodesically smooth Gaussian random fields, length scale 5 mm, scaled to the peak held-out evoked field",
+      "observable": {
+        "relative_error": 0.9587044609687403,
+        "unwhitened_relative_error": 0.8834478535116252,
+        "residual_sd_per_channel_mean": 1.8881843720960372,
+        "residual_sd_per_channel_max": 2.1142163632982154,
+        "signal_sd_per_channel_mean": 1.9776758262008318,
+        "signal_sd_per_channel_max": 1.9776758262008336,
+        "n_samples": 20
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "grf:10mm",
+      "description": "20 geodesically smooth Gaussian random fields, length scale 10 mm, scaled to the peak held-out evoked field",
+      "observable": {
+        "relative_error": 0.8684623502938615,
+        "unwhitened_relative_error": 0.8019973088328147,
+        "residual_sd_per_channel_mean": 1.7026335990308759,
+        "residual_sd_per_channel_max": 2.157124152910651,
+        "signal_sd_per_channel_mean": 1.9776758262008323,
+        "signal_sd_per_channel_max": 1.9776758262008352,
+        "n_samples": 20
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "grf:20mm",
+      "description": "20 geodesically smooth Gaussian random fields, length scale 20 mm, scaled to the peak held-out evoked field",
+      "observable": {
+        "relative_error": 0.6812009981744294,
+        "unwhitened_relative_error": 0.5841956577861025,
+        "residual_sd_per_channel_mean": 1.3115168658909702,
+        "residual_sd_per_channel_max": 1.9887392149278145,
+        "signal_sd_per_channel_mean": 1.9776758262008314,
+        "signal_sd_per_channel_max": 1.9776758262008338,
+        "n_samples": 20
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    },
+    {
+      "ensemble": "grf:40mm",
+      "description": "20 geodesically smooth Gaussian random fields, length scale 40 mm, scaled to the peak held-out evoked field",
+      "observable": {
+        "relative_error": 0.6348674540885941,
+        "unwhitened_relative_error": 0.590820747279231,
+        "residual_sd_per_channel_mean": 1.211276641069134,
+        "residual_sd_per_channel_max": 1.8263848647624337,
+        "signal_sd_per_channel_mean": 1.9776758262008323,
+        "signal_sd_per_channel_max": 1.977675826200834,
+        "n_samples": 20
+      },
+      "tolerance_sd_per_channel": 1.0,
+      "tolerance_basis": "whitened by the session's own noise covariance (sample_audvis-cov.fif); a residual of 1.0 is one standard deviation of that noise per channel, i.e. the largest coarsening error this instrument could not detect",
+      "passes": false
+    }
+  ],
+  "perturbational": {
+    "median": 0.9770927630433548,
+    "p10": 0.7079855994868568,
+    "p25": 0.864859822679801,
+    "p75": 1.0365745261881039,
+    "p90": 1.1477340411423287,
+    "fraction_below_half": 0.019338490264070418,
+    "n_fine": 7498,
+    "reference_whitened_field_norm": 15.190816263085056,
+    "median_residual_sd_per_channel_at_evoked_amplitude": 1.9323727374266204,
+    "p10_residual_sd_per_channel_at_evoked_amplitude": 1.4001660054034608
+  },
+  "rejected_point_estimate_prior_sd": 2.554235110393014e-10,
+  "provenance": {
+    "generator": "benchmarks/transforms/resolution_pair.py",
+    "generated_utc": "2026-08-06T18:37:19Z",
+    "subject": "mne-sample::sample",
+    "forward": "sample_audvis-eeg-oct-6-fwd.fif (BEM 5120-5120-5120)",
+    "source_space": "oct-6, fixed normal orientation, use_cps=True",
+    "parcellation": "aparc (Desikan-Killiany), subject's own annot, 'unknown' excluded",
+    "inverse": "MNE, lambda2=1/9, pick_ori='normal'",
+    "noise_cov": "sample_audvis-cov.fif",
+    "reference": "explicit average reference on lead field and data",
+    "channels": 59,
+    "bads_dropped": [
+      "EEG 053"
+    ],
+    "train_conditions": [
+      "Left Auditory",
+      "Left visual"
+    ],
+    "test_conditions": [
+      "Right Auditory",
+      "Right visual"
+    ],
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "python": "3.12.13",
+    "numpy": "2.5.1",
+    "torch": "2.13.0+cu130",
+    "mne": "1.12.1",
+    "wall_seconds": 14.5
+  },
+  "derived": {
+    "roundtrip_ok": true,
+    "prolongation_calibrated": true,
+    "coverage_ok": true,
+    "boundary_sufficient": false
+  },
+  "specificity": {
+    "declared_aparc": {
+      "n_coarse": 68,
+      "note": "the declared pair",
+      "observable_relative_error": 0.9667778669239708,
+      "lead_field_energy_retained": 0.05607833240153656
+    },
+    "aparc_a2009s": {
+      "n_coarse": 150,
+      "note": "2.2x more parcels, same construction",
+      "observable_relative_error": 0.9246440616119638,
+      "lead_field_energy_retained": 0.10842736236402034
+    },
+    "scrambled": {
+      "n_coarse": 68,
+      "note": "declared parcellation with membership permuted: same sizes, no contiguity",
+      "observable_relative_error": 0.9820165575380642,
+      "lead_field_energy_retained": 0.008773551886185097
+    },
+    "net_dipole_moment": {
+      "n_coarse": 204,
+      "note": "3 numbers per parcel: the parcel's net dipole moment vector",
+      "observable_relative_error": null,
+      "lead_field_energy_retained": 0.5170540970146336
+    },
+    "subdivided_x2": {
+      "n_coarse": 136,
+      "note": "each declared parcel split into 2 geodesic-position clusters",
+      "observable_relative_error": 0.9372562966621295,
+      "lead_field_energy_retained": 0.07958853826890555
+    },
+    "subdivided_x4": {
+      "n_coarse": 272,
+      "note": "each declared parcel split into 4 geodesic-position clusters",
+      "observable_relative_error": 0.9041509631886921,
+      "lead_field_energy_retained": 0.1144732216873121
+    },
+    "subdivided_x8": {
+      "n_coarse": 542,
+      "note": "each declared parcel split into 8 geodesic-position clusters",
+      "observable_relative_error": 0.8846551341950628,
+      "lead_field_energy_retained": 0.16228690982471888
+    },
+    "best_possible": {
+      "n_coarse": 68,
+      "note": "any 68-dim restriction containing row(G); rank(WG)=58",
+      "observable_relative_error": 0.0,
+      "lead_field_energy_retained": 1.0
+    }
+  }
+}

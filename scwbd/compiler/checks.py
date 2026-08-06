@@ -207,6 +207,7 @@ def check_r02(schema: BrainSchema, claim: ClaimManifest) -> Iterator[CompilerRef
             )
         if pair.out_of_support_policy is None:
             reasons.append("no out-of-support uncertainty policy")
+        reasons.extend(pair.roundtrip_failures())
         yield CompilerRefusal(
             "R02",
             offending_object=pair,
