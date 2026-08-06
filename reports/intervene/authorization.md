@@ -487,22 +487,30 @@ One enforced gate beats two partial ones.
 
 ## 8. Verification
 
-| suite | result |
-|---|---|
-| `tests/intervene/` (pre-existing, 224 tests) | **pass**, unchanged by this work |
-| `tests/intervene/test_limits_bind.py` + `test_deployment.py` (new) | **pass** |
-| the 8-file limit/decision set + the 2 new files (130 tests) | **pass**, `exitstatus: 0` |
-| bound-firing measurement | **7/17 → 17/17** |
-| end-to-end probe (§1) | re-run after all changes; results unchanged |
+| suite | tests | result |
+|---|---|---|
+| `tests/intervene/` (pre-existing, before the new files) | 224 | **pass**, unchanged by this work |
+| `tests/intervene/test_limits_bind.py` + `test_deployment.py` (new) | 126 | **pass** |
+| the 8-file limit/decision set + the 2 new files | 130 | **pass**, `exitstatus: 0` |
+| `tests/schema/` + `tests/compiler/` | 248 (1 skip) | **pass** |
+| `tests/schema/` + `tests/compiler/` + `tests/bench/` | 442 (1 skip) | **pass** |
+| `tests/runtime/test_no_command_surface.py` (the file I edited) | 30 | **pass** |
+| bound-firing measurement | 17 bound sides | **7/17 → 17/17** |
+| end-to-end probe (§1) | 5 probes | re-run after all changes; results unchanged |
 
-Not completed within this session, and stated rather than implied:
-`tests/schema/`, `tests/compiler/` and `tests/bench/` were queued but did not
-finish — the machine was at load average 164 with seven agents sharing one
-121 GB pool, and I stopped my own duplicate runs rather than make that worse.
-The changes that could touch them are the `SafetyLimits.load` refusal (no
-shipped file trips it — asserted by `test_the_shipped_file_has_no_such_entry`)
-and two appended dataclass fields with defaults. **Someone should run those
-three suites before this merges.**
+Pyflakes clean on all four files I added or substantially changed.
+
+**One gap, stated rather than implied:** the *full* `tests/runtime/` sweep did
+not finish inside this session. The machine was at load average 164 with seven
+agents sharing one 121 GB pool, and I stopped my own duplicate runs rather than
+make that worse for everybody else. I did run the runtime file I edited
+(`test_no_command_surface.py`, 30 tests, pass) and the three runtime files that
+exercise A_safe and the decision paths (`test_decision_paths.py`,
+`test_authorized_refusals.py`, `test_compare.py`, inside the 130 above). The
+changes that could reach the rest are two appended dataclass fields with
+defaults and the `SafetyLimits.load` refusal — which no shipped file trips,
+asserted by `test_the_shipped_file_has_no_such_entry`. **Someone should run the
+full `tests/runtime/` before this merges.**
 
 ### 8.1 The measured "before" state is reproducible
 
