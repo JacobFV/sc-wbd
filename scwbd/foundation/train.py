@@ -21,6 +21,7 @@ TRIBE v2 distillation is **off by default** and is never a subject likelihood.
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import math
 import os
@@ -326,7 +327,27 @@ class FoundationTrainer:
             if allow == ("*",):
                 perm = s.gradient_permission
             else:
-                perm = tuple(p for p in s.gradient_permission if p == "*" or any(_glob_overlap(p, a) for a in allow))
+                # "Restrict only" means the RESULT must be no broader than either
+                # side. Where a card pattern and an allowlist entry overlap, keep
+                # the NARROWER of the two. Keeping the card's pattern -- the
+                # previous behaviour -- silently widened the stage: `eeg.*`
+                # survived against an allowlist naming only `eeg.log_gain`,
+                # `eeg.offset`, `eeg.log_noise`, `eeg.nuisance*`, which let
+                # Stage V train `eeg.source_proj.*` (1,281 params) undeclared.
+                narrowed: list[str] = []
+                for p in s.gradient_permission:
+                    if p == "*":
+                        continue  # handled by the "*" branch below
+                    for a in allow:
+                        if not _glob_overlap(p, a):
+                            continue
+                        if fnmatch.fnmatch(a, p):
+                            narrowed.append(a)  # allowlist entry is the narrower
+                        elif fnmatch.fnmatch(p, a):
+                            narrowed.append(p)  # card pattern is the narrower
+                        else:
+                            narrowed.append(a)  # incomparable: prefer the stage
+                perm = tuple(dict.fromkeys(narrowed))
                 if "*" in s.gradient_permission:
                     perm = allow
             out[sid] = SourceSpec(**{**s.as_dict(), "gradient_permission": perm})
