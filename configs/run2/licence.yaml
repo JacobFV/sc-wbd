@@ -1,0 +1,85 @@
+# Run 2 licence. Held beside the run config rather than inside it, because
+# scwbd.foundation.config._build refuses any top-level key it does not declare
+# and a licence is not a training hyper-parameter.
+#
+# Coordinate with the owner of scwbd/release/** (Lovelace) before acting on
+# this; those paths are theirs and are not edited here.
+
+schema: scwbd-run2-licence/1.0.0
+run: scwbd-001-run2-integrity-ordered
+
+spdx: CC-BY-NC-SA-4.0
+accepted_by: owner
+accepted_on: 2026-08-06
+
+reason: >-
+  scwbd.anatomy.BrainPrior derives its excitation/inhibition proxy from the
+  Hansen neurotransmitter receptor/transporter PET atlas (CC-BY-NC-SA-4.0):
+  mean z(receptor_NMDA, receptor_mGluR5) - z(receptor_GABAa).
+  scwbd.foundation.anatomy.load_anatomy() runs on EVERY arm regardless of the
+  data mixture, because the anatomy is not part of the mixture -- it is the
+  object the model is built against. So once the real prior is in force, the
+  non-commercial and share-alike terms attach to every arm of run 2, INCLUDING
+  any arm named `-raw`. There is no simulation-free or data-free arm that
+  escapes it.
+
+# ---------------------------------------------------------------------------
+# Verified, not assumed.  Regenerated 2026-08-06 by calling BrainPrior.load()
+# with the shared assets (SCWBD_ASSETS=/data/scwbd/assets).
+# ---------------------------------------------------------------------------
+evidence:
+  probe: "scwbd.anatomy.BrainPrior.load().maps"
+  receptor_maps_loaded: 19
+  receptor_names: [5HT1a, 5HT1b, 5HT2a, 5HT4, 5HT6, 5HTT, A4B2, CB1, D1, D2,
+                   DAT, FDOPA_excluded, GABAa, H3, M1, MOR, NAT, NMDA, VAChT, mGluR5]
+  unavailable: {}                 # empty == every declared map loaded
+  ei_proxy_present: true
+  ei_prior_over_414_parcels: {min: 0.3720, max: 3.0382, distinct_values: 396}
+  hansen_on_disk: /data/scwbd/assets/src/hansen_receptors/data/PET_nifti_images
+
+# ---------------------------------------------------------------------------
+# THE ABSENCE CASE -- recorded because absence must write something, and
+# because it is a trap for anyone deciding the licence from a provenance string.
+# ---------------------------------------------------------------------------
+# In a checkout WITHOUT the gitignored assets/ symlinks (a fresh git worktree is
+# exactly this), the identical call reports
+#
+#   unavailable: {'receptors': 'the Hansen PET volumes are not on disk',
+#                 'ei_proxy':  'the E/I proxy needs receptor_NMDA, receptor_mGluR5
+#                               and receptor_GABAa; available receptors: []'}
+#
+# and every parcel silently receives the *ignorance* prior -- LogNormal(mu=0,
+# sigma=2*EI_LOG_RANGE), whose mean is exp(0.7^2/2) = 1.2776 for all 414 parcels.
+# E/I becomes CONSTANT and the model carries no receptor information at all.
+#
+# The trap: `AnatomyPrior.provenance` names hansen_receptors and its
+# CC-BY-NC-SA-4.0 licence in BOTH cases, because it is built from the source
+# registry rather than from what loaded. Reading the licence off the provenance
+# string therefore cannot distinguish "Hansen data is in this artifact" from
+# "Hansen data is absent and the prior is a constant".
+#
+# So the licence check is on `unavailable`, not on the provenance string:
+licence_check:
+  attaches_when: "BrainPrior.load().maps.unavailable == {} and 'ei_proxy' in maps"
+  and_the_run_is_invalid_when: "ei_proxy absent -- constant E/I is not a prior"
+  note: >-
+    These two conditions are the same condition. There is no configuration in
+    which the artifact is scientifically usable and the NC-SA obligation does
+    not attach, which is what makes the owner's acceptance the only decision
+    that was ever available.
+
+# ---------------------------------------------------------------------------
+# Consequences to carry into the release manifest (Lovelace's paths).
+# ---------------------------------------------------------------------------
+consequences:
+  - "NonCommercial: no arm of run 2 may be offered for commercial use."
+  - "ShareAlike: derivatives of the weights inherit CC-BY-NC-SA-4.0."
+  - "Attribution: Hansen J.Y. et al. (2022) Nat Neurosci 25:1569-1581, plus the
+     primary PET study per tracer (Table S3 of that paper)."
+  - "The `-raw` arm is NOT exempt. It was exempt for run 1 only because run 1
+     trained on the synthetic ellipsoid and therefore contained no Hansen data
+     -- a time-indexed fact about a defect, not a property of the arm."
+  - "Other sources keep their own terms and the strictest binds: Schaefer2018
+     MIT (CBIG) with GSP terms underneath; ENIGMA/HCP BSD-3 code with HCP
+     open-access data terms; neuromaps BSD-3 plus per-annotation terms;
+     EEGMMIDB ODC-BY-1.0."

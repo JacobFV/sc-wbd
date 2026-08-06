@@ -1,0 +1,483 @@
+# SC-WBD-001 RUN 2 -- real anatomy + integrity-ordered curriculum.
+#
+# Assembles three separately-prepared fixes that had never been combined:
+#   1. the real 414-parcel anatomical prior   (Turing, f816f2a on wt/turing)
+#   2. the integrity-ordered curriculum       (Bernoulli, 29c0913 on master)
+#   3. CC-BY-NC-SA-4.0, owner-accepted        (Hansen receptor maps stay)
+#
+# STATUS: NOT LAUNCHABLE AS OF 2026-08-06. Four preconditions, all recorded in
+# reports/run2_plan.md with the measurement each rests on:
+#
+#   P1  f816f2a is NOT on master. It lives only on branch `wt/turing`
+#       (merge-base with master 58bf7d8). On master `load_anatomy()` still
+#       returns the 454-region synthetic ellipsoid -- verified by calling it,
+#       not by reading the commit. Until it lands, `anatomy_force_fallback:
+#       false` below changes nothing and refusal X09 fires.
+#   P2  The run_stage admission patch (configs/run2/patches/0001-*.patch) is
+#       UNAPPLIED. Without it the six stage-NAME gates in run_stage decide
+#       admission and this file's ordering is not enacted. Validator X06.
+#   P3  The simulated corpus must be regenerated at 414 parcels. The path in
+#       `data.sim_index_fast` below does not exist yet. Specification (not the
+#       rebuild -- that needs the GPU): configs/run2/corpus_rebuild.yaml.
+#
+# Sibling files, split out because scwbd.foundation.config._build refuses any
+# top-level key it does not declare:
+#   configs/run2/licence.yaml         CC-BY-NC-SA-4.0 and the evidence for it
+#   configs/run2/corpus_rebuild.yaml  the 414-parcel corpus specification
+#   configs/run2/patches/             the unapplied trainer patch and its test
+#   P4  BLOCKER, found while preparing this config: on the real prior
+#       `AnatomyPrior.gradient` is all zeros, which makes the theta dimension
+#       `ei_gradient` INERT for every backend. Regenerating the corpus in that
+#       state would train the amortised posterior to recover a parameter that
+#       does nothing. Fix belongs in scwbd/foundation/anatomy.py (not this
+#       file's owner). Details in reports/run2_plan.md, "Blocker P4".
+#
+# Validate before launching:
+#   python -m scwbd.curriculum validate configs/run2/scwbd-001.yaml \
+#       --cards configs/curriculum/source_cards
+#
+# ---------------------------------------------------------------------------
+# WHAT IS AND IS NOT A CONTROLLED COMPARISON
+# ---------------------------------------------------------------------------
+# configs/curriculum/scwbd_001_integrity_ordered.yaml was a matched control
+# against 001-beta: same total steps, same per-stage max_lr, same seed, same
+# architecture, differing only in admission order and masks. Verified here by
+# regenerating the comparison rather than repeating the claim -- totals 8,700
+# vs 8,700, per-stage max_lr identical in order, model/posterior/data blocks
+# byte-identical.
+#
+# THIS FILE IS NOT THAT CONTROL. It additionally changes the anatomy (454
+# synthetic -> 414 real) and therefore the corpus. Run 2 vs run 1 confounds
+# THREE changes, and no difference between the two artifacts is attributable to
+# any one of them. If the ordering effect is wanted on its own it needs a fourth
+# arm: the integrity ordering at 454 on the existing corpus. Stated here rather
+# than discovered at analysis time.
+#
+# Two further respects in which "matched" is weaker than it sounds:
+#   * OneCycleLR takes `total_steps = stage.steps`, so each stage runs its own
+#     warm-up/anneal cycle. Matching per-stage `max_lr` does NOT match the
+#     learning-rate *trace*: 2,966 steps of one cycle is a different trajectory
+#     from 900 steps of one cycle at the same peak.
+#   * `train.resume: true` with stage-level resume granularity means any
+#     mid-stage stop replays that stage from step 1 with a fresh cycle
+#     (reports/decorative_guards.md). Stop only at stage boundaries.
+
+model:
+  # DECORATIVE FIELD -- read this before trusting it.
+  #
+  # `SCWBD.__init__` sets `self.n_regions = anat.n_regions` and never reads
+  # `cfg.model.n_regions`. At 3400cee the only consumer of this field anywhere
+  # in the run path is a provenance *string* in
+  # scwbd.curriculum.validate.parameter_universe, which will happily print
+  # "SCWBD(414 regions)" while a 454-region prior is loaded. Verified by grep,
+  # not assumed.
+  #
+  # So 414 here is a CLAIM, not a setting -- the same kind of claim that
+  # "n_regions: 454  # Schaefer-400 + 32 subcortex + 22 cerebellum" was in
+  # 001-beta, where the comment described a parcellation the code never built.
+  # `curriculum_admission.assert_region_count` exists to make the claim
+  # enforced by construction; the patch in configs/run2/patches/ wires it in.
+  #
+  # 414 = 400 Schaefer2018 cortical parcels + 14 subcortex + 0 cerebellum,
+  # measured from the real prior. NOTE THE ZERO: the 22 cerebellar regions the
+  # synthetic prior had do not exist in the real one. Any cerebellar statement
+  # available in principle from run 1's geometry is unavailable from run 2.
+  n_regions: 414
+  local_core: learned
+  hidden: 288
+  n_local_layers: 3
+  region_embed: 96
+  context_dim: 128
+  message_dim: 12
+  n_delay_bins: 8
+  n_spectral_modes: 8
+  n_adaptation: 2
+  n_uncertainty: 4
+  dt_model: 0.008
+  hemo_ratio: 25
+  residual_rho_max: 0.35
+  residual_init_scale: 0.05
+  encoder_channels: 96
+  encoder_layers: 3
+  dropout: 0.0
+  control_graph: none
+  scalar_state_ablation: false
+  dense_coupling_ablation: false
+  n_eeg_channels: 64
+  n_behaviour: 4
+  use_bf16: true
+  compile: true
+
+posterior:
+  summary_channels: 128
+  summary_layers: 4
+  flow_layers: 8
+  flow_hidden: 320
+  n_bands: 7
+  n_pcs: 16
+  dropout: 0.0
+  nuisance_dim: 2
+
+data:
+  # NEW PATH. Run 1's corpus stays at /data/scwbd/sim_corpus and is not
+  # overwritten: it is the only record of what run 1 trained on, and the shard
+  # attrs are the evidence that it was synthetic.
+  sim_index_fast: /data/scwbd/sim_corpus_414/index_fast.json
+  # Still absent, still deliberate. The slow/haemodynamic tier was never
+  # generated; leaving the path pointing at a file that does not exist makes the
+  # loader's failure the record. No haemodynamic claim is available from run 2
+  # either, and `with_hemo` is false in every stage below for that reason.
+  sim_index_slow: /data/scwbd/sim_corpus_414/index_slow.json
+  real_eeg_root: /data/scwbd/eegmmidb/1.0.0
+  real_sleep_root: /data/scwbd/sleep-edfx/1.0.0
+  window: 48
+  context: 24
+  fs_hz: 125.0
+  batch: 64
+  num_workers: 4
+  pin_memory: false
+  val_fraction: 0.05
+  real_test_fraction: 0.25
+  seed: 20260805
+
+train:
+  run_name: scwbd-001-run2-integrity-ordered
+  out_dir: checkpoints/scwbd-001-run2
+  report_dir: reports/training
+  seed: 20260805
+  device: cuda
+  # FALSE: run 2 exists in order to train on the real prior. With f816f2a
+  # landed, `load_anatomy` RAISES rather than substituting the synthetic prior,
+  # so this flag is the only route to the fallback and taking it would be a
+  # declaration, not an accident. Until f816f2a lands this line has no effect
+  # (master's load_anatomy has no such parameter reaching it from the config).
+  anatomy_force_fallback: false
+  amp_dtype: bfloat16
+  cuda_reserve_gb: 40.0
+  max_wall_seconds: 43200
+  # Stage-level granularity: a mid-stage stop replays the stage with a fresh
+  # OneCycle. Stop at stage boundaries only.
+  resume: true
+
+  stages:
+    # =====================================================================
+    # 1. TIER 1 ALONE -- measured EEG founds the representation
+    # =====================================================================
+    - name: T1_measured_founding
+      steps: 2966
+      lr: 3.46e-4
+      lambda_posterior: 0.0     # the posterior head is simulator-founded; it
+                                # cannot train here because nothing measured
+                                # supplies a theta label (tiers.yaml exemption)
+      lambda_anat: 0.0          # tier 3 not admitted yet
+      lambda_port: 0.05
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: I_regional + II_interface
+          admits: [1]
+          tier_permissions:
+            1: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "eeg.*", "log_dt_scale"]
+          objective: [likelihood, forecast, port]
+          # --- the four behaviours run 1 keyed on the stage NAME -----------
+          # Declared, because a stage not called "I_regional" silently loses
+          # boundary randomisation and a stage not called "V_individual"
+          # silently never builds the Individualizer.
+          boundary_randomisation: true   # matches run 1's I_regional
+          with_hemo: false
+          individualize: false
+          rationale: >-
+            2,966 = ceil(189,765 measured train windows / batch 64): one pass
+            over every measured window there is. Regional operator, long-range
+            operator, assimilation encoder and EEG head are all learned here
+            from sensor-space likelihood, before any lower-integrity source
+            exists.
+          absence:
+            - tier: 1
+              detail: >-
+                STRUCTURAL, and it undercuts this stage's own premise. The
+                measured path (train.real_losses) obtains theta by calling
+                self.posterior.sample(ctx_eeg), i.e. the amortised posterior --
+                which is simulator-founded and, in this stage, at its random
+                initialisation because lambda_posterior is 0.0 and no simulated
+                source has been admitted. So "measured data founds the
+                representation" is true of the operator and the EEG head, and
+                NOT of the theta the rollout is conditioned on: for 2,966 steps
+                that theta is noise from an untrained flow.
+              consequence: >-
+                Stage 1 founds the operator under a random theta prior. This is
+                a property of the ordering, not a bug introduced here, and it
+                did not arise in 001-beta because Stage III was the first
+                measured stage and the posterior had already trained for 1,600
+                steps. It must be stated in any claim that measured evidence
+                founded this model, and it is the strongest argument for adding
+                a fourth arm that orders the posterior separately.
+
+    # =====================================================================
+    # 2. + TIER 2 -- boundary target / calibration
+    # =====================================================================
+    - name: T2_boundary_calibration
+      steps: 500
+      lr: 2.31e-4
+      lambda_posterior: 0.0
+      lambda_anat: 0.0
+      lambda_cal: 0.1
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: II_interface
+          admits: [1, 2]
+          tier_permissions:
+            1: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "eeg.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"]
+          objective: [likelihood, forecast, calibration]
+          boundary_randomisation: false
+          with_hemo: false
+          individualize: false
+          rationale: >-
+            500 steps x batch 64 = 32,000 windows against 4 trainable nuisance
+            tensors over 64 channels. Sized by what is estimated, not by corpus
+            size. Tier 1 keeps training throughout, so the calibration is fitted
+            against a live likelihood rather than to a frozen model.
+          absence:
+            - tier: 2
+              role: boundary_target
+              detail: >-
+                No boundary-target source is wired into the foundation trainer.
+                Real BEM surfaces, source spaces and forward solutions ARE on
+                disk (mne-sample subject `sample` 3-layer BEM + sol, mne-somato
+                sub-01, mne-spm-face `spm`, an fsaverage template head under
+                ~/mne_data) and 31 digitised electrode files exist in ds004024.
+                They are reachable only from tests/observe: the training EEG
+                head calls scwbd.foundation.heads.build_lead_field, which looks
+                for names scwbd/observe/__init__.py does not export, and falls
+                back to provenance `analytic_sphere_fallback` -- a homogeneous
+                single sphere with real standard_1005 electrode geometry and
+                nothing else.
+              consequence: >-
+                Tier 2 is represented in run 2 by the montage calibration factor
+                alone. No lead-field or head-model claim is available. NOTE this
+                interacts with the anatomy change: the lead field is still built
+                against a sphere, so the 414 real parcel centroids are projected
+                through a head model that knows nothing about them.
+
+    # =====================================================================
+    # 3. + TIER 3 -- population prior (not subject).  REAL, in run 2.
+    # =====================================================================
+    - name: T3_population_prior
+      steps: 1000
+      lr: 1.73e-4
+      lambda_posterior: 0.0
+      lambda_anat: 0.05
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: III_sliced
+          admits: [1, 2, 3]
+          tier_permissions:
+            1: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "eeg.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"]
+            3: ["coupling.gain_*", "coupling.global_scale"]
+          objective: [likelihood, forecast, calibration, prior]
+          boundary_randomisation: false
+          with_hemo: false
+          individualize: false
+          rationale: >-
+            1,000 steps. The anatomical prior contributes a topology
+            regulariser, not data: its n_eff is 1 (one group-average object --
+            207 HCP subjects were averaged away, and averaging is not sampling),
+            so its saturating reliability term is 1/(1+24) = 0.04 and it cannot
+            dominate however long it runs. Length is set by how long the
+            coupling gains need to settle within the prior.
+            IN RUN 2 THIS STAGE HAS REAL CONTENT for the first time: verified by
+            calling load_anatomy() on branch wt/turing at f816f2a --
+            is_biological True, 414 parcels, Schaefer2018 labels, ENIGMA/HCP
+            connectome, density 0.0718, E/I 0.372-3.038 over 396 distinct
+            values, timescale 0.0227-0.2833 s. On master today the same call
+            still returns the synthetic ellipsoid.
+          absence:
+            - tier: 3
+              detail: >-
+                Every registered real population-prior DATASET remains
+                unavailable: ukbiobank-brain-imaging (MTA + fees),
+                hcp-young-adult (ConnectomeDB terms), adni (DSPC application).
+                None was downloaded. Tier 3 is represented by the derived
+                anatomy prior only.
+              consequence: >-
+                No population-level anatomical generalisation claim is
+                available. The prior is one group-average object, not a sample.
+            - tier: 3
+              detail: >-
+                The tier-3 loss term `anatomical_prior` is composed inside
+                `FoundationTrainer.sim_losses` (train.py:543), i.e. it is only
+                emitted on a step where the SIMULATED loader ran. In this stage
+                tier 4 is not admitted, so on the unpatched trainer this stage
+                would emit no tier-3 loss at all -- the stage that exists to
+                admit the population prior would admit it in name only. The
+                patch in configs/run2/patches/ moves the term out of sim_losses
+                for exactly this reason.
+              consequence: >-
+                Without that patch hunk, T3 trains tiers 1 and 2 and silently
+                nothing else.
+
+    # =====================================================================
+    # 4. + TIER 4 -- simulator-conditioned, LAST among the training tiers
+    # =====================================================================
+    - name: T4_simulator_extension
+      steps: 3334
+      lr: 1.15e-4
+      lambda_posterior: 1.0     # the amortised posterior trains here and only here
+      lambda_anat: 0.05
+      lambda_perturb: 0.0
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: III_sliced + IV_assembly
+          admits: [1, 2, 3, 4]
+          tier_permissions:
+            1: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "eeg.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"]
+            3: ["coupling.gain_*", "coupling.global_scale"]
+            4: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "log_dt_scale", "posterior.*"]
+          objective: [likelihood, forecast, calibration, prior, posterior, mechanism, scale]
+          boundary_randomisation: false
+          # FALSE, unlike run 1's IV_assembly, and this IS a difference from the
+          # matched control. The slow/BOLD tier was never generated, EEG's
+          # expected Fisher information for every haemodynamic parameter is
+          # exactly 0.0 in all three identifiability regimes, and bold.* is
+          # frozen for every source. Rolling the haemodynamic state forward
+          # under those conditions integrates an unconstrained sub-system into
+          # the forecast. Run 1 did it because its stage was called
+          # IV_assembly, not because anything decided it should.
+          with_hemo: false
+          individualize: false
+          rationale: >-
+            3,334 steps -- the largest block, deliberately last. At batch 64
+            that is 213,376 simulated windows, 5.93 passes over the ~35,994
+            train trajectories. This is where simulation earns its place: rare
+            regimes, controlled interventions, whole-brain coupling and
+            missingness that 46.5 h of resting and imagery EEG from 109 people
+            does not contain. Tier 1 trains throughout, so measured evidence is
+            a live constraint rather than a memory. Tier 4's mask is contained
+            in tier 1's except posterior.*, which carries a named founding
+            exemption in configs/curriculum/tiers.yaml.
+          absence:
+            - tier: 4
+              detail: >-
+                bold.* is frozen for every source in this run. Three
+                independent reasons, none a preference: (a) the only measured
+                modality is EEG, whose expected Fisher information for
+                beta_hrf, c_under and gain_bold is exactly 0.0 in all three
+                identifiability regimes; (b) the simulated slow/BOLD tier was
+                never generated; (c) the 663 MB of real BOLD on disk (ds000117,
+                2 subjects, 18 runs) has no loader.
+              consequence: >-
+                bold.* stays at its compiled initialisation. No haemodynamic,
+                fMRI-forecast or cross-modal-fusion claim is available.
+            - tier: 4
+              detail: >-
+                REGENERATED FOR RUN 2, and worse than the published figure.
+                reports/training/corpus_composition.md attributes the ~40 %
+                regional-timescale gap to DynamicsBackend.theta_from_prior.
+                That function has NO caller in scwbd/ outside tests: the corpus
+                generator is scwbd.foundation.simulate.simulate_batch, which
+                calls _regional_theta instead. Measured through the path that
+                actually generates shards, by perturbing each prior and
+                checking which backend parameters move, the anatomy TIMESCALE
+                prior reaches only `linear_gaussian` -- 5.41 % of the corpus by
+                trajectory count. 94.59 % receives none. (The E/I prior does
+                better than published: it reaches all five backends, 100 %.)
+                Rebuilding at 414 does not repair this; it is a separate defect
+                in _regional_theta, and on the real prior it gets worse, with
+                linear_gaussian's `tau` clamp rising 2.46 % -> 42.68 %.
+              consequence: >-
+                Run 2 inherits the timescale gap essentially in full and must
+                not be described as having fixed it. No claim about learned
+                regional timescale heterogeneity is supportable from the
+                simulated corpus in either run.
+
+    # =====================================================================
+    # 5. TIER 5 -- distillation. RUNS ZERO STEPS, AND SAYS WHY.
+    # =====================================================================
+    - name: T5_distillation
+      steps: 0
+      enabled: false
+      lr: 1.0e-4
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: III_sliced
+          admits: []
+          tier_permissions: {}
+          objective: []
+          boundary_randomisation: false
+          with_hemo: false
+          individualize: false
+          rationale: >-
+            Present with zero steps rather than omitted. A curriculum that has
+            no tier-5 stage and one whose tier-5 stage was skipped for cause
+            read identically afterwards; this file makes them different.
+          absence:
+            - tier: 5
+              detail: >-
+                TRIBE v2 is not on disk anywhere in this environment, and no
+                teacher-vs-measured discrepancy measurement exists in reports/
+                as of 2026-08-06. body.tex 6.3 requires a preregistered branch
+                with no-teacher, generic-feature, time-shuffled and
+                report-mismatched controls, retained only if it beats all four.
+              consequence: >-
+                No distillation was applied and none may be claimed.
+
+    # =====================================================================
+    # 6. TIER 1 ALONE -- individualisation closes on measured data
+    # =====================================================================
+    - name: T1_individualisation
+      steps: 900
+      lr: 5.77e-5
+      lambda_posterior: 0.3
+      ckpt_every: 150
+      extra:
+        curriculum:
+          scope: V_individual
+          admits: [1]
+          tier_permissions:
+            1: ["individualizer.*", "eeg.log_gain", "eeg.offset", "eeg.log_noise",
+                "eeg.nuisance*"]
+          objective: [likelihood, posterior]
+          boundary_randomisation: false
+          with_hemo: false
+          # TRUE. Run 1 got this from `stage.name == "V_individual"`; under a
+          # renamed stage the Individualizer is never constructed and the stage
+          # trains the EEG nuisances alone while reporting that it
+          # individualised. Declared so it cannot be lost by renaming.
+          individualize: true
+          rationale: >-
+            900 steps, unchanged from 001-beta so the individualisation block
+            is itself matched. Tier 1 alone: an individual's parameters are the
+            one thing a simulator, a population prior and a teacher may never
+            touch. The curriculum both opens and closes on measured data.
+          absence:
+            - tier: 1
+              detail: >-
+                eegmmidb has ONE session per participant, so it supports no
+                future-session holdout and the G5 individualisation claim is
+                not evaluable on it. sleep-edfx does have a night 1 -> night 2
+                holdout and is disabled pending a 2-channel montage adapter.
+              consequence: >-
+                This stage fits individual parameters that cannot be tested on
+                a held-out session of the same person from this corpus.
+
+mixture_cards: configs/curriculum/source_cards
+
+notes: >
+  Population/general adult model. Not a validated twin of any person. Admission
+  order is tier 1 (measured) -> 2 (calibration) -> 3 (population prior) -> 4
+  (simulator-conditioned) -> 5 (distillation, off), each tier's gradient mask
+  contained in the concurrently-admitted higher tiers. Checked by
+  `python -m scwbd.curriculum validate`; see reports/run2_plan.md for the
+  verdicts, the preconditions and what is knowingly shipped broken.
