@@ -149,6 +149,41 @@ CORPUS_LIMITATIONS: tuple[CorpusLimitation, ...] = (
         ),
     ),
     CorpusLimitation(
+        id="single_site_corpus",
+        artifact="scwbd-001-beta",
+        measured=(
+            "EEGMMIDB is single-site: 109 participants (71/11/27), 290,673 windows, all from "
+            "one recording setup. Agent Ada's auditor returned ok=True with 0 violations and "
+            "pairwise disjointness recomputed independently -- the split is clean -- alongside "
+            "the warning that 'this split cannot falsify a site/device shortcut'. THIS IS A "
+            "PROPERTY OF THE CORPUS, NOT THE SPLIT, and no splitting strategy can repair it: "
+            "there is no second site to hold out."
+        ),
+        consequence=(
+            "D03 (Site/device shortcuts) is COULD_NOT_RUN with the corpus named, in the same "
+            "form as G4's control_graph refusal: none of its three mandatory controls is "
+            "CONSTRUCTIBLE here. Leave-site-out needs a second site; a nuisance-only "
+            "classifier needs site/device labels that vary; within-site label permutation "
+            "exists but alone cannot falsify a site shortcut. "
+            "BENCH'S RULING ON G5, requested explicitly: G5 MAY RUN, and its verdict is "
+            "meaningful, but its CLAIM IS NARROWER THAN G5 AS WRITTEN and a PASS may not be "
+            "reported unqualified. The reasoning: site is CONSTANT across every arm, so it "
+            "cannot confound the contrast between an individualised model and its "
+            "population/anatomy-only/session-adapted baselines -- a constant explains no "
+            "difference. What is unsupported is (a) that any measured advantage would "
+            "replicate at another site, and (b) that the individualisation is not exploiting "
+            "signal characteristics specific to this setup which happen to individuate here. "
+            "So the licensed claim is 'individualization improves future prediction WITHIN "
+            "THIS RECORDING SETUP', and any gate reading a participant-disjoint split as "
+            "licensing broader generalisation is blocked from doing so before it measures "
+            "anything."
+        ),
+        blocks=("D03_site_device_shortcuts",),
+        discloses_on=("G5", "G1", "G2", "A7_individualization"),
+        source="agent Ada's leakage_audit warning; verified by agent Turing's hard gate",
+        found_by="agent Ada (auditor warning), relayed with the split verified clean",
+    ),
+    CorpusLimitation(
         id="slow_tier_never_built",
         artifact="scwbd-001-beta",
         measured="the slow tier was never built; the model sees only fast-tier dynamics",

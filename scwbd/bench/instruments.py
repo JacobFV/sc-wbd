@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Seventeen times in this project an
+The generalisation was forced by evidence.  Eighteen times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -266,9 +266,46 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         owner="bench (gate design); intervene + runtime (the bound)",
         still_reported=True,
         recurrence=(
-            "the live instance of the preregistration-inheritance row: a threshold that "
-            "moved between the run that reported it and the run that checked it"
+            "SUBSTANTIALLY ANSWERED, and by the judged party asking for a STRICTER bound. "
+            "Agent Asimov did not widen the interval -- widening would have preserved the "
+            "actual defect with more headroom -- they SPLIT it: solution_discrepancy_fraction "
+            "(0.0, 1.35) MEASURED against the exact solution of the same geometry, "
+            "geometry_discrepancy_fraction (-0.4, 0.4) a DECLARED prior, and "
+            "discrepancy_fraction derived and never settable. They then asked that N9 be "
+            "judged against the measured term alone, because testing an approximation's own "
+            "error against an interval that also carries a geometry prior is the very "
+            "conflation the gate exists to catch, one level up. BENCH ENDORSES: against "
+            "(-0.4, +2.29) the gate passes trivially; against (0, 1.35) it is a real test of "
+            "a real claim, and 1.06289 <= 1.35 still passes. What would CLOSE this row "
+            "entirely: record the bound used IN the report and fail when it moves without a "
+            "dated justification. Splitting removed the conflation; it did not yet make the "
+            "threshold immutable"
         ),
+    ),
+    UninformativeField(
+        name="a bound justified by the intended use rather than by what the code admits",
+        reads="a tighter, more flattering interval, defensible on every biological ground",
+        why_it_cannot_discriminate=(
+            "agent Asimov chose 1.35 over a suggested 1.10 because the measured error at a "
+            "60 mm head with 40 mm standoff is 1.3204, and DECLINED to justify the smaller "
+            "number by arguing that 60 mm is sub-adult. It is sub-adult -- adult radii are "
+            "~80-100 mm where the error is 0.74-0.89 -- but NOTHING IN HeadModel ENFORCES AN "
+            "ADULT RADIUS. A bound justified by what the caller is expected to do cannot "
+            "discriminate the case where the caller does something else, and the code admits "
+            "that case. This is the difference between a bound on the physics and a bound on "
+            "the intended use"
+        ),
+        remedy=(
+            "the bound must cover what the CODE ADMITS, not what biology suggests -- or the "
+            "code must enforce the assumption the bound relies on. Corollary applied in the "
+            "same change: a declared-but-UNCHECKED envelope is the same defect one level up, "
+            "so outside radius >= 60 mm / standoff <= 40 mm the fallback now raises "
+            "DiscrepancyBoundNotEstablished and the runtime answers Defer with all four "
+            "quantities Unresolved -- never a number under a bound nobody established"
+        ),
+        found_by="agent Asimov (declined the flattering justification unprompted)",
+        owner="robotics bridge (agent Asimov)",
+        still_reported=False,
     ),
     UninformativeField(
         name="a validation case on which the mechanism under test is degenerate",
