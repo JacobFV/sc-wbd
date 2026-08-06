@@ -1,10 +1,10 @@
 # N3_em_solver — PASS
 
-**Claim.** The electromagnetic solver reproduces a closed-form quasi-static reference, validated independently of any neural-response model.
+**Claim.** The quasi-static CONDUCTION solver reproduces the closed-form potential of a current dipole in an unbounded homogeneous conductor, validated independently of any neural-response model. This is the EEG/lead-field forward problem; it is NOT the magnetically induced TMS field, which has a different source term and boundary condition and needs its own gate (N6).
 
 **Falsified by (thesis).** relative error above tolerance against the analytic dipole solution
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 4d617af · 2026-08-06T07:35:02+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 696f94d · 2026-08-06T08:11:37+00:00*
 
 ## Sub-checks
 
@@ -27,6 +27,8 @@ _none run_ — no baseline, no claim.
 
 ## Notes
 
+- SCOPE: conduction, not induction. A PASS licenses the quasi-static conduction discretisation used for EEG lead fields. It does NOT license the magnetically induced TMS field: different source term, different boundary condition, separate gate (N6_induced_efield).
+- A verification gate is destroyed if the reference leaks into the solver. Check that the boundary data is homogeneous, not the analytic value, before reading this PASS as evidence.
 - Field accuracy, target engagement, network effect and clinical utility remain separate quantities (thesis §0.5).
 - Solver: scwbd.intervene.numerics.quasistatic_dipole_potential_fd -- a second-order 7-point finite-difference Poisson solve on a 256^3 grid, diagonalised exactly by the type-I DST. The truncation boundary carries HOMOGENEOUS DIRICHLET data (zero), not the analytic potential, so no value from the reference enters the solve; the boundary is placed at 1.9x the farthest field point and the residual truncation error is part of the reported number rather than removed by it.
 - The reference here is a CURRENT dipole in an unbounded homogeneous conductor -- the EEG/lead-field forward problem, not the magnetically induced TMS field of scwbd.intervene.tms.efield. Passing N3 licenses the quasi-static conduction discretisation; the induced-field operator is separately convergence-tested against the Sarvas / Heller-van Hulsteyn closed form in tests/intervene/test_tms_efield.py.

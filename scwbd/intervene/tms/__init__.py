@@ -33,6 +33,7 @@ from .coil import (
 )
 from .efield import (
     ImpossibleGeometry,
+    charge_bem_induced_efield,
     assert_sources_exterior,
     ChargeBEM,
     LayeredSphereBEM,
@@ -92,6 +93,7 @@ __all__ = [
     "halfsine",
     "pulse_waveform_spec",
     "ImpossibleGeometry",
+    "charge_bem_induced_efield",
     "assert_sources_exterior",
     "analytic_sphere_efield",
     "primary_efield_dipoles",

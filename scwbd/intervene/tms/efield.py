@@ -51,6 +51,7 @@ from .coil import MU0, CoilGeometry, TMSPulse
 
 __all__ = [
     "ImpossibleGeometry",
+    "charge_bem_induced_efield",
     "assert_sources_exterior",
     "analytic_sphere_efield",
     "primary_efield_dipoles",
@@ -781,6 +782,47 @@ def efield_from_coil(
             },
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# gate N6 adapter
+# ---------------------------------------------------------------------------
+
+#: icosphere subdivisions for the N6 solver adapter (4 -> 5120 panels)
+DEFAULT_N6_SUBDIV = 4
+
+
+def charge_bem_induced_efield(
+    points,
+    *,
+    dipole_pos,
+    dipole_mdot,
+    sphere_radius: float = 0.085,
+):
+    """Gate adapter for N6: the induced E-field ``[N,3]`` from :class:`ChargeBEM`.
+
+    Deliberately defined **here**, in the solver's own module, rather than in a
+    runner: ``validate_induced_efield_solver`` records ``__module__`` for the
+    solver and the reference and reports whether they coincide.  A wrapper
+    written somewhere neutral would make an independent check look like a shared
+    one, or the reverse.  The reference lives in
+    :mod:`scwbd.intervene.spectral_reference` and shares nothing with this file.
+
+    Single conducting shell with an insulating exterior, which is the geometry
+    the closed form describes; by the Heller--van Hulsteyn theorem the interior
+    field does not depend on the conductivity, so none is taken.
+    """
+    import numpy as _np
+
+    pts = torch.as_tensor(_np.asarray(points, dtype=float), dtype=_DT)
+    pos = torch.as_tensor(_np.asarray(dipole_pos, dtype=float), dtype=_DT)
+    mdot = torch.as_tensor(_np.asarray(dipole_mdot, dtype=float), dtype=_DT)
+    verts, faces = icosphere(DEFAULT_N6_SUBDIV)
+    bem = ChargeBEM(
+        [TriMesh(verts * float(sphere_radius), faces)], [0.33], [0.0]
+    )
+    bem.assert_sources_outside(pos, context="charge_bem_induced_efield")
+    return bem.total_field(pts, pos, mdot).detach().cpu().numpy()
 
 
 # ---------------------------------------------------------------------------
