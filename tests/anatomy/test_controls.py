@@ -84,7 +84,6 @@ def test_randomized_preserves_the_strength_sequence_in_rank(controls, sc_small):
 
 def test_randomized_destroys_the_topology(controls, sc_small):
     r = controls["randomized"]
-    same = ((r.weights > 0) == (sc_small.weights > 0)).mean()
     overlap = ((r.weights > 0) & (sc_small.weights > 0)).sum() / max(
         (sc_small.weights > 0).sum(), 1
     )

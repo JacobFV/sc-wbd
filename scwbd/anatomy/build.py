@@ -26,7 +26,7 @@ from .connectome import _ENIGMA_KEYS, load_structural_prior
 from .geometry import parcel_geometry
 from .manifest import Manifest, git_commit
 from .maps import load_maps
-from .paths import assets_root, cache_dir, derived_dir, src_dir
+from .paths import assets_root, derived_dir
 from .priors import BrainPrior
 
 #: Upstream clones and caches, with the source-registry key that describes them.
@@ -166,6 +166,12 @@ def build(*, rebuild: bool = False, verbose: bool = True) -> dict[str, Any]:
                                "hcps1200_maps", "sydnor2021"])
             report["built"].append(str(f.name))
             log(f"  ok {name}: {len(ms.maps)} maps, {len(ms.receptor_names)} receptors")
+            # A map that was expected and could not be built is a result, not a
+            # non-event: surface it here rather than letting a short panel ship
+            # silently the way the Schaefer300/400 5HT4 gap did.
+            for k, why in sorted(ms.unavailable.items()):
+                report.setdefault("unavailable", []).append(f"{name}: {k}: {why}")
+                log(f"    unavailable {k}: {why}")
         except Exception as exc:  # noqa: BLE001
             report["failed"].append(f"maps {name}: {exc!r}")
             log(f"  ! {name}: {exc!r}")
@@ -228,7 +234,7 @@ def _atlas_inputs(name: str) -> list[str]:
         "Buckner7": ["buckner2011"],
         "Buckner17": ["buckner2011"],
         "SUITAnatom": ["diedrichsen2009"],
-    }.get(name, [f"tian2020"] if name.startswith("Tian") else [])
+    }.get(name, ["tian2020"] if name.startswith("Tian") else [])
 
 
 def main(argv: list[str] | None = None) -> int:

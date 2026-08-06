@@ -10,7 +10,6 @@ from scwbd.anatomy.maps import (
     SURFACE_MAPS,
     MapSet,
     available_maps,
-    load_maps,
     receptor_matrix,
 )
 
@@ -32,6 +31,63 @@ def test_the_full_receptor_panel_is_present(maps_small):
     assert len(maps_small.receptor_names) >= 18, maps_small.receptor_names
     for k in ("NMDA", "GABAa", "mGluR5", "D1", "D2", "5HTT", "MOR"):
         assert k in maps_small.receptor_names
+
+
+def test_every_pet_target_on_disk_is_either_built_or_explained(maps_main):
+    """No receptor may vanish from the artifact without saying why.
+
+    Schaefer300x7 and Schaefer400x7 shipped a 31-map panel where 100x7 and
+    200x7 had 32: ``receptor_5HT4`` was dropped by a caught exception during a
+    build, and because the target has exactly one tracer volume the whole map
+    disappeared leaving no trace in the file.  This is the regression test.
+    """
+    from scwbd.anatomy.maps import _NON_RECEPTOR_TARGETS, _hansen_nifti_files
+
+    on_disk = {t for t in _hansen_nifti_files() if t not in _NON_RECEPTOR_TARGETS}
+    if not on_disk:
+        pytest.skip("Hansen PET volumes are not on disk")
+    built = set(maps_main.receptor_names)
+    missing = on_disk - built
+    unexplained = {t for t in missing if f"receptor_{t}" not in maps_main.unavailable}
+    assert not unexplained, (
+        f"receptor targets present on disk but absent from the Schaefer400x7 panel "
+        f"with no reason recorded: {sorted(unexplained)}"
+    )
+
+
+def test_the_main_atlas_panel_matches_the_small_atlas_panel(maps_main, maps_small):
+    """The receptor panel must not thin out as the parcellation gets finer."""
+    lost = set(maps_small.receptor_names) - set(maps_main.receptor_names)
+    unexplained = {t for t in lost if f"receptor_{t}" not in maps_main.unavailable}
+    assert not unexplained, (
+        f"{sorted(unexplained)} built on {maps_small.parcellation_name} but silently "
+        f"absent on {maps_main.parcellation_name}"
+    )
+
+
+def test_5ht4_is_present_on_the_foundation_parcellation(maps_main):
+    """The specific map that went missing, named so the gap cannot reopen quietly."""
+    from scwbd.anatomy.maps import _hansen_nifti_files
+
+    if "5HT4" not in _hansen_nifti_files():
+        pytest.skip("5HT4 tracer volume is not on disk")
+    assert "5HT4" in maps_main.receptor_names, (
+        "receptor_5HT4 missing from Schaefer400x7; "
+        f"recorded reason: {maps_main.unavailable.get('receptor_5HT4', '<none recorded>')}"
+    )
+
+
+def test_unavailable_survives_a_roundtrip(tmp_path, maps_small):
+    ms = MapSet(
+        parcellation_name=maps_small.parcellation_name,
+        space=maps_small.space,
+        density=maps_small.density,
+        maps=dict(list(maps_small.maps.items())[:2]),
+        receptor_names=(),
+        unavailable={"receptor_NOPE": "the tracer volume does not exist"},
+    )
+    back = MapSet.load(ms.save(tmp_path / "m.npz"))
+    assert back.unavailable == {"receptor_NOPE": "the tracer volume does not exist"}
 
 
 def test_fdopa_is_not_called_a_receptor(maps_small):
@@ -131,14 +187,19 @@ def test_ei_proxy_has_the_sign_structure_of_its_definition(maps_small):
     assert stats.pearsonr(ei.values[m], mglur5.values[m]).statistic > 0.2
 
 
-def test_ei_proxy_is_a_weak_second_order_contrast(maps_small):
-    """The excitatory and inhibitory maps co-vary, so most variance cancels.
+def test_ei_proxy_ingredients_covary_only_moderately(maps_small):
+    """The E/I ingredients share a gradient, but far less than once claimed.
 
-    This is a documented property of the proxy, not an accident, and it is the
-    reason `ei_proxy` is `mechanistic_status="surrogate"` and carries a
-    model-class variance as large as its measurement variance. If this test
-    ever starts failing because the ingredients decorrelate, the docstring in
-    `maps._ei_proxy` needs rewriting rather than the test.
+    This assertion was previously ``r > 0.4``, measured on cached artifacts that
+    had been produced by the older *volumetric-join* route.  Rebuilt through the
+    surface-sampling route that the module actually documents, NMDA-GABA-A falls
+    to 0.26 (Schaefer-100) / 0.35 (Schaefer-400), so the contrast is *not* the
+    heavily-cancelling second-order residual it was described as.  The docstring
+    of ``maps._ei_proxy`` carries the corrected table.
+
+    The band is deliberately two-sided: near-zero would mean the two tracers
+    share no anatomy at all (suspect), and > 0.6 would mean we are back to
+    differencing away most of the signal.
     """
     from scipy import stats
 
@@ -147,9 +208,38 @@ def test_ei_proxy_is_a_weak_second_order_contrast(maps_small):
     gaba = maps_small["receptor_GABAa"]
     m = ei.coverage & nmda.coverage & gaba.coverage
     shared = stats.pearsonr(nmda.values[m], gaba.values[m]).statistic
-    assert shared > 0.4, "excitatory and inhibitory markers should co-vary"
-    assert ei.values[m].std() < nmda.values[m].std(), (
-        "differencing co-varying maps must shrink the spread"
+    assert 0.1 < shared < 0.6, (
+        f"NMDA~GABA-A = {shared:.3f} is outside the measured band; if the maps "
+        "were rebuilt by a different route, _ei_proxy's docstring table is stale"
+    )
+
+
+def test_ei_proxy_keeps_the_spread_of_its_ingredients(maps_small):
+    """Differencing weakly-correlated maps does not shrink the contrast much."""
+    ei = maps_small["ei_proxy"]
+    ing = [maps_small[f"receptor_{r}"] for r in ("NMDA", "mGluR5", "GABAa")]
+    m = ei.coverage
+    for g in ing:
+        m = m & g.coverage
+    ratio = ei.values[m].std() / np.mean([g.values[m].std() for g in ing])
+    assert 0.7 < ratio < 1.4, (
+        f"E/I spread is {ratio:.2f}x its ingredients'; the docstring claims ~1.0"
+    )
+
+
+def test_ei_proxy_declares_its_route_fragile_ingredients(maps_main):
+    """NMDA and GABA-A are the panel's least route-stable maps, and the E/I
+    contrast is built from exactly those two. It must say so."""
+    from scwbd.anatomy.route_check import load_route_agreement
+
+    if load_route_agreement(maps_main.parcellation_name) is None:
+        pytest.skip("no route report computed for this parcellation")
+    led = maps_main["ei_proxy"].ledger
+    frag = led.validity_domain.get("route_fragile_ingredients")
+    assert frag is not None, "ei_proxy must record which ingredients are route-fragile"
+    assert "NMDA" in frag and "GABAa" in frag, frag
+    assert "route" in led.validity_domain["forbidden_inference"].lower(), (
+        "the forbidden-inference sentence must name the route dependence"
     )
 
 

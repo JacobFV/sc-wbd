@@ -48,6 +48,17 @@ def maps_small(parc_small):
 
 
 @pytest.fixture(scope="session")
+def maps_main(parc_main):
+    """Maps on the parcellation the foundation model actually uses.
+
+    Schaefer400x7 shipped without ``receptor_5HT4`` while Schaefer100x7 had it,
+    so a receptor-panel test that only ever looks at the small atlas cannot see
+    the gap that matters.
+    """
+    return load_maps(parc_main)
+
+
+@pytest.fixture(scope="session")
 def sc_small():
     return load_structural_prior(SMALL_ATLAS, include_subcortex=True)
 
