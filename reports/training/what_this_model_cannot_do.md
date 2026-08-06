@@ -103,10 +103,29 @@ tensors distorts the EEG head relative to the operator is **unmeasured**.
 
 ## 9. Window-level generalisation is not individual generalisation
 
-The real-EEG holdout is participant-disjoint (verified: 0 overlapping
-`(file, trajectory)` keys), and intervals are participant-clustered. That controls
-leakage. It does **not** establish that the model generalises to a *new individual's*
-dynamics — only that it does not memorise the participants it saw.
+The real-EEG holdout is participant-disjoint and the intervals are
+participant-clustered. That controls leakage. It does **not** establish that the
+model generalises to a *new individual's* dynamics — only that it does not memorise
+the participants it saw.
+
+**Correction to an earlier draft of this document.** I first cited "0 overlapping
+`(file, trajectory)` keys" as the verification here. That check is real but it is
+the **simulated** corpus's train/val split, not this one. The real-EEG split is
+verified by `reports/training/leakage_audit_stage3.json`: `grouped_splitter`
+backend (not the hash fallback), 109 subjects partitioned 71/11/27 across
+train/val/test, 290,673 windows, `violations: []`. Right conclusion, wrong evidence
+— and citing the wrong evidence for a leakage claim is exactly the kind of error a
+leakage claim cannot afford.
+
+## 9a. The split cannot falsify a site or device shortcut
+
+From the same audit's own warning: **"all records come from one site: this split
+cannot falsify a site/device shortcut."**
+
+Every participant was recorded on one acquisition setup. A model that has learned
+the amplifier, the montage, or the room rather than the brain would pass this split
+cleanly. Participant-disjointness does not test for it, and nothing else in this run
+does either.
 
 ## 10. Things not measured at all
 
