@@ -23,6 +23,7 @@ checked through a neural read-out has not been validated.
 
 from __future__ import annotations
 
+import functools
 import math
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Mapping, Sequence
@@ -1486,6 +1487,13 @@ def run_numerics_suite(
             em_fn, ac_run = dep.obj
             em_solver = em_solver or em_fn
             if acoustic_solver is None:
+                # functools.wraps is load-bearing, not cosmetic: without it the
+                # closure's own qualname lands in artifacts["subject"] and the
+                # report names THIS WRAPPER instead of the solver it measured.
+                # That is the provenance failure finalize() exists to prevent,
+                # and it shipped inside a PASS. The same identity bug was fixed
+                # once in CachedSolver and reintroduced here by the closure.
+                @functools.wraps(ac_run)
                 def acoustic_solver(points, source_pos=(0.0, 0.0, 0.0), k=100.0, **kw):
                     return ac_run(points, source_pos, k, **kw).pressure
                 if acoustic_grid is None:

@@ -100,11 +100,22 @@
     "Amplitude calibration is part of what is under test when the source strength is fixed a priori rather than fitted to the reference; a residual amplitude bias must be reported, not divided out."
   ],
   "artifacts": {
-    "subject": "scwbd.bench.numerics.run_numerics_suite.<locals>.acoustic_solver"
+    "subject": "scwbd.intervene.numerics.run_free_field_monopole",
+    "solver_cache": [
+      {
+        "solver": "scwbd.intervene.numerics.run_free_field_monopole",
+        "solver_content_hash": "8d2450f60dc208e6",
+        "hits": 0,
+        "misses": 1,
+        "uncacheable_calls": 0,
+        "served_from_cache": false,
+        "note": "every call re-solved: no stored result matched this solver's content hash"
+      }
+    ]
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T09:53:45+00:00",
-    "git_rev": "c0e5833",
+    "timestamp_utc": "2026-08-06T12:47:05+00:00",
+    "git_rev": "f6148d0",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -120,19 +131,28 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/bench/adjudication.py",
-      "scwbd/bench/corpus.py",
       "scwbd/bench/instruments.py",
       "scwbd/bench/numerics.py",
-      "scwbd/bench/report.py",
-      "scwbd/bench/runner.py",
-      "scwbd/runtime/_compat.py",
-      "scwbd/runtime/backends.py",
+      "scwbd/compiler/checks.py",
+      "scwbd/compiler/compile.py",
+      "scwbd/compiler/model.py",
+      "scwbd/individualize/",
+      "scwbd/infer/synthetic_slice.py",
+      "scwbd/intervene/safety.py",
+      "scwbd/release/",
+      "scwbd/runtime/__init__.py",
+      "scwbd/runtime/provenance.py",
       "scwbd/runtime/targeting.py",
-      "tests/bench/test_adjudication.py",
-      "tests/bench/test_instruments.py",
-      "tests/bench/test_runner.py",
-      "tests/runtime/test_field_backends.py"
+      "scwbd/schema/__init__.py",
+      "scwbd/schema/authorization.py",
+      "scwbd/schema/claims.py",
+      "tests/conftest.py",
+      "tests/individualize/",
+      "tests/intervene/test_authorization_gate.py",
+      "tests/intervene/test_safety.py",
+      "tests/runtime/test_authorized_refusals.py",
+      "tests/runtime/test_no_command_surface.py",
+      "tests/schema/test_authorization.py"
     ],
     "source_clean": false,
     "known_uninformative_fields": {

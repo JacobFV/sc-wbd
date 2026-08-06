@@ -60,13 +60,19 @@ different boundary condition. That is N6.
 equation.
 **Does not license:** tFUS exposure in tissue, dose, or any biological effect.
 
-> **Defect in this report, introduced by me.** Its `artifacts["subject"]` reads
-> `scwbd.bench.numerics.run_numerics_suite.<locals>.acoustic_solver` — the local
-> closure I wrote when auto-wiring the suite, not the underlying solver. The
-> report therefore names the wrapper rather than what was measured, which is the
-> exact provenance failure `finalize()` exists to prevent, in my own code. The
-> physics is unaffected; the provenance record is wrong and should be corrected
-> before this number is cited.
+**Subject:** `scwbd.intervene.numerics.run_free_field_monopole`.
+
+> **Defect found and fixed, recorded rather than erased.** This report
+> previously named `run_numerics_suite.<locals>.acoustic_solver` — the closure I
+> wrote when auto-wiring the suite — instead of the solver it measured. That is
+> the provenance failure `finalize()` exists to prevent, in my own code, inside
+> a PASS that had been cited externally. The identical identity bug had already
+> been fixed once in `CachedSolver` and was reintroduced by the closure; the fix
+> is `functools.wraps`, which is load-bearing here rather than cosmetic. Both
+> numbers are byte-identical before and after (0.0125564, 0.000913021),
+> confirming the defect was purely in the record and never in the physics — but
+> a gate whose entire value is that its subject is checkable cannot carry a
+> wrong subject.
 
 ### 1.4 N6 — induced E-field, standoff · PASS
 `induced_efield.mean_relative_error = 0.00214881` against `0.05`;
@@ -131,11 +137,11 @@ thesis claim on evidence**.
   > `rank_likelihood = 9`. The distinction — information *available in the data*
   > versus information *the estimator can use* — is the whole point, and
   > flattening it inverts the finding.
-- **Adding a modality is not automatically beneficial.** [UNVERIFIED as a
-  number in a committed file: the fusion gain of 1.000001 was relayed and I
-  could not locate it in `results.json` under the keys I searched.] What I did
-  verify is that `joint_native` and `eeg_only` differ by one rank unit
-  (8 vs 6 likelihood rank) while sharing `theta_profile_rank_likelihood = 4`.
+- **Adding a modality is not automatically beneficial.** The fusion gain of
+  1.000001 remains **[UNVERIFIED]** — relayed, and not locatable in
+  `results.json` under the keys I searched. What I verified directly:
+  `joint_native` and `eeg_only` differ by one rank unit (8 vs 6 likelihood
+  rank) while sharing `theta_profile_rank_likelihood = 4`.
 
 **Therefore:** G1 may **not** cite the resampling result as support for
 *fusion*. It supports source-native **timing**. These are different claims and
@@ -164,10 +170,12 @@ demonstrated *capable of catching a leak*, not merely reported clean.
 remedies. Conflating them would itself be a decorative claim.**
 
 ### 3.1 Not measurable on the current corpus (a new corpus is required)
-- **G4 — perturbation reduces non-identifiability.** [Corpus figure relayed as
-  35/37 shards with `control_graph: none`; **UNVERIFIED** — I could not read
-  `reports/training/corpus_composition.md` on this branch.] Independently
-  verified from the artifacts: G4 additionally cannot conclude because
+- **G4 — perturbation reduces non-identifiability.** **Verified directly** at
+  `reports/training/corpus_composition.md:186` (readable on master since
+  `f6148d0`): *"35 of 37 shards have `control_graph: none`; 2 have
+  `local_only`."* The corpus contains essentially no interventional structure,
+  so this is a **data** requirement and no modelling change reaches it. G4
+  additionally cannot conclude because
   `dose` and `state_dependence` are *unavailable by construction* in a
   linear-Gaussian benchmark and `delay` is simulation recovery, not held-out
   perturbation.
