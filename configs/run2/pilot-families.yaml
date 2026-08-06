@@ -51,6 +51,14 @@ data:
   real_test_fraction: 0.50
 
 train:
+  # 20 GB, NOT the base file's 40. `cuda_reserve_gb` drives
+  # `torch.cuda.set_per_process_memory_fraction`, so 40.0 permits 0.329 of the
+  # ONE ~121 GB unified pool shared with eight concurrent agents -- double the
+  # agreed budget. systemd's MemoryMax does NOT bound CUDA allocations, so the
+  # scope wrapper is not a second line of defence here; this field is the only
+  # one. Caught two minutes into the first launch and fixed there rather than at
+  # hour three, which is when it would otherwise have taken the box down.
+  cuda_reserve_gb: 20.0
   run_name: scwbd-001-pilot-families
   out_dir: checkpoints/scwbd-001-pilot-families
 
