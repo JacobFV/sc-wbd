@@ -21,9 +21,24 @@ individual parameters.
 **Is not:** a validated digital twin of any specific person, a clinical device,
 or evidence that any admitted operator is neurally realized. Per
 `thesis_contract.tex` §0.6 the build order stops at item 5 (empirical
-subsystem). **Item 6 (prospective human TMS/tFUS) is out of scope for this
-artifact, and no agent may implement a stimulation controller, a device command
-path, or a dosing computation for a person.**
+subsystem). **No agent may implement a stimulation controller, a device command
+path, or a dosing computation for a person** — that clause is enforced by there
+being no such surface to reach, and it is the part of this sentence that is a
+property of the software.
+
+Item 6 is *not reached yet*, which is a different statement from "out of
+scope". §0.6 item 6 reads: "Only after solver, field, calibration, and causal
+recovery gates pass, instantiate the running TMS or tFUS case **under an
+approved protocol**." That is a conjunction — upstream technical gates *and* an
+approved protocol — and the unmet half is the **technical** one. Specifically,
+per `reports/gates/SUMMARY.md`: the *field* gates have in fact passed (`N3`,
+`N4`, `N6`, `N8`), but `N5` (solver suite) and `N2` (boundary consistency) are
+`COULD_NOT_RUN`, G4's actual claim — that perturbation reduces
+non-identifiability — remains **unexercised**, and there is no trained
+checkpoint. Text asserting instead that item 6 is blocked because "there is no
+IRB, no consent, no participants" was misquoting this contract, and pointed at
+a blocker nobody here can clear instead of the ones they can; see
+`reports/intervene/authorization.md`.
 
 *Read this together with §7a, which it predates.* §7a records that
 **computational work in this repository is approved and is not gated** — the
@@ -456,6 +471,9 @@ it makes the narrowing visible so it can be challenged.
 | **N-6** | §6.1 (five regional families: visual, auditory, motor/somatosensory/cerebellar, hippocampal, brainstem/hypothalamic/insular) | The anatomy prior declares **two** cortical families — `cortex_unimodal` (Vis+SomMot, 138 parcels) and `cortex_association` (262) — plus **seven** subcortical families separated by atlas identity alone. **Auditory, cerebellar and brainstem/hypothalamic/autonomic families are not declared at all.** Early visual is not separable from somatomotor and is folded into `cortex_unimodal`. | Two is the finest cortical partition in which *every pair* of families separates under a Váša spin null on a measured regional profile (FDR q<0.05). Yeo-7 fails on 15 of 21 pairs — including `SomMot vs Vis` (q=0.49/0.78). The von Economo–Koskinas cytoarchitectonic classes fail globally on every block, so cytoarchitecture is carried as description and may not be cited as the reason a family exists. Auditory cortex has no delineation in this parcellation; the cerebellum and brainstem/hypothalamus have **zero parcels**. Declaring those families would mean inventing their boundaries. See `reports/anatomy_families.md`. | scheduled — revisit per family when a parcellation or measurement block that resolves it arrives |
 | **N-7** | §2.1 (`X_i ∈ 𝒳_i`, the state space indexed per region) | The state space is indexed **per family**, not per region: all parcels in a family share one component list and one dimension. | N-2 already assigns operators at family granularity; this is the state-space consequence of the same evidence limit, stated separately because a reader can accept one and reject the other. With two cortical families, "region-indexed state space" currently means a **binary** distinction across 400 cortical parcels — much closer to §11.4's pooled-vector control than the phrase suggests, and that should be read as a measurement of how little the prior resolves, not as a design preference. | scheduled — strictly tied to the family count in N-6 |
 
+| **N-8** | `body.tex` §7.4 ("independently validated device, exposure, and protocol limits define the feasible set") | `A_safe` binds only on the axes a proposal **supplies**. An omitted declared axis is reported in `unchecked_declared_axes`, not violated — except for a plan declaring `application="live"`, where every declared axis for the modality must be covered or the plan refuses. | Most axes have no producer for most proposals, so requiring full coverage everywhere would make every simulated study refuse and the rule would be switched off. Two tFUS axes (`cem43_minutes`, `temperature_rise_c`) have **no producer anywhere in `scwbd`**, so under uniform-omission a live tFUS plan was silently unchecked on thermal dose. Coverage is therefore enforced exactly where the consequence is physical. | permanent unless a thermal producer lands; delete the exemption then |
+| **N-9** | `body.tex` §7.2 (prospective targeting for a new person) | A plan declaring intent to drive real hardware or to be applied to a person is refused by `scwbd/intervene/deployment.py` unless a record exists that the preliminary review **occurred** with an approving outcome. A valid `AuthorizationRecord` is necessary and explicitly not sufficient. | The review gating live use is scheduled for 2026-08-25 and has not happened. The gate is a lower bound on a review *record*, never a calendar comparison: it does not open when that date passes, and `tests/intervene/test_deployment.py::TestTheDateIsNotAnUnlock` fires that case at a 2027 clock to prove it. | until a completed-review record exists |
+| **N-10** | `body.tex` §7.4 ("the controller may choose a safer measurement or reversible probe") | Reversibility is *required* of a live plan, not merely available to the controller. | It sat in `a_safe.toml` as `[protocol.reversibility] required = true` with no `min`/`max`, so `SafetyLimits.load` skipped it and nothing ever read it — a cited, reviewed, decorative guard. Moved to `[decision.reversibility]`, read, enforced on the live path, and fired by a test. Enforcing it on the simulated path would refuse most of this repository. | permanent |
 ---
 
 ## 5c. Standing rulings
