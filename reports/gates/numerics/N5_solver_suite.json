@@ -1,0 +1,94 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N5_solver_suite",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "N5_solver_suite",
+    "claim_text": "Solvers converge at their advertised order, remain stable, conserve their declared invariants, and are bitwise reproducible for a fixed seed.",
+    "falsified_by": "an observed order below the advertised order, non-finite or unbounded state, invariant drift beyond tolerance, or non-determinism at a fixed seed",
+    "consequence_if_failed": "The solver may not be used for claim-bearing inference until it converges; results produced with it are withdrawn.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "expected_order": 1.0,
+      "dts": [
+        0.02,
+        0.01,
+        0.005,
+        0.0025
+      ]
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "solver_convergence: could not run \u2014 no solver supplied (agent E dynamics / agent G field solvers)",
+    "solver_stability: could not run \u2014 no trajectory supplied",
+    "conservation: could not run \u2014 no trajectory or no invariant function supplied; a module that declares no invariant cannot claim a conservation property",
+    "seed_reproducibility: could not run \u2014 no stochastic entry point supplied"
+  ],
+  "subchecks": [
+    {
+      "name": "solver_convergence",
+      "description": "Step-refinement convergence study.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no solver supplied (agent E dynamics / agent G field solvers)",
+      "falsified_by": "observed order below the advertised order",
+      "metrics": []
+    },
+    {
+      "name": "solver_stability",
+      "description": "Long-horizon stability.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no trajectory supplied",
+      "falsified_by": "non-finite or unbounded state",
+      "metrics": []
+    },
+    {
+      "name": "conservation",
+      "description": "Conservation of a declared invariant.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no trajectory or no invariant function supplied; a module that declares no invariant cannot claim a conservation property",
+      "falsified_by": "the invariant drifts beyond tolerance",
+      "metrics": []
+    },
+    {
+      "name": "seed_reproducibility",
+      "description": "Bitwise reproducibility for a fixed seed.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no stochastic entry point supplied",
+      "falsified_by": "two runs with the same seed differ",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "gate",
+  "claim_id": "G3",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "G3",
+    "claim_text": "Multiresolution state adds information rather than decoration.",
+    "falsified_by": "Fine views cannot improve supported observables, fail round-trip tests, or become overconfident outside measured tiles.",
+    "consequence_if_failed": "Disable the scale relation or use source-specific views without gluing.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "thesis_contract.tex tab:claim-gates row 3; ARCHITECTURE.md \u00a74 G3",
+    "permitted_source_cards": [],
+    "baselines": [
+      "coarse_only",
+      "coarse_only(+withheld fine evidence)"
+    ],
+    "acceptance_thresholds": {
+      "min_delta_log_score": 0.0,
+      "max_coverage_error": 0.05,
+      "max_overconfidence_increase": 0.02,
+      "max_delay_rel_error": 0.15,
+      "boundary_rel_tol": 0.05,
+      "max_hallucination_index": 1.25,
+      "min_uncertainty_inflation": 1.05,
+      "min_fisher_eig_gain": 1.1,
+      "capacity_tol": 0.1,
+      "min_model_discrimination": 0.05,
+      "n_boot": 1000
+    },
+    "refusal_fixtures": [
+      "R02 (prolongation without tested restriction partner)",
+      "R03 (global cross-scale state above cocycle tolerance)"
+    ],
+    "non_goals": [
+      "This gate does not claim a validated digital twin of any specific person.",
+      "This gate does not claim that any admitted operator is neurally realized.",
+      "No prospective human TMS/tFUS protocol is implemented or implied (build order stops at item 5; item 6 is out of scope: no IRB, no consent, no participants)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "inputs[0]: could not run \u2014 missing: multiresolution candidate (agent E/I)",
+    "inputs[1]: could not run \u2014 missing: coarse-only baseline",
+    "inputs[2]: could not run \u2014 missing: fine-scale train/test datasets",
+    "inputs[3]: could not run \u2014 missing: coarse-scale evaluation set (boundary observable)",
+    "inputs[4]: could not run \u2014 missing: restriction map R (agent D transforms / agent C parcellation)"
+  ],
+  "subchecks": [
+    {
+      "name": "inputs[0]",
+      "description": "Required gate input",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: multiresolution candidate (agent E/I)",
+      "falsified_by": "Fine views cannot improve supported observables, fail round-trip tests, or become overconfident outside measured tiles.",
+      "metrics": []
+    },
+    {
+      "name": "inputs[1]",
+      "description": "Required gate input",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: coarse-only baseline",
+      "falsified_by": "Fine views cannot improve supported observables, fail round-trip tests, or become overconfident outside measured tiles.",
+      "metrics": []
+    },
+    {
+      "name": "inputs[2]",
+      "description": "Required gate input",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: fine-scale train/test datasets",
+      "falsified_by": "Fine views cannot improve supported observables, fail round-trip tests, or become overconfident outside measured tiles.",
+      "metrics": []
+    },
+    {
+      "name": "inputs[3]",
+      "description": "Required gate input",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: coarse-scale evaluation set (boundary observable)",
+      "falsified_by": "Fine views cannot improve supported observables, fail round-trip tests, or become overconfident outside measured tiles.",
+      "metrics": []
+    },
+    {
+      "name": "inputs[4]",
+      "description": "Required gate input",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: restriction map R (agent D transforms / agent C parcellation)",
+      "falsified_by": "Fine views cannot improve supported observables, fail round-trip tests, or become overconfident outside measured tiles.",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

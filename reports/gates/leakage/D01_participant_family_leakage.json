@@ -1,0 +1,96 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "leakage",
+  "claim_id": "D01_participant_family_leakage",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "D01_participant_family_leakage",
+    "claim_text": "Participant or family leakage is controlled for. Primary metric: Held-out-person likelihood, calibration and retrieval/leakage audit.",
+    "falsified_by": "The mandatory control (Group all sessions, derivatives, relatives and duplicate archive records before splitting) shows the result survives only without it.",
+    "consequence_if_failed": "Minimum interpretation enforced: Within-session prediction cannot support individual generalization",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "appendix.tex Appendix D, tab:mixture-evaluation",
+    "permitted_source_cards": [],
+    "baselines": [
+      "within-session prediction (the thing that must not be claimed)"
+    ],
+    "acceptance_thresholds": {
+      "min_delta_log_score": 0.0,
+      "max_coverage_error": 0.05,
+      "max_overconfidence_increase": 0.02,
+      "max_delay_rel_error": 0.15,
+      "boundary_rel_tol": 0.05,
+      "max_hallucination_index": 1.25,
+      "min_uncertainty_inflation": 1.05,
+      "min_fisher_eig_gain": 1.1,
+      "capacity_tol": 0.1,
+      "min_model_discrimination": 0.05,
+      "n_boot": 1000
+    },
+    "refusal_fixtures": [
+      "R10 (derived records crossing a parent-level holdout)"
+    ],
+    "non_goals": [
+      "This gate does not claim a validated digital twin of any specific person.",
+      "This gate does not claim that any admitted operator is neurally realized.",
+      "No prospective human TMS/tFUS protocol is implemented or implied (build order stops at item 5; item 6 is out of scope: no IRB, no consent, no participants)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "grouped_split: could not run \u2014 no lineage records supplied; grouping cannot be verified and R10 forbids splitting with unresolved parentage",
+    "held_out_person_likelihood: could not run \u2014 no model/train/test supplied; within-session prediction cannot substitute for held-out-person generalization",
+    "retrieval_audit: could not run \u2014 no embeddings supplied; near-duplicate archive records (the same scan under two accession numbers) cannot be detected by lineage alone"
+  ],
+  "subchecks": [
+    {
+      "name": "grouped_split",
+      "description": "Group all sessions, derivatives, relatives and duplicates before splitting.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no lineage records supplied; grouping cannot be verified and R10 forbids splitting with unresolved parentage",
+      "falsified_by": "a group appears on both sides of the holdout",
+      "metrics": []
+    },
+    {
+      "name": "held_out_person_likelihood",
+      "description": "Likelihood and calibration on people never seen in training.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no model/train/test supplied; within-session prediction cannot substitute for held-out-person generalization",
+      "falsified_by": "held-out-person likelihood collapses to the marginal",
+      "metrics": []
+    },
+    {
+      "name": "retrieval_audit",
+      "description": "Nearest-neighbour retrieval of training records from held-out records.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no embeddings supplied; near-duplicate archive records (the same scan under two accession numbers) cannot be detected by lineage alone",
+      "falsified_by": "held-out records retrieve near-identical training records",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "Splitting is agent B's; this audit consumes it rather than reimplementing it."
+  ],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

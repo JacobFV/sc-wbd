@@ -1,0 +1,59 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N4_acoustic_solver",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "N4_acoustic_solver",
+    "claim_text": "The acoustic solver reproduces free-field spreading and satisfies the Helmholtz equation, validated independently of any neural-response model.",
+    "falsified_by": "relative error above tolerance, or a Helmholtz residual that does not vanish under grid refinement",
+    "consequence_if_failed": "The acoustic solver may not be used for tFUS exposure or targeting; every downstream acoustic claim is suspended.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "relative_tol": 0.05,
+      "wavenumber_per_m": 100.0
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "acoustic_solver: could not run \u2014 no acoustic solver supplied (agent G scwbd.intervene); the exposure model is unvalidated and no tFUS claim may be made"
+  ],
+  "subchecks": [
+    {
+      "name": "acoustic_solver",
+      "description": "Acoustic solver versus free-field reference.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no acoustic solver supplied (agent G scwbd.intervene); the exposure model is unvalidated and no tFUS claim may be made",
+      "falsified_by": "relative error above tolerance, or a Helmholtz residual that does not vanish under grid refinement",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

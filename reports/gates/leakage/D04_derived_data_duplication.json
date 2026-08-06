@@ -1,0 +1,82 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "leakage",
+  "claim_id": "D04_derived_data_duplication",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "D04_derived_data_duplication",
+    "claim_text": "Derived-data duplication is controlled for. Primary metric: Hash/lineage audit and performance after deduplication.",
+    "falsified_by": "The mandatory control (Keep raw scan and every tractogram, parcellation, preprocessing derivative or augmentation in one split) shows the result survives only without it.",
+    "consequence_if_failed": "Minimum interpretation enforced: Different algorithms over one scan are not independent participants",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "appendix.tex Appendix D, tab:mixture-evaluation",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "min_delta_log_score": 0.0,
+      "max_coverage_error": 0.05,
+      "max_overconfidence_increase": 0.02,
+      "max_delay_rel_error": 0.15,
+      "boundary_rel_tol": 0.05,
+      "max_hallucination_index": 1.25,
+      "min_uncertainty_inflation": 1.05,
+      "min_fisher_eig_gain": 1.1,
+      "capacity_tol": 0.1,
+      "min_model_discrimination": 0.05,
+      "n_boot": 1000
+    },
+    "refusal_fixtures": [
+      "R10"
+    ],
+    "non_goals": [
+      "This gate does not claim a validated digital twin of any specific person.",
+      "This gate does not claim that any admitted operator is neurally realized.",
+      "No prospective human TMS/tFUS protocol is implemented or implied (build order stops at item 5; item 6 is out of scope: no IRB, no consent, no participants)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "hash_lineage_audit: could not run \u2014 no lineage records supplied",
+    "performance_after_dedup: could not run \u2014 no with/without-duplicate scores supplied; the size of the inflation is unknown"
+  ],
+  "subchecks": [
+    {
+      "name": "hash_lineage_audit",
+      "description": "Every derivative of a scan stays in one split.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no lineage records supplied",
+      "falsified_by": "a derivative crosses its parent's holdout",
+      "metrics": []
+    },
+    {
+      "name": "performance_after_dedup",
+      "description": "Performance change once duplicates are removed.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no with/without-duplicate scores supplied; the size of the inflation is unknown",
+      "falsified_by": "performance drops materially after deduplication",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N3_em_solver",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "N3_em_solver",
+    "claim_text": "The electromagnetic solver reproduces a closed-form quasi-static reference, validated independently of any neural-response model.",
+    "falsified_by": "relative error above tolerance against the analytic dipole solution",
+    "consequence_if_failed": "The EM solver may not be used for lead fields, E-field prediction or targeting; every downstream field-dependent claim is suspended.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "relative_tol": 0.05,
+      "sigma_S_per_m": 0.33
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "em_solver: could not run \u2014 no EM solver supplied (agent G scwbd.intervene / agent F lead fields); the field model is unvalidated and no E-field claim may be made"
+  ],
+  "subchecks": [
+    {
+      "name": "em_solver",
+      "description": "EM solver versus the analytic dipole potential.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no EM solver supplied (agent G scwbd.intervene / agent F lead fields); the field model is unvalidated and no E-field claim may be made",
+      "falsified_by": "relative error above tolerance against the analytic dipole solution",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

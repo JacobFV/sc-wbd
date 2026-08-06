@@ -1,0 +1,58 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N2_boundary_consistency",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "N2_boundary_consistency",
+    "claim_text": "Fine and coarse regional backends agree within the declared tolerance on boundary observables, so adaptive resolution may be used for inference.",
+    "falsified_by": "disagreement beyond the declared tolerance, or a backend that cannot produce the boundary observable at all",
+    "consequence_if_failed": "Adaptive resolution is refused for inference; run single-resolution backends or narrow the tolerance claim (\u00a711.1).",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "boundary_rel_tol": 0.05
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "boundary_consistency: could not run \u2014 the fine and/or coarse boundary observable was not supplied by the backends (agent E dynamics / agent D restriction maps); adaptive resolution may not be used for inference until both produce it (\u00a711.1)"
+  ],
+  "subchecks": [
+    {
+      "name": "boundary_consistency",
+      "description": "Fine/coarse agreement on the declared boundary observable.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "the fine and/or coarse boundary observable was not supplied by the backends (agent E dynamics / agent D restriction maps); adaptive resolution may not be used for inference until both produce it (\u00a711.1)",
+      "falsified_by": "disagreement beyond the declared tolerance",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

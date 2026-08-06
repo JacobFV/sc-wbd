@@ -1,0 +1,82 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "leakage",
+  "claim_id": "D02_stimulus_memorization",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "D02_stimulus_memorization",
+    "claim_text": "Stimulus memorization is controlled for. Primary metric: Cross-stimulus neural/behavioral forecast and matched-feature baseline.",
+    "falsified_by": "The mandatory control (Hold out stimuli, semantic families and temporal continuations separately from participant holdout) shows the result survives only without it.",
+    "consequence_if_failed": "Minimum interpretation enforced: Image/audio recognition gain is not evidence for brain dynamics unless it predicts new measured responses",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "appendix.tex Appendix D, tab:mixture-evaluation",
+    "permitted_source_cards": [],
+    "baselines": [
+      "matched_feature_baseline"
+    ],
+    "acceptance_thresholds": {
+      "min_delta_log_score": 0.0,
+      "max_coverage_error": 0.05,
+      "max_overconfidence_increase": 0.02,
+      "max_delay_rel_error": 0.15,
+      "boundary_rel_tol": 0.05,
+      "max_hallucination_index": 1.25,
+      "min_uncertainty_inflation": 1.05,
+      "min_fisher_eig_gain": 1.1,
+      "capacity_tol": 0.1,
+      "min_model_discrimination": 0.05,
+      "n_boot": 1000
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "This gate does not claim a validated digital twin of any specific person.",
+      "This gate does not claim that any admitted operator is neurally realized.",
+      "No prospective human TMS/tFUS protocol is implemented or implied (build order stops at item 5; item 6 is out of scope: no IRB, no consent, no participants)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "stimulus_holdout: could not run \u2014 no records with stimulus_ids supplied; stimulus holdout is not verifiable",
+    "cross_stimulus_forecast: could not run \u2014 model and/or matched-feature baseline not supplied; recognition gain on seen stimuli is not evidence for brain dynamics"
+  ],
+  "subchecks": [
+    {
+      "name": "stimulus_holdout",
+      "description": "Stimulus / semantic-family / temporal-continuation holdout.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no records with stimulus_ids supplied; stimulus holdout is not verifiable",
+      "falsified_by": "stimuli cross the holdout",
+      "metrics": []
+    },
+    {
+      "name": "cross_stimulus_forecast",
+      "description": "Cross-stimulus forecast against a matched-feature baseline.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "model and/or matched-feature baseline not supplied; recognition gain on seen stimuli is not evidence for brain dynamics",
+      "falsified_by": "a matched-feature baseline predicts equally well",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

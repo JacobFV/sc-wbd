@@ -1,0 +1,78 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "leakage",
+  "claim_id": "D06_teacher_simulator_domination",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "D06_teacher_simulator_domination",
+    "claim_text": "Teacher/simulator domination is controlled for. Primary metric: Measured held-out data likelihood and calibration, never teacher agreement alone.",
+    "falsified_by": "The mandatory control (No-teacher/no-simulator, generic-feature, shuffled, parameter-perturbed and empirical-only ablations) shows the result survives only without it.",
+    "consequence_if_failed": "Minimum interpretation enforced: Distillation is retained only when it improves empirical prediction beyond matched computation",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "appendix.tex Appendix D, tab:mixture-evaluation",
+    "permitted_source_cards": [],
+    "baselines": [
+      "with_teacher",
+      "no_teacher",
+      "matched_generic_features",
+      "shuffled_report",
+      "domain_shift_perception_vs_imagery"
+    ],
+    "acceptance_thresholds": {
+      "min_delta_log_score": 0.0,
+      "max_coverage_error": 0.05,
+      "max_overconfidence_increase": 0.02,
+      "max_delay_rel_error": 0.15,
+      "boundary_rel_tol": 0.05,
+      "max_hallucination_index": 1.25,
+      "min_uncertainty_inflation": 1.05,
+      "min_fisher_eig_gain": 1.1,
+      "capacity_tol": 0.1,
+      "min_model_discrimination": 0.05,
+      "n_boot": 1000
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "This gate does not claim a validated digital twin of any specific person.",
+      "This gate does not claim that any admitted operator is neurally realized.",
+      "No prospective human TMS/tFUS protocol is implemented or implied (build order stops at item 5; item 6 is out of scope: no IRB, no consent, no participants)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "quarantine: could not run \u2014 TRIBE v2 distillation stays OFF by default and is never a subject likelihood (ARCHITECTURE.md rule 5). With the teacher disabled there is no distillation contribution to audit, and none may be claimed."
+  ],
+  "subchecks": [
+    {
+      "name": "quarantine",
+      "description": "Teacher/simulator ablation set.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "TRIBE v2 distillation stays OFF by default and is never a subject likelihood (ARCHITECTURE.md rule 5). With the teacher disabled there is no distillation contribution to audit, and none may be claimed.",
+      "falsified_by": "the teacher improves nothing measured, or dominates the loss",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "Teacher agreement is never the metric; only measured held-out data likelihood and calibration count (Appendix D)."
+  ],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "ablation",
+  "claim_id": "A3_resolution",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "A3_resolution",
+    "claim_text": "Does multiresolution machinery beat scale- and parameter-matched controls? (\u00a711.4: single-resolution versus simultaneous fine/coarse cortical pyramids, arbitrary source-native resolution lattices, and sparse adaptive refinement, including scale- and parameter-matched controls)",
+    "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+    "consequence_if_failed": "Disable the scale relation and serve source-specific views without gluing (same consequence as gate G3).",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.4",
+    "permitted_source_cards": [],
+    "baselines": [
+      "single_resolution_fine",
+      "single_resolution_coarse",
+      "sparse_adaptive_refinement"
+    ],
+    "acceptance_thresholds": {
+      "min_delta_log_score": 0.0,
+      "max_coverage_error": 0.05,
+      "max_overconfidence_increase": 0.02,
+      "max_delay_rel_error": 0.15,
+      "boundary_rel_tol": 0.05,
+      "max_hallucination_index": 1.25,
+      "min_uncertainty_inflation": 1.05,
+      "min_fisher_eig_gain": 1.1,
+      "capacity_tol": 0.1,
+      "min_model_discrimination": 0.05,
+      "n_boot": 1000,
+      "effect_retention_floor": 0.5,
+      "mechanistic_claim": false
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "This gate does not claim a validated digital twin of any specific person.",
+      "This gate does not claim that any admitted operator is neurally realized.",
+      "No prospective human TMS/tFUS protocol is implemented or implied (build order stops at item 5; item 6 is out of scope: no IRB, no consent, no participants)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "arms[0]: could not run \u2014 missing: simultaneous_pyramid; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+    "arms[1]: could not run \u2014 missing: single_resolution_fine; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+    "arms[2]: could not run \u2014 missing: single_resolution_coarse; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+    "arms[3]: could not run \u2014 missing: sparse_adaptive_refinement; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+    "arms[4]: could not run \u2014 missing: train/test datasets; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it"
+  ],
+  "subchecks": [
+    {
+      "name": "arms[0]",
+      "description": "Required ablation arm or dataset",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: simultaneous_pyramid; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+      "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+      "metrics": []
+    },
+    {
+      "name": "arms[1]",
+      "description": "Required ablation arm or dataset",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: single_resolution_fine; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+      "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+      "metrics": []
+    },
+    {
+      "name": "arms[2]",
+      "description": "Required ablation arm or dataset",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: single_resolution_coarse; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+      "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+      "metrics": []
+    },
+    {
+      "name": "arms[3]",
+      "description": "Required ablation arm or dataset",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: sparse_adaptive_refinement; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+      "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+      "metrics": []
+    },
+    {
+      "name": "arms[4]",
+      "description": "Required ablation arm or dataset",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: train/test datasets; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+      "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

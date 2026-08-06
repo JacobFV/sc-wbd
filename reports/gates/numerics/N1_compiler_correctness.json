@@ -1,0 +1,56 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N1_compiler_correctness",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "N1_compiler_correctness",
+    "claim_text": "The compiler produces a model whose shapes, units, frames, delays and masks are internally consistent.",
+    "falsified_by": "any offset overlap, undeclared unit/frame/clock, negative or unrepresentable delay, or a mask that does not match the declared operator set",
+    "consequence_if_failed": "Fix the compiler before any claim-bearing run; a numerically inconsistent compilation invalidates every downstream gate.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {},
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "compiled_model: could not run \u2014 no CompiledModel supplied (agent A's scwbd.compiler.compile has not been run or has not landed); compiler correctness is unverified"
+  ],
+  "subchecks": [
+    {
+      "name": "compiled_model",
+      "description": "A CompiledModel to inspect.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "no CompiledModel supplied (agent A's scwbd.compiler.compile has not been run or has not landed); compiler correctness is unverified",
+      "falsified_by": "any offset overlap, undeclared unit/frame/clock, negative or unrepresentable delay, or a mask that does not match the declared operator set",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

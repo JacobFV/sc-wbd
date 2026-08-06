@@ -1,0 +1,116 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "gate",
+  "claim_id": "G2",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "G2",
+    "claim_text": "Anatomical topology improves inference.",
+    "falsified_by": "Equal-capacity controls match or exceed performance, or topology errors are absorbed by residuals.",
+    "consequence_if_failed": "Demote anatomy from compiled constraint to weak prior for the affected scale.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "thesis_contract.tex tab:claim-gates row 2; ARCHITECTURE.md \u00a74 G2",
+    "permitted_source_cards": [],
+    "baselines": [
+      "dense",
+      "randomized",
+      "distance_matched"
+    ],
+    "acceptance_thresholds": {
+      "min_delta_log_score": 0.0,
+      "max_coverage_error": 0.05,
+      "max_overconfidence_increase": 0.02,
+      "max_delay_rel_error": 0.15,
+      "boundary_rel_tol": 0.05,
+      "max_hallucination_index": 1.25,
+      "min_uncertainty_inflation": 1.05,
+      "min_fisher_eig_gain": 1.1,
+      "capacity_tol": 0.1,
+      "min_model_discrimination": 0.05,
+      "n_boot": 1000
+    },
+    "refusal_fixtures": [
+      "R05 (learned residual dominating a mechanistic term)"
+    ],
+    "non_goals": [
+      "This gate does not claim a validated digital twin of any specific person.",
+      "This gate does not claim that any admitted operator is neurally realized.",
+      "No prospective human TMS/tFUS protocol is implemented or implied (build order stops at item 5; item 6 is out of scope: no IRB, no consent, no participants)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "graph_controls: could not run \u2014 scwbd.anatomy.graph_controls unavailable (owner: agent C (anatomy)) \u2014 agent C has not landed the randomized / distance-matched / dense graph controls; agent J will not fabricate them, because the control is the experiment",
+    "inputs[0]: could not run \u2014 missing: model_for_graph(adjacency) factory (agent E / agent I)",
+    "inputs[1]: could not run \u2014 missing: anatomical adjacency (agent C)",
+    "inputs[2]: could not run \u2014 missing: graph controls (agent C): dense, randomized, distance_matched",
+    "inputs[3]: could not run \u2014 missing: train/test datasets"
+  ],
+  "subchecks": [
+    {
+      "name": "graph_controls",
+      "description": "Dense / randomized / distance-matched controls.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "scwbd.anatomy.graph_controls unavailable (owner: agent C (anatomy)) \u2014 agent C has not landed the randomized / distance-matched / dense graph controls; agent J will not fabricate them, because the control is the experiment",
+      "falsified_by": "Equal-capacity controls match or exceed performance, or topology errors are absorbed by residuals.",
+      "metrics": []
+    },
+    {
+      "name": "inputs[0]",
+      "description": "Required gate input",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: model_for_graph(adjacency) factory (agent E / agent I)",
+      "falsified_by": "Equal-capacity controls match or exceed performance, or topology errors are absorbed by residuals.",
+      "metrics": []
+    },
+    {
+      "name": "inputs[1]",
+      "description": "Required gate input",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: anatomical adjacency (agent C)",
+      "falsified_by": "Equal-capacity controls match or exceed performance, or topology errors are absorbed by residuals.",
+      "metrics": []
+    },
+    {
+      "name": "inputs[2]",
+      "description": "Required gate input",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: graph controls (agent C): dense, randomized, distance_matched",
+      "falsified_by": "Equal-capacity controls match or exceed performance, or topology errors are absorbed by residuals.",
+      "metrics": []
+    },
+    {
+      "name": "inputs[3]",
+      "description": "Required gate input",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: train/test datasets",
+      "falsified_by": "Equal-capacity controls match or exceed performance, or topology errors are absorbed by residuals.",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T05:59:59+00:00",
+    "git_rev": "b32ca56",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}
