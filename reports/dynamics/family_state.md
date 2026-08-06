@@ -548,5 +548,5 @@ resulting A1 should not be reported as a test of structured state.
 | `configs/run2/scwbd-001-families.yaml` | the §11.4 **treatment** arm, paired with `scwbd-001.yaml` (the control) |
 | `scwbd/foundation/uncertainty.py` | `UncertaintyPropagator`, `FamilyObservationInterface`, `FlatObservationInterface` — the state side of the P0 (§10) |
 | `tests/foundation/test_family_state.py` | 38 tests; every guard above has one that makes it fire |
-| `tests/foundation/test_uncertainty_state.py` | 16 tests; measures dependence, not shape, and measures the un-repaired path at exactly zero |
+| `tests/foundation/test_uncertainty_state.py` | 19 tests; measures dependence, not shape, and measures the un-repaired path at exactly zero |
 | `ARCHITECTURE.md` §5b | N-1 updated with the measured cost; **N-6 … N-10** added |
