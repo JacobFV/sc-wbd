@@ -86,8 +86,8 @@ UNKNOWN = "unknown"
 TAG_FAMILIES: tuple[str, ...] = (REAL, SIMULATION, SYNTHETIC)
 
 #: Families that exist in the mixture but are not named by any tag.  They are
-#: what makes ``-combined`` potentially distinct from
-#: ``-with-simulation-and-synthetic``; see ``reports/checkpoint_family.md``.
+#: reported alongside the tag rather than folded into it; see
+#: ``reports/checkpoint_family.md``.
 AUXILIARY_FAMILIES: tuple[str, ...] = (
     CALIBRATION,
     BOUNDARY,
@@ -144,23 +144,23 @@ FAMILY_TO_D12_BUCKET: Mapping[str, str] = {
 #: Only the three tag families (real, simulation, synthetic) are on this axis.
 #: The auxiliary families are *infrastructure* — a calibration factor and an
 #: anatomical prior are present in every arm of the ablation, so gating a
-#: variant on them would make every real run ``combined`` and the taxonomy
+#: variant on them would make every real run the broadest variant and the taxonomy
 #: would carry no information. :data:`AUXILIARY_FAMILIES` are therefore
 #: admitted by every variant and reported separately in the manifest rather
 #: than folded into the tag.
 #:
-#: Note what this makes visible: under the owner's own definition
-#: (``combined`` = "all families"), ``combined`` and
-#: ``with-simulation-and-synthetic`` name the **same set** on this axis. They
-#: are not two arms; they are two names. :mod:`scwbd.release.collapse` will
-#: refuse to mint both whenever they are trained, and
-#: :data:`STRUCTURALLY_IDENTICAL_VARIANTS` records the fact up front rather
-#: than leaving it to be discovered by a hash comparison at release time.
+#: This taxonomy previously carried a fifth variant, ``combined``, defined as
+#: "all families" -- which is the same set ``with-simulation-and-synthetic``
+#: already claims. Two names, one possible artifact. It was retired by the
+#: owner on 2026-08-06 and now lives in
+#: :data:`~scwbd.release.tags.RETIRED_VARIANTS`, which refuses it by name.
+#: :data:`STRUCTURALLY_IDENTICAL_VARIANTS` is the check that found it and is
+#: kept so the next redundant pair is caught the same way -- it is now empty,
+#: and a test asserts that.
 VARIANT_FAMILIES: Mapping[str, frozenset[str]] = {
     "raw": frozenset({REAL}),
     "with-simulation": frozenset({REAL, SIMULATION}),
     "with-simulation-and-synthetic": frozenset({REAL, SIMULATION, SYNTHETIC}),
-    "combined": frozenset({REAL, SIMULATION, SYNTHETIC}),
 }
 
 #: Variant pairs whose tag-axis family sets are identical, i.e. that can never
@@ -170,7 +170,6 @@ _VARIANT_SEQUENCE: tuple[str, ...] = (
     "raw",
     "with-simulation",
     "with-simulation-and-synthetic",
-    "combined",
 )
 
 STRUCTURALLY_IDENTICAL_VARIANTS: tuple[tuple[str, str], ...] = tuple(

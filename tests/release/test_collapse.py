@@ -40,52 +40,49 @@ def test_two_identical_checkpoints_collapse_to_one_tag_and_an_alias():
 
 
 def test_the_tribe_unusable_scenario_collapses_three_names_to_one():
-    """If TRIBE is unusable, +synthetic and combined are the +simulation bytes."""
+    """If TRIBE is unusable, the +synthetic arm is the +simulation bytes."""
     res = collapse_identical(
-        {
-            "with-simulation": H_A,
-            "with-simulation-and-synthetic": H_A,
-            "combined": H_A,
-        },
+        {"with-simulation": H_A, "with-simulation-and-synthetic": H_A},
         when=WHEN,
     )
     assert res.as_dict()["n_distinct_artifacts"] == 1
-    assert res.as_dict()["n_names_requested"] == 3
-    assert [a.variant for a in res.aliases] == [
-        "with-simulation-and-synthetic",
-        "combined",
-    ]
+    assert res.as_dict()["n_names_requested"] == 2
+    assert [a.variant for a in res.aliases] == ["with-simulation-and-synthetic"]
     assert all(a.canonical_variant == "with-simulation" for a in res.aliases)
 
 
 def test_genuinely_different_artifacts_are_not_collapsed():
     """The negative control: distinct bytes must still get distinct tags."""
     res = collapse_identical(
-        {"raw": H_A, "with-simulation": H_B, "combined": H_C}, when=WHEN
+        {"raw": H_A, "with-simulation": H_B, "with-simulation-and-synthetic": H_C},
+        when=WHEN,
     )
     assert len(res.minted) == 3
     assert res.aliases == ()
     assert res.collapsed is False
-    assert [t.variant for t in res.minted] == ["raw", "with-simulation", "combined"]
+    assert [t.variant for t in res.minted] == [
+        "raw", "with-simulation", "with-simulation-and-synthetic",
+    ]
 
 
 def test_partial_collapse_keeps_the_distinct_arm():
     res = collapse_identical(
-        {"raw": H_A, "with-simulation": H_B, "combined": H_B}, when=WHEN
+        {"raw": H_A, "with-simulation": H_B, "with-simulation-and-synthetic": H_B},
+        when=WHEN,
     )
     assert {t.variant for t in res.minted} == {"raw", "with-simulation"}
-    assert [a.variant for a in res.aliases] == ["combined"]
+    assert [a.variant for a in res.aliases] == ["with-simulation-and-synthetic"]
 
 
 def test_narrowest_variant_always_keeps_the_tag_regardless_of_input_order():
     """Insertion order must not decide which provenance claim survives."""
     for order in (
-        {"combined": H_A, "raw": H_A},
-        {"raw": H_A, "combined": H_A},
+        {"with-simulation-and-synthetic": H_A, "raw": H_A},
+        {"raw": H_A, "with-simulation-and-synthetic": H_A},
     ):
         res = collapse_identical(order, when=WHEN)
         assert res.minted[0].variant == "raw"
-        assert res.aliases[0].variant == "combined"
+        assert res.aliases[0].variant == "with-simulation-and-synthetic"
 
 
 # ======================================================================
@@ -120,13 +117,18 @@ def test_all_minted_tags_share_one_timestamp():
 # ======================================================================
 # the taxonomy already contains a redundant pair
 # ======================================================================
-def test_combined_and_with_simulation_and_synthetic_are_structurally_identical():
-    """Under the owner's own definition these two variants name the same set.
+def test_no_two_live_variants_claim_the_same_family_set():
+    """The redundancy check that found ``-combined``, kept pointed at the future.
 
-    They can never describe different training mixtures, so any run that
-    produces both will always collapse. Recorded as a taxonomy fact so it is
-    not rediscovered as a surprise at release time.
+    ``-combined`` claimed exactly what ``-with-simulation-and-synthetic``
+    claims and was retired on 2026-08-06. The check is retained so the next
+    redundant pair is caught the same way rather than shipping as two names
+    for one artifact.
     """
-    assert STRUCTURALLY_IDENTICAL_VARIANTS == (
-        ("with-simulation-and-synthetic", "combined"),
-    )
+    assert STRUCTURALLY_IDENTICAL_VARIANTS == ()
+
+
+def test_retired_variant_cannot_be_minted():
+    """Collapse must not resurrect a withdrawn name."""
+    with pytest.raises(CollapseError, match="unknown variant"):
+        collapse_identical({"combined": H_A}, when=WHEN)

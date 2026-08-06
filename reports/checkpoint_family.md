@@ -5,7 +5,9 @@
 `scwbd-001-beta-with-simulation` training run live (started 05:14 UTC, PID 356780).
 **Method:** every table below was regenerated from files on disk
 (`configs/source_cards/*.yaml`, `scwbd/sources/cards/*.yaml`,
-`scwbd/anatomy/sources.py`, `assets/MANIFEST.json`). Nothing was copied from a
+`scwbd/anatomy/sources.py`, `assets/MANIFEST.json`) or from **run records**
+(`/data/scwbd/sim_corpus/index_fast.json`) and by **executing the production
+path**. Nothing was copied from a
 brief or a relayed summary. Where a claim in my brief could not be verified
 against a file it is marked **[UNVERIFIED]** and recorded as such in code, not
 silently adopted.
@@ -22,11 +24,16 @@ The taxonomy is built and every refusal in it has a test that makes it fire. The
 timestamp format in the owner's example is invalid and is rejected rather than
 normalised (§1). The tag is checked against the run's own source cards, so a
 `-raw` checkpoint containing simulated data fails validation (§3). Licence is
-**computed**, not declared, and splits into inheritance and policy (§4) — and
-the computation produced a result that contradicts the licence table I was
-given: **non-commercial enters this release through the anatomical prior, not
-through TRIBE** (§4.2). Two of the five names in the owner's table denote the
-same thing and always will (§2.2).
+**computed**, not declared, and splits into inheritance and policy (§4).
+
+**The NC-SA question is answered definitively, and the answer is "no tier"
+(§4.2).** No Hansen receptor data reached the corpus, the training run, or any
+variant — because `scwbd.anatomy` **never loads at all**. The adapter between
+🧠 Cajal's `BrainPrior` and the foundation model raises on an interface
+mismatch, the exception is swallowed by a bare `except Exception`, and every run
+falls back silently to the labelled synthetic connectome. This is read from the
+run record and reproduced by executing the production path, not inferred from
+code. `-combined` is retired: four names for four things (§2).
 
 ---
 
@@ -66,8 +73,7 @@ second 60, month 13, day 32, and `20260229` (2026 is not a leap year). Naive
 | `scwbd-001-beta-raw` | real |
 | `scwbd-001-beta-with-simulation` | real + simulation |
 | `scwbd-001-beta-with-simulation-and-synthetic` | real + simulation + synthetic |
-| `scwbd-001-beta-combined` | real + simulation + synthetic |
-| `scwbd-001-beta` | **alias → combined** |
+| `scwbd-001-beta` | **alias → with-simulation-and-synthetic** |
 
 The variant set is **closed**. An unrecognised variant raises rather than being
 accepted as a new family: a tag is a provenance claim, and a claim nobody can
@@ -78,22 +84,27 @@ check against a manifest is worse than no claim.
 Only `real`, `simulation` and `synthetic` are on the tag axis. The auxiliary
 families — `calibration`, `boundary`, `evaluation_only`, `negative_control`,
 `unknown` — are infrastructure present in *every* arm. Gating variants on them
-would make every real run `combined` and the taxonomy would carry no
+would make every real run the broadest variant and the taxonomy would carry no
 information. They are reported separately in the manifest instead.
 
-### 2.2 `-combined` and `-with-simulation-and-synthetic` are the same name twice
+### 2.2 `-combined` is retired
 
-Under the owner's own definition (`combined` = "all families"), these two
-variants claim an **identical** family set. They cannot describe different
-training mixtures — not "probably won't", *cannot*. This is recorded as a
-taxonomy fact in `families.STRUCTURALLY_IDENTICAL_VARIANTS` rather than left to
-be rediscovered by a hash comparison on release day.
+`-combined` was defined as "all families", which is the set
+`-with-simulation-and-synthetic` already claims. Two names, one possible
+artifact — a distinction in the naming scheme with no corresponding distinction
+in the artifacts, which is the same defect §5 exists to catch, one level up.
+The owner retired it on 2026-08-06.
 
-This is the same defect §5 exists to catch, one level up: a distinction in the
-naming scheme that does not correspond to a distinction in the artifacts. **The
-family should have four names, not five.** I have not removed `-combined`,
-because the name set was given to me by the owner and renaming a release line is
-their call — but it will always collapse, and the collapse will be recorded.
+**A retired tag that still parses is a name for nothing**, so `combined` is
+listed in `tags.RETIRED_VARIANTS` and refused *by name, with the reason and the
+replacement*, rather than failing as a generic "unknown variant" — someone
+holding an old checkpoint needs to be told what happened to the name, not merely
+that it is not recognised. `test_retired_combined_variant_is_rejected_by_name`
+proves it, and the guard was mutation-tested.
+
+`families.STRUCTURALLY_IDENTICAL_VARIANTS` — the check that found the
+redundancy — is now empty and kept, with a test asserting it stays empty, so the
+next redundant pair is caught the same way instead of shipping.
 
 ---
 
@@ -139,7 +150,8 @@ from a manifest without one would be indistinguishable from one never declared.
 | out-of-range time fields wrapped instead of refused | `test_out_of_range_fields_are_refused_not_wrapped` |
 | naive datetime assumed to be UTC | `test_naive_datetime_is_refused_rather_than_assumed_utc` |
 | unknown variant accepted as a new family | `test_unknown_variant_is_refused` |
-| non-`combined` variant written in alias form | `test_only_combined_may_be_written_in_alias_form` |
+| non-alias variant written in alias form | `test_only_combined_may_be_written_in_alias_form` |
+| **retired** `-combined` still parsing | `test_retired_combined_variant_is_rejected_by_name` |
 | unparseable tag sorted to an arbitrary position | `test_sorting_an_unparseable_tag_raises...` |
 | unknown licence treated as permissive | `test_unknown_never_becomes_permissive` |
 | byte-identical variants minting distinct tags | `test_two_identical_checkpoints_collapse_to_one_tag_and_an_alias` |
@@ -177,58 +189,153 @@ permitted" would be a licence field asserting more than anyone established.
 Every term carries `provenance` (the file the fact came from) and `verified`
 (whether that file actually states it).
 
-### 4.2 The finding that contradicts the licence table I was given
+### 4.2 THE DECISIVE QUESTION: does NC-SA enter, and at which tier?
 
-I was told NC is triggered by TRIBE, so `-raw` and `-with-simulation` are not
-non-commercial. **Regenerating from source gives a different answer.**
+**Answer: it enters at no tier. Not `-raw`, not `-with-simulation`, not
+`-with-simulation-and-synthetic`.** Both the owner's hypothesis (NC-SA enters at
+the synthetic tier) and the coordinator's (it enters at the simulation tier) are
+falsified — but not because the licence reasoning was wrong. It was right. The
+reasoning simply never engages, because **`scwbd.anatomy` never loads.**
 
-`scwbd/anatomy/sources.py` records four non-commercial upstream assets:
+This was determined from artifacts and run records, not from reading code, on
+the explicit ground that reading `sources.py` says what *could* load and only a
+run record says what *did*.
 
-| asset | licence |
+**Evidence 1 — the corpus's own run record.** `/data/scwbd/sim_corpus/index_fast.json`
+carries an `anatomy` block written at generation time:
+
+```
+"provenance":     "synthetic_fallback"
+"is_biological":  false
+"frame":          "synthetic_ellipsoid_RAS"
+"source_note":    "GEOMETRY-RESPECTING SYNTHETIC CONNECTOME, NOT ANATOMY.
+                   Generated by scwbd.foundation.anatomy._synthetic_prior ...
+                   Carries no biological information."
+```
+
+37 888 trajectories, `git_sha f472ad1`. The simulated corpus that trains
+`-with-simulation` was generated against a synthetic ellipsoid, not a brain.
+
+**Evidence 2 — executing the production path.** Running
+`scwbd.foundation.anatomy.load_anatomy()` today, CPU-only, with all of Cajal's
+assets present on disk, returns `provenance='synthetic_fallback'`,
+`is_biological=False`. That is the exact call the trainer makes.
+
+**Evidence 3 — the root cause.** The fallback is not a configuration choice; it
+is a silent failure:
+
+| step | result |
 |---|---|
-| `hansen_receptors` | **CC-BY-NC-SA-4.0** |
-| `hansen_schaefer_sc` | **CC-BY-NC-SA-4.0** |
-| `hansen_lausanne_sc` | **CC-BY-NC-SA-4.0** |
-| `harvardoxford` | FSL — free for non-commercial research |
+| `importlib.import_module("scwbd.anatomy")` | succeeds |
+| `BrainPrior.load()` | succeeds — 414 parcels, 33 maps, 19 receptors |
+| `_from_agent_c(obj)` | **raises** `AttributeError: BrainPrior exposes no weights/connectome` |
+| bare `except Exception` (`anatomy.py:293`) | swallows it |
+| → `_synthetic_prior(...)` | every run, silently |
 
-Resolving `assets/MANIFEST.json`'s `inputs` against that registry: **20 of 54
-derived assets inherit a non-commercial term**, including
-`Schaefer400x7__enigma_hcp__*` and `Schaefer400x7__fsLR-32k__maps.npz` — which is
-exactly what this run uses (`n_regions: 454` = Schaefer-400 + 32 subcortex + 22
-cerebellum).
+The adapter looks for `weights` / `connectome` / `sc` / `structural_connectivity`.
+Cajal's `BrainPrior` exposes the connectome as **`coupling_mask`**. A name
+mismatch, nothing more.
 
-This is not my rule. `reports/anatomy_prior.md` §6 ("Licensing that must not be
-laundered") already states it: *"Every derived map artifact records
-`hansen_receptors` in its `inputs` and inherits the most restrictive input
-license."* A checkpoint is a derived work of its training sources, so the rule
-applies one level up.
+There is a **second, independent** mismatch behind it: the adapter reads E/I via
+`ei_prior` / `ei_ratio` / `excitation_inhibition`, and `BrainPrior` exposes
+**`ei_ratio_prior`**. That lookup returns `None` rather than raising, so
+repairing only the connectome name would yield a model with a real ENIGMA
+connectome and **no receptor-derived E/I at all** — silently, again.
 
-**Consequences:**
+There is also a **shape** mismatch: `BrainPrior.load()` yields 414 parcels
+(Schaefer-400 + 14 subcortex, no cerebellum); the model is built for 454
+(400 + 32 + 22).
 
-1. NC reaches `-with-simulation` **through the anatomical prior, not TRIBE**.
-   TRIBE is `enabled: false` and contributes nothing today.
-2. It brings **share-alike** as well. CC-BY-NC-SA is copyleft. No relayed
-   summary mentioned share-alike; it is the more viral of the two terms.
-3. NC here is **by inheritance and therefore not removable** — unlike a policy
-   NC, which the owner could revoke.
+**This is the "verified a different path than production uses" pattern, and it
+is the fourth instance tonight.** `simulate.py:171` genuinely says E/I is "a
+global level times the receptor-derived regional prior" — that docstring
+describes what the code does *when anatomy is real*. `anat.ei_prior` came from
+`_synthetic_prior`, which builds "a smooth unimodal-to-transmodal gradient"
+carrying no biological information. Reading line 171 and concluding receptors
+are in the corpus is exactly the inference the run record refutes.
 
-### 4.3 It depends on a runtime fact nobody has recorded
+I own an instance of this too: see the correction at the end of §4.2.1.
 
-`configs/source_cards/anatomical_prior.yaml` says the prior is *"agent C, or the
-labelled synthetic fallback"*. `scwbd/foundation/anatomy.py` builds a labelled
-synthetic connectome when the real one is unavailable. So the licence differs
-per run:
+### 4.2.1 What happens once the adapter is fixed
 
-| anatomy provenance | NC | share-alike | effective |
-|---|---|---|---|
-| real (agent C, Hansen inputs) | **yes**, inherited | **yes** | non-commercial + copyleft |
-| `synthetic_fallback` | no third-party term | — | attribution only |
-| **not recorded** | **UNKNOWN** | **UNKNOWN** | unknown ≠ permissive |
+The licence analysis is correct and becomes live the moment the interface is
+repaired, so it is worth stating precisely. From `BrainPrior.provenance.sources`
+— the per-object record, authoritative for what the loaded object actually
+depends on:
 
-The manifest resolves this from the run's `anatomy.is_biological`, and records
-`unknown` when the run did not say. **This must be resolved before release**: it
-decides whether the artifact is commercially usable, and it is currently a
-`None`.
+| source in `BrainPrior` | licence | NC-SA? |
+|---|---|---|
+| `schaefer2018` (parcellation) | MIT (CBIG) | no |
+| `enigma_hcp_sc` (**connectome**) | BSD-3 code; HCP open-access terms | no |
+| `neuromaps` | BSD-3; per-annotation terms | no |
+| `hansen_receptors` (**receptor maps**) | **CC-BY-NC-SA-4.0** | **yes** |
+
+The coordinator is right on both counts: the connectome is **ENIGMA-derived and
+clean** (`hansen_schaefer_sc` is *not* among the sources), and `hansen_receptors`
+is the **only** NC-SA dependency. After a fix:
+
+- `-with-simulation` would inherit NC-SA through the E/I prior;
+- **`-raw` would too**, because `load_anatomy()` is called for every arm — the
+  model needs a coupling mask and regional priors whatever the data mixture. Its
+  connectome and parcellation would stay clean; its E/I initialisation would not.
+
+**Correction to my previous report.** I wrote "20 of 54 derived assets inherit
+NC, including the Schaefer-400 connectome". The figure is a correct measurement
+of `assets/MANIFEST.json`, but I drew the wrong conclusion from it. Cajal's
+asset-level `inputs` field lists **every registry source consulted during a
+build, including comparison matrices** — so the `__enigma_hcp__` connectome
+`.npz` names `hansen_schaefer_sc` among its inputs even though it is ENIGMA
+data. **Asset-level `inputs` is a conservative superset of the real dependency;
+`BrainPrior.provenance.sources` is the accurate per-object record.** The
+connectome is clean; only the receptor maps carry NC-SA. I have kept the
+superset computation — over-listing is the right default for a licence audit —
+but the object-level record is what the manifest prefers, and the distinction is
+now stated wherever the figure appears.
+
+### 4.3 What the release may assert today
+
+| variant | Hansen / NC-SA today | why |
+|---|---|---|
+| `-raw` | **no** | anatomy is the synthetic fallback |
+| `-with-simulation` | **no** | corpus run record: `is_biological: false` |
+| `-with-simulation-and-synthetic` | **no** (and untrained) | same, plus TRIBE disabled |
+
+**`-raw` is therefore genuinely clean of copyleft** — attribution-only, via
+ODC-By on eegmmidb — and commercially usable on that axis. Established
+deliberately rather than discovered by accident, which is what was asked.
+
+Two caveats that must travel with that sentence:
+
+1. It is **contingent on a defect**. `-raw` is clean because agent C's anatomy
+   is unreachable, not because anyone decided it should be. Fix the adapter and
+   `-raw` inherits NC-SA. This is a fact about today's artifacts with a known
+   expiry condition, not a property of the design.
+2. `montage_calibration` still has **no recorded licence**, so the union is
+   `UNKNOWN`, not "permissive" (§4.4).
+
+The manifest's `anatomy_is_biological` flag is exactly the control for this: it
+is the single input that flips the whole licence computation, and it is now
+known to be `False` for every artifact built so far.
+
+### 4.3.1 A clean escape for the simulation tier — recorded, not recommended
+
+Presented as a finding for the owner; not acted on.
+
+Once the adapter is fixed, NC-SA reaches `-raw` and `-with-simulation` **solely**
+through the receptor-derived E/I prior. Regenerating the corpus with E/I from a
+non-Hansen source — or a uniform prior — removes copyleft from every variant
+except `-with-simulation-and-synthetic`, and leaves the ENIGMA connectome and
+MIT parcellation untouched.
+
+The scientific cost is smaller than it looks. 🌊 Hodgkin measured the two maps
+that dominate the E/I contrast as the **least route-stable in the panel**
+(`reports/anatomy_prior.md` §route agreement): **NMDA 0.590** and **GABA-A
+0.685**, both classified *route-fragile*, and fragile again on Schaefer100x7
+(NMDA 0.578). A prior built on the two least reproducible maps in the panel is
+carrying a copyleft obligation for a quantity that is itself unstable.
+
+This is the owner's call. It is recorded here so the trade is visible: a
+licensing constraint and a measurement-stability concern point the same way.
 
 ### 4.4 "Not NC" is not "unrestricted"
 
@@ -315,10 +422,16 @@ I could not reach Popper or Ramón to coordinate (`SendMessage`: "No agent named
    2 was not. Calibration is the obvious candidate and that is exactly why
    inventing it would be hard to notice later. `FAMILY_TIER` returns `None` and
    `TIER_GAP_REASON` says why. Needs 📐 Bernoulli.
-3. **Anatomy provenance for the live run is unrecorded** (§4.3). Blocks the
-   licence determination.
+3. **`scwbd.anatomy` is unreachable from the foundation model** (§4.2). Two
+   attribute-name mismatches and a parcel-count mismatch, behind a bare
+   `except Exception`. Agent C's entire anatomy — connectome, receptor maps,
+   gradients — has never reached a checkpoint. This is a defect in
+   `scwbd/foundation/anatomy.py`, which I must not edit (🔥 Turing is
+   mid-training); reported for Turing and 🧠 Cajal. It is also the reason the
+   licence answer is currently "clean".
 4. **TRIBE's licence is unverified** (§4.5). Needs 🎓 Ramón.
-5. **`-combined` is a redundant name** (§2.2). Needs the owner.
+5. **Whether to keep receptor-derived E/I at all** (§4.3.1). Owner's call;
+   licensing and route-stability point the same way.
 
 ## 8. Claims in my brief that did not survive checking
 
@@ -326,11 +439,14 @@ Recorded because the house rule is to regenerate, not to audit the table.
 
 | claim | finding |
 |---|---|
-| "read `reports/decorative_guards.md` first — 21+ rows" | **File does not exist**, under that or any name. |
+| "read `reports/decorative_guards.md` first — 21+ rows" | **Correction: it does exist** and I have now read it. It was absent when I first searched (46 KB, mtime 05:44, after my initial sweep). My earlier "does not exist" was true when measured and wrong by the time it was published — a measurement-window failure of exactly the kind this report is supposed to date. Its headline finding is directly relevant: *"Process discipline cannot manufacture a reference class."* |
 | "`assets/MANIFEST.json` records licence per asset" | Not at that path in the checkout; it is at the data root behind the `assets/` symlinks. Resolved by following them, so it works with or without data attached. |
-| "checkpoints under `checkpoints/scwbd-001-beta/`" | Directory exists but is **empty**; the run has written no checkpoint yet. |
+| "checkpoints under `checkpoints/scwbd-001-beta/`" | Empty on `master`, which is **correct**: 🔥 Turing's live checkpoints are in the worktree and not merged. Withdrawn as a discrepancy. |
 | "D12 is in Appendix D / `scwbd/bench/ablations.py`" | The requirement text is real (`paper/appendix.tex` l.1523), but D12 is implemented in `scwbd/bench/leakage.py`, not `ablations.py`. |
-| "NC across the family, by owner policy" | Superseded mid-task; and NC turns out to arrive by **inheritance** via anatomy regardless (§4.2). |
+| "NC across the family, by owner policy" | Superseded mid-task by the owner. |
+| "NC-SA is not used until the synthetic phase" (owner) | **Falsified, but not as expected.** It enters at *no* phase, because anatomy never loads (§4.2). Had it loaded, it would have entered at the **simulation** phase via the E/I prior — one tier earlier than the hypothesis. |
+| "NC enters at the simulation tier via the E/I prior" (coordinator) | **Correct in mechanism, not in fact.** The code path is exactly as described; it never executes (§4.2). |
+| "20 of 54 derived assets inherit NC, incl. the Schaefer-400 connectome" (my own earlier report) | **Correct measurement, wrong conclusion.** Asset-level `inputs` over-lists consulted sources. `BrainPrior` uses the **ENIGMA** connectome; only `hansen_receptors` carries NC-SA. Corrected in §4.2.1. |
 | "`-raw` = real measured data only (EEG)" | Corrected mid-task to all measured modalities. The modality axis is implemented; note that of the multimodal sources, `ds000117` is `status: partial` and `mne-sample` is role `calibration`, not `likelihood`. |
 | "TRIBE v2 is CC BY-NC 4.0" | **[UNVERIFIED]** — stated nowhere in this repository (§4.5). |
 
@@ -338,8 +454,10 @@ Recorded because the house rule is to regenerate, not to audit the table.
 
 - It does not rename or move any live checkpoint. Migration happens when 🔥
   Turing's run completes and hands over.
-- It does not decide whether the anatomical prior was biological for the live
-  run; it records the question and refuses to guess the answer.
+- It does not fix the `scwbd.anatomy` adapter. That file is 🔥 Turing's and is
+  mid-training; the defect is measured, located to the line, and reported.
+- It does not claim `-raw` will *stay* clean. It is clean today because of a
+  defect, and repairing that defect changes the answer (§4.3).
 - It does not verify TRIBE's licence, and says so in every manifest it emits.
 - A passing `validate_tag` means the tag matches the cards. It is **not**
   evidence that training respected those cards — that is
@@ -348,9 +466,16 @@ Recorded because the house rule is to regenerate, not to audit the table.
 ## 10. Reproducing
 
 ```bash
-CUDA_VISIBLE_DEVICES="" .venv/bin/python -m pytest tests/release -q     # 102 tests
+CUDA_VISIBLE_DEVICES="" .venv/bin/python -m pytest tests/release -q     # 104 tests
+
+# what the release actually inherits, given the measured anatomy provenance
 CUDA_VISIBLE_DEVICES="" .venv/bin/python -c "
 from scwbd.release import build_manifest
-m = build_manifest(config='configs/scwbd_001_beta.yaml', anatomy_is_biological=True)
+m = build_manifest(config='configs/scwbd_001_beta.yaml', anatomy_is_biological=False)
 print(m.best_variant()); print(m.licence().summary())"
+
+# the finding: the production anatomy path falls back, silently
+CUDA_VISIBLE_DEVICES="" .venv/bin/python -c "
+from scwbd.foundation.anatomy import load_anatomy
+a = load_anatomy(device='cpu'); print(a.provenance, a.is_biological())"
 ```

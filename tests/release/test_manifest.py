@@ -161,7 +161,8 @@ def test_validation_ignores_the_filename_entirely(tmp_path):
     m = _manifest(tmp_path, [REAL_CARD, SIM_CARD])
     assert m.validates("scwbd-001-beta-with-simulation-20260806T114623Z")
     assert not m.validates("scwbd-001-beta-raw-20260806T114623Z")
-    assert not m.validates("scwbd-001-beta-20260806T114623Z")  # alias -> combined
+    # the bare alias resolves to with-simulation-and-synthetic, which this is not
+    assert not m.validates("scwbd-001-beta-20260806T114623Z")
 
 
 # ======================================================================

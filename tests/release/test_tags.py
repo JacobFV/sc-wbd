@@ -13,6 +13,7 @@ import pytest
 
 from scwbd.release.tags import (
     ALIAS_VARIANT,
+    RETIRED_VARIANTS,
     BASE,
     VARIANT_ORDER,
     CheckpointTag,
@@ -118,16 +119,35 @@ def test_each_known_variant_round_trips():
         assert CheckpointTag.parse(text).variant == v
 
 
-def test_alias_resolves_to_combined():
-    """A bare ``scwbd-001-beta-<ts>`` means ``combined`` and says so."""
+def test_alias_resolves_to_with_simulation_and_synthetic():
+    """A bare ``scwbd-001-beta-<ts>`` means the broadest live variant."""
     tag = CheckpointTag.parse("scwbd-001-beta-20260806T114623Z")
-    assert tag.variant == ALIAS_VARIANT == "combined"
+    assert tag.variant == ALIAS_VARIANT == "with-simulation-and-synthetic"
     assert tag.is_alias is True
     assert tag.format() == "scwbd-001-beta-20260806T114623Z"
     # and the alias compares equal on variant with the thing it points at
-    explicit = CheckpointTag.parse("scwbd-001-beta-combined-20260806T114623Z")
+    explicit = CheckpointTag.parse(
+        "scwbd-001-beta-with-simulation-and-synthetic-20260806T114623Z"
+    )
     assert tag.variant == explicit.variant
     assert explicit.is_alias is False
+
+
+def test_retired_combined_variant_is_rejected_by_name():
+    """``-combined`` was withdrawn; a retired tag that still parses names nothing.
+
+    It must not merely fail as "unknown" either: someone holding an old
+    checkpoint needs to be told the name was retired and what replaced it.
+    """
+    with pytest.raises(TagFormatError, match="retired"):
+        CheckpointTag.parse("scwbd-001-beta-combined-20260806T114623Z")
+    with pytest.raises(TagFormatError, match="retired"):
+        CheckpointTag(variant="combined", timestamp=parse_timestamp("20260806T114623Z"))
+    # the reason names the replacement rather than just refusing
+    with pytest.raises(TagFormatError, match="with-simulation-and-synthetic"):
+        CheckpointTag.parse("scwbd-001-beta-combined-20260806T114623Z")
+    assert "combined" not in VARIANT_ORDER
+    assert "combined" in RETIRED_VARIANTS
 
 
 def test_multi_hyphen_variant_is_not_torn_apart():
@@ -156,10 +176,10 @@ def test_only_combined_may_be_written_in_alias_form():
     when = datetime(2026, 8, 6, 11, 46, 23, tzinfo=UTC)
     with pytest.raises(TagFormatError, match="alias form"):
         CheckpointTag.mint("raw", when).format(as_alias=True)
-    # combined may
-    assert CheckpointTag.mint("combined", when).format(as_alias=True) == (
-        "scwbd-001-beta-20260806T114623Z"
-    )
+    # the alias target may
+    assert CheckpointTag.mint("with-simulation-and-synthetic", when).format(
+        as_alias=True
+    ) == "scwbd-001-beta-20260806T114623Z"
 
 
 # ======================================================================
@@ -167,7 +187,7 @@ def test_only_combined_may_be_written_in_alias_form():
 # ======================================================================
 def test_tags_sort_chronologically():
     tags = [
-        "scwbd-001-beta-combined-20260806T114623Z",
+        "scwbd-001-beta-with-simulation-and-synthetic-20260806T114623Z",
         "scwbd-001-beta-raw-20260101T000000Z",
         "scwbd-001-beta-with-simulation-20260803T235959Z",
     ]
@@ -175,7 +195,7 @@ def test_tags_sort_chronologically():
     assert got == [
         "scwbd-001-beta-raw-20260101T000000Z",
         "scwbd-001-beta-with-simulation-20260803T235959Z",
-        "scwbd-001-beta-combined-20260806T114623Z",
+        "scwbd-001-beta-with-simulation-and-synthetic-20260806T114623Z",
     ]
 
 
@@ -184,9 +204,8 @@ def test_same_timestamp_ties_break_by_variant_breadth():
     ts = "20260806T114623Z"
     tags = sort_tags(
         [
-            f"scwbd-001-beta-combined-{ts}",
-            f"scwbd-001-beta-raw-{ts}",
             f"scwbd-001-beta-with-simulation-and-synthetic-{ts}",
+            f"scwbd-001-beta-raw-{ts}",
             f"scwbd-001-beta-with-simulation-{ts}",
         ]
     )

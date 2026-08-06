@@ -11,7 +11,9 @@ Grammar (strict)::
 
 ``base`` is ``scwbd-001-beta``.  ``variant`` is drawn from a closed set
 (:data:`VARIANTS`); an unknown variant is an error, not a new family.  Omitting
-the variant yields the **release alias**, which resolves to ``combined``.
+the variant yields the **release alias**, which resolves to
+``with-simulation-and-synthetic``.  Retired variants (:data:`RETIRED_VARIANTS`)
+are refused by name with the reason they were withdrawn.
 
 Timestamps are **ISO 8601 basic, UTC, seconds resolution**.  The project
 owner's worked example was ``-20260806T116423``, which is not a time: minute
@@ -29,7 +31,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Iterable
+from typing import Iterable, Mapping
 
 __all__ = [
     "TagFormatError",
@@ -38,6 +40,7 @@ __all__ = [
     "VARIANT_ORDER",
     "ALIAS_VARIANT",
     "TIMESTAMP_FORMAT",
+    "RETIRED_VARIANTS",
     "CheckpointTag",
     "format_timestamp",
     "parse_timestamp",
@@ -67,16 +70,32 @@ VARIANT_ORDER: tuple[str, ...] = (
     "raw",
     "with-simulation",
     "with-simulation-and-synthetic",
-    "combined",
 )
 
 VARIANTS: frozenset[str] = frozenset(VARIANT_ORDER)
+
+#: Variants that once existed and have been withdrawn.  ``combined`` claimed
+#: exactly the family set ``with-simulation-and-synthetic`` claims, so it could
+#: never denote a different artifact; the owner retired it on 2026-08-06.
+#:
+#: Retired names are listed rather than forgotten so the parser can refuse them
+#: *by name and with a reason*. A retired tag that still parses is a name for
+#: nothing, and one that fails as a generic "unknown variant" tells a reader
+#: holding an old checkpoint nothing about what happened to it.
+RETIRED_VARIANTS: Mapping[str, str] = {
+    "combined": (
+        "retired 2026-08-06: it claimed the same source families as "
+        "'with-simulation-and-synthetic' and could never denote a different "
+        "artifact. The bare alias 'scwbd-001-beta-<ts>' now resolves to "
+        "'with-simulation-and-synthetic'."
+    ),
+}
 
 #: The variant that a bare ``scwbd-001-beta-<ts>`` tag resolves to.  The alias
 #: exists because the owner wants one obvious name to hand out; it is a
 #: *pointer*, and :attr:`CheckpointTag.is_alias` keeps that visible so a reader
 #: can tell a pointer from an arm of the ablation.
-ALIAS_VARIANT = "combined"
+ALIAS_VARIANT = "with-simulation-and-synthetic"
 
 #: ``strptime``/``strftime`` pattern for ISO 8601 basic UTC at seconds
 #: resolution.  ``%M`` accepts ``00``-``59`` only, which is what rejects the
@@ -142,7 +161,7 @@ class CheckpointTag:
     ``variant`` is always the *resolved* variant, so the alias and the thing it
     points at compare equal on this field.  ``is_alias`` records that the
     written form omitted the variant, which is the only way a reader can tell
-    ``scwbd-001-beta-<ts>`` from ``scwbd-001-beta-combined-<ts>`` after parsing.
+    ``scwbd-001-beta-<ts>`` from an explicitly-written variant after parsing.
     """
 
     variant: str
@@ -151,6 +170,11 @@ class CheckpointTag:
     is_alias: bool = False
 
     def __post_init__(self) -> None:
+        if self.variant in RETIRED_VARIANTS:
+            raise TagFormatError(
+                f"variant {self.variant!r} has been retired. "
+                f"{RETIRED_VARIANTS[self.variant]}"
+            )
         if self.variant not in VARIANTS:
             raise TagFormatError(
                 f"unknown variant {self.variant!r}; known variants are "
@@ -189,6 +213,11 @@ class CheckpointTag:
                 f"(stem was {stem!r})."
             )
         variant = stem[len(BASE) + 1 :]
+        if variant in RETIRED_VARIANTS:
+            raise TagFormatError(
+                f"tag {text!r} names retired variant {variant!r}. "
+                f"{RETIRED_VARIANTS[variant]}"
+            )
         if variant not in VARIANTS:
             raise TagFormatError(
                 f"tag {text!r} names variant {variant!r}, which is not in the known "
