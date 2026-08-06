@@ -26,6 +26,18 @@ was launched inside `systemd-run --user --scope -p MemoryMax=40G -p MemorySwapMa
 Killing that single process returned available memory from 13 GB to **115 GB**.
 The attribution is not ambiguous.
 
+## Independently confirmed
+
+🌊 Hodgkin reproduced this in a controlled experiment without seeing these
+numbers: under a **4 GiB** `MemoryMax`, a **6 GiB** CUDA tensor allocated
+successfully while the cgroup's `memory.current` moved only **+99 MB**. They also
+established that host `VmHWM` does not see the CUDA pool either — so neither the
+cgroup nor RSS is a valid instrument here. See `benchmarks/dynamics/README.md`.
+
+Two independent arrivals at the same result, from opposite directions: one from a
+machine that died, one from a deliberate probe. That is the level of evidence a
+platform claim should have before the fleet relies on it.
+
 ## Why
 
 The GB10 has **one** physical pool. `torch.cuda.get_device_properties().total_memory`
