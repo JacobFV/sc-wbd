@@ -369,3 +369,78 @@ class TestTheLimitsRemainOutsideTheObjective:
         """A soft penalty is exactly the failure mode R11 names."""
         for banned in ("score", "penalty", "loss", "soft"):
             assert not hasattr(FeasibleSet(), banned)
+
+
+# ---------------------------------------------------------------------------
+# 7. the last outcome in safety.py that no test reached
+# ---------------------------------------------------------------------------
+
+
+class TestASingleAdmissibleCandidateNeverRanks:
+    """``NoRecommendation("admissible candidates are not distinguishable")``.
+
+    Reading `RiskSensitiveController.decide`: with one feasible candidate the
+    code sets ``gap = float("inf")``, the disagreement branch is skipped
+    (``numel() > 1`` is False), and ``not math.isfinite(gap)`` then returns
+    `NoRecommendation`. So **a single admissible candidate can never produce a
+    `SimulatedRanking`** — a real behaviour of this controller that was not
+    written down anywhere and that no test reached.
+
+    It is arguably the right behaviour: "the best of one" is not a comparison,
+    and this controller exists to compare. But it was undocumented and
+    unexercised, which is how a behaviour becomes a surprise.
+    """
+
+    def test_one_feasible_candidate_yields_no_recommendation_not_a_ranking(self):
+        import torch
+
+        from scwbd.intervene.safety import (
+            NoRecommendation,
+            RiskSensitiveController,
+            SimulatedRanking,
+        )
+
+        dt = torch.float64
+        only = ProposedIntervention(
+            label="the_only_one",
+            modality="tms",
+            exposure={"tms.peak_efield_v_per_m": 95.0},
+            pose_certified=True,
+            reversible=True,
+        )
+        out = RiskSensitiveController(gamma=1.0).decide(
+            [only],
+            benefit=torch.tensor([[1.0], [1.0]], dtype=dt),
+            burden=torch.zeros(1, dtype=dt),
+            harm=torch.zeros((2, 1), dtype=dt),
+            model_log_weights=torch.zeros(2, dtype=dt),
+        )
+        assert isinstance(out, NoRecommendation)
+        assert not isinstance(out, SimulatedRanking)
+        assert "not distinguishable" in out.reason
+
+    def test_two_candidates_do_rank(self):
+        """The discriminating control: the refusal above is about arity."""
+        import torch
+
+        from scwbd.intervene.safety import RiskSensitiveController, SimulatedRanking
+
+        dt = torch.float64
+        cands = [
+            ProposedIntervention(
+                label=f"pose_{i}",
+                modality="tms",
+                exposure={"tms.peak_efield_v_per_m": 95.0},
+                pose_certified=True,
+                reversible=True,
+            )
+            for i in range(2)
+        ]
+        out = RiskSensitiveController(beta=1.0, gamma=0.0).decide(
+            cands,
+            benefit=torch.tensor([[1.0, 1.0], [1.0, 1.0]], dtype=dt),
+            burden=torch.zeros(2, dtype=dt),
+            harm=torch.tensor([[0.0, 0.4], [0.0, 0.4]], dtype=dt),
+            model_log_weights=torch.zeros(2, dtype=dt),
+        )
+        assert isinstance(out, SimulatedRanking)

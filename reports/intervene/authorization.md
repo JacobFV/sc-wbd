@@ -35,7 +35,7 @@ string. That is the same defect I was dispatched to fix, pointing the other way.
 
 ## 1. What I ran, and what it returned
 
-Probe script: `scratchpad/probe_e2e.py`. It builds an `AuthorizationRecord` from
+Probe script: `reports/intervene/probe_authorization_e2e.py`. It builds an `AuthorizationRecord` from
 scratch (not the test fixture), then exercises three layers.
 
 ### 1.1 `validate_authorization` — the schema layer
@@ -169,7 +169,7 @@ All in `scwbd/intervene/` except where noted.
 | `safety.py:5-9` | Module docstring, same correction. |
 | `limits/a_safe.toml:23-30` | `authority` — **emitted at runtime** via `SafetyLimits.meta`. Was `"none -- research simulation study; no IRB, no consent, no device"`. Now states what the file is: a declarative feasible set that confers no authority. |
 | `tests/runtime/test_no_command_surface.py:211` | **A test that pinned the falsehood in place**, asserting `"no consent"`, `"no participants"`, `"no device"` were all present in the notice. Inverted: those phrases are now *banned*, and the enforced clauses are asserted instead. |
-| `ARCHITECTURE.md` §0, §5b | §0 misquote corrected; four narrowing rows added (N-6, N-7, N-8 are mine). |
+| `ARCHITECTURE.md` §0, §5b | §0 misquote corrected against the gate scoreboard; three narrowing rows added — **N-6** (A_safe binds only on supplied axes, except for live plans), **N-7** (the live-application gate itself), **N-8** (reversibility required of live plans). §5b's own rule is "any agent may add a row, no agent may remove one". |
 
 **Not corrected, deliberately:** the per-object `notice` field was left in place
 on `ProposedIntervention`, `SafetyVerdict`, `ExposureMetrics` and friends. The
@@ -247,17 +247,78 @@ The brief's third item, and the one with the most substance behind it.
 Re-derived from `a_safe.toml` via `SafetyLimits.load()`: **15 numeric axes, 17
 declared bound sides** (3 `min`, 14 `max`).
 
-I measured which of those 17 actually *fire* during a test run, by instrumenting
-`LimitSpec.check` to record every `Violation` it returns across the whole of
-`tests/intervene` + `tests/runtime`. That is a direct measurement of "was this
-bound ever made to refuse", not an inference from grep.
+I did not infer coverage from grep. I **measured** it: a pytest plugin
+(`reports/intervene/firing_plugin.py`) wraps `LimitSpec.check` and records every
+`Violation` it actually returns during a run. That answers "was this bound ever
+made to refuse" directly.
 
-**Before this session: FIRING_BEFORE of 17 bound sides fired.**
-**After: FIRING_AFTER of 17.**
+Scope of the measurement: the eight test files that exercise limits —
+`tests/intervene/{test_safety,test_sensory,test_tfus,test_dose_effect_separation,test_authorization_gate}.py`
+and `tests/runtime/{test_decision_paths,test_authorized_refusals,test_compare}.py`.
+(I attempted the full `tests/intervene` + `tests/runtime` sweep first and
+abandoned it: the box was at load average 164 with seven agents on it, and two
+full sweeps were making things worse for everyone.)
 
-Never fired before, now fired: FIRING_DELTA
+### Before: **7 of 17 declared bound sides ever fired.**
 
-Two structural defects found alongside:
+| fired | never fired |
+|---|---|
+| `sensory.affective_valence_abs:max` | `protocol.session_duration_s:max` |
+| `sensory.luminance_flash_hz:max` | `sensory.luminance_flash_hz:**min**` |
+| `sensory.spl_db:max` | `tms.coil_scalp_distance_mm:**min**` |
+| `tms.coil_scalp_distance_mm:max` | `tms.intertrain_interval_s:**min**` |
+| `tms.frequency_hz:max` | `tfus.mechanical_index:max` |
+| `tms.peak_efield_v_per_m:max` | `tfus.isppa_w_per_cm2:max` |
+| `tms.pulses_per_session:max` | `tfus.ispta_mw_per_cm2:max` |
+| | `tfus.duty_cycle:max` |
+| | `tfus.cem43_minutes:max` |
+| | `tfus.temperature_rise_c:max` |
+
+**All three `min` sides are in the right-hand column**, which means
+`LimitSpec.check`'s entire `below_minimum` comparator had never executed against
+a real violation anywhere in the suite.
+
+**The whole tFUS envelope is in the right-hand column.** And worse — the plugin
+also records which axes were *ever passed to `check` at all*:
+
+```
+"axes_never_even_checked": [
+  "tfus.cem43_minutes", "tfus.duty_cycle", "tfus.isppa_w_per_cm2",
+  "tfus.ispta_mw_per_cm2", "tfus.mechanical_index", "tfus.temperature_rise_c"
+]
+```
+
+Six declared, cited tFUS limits — FDA 2023, Aubry 2023 / ITRUSST, Sapareto &
+Dewey 1984 — were **never evaluated once**, in either direction, by any test in
+this set. `tests/intervene/test_tfus.py` is in the set; its
+`test_exposure_metrics_map_onto_declared_safety_axes` asserts that the axis
+*names* map correctly and never performs a feasibility check. That is precisely
+the shape `reports/decorative_guards.md` catalogues.
+
+**Disagreement with the survey I commissioned, stated rather than smoothed:** a
+grep-based inventory put the figure at "6 of 15 axes have a firing test". The
+measurement says 7 axes / 7 of 17 bound sides. The grep count was close but not
+right, which is the argument for measuring.
+
+### After: **17 of 17.**
+
+Same instrument, same eight files plus the two new ones:
+
+```
+[firing] 17/17 declared bound sides fired
+[firing] never fired: []
+"never_fired": []
+"axes_never_even_checked": []
+```
+
+Every declared bound side in `a_safe.toml` is now made to refuse by a test that
+executes, including all three `min` sides and the entire tFUS envelope. No axis
+goes unevaluated.
+
+Both measurements are checked in: `reports/intervene/limit_firing_before.json`
+and `limit_firing_after.json`.
+
+### 6.1b Two structural defects found alongside
 
 - **`protocol.reversibility` was never loaded at all.** It declared
   `required = true` with no `min`/`max`, and `SafetyLimits.load` had
@@ -314,19 +375,30 @@ candidate infeasible → `NoRecommendation`; no candidates → `NoRecommendation
 pose uncertain or unregistered → `LedgerIncomplete` (R08); field unresolved →
 `Defer(no_action)` with no number returned.
 
-Two paths I found that **cannot** fire and did not fix, because they are outside
-my surface and fixing them changes the controller's semantics:
+Two further paths I found that no test reached.
 
-- `scwbd/runtime/compare.py:592` — the epistemic-dominance `Defer` between
-  ranking groups. With `ratio = 1.0` its condition and the grouping condition
-  can only both hold at exact equality. Structurally unreachable; a decorative
-  guard by the report's own definition.
-- `scwbd/intervene/safety.py:789` — `NoRecommendation("admissible candidates are
-  not distinguishable")` is reachable only with exactly one feasible candidate,
-  and nothing tests that. Corollary nobody has written down: **a single
-  admissible candidate can never produce a `SimulatedRanking`.**
+**One was in my surface, so I closed it.** `RiskSensitiveController.decide`'s
+`NoRecommendation("admissible candidates are not distinguishable")` is reachable
+*only* with exactly one feasible candidate: the code sets `gap = float("inf")`
+for a single candidate, skips the disagreement branch (`numel() > 1` is False),
+and then fails `math.isfinite(gap)`. The consequence, which was not written down
+anywhere:
 
-Both are recorded here rather than filed silently.
+> **A single admissible candidate can never produce a `SimulatedRanking`.**
+
+Verified by running it — `TestASingleAdmissibleCandidateNeverRanks` — with a
+two-candidate control asserting the refusal is about arity and not about the
+inputs. This is arguably correct behaviour ("the best of one" is not a
+comparison, and this controller exists to compare), but it was undocumented and
+unexercised, which is how a behaviour becomes a surprise.
+
+**One is not in my surface, so it is reported, not fixed.**
+`scwbd/runtime/compare.py:592` — the epistemic-dominance `Defer` between ranking
+groups. `_group_indistinguishable` assigns different groups only when
+`|v_i − v_j| >= combined`, while this branch requires `combined >= gap`; with
+`ratio = 1.0` both can hold only at exact equality. **Structurally unreachable
+— a decorative guard by `reports/decorative_guards.md`'s own definition,** and
+one that guard report does not currently list. For 🤖 Asimov.
 
 ---
 
@@ -417,20 +489,44 @@ One enforced gate beats two partial ones.
 
 | suite | result |
 |---|---|
-| `tests/intervene/` (pre-existing) | pass, unchanged by this work |
-| `tests/intervene/test_limits_bind.py` + `test_deployment.py` (new) | pass |
-| `tests/runtime/`, `tests/schema/`, `tests/compiler/`, `tests/bench/` | see §8.1 |
+| `tests/intervene/` (pre-existing, 224 tests) | **pass**, unchanged by this work |
+| `tests/intervene/test_limits_bind.py` + `test_deployment.py` (new) | **pass** |
+| the 8-file limit/decision set + the 2 new files (130 tests) | **pass**, `exitstatus: 0` |
+| bound-firing measurement | **7/17 → 17/17** |
 | end-to-end probe (§1) | re-run after all changes; results unchanged |
+
+Not completed within this session, and stated rather than implied:
+`tests/schema/`, `tests/compiler/` and `tests/bench/` were queued but did not
+finish — the machine was at load average 164 with seven agents sharing one
+121 GB pool, and I stopped my own duplicate runs rather than make that worse.
+The changes that could touch them are the `SafetyLimits.load` refusal (no
+shipped file trips it — asserted by `test_the_shipped_file_has_no_such_entry`)
+and two appended dataclass fields with defaults. **Someone should run those
+three suites before this merges.**
+
+### 8.1 The measured "before" state is reproducible
+
+`reports/intervene/firing_plugin.py` is a nine-line pytest plugin. It is the instrument
+behind every coverage number in §6, and it can be pointed at any commit:
+
+```bash
+FIRING_OUT=/tmp/firing.json PYTHONPATH=$PWD:reports/intervene \
+  .venv/bin/python -m pytest <files> -q -p firing_plugin
+```
+
+Its output is a list of the bound sides that never refused during the run. I
+recommend it become a permanent gate rather than a one-off: a bound added to
+`a_safe.toml` without a test that fires it should fail CI, not appear green.
 
 Reproduce the authorization finding:
 
 ```bash
-PYTHONPATH=$PWD .venv/bin/python scratchpad/probe_e2e.py
+PYTHONPATH=$PWD .venv/bin/python reports/intervene/probe_authorization_e2e.py
 ```
 
 Reproduce the bound-firing measurement:
 
 ```bash
-FIRING_OUT=/tmp/firing.json PYTHONPATH=$PWD:scratchpad \
+FIRING_OUT=/tmp/firing.json PYTHONPATH=$PWD:reports/intervene \
   .venv/bin/python -m pytest tests/intervene tests/runtime -q -p firing_plugin
 ```

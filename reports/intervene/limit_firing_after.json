@@ -1,0 +1,43 @@
+{
+  "declared_bound_sides": [
+    "protocol.session_duration_s:above_maximum",
+    "sensory.affective_valence_abs:above_maximum",
+    "sensory.luminance_flash_hz:above_maximum",
+    "sensory.luminance_flash_hz:below_minimum",
+    "sensory.spl_db:above_maximum",
+    "tfus.cem43_minutes:above_maximum",
+    "tfus.duty_cycle:above_maximum",
+    "tfus.isppa_w_per_cm2:above_maximum",
+    "tfus.ispta_mw_per_cm2:above_maximum",
+    "tfus.mechanical_index:above_maximum",
+    "tfus.temperature_rise_c:above_maximum",
+    "tms.coil_scalp_distance_mm:above_maximum",
+    "tms.coil_scalp_distance_mm:below_minimum",
+    "tms.frequency_hz:above_maximum",
+    "tms.intertrain_interval_s:below_minimum",
+    "tms.peak_efield_v_per_m:above_maximum",
+    "tms.pulses_per_session:above_maximum"
+  ],
+  "fired": [
+    "protocol.session_duration_s:above_maximum",
+    "sensory.affective_valence_abs:above_maximum",
+    "sensory.luminance_flash_hz:above_maximum",
+    "sensory.luminance_flash_hz:below_minimum",
+    "sensory.spl_db:above_maximum",
+    "tfus.cem43_minutes:above_maximum",
+    "tfus.duty_cycle:above_maximum",
+    "tfus.isppa_w_per_cm2:above_maximum",
+    "tfus.ispta_mw_per_cm2:above_maximum",
+    "tfus.mechanical_index:above_maximum",
+    "tfus.temperature_rise_c:above_maximum",
+    "tms.coil_scalp_distance_mm:above_maximum",
+    "tms.coil_scalp_distance_mm:below_minimum",
+    "tms.frequency_hz:above_maximum",
+    "tms.intertrain_interval_s:below_minimum",
+    "tms.peak_efield_v_per_m:above_maximum",
+    "tms.pulses_per_session:above_maximum"
+  ],
+  "never_fired": [],
+  "axes_never_even_checked": [],
+  "exitstatus": 0
+}
