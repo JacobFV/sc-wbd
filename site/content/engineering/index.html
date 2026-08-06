@@ -1,0 +1,107 @@
+title: Engineering — SC-WBD
+description: Engineering essays on what actually went wrong building SC-WBD, and what each failure was worth.
+nav: engineering
+kicker: Engineering
+heading: What went wrong, and what it was worth
+standfirst: Six essays on defects found while building SC-WBD. Most were found by instruments we had built to find defects; several were found inside those instruments.
+---
+<div class="prose">
+
+<p class="lede">These are written for engineers and researchers, and they assume
+you would rather read the failure than the summary. Nothing here is
+retrospective tidying — every claim is traceable to a committed file, including
+the ones that make us look bad.</p>
+
+<ul class="cards">
+
+<li><a href="control-arm.html">
+  <span class="card-num">01</span>
+  <span class="card-title">We built the control arm of our own ablation and shipped it under the model's name</span>
+  <p class="card-desc">Our paper's first required comparison is structured regional
+  state versus a pooled vector. We built the second one, named it after the
+  first, and measured it losing. The controlling defect was not the narrowing —
+  it was that nobody had written the narrowing down.</p>
+</a></li>
+
+<li><a href="variance-channel.html">
+  <span class="card-num">02</span>
+  <span class="card-title">The most expensive 134 seconds</span>
+  <p class="card-desc">A parameter with a closed-form optimum was left to
+  gradient descent for two minutes, got 20% of the way there, and lost the
+  entire run. The model had the best conditional mean of all seven arms and the
+  second-worst score.</p>
+</a></li>
+
+<li><a href="decorative-guards.html">
+  <span class="card-num">03</span>
+  <span class="card-title">Decorative guards: checks that cannot fail</span>
+  <p class="card-desc">A catalogue of instruments whose reading was constant with
+  respect to the question being asked. All were green. All looked like evidence.
+  Plus the inverse category — guards asserting a defect still exists, which fail
+  the moment someone fixes it.</p>
+</a></li>
+
+<li><a href="resolution-pair.html">
+  <span class="card-num">04</span>
+  <span class="card-title">A measured FAIL, kept as the deliverable</span>
+  <p class="card-desc">We built the fine/coarse resolution pair the paper asks
+  for, measured whether it validates at its boundary, and it does not. The
+  failing measurement is the result — and it says something specific about what
+  regional state can carry.</p>
+</a></li>
+
+<li><a href="declared-narrowings.html">
+  <span class="card-num">05</span>
+  <span class="card-title">Declaring where the implementation is narrower than the paper</span>
+  <p class="card-desc">Every divergence between what we wrote and what we built,
+  in a register any contributor may add to and none may delete from. A stated
+  narrowing is a decision you can attack. An unstated one is invisible to a
+  process built entirely out of attacking stated things.</p>
+</a></li>
+
+<li><a href="infrastructure.html">
+  <span class="card-num">06</span>
+  <span class="card-title">The failures that were not science</span>
+  <p class="card-desc">A trailing slash in <code>.gitignore</code> that could not
+  match a symlink and gave seven checkouts <code>ELOOP</code>. An anatomy loader
+  whose exception was swallowed by a bare <code>except</code>. A provenance field
+  that was structurally incapable of ever reading clean.</p>
+</a></li>
+
+</ul>
+
+<h2>The one heuristic worth taking away</h2>
+
+<p>If you read nothing else here, take this. It found two of the most expensive
+defects in the list above, before either instrument had ever been run, and it
+costs nothing:</p>
+
+<div class="callout">
+<span class="callout-label">The operational check</span>
+<p>For every quantity your code names as varying, ask <strong>what it is a
+function of</strong> — and read the answer off the expression rather than the
+docstring. If the expression's free variables do not include the thing it claims
+to depend on, it is decorative. No run required, no data required.</p>
+</div>
+
+<p>The companion question, for guards specifically:</p>
+
+<div class="callout">
+<span class="callout-label">The companion check</span>
+<p>Take the failure this guard exists to catch. Apply it to the guard's input.
+<strong>Does the reading move?</strong> If not, the guard is decorative —
+however sound its mechanism, however green its tests, and especially if it has
+never been run.</p>
+</div>
+
+<p>And the corollary that is harder to see, because from inside the apparatus
+every check is green and every check is correct:</p>
+
+<blockquote>
+<p>Ask of any guard not only <em>“can it fire”</em> but <strong>“is the failure
+it targets representable in the model it runs against”</strong>. A verification
+apparatus built on a surrogate inherits the surrogate's assumptions as blind
+spots.</p>
+</blockquote>
+
+</div>

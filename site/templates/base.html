@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="{{root}}static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+<script>
+/* Applied before paint so an explicit theme choice does not flash. */
+(function () {
+  try {
+    var t = localStorage.getItem("scwbd-theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body class="{{bodyclass}}">
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="{{root}}index.html">SC&#8209;WBD</a>
+    <nav>
+        {{nav}}
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="pagehead">
+      <p class="kicker">{{kicker}}</p>
+      <h1>{{heading}}</h1>
+      <p class="standfirst">{{standfirst}}</p>
+    </div>
+{{body}}
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p><strong>SC-WBD-001 series.</strong> A research programme, not a product.
+    Nothing on this site is a medical device, a clinical claim, or advice.
+    No trained model here has been shown to beat its baselines.</p>
+    <p>Data sources carry their own licences, several of them non-commercial and
+    share-alike. See <a href="{{root}}attribution.html">attribution</a>.</p>
+    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+  </div>
+</footer>
+
+<script>
+document.getElementById("theme-toggle").addEventListener("click", function () {
+  var el = document.documentElement;
+  var cur = el.getAttribute("data-theme");
+  if (!cur) {
+    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  var next = cur === "dark" ? "light" : "dark";
+  el.setAttribute("data-theme", next);
+  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
+});
+</script>
+
+</body>
+</html>

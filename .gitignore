@@ -28,3 +28,10 @@ __pycache__/
 
 # bench solver cache (content-keyed; safe to delete)
 .cache/
+
+# public site + release comms (Tufte). Build products, never committed.
+# Both forms of each name, per the ELOOP note above.
+site/_build
+site/_build/
+.wrangler
+.wrangler/

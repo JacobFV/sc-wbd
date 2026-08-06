@@ -1,0 +1,270 @@
+title: The most expensive 134 seconds — SC-WBD
+description: A predictive-variance parameter with a closed-form optimum was left to SGD for two minutes. It cost the whole training run.
+nav: engineering
+kicker: Engineering · 02
+heading: The most expensive 134 seconds
+standfirst: Our model had the best conditional mean of all seven arms and the second-worst score. The entire deficit was one scalar that had a closed-form optimum and was handed to gradient descent for two minutes.
+---
+<div class="prose">
+
+<p class="lede">The filed result was <em>“beaten by five of six baselines”</em>.
+The true statement is that the forecast was the best in the table and only the
+confidence attached to it was wrong. Nothing in the instrument could say so,
+because the comparison table had no column in which the difference could
+appear.</p>
+
+<h2>The number nobody had quoted</h2>
+
+<p>The evaluation record carried a mean-squared-error column that no report had
+read. On it, our model has the <strong>lowest MSE of all seven arms</strong>.</p>
+
+<div class="keyfig">
+  <div><span class="n pass">3.97</span><span class="l">SC-WBD mean squared error<br>lowest of seven arms</span></div>
+  <div><span class="n">7.17</span><span class="l">persistence baseline MSE<br>1.8× worse</span></div>
+  <div><span class="n fail">2.5552</span><span class="l">SC-WBD score (NLL)<br>second worst of seven</span></div>
+</div>
+
+<p>A model can only hold the best conditional mean and nearly the worst
+log-score if its <em>uncertainty</em> is wrong. Isolating that: excess score over
+<code>½·log(2πe·MSE)</code> — the part attributable entirely to predictive
+variance, given the mean — is <strong>+0.4469</strong> for SC-WBD, against
+<strong>−0.1025 to −0.1249</strong> for every statistical
+baseline.[[note: An earlier internal draft quoted this baseline range as “−0.10
+to −0.12”, which puts persistence marginally outside it. The corrected range is
+in the text. We are reproducing the correction rather than quietly using the
+right number, because the habit of silently fixing quoted figures is how a
+project loses the ability to audit itself.]] The deficit to persistence is
+0.2765. <strong>The variance penalty is 1.62× the entire gap.</strong></p>
+
+<h2>The mechanism, in two lines</h2>
+
+<p>The whole predictive variance for EEG:[[src: scwbd/foundation/heads.py:238]]</p>
+
+<pre><code>self.log_noise = nn.Parameter(torch.zeros(n_ch))   # __init__, shape (C,)
+...
+lv = self.log_noise.expand_as(y)                   # forward()</code></pre>
+
+<p>One learned scalar per channel, broadcast. <code>lv</code> never reads the
+state. It is constant across time, across horizon step, across window, across
+participant and across condition.</p>
+
+<p>The module docstring claims the head learns “a heteroscedastic noise model”.
+It cannot: <strong>there is no path from state to variance.</strong> Meanwhile
+the five held-out-calibrated baselines get variance shaped
+<em>(horizon, channel)</em>, so their uncertainty may grow with the forecast
+horizon. Ours could not. One constant covering horizons 1 through 24 is a
+compromise the Gaussian log-score punishes at every horizon simultaneously.</p>
+
+<div class="callout">
+<span class="callout-label">The check that finds this class in one pass</span>
+<p>For every quantity your code names as varying, ask <strong>what it is a
+function of</strong>, and read the answer off the expression rather than the
+docstring. <code>lv = self.log_noise.expand_as(y)</code> fails that check by
+inspection — before any run, before any data.</p>
+</div>
+
+<h2>Decomposing the penalty — and the surprise</h2>
+
+<p>The obvious hypothesis was horizon-flatness: a variance that cannot grow with
+horizon, scored at 24 horizons. It was pre-registered before the measurement, and
+it was <strong>wrong</strong>.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Component of the excess</th><th class="num">Nats</th><th class="num">Share</th></tr></thead>
+<tbody>
+<tr><td><strong>Scale</strong> — one global rescale</td><td class="num">0.4467</td><td class="num">100%</td></tr>
+<tr><td>Channel — per-channel fitting</td><td class="num">0.1113</td><td class="num">—</td></tr>
+<tr><td><strong>Horizon</strong> — the hypothesis</td><td class="num">0.0096</td><td class="num">2.1%</td></tr>
+<tr><td>State — per-window, beyond flat</td><td class="num">0.1896</td><td class="num">—</td></tr>
+<tr><td>State — per-window per-channel</td><td class="num">0.2587</td><td class="num">—</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Horizon-flatness is worth <strong>0.0096 nats</strong>. It is not the cause.
+The cause is a <strong>scale error in a single scalar</strong>.[[note: The
+decomposition procedure was validated before being trusted: run identically on
+all seven arms, every baseline's flat-recalibration gap is 0.0000 to four
+decimals — the reimplementation reproduces each baseline's own calibration
+exactly. A decomposition that could not reproduce a known-correct case would
+not be evidence about the unknown one.]]</p>
+
+<h2>The 134 seconds</h2>
+
+<p>The parameter <code>eeg.log_noise</code> has mean <strong>0.2732</strong> and
+standard deviation <strong>0.0299</strong> across 64 channels — flat to 3%. It
+asserts a variance of 1.31 when the held-out residual variance is 3.97. The model
+is uniformly <strong>3.0× overconfident</strong>.</p>
+
+<p>Why? The parameter was made trainable in <strong>stage V only</strong>, and
+stage V ran <strong>900 steps at learning rate 5.77e-5 — 134
+seconds</strong>.[[src: scwbd/foundation/train.py:78]] The stationary point is
+<code>log(3.97) = 1.379</code>. It started at 0 and reached 0.273: about 20% of
+the way there, still drifting when training stopped.</p>
+
+<blockquote>
+<p>A parameter whose optimum has a closed form was left to SGD for two minutes.</p>
+</blockquote>
+
+<p>There is a second instance of the same class in the same file. The
+haemodynamic head's <code>log_noise</code> is exactly <strong>−4.0000 across all
+454 regions, standard deviation exactly zero</strong>. It never received a
+gradient, because no measured haemodynamic data entered the corpus. Nothing was
+scored on it — which is why nobody noticed, and exactly why it is dangerous: the
+moment real data lands, an unfitted noise model is presented as a fitted one.</p>
+
+<h2>Model and instrument, both true</h2>
+
+<p>The pre-registration provided for the possibility that this was partly an
+instrument defect, and it was. The comparison was <strong>not
+calibration-matched</strong>: five of six baselines carry held-out, per-horizon,
+per-channel residual variance calibration. Our arm's descriptor had three fields
+and none of them was that.</p>
+
+<p>So the instrument reported no difference <em>because it had no field in which
+a difference could appear.</em></p>
+
+<p>Recalibrated to the same standard every baseline already got, the paired
+participant-clustered interval against persistence is
+<strong>−0.2582 [−0.2868, −0.2307]</strong>, excluding zero. Matched, the failure
+does not reproduce, and SC-WBD goes from beaten-by-five to beaten-by-none.</p>
+
+<p>And on the conditional mean, with the paired intervals restored, SC-WBD beats
+<em>every</em> baseline:</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>MSE difference vs.</th><th class="num">Estimate</th><th class="num">95% interval</th></tr></thead>
+<tbody>
+<tr><td>persistence</td><td class="num">−3.1962</td><td class="num">[−3.9428, −2.5099]</td></tr>
+<tr><td>population gaussian</td><td class="num">−0.3906</td><td class="num">[−0.5731, −0.2477]</td></tr>
+<tr><td>ar16 / subject AR</td><td class="num">−0.1665</td><td class="num">[−0.3099, −0.0574]</td></tr>
+<tr><td>var4</td><td class="num">−0.1030</td><td class="num">[−0.2142, −0.0034]</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>This does not rescue the model, and we declined to say it did</h3>
+
+<p>Two refusals are the point of this section.</p>
+
+<p><strong>The failure stands.</strong> A model contracted to emit calibrated
+uncertainty, failing at exactly that, is a real failure and not an artifact of
+the instrument. The specification lists an uncertainty channel as regional state;
+the artifact emits a constant.</p>
+
+<p><strong>We did not promote MSE to the primary endpoint.</strong> Doing so was
+defensible on the merits — the intervals are real and the model wins on all of
+them. It was refused anyway, because selecting an endpoint after seeing the
+outcome is exactly what the pre-commitment was written to prevent. The temptation
+arrived faster than expected, and the rule held precisely because nobody was
+allowed to relitigate it once the numbers were visible.</p>
+
+<div class="callout">
+<span class="callout-label">Separate who measures from who adjudicates</span>
+<p>Self-binding is not enough when the same party produces the numbers and
+decides what they mean. Each of these calls was handed to someone who had not
+generated the measurement. Over one night the roles swapped four times — the
+person who needs to supply restraint is whoever is <em>not</em> invested in that
+particular outcome, and on a long enough task both parties take turns being
+that person.</p>
+</div>
+
+<h2>Why the verification apparatus could not have caught it</h2>
+
+<p>The identifiability machinery found most of the other defects in this project.
+It could not have found this one, and the reason is structural rather than an
+oversight.</p>
+
+<p>Those checks are exact Fisher computations on a <strong>linear-Gaussian
+surrogate</strong>. In that surrogate, state-independent innovation covariance is
+a <em>theorem</em> — it is precisely why the Riccati recursion can be shared
+across the trajectory. So a constant <code>log_noise</code> is <strong>correct in
+the surrogate</strong>. The surrogate cannot represent the defect, let alone
+detect it.</p>
+
+<blockquote>
+<p>Every check was green and every check was correct. A verification apparatus
+built on a surrogate inherits the surrogate's assumptions as blind spots, and
+those blind spots are invisible from inside the apparatus.</p>
+</blockquote>
+
+<p>The generalised question, which now runs against every guard we write: ask not
+only <em>can it fire</em>, but <strong>is the failure it targets representable in
+the model it runs against</strong>?</p>
+
+<h2>The repair has its own trap</h2>
+
+<p>The natural way to add a state-dependent variance term is to zero-initialise
+its output projection so the module “starts as a no-op”. <strong>That reproduces
+the defect exactly.</strong> The quantity is constant at step 0, a firing test
+passes while measuring nothing, and heteroscedasticity appears only if training
+happens to find it — a shape, not a mechanism.</p>
+
+<p>Both repairs are therefore initialised <strong>non-zero and from the
+physics</strong>, and the test asserts the un-repaired arm's spread is exactly
+<code>0.0</code> rather than describing it as constant. Asserting the dead case
+is what makes the live case evidence.</p>
+
+<p>Two further rulings came out of it. The instrument noise floor is
+<em>separately parameterised</em> from the state term — electrode impedance
+genuinely is not a function of neural state, and keeping them distinct stops the
+floor silently absorbing the structure. And horizon dependence must come from
+<em>integrating the state</em>, never from passing the horizon index to the head:
+a variance that grows because it was handed <em>h</em> would vary with horizon for
+reasons unrelated to the structured state the ablation exists to
+measure.[[note: This is the decorative-guard failure reproduced inside the
+repair, which is why it is a standing ruling rather than a code review comment.
+The residual horizon embedding was dropped outright: 2.1% of the gap is not worth
+confounding the ablation for.]]</p>
+
+<h2>The baseline that was not the baseline</h2>
+
+<p>One more finding from the same audit, because it has the same shape. The
+“subject-specific autoregressive” baseline reported 77,248 parameters. The split
+is participant-disjoint — verified, 71/11/27 — so every test window misses the
+per-subject model store and falls through to a shared 4,160-parameter fallback.</p>
+
+<p><strong>The 77,248 parameters are 71 per-subject models that are never
+used.</strong> The 4,160 that are used go unreported. The internal counter
+records only <em>fit</em>-time fallbacks, so the descriptor reports 71 models in
+use when the true count is zero — a guard watching the wrong door, in a class
+whose own docstring names that hazard.</p>
+
+<h2>What was actually wrong, in one table</h2>
+
+<p>Four defects, each of which looked like a separate finding. They are one
+class: <em>a thing that is not the hypothesis, differing between arms, at a place
+nobody was looking because it is not “the model”.</em></p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Stage of the state→scalar path</th><th>Defect</th></tr></thead>
+<tbody>
+<tr><td>Observation interface</td><td>treatment arm's mean path narrowed to 2 exported dimensions against the control's 18</td></tr>
+<tr><td>Head parameterisation</td><td><code>log_noise</code> with no path from state</td></tr>
+<tr><td>Score</td><td>five baselines held-out calibrated; the candidate not calibrated at all</td></tr>
+<tr><td>Split</td><td>the subject-specific baseline silently reduced to a shared one</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Capacity budgets cover the model and the optimiser. <strong>Not one of these
+four is a budget.</strong> A matched budget with an unmatched interface, head,
+score or split is an unmatched comparison wearing a green check — and that is now
+a standing ruling: between-arm parity is checked along the whole path from state
+to scalar, not only in the budgets.</p>
+
+<div class="callout">
+<span class="callout-label">Transferable</span>
+<p>Capacity matching guards the model. <strong>Nothing guarded the path from the
+model to the number.</strong> Trace that path explicitly — inputs, conditioning,
+state, observation interface, head parameterisation, score, split, optimiser —
+and check parity at every stage. Four of this project's between-arm defects sat
+on stages nobody was watching.</p>
+</div>
+
+<p class="lede"><a href="decorative-guards.html">Next: checks that cannot fail →</a></p>
+
+</div>
