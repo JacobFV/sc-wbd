@@ -1,11 +1,51 @@
-# Publishing — what is ready, and the one command that ships it
+# Publishing — what landed, and the command that ships the rest
 
 Owner: 📡 Shannon. Branch `wt/shannon`. Written 2026-08-06.
 
-**Nothing has been pushed.** No repo, no file, no dry run that created remote
-state. `huggingface_hub` was never called with a token; the only Hub call made
-anywhere in this work was `HfApi().whoami()` by a previous agent, which I did
-not repeat. Everything below was verified locally.
+## PUBLISHED — three artifacts are live and public
+
+| artifact | URL | files | bytes |
+|---|---|---:|---:|
+| anatomy prior | <https://huggingface.co/datasets/jacob-valdez/scwbd-anatomy-prior-414> | 4 + card | 7,357,330 |
+| run-1 checkpoint | <https://huggingface.co/jacob-valdez/scwbd-001-beta> | 3 + card | 33,814,975 |
+| corpus subset | <https://huggingface.co/datasets/jacob-valdez/scwbd-sim-corpus-414-subset> | 2 + card | 318,279,117 |
+
+All three verified from the Hub after upload: `private=False`, `author=jacob-valdez`.
+Published in the order instructed, each as `jacob-valdez`, each with
+`env -u HF_TOKEN`. The anatomy prior **excludes** the Hansen-derived maps (§3).
+`run2-pilot` remains `NOT PUBLISHABLE` by design (§5).
+
+### The identity defect, and the guard that now closes it
+
+An `HF_TOKEN` environment variable is set on this box and **silently overrides
+the stored CLI login**. Measured:
+
+```
+hf auth whoami                 -> user=brandonin      orgs=humanitys-last-hackathon
+env -u HF_TOKEN hf auth whoami -> user=jacob-valdez   orgs=none
+```
+
+The owner logged into `jacob-valdez` correctly; the env var won. Publishing
+would have landed everything in `brandonin` and **reported success**. That
+composes badly with `create_repo(exist_ok=True)`, which uploads into an existing
+repo rather than failing — wrong identity plus silent-merge-on-collision puts an
+artifact somewhere nobody intended with nothing reporting it.
+
+Both are now checked against the network before any write, and both refuse:
+
+- `verify_identity()` asserts the authenticated account equals the namespace or
+  belongs to it as an org. Verified in both directions: with `HF_TOKEN` set it
+  refuses with `IDENTITY MISMATCH` and exit 3; with `env -u HF_TOKEN` it passes.
+- `repo_exists()` is checked first and a pre-existing repo is **refused**, not
+  merged into. `exist_ok` is now `False` unless `--allow-existing` is passed.
+- The CLI prints a loud warning whenever `HF_TOKEN`/`HUGGING_FACE_HUB_TOKEN` is
+  set, and reports **the observed identity** (`user=... orgs=... auth=...`) on
+  every push — an observation, not a boolean.
+- `--whoami` reports identity and exits, creating no state.
+
+Three mutants kill-tested: removing the identity assertion, restoring
+`exist_ok=True`, and moving the identity check after `create_repo`. All three
+turn tests red.
 
 ---
 
@@ -14,8 +54,17 @@ not repeat. Everything below was verified locally.
 Two steps, once per session:
 
 ```bash
-export SCWBD_HF_NAMESPACE=<user-or-org>          # no default exists; see §4
+export SCWBD_HF_NAMESPACE=jacob-valdez           # no default exists; see §4
 cd /home/brandonin/Documents/scwbd-wt/shannon
+```
+
+**Every command must be prefixed with `env -u HF_TOKEN`** or you authenticate
+as `brandonin` while believing you are `jacob-valdez`. The identity guard now
+refuses in that case rather than publishing, but unsetting the variable is the
+fix; the guard is the backstop. Check first, free of charge:
+
+```bash
+env -u HF_TOKEN PYTHONPATH=. $PY -m scwbd.release.publish anatomy-prior --whoami
 ```
 
 Then one command per artifact. **Drop `--push` and it is a dry run** — that is
@@ -24,20 +73,27 @@ the default, and the dry run reaches no network at all.
 ```bash
 PY=/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/bin/python
 
-# 1. the anatomy prior  (READY)
-PYTHONPATH=. $PY -m scwbd.release.publish anatomy-prior --push
+# 1. the anatomy prior  (PUBLISHED)
+env -u HF_TOKEN PYTHONPATH=. $PY -m scwbd.release.publish anatomy-prior \
+    --stage-dir /tmp/pub --public --push
 
-# 2. the run-1 checkpoint  (READY, negative result, card says so)
-PYTHONPATH=. $PY -m scwbd.release.publish run1-checkpoint \
-    --checkpoint-dir /home/brandonin/Documents/scwbd-wt/turing/checkpoints/scwbd-001-beta --push
+# 2. the run-1 checkpoint  (PUBLISHED, negative result, card says so)
+env -u HF_TOKEN PYTHONPATH=. $PY -m scwbd.release.publish run1-checkpoint \
+    --checkpoint-dir /home/brandonin/Documents/scwbd-wt/turing/checkpoints/scwbd-001-beta \
+    --stage-dir /tmp/pub --public --push
 
-# 3. a documented subset of the simulated corpus  (READY)
-PYTHONPATH=. $PY -m scwbd.release.publish sim-corpus --n-shards 4 --push
+# 3. a documented subset of the simulated corpus  (PUBLISHED at --n-shards 1)
+env -u HF_TOKEN PYTHONPATH=. $PY -m scwbd.release.publish sim-corpus \
+    --n-shards 1 --stage-dir /tmp/pub --public --push
 
 # 4. the run-2 pilot  (NOT YET — still training; path is wired, see §5)
-PYTHONPATH=. $PY -m scwbd.release.publish run2-pilot \
-    --checkpoint-dir <path> --push
+env -u HF_TOKEN PYTHONPATH=. $PY -m scwbd.release.publish run2-pilot \
+    --checkpoint-dir <path> --stage-dir /tmp/pub --public --push
 ```
+
+`--stage-dir` is what puts the generated `README.md` (the card) in the repo, so
+pass it. Re-running any of the above now **refuses** with "already exists" —
+pass `--allow-existing` to update a published artifact.
 
 Add `--public` to publish publicly; the default is **private**, so the first
 push is recoverable. Add `--stage-dir <dir>` to write the generated card and
@@ -220,54 +276,78 @@ route is still refused.
 
 ---
 
-## 6. What I could not check without creating remote state
+## 6. Answered by the push, and what is still unchecked
 
-Honestly, these are unknown until someone pushes:
+Now answered:
 
-1. **Whether the namespace exists and the token can write to it.** `create_repo`
-   is the first call that finds out. If it is an org, the token needs write
-   access to that org.
-2. **Whether the repo names are free.** `scwbd-001-beta`, `scwbd-anatomy-prior-414`,
-   `scwbd-sim-corpus-414-subset` — I did not query the Hub for collisions.
-   `create_repo(exist_ok=True)` means a name collision *inside* the namespace
-   would silently upload into an existing repo rather than fail. Worth a look
-   before the first push.
-3. **Whether the card front-matter renders.** The `license: other` +
-   `license_name:` combination is what the Hub wants for a licence set that is
-   not a single SPDX id, but I could not see it rendered.
-4. **Upload behaviour on the corpus.** Shards are ~300 MB each; I used
-   `upload_file` per file, which is fine at `--n-shards 4` but should probably
-   become `upload_large_folder` before anyone mirrors the full 44 GB.
-5. **Whether the run-1 weights load from a fresh clone.** I published the file
+1. **The namespace and write access** — confirmed. `auth=oauth`, user
+   `jacob-valdez`, no orgs. All three `create_repo` calls succeeded.
+2. **The repo names were free.** All three were created new; the
+   `repo_exists()` precheck reported false for each before creation.
+3. **Upload behaviour at 300 MB.** `upload_file` handled the single
+   `fast_00000_wilson_cowan.h5` shard without incident.
+
+Still unchecked:
+
+1. **Whether the card front-matter renders as intended.** `license: other` +
+   `license_name: see-licence-section` is the right shape for a licence set that
+   is not a single SPDX id, but I have not viewed the rendered pages. **Worth a
+   human eye on all three** — this is the most likely cosmetic defect.
+2. **`upload_large_folder` at scale.** One shard is not evidence about 151.
+   Before anyone mirrors the full 44 GB, switch to `upload_large_folder` and
+   test resumption; `upload_file` per shard will be slow and has no resume.
+3. **Whether the run-1 weights load from a fresh clone.** I published the file
    list, not a round-trip test; `torch` was deliberately not imported (training
-   holds the GPU).
+   holds the GPU). Someone should `torch.load` the published
+   `stage_V_individual.pt` and confirm it matches
+   `provenance.json`'s `weights_sha256`.
+4. **Whether `CC-BY-NC-SA-4.0` is actually the repo licence on disk.** I was
+   told it is and the cards say so, but **no `LICENSE` file exists** in
+   `wt/shannon` or in `wt/tufte` as of `df8b54b`, and `pyproject.toml` still
+   reads `license = { text = "Proprietary" }` in both. The cards currently
+   assert a licence the repository does not yet carry. Erring toward the more
+   restrictive term is the safe direction, but **the file needs to land** —
+   flagged to the architect.
 
 ---
 
 ## 7. `make publish` — needs one target from 📊 Tufte
 
-There is no top-level `Makefile` yet and I did **not** create one, per
-instruction. Tufte's worktree has none as of `2d63e34`. Requested target:
+Tufte's `Makefile` **has landed** at `df8b54b` (`site`, `paper`, `video`,
+`link-data`, `doctor`, `test`, …) but it has **no `publish` target**. I did not
+add one — not my file. Requested target, to be added by Tufte:
 
 ```makefile
-# Publish an SC-WBD artifact. Dry run unless PUSH=1.
-# SCWBD_HF_NAMESPACE must be set; there is no default namespace by design.
-PY ?= /home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/bin/python
-ARTIFACT ?= anatomy-prior
+# Publish an SC-WBD artifact to the Hub. Dry run unless PUSH=1.
+# `env -u HF_TOKEN` is not optional: HF_TOKEN is set on this box and silently
+# overrides the stored CLI login (publishes as brandonin, not jacob-valdez).
+ARTIFACT   ?= anatomy-prior
+STAGE_DIR  ?= $(BUILD)/publish
+CKPT_DIR   ?= /home/brandonin/Documents/scwbd-wt/turing/checkpoints/scwbd-001-beta
 
-publish:
+.PHONY: publish
+publish: ## Publish an artifact (ARTIFACT=..., PUSH=1 to really push)
 	@test -n "$(SCWBD_HF_NAMESPACE)" || { echo "set SCWBD_HF_NAMESPACE"; exit 1; }
-	PYTHONPATH=. $(PY) -m scwbd.release.publish $(ARTIFACT) $(if $(PUSH),--push,)
+	env -u HF_TOKEN PYTHONPATH=. $(PY) -m scwbd.release.publish $(ARTIFACT) \
+	  --stage-dir $(STAGE_DIR) --public \
+	  $(if $(filter run1-checkpoint run2-pilot,$(ARTIFACT)),--checkpoint-dir $(CKPT_DIR),) \
+	  $(if $(PUSH),--push,)
 
-publish-dry:
-	$(MAKE) publish
+.PHONY: publish-whoami
+publish-whoami: ## Report which Hub account a publish would use. Creates nothing.
+	@test -n "$(SCWBD_HF_NAMESPACE)" || { echo "set SCWBD_HF_NAMESPACE"; exit 1; }
+	env -u HF_TOKEN PYTHONPATH=. $(PY) -m scwbd.release.publish anatomy-prior --whoami
 ```
 
 `make publish` is a dry run; `make publish ARTIFACT=run1-checkpoint PUSH=1`
-pushes. The Pages site will want to link the artifact URLs once they exist —
-they are `https://huggingface.co/<namespace>/<name>` for models and
-`https://huggingface.co/datasets/<namespace>/<name>` for datasets, with the
-names in §1.
+pushes. Note `--allow-existing` is needed to update an already-published
+artifact — all three currently refuse re-publication by design.
+
+**Links for the site**, all live and public:
+
+- <https://huggingface.co/datasets/jacob-valdez/scwbd-anatomy-prior-414>
+- <https://huggingface.co/jacob-valdez/scwbd-001-beta>
+- <https://huggingface.co/datasets/jacob-valdez/scwbd-sim-corpus-414-subset>
 
 ---
 

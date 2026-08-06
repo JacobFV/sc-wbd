@@ -26,6 +26,7 @@ import pytest
 from scwbd.release.publish import (
     NAMESPACE_ENV,
     ArtifactPlan,
+    IdentityMismatch,
     NamespaceError,
     PublishBlocked,
     _inputs_from_artifact,
@@ -266,6 +267,163 @@ def test_an_unrecognised_source_url_yields_no_key(tmp_path):
     meta = {"provenance": {"source_url": "https://example.invalid/nope"}}
     np.savez(p, _meta=np.array(json.dumps(meta), dtype=object))
     assert _inputs_from_artifact(p) == ()
+
+
+# ---------------------------------------------------------------------------
+# identity: the guard that makes the push falsifiable
+# ---------------------------------------------------------------------------
+def _fake_hub(monkeypatch, *, user, orgs=(), recorder=None):
+    """Install a huggingface_hub whose whoami() reports a chosen identity."""
+
+    class FakeApi:
+        def __init__(self, token=None):
+            self.token = token
+
+        def whoami(self):
+            return {
+                "name": user,
+                "orgs": [{"name": o} for o in orgs],
+                "auth": {"type": "access_token"},
+            }
+
+        def repo_exists(self, repo_id, repo_type=None):
+            return bool(recorder and recorder.get("exists"))
+
+        def create_repo(self, **kw):
+            if recorder is not None:
+                recorder.setdefault("created", []).append(kw["repo_id"])
+
+        def upload_file(self, **kw):
+            if recorder is not None:
+                recorder.setdefault("uploaded", []).append(kw["path_in_repo"])
+
+    fake = type(sys)("huggingface_hub")
+    fake.HfApi = FakeApi
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake)
+    return fake
+
+
+def test_publishing_as_the_wrong_user_is_refused(monkeypatch, tmp_path):
+    """The real defect: HF_TOKEN overrides the stored login silently.
+
+    On this box `hf auth whoami` reports brandonin while
+    `env -u HF_TOKEN hf auth whoami` reports jacob-valdez. Without this guard
+    the artifact lands in the wrong namespace and nothing reports it.
+    """
+    rec: dict = {}
+    _fake_hub(monkeypatch, user="brandonin", orgs=("humanitys-last-hackathon",),
+              recorder=rec)
+    plan = ArtifactPlan(
+        name="x", repo_type="dataset",
+        attribution=AttributionBlock(entries=(), unattributable=()),
+    )
+    with pytest.raises(IdentityMismatch) as exc:
+        publish(plan, namespace="jacob-valdez", dry_run=False, stage_dir=tmp_path)
+    assert "brandonin" in str(exc.value)
+    # and crucially: nothing was created
+    assert "created" not in rec and "uploaded" not in rec
+
+
+def test_the_matching_identity_is_allowed(monkeypatch, tmp_path):
+    """Control: the same guard must let the *right* user through."""
+    rec: dict = {}
+    _fake_hub(monkeypatch, user="jacob-valdez", recorder=rec)
+    plan = ArtifactPlan(
+        name="x", repo_type="dataset", card="# c\n",
+        attribution=AttributionBlock(entries=(), unattributable=()),
+    )
+    res = publish(plan, namespace="jacob-valdez", dry_run=False, stage_dir=tmp_path)
+    assert res["identity"]["user"] == "jacob-valdez"
+    assert rec["created"] == ["jacob-valdez/x"]
+
+
+def test_an_org_the_user_belongs_to_is_allowed(monkeypatch, tmp_path):
+    _fake_hub(monkeypatch, user="someone", orgs=("my-org",))
+    plan = ArtifactPlan(
+        name="x", repo_type="model",
+        attribution=AttributionBlock(entries=(), unattributable=()),
+    )
+    res = publish(plan, namespace="my-org", dry_run=False, stage_dir=tmp_path)
+    assert res["identity"]["user"] == "someone"
+
+
+def test_identity_is_reported_as_an_observation_not_a_boolean(monkeypatch, tmp_path):
+    _fake_hub(monkeypatch, user="jacob-valdez")
+    plan = ArtifactPlan(
+        name="x", repo_type="dataset",
+        attribution=AttributionBlock(entries=(), unattributable=()),
+    )
+    res = publish(plan, namespace="jacob-valdez", dry_run=False, stage_dir=tmp_path)
+    ident = res["identity"]
+    assert set(ident) >= {"user", "orgs", "auth_type", "token_env_set"}
+    assert ident["user"] == "jacob-valdez"  # the observation, not True
+
+
+def test_identity_is_checked_before_any_write(monkeypatch, tmp_path):
+    """Ordering matters: a check after create_repo has already leaked state."""
+    rec: dict = {}
+    _fake_hub(monkeypatch, user="wrong-user", recorder=rec)
+    plan = ArtifactPlan(
+        name="x", repo_type="dataset",
+        attribution=AttributionBlock(entries=(), unattributable=()),
+    )
+    with pytest.raises(IdentityMismatch):
+        publish(plan, namespace="right-user", dry_run=False, stage_dir=tmp_path)
+    assert rec == {}
+
+
+# ---------------------------------------------------------------------------
+# a pre-existing repo is refused, not merged into
+# ---------------------------------------------------------------------------
+def test_a_preexisting_repo_is_refused_rather_than_uploaded_into(
+    monkeypatch, tmp_path
+):
+    """create_repo(exist_ok=True) silently merges. On a first publish that is
+    indistinguishable from success."""
+    rec: dict = {"exists": True}
+    _fake_hub(monkeypatch, user="jacob-valdez", recorder=rec)
+    plan = ArtifactPlan(
+        name="x", repo_type="dataset",
+        attribution=AttributionBlock(entries=(), unattributable=()),
+    )
+    with pytest.raises(PublishBlocked, match="already exists"):
+        publish(plan, namespace="jacob-valdez", dry_run=False, stage_dir=tmp_path)
+    assert "created" not in rec and "uploaded" not in rec
+
+
+def test_merging_into_an_existing_repo_requires_saying_so(monkeypatch, tmp_path):
+    rec: dict = {"exists": True}
+    _fake_hub(monkeypatch, user="jacob-valdez", recorder=rec)
+    plan = ArtifactPlan(
+        name="x", repo_type="dataset", card="# c\n",
+        attribution=AttributionBlock(entries=(), unattributable=()),
+    )
+    res = publish(
+        plan, namespace="jacob-valdez", dry_run=False, stage_dir=tmp_path,
+        allow_existing=True,
+    )
+    assert res["preexisting"] is True
+    assert rec["created"] == ["jacob-valdez/x"]
+
+
+def test_dry_run_checks_no_identity_because_it_writes_nothing(monkeypatch, tmp_path):
+    """A dry run must stay offline even now that a Hub call exists on the
+    push path — otherwise the offline guarantee quietly regressed."""
+
+    class Detonate:
+        def __init__(self, *a, **k):
+            raise AssertionError("a dry run reached the Hub")
+
+    fake = type(sys)("huggingface_hub")
+    fake.HfApi = Detonate
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake)
+    plan = ArtifactPlan(
+        name="x", repo_type="dataset",
+        attribution=AttributionBlock(entries=(), unattributable=()),
+    )
+    res = publish(plan, namespace="anything", stage_dir=tmp_path)
+    assert res["dry_run"] is True
+    assert "identity" not in res
 
 
 # ---------------------------------------------------------------------------
