@@ -260,6 +260,23 @@ def regime_prior_offset(results: Mapping[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _num(x: Any, default: float = 0.0) -> float:
+    """Coerce a possibly-null / non-finite JSON value to a plottable float.
+
+    ``as_builtin`` serialises NaN as ``null``, so a single degenerate statistic
+    -- e.g. the standard error of a delay RMSE that is exactly zero because the
+    design carries no delay information -- must not be able to abort figure
+    generation for a sweep that took hours to compute.
+    """
+    if x is None:
+        return default
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return default
+    return v if math.isfinite(v) else default
+
+
 def modality_decomposition(results: Mapping[str, Any]) -> dict[str, Any]:
     """Where each modality's theta information actually goes.
 
@@ -616,8 +633,9 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
         vals, errs = [], []
         for d in design_names:
             rec = rr["designs"][d].get("recovery")
-            vals.append(rec["delay_error"]["rmse_seconds"] * 1e3 if rec else np.nan)
-            errs.append(abs(rec["delay_error"].get("rmse_seconds_se", 0.0)) * 1e3 if rec else 0)
+            vals.append(_num(rec["delay_error"]["rmse_seconds"]) * 1e3 if rec else np.nan)
+            errs.append(abs(_num(rec["delay_error"].get("rmse_seconds_se"))) * 1e3
+                        if rec else 0.0)
         ax.bar(np.arange(len(design_names)) + i * width, vals, width, yerr=errs,
                capsize=2, label=rn)
     ax.set_xticks(np.arange(len(design_names)) + 0.4 - width / 2)
@@ -629,10 +647,17 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
     p = outdir / "delay_error.png"
     fig.savefig(p, dpi=150); plt.close(fig); made.append(str(p))
 
-    # 5. profile likelihoods (reference regime)
-    rn0 = list(regimes)[0]
-    d0 = regimes[rn0]["designs"]
-    if any("profile_likelihood" in v for v in d0.values()):
+    # 5. profile likelihoods.  Profiles are computed for one regime only, but
+    # which one must be discovered rather than assumed to be first: the regime
+    # mapping is plain JSON and any consumer that rewrites it (sorted keys, a
+    # merge) can reorder it, silently dropping this figure.
+    rn0 = next(
+        (rn for rn, rr in regimes.items()
+         if any("profile_likelihood" in v for v in rr["designs"].values())),
+        None,
+    )
+    if rn0 is not None:
+        d0 = regimes[rn0]["designs"]
         fig, axes = plt.subplots(1, len(PREREGISTERED_SUBSET),
                                  figsize=(3.0 * len(PREREGISTERED_SUBSET), 3.0),
                                  squeeze=False)
@@ -652,13 +677,14 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
         p = outdir / "profile_likelihoods.png"
         fig.savefig(p, dpi=150); plt.close(fig); made.append(str(p))
 
-    # 6. posterior correlation heatmaps
+    # 6. posterior correlation heatmaps (first regime; independent of profiles)
+    dcorr = regimes[list(regimes)[0]]["designs"]
     fig, axes = plt.subplots(1, min(len(design_names), 5),
                              figsize=(3.1 * min(len(design_names), 5), 3.2),
                              squeeze=False)
     for j, d in enumerate(design_names[:5]):
         ax = axes[0][j]
-        C = np.array(d0[d]["fisher_T4"]["metrics"]["posterior_correlation"])
+        C = np.array(dcorr[d]["fisher_T4"]["metrics"]["posterior_correlation"])
         im = ax.imshow(C, vmin=-1, vmax=1, cmap="coolwarm")
         ax.set_title(d, fontsize=7)
         ax.set_xticks(range(len(PARAM_NAMES)))

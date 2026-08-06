@@ -114,7 +114,7 @@
   "environment": {
     "cuda_available": true,
     "device_name": "NVIDIA GB10",
-    "git_revision": "32ca47e5b46d76b271984bd60ce34dbc9b4be0fc",
+    "git_revision": "f0b2b20f5cedf8e5b5851f644657bc017af96ddd",
     "numpy": "2.5.1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "python": "3.12.13",
@@ -126,16 +126,24 @@
       "device": null,
       "dtype": "float64",
       "epoch_seconds": 6.0,
-      "mc_replicates": 192,
-      "n_epochs": 32,
-      "newton": 4,
-      "no_monte_carlo": false,
-      "no_profiles": false,
+      "mc_replicates": 256,
+      "n_epochs": 16,
+      "newton": 12,
+      "newton_tol": 0.05,
+      "no_monte_carlo": true,
+      "no_profiles": true,
       "no_recovery": false,
+      "no_resume": false,
       "out": "reports/identifiability",
       "primary_only": false,
+      "recovery_designs": [
+        "eeg_only",
+        "fmri_only",
+        "joint_native",
+        "joint_resampled"
+      ],
       "regimes": null,
-      "replicates": 48,
+      "replicates": 32,
       "seed": 20260805
     },
     "profile_and_monte_carlo_regime": "reference",
@@ -155,12 +163,12 @@
     "epoch_seconds": 6.0,
     "hrf_stages": 8,
     "n_delay_taps": 26,
-    "n_epochs": 32,
+    "n_epochs": 16,
     "state_dimension": 105
   },
   "model_designation": "SC-WBD-001-beta",
-  "n_monte_carlo_fisher_replicates": 192,
-  "n_recovery_replicates": 48,
+  "n_monte_carlo_fisher_replicates": 256,
+  "n_recovery_replicates": 32,
   "non_goals": [
     "no whole-brain training",
     "no real datasets",
@@ -299,5 +307,5 @@
   "seed": 20260805,
   "status": "preregistered_before_run",
   "thesis_reference": "thesis_contract.tex sec. 0.3 (T1-T4), sec. 0.6 item 2, sec. 11",
-  "written_at": "2026-08-05T23:27:25-0700"
+  "written_at": "2026-08-06T05:09:47-0700"
 }

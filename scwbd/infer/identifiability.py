@@ -502,10 +502,7 @@ def recover(
         "mean_estimate_seconds": float(tau_hat.mean()),
         "bias_seconds": float(tau_hat.mean() - tau_true),
         "rmse_seconds": float(np.sqrt(((tau_hat - tau_true) ** 2).mean())),
-        "rmse_seconds_se": float(
-            np.std((tau_hat - tau_true) ** 2, ddof=1)
-            / (2 * np.sqrt(((tau_hat - tau_true) ** 2).mean()) * math.sqrt(n_replicates))
-        ),
+        "rmse_seconds_se": _delay_rmse_se(tau_hat, tau_true, n_replicates),
         "mad_seconds": float(np.abs(tau_hat - tau_true).mean()),
     }
     with np.errstate(invalid="ignore", divide="ignore"):
@@ -822,6 +819,21 @@ def run_signature(
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True).encode()
     ).hexdigest()[:16]
+
+
+def _delay_rmse_se(tau_hat: np.ndarray, tau_true: float, n: int) -> float:
+    """Delta-method standard error of the delay RMSE.
+
+    A design carrying no delay information leaves every replicate at the prior
+    mean, so the squared error can be identically zero and the delta-method
+    denominator vanishes.  Return 0.0 there rather than a NaN, which JSON
+    serialises to ``null`` and every downstream consumer then trips over.
+    """
+    sq = (np.asarray(tau_hat, float) - float(tau_true)) ** 2
+    root = float(np.sqrt(sq.mean()))
+    if root <= 0.0 or n < 2:
+        return 0.0
+    return float(np.std(sq, ddof=1) / (2.0 * root * math.sqrt(n)))
 
 
 def _load_checkpoint(path: str | None, signature: str) -> dict[str, Any]:
