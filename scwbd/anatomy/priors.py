@@ -484,8 +484,10 @@ class BrainPrior:
             "n_covered": int(np.isfinite(z).sum()),
             "n_parcels": n,
             "selection": (
-                "reports/ei_ordering_substitution.md -- criterion pre-committed "
-                "at 97086e7, measurement at the following commit"
+                "reports/ei_ordering_substitution.md -- criterion committed at "
+                "97086e7 (branch master), measurement and implementation at "
+                "cf37755. Two immutable SHAs, in that order; that ordering is "
+                "the evidence that the criterion was not chosen to fit."
             ),
         }
         if not record["available"]:

@@ -7,6 +7,10 @@
 > below §1 was written afterwards, against numbers this criterion had already
 > decided how to read. `git log --follow reports/ei_ordering_substitution.md`
 > shows the two commits in that order; the ordering is the point.
+>
+> Immutable references, on branch `master`: criterion **`97086e7`** (one file,
+> §1 only); measurement and implementation **`cf37755`**. `git show --stat
+> 97086e7` is the check.
 
 ## 1. Selection criterion, pre-committed
 
