@@ -1,0 +1,3858 @@
+{
+ "purpose": "per-parameter-group identifiability by modality combination, at the committed benchmark configuration; regenerated from source",
+ "config": {
+  "epoch_seconds": 3.0,
+  "n_epochs": 30,
+  "n_delay_taps": 26,
+  "hrf_stages": 8,
+  "dtype": "float64"
+ },
+ "thresholds": {
+  "identifiable": 1.0,
+  "weak": 0.001
+ },
+ "groups": [
+  {
+   "name": "coupling",
+   "parameters": [
+    "a21",
+    "a32",
+    "a13"
+   ],
+   "kind": "likelihood",
+   "evidence_kind": "fisher_information",
+   "informed_by": [
+    "eeg",
+    "meg",
+    "fmri"
+   ],
+   "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+   "description": "theta block, coupling gains (1/s)"
+  },
+  {
+   "name": "conduction_delay",
+   "parameters": [
+    "tau"
+   ],
+   "kind": "likelihood",
+   "evidence_kind": "fisher_information",
+   "informed_by": [
+    "eeg",
+    "meg",
+    "fmri"
+   ],
+   "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+   "description": "theta block, conduction delay"
+  },
+  {
+   "name": "eeg_lead_field",
+   "parameters": [
+    "gain_eeg",
+    "tilt_eeg"
+   ],
+   "kind": "likelihood",
+   "evidence_kind": "fisher_information",
+   "informed_by": [
+    "eeg",
+    "meg"
+   ],
+   "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+   "description": "ell block, observation nuisances of the fast channel"
+  },
+  {
+   "name": "hemodynamic",
+   "parameters": [
+    "beta_hrf",
+    "c_under",
+    "gain_bold"
+   ],
+   "kind": "likelihood",
+   "evidence_kind": "fisher_information",
+   "informed_by": [
+    "fmri"
+   ],
+   "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+   "description": "rho block, observation nuisances of the slow channel"
+  },
+  {
+   "name": "head_geometry",
+   "parameters": [],
+   "kind": "anatomical",
+   "evidence_kind": "modality_presence",
+   "informed_by": [
+    "structural_mri"
+   ],
+   "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+   "description": "individualised by segmentation of the structural scan; the downstream lead field is then this patient's, which is a real personalisation even when no dynamical parameter can be fitted"
+  },
+  {
+   "name": "structural_connectivity_prior",
+   "parameters": [],
+   "kind": "anatomical",
+   "evidence_kind": "modality_presence",
+   "informed_by": [
+    "dmri"
+   ],
+   "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+   "description": "dMRI narrows the coupling/delay prior; it does not make the coupling likelihood informative, and the two must not be conflated"
+  }
+ ],
+ "regimes": {
+  "reference": {
+   "mri_only": {
+    "modalities": [
+     "structural_mri"
+    ],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "dmri_only": {
+    "modalities": [
+     "dmri"
+    ],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['structural_mri']; this group stays at the population/template value.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['dmri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": [
+        "dmri"
+       ]
+      }
+     }
+    }
+   },
+   "eeg_only": {
+    "modalities": [
+     "structural_mri",
+     "eeg"
+    ],
+    "design": "eeg_only",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 16.009321214072735,
+      "lambda_min_with_nuisance_prior": 16.009411872406286,
+      "per_parameter_information": {
+       "a21": 212.24191807430188,
+       "a32": 57.22628656090752,
+       "a13": 16.028575842564898
+      },
+      "posterior_sd_ratio": 0.24246916041200384,
+      "reason": "lambda_min = 16.0093 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.242 x prior sd).",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 3,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 20.017708486796522,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 59.14982189298154,
+      "lambda_min_with_nuisance_prior": 59.16969818717015,
+      "per_parameter_information": {
+       "tau": 65.38538690862062
+      },
+      "posterior_sd_ratio": 0.12893856341207885,
+      "reason": "lambda_min = 59.1498 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.129 x prior sd).",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 5,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 73.08015662098516,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 329.5198580471902,
+      "lambda_min_with_nuisance_prior": 330.16097420890935,
+      "per_parameter_information": {
+       "gain_eeg": 1164.7256412079737,
+       "tilt_eeg": 387.2848358806942
+      },
+      "posterior_sd_ratio": 0.055004879958095027,
+      "reason": "lambda_min = 329.52 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.055 x prior sd).",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 13.244986236448286,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "lambda_min = 0 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 73.09616417522517,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "meg_only": {
+    "modalities": [
+     "structural_mri",
+     "meg"
+    ],
+    "design": "eeg_only",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 16.009321214072735,
+      "lambda_min_with_nuisance_prior": 16.009411872406286,
+      "per_parameter_information": {
+       "a21": 212.24191807430188,
+       "a32": 57.22628656090752,
+       "a13": 16.028575842564898
+      },
+      "posterior_sd_ratio": 0.24246916041200384,
+      "reason": "lambda_min = 16.0093 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.242 x prior sd).",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 3,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 20.017708486796522,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 59.14982189298154,
+      "lambda_min_with_nuisance_prior": 59.16969818717015,
+      "per_parameter_information": {
+       "tau": 65.38538690862062
+      },
+      "posterior_sd_ratio": 0.12893856341207885,
+      "reason": "lambda_min = 59.1498 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.129 x prior sd).",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 5,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 73.08015662098516,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 329.5198580471902,
+      "lambda_min_with_nuisance_prior": 330.16097420890935,
+      "per_parameter_information": {
+       "gain_eeg": 1164.7256412079737,
+       "tilt_eeg": 387.2848358806942
+      },
+      "posterior_sd_ratio": 0.055004879958095027,
+      "reason": "lambda_min = 329.52 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.055 x prior sd).",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 13.244986236448286,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "lambda_min = 0 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 73.09616417522517,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "fmri_only": {
+    "modalities": [
+     "structural_mri",
+     "fmri"
+    ],
+    "design": "fmri_only",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 2.9392138322281394e-06,
+      "lambda_min_with_nuisance_prior": 0.013220603900274274,
+      "per_parameter_information": {
+       "a21": 0.8481834096777265,
+       "a32": 0.3486765499719152,
+       "a13": 0.14395602204450073
+      },
+      "posterior_sd_ratio": 0.9999985303963234,
+      "reason": "lambda_min = 2.93921e-06 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 0.999999 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 2,
+       "nuisance_condition": 428222965.20121825,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 1.2057609304989076e-05,
+      "lambda_min_with_nuisance_prior": 3.9995178058214155e-05,
+      "per_parameter_information": {
+       "tau": 5.978933492395925e-05
+      },
+      "posterior_sd_ratio": 0.9999939712498667,
+      "reason": "lambda_min = 1.20576e-05 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 0.999994 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 2,
+       "nuisance_condition": 1221586587.028236,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "lambda_min = 0 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 7,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 1276931822.041621,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 8.86669245179386e-09,
+      "lambda_min_with_nuisance_prior": 2.5413802420564658e-08,
+      "per_parameter_information": {
+       "beta_hrf": 8.184688004973848,
+       "c_under": 7.035850575279553e-06,
+       "gain_bold": 2.8451440667708954
+      },
+      "posterior_sd_ratio": 0.9999999955666539,
+      "reason": "lambda_min = 8.86669e-09 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 2,
+       "nuisance_condition": 69417.7650581661,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "eeg_fmri": {
+    "modalities": [
+     "structural_mri",
+     "eeg",
+     "fmri"
+    ],
+    "design": "joint_native",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 16.009344448904702,
+      "lambda_min_with_nuisance_prior": 16.022947380355323,
+      "per_parameter_information": {
+       "a21": 213.0901014839796,
+       "a32": 57.57496311087942,
+       "a13": 16.172531864609397
+      },
+      "posterior_sd_ratio": 0.24246899480502998,
+      "reason": "lambda_min = 16.0093 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.242 x prior sd).",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 45018422712.57134,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 59.150607172235574,
+      "lambda_min_with_nuisance_prior": 59.17049060304425,
+      "per_parameter_information": {
+       "tau": 65.38544669795554
+      },
+      "posterior_sd_ratio": 0.12893772174884283,
+      "reason": "lambda_min = 59.1506 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.129 x prior sd).",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 8,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 45033298596.70522,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 329.5661676163677,
+      "lambda_min_with_nuisance_prior": 330.2087150732281,
+      "per_parameter_information": {
+       "gain_eeg": 1164.7256412079737,
+       "tilt_eeg": 387.2848358806942
+      },
+      "posterior_sd_ratio": 0.05500102696017581,
+      "reason": "lambda_min = 329.566 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.055 x prior sd).",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 7,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 8202775881.740407,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 2.598263060032391e-08,
+      "lambda_min_with_nuisance_prior": 2.5982701311929745e-08,
+      "per_parameter_information": {
+       "beta_hrf": 8.184688004973848,
+       "c_under": 7.035850575279553e-06,
+       "gain_bold": 2.8451440667708954
+      },
+      "posterior_sd_ratio": 0.9999999870086851,
+      "reason": "lambda_min = 2.59826e-08 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 72.44947457491133,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "behavior_only": {
+    "modalities": [
+     "behavior"
+    ],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['structural_mri']; this group stays at the population/template value.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "nothing": {
+    "modalities": [],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['structural_mri']; this group stays at the population/template value.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   }
+  },
+  "weak_coupling_long_delay": {
+   "mri_only": {
+    "modalities": [
+     "structural_mri"
+    ],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "dmri_only": {
+    "modalities": [
+     "dmri"
+    ],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['structural_mri']; this group stays at the population/template value.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['dmri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": [
+        "dmri"
+       ]
+      }
+     }
+    }
+   },
+   "eeg_only": {
+    "modalities": [
+     "structural_mri",
+     "eeg"
+    ],
+    "design": "eeg_only",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 1.8395451026599652,
+      "lambda_min_with_nuisance_prior": 1.8395459308563737,
+      "per_parameter_information": {
+       "a21": 258.61602868702875,
+       "a32": 21.35740525102471,
+       "a13": 1.8398682138328948
+      },
+      "posterior_sd_ratio": 0.5934383580302661,
+      "reason": "lambda_min = 1.83955 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.593 x prior sd).",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 3,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 31.598241766888187,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 45.35889795352216,
+      "lambda_min_with_nuisance_prior": 45.36051447036304,
+      "per_parameter_information": {
+       "tau": 46.04474640889176
+      },
+      "posterior_sd_ratio": 0.146870119532994,
+      "reason": "lambda_min = 45.3589 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.147 x prior sd).",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 5,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 778.2908124200753,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 478.60187530045937,
+      "lambda_min_with_nuisance_prior": 478.8266784297234,
+      "per_parameter_information": {
+       "gain_eeg": 1425.1922291367994,
+       "tilt_eeg": 502.5912372667897
+      },
+      "posterior_sd_ratio": 0.045662487224578475,
+      "reason": "lambda_min = 478.602 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.046 x prior sd).",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 140.56527488487137,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "lambda_min = 0 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 778.3022533029629,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "meg_only": {
+    "modalities": [
+     "structural_mri",
+     "meg"
+    ],
+    "design": "eeg_only",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 1.8395451026599652,
+      "lambda_min_with_nuisance_prior": 1.8395459308563737,
+      "per_parameter_information": {
+       "a21": 258.61602868702875,
+       "a32": 21.35740525102471,
+       "a13": 1.8398682138328948
+      },
+      "posterior_sd_ratio": 0.5934383580302661,
+      "reason": "lambda_min = 1.83955 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.593 x prior sd).",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 3,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 31.598241766888187,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 45.35889795352216,
+      "lambda_min_with_nuisance_prior": 45.36051447036304,
+      "per_parameter_information": {
+       "tau": 46.04474640889176
+      },
+      "posterior_sd_ratio": 0.146870119532994,
+      "reason": "lambda_min = 45.3589 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.147 x prior sd).",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 5,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 778.2908124200753,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 478.60187530045937,
+      "lambda_min_with_nuisance_prior": 478.8266784297234,
+      "per_parameter_information": {
+       "gain_eeg": 1425.1922291367994,
+       "tilt_eeg": 502.5912372667897
+      },
+      "posterior_sd_ratio": 0.045662487224578475,
+      "reason": "lambda_min = 478.602 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.046 x prior sd).",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 140.56527488487137,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "lambda_min = 0 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 778.3022533029629,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "fmri_only": {
+    "modalities": [
+     "structural_mri",
+     "fmri"
+    ],
+    "design": "fmri_only",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 4.679561633813347e-07,
+      "lambda_min_with_nuisance_prior": 0.0015229228166832472,
+      "per_parameter_information": {
+       "a21": 1.2994400568419935,
+       "a32": 0.17151925085645775,
+       "a13": 0.017452171656587436
+      },
+      "posterior_sd_ratio": 0.9999997660220005,
+      "reason": "lambda_min = 4.67956e-07 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 2,
+       "nuisance_condition": 479443368.39821595,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 9.196070112139095e-06,
+      "lambda_min_with_nuisance_prior": 2.7038425929474132e-05,
+      "per_parameter_information": {
+       "tau": 4.6365815952978524e-05
+      },
+      "posterior_sd_ratio": 0.9999954019966566,
+      "reason": "lambda_min = 9.19607e-06 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 0.999995 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 2,
+       "nuisance_condition": 1406077064.0645542,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "lambda_min = 0 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 7,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 1443920643.282468,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 8.61612521348777e-09,
+      "lambda_min_with_nuisance_prior": 2.5078090341191452e-08,
+      "per_parameter_information": {
+       "beta_hrf": 9.03666983527359,
+       "c_under": 7.471184743810239e-06,
+       "gain_bold": 3.1229828002015276
+      },
+      "posterior_sd_ratio": 0.9999999956919374,
+      "reason": "lambda_min = 8.61613e-09 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 2,
+       "nuisance_condition": 125810.22934415683,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "eeg_fmri": {
+    "modalities": [
+     "structural_mri",
+     "eeg",
+     "fmri"
+    ],
+    "design": "joint_native",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 1.8395458253741166,
+      "lambda_min_with_nuisance_prior": 1.8410880491542876,
+      "per_parameter_information": {
+       "a21": 259.91546874387075,
+       "a32": 21.52892450188117,
+       "a13": 1.8573203854894822
+      },
+      "posterior_sd_ratio": 0.5934382825100327,
+      "reason": "lambda_min = 1.83955 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.593 x prior sd).",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 56256027630.71683,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 45.358935824583796,
+      "lambda_min_with_nuisance_prior": 45.360552388259286,
+      "per_parameter_information": {
+       "tau": 46.044792774707716
+      },
+      "posterior_sd_ratio": 0.14687005954317342,
+      "reason": "lambda_min = 45.3589 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.147 x prior sd).",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 8,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 56265300283.37662,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 478.64286310729614,
+      "lambda_min_with_nuisance_prior": 478.8687706909791,
+      "per_parameter_information": {
+       "gain_eeg": 1425.1922291367994,
+       "tilt_eeg": 502.5912372667897
+      },
+      "posterior_sd_ratio": 0.04566053614249622,
+      "reason": "lambda_min = 478.643 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.046 x prior sd).",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 7,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 10214822648.421837,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 2.5445668524311957e-08,
+      "lambda_min_with_nuisance_prior": 2.5445734920707158e-08,
+      "per_parameter_information": {
+       "beta_hrf": 9.03666983527359,
+       "c_under": 7.471184743810239e-06,
+       "gain_bold": 3.1229828002015276
+      },
+      "posterior_sd_ratio": 0.999999987277166,
+      "reason": "lambda_min = 2.54457e-08 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 771.0004865543615,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "behavior_only": {
+    "modalities": [
+     "behavior"
+    ],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['structural_mri']; this group stays at the population/template value.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "nothing": {
+    "modalities": [],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['structural_mri']; this group stays at the population/template value.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   }
+  },
+  "low_snr_short_delay": {
+   "mri_only": {
+    "modalities": [
+     "structural_mri"
+    ],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "dmri_only": {
+    "modalities": [
+     "dmri"
+    ],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['structural_mri']; this group stays at the population/template value.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['dmri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": [
+        "dmri"
+       ]
+      }
+     }
+    }
+   },
+   "eeg_only": {
+    "modalities": [
+     "structural_mri",
+     "eeg"
+    ],
+    "design": "eeg_only",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 17.65553242738447,
+      "lambda_min_with_nuisance_prior": 17.662339853505802,
+      "per_parameter_information": {
+       "a21": 91.67675943302359,
+       "a32": 39.6541159997839,
+       "a13": 17.873678764371665
+      },
+      "posterior_sd_ratio": 0.2315240846506136,
+      "reason": "lambda_min = 17.6555 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.232 x prior sd).",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 3,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 34.24478720752913,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 14.155575516402944,
+      "lambda_min_with_nuisance_prior": 14.249793407380285,
+      "per_parameter_information": {
+       "tau": 20.889857364980912
+      },
+      "posterior_sd_ratio": 0.2568702353117228,
+      "reason": "lambda_min = 14.1556 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.257 x prior sd).",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 5,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 26.515960857064485,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 55.30852705787395,
+      "lambda_min_with_nuisance_prior": 56.586186085936994,
+      "per_parameter_information": {
+       "gain_eeg": 468.58356967706516,
+       "tilt_eeg": 86.13736306719912
+      },
+      "posterior_sd_ratio": 0.1332640220145555,
+      "reason": "lambda_min = 55.3085 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.133 x prior sd).",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 5.226043345675912,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "lambda_min = 0 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 37.46464097647791,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "meg_only": {
+    "modalities": [
+     "structural_mri",
+     "meg"
+    ],
+    "design": "eeg_only",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 17.65553242738447,
+      "lambda_min_with_nuisance_prior": 17.662339853505802,
+      "per_parameter_information": {
+       "a21": 91.67675943302359,
+       "a32": 39.6541159997839,
+       "a13": 17.873678764371665
+      },
+      "posterior_sd_ratio": 0.2315240846506136,
+      "reason": "lambda_min = 17.6555 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.232 x prior sd).",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 3,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 34.24478720752913,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 14.155575516402944,
+      "lambda_min_with_nuisance_prior": 14.249793407380285,
+      "per_parameter_information": {
+       "tau": 20.889857364980912
+      },
+      "posterior_sd_ratio": 0.2568702353117228,
+      "reason": "lambda_min = 14.1556 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.257 x prior sd).",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 5,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 26.515960857064485,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 55.30852705787395,
+      "lambda_min_with_nuisance_prior": 56.586186085936994,
+      "per_parameter_information": {
+       "gain_eeg": 468.58356967706516,
+       "tilt_eeg": 86.13736306719912
+      },
+      "posterior_sd_ratio": 0.1332640220145555,
+      "reason": "lambda_min = 55.3085 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.133 x prior sd).",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 3,
+       "nuisance_condition": 5.226043345675912,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "lambda_min = 0 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 37.46464097647791,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "fmri_only": {
+    "modalities": [
+     "structural_mri",
+     "fmri"
+    ],
+    "design": "fmri_only",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 7.753140480966469e-07,
+      "lambda_min_with_nuisance_prior": 0.014124742727849107,
+      "per_parameter_information": {
+       "a21": 0.11951149240698897,
+       "a32": 0.07000385361872774,
+       "a13": 0.05506781379079249
+      },
+      "posterior_sd_ratio": 0.9999996123432013,
+      "reason": "lambda_min = 7.75314e-07 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 2,
+       "nuisance_condition": 613104770.2417545,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 1.1867905171882501e-06,
+      "lambda_min_with_nuisance_prior": 7.65823068762112e-06,
+      "per_parameter_information": {
+       "tau": 8.372396678043966e-06
+      },
+      "posterior_sd_ratio": 0.9999994066052695,
+      "reason": "lambda_min = 1.18679e-06 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 0.999999 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 2,
+       "nuisance_condition": 1540721165.4595313,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "lambda_min = 0 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 7,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 1588843626.9003932,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 1.4431255019774896e-09,
+      "lambda_min_with_nuisance_prior": 3.6511572259046212e-09,
+      "per_parameter_information": {
+       "beta_hrf": 1.64928610893226,
+       "c_under": 1.1564446179435445e-06,
+       "gain_bold": 0.5546225645649789
+      },
+      "posterior_sd_ratio": 0.9999999992784374,
+      "reason": "lambda_min = 1.44313e-09 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 4,
+       "nuisance_dropped": 2,
+       "nuisance_condition": 120688.04144637244,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "eeg_fmri": {
+    "modalities": [
+     "structural_mri",
+     "eeg",
+     "fmri"
+    ],
+    "design": "joint_native",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 17.655941725874037,
+      "lambda_min_with_nuisance_prior": 17.67946978883772,
+      "per_parameter_information": {
+       "a21": 91.79627092543059,
+       "a32": 39.72411985340263,
+       "a13": 17.928746578162457
+      },
+      "posterior_sd_ratio": 0.23152154489734625,
+      "reason": "lambda_min = 17.6559 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.232 x prior sd).",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 127783145610.20407,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 14.156095199182797,
+      "lambda_min_with_nuisance_prior": 14.250289247685705,
+      "per_parameter_information": {
+       "tau": 20.88986573737759
+      },
+      "posterior_sd_ratio": 0.25686583140093566,
+      "reason": "lambda_min = 14.1561 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.257 x prior sd).",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 8,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 127938025968.79852,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 55.31233209672752,
+      "lambda_min_with_nuisance_prior": 56.589971357508354,
+      "per_parameter_information": {
+       "gain_eeg": 468.58356967706516,
+       "tilt_eeg": 86.13736306719912
+      },
+      "posterior_sd_ratio": 0.13325951959626853,
+      "reason": "lambda_min = 55.3123 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.133 x prior sd).",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 7,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 25249097170.531345,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 3.6714460305231153e-09,
+      "lambda_min_with_nuisance_prior": 3.671451473936456e-09,
+      "per_parameter_information": {
+       "beta_hrf": 1.64928610893226,
+       "c_under": 1.1564446179435445e-06,
+       "gain_bold": 0.5546225645649789
+      },
+      "posterior_sd_ratio": 0.9999999981642771,
+      "reason": "lambda_min = 3.67145e-09 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 6,
+       "nuisance_dropped": 0,
+       "nuisance_condition": 37.4595924102003,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": [
+        "structural_mri"
+       ]
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "behavior_only": {
+    "modalities": [
+     "behavior"
+    ],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['structural_mri']; this group stays at the population/template value.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   },
+   "nothing": {
+    "modalities": [],
+    "design": "prior",
+    "groups": {
+     "coupling": {
+      "group": "coupling",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "a21",
+       "a32",
+       "a13"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "a21": 0.0,
+       "a32": 0.0,
+       "a13": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "conduction_delay": {
+      "group": "conduction_delay",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "tau"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "tau": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+      "diagnostics": {
+       "n_keep": 1,
+       "n_profiled": 8,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 8,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "eeg_lead_field": {
+      "group": "eeg_lead_field",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "gain_eeg",
+       "tilt_eeg"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "gain_eeg": 0.0,
+       "tilt_eeg": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+      "diagnostics": {
+       "n_keep": 2,
+       "n_profiled": 7,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 7,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "hemodynamic": {
+      "group": "hemodynamic",
+      "kind": "likelihood",
+      "evidence_kind": "fisher_information",
+      "status": "not_identifiable",
+      "parameters": [
+       "beta_hrf",
+       "c_under",
+       "gain_bold"
+      ],
+      "lambda_min_likelihood": 0.0,
+      "lambda_min_with_nuisance_prior": 0.0,
+      "per_parameter_information": {
+       "beta_hrf": 0.0,
+       "c_under": 0.0,
+       "gain_bold": 0.0
+      },
+      "posterior_sd_ratio": 1.0,
+      "reason": "no modality the reference likelihood can read: the expected information about this group is identically zero. Nothing in this patient's data could move these parameters.",
+      "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+      "diagnostics": {
+       "n_keep": 3,
+       "n_profiled": 6,
+       "nuisance_prior": 0.0,
+       "nuisance_rank": 0,
+       "nuisance_dropped": 6,
+       "nuisance_condition": Infinity,
+       "leaked_negative_eigenvalue": 0.0
+      }
+     },
+     "head_geometry": {
+      "group": "head_geometry",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['structural_mri']; this group stays at the population/template value.",
+      "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     },
+     "structural_connectivity_prior": {
+      "group": "structural_connectivity_prior",
+      "kind": "anatomical",
+      "evidence_kind": "modality_presence",
+      "status": "not_identifiable",
+      "parameters": [],
+      "lambda_min_likelihood": null,
+      "lambda_min_with_nuisance_prior": null,
+      "per_parameter_information": {},
+      "posterior_sd_ratio": null,
+      "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+      "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+      "diagnostics": {
+       "modalities_present": []
+      }
+     }
+    }
+   }
+  }
+ },
+ "environment": {
+  "git_revision": "94eb31cdc15b32d675034904e64d96d6945807e5",
+  "python": "3.12.13",
+  "numpy": "2.5.1",
+  "torch": "2.13.0+cu130",
+  "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+  "device": "cpu",
+  "cuda_visible_devices": ""
+ }
+}

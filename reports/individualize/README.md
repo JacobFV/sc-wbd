@@ -50,11 +50,31 @@ downstream is affected: the number is six orders of magnitude below the EEG one
 under any of those digits. But quoting it to fifteen figures, as the committed
 report does, overstates what is there.
 
-**The brief's table is confirmed, with one correction to its wording.** In the
-reference regime EEG-only is `16.008456` against joint `16.008480` — EEG alone
-gives up `1.5e-04 %` of the joint information. fMRI-only is `2.93e-06`, a factor
-of **5.5e+06** — that is 6.7 orders of magnitude, not ~7, and the factor varies
-by regime (5.5e+06 / 3.9e+06 / 1.8e+07). The conclusion is unaffected.
+**The brief's table is confirmed, with two corrections to its wording.**
+
+*How close EEG-only is to joint*, as `(joint − eeg)/joint`:
+
+| regime | gap |
+|---|---|
+| reference | 1.49e-06 |
+| weak_coupling_long_delay | 3.93e-07 |
+| low_snr_short_delay | **8.58e-05** |
+
+"Loses essentially nothing" is right, but the margin is regime-dependent and
+worst in the low-SNR regime — a first version of the test used a `1e-05` bound
+and failed there.
+
+*How far behind fMRI-only is*, as `eeg / fmri`:
+
+| regime | ratio |
+|---|---|
+| reference | 5.46e+06 |
+| weak_coupling_long_delay | **3.93e+06** |
+| low_snr_short_delay | 1.79e+07 |
+
+That is 6.6–7.3 orders of magnitude, not "~7 orders" flat; the brief's figure is
+right for the reference regime to within a factor of two. The conclusion is
+unaffected in every regime.
 
 ## 2. What is identifiable from each modality combination
 
@@ -107,10 +127,20 @@ Read across, this says four things and none of them was assumed:
 3. **fMRI-only identifies nothing in this slice.** Not just coupling and delay:
    its own haemodynamic parameters come out at `8.9e-09` too, because BOLD
    amplitude is the product of coupling gain and haemodynamic gain and fMRI
-   alone cannot separate the factors. Under the less conservative statistic
-   (nuisances profiled out under their priors rather than a flat prior) fMRI's
-   coupling profile rises to `1.3e-02` — still weakly identifiable at best, and
-   the *status* is unchanged in all 48 cells of the table.
+   alone cannot separate the factors.
+
+   Both statistics were computed for all 48 cells (3 regimes × 4 designs × 4
+   groups) and they agree on the status in **45**. The three that differ are
+   all `fmri_only / coupling`: likelihood-only gives `2.9e-06`,
+   `4.7e-07`, `7.8e-07` → *not identifiable*, while profiling the nuisances
+   under their priors gives `1.3e-02`, `1.5e-03`, `1.4e-02` → *weakly
+   identifiable*. This is the only place the choice of statistic changes a
+   verdict, so it is worth being exact about what is at stake: at
+   `lambda_min = 1.3e-02` the posterior sd of the worst coupling direction is
+   `0.9935` times the prior sd — a **0.65%** narrowing. The conservative
+   statistic refuses it; the permissive one would admit it and label it weak.
+   Either way no clinician could act on the difference, and the conservative
+   call is the one that ships.
 4. **The haemodynamic group is never identifiable in this reference slice**,
    even jointly (`2.6e-08`). That is a limitation of the three-region slice with
    a 1 s BOLD clock — `c_under` barely moves the record — and it is reported as
@@ -239,13 +269,53 @@ MEG-only profile is an EEG-shaped profile and is labelled as one.
 **And the identifiability profile cannot tell you whether the file contains
 data.** It answers "could data of this kind move this parameter", from the
 design, before anything is read. A disconnected electrode produces a file of the
-right shape and the profile says yes. That gap is why the negative control
-exists as a separate check on the record itself.
+right shape and the profile says yes — measured, in §7: patient `P05` has
+`coupling_lambda_min = 4.2303` on a record that is pure noise. That gap is why
+the negative control exists as a separate check on the record itself, and why it
+is reported separately rather than folded into the profile.
 
-## 7. Artifacts
+## 7. Five patients, end to end
+
+`patients/*.md` are complete reports; `patients/index.json` is the summary.
+Generated at `epoch_seconds=3.0, n_epochs=8, newton=3` (a shorter record than
+the benchmark, so the `lambda_min` values are correspondingly smaller — the
+ordering is what carries over).
+
+| patient | has | individualized | population prior | coupling `lambda_min` | coupling query |
+|---|---|---|---|---|---|
+| `P01-mri-only` | MRI, dMRI | head geometry, connectivity prior | coupling, delay, lead field, haemodynamic | **0** | **Defer** — "adding EEG would make coupling identifiable (measured 4.23)" |
+| `P02-eeg-only` | MRI, EEG | coupling, delay, lead field, head geometry | haemodynamic, connectivity prior | 4.2303 | answered, `8.854` |
+| `P03-fmri-only` | MRI, fMRI | head geometry only | coupling, delay, lead field, haemodynamic, connectivity prior | 6.63e-07 | **Defer** |
+| `P04-joint` | MRI, EEG, fMRI | coupling, delay, lead field, head geometry | haemodynamic, connectivity prior | 4.2303 | answered |
+| `P05-noise-control` | MRI, EEG (pure noise) | head geometry only | coupling, delay, lead field, haemodynamic, connectivity prior | 4.2303 | **Defer** |
+
+Four things to read off it.
+
+**P02 and P04 get the same groups.** Adding fMRI to an EEG patient moves the
+coupling profile from `4.230294` to `4.230302` and changes nothing about what
+can be personalised.
+
+**P03 never runs an optimiser at all.** The profile admits no group, so
+`consistency_passed` is `null` rather than `true`: there was no fit to check,
+which is a different statement from "the fit was fine".
+
+**P01's refusal names its own remedy with a measured number**, not an adjective:
+*"adding eeg would make coupling identifiable (measured lambda_min = 4.23);
+adding eeg would make conduction_delay identifiable (measured lambda_min =
+15.38)"*.
+
+**P05 is the case the identifiability profile cannot catch, and the negative
+control does.** Its EEG file has the right shape, the right marginal scale, and
+`coupling_lambda_min = 4.2303` — the profile says coupling is identifiable,
+because the profile answers a question about the *design*. The whitened
+innovations then come back at mean square `1.981` over 96 000 samples against a
+declared 25% tolerance, the individualization is rejected, and every dynamical
+group reverts to the population prior with the reason recorded. Without that
+second check P05's report would have been indistinguishable from P02's.
+
+## 8. Artifacts
 
 - `verify_fisher.json` — the reproduction in §1, machine-readable
 - `identifiability_by_modality.json` / `.md` — the full table in §2, all three
   regimes, eight modality combinations, both statistics
-- `patients/*.md`, `patients/*.json` — end-to-end per-patient reports for
-  MRI-only, EEG-only, fMRI-only, joint and a pure-noise negative control
+- `patients/*.md`, `patients/*.json`, `patients/index.json` — §7

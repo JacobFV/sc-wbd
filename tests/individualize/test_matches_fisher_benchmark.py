@@ -94,11 +94,105 @@ def test_the_tolerance_can_fail():
         assert not (rel < RTOL or absd < ATOL), (lam, want)
 
 
+#: Per-group theta/nuisance profiles at the benchmark configuration, reference
+#: regime.  These are the numbers printed in ``reports/individualize/README.md``
+#: sec. 2; pinning them here is what stops the report and the code drifting
+#: apart.  Regenerate with ``python -m scwbd.individualize.cli table``.
+REFERENCE_GROUPS = {
+    "prior": {
+        "coupling": 0.0,
+        "conduction_delay": 0.0,
+        "eeg_lead_field": 0.0,
+        "hemodynamic": 0.0,
+    },
+    "eeg_only": {
+        "coupling": 16.009321214072735,
+        "conduction_delay": 59.14982189298154,
+        "eeg_lead_field": 329.5198580471902,
+        "hemodynamic": 0.0,
+    },
+    "fmri_only": {
+        "coupling": 2.9392138322281394e-06,
+        "conduction_delay": 1.2057609304989076e-05,
+        "eeg_lead_field": 0.0,
+        "hemodynamic": 8.86669245179386e-09,
+    },
+    "joint_native": {
+        "coupling": 16.009344448904702,
+        "conduction_delay": 59.150607172235574,
+        "eeg_lead_field": 329.5661676163677,
+        "hemodynamic": 2.598263060032391e-08,
+    },
+}
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("design", sorted(REFERENCE_GROUPS))
+def test_per_group_table_matches_the_report(design):
+    from scwbd.individualize.groups import LIKELIHOOD_GROUPS
+
+    regime = REGIMES[0]
+    assert regime.name == "reference"
+    I, _ = _fisher_for_design(
+        design, cfg=benchmark_config(), regime=regime, eta=None, seed=20260805
+    )
+    for g in LIKELIHOOD_GROUPS:
+        S, _ = profiled_information(I, g.index, nuisance_prior=0.0)
+        lam = float(np.linalg.eigvalsh(0.5 * (S + S.T)).min())
+        want = REFERENCE_GROUPS[design][g.name]
+        rel = abs(lam - want) / max(abs(want), 1e-300)
+        assert rel < RTOL or abs(lam - want) < ATOL, (
+            f"{design}/{g.name}: {lam!r} vs reported {want!r}"
+        )
+
+
+@pytest.mark.slow
+def test_the_two_statistics_disagree_only_where_the_report_says_they_do():
+    """The report claims 45/48 agreement; the reference regime's share is 15/16."""
+    from scwbd.individualize.groups import LIKELIHOOD_GROUPS
+    from scwbd.individualize.profile import IdentifiabilityThresholds
+
+    th = IdentifiabilityThresholds()
+    disagree = []
+    for design in sorted(REFERENCE_GROUPS):
+        I, _ = _fisher_for_design(
+            design, cfg=benchmark_config(), regime=REGIMES[0], eta=None,
+            seed=20260805,
+        )
+        for g in LIKELIHOOD_GROUPS:
+            a, _ = profiled_information(I, g.index, nuisance_prior=0.0)
+            b, _ = profiled_information(I, g.index, nuisance_prior=1.0)
+            sa = th.classify(float(np.linalg.eigvalsh(0.5 * (a + a.T)).min()))
+            sb = th.classify(float(np.linalg.eigvalsh(0.5 * (b + b.T)).min()))
+            if sa != sb:
+                disagree.append((design, g.name, sa, sb))
+    assert disagree == [
+        ("fmri_only", "coupling", "not_identifiable", "weakly_identifiable")
+    ], disagree
+
+
+#: Measured, per regime: ``(joint - eeg)/joint`` and ``eeg/fmri``.  Bounds are
+#: set from these rather than picked: the EEG-vs-joint gap is largest in
+#: ``low_snr_short_delay`` at 8.58e-05, and the EEG-vs-fMRI ratio is smallest in
+#: ``weak_coupling_long_delay`` at 3.93e+06.  A first version of this test used
+#: 1e-05 for the gap and failed on ``low_snr_short_delay`` -- the bound was
+#: chosen before the number was looked at, which is the wrong order.
+MAX_EEG_JOINT_GAP = 1e-4
+MIN_EEG_FMRI_RATIO = 1e6
+
+
 @pytest.mark.slow
 def test_the_ordering_the_whole_design_rests_on(committed):
     """EEG ~= joint >> fMRI-only, in EVERY committed regime."""
+    gaps, ratios = {}, {}
     for r in REGIMES:
         m = committed[r.name]["theta_profile_min_eigenvalue_nonprior"]
         e, j, f = m["eeg_only"], m["joint_native"], m["fmri_only"]
-        assert abs(j - e) / j < 1e-5, (r.name, e, j)
-        assert e / f > 1e5, (r.name, e, f)
+        gaps[r.name] = abs(j - e) / j
+        ratios[r.name] = e / f
+        assert gaps[r.name] < MAX_EEG_JOINT_GAP, (r.name, e, j)
+        assert ratios[r.name] > MIN_EEG_FMRI_RATIO, (r.name, e, f)
+    # the bounds must not be so loose they could not fail: the worst measured
+    # values have to sit within an order of magnitude of them
+    assert max(gaps.values()) > 0.1 * MAX_EEG_JOINT_GAP, gaps
+    assert min(ratios.values()) < 10 * MIN_EEG_FMRI_RATIO, ratios

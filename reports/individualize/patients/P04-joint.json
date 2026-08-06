@@ -1,0 +1,803 @@
+{
+ "availability": {
+  "absent": [
+   "dmri",
+   "meg",
+   "behavior"
+  ],
+  "channels": [
+   "eeg",
+   "bold"
+  ],
+  "design": "joint_native",
+  "group": "population",
+  "meg_as_eeg_proxy": false,
+  "notes": [],
+  "patient_id": "P04-joint",
+  "present": [
+   "structural_mri",
+   "eeg",
+   "fmri"
+  ],
+  "records": [
+   {
+    "calibration": "declared:P04-joint:structural_mri:calibration",
+    "channel_reason": "no observation operator in the reference dynamical slice; structural MRI individualises geometry, lead fields and anatomy-derived priors, which are outside theta = (a21, a32, a13, tau)",
+    "clock": "declared:P04-joint:structural_mri:clock",
+    "declaration_kind": {
+     "calibration": "name",
+     "clock": "name",
+     "source_card": "name",
+     "support": "name"
+    },
+    "duration_seconds": null,
+    "fully_objectified": false,
+    "likelihood_channel": null,
+    "modality": "structural_mri",
+    "n_samples": null,
+    "notes": [],
+    "session_id": "s0",
+    "source_card": "declared:P04-joint:structural_mri:card",
+    "support": "declared:P04-joint:structural_mri:support"
+   },
+   {
+    "calibration": "declared:P04-joint:eeg:calibration",
+    "channel_reason": "read by H_eeg (T2): instantaneous lead-field mixing of the fast state",
+    "clock": "declared:P04-joint:eeg:clock",
+    "declaration_kind": {
+     "calibration": "name",
+     "clock": "name",
+     "source_card": "name",
+     "support": "name"
+    },
+    "duration_seconds": null,
+    "fully_objectified": false,
+    "likelihood_channel": "eeg",
+    "modality": "eeg",
+    "n_samples": null,
+    "notes": [],
+    "session_id": "s0",
+    "source_card": "declared:P04-joint:eeg:card",
+    "support": "declared:P04-joint:eeg:support"
+   },
+   {
+    "calibration": "declared:P04-joint:fmri:calibration",
+    "channel_reason": "read by H_bold (T3): hemodynamic cascade on the slow clock",
+    "clock": "declared:P04-joint:fmri:clock",
+    "declaration_kind": {
+     "calibration": "name",
+     "clock": "name",
+     "source_card": "name",
+     "support": "name"
+    },
+    "duration_seconds": null,
+    "fully_objectified": false,
+    "likelihood_channel": "bold",
+    "modality": "fmri",
+    "n_samples": null,
+    "notes": [],
+    "session_id": "s0",
+    "source_card": "declared:P04-joint:fmri:card",
+    "support": "declared:P04-joint:fmri:support"
+   }
+  ],
+  "session_ids": [
+   "s0"
+  ]
+ },
+ "data_consistency": {
+  "n_samples": 96072,
+  "passed": true,
+  "per_channel": {
+   "bold": 1.1643162979818686,
+   "eeg": 0.9704676123326208
+  },
+  "reason": "whitened innovations have mean square 0.9706 over 96072 samples (z = -6.44); within the declared 25% tolerance of 1.",
+  "rel_tolerance": 0.25,
+  "whitened_innovation_mean_square": 0.9706128898886907,
+  "z_score": -6.440807188077248
+ },
+ "decomposition": {
+  "alpha": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "delta": [
+   0.5544705708544235,
+   1.3148562968049937,
+   1.2654603360812366,
+   0.011829700024016176,
+   0.08112684411728284,
+   0.027178507879751967,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "delta_zeta_separable": false,
+  "mu": [
+   30.0,
+   25.0,
+   -18.0,
+   -4.422848629194137,
+   0.0,
+   0.0,
+   0.47000362924573563,
+   0.0,
+   0.0
+  ],
+  "parameter_names": [
+   "a21",
+   "a32",
+   "a13",
+   "tau",
+   "gain_eeg",
+   "tilt_eeg",
+   "beta_hrf",
+   "c_under",
+   "gain_bold"
+  ],
+  "separability_reason": "one session: delta_p (trait) and zeta_{p,s} (state) enter the likelihood only through their sum, so the split is NOT identified. The combined offset is reported as delta and must not be read as evidence that this patient's session effect is zero.",
+  "session_ids": [
+   "s0"
+  ],
+  "shrinkage_applied_in_fit": true,
+  "shrinkage_factor": [
+   0.9306339780839623,
+   0.7976754108995685,
+   0.552466337474494,
+   0.8090104726527906,
+   0.9871715748017996,
+   0.9597265350375855,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "theta_trait": [
+   30.554470570854424,
+   26.314856296804994,
+   -16.734539663918763,
+   -4.411018929170121,
+   0.08112684411728284,
+   0.027178507879751967,
+   0.47000362924573563,
+   0.0,
+   0.0
+  ],
+  "zeta": [
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  ],
+  "zeta_centering_residual": 0.0
+ },
+ "fit_diagnostics": {
+  "channels": [
+   "eeg",
+   "bold"
+  ],
+  "data_consistency_per_session": {
+   "s0": {
+    "n_samples": 96072,
+    "passed": true,
+    "per_channel": {
+     "bold": 1.1643162979818686,
+     "eeg": 0.9704676123326208
+    },
+    "reason": "whitened innovations have mean square 0.9706 over 96072 samples (z = -6.44); within the declared 25% tolerance of 1.",
+    "rel_tolerance": 0.25,
+    "whitened_innovation_mean_square": 0.9706128898886907,
+    "z_score": -6.440807188077248
+   }
+  },
+  "design": "joint_native",
+  "per_session": {
+   "s0": {
+    "fitted_indices": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ],
+    "frozen_indices": [
+     6,
+     7,
+     8
+    ],
+    "n_newton": 3,
+    "objective_decrease": 48.31278177174681,
+    "objective_history": [
+     -79879.05581376713,
+     -79919.72181760974,
+     -79926.27300421787,
+     -79927.36859553888
+    ],
+    "prior_used": "individual: N(mu + alpha_g, diag(person_sd^2 + session_sd^2))"
+   }
+  },
+  "seconds": 63.02332425117493
+ },
+ "fit_mask": {
+  "a13": true,
+  "a21": true,
+  "a32": true,
+  "beta_hrf": false,
+  "c_under": false,
+  "gain_bold": false,
+  "gain_eeg": true,
+  "tau": true,
+  "tilt_eeg": true
+ },
+ "group": "population",
+ "identifiability_profile": {
+  "availability_digest": "68befa32b249a0c6",
+  "basis": "prior_standardised",
+  "channels": [
+   "eeg",
+   "bold"
+  ],
+  "config": {
+   "device": "cpu",
+   "dt": 0.001,
+   "dt_bold": 1.0,
+   "dtype": "float64",
+   "epoch_seconds": 3.0,
+   "hrf_stages": 8,
+   "n_delay_taps": 26,
+   "n_epochs": 8
+  },
+  "counterfactuals": {},
+  "design": "joint_native",
+  "fittable_parameters": [
+   "a21",
+   "a32",
+   "a13",
+   "tau",
+   "gain_eeg",
+   "tilt_eeg"
+  ],
+  "groups": {
+   "conduction_delay": {
+    "clinical_meaning": "network conduction delay (s) -- sets the phase relationships any oscillation-timed or closed-loop protocol depends on",
+    "diagnostics": {
+     "leaked_negative_eigenvalue": 0.0,
+     "n_keep": 1,
+     "n_profiled": 8,
+     "nuisance_condition": 50685388709.245125,
+     "nuisance_dropped": 0,
+     "nuisance_prior": 0.0,
+     "nuisance_rank": 8
+    },
+    "evidence_kind": "fisher_information",
+    "group": "conduction_delay",
+    "kind": "likelihood",
+    "lambda_min_likelihood": 15.380982141247538,
+    "lambda_min_with_nuisance_prior": 15.402437740951568,
+    "parameters": [
+     "tau"
+    ],
+    "per_parameter_information": {
+     "tau": 17.10174457804788
+    },
+    "posterior_sd_ratio": 0.24707569836208793,
+    "reason": "lambda_min = 15.381 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.247 x prior sd).",
+    "status": "identifiable"
+   },
+   "coupling": {
+    "clinical_meaning": "directed effective coupling gains between regions -- what a stimulation target, a seizure-propagation prediction or a disconnection claim is actually about",
+    "diagnostics": {
+     "leaked_negative_eigenvalue": 0.0,
+     "n_keep": 3,
+     "n_profiled": 6,
+     "nuisance_condition": 50661271277.3117,
+     "nuisance_dropped": 0,
+     "nuisance_prior": 0.0,
+     "nuisance_rank": 6
+    },
+    "evidence_kind": "fisher_information",
+    "group": "coupling",
+    "kind": "likelihood",
+    "lambda_min_likelihood": 4.230302218149023,
+    "lambda_min_with_nuisance_prior": 4.240954461958844,
+    "parameters": [
+     "a21",
+     "a32",
+     "a13"
+    ],
+    "per_parameter_information": {
+     "a13": 4.278259768759804,
+     "a21": 56.1683186578785,
+     "a32": 15.208349947954602
+    },
+    "posterior_sd_ratio": 0.43725683607734706,
+    "reason": "lambda_min = 4.2303 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.437 x prior sd).",
+    "status": "identifiable"
+   },
+   "eeg_lead_field": {
+    "clinical_meaning": "global gain and electrode-placement tilt of the patient's EEG lead field -- the sensor-to-source map",
+    "diagnostics": {
+     "leaked_negative_eigenvalue": 0.0,
+     "n_keep": 2,
+     "n_profiled": 7,
+     "nuisance_condition": 9273004182.797802,
+     "nuisance_dropped": 0,
+     "nuisance_prior": 0.0,
+     "nuisance_rank": 7
+    },
+    "evidence_kind": "fisher_information",
+    "group": "eeg_lead_field",
+    "kind": "likelihood",
+    "lambda_min_likelihood": 82.51979258336837,
+    "lambda_min_with_nuisance_prior": 83.14212279528502,
+    "parameters": [
+     "gain_eeg",
+     "tilt_eeg"
+    ],
+    "per_parameter_information": {
+     "gain_eeg": 305.7314842482641,
+     "tilt_eeg": 97.66833430461031
+    },
+    "posterior_sd_ratio": 0.10942216325469348,
+    "reason": "lambda_min = 82.5198 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.109 x prior sd).",
+    "status": "identifiable"
+   },
+   "head_geometry": {
+    "clinical_meaning": "the patient's own scalp/skull/brain surfaces and source space, instead of a template head",
+    "diagnostics": {
+     "modalities_present": [
+      "structural_mri"
+     ]
+    },
+    "evidence_kind": "modality_presence",
+    "group": "head_geometry",
+    "kind": "anatomical",
+    "lambda_min_likelihood": null,
+    "lambda_min_with_nuisance_prior": null,
+    "parameters": [],
+    "per_parameter_information": {},
+    "posterior_sd_ratio": null,
+    "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+    "status": "identifiable"
+   },
+   "hemodynamic": {
+    "clinical_meaning": "the patient's haemodynamic response: cascade time constant, undershoot weight and BOLD gain -- vascular, not neural",
+    "diagnostics": {
+     "leaked_negative_eigenvalue": 0.0,
+     "n_keep": 3,
+     "n_profiled": 6,
+     "nuisance_condition": 71.88313203738329,
+     "nuisance_dropped": 0,
+     "nuisance_prior": 0.0,
+     "nuisance_rank": 6
+    },
+    "evidence_kind": "fisher_information",
+    "group": "hemodynamic",
+    "kind": "likelihood",
+    "lambda_min_likelihood": 6.05852067764185e-09,
+    "lambda_min_with_nuisance_prior": 6.05861271322538e-09,
+    "parameters": [
+     "beta_hrf",
+     "c_under",
+     "gain_bold"
+    ],
+    "per_parameter_information": {
+     "beta_hrf": 2.344565420348723,
+     "c_under": 2.1695023280675734e-06,
+     "gain_bold": 0.8317211614472722
+    },
+    "posterior_sd_ratio": 0.9999999969707398,
+    "reason": "lambda_min = 6.05852e-09 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label.",
+    "status": "not_identifiable"
+   },
+   "structural_connectivity_prior": {
+    "clinical_meaning": "tract-derived prior on which connections exist and how long they are -- a PRIOR on coupling and delay, never a measurement of them",
+    "diagnostics": {
+     "modalities_present": []
+    },
+    "evidence_kind": "modality_presence",
+    "group": "structural_connectivity_prior",
+    "kind": "anatomical",
+    "lambda_min_likelihood": null,
+    "lambda_min_with_nuisance_prior": null,
+    "parameters": [],
+    "per_parameter_information": {},
+    "posterior_sd_ratio": null,
+    "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+    "status": "not_identifiable"
+   }
+  },
+  "identifiable": [
+   "coupling",
+   "conduction_delay",
+   "eeg_lead_field",
+   "head_geometry"
+  ],
+  "not_identifiable": [
+   "hemodynamic",
+   "structural_connectivity_prior"
+  ],
+  "notes": [
+   "at least one modality's source card / support / clock / calibration is a NAME, not an object: the R01 declarations exist but have not been resolved to records that could be checked."
+  ],
+  "patient_id": "P04-joint",
+  "present": [
+   "structural_mri",
+   "eeg",
+   "fmri"
+  ],
+  "provenance": {
+   "cache": "hit",
+   "computed": "expected_fisher(method='analytic', standardised=True)",
+   "n_bold_samples_used": null,
+   "n_eeg_samples_used": null,
+   "notes": [],
+   "seed": 20260805,
+   "sigma_bold": 0.0036943445543224777,
+   "sigma_eeg": 0.0938316131769129,
+   "statistic": "min eigenvalue of the Schur complement of the LIKELIHOOD-only expected Fisher information on the group, all other parameters profiled out, prior-standardised basis"
+  },
+  "regime": "reference",
+  "thresholds": {
+   "identifiable": 1.0,
+   "weak": 0.001
+  },
+  "weakly_identifiable": []
+ },
+ "individualized_groups": [
+  "coupling",
+  "conduction_delay",
+  "eeg_lead_field",
+  "head_geometry"
+ ],
+ "notes": [
+  "one session: delta_p (trait) and zeta_{p,s} (state) enter the likelihood only through their sum, so the split is NOT identified. The combined offset is reported as delta and must not be read as evidence that this patient's session effect is zero.",
+  "at least one modality's source card / support / clock / calibration is a NAME, not an object: the R01 declarations exist but have not been resolved to records that could be checked."
+ ],
+ "outcomes": {
+  "conduction_delay": {
+   "group": "conduction_delay",
+   "identifiability_status": "identifiable",
+   "lambda_min": 15.380982141247538,
+   "parameters": [
+    "tau"
+   ],
+   "population_value_unconstrained": {
+    "tau": -4.422848629194137
+   },
+   "posterior_sd_unconstrained": {
+    "tau": 0.0552794041508178
+   },
+   "reason": "fitted from ['eeg', 'bold'] on the patient's own records; lambda_min = 15.381 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.247 x prior sd).",
+   "source": "patient data",
+   "status": "individualized",
+   "uncertainty_ledger": {
+    "bias_status": "prior_specified_sensitivity",
+    "prior_fraction": {
+     "tau": 0.05524329413048438
+    },
+    "units": "unconstrained coordinate of scwbd.infer.linear_gaussian",
+    "validity_domain": {
+     "design": "joint_native",
+     "modalities": [
+      "structural_mri",
+      "eeg",
+      "fmri"
+     ],
+     "regime": "reference"
+    },
+    "variance": {
+     "tau": 0.0030558125232694523
+    },
+    "variance_source": "Laplace (expected information at the estimate)"
+   },
+   "value_natural": {
+    "tau": 0.0121427993718583
+   },
+   "value_unconstrained": {
+    "tau": -4.411018929170121
+   }
+  },
+  "coupling": {
+   "group": "coupling",
+   "identifiability_status": "identifiable",
+   "lambda_min": 4.230302218149023,
+   "parameters": [
+    "a21",
+    "a32",
+    "a13"
+   ],
+   "population_value_unconstrained": {
+    "a13": -18.0,
+    "a21": 30.0,
+    "a32": 25.0
+   },
+   "posterior_sd_unconstrained": {
+    "a13": 3.453100885006757,
+    "a21": 1.3214663247066234,
+    "a32": 2.280749166691095
+   },
+   "reason": "fitted from ['eeg', 'bold'] on the patient's own records; lambda_min = 4.2303 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.437 x prior sd).",
+   "source": "patient data",
+   "status": "individualized",
+   "uncertainty_ledger": {
+    "bias_status": "prior_specified_sensitivity",
+    "prior_fraction": {
+     "a13": 0.18945638218085714,
+     "a21": 0.017492205883899783,
+     "a32": 0.061696594854567174
+    },
+    "units": "unconstrained coordinate of scwbd.infer.linear_gaussian",
+    "validity_domain": {
+     "design": "joint_native",
+     "modalities": [
+      "structural_mri",
+      "eeg",
+      "fmri"
+     ],
+     "regime": "reference"
+    },
+    "variance": {
+     "a13": 11.923905722034448,
+     "a21": 1.746273247333631,
+     "a32": 5.201816761362124
+    },
+    "variance_source": "Laplace (expected information at the estimate)"
+   },
+   "value_natural": {
+    "a13": -16.734539663918763,
+    "a21": 30.554470570854424,
+    "a32": 26.314856296804994
+   },
+   "value_unconstrained": {
+    "a13": -16.734539663918763,
+    "a21": 30.554470570854424,
+    "a32": 26.314856296804994
+   }
+  },
+  "eeg_lead_field": {
+   "group": "eeg_lead_field",
+   "identifiability_status": "identifiable",
+   "lambda_min": 82.51979258336837,
+   "parameters": [
+    "gain_eeg",
+    "tilt_eeg"
+   ],
+   "population_value_unconstrained": {
+    "gain_eeg": 0.0,
+    "tilt_eeg": 0.0
+   },
+   "posterior_sd_unconstrained": {
+    "gain_eeg": 0.01699944160936873,
+    "tilt_eeg": 0.019938258923228553
+   },
+   "reason": "fitted from ['eeg', 'bold'] on the patient's own records; lambda_min = 82.5198 prior-precision units >= 1: the patient's data determine every direction in this group at least as well as the prior does (posterior sd <= 0.109 x prior sd).",
+   "source": "patient data",
+   "status": "individualized",
+   "uncertainty_ledger": {
+    "bias_status": "prior_specified_sensitivity",
+    "prior_fraction": {
+     "gain_eeg": 0.0032601804879952077,
+     "tilt_eeg": 0.010134963836652857
+    },
+    "units": "unconstrained coordinate of scwbd.infer.linear_gaussian",
+    "validity_domain": {
+     "design": "joint_native",
+     "modalities": [
+      "structural_mri",
+      "eeg",
+      "fmri"
+     ],
+     "regime": "reference"
+    },
+    "variance": {
+     "gain_eeg": 0.0002889810150303369,
+     "tilt_eeg": 0.000397534168889703
+    },
+    "variance_source": "Laplace (expected information at the estimate)"
+   },
+   "value_natural": {
+    "gain_eeg": 1.0845084513597663,
+    "tilt_eeg": 0.027178507879751967
+   },
+   "value_unconstrained": {
+    "gain_eeg": 0.08112684411728284,
+    "tilt_eeg": 0.027178507879751967
+   }
+  },
+  "head_geometry": {
+   "group": "head_geometry",
+   "identifiability_status": "identifiable",
+   "lambda_min": null,
+   "parameters": [],
+   "population_value_unconstrained": {},
+   "posterior_sd_unconstrained": {},
+   "reason": "presence-determined: the patient has ['structural_mri'], from which this group is individualised directly. NOTE: this status is established by PRESENCE, not by a Fisher computation -- there is no lambda_min for it and none is reported.",
+   "source": "patient anatomy (presence-determined, no Fisher number)",
+   "status": "individualized",
+   "uncertainty_ledger": {
+    "bias_status": "prior_specified_sensitivity",
+    "note": "anatomical groups are individualised outside the dynamical likelihood; their uncertainty is owned by the anatomy/observe modules, not measured here",
+    "variance": {}
+   },
+   "value_natural": {},
+   "value_unconstrained": {}
+  },
+  "hemodynamic": {
+   "group": "hemodynamic",
+   "identifiability_status": "not_identifiable",
+   "lambda_min": 6.05852067764185e-09,
+   "parameters": [
+    "beta_hrf",
+    "c_under",
+    "gain_bold"
+   ],
+   "population_value_unconstrained": {
+    "beta_hrf": 0.47000362924573563,
+    "c_under": 0.0,
+    "gain_bold": 0.0
+   },
+   "posterior_sd_unconstrained": {
+    "beta_hrf": 0.2,
+    "c_under": 0.6,
+    "gain_bold": 0.3
+   },
+   "reason": "NOT individualized. lambda_min = 6.05852e-09 prior-precision units < 0.001: the available modalities carry essentially no information about the worst-determined direction of this group (posterior sd = 1.000000 x prior sd -- the prior, to six figures). Fitting it would return the prior wearing a posterior's label. The value below is the population value, returned unchanged and labelled as such.",
+   "source": "population prior (NOT this patient)",
+   "status": "population_prior",
+   "uncertainty_ledger": {
+    "bias_status": "prior_specified_sensitivity",
+    "prior_fraction": {
+     "beta_hrf": 0.2989925070431824,
+     "c_under": 0.9999978305023787,
+     "gain_bold": 0.5459346220632643
+    },
+    "units": "unconstrained coordinate of scwbd.infer.linear_gaussian",
+    "validity_domain": {
+     "design": "joint_native",
+     "modalities": [
+      "structural_mri",
+      "eeg",
+      "fmri"
+     ],
+     "regime": "reference"
+    },
+    "variance": {
+     "beta_hrf": 0.04000000000000001,
+     "c_under": 0.36,
+     "gain_bold": 0.09
+    },
+    "variance_source": "population prior variance -- no patient information entered"
+   },
+   "value_natural": {
+    "beta_hrf": 1.6,
+    "c_under": 0.25,
+    "gain_bold": 1.0
+   },
+   "value_unconstrained": {
+    "beta_hrf": 0.47000362924573563,
+    "c_under": 0.0,
+    "gain_bold": 0.0
+   }
+  },
+  "structural_connectivity_prior": {
+   "group": "structural_connectivity_prior",
+   "identifiability_status": "not_identifiable",
+   "lambda_min": null,
+   "parameters": [],
+   "population_value_unconstrained": {},
+   "posterior_sd_unconstrained": {},
+   "reason": "the patient has none of ['dmri']; this group stays at the population/template value.",
+   "source": "population/template",
+   "status": "population_prior",
+   "uncertainty_ledger": {
+    "bias_status": "prior_specified_sensitivity",
+    "note": "anatomical groups are individualised outside the dynamical likelihood; their uncertainty is owned by the anatomy/observe modules, not measured here",
+    "variance": {}
+   },
+   "value_natural": {},
+   "value_unconstrained": {}
+  }
+ },
+ "patient_id": "P04-joint",
+ "population_model": {
+  "alpha_centered": [
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  ],
+  "centering_residual": 0.0,
+  "group_counts": [
+   1.0
+  ],
+  "group_names": [
+   "population"
+  ],
+  "mu": [
+   30.0,
+   25.0,
+   -18.0,
+   -4.422848629194137,
+   0.0,
+   0.0,
+   0.47000362924573563,
+   0.0,
+   0.0
+  ],
+  "parameter_names": [
+   "a21",
+   "a32",
+   "a13",
+   "tau",
+   "gain_eeg",
+   "tilt_eeg",
+   "beta_hrf",
+   "c_under",
+   "gain_bold"
+  ],
+  "person_sd": [
+   5.0,
+   5.0,
+   5.0,
+   0.125,
+   0.15,
+   0.1,
+   0.1,
+   0.3,
+   0.15
+  ],
+  "prior_sd": [
+   10.0,
+   10.0,
+   10.0,
+   0.25,
+   0.3,
+   0.2,
+   0.2,
+   0.6,
+   0.3
+  ],
+  "provenance": {
+   "note": "a single population group with alpha = 0; this stands in for a fitted population posterior and is labelled so that nothing downstream can mistake it for one",
+   "source": "scwbd.infer.linear_gaussian.prior_mean_u / prior_sd_u"
+  },
+  "session_sd": [
+   2.0,
+   2.0,
+   2.0,
+   0.05,
+   0.06,
+   0.04000000000000001,
+   0.04000000000000001,
+   0.12,
+   0.06
+  ]
+ },
+ "population_prior_groups": [
+  "hemodynamic",
+  "structural_connectivity_prior"
+ ]
+}
