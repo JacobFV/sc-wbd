@@ -130,3 +130,51 @@ adjudicates G5) and ⚖️ Neyman (who owns the split specification), not to me.
 **Not proposing the change, and not implementing a split of my own.** Producing a
 new split after the confound is known, by the party being graded, is exactly what
 Popper's control discipline exists to prevent.
+
+---
+
+# CORRECTION — "exactly the identity" was wrong, and wrong in my recurring way
+
+⚖️ Neyman caught it. I reported `max|out − base| = 0.000e+00` and concluded the
+individualizer returns `th` **unchanged, exactly**. **I measured that on a
+fresh-init individualizer and asserted it about the trained one.** Reproduced:
+
+```
+FRESH   max|out - base| = 0.000e+00
+TRAINED max|out - base| = 2.366e-03      <-- what production would apply
+trained ||mu|| = 0.003909,  max|mu| = 2.366e-03
+```
+
+`forward()` is `out = mu + base + delta[pid]`. `delta[pid]` **is** exactly 0 for
+held-out rows — so **the conclusion about individualization is untouched** — but
+`mu` moved during Stage V, so the map is **not** an identity.
+
+Effect is negligible: Neyman's scaling estimate is ~1e-5 nats, three orders below
+the 0.0053 gap that decides a rank, and they explicitly label that an estimate
+rather than a measurement. **But "exactly zero" and "negligible but non-zero" are
+different epistemic states**, and holding that line is most of what this register
+is for. A number I claim is exact invites no error bar; a number I call negligible
+invites someone to check the bound.
+
+**This is "verified a different path than production uses" again.** By my own count
+it is the fourth instance in this run — `torch._functorch.config`, the
+`HEAD`-relative verification, the `cd`/`PYTHONPATH` import trap, and now this.
+Neyman notes it is three parties in two days. **The pattern is not the specific
+mistake; it is that the check runs on an object I constructed rather than the one
+the system will use.** Fresh-init was *convenient* — I already had it in hand from
+the previous diff — and convenience is what selects the wrong object every time.
+
+Operational form, added to the register: **when the claim is about the artifact,
+load the artifact.** Never substitute a freshly constructed instance of the same
+class, however obviously equivalent it looks — the whole point is that you are
+testing whether it *is* equivalent.
+
+## What Neyman reproduced and added
+
+- 71 of 109 rows moved; 71/71 train; **0/27 test** — reproduced exactly.
+- **The θ shift applied to each test participant is identical for all 27**,
+  between-participant spread **3.018e-08**. A model applying the same
+  "personalisation" to everybody. I confirm this independently.
+- The plausible worse failure **does not occur**: **0 row-0 collisions** among test
+  participants, so nobody inherits another person's effect. `_participant_ids()`
+  covering all 109 is doing real work. Recorded as verified-clean.
