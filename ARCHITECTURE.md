@@ -448,12 +448,73 @@ Same for `padding_fraction`, which was filed as a measured cost against an
 11-family partition that no longer exists — a derived quantity written down as
 a constant goes stale silently.
 
+### O-5. Regional state is **vector-valued**, not scalar-per-parcel
+
+This is the change the measurements have been asking for all day and that
+nothing has acted on.
+
+🧭 Gauss: a per-parcel scalar support carries **5.6%** of the whitened EEG lead
+field; 16.2% even subdivided to 542 parcels; **51.7%** for a net dipole moment
+at three numbers per parcel. 🧠 Cajal corroborated by independent geometry —
+folding cancellation means subdividing past 400 parcels buys at most a further
+**1.29×**. Two methods, one conclusion: **orientation buys ~9× what resolution
+buys, and we are spending everything on resolution.**
+
+Pyramidal cells sit normal to the sheet, so a parcel's contribution to any
+electromagnetic observation is the *vector* sum of its face normals weighted by
+area — which is why Cajal's `coherence = |Σ a·n| / Σ a` is load-bearing and a
+bare unit normal is not. A parcel at coherence 0.28 contributes a quarter of
+what its area suggests.
+
+So `rate_e` as a scalar per parcel is the wrong primitive for anything that
+touches a lead field, an E-field, or a TMS impulse. The state must carry a
+**3-vector moment** with its coherence, its port declared in `Hz·m` (a moment,
+not a rate), and the observation heads must project through `normal × coherence`
+rather than multiplying a scalar amplitude.
+
+This is not an optimisation. It is the difference between a model that can
+predict a pose-dependent TMS response and one that structurally cannot.
+
+### O-6. The state layout is **ragged**, not padded
+
+`padded-family-state` was declared a narrowing with the padding measured at
+**52.26%** of the state plane — because two hippocampal parcels set `D` for all
+414. The justification was that ragged breaks the batched trainer.
+
+In greenfield that is the wrong trade and it should be reversed. §2.1 says the
+components "need not have equal shape or even be ordinary dense tensors", and
+we are paying 2.1× in cells to pretend otherwise while declaring it a narrowing
+of the paper's central claim. Segment layouts are a solved problem
+(`nested_tensor`, segment ids + offsets, or per-family dense blocks with a
+gather). The enforced span guard that made padding *honest* becomes unnecessary
+rather than merely satisfied.
+
+### O-7. One region ontology
+
+`schema.Region` and `anatomy.RegionFamily` are two region vocabularies with no
+enforced relationship. That mismatch produced the same class of bug **three
+times in one day** — a `FamilyPartition` read as per-parcel labels in
+`_declared_families`, in `derive_families`, and again in a binding-drift
+misdiagnosis. Two vocabularies for one concept is not a coordination problem to
+be managed; it is a defect to be removed.
+
 ### What this is not
 
-Not a rewrite. `Support`, `SourceCard`, `ObservationModel` and the ledger are
-the right *shapes*; they are under-connected rather than wrong. O-1 and O-2 add
-objects that should already exist; O-3 and O-4 remove duplication that has
-already caused three defects.
+**It is a rewrite of the state and its ontology, and it should be.** This is
+greenfield. The earlier draft of this section scoped O-3/O-4 out because
+another agent was mid-task in those files — that is a coordination concern
+being allowed to masquerade as a design decision, and a half-migrated ontology
+is worse than either end.
+
+What survives unchanged: `SourceCard`, `ObservationModel`, the ledger, the
+compiler and its refusals, the dynamics backends, the anatomy prior's *content*.
+What changes: what regional state **is** (O-5, O-6), what a source attaches
+**to** (O-1, O-2), and how a region is **named and annotated** (O-3, O-4, O-7).
+
+Run 2's pilot proceeds on the current design as a shakedown. It is not the
+thing this replaces — it is how we find out whether the training path works at
+all, and its checkpoint is what unblocks the impulse-response and prediction
+paths. The redesign runs in parallel and lands for run 3.
 
 ---
 
