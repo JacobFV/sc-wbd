@@ -12,20 +12,31 @@ existing report except where explicitly attributed.
 
 ## 0. Headline
 
-> **The bridge has no bridge.** `scwbd.runtime` never reads a checkpoint. It
-> contains no `torch.load`. The predictions `tms-robotics` consumes are
+> **The bridge had no bridge.** `scwbd.runtime` did not read checkpoints. It
+> contained no `torch.load`. The predictions `tms-robotics` consumed were
 > produced entirely by a closed-form field model and prior-specified surrogate
-> propagators over a topology prior, and they are **byte-identical** whether
-> the service is backed by nothing, by the run-1 artifact, or by the declared
+> propagators over a topology prior, and they were **byte-identical** whether
+> the service was backed by nothing, by the run-1 artifact, or by the declared
 > g5 control arm.
 
 Established by execution, not by reading — §2, finding **F3**.
 
-The claim boundary is now structurally enforced at load (§3) and consumers read
-declared ports rather than state slices (§4). Neither of those changes the
-headline. **The honest deliverable is that the consumer cannot safely use any
-checkpoint we currently have, and after this work it can no longer do so by
-accident.**
+**That is now closed.** §7 builds the path: a checkpoint is reconstructed,
+loaded and rolled forward, and different checkpoints produce different numbers.
+The test that would have failed silently the whole time now runs on real
+artifacts and passes.
+
+| checkpoint | activity mean | \|EEG\| |
+|---|---|---|
+| `stage_I_regional.pt` | +0.002702 | 2.074976 |
+| `stage_II_interface.pt` | +0.005777 | 1.874494 |
+| `stage_V_individual.pt` | −0.003434 | 0.896981 |
+| `g5control/last.pt` | −0.003434 | 0.899428 |
+
+The remaining sections stand: the claim boundary is labelled at load (§3),
+consumers read declared ports rather than state slices (§4), and the run-1
+artifact is still the control arm with synthetic anatomy and unrun gates — it is
+now *runnable and labelled* rather than unusable and unlabelled.
 
 ---
 
@@ -94,7 +105,7 @@ The service hashes the weights file and reports its sha256. It never opens it.
 `load_anatomy`; `network_response` is computed from `head.connectivity` — a
 topology prior — through the surrogate propagators in `runtime/backends.py`.
 
-### F3 — the trained/untrained distinction cannot change any output
+### F3 — the trained/untrained distinction could not change any output
 
 Three loads, three different backings, same fixture pose:
 
@@ -108,11 +119,10 @@ Distinct `(benefit, epistemic)` pairs across all three: **1**.
 
 The provenance fields change. The numbers do not. A guard that discriminates on
 `weights_status` is discriminating on a label attached to numbers it cannot
-affect. **This remains true after all of this work** — closing it requires a
-real bridge from checkpoint to prediction, which does not exist and is not
-built here.
+affect. **Closed 2026-08-06** by `scwbd/runtime/predict.py` — see §7. The table above
+is retained as the measurement that motivated it.
 
-### F4 — `warm_up()` returns `Recommend`, and its docstring says otherwise
+### F4 — `warm_up()` returned `Recommend`, and its docstring said otherwise
 
 `ServedModel.warm_up`'s docstring: *"including its decision, which for the
 shipped phantom is frequently a `Defer`. That is the expected outcome, not a
@@ -125,11 +135,21 @@ decision: Recommend — predicted change on left_dlpfc separates from
 no_stimulation by 0.2296 against an epistemic uncertainty of 0.1567
 ```
 
-**This disagrees with the docstring.** I am filing the disagreement rather than
+**This disagreed with the docstring.** I filed the disagreement rather than
 editing the docstring to match: the interesting fact is that the default
-warm-up path emits a positive recommendation for a coil pose over left DLPFC
+warm-up path emitted a positive recommendation for a coil pose over left DLPFC
 with an analytic field model and zero model evidence, and whoever wrote that
 docstring believed it did not.
+
+**Resolved in the code's favour of the docstring.** `_decide` now defers when
+`weights_status != "trained"`: a benefit computed from prior-specified
+surrogates is a statement about the surrogates, not about a brain, and it
+cannot support a recommendation however small its uncertainty. It is a `Defer`
+and not a `Refuse` because the field solve and the ledger are real — the gap is
+one a measurement can close. `Recommend` remains reachable and is still tested;
+the tests that exercise the uncertainty arithmetic now mark their service as
+trained explicitly, rather than the production rule being weakened to keep them
+green.
 
 ### F5 — nothing refused, and a declared control arm passed a strict handshake
 
@@ -191,125 +211,96 @@ Guards that never executed under the suite, i.e. green for want of an input:
 
 ---
 
-## 3. The claim boundary, structurally enforced
+## 3. The claim boundary: two refusals, four labels
 
-New module: **`scwbd/runtime/admission.py`**. Refusal happens in
-`ServedModel.load`, *before the `TargetingService` is constructed*, so there is
-no window in which an inadmissible checkpoint is a usable object.
+New module: **`scwbd/runtime/admission.py`**, evaluated in `ServedModel.load`
+*before the `TargetingService` is constructed*.
 
-### 3.1 Purposes
+### 3.1 The posture changed under this work, and the module changed with it
 
-| purpose | mode | required conditions |
-|---|---|---|
-| `simulation` | computational | A0 |
-| `research_offline` | computational | A0, A1 |
-| `live_hardware` | live | A0 … A6 |
-| `patient_directed` | live | A0 … A6 |
+`ARCHITECTURE.md` §7a was rewritten mid-cycle:
 
-`simulation` asks nothing of the checkpoint. A simulation reported as a
-simulation needs no artifact to be valid, and a gate that fires on simulation
-is a gate everyone learns to route around. Non-required conditions are still
-*evaluated and recorded* in the verdict, so it shows what was not asked rather
-than hiding it.
+> **Ship the artifact and label it. Never refuse to produce it.** Refusals
+> belong on claims in papers, not files on disk.
+> **A precondition blocks only if it changes what a number means.**
 
-### 3.2 Conditions
+The first version of this module refused on the control arm, on synthetic
+anatomy and on `COULD_NOT_RUN` gates. Under the new rule that is wrong, and
+wrong in a way worth naming: it would have withheld the only checkpoint we have
+from the only people who can do anything with it, in the name of protecting
+them from a number they were fully capable of interpreting. Those three
+conditions are now **labels**.
+
+The distinction that survives is *correctness versus quality*. A checkpoint
+whose manifest cannot be read cannot be labelled at all, so every label would
+be a guess — that still blocks. A checkpoint that is honestly a control arm is
+fine; the consumer just has to be told, loudly.
+
+### 3.2 Refusals
 
 | code | condition | fires when |
 |---|---|---|
 | **A0** | consumer standing invariants are false | any of the three is widened |
-| **A1** | claim manifest present | no `claim_manifest.json` beside the weights |
-| **A2** | not an ablation control arm | manifest declares the control arm, **or says nothing** |
-| **A3** | anatomy is biological | `anatomy.is_biological: false`, or unstated |
-| **A4** | claim gates ran and did not fail | any `COULD_NOT_RUN`, any `FAIL`, or no gate results at all |
-| **A5** | trained weights are loaded | `weights_status != "trained"` |
-| **A6** | live application authorized | delegated — §3.3 |
+| **A1** | a checkpoint that exists can be labelled | a checkpoint is present with no readable `claim_manifest.json` |
 
-**Every default is the refusing value.** A fact the artifact does not state is
-not thereby true: a checkpoint with no anatomy record is treated as one whose
-anatomy is not biological, and a checkpoint that does not say which arm it is
-is treated as the control arm — because that is precisely the state run 1 was
-in while claiming otherwise. Absence is not permission.
+A1 binds only when a checkpoint is *present*. Refusing the no-checkpoint case
+would have broken the load path's deliberate design of not failing without a
+trained artifact — which exists to stop consumers building their own
+uncontrolled fallback. That was caught by the existing suite rather than by
+inspection, which is the correct order.
 
-Applied to the run-1 artifact as it actually exists on disk, for any purpose
-beyond `simulation`:
+### 3.3 Labels
 
-```
-SC-WBD refuses to serve SC-WBD-001-beta for purpose 'research_offline';
-1 condition(s) failed:
-  - [A1] claim manifest present: no claim_manifest.json beside the checkpoint.
-    An artifact that does not state its claim class cannot be checked against
-    a purpose, and absence is not permission
-```
+| code | label | flags when | what it changes about the numbers |
+|---|---|---|---|
+| **L1** | ablation arm | control arm, **or the manifest says nothing** | the numbers measure the §11.4 control, and may not be reported as a test of the thesis |
+| **L2** | anatomy provenance | `is_biological: false`, or unstated | the connectome is a geometry-respecting synthetic graph; no prediction is about any particular head |
+| **L3** | claim gates | any `COULD_NOT_RUN`, any `FAIL`, or none recorded | the claims are unsupported rather than supported |
+| **L4** | weights | no trained weights | nothing behind the numbers was fitted to data |
 
-Given a truthful sidecar, it fails **A2, A3, A4** simultaneously and names all
-three. Tested: `test_load_time_refusal.py::TestLoadRefusesBeforeAServiceExists`
-and `test_admission.py::TestRefusalsCompose`.
+Every label carries a **`consequence`** string. A label a consumer cannot act on
+is decoration, so a flagged label without one is a test failure. All four are
+surfaced in `provenance.notes` as `admission_labels`, `admission_flagged` and
+`admission_banner` — a consumer that logs provenance logs them without having to
+know they exist.
 
-### 3.3 The live-application gate is Faraday's, called from here
+**Every default is the worst value.** An artifact that does not say which arm it
+is gets labelled the control arm, because that is precisely the state run 1 was
+in while claiming otherwise. Silence is not a clean bill of health; it is an
+unlabelled artifact, and the label says so.
 
-A6 contains **no logic of its own.** It calls
-`scwbd.intervene.deployment.authorize_live_application`. One implementation,
-two call sites: `scwbd.intervene` gates a proposed intervention, `scwbd.runtime`
-gates a checkpoint leaving for a consumer, and both ask the same predicate the
-same question. Two partial gates is how a hole opens between them.
+Applied to the run-1 artifact with a truthful sidecar, for `patient_directed` —
+the most consequential purpose — it **loads**, with L1, L2 and L3 flagged and
+named in the banner. Tested:
+`test_load_time_refusal.py::TestLoadShipsTheArtifactAndLabelsIt` and
+`test_admission.py::TestTheArtifactShipsAndIsLabelled`.
 
-I initially built a second implementation (`LiveUseAuthorization`) and it was
-wrong in a way worth recording: it introduced a **second literal
-`date(2026, 8, 25)`**, which broke
+### 3.4 There is no live-application gate here
+
+There was one. It delegated to `scwbd.intervene.deployment`, on the principle
+that one implementation with two call sites beats two partial gates with a hole
+between them. That module has since been removed from the repository in the
+authorization excision, and `scwbd.runtime` stopped importing entirely until
+A6 was stripped.
+
+Nothing replaced it, deliberately. Live application is governed in the consumer
+repository, whose three standing invariants are false and stay false.
+
+Worth recording from the interval in which it existed: I first built a *second*
+implementation rather than delegating, and it introduced a second literal
+`date(2026, 8, 25)`, which broke
 `test_deployment.py::test_the_scheduled_date_appears_exactly_once_as_a_literal`.
-Verified failing before the change, passing after. `admission.py` now contains
-no date at all, and `LIVE_PURPOSES` is *derived* from `MODE_OF_PURPOSE` rather
-than restated, so the two cannot drift.
-
-Two properties of this call site that the intervene tests cannot cover:
-
-- **the mode is derived from the purpose, not taken from the caller** — a
-  caller cannot ask for `patient_directed` and have it checked as
-  computational;
-- **`as_of` is not defaulted to now.** An undated request cannot be checked
-  against a dated record, and `authorize_live_application` refuses it for that
-  reason (`REVIEW_TIME_UNDECLARED`). Substituting the wall clock here would
-  have converted a refusal into a pass. This bit me: my first test helper
-  defaulted `as_of=None` to a fixed time and hid exactly that refusal.
-
-The date is not an unlock at this call site either:
-`test_the_date_is_not_an_unlock_at_this_call_site_either` sets the clock to
-2027-12-31 with a valid `AuthorizationRecord` and no review record, and asserts
-the refusal stands.
-
-### 3.4 `prospective_human` — an unconditional refusal, now satisfiable
-
-`scwbd/runtime/provenance.py` raised on `prospective_human=True` **regardless
-of any record**, with the reason "out of scope for SC-WBD-001-beta (build-order
-item 6)". Both guards in that `__post_init__` carried `# pragma: no cover` and
-neither was fired by any test.
-
-This is the mirror of the stale permission strings Faraday removed, pointed the
-safe way — but it made the authorization mechanism *structurally unreachable
-from the consumer*, which is this brief's core deliverable. A gate that can
-only ever be closed cannot discriminate, so it is not a gate.
-
-It now routes through the same predicate and is tested in both directions:
-refused with no verdict, refused on a refusing verdict (naming
-`REVIEW_ABSENT`), refused on an *admitting computational* verdict, and
-**permitted** on an admitting live one.
-
-`human_use_authorized` stays unconditional, and the asymmetry is deliberate and
-stated in the code: `prospective_human` is a claim about what is being
-attempted, which a record can answer; `human_use_authorized` asserts that *this
-repository issued* an authorization, which is never true whatever any record
-says. It is now fired by a test rather than carrying a `no cover` pragma.
+Verified failing before the change, passing after. The lesson survives the
+module: a date restated in two files goes stale in one of them.
 
 ### 3.5 Orthogonality — stated because it will otherwise be misread
 
 `sim2real_ready`, `promotion_eligible` and `robot_command_authority` remain
-`False` **unconditionally**. They are not what this gate governs and no
-authorization or review record relaxes them. An approving review of live
-application is a compliance outcome, not a promotion decision; reading
-"authorized" here as "promotion eligible" crosses two unrelated boundaries.
-`ConsumerInvariants` refuses construction in any widened state, and
-`test_admission.py::test_an_approving_review_does_not_relax_them` proves an
-admitted `patient_directed` load still carries all three false.
+`False` **unconditionally**. No label relaxes them and no record anywhere else
+does either. Reading a successful admission as "promotion eligible" crosses two
+unrelated boundaries. `ConsumerInvariants` refuses construction in any widened
+state, and an admitted `patient_directed` load is asserted to still carry all
+three false.
 
 ---
 
@@ -405,15 +396,17 @@ Full sweep, `PYTHONPATH` set to this worktree, under a 12 GB cgroup:
 
 ```
 tests/runtime tests/intervene tests/schema
-→ 929 passed, 1 skipped in 576.13s
+→ 814 passed, 1 skipped in 337.02s
 ```
 
 The one skip is `tests/schema/test_priors.py:45` ("a Dirac prior is the same
-everywhere by construction") and is unrelated to this work.
+everywhere by construction") and is unrelated to this work. The total fell from
+929 because Faraday's authorization excision removed `tests/intervene/
+test_deployment.py` and its siblings, not because anything here was dropped.
 
-`tests/runtime/` alone: **326 tests, all passing** — 202 before this work. New
-files: `test_admission.py` (42), `test_ports.py` (44),
-`test_load_time_refusal.py` (31).
+`tests/runtime/` alone: **327 tests, all passing** — 202 before this work. New
+files: `test_ports.py` (44), `test_admission.py` (38),
+`test_prediction_path.py` (32), `test_load_time_refusal.py` (27).
 
 Statement-level line trace of `scwbd/runtime/` under its own suite, after the
 work (docstrings excluded): `admission.py` 86.4 %, `ports.py` 86.6 %,
@@ -432,7 +425,19 @@ make it **pass** on an input differing *only* in that condition. (2) is the
 part usually missing — a gate that can never open is as useless as one that
 never closes, and a suite that only exercises refusals cannot tell them apart.
 
-One pre-existing guard fired against my own change and was right to:
+Three pre-existing guards fired against my own changes and were right to.
+
+`test_no_command_surface.py` twice, on `ConsumerInvariants.robot_command_authority`
+and then on `ServedModel.predictor`. The second is a genuine new public method
+and the surface test is meant to notice; it is listed with the reason it is not
+a command entry point.
+
+The runtime suite caught A1 refusing the *no-checkpoint* case, which would have
+broken the load path's deliberate design of not failing without a trained
+artifact. I had reasoned about that design in a docstring and then contradicted
+it in a gate three files away; the suite noticed and I did not.
+
+And the first one, in full:
 `test_no_command_surface.py` flagged `ConsumerInvariants.robot_command_authority`
 as an actuation-shaped symbol. Rather than widen the allow-list on trust, the
 exemption is now conditional and *proved*: every excused name must be a
@@ -593,44 +598,160 @@ that is asserted on both sides.
 
 ---
 
-## 7. What is still open
+## 7. The prediction path
 
-1. **There is no path from a checkpoint to a prediction.** F2/F3. Until one
-   exists, `weights_status`, the `A5` condition, and the consumer's
-   `upstream_weights_status` note all describe an artifact that contributes
-   nothing to the numbers beside them. This is the single most important
-   remaining item on this surface and it is not mine alone to close.
-2. **No checkpoint we hold ships a `ClaimManifest`.** The real directory has
-   `provenance.json`. `admission.sidecar_from_checkpoint()` can derive one from
-   a checkpoint's own metadata, but it requires
-   `trust_checkpoint_pickle=True` — `torch.load(weights_only=False)` executes
-   the pickle, and that decision is made once by a person at emission time, not
-   on every consumer load. Nobody has emitted one yet.
+New module: **`scwbd/runtime/predict.py`**. This is the section that closes F2
+and F3.
 
-   Run against the real artifact today, the derived sidecar reads
-   `id="SC-WBD-001-beta"`, `anatomy.is_biological=False`,
-   `anatomy.provenance="synthetic_fallback"`, `is_control_arm=True` (derived
-   from `config.model.local_core="learned"` — one operator for all regions *is*
-   the control arm, per `scope_gap.md` G-1 and refusal R12), and
-   `gates={}` — because **gate statuses do not live in a checkpoint at all**.
-   A4 therefore cannot pass on any artifact until whoever runs the gates writes
-   the results into the sidecar. That is a real gap in the emission path, not a
-   defect in the check.
-3. **`warm_up()` recommends** (F4), and its docstring says it defers.
-4. Run 2's per-family layout is not yet emitted in the `entries` shape.
-   `PortContract` reads it today; nothing writes it yet. Coordinate with
-   🌊 Hodgkin.
+```python
+from scwbd.runtime.predict import LoadedModel
+
+model = LoadedModel.from_checkpoint("checkpoints/scwbd-001-beta/last.pt")
+pred  = model.predict(context, n_steps=30)   # context is (B, T, N) regional activity
+
+pred.activity          # (B,T,N)     predicted regional activity
+pred.activity_logvar   # (B,T,N)     or Unresolved
+pred.eeg               # (B,T,64)    predicted scalp potential
+pred.eeg_logvar        # (B,T,64)    or Unresolved
+pred.hemodynamic       # (B,T_slow,N,4) Balloon-Windkessel, or Unresolved
+pred.state             # PortedState -- read(family, name), never an index
+pred.load_report       # what was restored, and what was not
+```
+
+`ServedModel.predictor()` exposes the same thing from the serving surface, and
+**refuses** rather than silently substituting the analytic backend when there is
+no checkpoint.
+
+### 7.1 The test that matters
+
+Measured on the real artifacts, one fixed context window shared across all four
+so that any difference is attributable to the weights:
+
+| checkpoint | activity mean | activity sd | \|EEG\| |
+|---|---|---|---|
+| `stage_I_regional.pt` | +0.002702 | 0.002897 | 2.074976 |
+| `stage_II_interface.pt` | +0.005777 | 0.003563 | 1.874494 |
+| `stage_V_individual.pt` | −0.003434 | 0.014395 | 0.896981 |
+| `g5control/last.pt` | −0.003434 | 0.014395 | 0.899428 |
+
+Four distinct EEG predictions; three distinct activity traces. The same
+checkpoint loaded twice is bit-identical, so the differences are the weights and
+not sampling noise — both directions asserted.
+
+One thing that fell out and is worth someone's attention: **`stage_V_individual`
+and the g5 control produce identical regional activity and differ only in EEG.**
+That is consistent with the control differing only in its observation head, but
+I have not verified it and it is not my surface. Flagging it rather than
+explaining it.
+
+### 7.2 Three ways this would have loaded "successfully" and been wrong
+
+**The anatomy moved.** The live prior now returns 414 regions; run 1 was trained
+at 454 against the synthetic fallback. Rebuilding with today's default raises on
+thirteen tensors — which is *luck*, not a guard: a prior that changed content but
+not shape would have loaded in silence and produced numbers about a different
+brain. `rebuild_anatomy` reproduces the prior the checkpoint records and refuses
+on any region-count mismatch.
+
+**`torch.compile` renamed 29 parameters.** The run was configured
+`compile: true`, so `local` and `residual` carry an `_orig_mod.` infix. Loaded
+naively with `strict=False` that is 29 silently-random tensors and a model that
+runs fine. Stripped, and *counted* — the count is asserted.
+
+**Config fields that postdate the checkpoint.** `state_dependent_variance`
+defaults `True` today; run 1 predates it, so taking today's default builds an
+architecture the checkpoint cannot fill and leaves the uncertainty modules at
+their random initialisation. Absent fields are **inferred from the state dict**
+— does the parameter they gate exist? — never defaulted, and every inference is
+recorded in `load_report.inferred_config`. The counterfactual is *run* in a test
+(`test_taking_todays_default_instead_would_leave_parameters_random`) so the
+inference is not taken on trust.
+
+### 7.3 The load report is carried, not discarded
+
+`strict=False` plus a discarded load report is a standing entry in
+`reports/decorative_guards.md`. So `CheckpointLoadReport` is returned, carried
+into the `Prediction`, and **any output whose parameters were not restored comes
+back `Unresolved` rather than as a number.** An uninitialised head does not
+produce a slightly worse prediction; it produces a random one, and a random
+number with units on it is the least honest thing this repository could emit.
+
+Two refinements that took a wrong first attempt to find:
+
+- **Mean and variance are tracked separately**, because `heads.py`
+  parameterises them separately. My first version marked the EEG *mean*
+  unresolved because a log-variance mixer was absent — a refusal that is wrong
+  in the safe direction, which is still wrong, and which made the whole module
+  look broken on the only checkpoint we have.
+- **Parameters that are provably never read under a config are reported
+  `inert`**, not alarmed about. `eeg.logvar_mix` and `bold.logvar_gain` are
+  allocated unconditionally but only consulted when the observation module is
+  present; under `state_dependent_variance=False` they cannot affect any
+  number. A false alarm is how a warning channel stops being read.
+
+On the run-1 artifact the report reads: **85 tensors restored, 29 `torch.compile`
+keys renamed, 2 inert, 0 consequential, 0 ignored** — a clean load, and every
+output resolves.
+
+### 7.4 What this does *not* establish
+
+The artifact is now **runnable**, not **right**. It is still the equal-capacity
+generic-operator control arm, its anatomy is still synthetic, its gates still
+did not run, and it is still beaten on held-out real EEG by all five baselines.
+Those are labels L1–L4 and nothing here revokes them. What has changed is that a
+consumer can now get a number *out of the model* and see, in the same object,
+exactly what that number is a number about.
 
 ---
 
-## 8. Files
+## 8. What is still open
+
+1. **No checkpoint we hold ships a `ClaimManifest`.** The real directory has
+   `provenance.json`. `admission.sidecar_from_checkpoint()` derives one from a
+   checkpoint's own metadata, but requires `trust_checkpoint_pickle=True` —
+   `torch.load(weights_only=False)` executes the pickle, and that decision is
+   made once by a person at emission time, not on every consumer load. Nobody
+   has emitted one yet, so the real artifact refuses on A1 until someone writes
+   one file.
+
+   Run against the real artifact today, the derived sidecar reads
+   `id="SC-WBD-001-beta"`, `anatomy.is_biological=False`,
+   `anatomy.provenance="synthetic_fallback"`, `is_control_arm=True` (from
+   `config.model.local_core="learned"` — one operator for all regions *is* the
+   control arm, per `scope_gap.md` G-1 and refusal R12), and `gates={}`. Under
+   the §7a posture the empty gates are label L3, not a blocked load, so this is
+   no longer a blocker — only a missing file.
+
+2. **The consumer still does not call any of this.** §6 C0: `scwbd` is not
+   importable in the robotics repo, so every bridge test skips and CI omits the
+   bridge entirely. The prediction path exists; nothing downstream consumes it
+   yet.
+
+3. **`predict` takes regional activity, not sensor data.** Projecting 64 EEG
+   channels onto 454 parcels needs the checkpoint's own `sensor_to_parcel`,
+   whose recorded note is explicit: *"Assimilation input only. The likelihood is
+   evaluated in sensor space; this projection supports no source-localisation
+   claim."* I did not wire it silently. A consumer holding real EEG needs that
+   step designed, with its claim limit attached.
+
+4. Run 2's per-family layout is not yet emitted in the `entries` shape.
+   `PortContract` reads it today; nothing writes it yet. Coordinate with
+   🌊 Hodgkin — and note that `LoadedModel.port_contract()` builds from the
+   **live model**, so it will follow run 2 automatically.
+
+---
+
+## 9. Files
 
 | path | what |
 |---|---|
-| `scwbd/runtime/admission.py` | the export gate; A0–A6; delegates A6 to `scwbd.intervene.deployment` |
+| `scwbd/runtime/predict.py` | **the path**: `LoadedModel` -> `Prediction`, with the load report carried |
+| `scwbd/runtime/admission.py` | refusals A0/A1, labels L1–L4 |
 | `scwbd/runtime/ports.py` | `PortContract`, `PortedState`, the four refusals |
-| `scwbd/runtime/serving.py` | `_WEIGHT_NAMES` fix; `purpose`/`review`/`authorization` on `load`; `port_contract()` |
-| `scwbd/runtime/provenance.py` | `port_contract_digest`, `exported_ports`; `prospective_human` routed through the gate |
-| `tests/runtime/test_admission.py` | every condition fired, each paired with its passing neighbour |
+| `scwbd/runtime/serving.py` | `_WEIGHT_NAMES` fix; `purpose` on `load`; `predictor()`; `port_contract()` |
+| `scwbd/runtime/targeting.py` | `_decide` defers when no trained artifact backs the benefit |
+| `scwbd/runtime/provenance.py` | `port_contract_digest`, `exported_ports` |
+| `tests/runtime/test_prediction_path.py` | two checkpoints, different numbers — on real artifacts |
+| `tests/runtime/test_admission.py` | every refusal and label fired, each paired with its opposite |
 | `tests/runtime/test_ports.py` | layout reading, digest semantics, span enforcement, raw-access refusals |
-| `tests/runtime/test_load_time_refusal.py` | refusal at load, incl. against the real run-1 artifact |
+| `tests/runtime/test_load_time_refusal.py` | ship-and-label at load, incl. against the real run-1 artifact |
