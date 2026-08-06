@@ -768,6 +768,32 @@ def write_report(
     A("")
     A("> " + DECISION_RULE["known_algebraic_caveat"] + "\n")
 
+    # C4 is a statement about interval calibration.  Intervals built from the
+    # observed information at a point that is not the optimum are not the
+    # intervals C4 claims to test, so a pass earned where the optimiser stopped
+    # short has to be labelled at the top, not left in a column further down.
+    weak_conv = []
+    for rname, rr in results["regimes"].items():
+        rec = rr["designs"].get("joint_native", {}).get("recovery")
+        if not rec:
+            continue
+        frac = float(rec.get("converged_fraction", 1.0))
+        if frac < 0.9:
+            med = rec.get("optimiser", {}).get("median_newton_decrement")
+            weak_conv.append((rname, frac, med))
+    if weak_conv:
+        A("\n> **Convergence caveat on `C4`.** The MAP estimator did not reach "
+          "the convergence tolerance for every replicate in:\n>")
+        for rname, frac, med in weak_conv:
+            A(f"> - `{rname}`: {frac:.0%} of `joint_native` replicates converged"
+              + (f", median remaining Newton decrement {med:.3f} posterior sd"
+                 if med is not None else "") + ".")
+        A(">\n> Coverage there is computed from observed-information intervals "
+          "around estimates that are still short of the optimum, so the `C4` "
+          "pass is **not** a sound calibration test in those regimes. Raising "
+          "the step cap, or refreshing the preconditioner at the current "
+          "iterate instead of holding it at the prior mean, is the fix.\n")
+
     for rname, rr in results["regimes"].items():
         A(f"\n## Regime `{rname}`\n")
         A(f"{rr['description']}\n")

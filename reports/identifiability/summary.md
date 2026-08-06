@@ -22,6 +22,14 @@ Preregistered subset: `a21`, `a32`, `a13`, `tau`. Manifest (written before the r
 > Under the modality-block-diagonal form of T4, I_{EEG+BOLD} = I_EEG + I_BOLD, so C1 cannot fail unless the fMRI contribution to the theta profile information is numerically negligible. C1 is therefore a NECESSARY but WEAK criterion and is reported with the effect size. The discriminating criteria are C2, C3, C4 and C5.
 
 
+> **Convergence caveat on `C4`.** The MAP estimator did not reach the convergence tolerance for every replicate in:
+>
+> - `weak_coupling_long_delay`: 28% of `joint_native` replicates converged, median remaining Newton decrement 0.058 posterior sd.
+> - `low_snr_short_delay`: 0% of `joint_native` replicates converged, median remaining Newton decrement 0.270 posterior sd.
+>
+> Coverage there is computed from observed-information intervals around estimates that are still short of the optimum, so the `C4` pass is **not** a sound calibration test in those regimes. Raising the step cap, or refreshing the preconditioner at the current iterate instead of holding it at the prior mean, is the fix.
+
+
 ## Regime `reference`
 
 prior-mean coupling, 12 ms delay, evoked == ongoing variance
@@ -333,4 +341,4 @@ If native-clock fusion does not raise theta profile information above the best s
 
 ---
 
-Generated 2026-08-06T06:28:26-0700 · git `3d4ab5e46dc9` · machine-readable: `results.json`.
+Generated 2026-08-06T06:48:37-0700 · git `9088581f447e` · machine-readable: `results.json`.

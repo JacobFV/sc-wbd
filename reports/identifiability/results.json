@@ -284,7 +284,7 @@
  "environment": {
   "cuda_available": true,
   "device_name": "NVIDIA GB10",
-  "git_revision": "3d4ab5e46dc9f8867f6548927393f88ecc39b41f",
+  "git_revision": "9088581f447ebb089303b31ceb5b88f535a7d70f",
   "numpy": "2.5.1",
   "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
   "python": "3.12.13",
@@ -32302,6 +32302,6 @@
    }
   },
   "run_signature": "52996da843ca1ff2",
-  "wall_seconds": 0.06774139404296875
+  "wall_seconds": 0.07168078422546387
  }
 }
