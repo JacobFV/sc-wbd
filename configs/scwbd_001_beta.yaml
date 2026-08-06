@@ -83,32 +83,40 @@ train:
   # version of this artifact -- it is a different one.
   max_wall_seconds: 43200     # 12 h
   resume: true
+  # Learning rates sqrt-scaled by sqrt(64/192) = 0.5774 on 2026-08-06.
+  # The original rates (6.0e-4 ... 1.0e-4) were written for batch 192; batch was
+  # cut to 64 for device memory without revisiting them, which is 3x noisier
+  # gradients at unchanged step size. grad_clip=1.0 prevented blow-up but that
+  # is not the failure that mattered: unit-norm steps in noisier directions
+  # degrade converged quality quietly. The within-run tell was the loss floor
+  # RISING as lr crossed ~5e-4 (0.33 at 2-4e-4 -> 0.60 at 6e-4); floors should
+  # fall as training proceeds. Caught at step ~200 and restarted.
   stages:
     - name: I_regional
       steps: 900
-      lr: 6.0e-4
+      lr: 3.46e-4
       lambda_obs: 0.0
       lambda_posterior: 0.0
       lambda_anat: 0.0
       ckpt_every: 150
     - name: II_interface
       steps: 700
-      lr: 4.0e-4
+      lr: 2.31e-4
       lambda_posterior: 0.0
       lambda_port: 0.05
       ckpt_every: 150
     - name: III_sliced
       steps: 2600
-      lr: 3.0e-4
+      lr: 1.73e-4
       ckpt_every: 250
     - name: IV_assembly
       steps: 3600
-      lr: 2.0e-4
+      lr: 1.15e-4
       lambda_perturb: 0.0
       ckpt_every: 250
     - name: V_individual
       steps: 900
-      lr: 1.0e-4
+      lr: 5.77e-5
       lambda_posterior: 0.3
       ckpt_every: 150
 

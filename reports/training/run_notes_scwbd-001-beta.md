@@ -1,8 +1,55 @@
 # Run notes — scwbd-001-beta
 
-Live notes for the production run launched 2026-08-06 01:08:59, commit `7f18528`,
-provenance frozen at step 150. Written during the run so the loss curve does not
-have to be reconstructed from memory afterwards.
+Live notes, written during the run so the loss curve does not have to be
+reconstructed from memory afterwards.
+
+**The artifact is the run launched 2026-08-06 01:35 with sqrt-scaled learning
+rates.** An earlier attempt (commit `7f18528`, 01:08:59) was stopped at step 260
+and is superseded — see "The restart" below. Everything in the tables further
+down describes that superseded attempt and is retained as the evidence that
+motivated the rescale.
+
+## The restart
+
+The stage learning rates (I 6e-4 → V 1e-4) were written when the config had
+`batch: 192`. Batch was cut to **64** for device-memory reasons and the rates
+were **not revisited** — 3× noisier gradient estimates at unchanged step size.
+Caught at step ~200 while writing up the warmup spikes, i.e. three hours after
+introducing it and while looking at something else.
+
+Rates were rescaled by `sqrt(64/192) = 0.5774` and the run restarted from zero:
+
+| stage | before | after |
+|---|---|---|
+| I_regional | 6.0e-4 | **3.46e-4** |
+| II_interface | 4.0e-4 | 2.31e-4 |
+| III_sliced | 3.0e-4 | 1.73e-4 |
+| IV_assembly | 2.0e-4 | 1.15e-4 |
+| V_individual | 1.0e-4 | 5.77e-5 |
+
+Batch 64, 12 h cap, and everything else unchanged.
+
+**My initial call was to continue, and it was wrong.** The reasoning I gave —
+`grad_clip = 1.0` is active, so no hard batch can produce a divergent update —
+is true and answers the wrong question. Clipping to unit norm prevents blow-up;
+it does not make a too-high learning rate optimal. With 3× noisier gradients,
+clipping means taking unit-norm steps in *noisier directions*, which degrades
+converged quality quietly rather than failing loudly. I had ruled out the
+dramatic failure and treated that as having ruled out the failure.
+
+I also discounted my own strongest evidence: the loss **floor** rose as lr
+crossed ~5e-4 (0.33 at 2–4e-4, ~0.60 at 6e-4). Floors should fall as training
+proceeds. That is a within-run signal agreeing with the a-priori scaling
+argument, and two independent lines agreeing is enough to act on when acting
+costs ten minutes.
+
+The decisive argument was cost asymmetry, not evidence strength: 10 minutes to
+restart at step 260, against either ~45 minutes if the pre-committed step-900
+trigger fired anyway, or a permanent Stage I caveat that **cannot be separated
+from the architecture after the fact** — the exact attribution problem this note
+was written to prevent.
+
+The near-miss stays on the record even though it no longer affects the artifact.
 
 ## Reading the outputs
 
@@ -37,6 +84,10 @@ Read as noisy progress on a heterogeneous mixture, not instability.
 
 ## A confound I introduced, stated plainly
 
+*(Superseded by the restart above — retained because it is the evidence that
+motivated it, and because the reasoning below is the reasoning that got it
+wrong.)*
+
 The stage learning rates (Stage I 6e-4, II 4e-4, III 3e-4, IV 2e-4, V 1e-4) were
 written when the config had `batch: 192`. I cut the batch to **64** for device
 memory reasons and **did not revisit the learning rates**. That is a 3× reduction
@@ -61,7 +112,10 @@ attributed to the architecture without testing it.
 
 ### Pre-committed intervention trigger
 
-Recorded *before* the data exists, so the decision is not made post-hoc:
+**Live and unchanged on the rescaled run.** A rescale is not a guarantee, and
+the thresholds below are worth more than my judgement at 4 a.m. with a
+half-trained model in front of me. Recorded *before* the data exists, so the
+decision is not made post-hoc:
 
 I will stop and rescale the learning rates if **any** of the following holds:
 
