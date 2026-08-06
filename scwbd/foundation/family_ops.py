@@ -26,13 +26,14 @@ Three things are deliberate:
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 import torch
 from torch import Tensor, nn
 
 from .config import ModelConfig
 from .families import FamilyStateLayout, RegionFamily, SpanViolation
+from .uncertainty import UNCERTAINTY_COMPONENT, UncertaintyPropagator
 
 __all__ = ["FamilyPorts", "FamilyLocalOperator", "FamilyResidual", "FamilyReadout", "MechanisticFamilyCore"]
 
@@ -188,6 +189,32 @@ class FamilyLocalOperator(nn.Module):
              for k, v in self._group_members.items()}
         )
 
+        # -- X_i^uncertainty, per family (body.tex §2.1) --------------------
+        # One propagator per family, because how uncertainty accumulates in a
+        # thalamic relay is not how it accumulates in a cortical column. It
+        # OVERWRITES whatever the family's core wrote into the uncertainty
+        # channel, so that channel has one law rather than being an incidental
+        # output of a generic operator (learned families) or untouched for the
+        # whole rollout (mechanistic families, whose backends emit nothing there).
+        self.uncertainty = nn.ModuleDict()
+        self._unc_slice: dict[str, slice] = {}
+        if cfg.state_dependent_variance:
+            for f in flayout:
+                if UNCERTAINTY_COMPONENT not in f.layout:
+                    raise SpanViolation(
+                        f"family {f.name!r} declares no {UNCERTAINTY_COMPONENT!r} component; "
+                        "body.tex §2.1 names X_i^uncertainty and the predictive variance is "
+                        "sourced from it"
+                    )
+                self._unc_slice[f.name] = f.layout.slice(UNCERTAINTY_COMPONENT)
+                self.uncertainty[f.name] = UncertaintyPropagator(
+                    f.dim,
+                    f.layout.spec(UNCERTAINTY_COMPONENT).dim,
+                    in_extra=in_extra,
+                    hidden=max(cfg.hidden // 4, 32),
+                    dt=cfg.dt_model,
+                )
+
     # -- context -----------------------------------------------------------
     def prepare(self, ctx: Tensor, dtype) -> dict[str, list]:
         return {k: op.prepare(ctx, dtype) for k, op in self.learned.items()}
@@ -213,6 +240,7 @@ class FamilyLocalOperator(nn.Module):
         """
         packs = packs or {}
         out: dict[str, Tensor] = {}
+        feat_by_family: dict[str, Tensor] = {}
         # learned groups: one operator call per (dim) group, not per family
         for key, op in self.learned.items():
             idx = self.group_regions(key).to(x.device)
@@ -224,7 +252,9 @@ class FamilyLocalOperator(nn.Module):
             offset = 0
             for name in self._group_members[key]:
                 n = self.flayout.family(name).n_regions
-                feats.append(self.ports.readin(name, cg[..., offset : offset + n, :]))
+                fe = self.ports.readin(name, cg[..., offset : offset + n, :])
+                feat_by_family[name] = fe
+                feats.append(fe)
                 offset += n
             extra = torch.cat(feats, dim=-2)
             scale = torch.sigmoid(self.log_dt[key]).to(x.dtype).reshape(1, -1, 1) * 2.0
@@ -248,6 +278,16 @@ class FamilyLocalOperator(nn.Module):
                     "backend defaults would silently drop the anatomical conditioning."
                 )
             out[name] = core(xf, cf, pack) * self.cfg.dt_model
+            feat_by_family[name] = self.ports.readin(name, cf)
+        # X_i^uncertainty: one law, overwriting whatever the core wrote there.
+        for name, prop in self.uncertainty.items():
+            idx = self.flayout.index(name).to(x.device)
+            f = self.flayout.family(name)
+            xf = x.index_select(-2, idx)[..., : f.dim]
+            sl = self._unc_slice[name]
+            du = prop(xf, xf[..., sl], feat_by_family[name])
+            d = out[name]
+            out[name] = torch.cat([d[..., : sl.start], du.to(d.dtype), d[..., sl.stop :]], dim=-1)
         return self.flayout.assemble([_pad_to(out[f.name], self.dim) for f in self.flayout])
 
     def describe(self) -> dict[str, Any]:

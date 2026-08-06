@@ -25,7 +25,7 @@ import re
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Literal, Sequence
+from typing import Any, Iterable, Literal, Mapping, Sequence
 
 __all__ = ["Claim", "ClaimManifest", "OverclaimError", "R12Violation", "FAMILY_STATE_PHRASES"]
 
@@ -181,6 +181,28 @@ class ClaimManifest:
         return self
 
     # -- refusal R12 ------------------------------------------------------
+    def _r12_predicate(self):
+        """The canonical R12 predicate, if the refusal set defines one.
+
+        **Ownership seam.** The refusal *definition* belongs with R01-R11 in the
+        schema/compiler refusal set (📜 Noether), not in ``foundation``; the
+        *enforcement point* — checkpoint emission — is here and stays here. One
+        definition, one enforcement point. When Noether's canonical predicate
+        lands, this lookup finds it and the local fallback below stops running;
+        delete the fallback at that point rather than leaving two.
+        """
+        for mod, attr in (
+            ("scwbd.schema.refusals", "r12_predicate"),
+            ("scwbd.compiler.refusals", "r12_predicate"),
+        ):
+            try:
+                import importlib
+
+                return getattr(importlib.import_module(mod), attr)
+            except (ImportError, AttributeError):
+                continue
+        return None
+
     def refuse_r12(self) -> None:
         """Refuse a §2.1 differentiator claim on a §11.4 control-arm artifact.
 
@@ -193,6 +215,10 @@ class ClaimManifest:
         Prose counts.  The scope gap was not a wrong number, it was a correct
         artifact described in the words of a different one.
         """
+        canonical = self._r12_predicate()
+        if canonical is not None:
+            canonical(self)  # raises its own R12; this call site stays either way
+            return
         arm = str(self.regional_state.get("ablation_arm", "")) if self.regional_state else ""
         if arm == "treatment":
             return

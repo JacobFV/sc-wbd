@@ -49,8 +49,8 @@ fire; a guard with no firing test is worse than no guard
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field, replace
-from typing import Any, Iterable, Iterator, Literal, Mapping, Sequence
+from dataclasses import dataclass
+from typing import Any, Iterator, Literal, Mapping, Sequence
 
 import torch
 from torch import Tensor

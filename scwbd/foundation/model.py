@@ -479,6 +479,42 @@ class SCWBD(nn.Module):
         self.register_buffer("tau_prior", anat.timescale_prior.float().clone())
         self.log_dt_scale = nn.Parameter(torch.zeros(self.n_regions))
 
+        # -- the typed observation boundary (body.tex §2.1 X_i^uncertainty) ---
+        # Built for BOTH §11.4 arms. Giving the treatment arm a state-dependent
+        # predictive variance and leaving the control arm on heads.py's broadcast
+        # `log_noise` parameter would make A1 measure the variance path instead
+        # of the structured state -- the same class of error as an interface that
+        # silently narrows one arm. `None` restores run-1 behaviour and is kept
+        # only so the repair itself can be ablated.
+        self.observation = None
+        self.uncertainty_propagator = None
+        if cfg.state_dependent_variance:
+            from .uncertainty import (
+                UNCERTAINTY_COMPONENT,
+                FamilyObservationInterface,
+                FlatObservationInterface,
+                UncertaintyPropagator,
+            )
+
+            if self.family_layout is not None:
+                self.observation = FamilyObservationInterface(self.family_layout, cfg)
+            elif UNCERTAINTY_COMPONENT not in L:
+                # `scalar_state_ablation` is one scalar per region by definition
+                # and has no uncertainty component to source a variance from.
+                # That arm keeps heads.py's broadcast parameter, and the manifest
+                # says so rather than the model pretending otherwise.
+                self.observation = None
+            else:
+                self.observation = FlatObservationInterface(L, cfg)  # noqa: F821 - see guard above
+                self.uncertainty_propagator = UncertaintyPropagator(
+                    L.dim,
+                    L.spec(UNCERTAINTY_COMPONENT).dim,
+                    in_extra=long_dim,
+                    hidden=max(cfg.hidden // 4, 32),
+                    dt=cfg.dt_model,
+                )
+                self._unc_slice = L.slice(UNCERTAINTY_COMPONENT)
+
         lf = lead_field if lead_field is not None else build_lead_field(anat, device=anat.weights.device)
         self.eeg = EEGHead(L, lf)
         self.bold = BOLDHead(L, self.n_regions, dt_slow=cfg.dt_model * cfg.hemo_ratio)
@@ -626,6 +662,18 @@ class SCWBD(nn.Module):
                 dt_scale = torch.sigmoid(self.log_dt_scale).to(x.dtype).reshape(1, -1, 1) * 2.0
                 f_mech = self.local(x, long_feat, film) * dt_scale
             f_res = self.residual(x, long_feat)
+            if self.uncertainty_propagator is not None:
+                # X_i^uncertainty gets ONE law in the control arm too, replacing
+                # whatever the generic operator happened to write there. Both
+                # §11.4 arms must share the variance path or A1 measures it
+                # instead of the structured state.
+                sl = self._unc_slice
+                a, b = sl.start, sl.stop
+                du = self.uncertainty_propagator(x, x[..., sl], long_feat).to(x.dtype)
+                f_mech = torch.cat([f_mech[..., :a], du, f_mech[..., b:]], dim=-1)
+                f_res = torch.cat(
+                    [f_res[..., :a], torch.zeros_like(f_res[..., a:b]), f_res[..., b:]], dim=-1
+                )
         dx = f_mech + f_res
         if u is not None:
             dx = dx + u
@@ -771,8 +819,15 @@ class SCWBD(nn.Module):
 
         Written into the checkpoint and read by ``manifest.refuse_r12``.
         """
+        obs = {
+            "observation_interface": (self.observation.describe() if self.observation is not None else None),
+            "predictive_variance": (
+                "state_dependent_via_X_uncertainty" if self.observation is not None else "broadcast_parameter"
+            ),
+        }
         if self.family_layout is None:
             return {
+                **obs,
                 "family_state": False,
                 "ablation_arm": "control",
                 "local_core": self.cfg.local_core,
@@ -784,6 +839,7 @@ class SCWBD(nn.Module):
                 ),
             }
         d = self.family_layout.describe()
+        d.update(obs)
         d["family_state"] = True
         d["ablation_arm"] = "treatment"
         d["operators"] = self.family_local.describe()

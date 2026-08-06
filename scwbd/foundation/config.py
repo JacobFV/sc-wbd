@@ -57,6 +57,22 @@ class ModelConfig:
     d_context: int = 4
     #: cerebellar forward-model / error / eligibility width
     d_prediction: int = 8
+    #: Drive ``X_i^uncertainty`` (body.tex §2.1) with an integrated innovation /
+    #: decay law and expose it to the observation heads as a **state-dependent**
+    #: predictive log-variance.
+    #:
+    #: ``False`` restores the run-1 behaviour: ``SCWBD.observation is None`` and
+    #: ``heads.py`` falls back to its broadcast ``log_noise`` parameter — the
+    #: variance that is constant in state, time, horizon, window, participant and
+    #: condition, and that cost run 1 its NLL.  Retained as a switch **only** so
+    #: the repair itself can be ablated; it is not a supported configuration.
+    #:
+    #: Applies to BOTH §11.4 arms on purpose.  Giving the treatment arm a
+    #: state-dependent variance and leaving the control arm on a broadcast
+    #: constant would make A1 measure the variance path instead of the structured
+    #: state -- the same class of error as an interface that silently narrows one
+    #: arm.  See reports/dynamics/family_state.md §10.
+    state_dependent_variance: bool = True
     hidden: int = 320
     n_local_layers: int = 3
     region_embed: int = 96

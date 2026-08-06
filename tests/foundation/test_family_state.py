@@ -380,6 +380,58 @@ def test_ablation_arm_is_a_property_of_the_config():
 
 
 # ======================================================================
+# the compiled schema must describe the state the model actually holds
+# ======================================================================
+@pytest.fixture(scope="module")
+def source_specs():
+    from scwbd.foundation.config import load_config
+    from scwbd.foundation.mixture import SourceSpec
+
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[2]
+    cfg = load_config(repo / "configs" / "scwbd_001_beta.yaml")
+    return list(SourceSpec.load_dir(repo / cfg.mixture_cards).values())
+
+
+def test_schema_carries_one_state_spec_per_family(anat, flayout, source_specs):
+    """§2.1 indexes the state *space* by region, so the ABI must too."""
+    import scwbd.foundation.compiler_bridge as cb
+
+    schema = cb.build_foundation_schema(anat, source_specs, family_layout=flayout)
+    by_family = {}
+    for r in schema.regions:
+        assert "[family " in r.label, r.label
+        fam = r.label.split("[family ")[1].rstrip("]")
+        by_family[fam] = set(r.state.components)
+    assert len(set(map(frozenset, by_family.values()))) > 1, (
+        "every region compiled to the same StateSpec; the schema is describing a "
+        "homogeneous model regardless of the weights"
+    )
+    if "hippocampus" in by_family:
+        assert {"k", "v", "g", "c", "rho"} <= by_family["hippocampus"]
+
+
+def test_schema_refuses_the_opaque_private_block(anat, source_specs):
+    """The interface view is not a state space and must not compile as one."""
+    import scwbd.foundation.compiler_bridge as cb
+
+    model = SCWBD(_small_cfg(), anat)
+    assert "private" in model.layout
+    with pytest.raises(cb.SchemaBuildError, match="no declared schema kind"):
+        cb.build_foundation_schema(anat, source_specs, layout=model.layout)
+
+
+def test_schema_refuses_both_layouts_at_once(anat, flayout, source_specs):
+    import scwbd.foundation.compiler_bridge as cb
+
+    from scwbd.foundation.state import default_layout
+
+    with pytest.raises(cb.SchemaBuildError, match="not both"):
+        cb.build_foundation_schema(anat, source_specs, layout=default_layout(), family_layout=flayout)
+
+
+# ======================================================================
 # refusal R12
 # ======================================================================
 def _manifest(**kw) -> ClaimManifest:

@@ -252,7 +252,7 @@ class BasalGangliaBackend(DynamicsBackend):
         return theta.get("sigma").expand_as(x)
 
     def observables(self, x):
-        gpe, stn, gpi = x[..., 0], x[..., 1], x[..., 2]
+        stn, gpi = x[..., 1], x[..., 2]
         gate = torch.sigmoid(-4.0 * (gpi - 0.5))
         return {
             "activity": gate,
