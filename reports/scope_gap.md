@@ -17,9 +17,31 @@ earlier report.
 > *structured regional state versus one scalar or pooled vector per region*
 
 SC-WBD-001-beta is the second of those two. Popper's ruling that it is beaten
-by all five baselines (NLL 2.5552 vs. persistence 2.2787) is therefore not a
-surprising failure of the thesis — it is the expected behaviour of the null arm,
-measured correctly, with the treatment arm never built.
+by all five baselines (NLL 2.5552 vs. persistence 2.2787) therefore does not
+stand as a test of the thesis: the treatment arm was never built, so the
+comparison the paper requires was never run.
+
+**Correction, 2026-08-06, on Popper's rejection of this section's first
+draft.** That draft continued "— it is the expected behaviour of the null arm,
+measured correctly." That was wrong on two counts and the error was mine:
+
+1. **It is not expected behaviour of that class.** A 1.76M-parameter pooled-
+   vector model losing to persistence is not what the thesis predicts of a
+   pooled-vector model. `ar16`, at 4,160 parameters, is a class the thesis
+   equally expects to lose, and it *wins* by 0.5419. Re-scoping removes the
+   result's standing as a thesis test; it does not convert it into a design
+   choice. **The FAIL remains an unexplained defect.**
+2. **Run 1 is not run 2's control arm.** It is a control-*class* artifact from
+   a different protocol — synthetic anatomy (`is_biological: false`) where run
+   2's families come from the anatomy prior, an unproven split, no matched
+   search budget, one seed. Treating it as the control would license an
+   unmatched comparison. Run 2 trains its own control. See
+   `reports/ablations/PREREG_A1_run2.md`.
+
+The consequence is a precondition, not a footnote: **if the cause of the FAIL
+lives in shared infrastructure, it will damage run 2's treatment arm
+identically.** Finding it precedes run 2. Popper carries this as P0, and §6
+below records what is known about the mechanism.
 
 The process defect that produced this is mine and is stated plainly in §4.
 
@@ -163,3 +185,50 @@ by definition.
 equal-capacity generic-operator **control** for §11.4's first ablation. Its
 FAIL is a valid measurement of that control, and it may not be reported as a
 test of the thesis. G1–G5 remain COULD_NOT_RUN; nothing here changes that.
+
+---
+
+## 6. P0 — the run-1 FAIL is unexplained, and it blocks run 2
+
+Established by 🛡️ Popper (`cb19aa5`), re-derived from
+`reports/training/evaluation.json` at `f04d87f`.
+
+**The failure is in the variance channel, not the conditional mean.**
+`evaluation.json` carries an `mse` column that no report had quoted. On it,
+SC-WBD-001-beta has the **lowest MSE of all seven arms** — 3.9697 against
+persistence's 7.1653 — while holding the second-worst NLL. Excess NLL over
+`½·log(2πe·MSE)`, which is attributable entirely to predictive variance given
+the mean, is **+0.4469** for SC-WBD against **−0.10 to −0.12** for all five
+statistical baselines. The persistence deficit is 0.2765; the variance penalty
+is 1.62× it. This is robust to the missing interval: the MSE would have to be
+2.44× larger than measured — and larger than persistence's — for the NLL to be
+explicable by the conditional mean.
+
+**The comparison is not calibration-matched.** All six baselines carry
+`variance_calibration` (`baselines.py:418-427`, held-out per-channel residual
+variance). SC-WBD's `describe()` has three keys and none of them is that. The
+two arms that received no calibration are exactly the two with positive excess.
+
+Two things this does **not** license, both of which Popper flagged against its
+own finding:
+
+- The MSE advantage is a **point estimate, not a claim**: no paired interval
+  exists, because `evaluate.py:398-418` discards the `per_window_mse` the
+  harness already holds for every arm. Restoring it is a run-2 precondition.
+- The FAIL still stands. A model contracted to emit calibrated uncertainty
+  failing at exactly that is a real failure, not an artifact of the instrument.
+  What changes is that the §3.4 headline is true of the NLL *as scored* and is
+  not true of the conditional mean.
+
+**`subject_specific_ar` ≡ `ar16` now has a mechanism.** It is not a baseline
+bug. The split is participant-disjoint (verified: `train ∩ test = ∅`,
+71/11/27), so every test window misses `models_` and falls through to
+`fallback_` → `ar16`. The reported 77,248 parameters are the 71 per-subject
+models that are **never used**; the 4,160 that are used go unreported.
+`fallback_subjects_` records only *fit*-time fallbacks, so `describe()` reports
+71 models in use when the true count is zero — a guard watching the wrong door,
+in a class whose own docstring names this hazard. Same root cause as G5
+blocker 4.
+
+`real_split.verified` remains `false`, and the evaluation's `git_sha` is
+`-dirty`.
