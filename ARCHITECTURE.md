@@ -361,3 +361,40 @@ simulation and research use, but it is **not** what `tms-robotics` consumes.
 5. TRIBE v2 distillation stays **off by default** and is never a subject likelihood.
 6. Participant/family/derivative grouping precedes any split (R10).
 7. Report negative results. The compiler earns credibility by rejecting programs.
+8. **The live-use gate is one enforced refusal at the export edge — never a
+   disclaimer string.** See §7a.
+
+---
+
+## 7a. The authorization boundary
+
+Recorded 2026-08-06 on the project owner's instruction.
+
+**Inside this repository, everything is approved computational work and is not
+gated.** Simulation, modelling, intervention physics, dose-response on simulated
+tissue, planning against simulated or previously-recorded open data, training,
+and benchmarking are all covered by a UT Arlington IRB approval for
+computational studies. Code in `scwbd.intervene` must stop carrying a
+per-call disclaimer asserting it is unapproved — that claim is false, and a
+disclaimer on every entry point trains readers to ignore it.
+
+**What is gated is live application**: driving stimulation hardware, or
+informing a real person's stimulation, in production in
+`/home/brandonin/Documents/robotics`. That is pending a preliminary review on
+**2026-08-25**.
+
+Three properties this boundary must have:
+
+1. **One gate, at the export edge.** The refusal lives where an artifact or a
+   plan leaves this repository toward live use — Asimov's surface
+   (`scwbd/runtime/`, the `tms-robotics` bridge) — not distributed across
+   intervention entry points. Twelve partial restrictions are how a hole opens
+   between them.
+2. **It does not open on a calendar comparison.** A date passing is not evidence
+   of an outcome, and a scheduled review is not a completed one. What unlocks
+   live use is a record of the review having occurred *with an approving
+   outcome*; 2026-08-25 is the earliest date such a record could exist. A
+   hardcoded date string also goes silently stale the day after.
+3. **It is orthogonal to `sim2real_ready` and `promotion_eligible`,** which
+   remain `false`. IRB approval is not promotion eligibility, and nothing in
+   this section may be read as relaxing the claim boundary.
