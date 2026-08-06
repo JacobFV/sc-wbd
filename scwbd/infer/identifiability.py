@@ -651,6 +651,7 @@ def run_benchmark(
     recovery_designs: Sequence[str] | None = None,
     heavy_regimes: Sequence[str] | None = None,
     checkpoint_path: str | None = None,
+    resume: bool = True,
     verbose: bool = True,
 ) -> dict[str, Any]:
     """Run the benchmark.
@@ -660,9 +661,24 @@ def run_benchmark(
     ``heavy_regimes`` restricts profile likelihoods and the Monte-Carlo complete
     information to named regimes.  Both restrictions are recorded in the
     manifest so the report states exactly what was computed where.
+
+    ``resume`` reloads ``checkpoint_path`` and skips any (regime, design) pair
+    already present.  On a shared machine this run *will* be interrupted; every
+    interruption should cost the design in flight, not the whole sweep.
     """
     seed_everything(seed)
-    results: dict[str, Any] = {"regimes": {}}
+    sig = run_signature(
+        base_cfg, seed=seed, n_replicates=n_replicates, n_newton=n_newton,
+        mc_replicates=mc_replicates, with_recovery=with_recovery,
+        with_profiles=with_profiles,
+        with_monte_carlo_fisher=with_monte_carlo_fisher,
+    )
+    results: dict[str, Any] = {"regimes": {}, "run_signature": sig}
+    done = _load_checkpoint(checkpoint_path, sig) if resume else {}
+    if done and verbose:
+        n = sum(len(r.get("designs", {})) for r in done.values())
+        print(f"[resume] reusing {n} completed design(s) from {checkpoint_path}",
+              flush=True)
     for regime in regimes:
         u_true = regime.eta_true()
         rres: dict[str, Any] = {
@@ -677,8 +693,15 @@ def run_benchmark(
             "designs": {},
         }
         if verbose:
-            print(f"[regime {regime.name}]")
+            print(f"[regime {regime.name}]", flush=True)
+        prior = done.get(regime.name, {}).get("designs", {})
         for spec in designs:
+            if spec.name in prior:
+                rres["designs"][spec.name] = prior[spec.name]
+                if verbose:
+                    print(f"  {spec.name:32s} [resumed from checkpoint]", flush=True)
+                results["regimes"][regime.name] = rres
+                continue
             t0 = time.time()
             bd = build_design(spec, base_cfg, regime, seed=seed)
             do_rec = with_recovery and (
@@ -750,6 +773,65 @@ def run_benchmark(
         results["regimes"][regime.name] = rres
         _checkpoint(checkpoint_path, results)
     return results
+
+
+def run_signature(
+    cfg: SystemConfig, *, seed: int, n_replicates: int, n_newton: int,
+    mc_replicates: int, with_recovery: bool, with_profiles: bool,
+    with_monte_carlo_fisher: bool,
+) -> str:
+    """Hash of everything that changes what a design entry *means*.
+
+    Resuming across a settings change would silently splice together results
+    computed under different budgets, which is exactly the kind of quiet
+    inconsistency a claim report must never contain.
+    """
+    import hashlib
+    import json
+
+    payload = {
+        "epoch_seconds": cfg.epoch_seconds, "n_epochs": cfg.n_epochs,
+        "dtype": cfg.dtype, "dt": cfg.dt, "n_regions": cfg.n_regions,
+        "n_delay_taps": cfg.n_delay_taps, "hrf_stages": cfg.hrf_stages,
+        "seed": seed, "n_replicates": n_replicates, "n_newton": n_newton,
+        "mc_replicates": mc_replicates, "with_recovery": with_recovery,
+        "with_profiles": with_profiles,
+        "with_monte_carlo_fisher": with_monte_carlo_fisher,
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True).encode()
+    ).hexdigest()[:16]
+
+
+def _load_checkpoint(path: str | None, signature: str) -> dict[str, Any]:
+    """Completed ``{regime: {designs: {...}}}`` from a previous run, or ``{}``.
+
+    A corrupt, unreadable, or differently-configured checkpoint is treated as
+    absent rather than fatal: losing the cache costs time, but refusing to
+    start costs the whole run.
+    """
+    if not path:
+        return {}
+    import json
+    from pathlib import Path as _P
+
+    p = _P(path)
+    if not p.exists():
+        return {}
+    try:
+        blob = json.loads(p.read_text())
+    except Exception as exc:                       # noqa: BLE001 - see docstring
+        print(f"[resume] ignoring unreadable checkpoint {p}: {exc}", flush=True)
+        return {}
+    got = blob.get("run_signature")
+    if got != signature:
+        print(
+            f"[resume] ignoring checkpoint {p}: run signature {got} != "
+            f"{signature} (settings changed since it was written)",
+            flush=True,
+        )
+        return {}
+    return blob.get("regimes", {})
 
 
 def _checkpoint(path: str | None, results: Mapping[str, Any]) -> None:

@@ -74,9 +74,12 @@ def cmd_benchmark(args) -> int:
         with_profiles=not args.no_profiles,
         with_monte_carlo_fisher=not args.no_monte_carlo,
         mc_replicates=args.mc_replicates,
-        recovery_designs=[d.name for d in designs if d.primary],
+        recovery_designs=(
+            args.recovery_designs or [d.name for d in designs if d.primary]
+        ),
         heavy_regimes=[regimes[0].name],
         checkpoint_path=str(out / 'results_partial.json'),
+        resume=not args.no_resume,
     )
     res["wall_seconds"] = time.time() - t0
     decision = evaluate_decision_rule(res)
@@ -119,6 +122,15 @@ def main(argv=None) -> int:
     b.add_argument("--no-recovery", action="store_true")
     b.add_argument("--no-profiles", action="store_true")
     b.add_argument("--no-monte-carlo", action="store_true")
+    b.add_argument(
+        "--recovery-designs", nargs="*", default=None,
+        help="restrict the expensive MAP-recovery arm to these designs "
+             "(default: every primary design)",
+    )
+    b.add_argument(
+        "--no-resume", action="store_true",
+        help="recompute designs already present in results_partial.json",
+    )
     b.set_defaults(func=cmd_benchmark)
     s = sub.add_parser("slice")
     s.set_defaults(func=cmd_slice)
