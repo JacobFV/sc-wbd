@@ -329,8 +329,28 @@ fully broken. `BehaviourHead` and `SCWBD.readout` are already state-dependent.
 variance cross the same typed interface. A shared-slice view silently narrowed
 the treatment arm's EEG mean path to 2 exported dims against the control's 18;
 that would have concluded heterogeneous state does not help, with a green
-harness. `SCWBD.observation` is `None` on the control arm so the §11.4 control
-is untouched.
+harness.
+
+> **RL-4 amended 2026-08-06, on Hodgkin's declared disagreement. I was wrong
+> and the amendment is his.** The original ruling said `SCWBD.observation` is
+> `None` **on the control arm**, to leave the §11.4 control untouched. That
+> makes the state-dependent variance path a property of *which arm you are in*,
+> so A1 would measure the variance path rather than the structured state — the
+> identical class of error as the mean-path regression, pointing the other way.
+> Last time the interface silently narrowed one arm; this would silently widen
+> the other. It is an unmatched **stage 5** under RL-6, in the ruling that
+> exists to prevent unmatched stages.
+>
+> My rationale had already expired: Popper ruled that run 2 trains its **own**
+> control arm, so "leave the §11.4 control untouched" was protecting a run-1
+> artifact that is not run 2's control.
+>
+> **Both arms build the observation interface by default.** The disable path
+> survives as `ModelConfig.state_dependent_variance=False` — a declared config
+> choice, not a property of an arm — and `heads.py` behaviour is unchanged when
+> the interface is absent, which is the safety property I actually wanted. An
+> A1 run with the control on the broadcast constant may not be reported as a
+> test of structured state.
 
 **RL-5 — one refusal definition, one enforcement point.** R12's *definition*
 lives with R01–R11 in the schema/compiler refusal set (Noether). Its
