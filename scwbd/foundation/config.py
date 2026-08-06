@@ -133,6 +133,17 @@ class TrainConfig:
     seed: int = 20260805
     device: str = "cuda"
     amp_dtype: str = "bfloat16"
+    #: Hard ceiling, in GB, on what the CUDA caching allocator may reserve.
+    #:
+    #: This is **not** redundant with ``systemd-run -p MemoryMax``.  On the GB10
+    #: the GPU allocates from the same physical pool as the host, but those
+    #: allocations are not charged to the systemd cgroup: on 2026-08-06 a run
+    #: held 97.9 GB of device memory while its cgroup reported
+    #: ``memory.current = 8.17 GB`` against a 40 GB cap that never fired.  The
+    #: cgroup bounds host-side allocation only.  Without this ceiling the
+    #: caching allocator grows unopposed -- it reserves freed blocks rather than
+    #: returning them -- until the machine dies.  ``0`` disables the cap.
+    cuda_reserve_gb: float = 40.0
     max_wall_seconds: float = 6 * 3600.0
     resume: bool = True
     stages: list[StageConfig] = field(

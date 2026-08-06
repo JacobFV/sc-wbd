@@ -43,7 +43,16 @@ from .mixture import MixtureTrainer, SourceSpec
 from .model import SCWBD
 from .posterior import AmortizedPosterior
 from .simulate import THETA_NAMES, CorpusSpec, SimCorpus, ThetaPrior, generate_corpus
-from .util import JsonlLogger, Timer, count_parameters, env_fingerprint, git_sha, set_determinism
+from .util import (
+    JsonlLogger,
+    Timer,
+    cap_cuda_reserve,
+    count_parameters,
+    cuda_reserved_gb,
+    env_fingerprint,
+    git_sha,
+    set_determinism,
+)
 
 __all__ = ["FoundationTrainer", "BindingDriftError", "STAGE_PERMISSIONS", "main"]
 
@@ -132,6 +141,7 @@ class FoundationTrainer:
         self.cfg = cfg
         self.quick = quick
         self.device = torch.device(device or cfg.train.device)
+        cap_cuda_reserve(self.device, cfg.train.cuda_reserve_gb)
         set_determinism(cfg.train.seed)
         torch.backends.cuda.matmul.allow_tf32 = False  # solvers stay fp32 (ARCH §3)
         self.out_dir = Path(cfg.train.out_dir)
@@ -541,6 +551,10 @@ class FoundationTrainer:
                         / max(time.time() - t0, 1e-9),
                         1,
                     ),
+                    # Reserved, not allocated: the caching allocator's footprint
+                    # is the machine's actual exposure, and it is the number the
+                    # cgroup cannot see (reports/training/platform_memory_limits.md).
+                    "gpu_reserved_gb": round(cuda_reserved_gb(self.device), 2),
                     **{k: v for k, v in diag.items() if isinstance(v, (int, float))},
                 }
                 self.logger.log(**rec)

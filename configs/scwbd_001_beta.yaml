@@ -46,7 +46,11 @@ data:
   window: 48                  # model steps forecast (0.384 s)
   context: 24                 # assimilation window (0.192 s)
   fs_hz: 125.0
-  batch: 192
+  # 128, not 192: at 192 the run allocated 38.93 GB and hit the 40 GB device cap
+  # mid-step (2026-08-06). Measured ~0.203 GB/sample, so 128 projects to ~26 GB
+  # and leaves headroom for fragmentation. The cap is the budget; the batch is
+  # the variable that gives.
+  batch: 128
   # 4, not 10: each persistent worker holds its own copy of the batch plus its
   # HDF5 read buffers in the single 121 GB unified pool the GPU allocates from.
   # Ten of them plus pinning is what put this run in the 2026-08-05 OOM.
@@ -63,6 +67,12 @@ train:
   seed: 20260805
   device: cuda
   amp_dtype: bfloat16
+  # Device-side ceiling on the CUDA caching allocator. NOT redundant with
+  # `systemd-run -p MemoryMax=40G`: on this unified-memory box the cgroup does
+  # not charge device allocations, so MemoryMax reported 8.17 GB while this run
+  # held 97.9 GB and took the machine to 8 GB free. See
+  # reports/training/platform_memory_limits.md.
+  cuda_reserve_gb: 40.0
   max_wall_seconds: 18000     # 5 h
   resume: true
   stages:
