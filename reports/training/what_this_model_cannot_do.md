@@ -134,11 +134,24 @@ does either.
   supported, in either direction.** I explicitly retract an earlier reading of mine
   that treated a negative loss share as negative transfer; it was arithmetic, not
   harm.
-- **[pending] Held-out real-EEG performance vs baselines.** Not run. The harness
-  that would have produced it scored SC-WBD and the baselines **in different units**
-  (`NLL_scwbd = NLL_raw − log s`, mean log s = 0.598 on the real test split), which
-  would have handed the model a ~0.6-nat unearned advantage. Fixed but not yet
-  applied; see `reports/training/eval_metric_incomparability.md`.
+- **[pending] Held-out real-EEG performance vs baselines.** Not run, and the harness
+  that would have produced it was **not a comparison at all**. ⚖️ Neyman's
+  independent audit found **10 of 12 comparisons defective**. The dominant defect:
+  `max_batches=40` at batch 16 collects 640 windows from participant-ordered folds,
+  so **every baseline was fit on one participant (S001) and every model scored on
+  one different participant (S008)** — I regenerated this independently and confirm
+  `DISTINCT PARTICIPANTS = 1` on both sides — while SC-WBD had trained on all 71.
+  `bootstrap_ci` then received a single cluster and returned `nan`, so **every
+  reported interval was `[nan, nan]`** while the prose discussed them overlapping.
+
+  A separate units defect (`NLL_scwbd = NLL_raw − log s`, mean log s 0.598) is real
+  but **subsumed**. I claimed it "would have beaten every baseline on units alone";
+  the counterfactual says otherwise — it moves SC-WBD 7th of 7 to **5th of 7**.
+  Corrected in `reports/training/eval_metric_incomparability.md`.
+
+  Also: **`subject_specific_ar` is bit-for-bit `ar16`** — R10 disjointness routes
+  100% of windows to the fallback while `describe()` claims 71 subject models. The
+  thesis's hardest baseline has never been run.
 - **[pending] Individualization (Stage V) and G5.** Not reached.
 - **Interventional / causal validity.** Nothing here tests a perturbation
   prospectively.
@@ -157,9 +170,21 @@ code that did not produce it:
 | `patch_eval_strict_load.diff` | `strict=False` + discarded load report ⇒ evaluating **random weights** while printing "loaded" |
 | `patch_eval_raw_units.diff` | the units mismatch in item 10 |
 
-## 12. What I am least confident about in this document
+## 12. What I was least confident about — now adjudicated
 
-The units algebra in item 10 and the claim that `bootstrap_ci` is correct both rest
-on **my arithmetic alone**. Given that I found three defects in the evaluation path,
-I do not think I should be the one certifying that path is now clean. Both deserve
-an independent re-derivation before any final number is quoted.
+I flagged that the units algebra and the `bootstrap_ci` correctness claim rested on
+my arithmetic alone, and that I should not certify the path I had audited. **Both
+were re-derived independently by ⚖️ Neyman and both held**: the units algebra is
+confirmed, and `bootstrap_ci` is verified clean with the failure constructed
+(clustered intervals 1.87–2.29× wider than window-level against a 2.60× design
+effect from measured ICC).
+
+**The refusal to self-certify was the correct call, and for a better reason than I
+gave.** I expected an independent check to catch an error in my arithmetic. Instead
+it caught **four defects I had not looked for**, including the one that mattered
+most — and it caught them in the component I had explicitly declared clean, because
+I verified `bootstrap_ci`'s internals without ever asking what it was called with.
+
+The general form, now in the register: **a correctness proof about a function is
+worthless without a claim about its domain.** Nothing in this document should be
+read as certified by its author.
