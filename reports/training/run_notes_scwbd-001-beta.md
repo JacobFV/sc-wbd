@@ -244,6 +244,25 @@ extremeness threshold to roughly the top 0.5 %, which is precisely the
 retrospective fitting that produced the retracted period-60 claim. It has not
 been done and should not be, however tempting it becomes now that the fix is in.
 
+### Pre-committed wording for whatever the spike rate does
+
+Written **before** the post-fix rate is known, because the outcome that would be
+most flattering is also the most likely to be misreported.
+
+- **If the spike rate falls:** report *"the spike rate fell from ~31 % to X %
+  after the normaliser fix."* Do **not** report that the fix explained the
+  spikes. The two runs differ in more than one respect, no causal link was ever
+  established, and a "≥1 extreme window" model predicted 98 % rather than 31 %.
+  A fall would be **consistent with** the fix and would not establish it.
+- **If the spike rate is unchanged:** report that too, plainly. It would mean the
+  normaliser defect — real, measured, and worth fixing on its own terms — was
+  not what produced the spikes, and the cause remains unknown.
+- **Either way**, the defect's justification stands on its own measurements
+  (worst `max|z|` 2426.86 → 21.12) and needs no help from the spike rate.
+
+Establishing the link properly would require holding everything else fixed and
+varying only the normaliser, which is not what happened here.
+
 ## Provenance of the artifact
 
 Branch **`wt/turing`**. The run's commit is **`4be98fc`**
@@ -276,6 +295,20 @@ Note also that `7f18528` is the **superseded** run, not this one. The artifact i
 `4be98fc`.
 
 ## Reading the outputs
+
+**A `tail -F` monitor will replay a restored log as if it were live.**
+`train_main.log` is a *tracked* file, so `git checkout -- reports/training/…`
+rewrites it with the committed (old) contents, and any `tail -F` following it
+emits that history as fresh events. This happened twice: once producing a wall of
+long-fixed binding warnings, and once emitting **pre-fix training numbers with
+`wall_s = 2196` for a run that was one minute old.** Both looked like the new run
+regressing.
+
+The tell is a value that cannot belong to the current run — a wall clock larger
+than the elapsed time, or a metric that predates a fix. The check is to read the
+live file directly and look for a marker only the current build emits (here,
+`[mem] CUDA reserve capped at …`). Another instrument reading the wrong thing:
+the monitor was correct about the bytes and wrong about what they meant.
 
 **`reports/training/train_main.log` is the live source of truth, not the JSONL.**
 `JsonlLogger.log()` writes to the file without flushing but prints with
