@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** The mandatory control (Randomized, distance-matched, dense, graph-only, local-only and soft-edge controls at matched parameter/compute budgets) shows the result survives only without it.
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git a8221f6 · 2026-08-06T06:22:53+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 4d617af · 2026-08-06T07:56:41+00:00*
 
 ## Could not run
 
@@ -55,3 +55,6 @@ _none run_ — no baseline, no claim.
 ## Notes
 
 - Delegated to gate G2; this Appendix D row and that gate are the same experiment and must not be double-counted as two pieces of evidence.
+- Sparsity or plausibility alone is not evidence for the declared topology (Appendix D, 'Connectome prior value').
+- Controls are agent C's; this gate refuses to synthesise them, because the control IS the experiment. A gate that invents its own null has measured nothing.
+- If the topology or any derived prior is route-fragile (agent C's ledgers carry route_agreement_r / route_fragile) or carries a forbidden_inference, that must be disclosed alongside the verdict: a topology claim inherits the fragility of the maps it was built from.

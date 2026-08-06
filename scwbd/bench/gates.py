@@ -622,6 +622,68 @@ def run_g1(
 # ==========================================================================
 # G2 -- anatomy improves inference
 # ==========================================================================
+def _prior_fragility_subcheck(prior: Any, artifacts: dict[str, Any]) -> SubCheck:
+    """Disclose route-fragile inputs and forbidden inferences of the anatomy prior.
+
+    A topology claim inherits the fragility of the maps it was built from.  Agent
+    C's ledgers carry ``route_agreement_r`` / ``route_fragile`` (maps whose value
+    depends on the sampling route) and ``forbidden_inference`` (combinations the
+    prior explicitly does not support).  G2 reports them next to its verdict
+    rather than leaving them in another module's documentation.
+    """
+    fragile = getattr(prior, "route_fragile", None)
+    forbidden = getattr(prior, "forbidden_inference", None)
+    ledger = getattr(prior, "ledger", None)
+    if fragile is None and ledger is not None:
+        fragile = getattr(ledger, "route_fragile", None)
+    if forbidden is None and ledger is not None:
+        forbidden = getattr(ledger, "forbidden_inference", None)
+    if fragile is None and forbidden is None:
+        return SubCheck(
+            name="prior_fragility_disclosure",
+            description="Route-fragile inputs and forbidden inferences of the anatomy prior.",
+            metrics=[], mandatory=False, forced_status="COULD_NOT_RUN",
+            reason=(
+                "the supplied topology object exposes no route_fragile / "
+                "forbidden_inference ledger, so this gate cannot state which of its inputs "
+                "are route-dependent; pass prior_ledger= to disclose them"
+            ),
+        )
+    frag = list(fragile or [])
+    forb = list(forbidden or [])
+    artifacts["prior_fragility"] = {"route_fragile": frag, "forbidden_inference": forb}
+    return SubCheck(
+        name="prior_fragility_disclosure",
+        description="Route-fragile inputs and forbidden inferences of the anatomy prior.",
+        metrics=[
+            Metric(name="prior.route_fragile_inputs", value=float(len(frag)),
+                   kind="diagnostic", exact=True,
+                   note=("maps whose value depends on the sampling route: "
+                         + (", ".join(map(str, frag)) if frag else "none"))),
+            Metric(name="prior.forbidden_inferences", value=float(len(forb)),
+                   kind="diagnostic", exact=True,
+                   note=("combinations this prior does not support: "
+                         + (", ".join(map(str, forb)) if forb else "none"))),
+        ],
+        mandatory=False,
+        reason=("disclosure only; a fragile input does not invalidate the gate, but a "
+                "verdict that leans on one must say so"),
+    )
+
+
+#: Standing notes on every G2 report, on every path — including the refusals.
+_G2_NOTES: tuple[str, ...] = (
+    "Sparsity or plausibility alone is not evidence for the declared topology "
+    "(Appendix D, 'Connectome prior value').",
+    "Controls are agent C's; this gate refuses to synthesise them, because the control "
+    "IS the experiment. A gate that invents its own null has measured nothing.",
+    "If the topology or any derived prior is route-fragile (agent C's ledgers carry "
+    "route_agreement_r / route_fragile) or carries a forbidden_inference, that must be "
+    "disclosed alongside the verdict: a topology claim inherits the fragility of the maps "
+    "it was built from.",
+)
+
+
 def run_g2(
     *,
     train: Dataset | None = None,
@@ -631,6 +693,7 @@ def run_g2(
     anatomy: np.ndarray | None = None,
     controls: Mapping[str, np.ndarray] | None = None,
     causal_holdout: Mapping[str, Dataset] | None = None,
+    prior_ledger: Any = None,
     data_efficiency_sizes: Sequence[int] | None = None,
     n_efficiency_seeds: int = 3,
     corrupt_fraction: float = 0.5,
@@ -683,7 +746,8 @@ def run_g2(
         for i, m in enumerate(missing):
             subs.append(could_not_run(f"inputs[{i}]", "Required gate input", f"missing: {m}",
                                       falsified_by=CLAIMS["G2"]["falsified_by"]))
-        return ClaimReport(manifest=man, subchecks=subs, kind="gate").finalize()
+        return ClaimReport(manifest=man, subchecks=subs, kind="gate",
+                           notes=list(_G2_NOTES)).finalize()
 
     assert model_for_graph is not None and anatomy is not None and controls is not None
     assert train is not None and test is not None
@@ -931,14 +995,14 @@ def run_g2(
             "ci": [d.interval.lo, d.interval.hi],
         }
 
+    # -- prior fragility disclosure (agent C's ledgers) -------------------
+    subs.append(_prior_fragility_subcheck(prior_ledger if prior_ledger is not None else anatomy,
+                                          artifacts))
+
     rows = _baseline_rows(base, {k: "topology control" for k in base}, seed=seed)
     return ClaimReport(
         manifest=man, subchecks=subs, baselines_run=rows, artifacts=artifacts, kind="gate",
-        notes=[
-            "Sparsity or plausibility alone is not evidence for the declared topology "
-            "(Appendix D, 'Connectome prior value').",
-            "Controls are agent C's; this gate refuses to synthesise them.",
-        ],
+        notes=list(_G2_NOTES),
     ).finalize()
 
 

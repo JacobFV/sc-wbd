@@ -1,0 +1,61 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N6_induced_efield",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "N6_induced_efield",
+    "claim_text": "The magnetically induced E-field solver reproduces the closed-form (Sarvas / Heller-van Hulsteyn) solution for a spherically symmetric conductor, validated independently of any neural-response model.",
+    "falsified_by": "relative error above tolerance against the closed form, or a mesh-refinement study that does not converge at the advertised order",
+    "consequence_if_failed": "The induced-field solver may not be used for TMS E-field prediction, target engagement or pose ranking; every downstream induction-dependent claim is suspended (N3 does not cover this: it validates conduction, not induction).",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "relative_tol": 0.05,
+      "expected_order": 1.5
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "induced_efield: could not run \u2014 missing: induced-field solver (agent Faraday: scwbd.intervene.tms.efield); closed-form reference (Sarvas / Heller-van Hulsteyn); agent J does not implement induction physics and will not substitute the conduction reference from N3, which is a different problem"
+  ],
+  "subchecks": [
+    {
+      "name": "induced_efield",
+      "description": "Induced E-field versus the closed form.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: induced-field solver (agent Faraday: scwbd.intervene.tms.efield); closed-form reference (Sarvas / Heller-van Hulsteyn); agent J does not implement induction physics and will not substitute the conduction reference from N3, which is a different problem",
+      "falsified_by": "relative error above tolerance against the closed form, or a mesh-refinement study that does not converge at the advertised order",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "Opened because N3 passed for CONDUCTION only. Any claim that depends on the induced TMS field remains suspended until this gate runs."
+  ],
+  "artifacts": {},
+  "provenance": {
+    "timestamp_utc": "2026-08-06T07:57:56+00:00",
+    "git_rev": "4d617af",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    }
+  }
+}

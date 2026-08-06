@@ -94,3 +94,19 @@ def test_summary_does_not_quote_g4_numbers_before_the_preregistered_run(bare):
     g4 = next(r for r in bare["gates"] if r.manifest.claim_id == "G4")
     assert g4.status == "COULD_NOT_RUN"
     assert not g4.artifacts.get("fisher"), "G4 reported information numbers with no run"
+
+
+def test_summary_states_what_a_numerical_pass_does_not_unblock(bare):
+    md = build_summary(bare["gates"], bare["ablations"], bare["leakage"], bare["numerics"])
+    assert "What a passing numerical gate does and does not unblock" in md
+    assert "licenses no claim on its own" in md
+    assert "N3` validates **conduction**" in md
+    assert "does **not** cover" in md
+    assert "`N6`" in md
+
+
+def test_summary_records_the_provenance_lesson(bare):
+    md = build_summary(bare["gates"], bare["ablations"], bare["leakage"], bare["numerics"])
+    assert "Provenance is part of the discipline" in md
+    assert "stale artifact" in md
+    assert "refused unless it records its subject or its solver provenance" in md

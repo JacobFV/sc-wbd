@@ -26,6 +26,7 @@ __all__ = [
     "fisher_backend",
     "fisher_design_map",
     "reference_compiled",
+    "field_solvers",
     "theta_partition",
     "anatomy_controls",
 ]
@@ -225,6 +226,22 @@ def fisher_design_map(u: Any, cfg: Any, proto: Any, **kw: Any) -> Dependency:
         return fn(u, cfg, proto, design=design, **kw)
 
     return Dependency(dep.name + "(bound)", True, _map, "")
+
+
+def field_solvers() -> Dependency:
+    """Agent Faraday's reference-problem field solvers for gates N3 and N4.
+
+    These are *purpose-built discretisations of the reference problems*, not the
+    production operators: N3's subject is a current dipole in an unbounded
+    conductor (conduction), N4's a free-field monopole.  The production TMS
+    induced-field operator is a different problem and has its own gate (N6).
+    """
+    em = probe_attr("scwbd.intervene.numerics", "quasistatic_dipole_potential_fd")
+    ac = probe_attr("scwbd.intervene.numerics", "run_free_field_monopole")
+    if em.available and ac.available:
+        return Dependency("scwbd.intervene.numerics", True, (em.obj, ac.obj), "")
+    reason = em.reason or ac.reason or "field solvers not exposed"
+    return Dependency("scwbd.intervene.numerics", False, None, reason)
 
 
 def anatomy_controls() -> Dependency:

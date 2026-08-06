@@ -62,6 +62,13 @@ def test_g1_without_the_intervention_holdout_cannot_pass():
 
 
 def test_g2_refuses_to_invent_the_anatomy_controls():
+    """G2 must refuse rather than synthesise its own null.
+
+    Written to be independent of *which* refusal path fires: before agent C
+    landed ``scwbd.anatomy.controls.graph_controls`` the adapter probe failed;
+    afterwards the same request refuses as a missing input. Either way the gate
+    must not run, must name agent C, and must state the principle.
+    """
     d = make_graph_dataset(seed=2)
     rep = run_g2(train=d["train"], test=d["test"], ood=d["ood"],
                  model_for_graph=lambda A: RidgeGaussian(mask=A),
@@ -69,7 +76,11 @@ def test_g2_refuses_to_invent_the_anatomy_controls():
     assert rep.status == "COULD_NOT_RUN"
     joined = " ".join(rep.blocking_reasons)
     assert "agent C" in joined
-    assert "control is the experiment" in joined
+    assert "graph controls" in joined.lower()
+    # the principle is stated on every G2 report, on every refusal path
+    assert any("control\n    IS the experiment" in n.replace("control IS the experiment",
+                                                             "control\n    IS the experiment")
+               or "control IS the experiment" in n for n in rep.notes)
 
 
 def test_g2_with_a_missing_single_control_cannot_run():
