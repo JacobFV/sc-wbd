@@ -359,6 +359,104 @@ control arm.
 
 ---
 
+## 2b. Ontology: carriers, views, and annotations
+
+Recorded 2026-08-06 in answer to a direct question: *what ontological changes
+would improve the design and allow heterogeneous source integration?* Four, and
+they are all consequences of one omission.
+
+### The omission
+
+**There is no object for the thing sources are observations *of*.** The latent
+is implicitly "the dense `(B,T,N,D)` state tensor", so an observation operator
+maps from a *slice of an array* rather than from a declared field. That is the
+scalar-only limitation: `LeadField` is `(n_channels, n_regions)` and multiplies
+a per-region scalar amplitude. It cannot express "this montage sees a blurred
+low-rank projection of a field that the connectome also constrains", because
+there is no field for it to project *from* — only a tensor to index.
+
+Everything below follows from naming that object.
+
+### O-1. Separate the **carrier** from its **views**
+
+One `LatentField` — what the model owns, region-indexed and heterogeneous per
+§2.1. Many `View`s — what each source sees. A `View` is `(operator, support,
+uncertainty)` and belongs to a `SourceCard`, not to the model.
+
+Then electrode montage A and montage B are **two views of one carrier**, and
+nothing special has to be built for either: each declares its own lead field
+into its own channel support, and both back-propagate into the same field. A
+high-resolution connectome stops being a separate artifact and becomes a
+**prior on the carrier**, which is the only place it can constrain both.
+
+This is the change that makes the example in the question expressible. It is
+also what `SourceCard.observation.target_ports` was reaching for without a
+target to point at.
+
+### O-2. `Support` must compose
+
+`Support` today is a passive descriptor — `kind, frame, units, psf, extent,
+n_elements, resolution` and **no operators**. Two supports cannot be related
+without hand-writing a map, which is why 🧭 Gauss's restriction/prolongation
+pair had to be declared as a one-off rather than derived.
+
+It needs an algebra: given supports `a` and `b`, produce their common
+refinement and the two operators into it, with the composed PSF and the
+uncertainty each map introduces. Then "5000 Hz EEG against 0.5 Hz BOLD on the
+same subject" is a *computation over declared supports*, not a bespoke harness.
+`ds002336` is the case that would exercise it and is on disk.
+
+Constraint from the measurement: the pair Gauss validated **fails** its
+boundary check, and the cause is that a per-parcel scalar carries 5.6% of the
+whitened lead field against 51.7% for three numbers per parcel. So the algebra
+must carry **orientation**, not just extent — a support whose elements are
+scalars is a different kind of object from one whose elements are vectors, and
+today `Support` cannot tell them apart.
+
+### O-3. One region identity; everything else is a typed annotation
+
+`RegionFamily` carries 17 fields across four concerns that have leaked into
+each other, and `schema.Region` is a second region vocabulary with no enforced
+relationship to it — a mismatch that produced the same bug three times in one
+day (a `FamilyPartition` read as per-parcel labels).
+
+Proposed: **`Region` is identity and membership only.** Every other property —
+cytoarchitecture, laminar profile, receptor profile, intrinsic timescale, E/I
+prior, normals, coherence — becomes an `Annotation` keyed by region id,
+carrying its own **provenance, licence, coverage, and admissibility**.
+
+Two problems dissolve:
+
+- **Two licence surfaces become one.** `membership_licence` and
+  `provenance[].licence` are currently both authoritative for different fields.
+  An annotation carries its own licence and there is nothing else to consult.
+- **Inadmissible evidence stops looking like evidence.** Cytoarchitecture is
+  carried but **barred** from justifying a family — it fails globally on every
+  measured block. Today it sits in the same struct as the fields that *are*
+  admissible. As an annotation it declares `admissible_for: []` and the bar is
+  a property of the datum rather than a rule in someone's head.
+
+### O-4. Epistemic status is **derived**, never declared
+
+`evidence_tier` and `training_status` are not independent: `atlas_separation`
+mechanically forces `prior_only_untrained`. Two declared fields that cannot
+disagree are one field and a chance to be inconsistent. Derive
+`training_status` from whether admissible annotations exist with data behind
+them, and delete the declaration.
+
+Same for `padding_fraction`, which was filed as a measured cost against an
+11-family partition that no longer exists — a derived quantity written down as
+a constant goes stale silently.
+
+### What this is not
+
+Not a rewrite. `Support`, `SourceCard`, `ObservationModel` and the ledger are
+the right *shapes*; they are under-connected rather than wrong. O-1 and O-2 add
+objects that should already exist; O-3 and O-4 remove duplication that has
+already caused three defects.
+
+---
+
 ## 3. Numerical contracts
 
 - Default dtype `float32`; `bfloat16` permitted only inside learned operators,
