@@ -1364,3 +1364,102 @@ when something mechanically checks it, not when it has been articulated well.** 
 correct response to writing a constraint down is to ask immediately *"what in this
 change set does it forbid?"* — and to run that check against your own next artifact
 before anyone else's.
+
+---
+
+## Entry: a safety bound that had never been shown to bind
+
+`scwbd/intervene/limits/a_safe.toml` and `scwbd/intervene/safety.py`. Found by
+⚡ Faraday while reconciling the intervention stack's documentation.
+
+Two findings. The first is the register's ordinary shape at unusual stakes; the
+second is a variant I had not seen recorded here.
+
+### 1. Measured, not grepped: 7 of 17 bounds had ever fired
+
+`a_safe.toml` declares 15 numeric axes — TMS field and pulse limits, the tFUS
+acoustic and thermal envelope, sensory photosensitivity and SPL ceilings — each
+with an external citation (Rossi et al. 2021, Deng et al. 2013, FDA 2023, Aubry
+et al. 2023 / ITRUSST, Sapareto & Dewey 1984, WCAG 2.2, NIOSH 1998). Between
+them they declare **17 bound sides** (14 `max`, 3 `min`).
+
+I did not grep for coverage. I instrumented `LimitSpec.check` with a nine-line
+pytest plugin that records every `Violation` it actually returns during a run,
+which answers *was this bound ever made to refuse* directly rather than by
+inference. Across the eight test files that exercise limits:
+
+**Before: 7 of 17 fired. After: 17 of 17.**
+
+Never fired: the session-duration ceiling, **the entire tFUS envelope** —
+mechanical index, ISPPA, ISPTA, duty cycle, thermal dose, temperature rise —
+and **all three `min` sides**. That last one is the sharp part: with no `min`
+ever crossed, the `below_minimum` branch of `LimitSpec.check` had **never
+executed against a real violation anywhere in the suite**. Half of the
+comparator was untested code wearing a citation.
+
+The plugin also reports which axes were passed to `check` *at all*. Six tFUS
+axes were **never evaluated once, in either direction**. `test_tfus.py` exists
+and is in the set; its `test_exposure_metrics_map_onto_declared_safety_axes`
+asserts the axis *names* map correctly and never performs a feasibility check.
+A test named after the thing, passing, adjacent to the thing, not testing it.
+
+**A grep-based inventory of the same question returned "6 of 15 axes".** The
+measurement says 7 axes / 7 of 17 sides. Close enough to feel confirmatory and
+wrong in both directions — which is the argument for the instrument over the
+search. Both readings are checked in at `reports/intervene/limit_firing_*.json`
+and the plugin at `reports/intervene/firing_plugin.py`; it runs against any
+commit.
+
+### 2. The variant: a bound the loader silently declined to load
+
+`[protocol.reversibility]` declared `required = true`, with a `basis`, a
+citation to `body.tex` §7.4, and **no `min` and no `max`**. `SafetyLimits.load`
+contained:
+
+```python
+if "min" not in entry and "max" not in entry:
+    continue  # a declarative rule, not a numeric bound
+```
+
+So it never became a `LimitSpec`. It was never in `keys()`, never returned by
+`get()`, never checked by `FeasibleSet.contains`. `ProposedIntervention` even
+carries a `reversible` field — set by callers, read by nothing.
+
+This is distinct from the entries already in this report. The guards catalogued
+above *ran* and could not discriminate. This one **never ran**, and nothing
+anywhere reported its absence: no warning, no unmatched-pattern metric, no
+`KeyError`. It was cited, reviewed, present in the file, and unreachable, and
+the only way to discover it was to enumerate the loaded limits and diff them
+against the declared ones. **A silent `continue` in a loader is a delete
+statement with a comment on it.**
+
+The nearest relative in this register is agent Turing's exact-name gradient
+permission that matched an empty set under `torch.compile` — the same shape,
+*declared and matching nothing*, and the same remedy: the loader must refuse
+what it cannot use rather than skipping it.
+
+Both are now enforced. `SafetyLimits.load` raises on an entry declaring neither
+`min` nor `max` — *"a bound that cannot fire is not a bound"* — so the failure
+is at startup instead of invisible forever, and the rule moved to
+`[decision.reversibility]` where it is read and fired by a test.
+
+### The generalisable part
+
+**A limit that has never been observed to refuse is indistinguishable from a
+limit that cannot, and citing it does not change that.** Every one of these
+axes traced to a real external standard. The citation is what made them look
+finished; it is evidence that somebody chose the number correctly, and carries
+no information about whether the comparison against it is reachable.
+
+Two standing recommendations, in the register's usual form:
+
+1. **The firing measurement should be a gate, not a one-off.** A bound added to
+   a limits file without a test that makes it refuse should fail CI. The
+   instrument already exists and takes seconds.
+2. **Sweep the loaded objects, not a hardcoded list.** The replacement tests
+   parametrise over `SafetyLimits.load().all_specs()`, so a bound added
+   tomorrow is covered tomorrow — and one that cannot be made to fire fails the
+   suite rather than joining it quietly. The discriminating control matters as
+   much as the sweep: alongside "crossing the bound refuses" there is "a value
+   inside it does not", without which an axis that refused unconditionally
+   would pass too.
