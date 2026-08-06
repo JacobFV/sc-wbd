@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** relative error above tolerance against the closed form, or a mesh-refinement study that does not converge at the advertised order
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c0e5833 · 2026-08-06T09:54:47+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1a35a9a · 2026-08-06T19:03:57+00:00*
 
 ## Sub-checks
 
@@ -32,3 +32,4 @@ _none run_ — no baseline, no claim.
 - Induction, not conduction: this gate is what N3 does NOT cover.
 - STANDOFF ONLY. The reference series converges like (a/R_c)**degree. At a contact geometry (a/R_c ~ 0.955 for a coil element 4 mm off an 85 mm scalp) no feasible degree brings its bound below the solver error, so this gate validates the discretisation against a STANDOFF equivalent dipole, not against a contact coil. tms-robotics positions a coil in contact; that regime is gate N8_induced_efield_contact and it has not run.
 - The validity domain is a metric in this report, not a footnote: a reader who checks only the headline error still sees reference.convergence_ratio.
+- SERVED FROM CACHE (in part): at least one solver call re-used a stored result rather than re-solving. The stored value was produced by a solver whose module source hashes identically, so the physics is the same physics -- but this run did not recompute it, and that is recorded here rather than left to be inferred from numbers that are identical either way. Clear scwbd.bench.solver_cache.CACHE_DIR to force a full re-solve.

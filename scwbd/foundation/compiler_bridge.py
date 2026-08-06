@@ -1663,7 +1663,6 @@ def build_foundation_claim(
         posterior_class="generalized",
         requires_global_section=False,
         optimizes_intervention=False,
-        prospective_human=False,
         target_gates=("G1", "G2"),
         overrides=(),
         disabling_evidence=(

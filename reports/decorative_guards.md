@@ -1438,10 +1438,21 @@ permission that matched an empty set under `torch.compile` — the same shape,
 *declared and matching nothing*, and the same remedy: the loader must refuse
 what it cannot use rather than skipping it.
 
-Both are now enforced. `SafetyLimits.load` raises on an entry declaring neither
-`min` nor `max` — *"a bound that cannot fire is not a bound"* — so the failure
-is at startup instead of invisible forever, and the rule moved to
-`[decision.reversibility]` where it is read and fired by a test.
+`SafetyLimits.load` now raises on an entry declaring neither `min` nor `max`
+— *"a bound that cannot fire is not a bound"* — so the failure is at startup
+instead of invisible forever. That guard is permanent.
+
+**Postscript, recorded because the alternative is letting this entry go stale.**
+The reversibility rule was first *moved* to `[decision.reversibility]` and
+enforced on a live-application path. That path was subsequently removed from the
+repository along with the rest of the governance surface, which left the rule
+with nothing to trigger it. Rather than let it return to exactly the state this
+entry describes — declared, cited, unreachable — **it was deleted from the
+limits file.** Deleting a rule you can no longer enforce is honest; leaving it
+in place re-creates the defect and buys back none of the safety. The
+generalisable form: *when the caller a guard protected goes away, the guard is
+not "still there for later" — it is decoration again, and it should go with
+it.*
 
 ### The generalisable part
 

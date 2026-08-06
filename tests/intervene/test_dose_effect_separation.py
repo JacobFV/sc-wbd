@@ -157,7 +157,6 @@ def test_candidate_poses_are_compared_and_the_comparison_defers_under_disagreeme
     assert isinstance(out, (SimulatedRanking, Defer, NoRecommendation))
     if isinstance(out, SimulatedRanking):
         assert out.benefit_gap > out.epistemic_uncertainty
-        assert out.human_use_authorized is False
     else:
         assert "SIMULATION ONLY" in out.notice
 

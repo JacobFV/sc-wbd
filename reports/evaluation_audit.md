@@ -1368,6 +1368,13 @@ CUDA_VISIBLE_DEVICES="" .venv/bin/python -m pytest tests/evaluation_audit/ -q
 > second is not the way to bet without checking. This branch-dependence is
 > itself the register's "no moving symbols in an evidentiary claim": a bare
 > "37 failing" means nothing without naming where it was run.
+>
+> *[Later note, ⚡ Faraday: the branch-dependence described here no longer
+> applies. `tests/conftest.py` and `scwbd/schema/authorization.py` were both
+> removed with the governance surface, so the root conftest no longer imports
+> anything branch-specific and the suite runs from any branch. The account
+> above is left as written because it is a record of what was observed at the
+> time, not a claim about the tree today.]*
 
 **Immutable referents**, per `decorative_guards`' rule on moving symbols:
 `scwbd/foundation/evaluate.py` as of commit `4d617af` (unchanged in
