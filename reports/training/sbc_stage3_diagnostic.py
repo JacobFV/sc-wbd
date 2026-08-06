@@ -30,8 +30,18 @@ def main() -> None:
     ap.add_argument("--config", default="configs/scwbd_001_beta.yaml")
     ap.add_argument("--ckpt", default="checkpoints/scwbd-001-beta/stage_III_sliced.pt")
     ap.add_argument("--out", default="reports/training/sbc_stage3_diagnostic.json")
-    ap.add_argument("--n-datasets", type=int, default=512)
+    ap.add_argument("--n-datasets", type=int, default=512, help="0 = use every val window")
     ap.add_argument("--n-samples", type=int, default=256)
+    ap.add_argument(
+        "--order",
+        choices=("sequential", "shuffled"),
+        default="sequential",
+        help=(
+            "'sequential' takes the FIRST n windows and is backend-biased -- the "
+            "first 512 of 1888 contain zero samples from backends 0 and 1. Use "
+            "'shuffled' (seeded) or --n-datasets 0 for a representative sample."
+        ),
+    )
     args = ap.parse_args()
 
     torch.manual_seed(0)
@@ -58,16 +68,21 @@ def main() -> None:
         val_fraction=d.val_fraction,
         seed=d.seed,
     )
-    loader = torch.utils.data.DataLoader(val, batch_size=64, shuffle=False, num_workers=2)
-    ys, ths, n = [], [], 0
+    want = len(val) if args.n_datasets <= 0 else min(args.n_datasets, len(val))
+    if args.order == "shuffled":
+        idx = torch.randperm(len(val), generator=torch.Generator().manual_seed(0))[:want].tolist()
+    else:
+        idx = list(range(want))
+    subset = torch.utils.data.Subset(val, idx)
+    loader = torch.utils.data.DataLoader(subset, batch_size=64, shuffle=False, num_workers=2)
+    ys, ths, bks = [], [], []
     for b in loader:
         ys.append(b["activity"][:, : d.context])
         ths.append(b["theta"])
-        n += ys[-1].shape[0]
-        if n >= args.n_datasets:
-            break
-    y = torch.cat(ys)[: args.n_datasets]
-    th = torch.cat(ths)[: args.n_datasets]
+        bks.append(b["backend"])
+    y = torch.cat(ys)
+    th = torch.cat(ths)
+    backends = torch.cat(bks)
 
     rep = posterior_report(posterior, y, th, param_names=THETA_NAMES, n_samples=args.n_samples)
 
@@ -87,6 +102,9 @@ def main() -> None:
         "config_sha": payload.get("config_sha"),
     }
     rep["n_datasets"] = int(ranks.shape[0])
+    rep["val_windows_available"] = len(val)
+    rep["order"] = args.order
+    rep["backend_counts"] = torch.bincount(backends, minlength=5).tolist()
     rep["diagnostic_sha"] = subprocess.run(
         ["git", "rev-parse", "HEAD"], capture_output=True, text=True
     ).stdout.strip()
