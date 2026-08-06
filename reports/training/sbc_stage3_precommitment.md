@@ -79,3 +79,52 @@ verdict and KL, having no reference class, does not.**
   ranks. Do not infer a cause beyond noting consistency or inconsistency with the
   filed KL mechanism. **The final SBC still carries the verdict.**
 - **Either way:** no action, no tuning, no curriculum change.
+
+---
+
+## Disclosure: an unplanned Stage II read (filed before the Stage III run)
+
+Appended at 06:48, still **before** the Stage III diagnostic has been executed.
+
+To avoid shipping an unvalidated script — I have three prior instances of
+verifying a different path than production runs — I dry-ran
+`sbc_stage3_diagnostic.py` against the **Stage II** checkpoint. It caught two
+real errors (a missing `PYTHONPATH`, and `THETA_NAMES` imported from the wrong
+module; it lives in `simulate.py`, not `state.py`). Both would have failed at the
+boundary.
+
+**The dry run printed calibration numbers, so I have now seen a Stage II SBC I
+never pre-committed to.** Suppressing it would be selective reporting, so it is
+recorded here:
+
+| param | mean rank | edge mass | KS p |
+|---|---|---|---|
+| log_G | 0.476 | 0.094 | 0.073 |
+| **log_velocity** | 0.467 | **0.000** | **1.9e-06** |
+| ei_global | 0.467 | 0.164 | 0.184 |
+| ei_gradient | 0.510 | 0.055 | 0.067 |
+| log_sigma | 0.496 | 0.070 | 0.480 |
+| drive | 0.521 | 0.102 | 0.200 |
+
+(uniform reference: mean rank 0.500, edge mass 0.100; n=128, 64 samples)
+
+**This does not count as evidence for or against the filed KL mechanism**, for a
+reason that is about method and not modesty: I chose neither its timing nor its
+sample size under a commitment, and it is underpowered (128 datasets / 64 bins
+against the diagnostic's 512 / 256). A number I can decide to report after seeing
+it is worth less than one I promised to report before. That is the whole basis on
+which I argued for this design, and it applies against me here.
+
+What it does do is set a **prediction I am now on the record for**: `log_velocity`
+is inverted-U at Stage II — edge mass 0.000 against 0.100 expected, meaning the
+posterior is **too wide**, under-confident, not over-confident. If the Stage III
+diagnostic shows the same parameter as the offender, the KL rise I filed is
+tracking a width that was already too large at Stage II and is a **less
+interesting** finding than the filing implies — it would predate the Stage III
+trajectory entirely.
+
+**Under-confidence is also the opposite of the failure mode a rising KL would
+most naturally suggest.** I filed KL growth as the candidate mechanism for a
+calibration problem; the shape of the only calibration evidence I have so far
+points the other way. I am recording that tension before the measurement that
+could resolve it.
