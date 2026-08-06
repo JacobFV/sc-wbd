@@ -32,6 +32,13 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
     "*.log",
     ".DS_Store",
     "*.part",
+    # ``download_ranged`` writes a sidecar ``<name>.part.done`` recording which
+    # byte ranges completed, so a transfer resumes at chunk granularity. The
+    # pattern above does not match it (fnmatch is not a prefix match), so an
+    # interrupted fetch left these in the tree and they were hashed into the
+    # manifest as if they were data. Added 2026-08-06 (🗄️ Ada) after finding
+    # them under ds000113 mid-download.
+    "*.part.done",
     "*.tmp",
     ".scwbd_*",
 )

@@ -27,6 +27,9 @@ identity:
   file_manifest: null
 
 governance:
+  license_spdx: "DUA-UKB-MTA"
+  license_spdx_note: >-
+    a Material Transfer Agreement, not a licence.
   status: unavailable
   unavailable_reason: >-
     access requires an approved research application and a signed Material Transfer Agreement with UK Biobank, plus per-project fees. No application was made, so no bytes were downloaded and no field of this card is measured.

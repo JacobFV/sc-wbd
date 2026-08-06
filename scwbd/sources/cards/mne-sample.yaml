@@ -59,6 +59,9 @@ identity:
 # G_k  governance and consent
 # =====================================================================
 governance:
+  license_spdx: "UNKNOWN"
+  license_spdx_note: >-
+    verified absent: no LICENSE, COPYING or licence field anywhere in the unpacked tree. UNKNOWN is a routing value, not a placeholder - it must not resolve to permissive.
   status: live
   license: >-
     unknown - the archive ships no LICENSE file and the MNE-Python
@@ -128,6 +131,13 @@ population:
 # S_k(signal)  native signal and units
 # =====================================================================
 signal:
+  modality_evidence:
+    meg:     {globs: ["MNE-sample-data/MEG/sample/sample_audvis_raw.fif"], channel_type: [MAG, GRAD]}
+    eeg:     {globs: ["MNE-sample-data/MEG/sample/sample_audvis_raw.fif"], channel_type: EEG}
+    eog:     {globs: ["MNE-sample-data/MEG/sample/sample_audvis_raw.fif"], channel_type: EOG}
+    mri:     ["MNE-sample-data/subjects/sample/mri/T1.mgz"]
+    bem:     ["MNE-sample-data/subjects/sample/bem/*bem-sol.fif"]
+    forward: ["MNE-sample-data/MEG/sample/*-fwd.fif"]
   modalities: ["meg", "eeg", "eog", "mri", "bem", "forward"]
   n_channels: 376
   channel_types: {grad: 204, mag: 102, eeg: 60, eog: 1, stim: 9}

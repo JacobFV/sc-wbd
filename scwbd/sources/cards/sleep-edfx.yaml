@@ -50,6 +50,7 @@ identity:
 # G_k  governance and consent
 # =====================================================================
 governance:
+  license_spdx: "ODC-By-1.0"
   status: live
   license: "Open Data Commons Attribution License v1.0 (ODC-By 1.0)"
   license_url: "https://opendatacommons.org/licenses/by/1-0/"
@@ -129,6 +130,16 @@ population:
 # S_k(signal)  native signal and units
 # =====================================================================
 signal:
+  # The EDF header types every channel 'eeg'; the distinctions live in the
+  # channel LABELS, which is what the loader keys on, so that is what the
+  # audit checks (channel_name), not a header type that does not exist.
+  modality_evidence:
+    eeg:         {globs: ["sleep-cassette/*PSG.edf"], channel_name: ["EEG Fpz-Cz", "EEG Pz-Oz"]}
+    eog:         {globs: ["sleep-cassette/*PSG.edf"], channel_name: "EOG horizontal"}
+    emg:         {globs: ["sleep-cassette/*PSG.edf"], channel_name: "EMG submental"}
+    resp:        {globs: ["sleep-cassette/*PSG.edf"], channel_name: "Resp oro-nasal"}
+    temperature: {globs: ["sleep-cassette/*PSG.edf"], channel_name: "Temp rectal"}
+    hypnogram:   ["sleep-cassette/*Hypnogram.edf"]
   modalities: ["eeg", "eog", "emg", "resp", "temperature", "hypnogram"]
   n_channels: 7
   channel_types: {eeg: 2, eog: 1, emg: 1, resp: 1, temp: 1, misc: 1}

@@ -56,6 +56,9 @@ identity:
       MNE-somato-data/sub-01/meg/sub-01_task-somato_meg.fif: 71bb33cb530fe6bf289c492deac5bc184da7ee0dbbc964203a59175cda32ffc3
 
 governance:
+  license_spdx: "PDDL-1.0"
+  license_spdx_note: >-
+    declared in the dataset's own dataset_description.json.
   status: live
   license: "Open Data Commons Public Domain Dedication and License (PDDL)"
   license_url: "https://opendatacommons.org/licenses/pddl/"
@@ -110,6 +113,12 @@ population:
     predicted at all; it cannot show that it generalises across people.
 
 signal:
+  modality_evidence:
+    meg:     {globs: ["MNE-somato-data/sub-01/meg/*_meg.fif"], channel_type: [MAG, GRAD]}
+    eog:     {globs: ["MNE-somato-data/sub-01/meg/*_meg.fif"], channel_type: EOG}
+    mri:     ["MNE-somato-data/derivatives/freesurfer/subjects/01/mri/T1.mgz"]
+    bem:     ["MNE-somato-data/derivatives/freesurfer/subjects/01/bem/*bem-sol.fif"]
+    forward: ["MNE-somato-data/derivatives/sub-01/*-fwd.fif"]
   modalities: ["meg", "eog", "mri", "bem", "forward"]
   n_channels: 316
   channel_types: {grad: 204, mag: 102, eog: 1, stim: 9}

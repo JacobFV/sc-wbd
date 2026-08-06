@@ -1,0 +1,2196 @@
+{
+ "algorithm": "sha256",
+ "dataset_id": "ds002336",
+ "files": {
+  ".bidsignore": {
+   "bytes": 16,
+   "sha256": "987077da1852e576f706119db8888e019a77981ea8cbaba0b3184463e58af7ac"
+  },
+  ".datalad/.gitattributes": {
+   "bytes": 132,
+   "sha256": "84890900c3a64c90b3f3db5366717517d376aa246a01d2885ca22269e4510e78"
+  },
+  ".datalad/config": {
+   "bytes": 63,
+   "sha256": "46fdb7cfdb55ee4846658483ced4241ed523bbb6ce3da74f6217a694b7a79aee"
+  },
+  ".gitattributes": {
+   "bytes": 284,
+   "sha256": "9476689a1190b1b79c7a65a128f992a551d86f55236c939a74218973423fcdd1"
+  },
+  "CHANGES": {
+   "bytes": 337,
+   "sha256": "a5df6ba8c910be66645ea1ee0cbe600d2ff973d54e72e532c6ded9b403412939"
+  },
+  "README": {
+   "bytes": 10780,
+   "sha256": "bf034cd7737bf07113d7922d8a4c094d5211edad95084b88929bf09bb9056473"
+  },
+  "channels.json": {
+   "bytes": 302,
+   "sha256": "210b4c528b153eb784697a1091f89fcd911e5383d7669e5613772199da444d6b"
+  },
+  "dataset_description.json": {
+   "bytes": 1696,
+   "sha256": "4f70c32d00317e03c6a2fb987287793aad3cf86169914f211b1cd22216311074"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "27e818398b5acaf1eca6f2d1830fb0558c768610982df4fbadc39ae4b0cf697b"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "e4e3b459e1223aecca974104cec3e454ecc3712a3f3891fa0616853c997c8706"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 22814,
+   "sha256": "1f9b371e9b14e3ce29d91850e143cdb1a1d270421d7302c08e7bc556e0dd4567"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "6652a801692570d1b4fb8486ac2eccca78032ad32926fd710dbbd0c6ee87be3f"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3854,
+   "sha256": "98720d59009f52f98c4cd20c3120e9d70d08b48e3283e2f1ac4c5e721eeb183b"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 21505,
+   "sha256": "65fc37aef8a327d95d8a7def31d2c9e669696a9fb449cb65b2e6227a76e5b609"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "cf5c2a23a8e56e19d072060100db9d210cee8e8286d6db195589bdf5cebb3c19"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "b7640b955e30b2b9e64b043b6b77cd866e2683ab73f6aaf2834126398f8cb342"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 23373,
+   "sha256": "b39a9a8d4e31f44191fffc0a5b8a30751520c2e02129b285451aaf1a136fc7da"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-motorloc_eeg_pp.dat": {
+   "bytes": 17251328,
+   "sha256": "7708db30e780aacbe2ee99a14fdc0eb17f33b498de2abf0d643bbc94bfa3f1ea"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-motorloc_eeg_pp.vhdr": {
+   "bytes": 3777,
+   "sha256": "94fd15e275ccfc8a90da77d3da7eab7eb4c6039b41200e97fd4e8180139bf64f"
+  },
+  "derivatives/sub-xp101/eeg_pp/sub-xp101_task-motorloc_eeg_pp.vmrk": {
+   "bytes": 19762,
+   "sha256": "c9716ce4cc92f3c901b010b24687b4c10bf43173b862b28ef822fdce36c391ba"
+  },
+  "derivatives/sub-xp101/head_motion/d_sub-xp101_task-MIpre_headmotion.tsv": {
+   "bytes": 15018,
+   "sha256": "492d77b3174c93aacb32d9a0a378462d68f7d5e926566e671f07e2e0b609b712"
+  },
+  "derivatives/sub-xp101/head_motion/d_sub-xp101_task-eegNF_headmotion.tsv": {
+   "bytes": 18882,
+   "sha256": "90b47315c781c8219b7b9a6f279b0ab06547e25d477f7f664ef573106d95c1fd"
+  },
+  "derivatives/sub-xp101/head_motion/d_sub-xp101_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "6e75d2533614f41bdece87844d7e9fac98a96df17660d428ee2633bf6bf8be66"
+  },
+  "derivatives/sub-xp101/head_motion/d_sub-xp101_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "0ace2b7f43c6d91377704c16b7467f3c7be534afbd319486acfd03b6a4c23082"
+  },
+  "derivatives/sub-xp101/head_motion/d_sub-xp101_task-motorloc_headmotion.tsv": {
+   "bytes": 15018,
+   "sha256": "492d77b3174c93aacb32d9a0a378462d68f7d5e926566e671f07e2e0b609b712"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-MIpost_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "0c1d8dcfbeeee46f5fd4d0a19913e7ed7d6bb0c6df0aa2575736981b2e0bbc49"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-MIpost_eeg_pp.vhdr": {
+   "bytes": 3840,
+   "sha256": "063195603283944f1fb2fe27b19583b75858fc9935132f8321ddde5d49efb6c4"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-MIpost_eeg_pp.vmrk": {
+   "bytes": 12301,
+   "sha256": "c910daf185ced5fe76dd6bc3f945c03ca94886fd8005b7054dd2067e60513ec2"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-MIpre_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "22772d70b7242702080950b3f5bff58c8013ceb4e2ebf02b6cc7645da816406b"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-MIpre_eeg_pp.vhdr": {
+   "bytes": 3837,
+   "sha256": "4b7206cc7961004815c26a584da416be1dcd2b94687eadd696d315dd435ec8d6"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-MIpre_eeg_pp.vmrk": {
+   "bytes": 12201,
+   "sha256": "4e6d61ff108c331c9cb4dd94e865437eeccbedab7d8fc915a5aae47561d8a6d0"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "8eb9739499594838111098f3a64878b454fff17b4081361f23b656a235599e6a"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "77ccc51d5e6b785c68b0df7a440687b8925d98ddf90dafd25747d0f45e26119e"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 23414,
+   "sha256": "4dc1d276cc0f67771ab29aedd725ca7d918e6d60a20f693a90c86767c816a1ef"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "f5ba08eebf62fe9a8d259155d9d6bb9c6fcb615bf4b9947274fa4dffb7cd267f"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3854,
+   "sha256": "14a43f9d3ce345ff32be390ebf5f3fcf0a55f104c24be9186e2a4a971e217d14"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 23523,
+   "sha256": "e0870f9490a531c759e8abf317c307932ed0c05400d745f0b3af4af26c44dce4"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "7b474ca2f33d88ee9fc0de2e70b457b3ae36ab63ea0aad8cb198d1b3a8ac362b"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "0197093ae0f35f40506a58d55397d527bd794aec719f4a1b78ce48e09045727a"
+  },
+  "derivatives/sub-xp102/eeg_pp/sub-xp102_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 23484,
+   "sha256": "a0eb65e1d027a4b757b7c1fab10c21a33b2b79d37d871f30001348cde359d3d7"
+  },
+  "derivatives/sub-xp102/head_motion/d_sub-xp102_task-MIpost_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "867fbe4d0effd531ead0c9757af61a7e2cf90944d5d1de511531cc5153a41791"
+  },
+  "derivatives/sub-xp102/head_motion/d_sub-xp102_task-MIpre_headmotion.tsv": {
+   "bytes": 9958,
+   "sha256": "d7770a8a74e03d9c6ccbc813f5ed9ae3b4f3933e1c56bf8c5fc896bf8824131b"
+  },
+  "derivatives/sub-xp102/head_motion/d_sub-xp102_task-eegNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "39f4358b819ba81361664660bcb2f1649c6ea2a9c4cd62ee558c60daf40c2b6c"
+  },
+  "derivatives/sub-xp102/head_motion/d_sub-xp102_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "13486c771fe6cbea1881981f11f260e9907d2abfa5a4eb128e027e5930fd835c"
+  },
+  "derivatives/sub-xp102/head_motion/d_sub-xp102_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "806de5f0ce3bb03e68892baac35668ca27e330046960bc45b75da0e173135425"
+  },
+  "derivatives/sub-xp102/head_motion/d_sub-xp102_task-motorloc_headmotion.tsv": {
+   "bytes": 15294,
+   "sha256": "3d2c325d28566cf74a40518eedc1e170d49aa8becac57ffbef0abe233b1dac4a"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-MIpost_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "93babf3723a47140dc3fdc9fc82c366931f69404e414b0d869c4b4eac0c2d302"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-MIpost_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "08acecc7bf5cfe9fbe2f6a7a72c06878c95aba93701332ea5003b53dbbfe6440"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-MIpost_eeg_pp.vmrk": {
+   "bytes": 12201,
+   "sha256": "eb79873f576c4566a8b1703e2d6c14309fe4f184499e29922d8330dc74b56e73"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-MIpre_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "84031d9092d888e0c9b5992071dc3effbec73155316ae2570318f9ce6c65f61a"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-MIpre_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "23eaa8d4f8fb2ecea7e8f5637b1d8ca0d1722178e4b40eda89110a11c69d5c59"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-MIpre_eeg_pp.vmrk": {
+   "bytes": 12090,
+   "sha256": "06072f7eef9a2ea4bc67467b2b87a5eadcb9866672b46219fccd0efc4638f6dc"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "d9dba86571d8d8f762d8faf25915689f6e5d87e91224728dc3afb18d20fc1fe0"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "21000e8e6d79f0922fc9865b27568fba4224bf8ef199abe1cfe1727ae65ddb36"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 22648,
+   "sha256": "1a1a39299b4501ecb3f674618d5cdc74d36eafd510b5e118cde997f275dadf75"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "f37d908a10d85329f22b4a0b7898f2281baf328766683771fd936acb48779d11"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3854,
+   "sha256": "05947eba4b38e63eec489d9ad19f256f81907655e18303916ff8412e46ef892c"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 22599,
+   "sha256": "fea3a877729d70e5acb83c3ed92cc25039d5f67c6a60fb31e05756df644233a2"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "7533fc46ca160fe8958375f998c72184c54fd06f07b1c44f54ffb1ab955f8288"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "cccef3f7ce55178e6823f33fbfbc86c83ed54f8915a889613704cba243d7cafa"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 23026,
+   "sha256": "bd4211ce9123e1931dc2ee2e9c98641f11886a3d49efe4dbe15fcb92bcf8068b"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-motorloc_eeg_pp.dat": {
+   "bytes": 18871296,
+   "sha256": "4e5bdc7bbe3e7e65f5f29acd2305088e5240ac4a396ce3d3fd51b4955f4cf688"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-motorloc_eeg_pp.vhdr": {
+   "bytes": 3777,
+   "sha256": "766da8ef2ff166b56b3a9aafe8e924b0babdf38eb46221ab0293ed705b8f627d"
+  },
+  "derivatives/sub-xp103/eeg_pp/sub-xp103_task-motorloc_eeg_pp.vmrk": {
+   "bytes": 19606,
+   "sha256": "b951cd419619d837555f07411af7c9da6d318cbd5c4c31eb50449567c77b44f9"
+  },
+  "derivatives/sub-xp103/head_motion/d_sub-xp103_task-MIpost_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "5733ad70934aa90a7476c86ef777c668f7ec210f5ca20234cee1d255e00d653b"
+  },
+  "derivatives/sub-xp103/head_motion/d_sub-xp103_task-MIpre_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "71eb67ea8eea2d30386bb552abdd8ca072d5a26d8e6a97371bf3006100bec631"
+  },
+  "derivatives/sub-xp103/head_motion/d_sub-xp103_task-eegNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "9dad7cc5c3397bcb3633da039161559a1f9a16535214057d7a187c4b8b2fbd06"
+  },
+  "derivatives/sub-xp103/head_motion/d_sub-xp103_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "ff68121cd8d79996c474aa515489d849b4619d1835fbc648383b89d20456c19f"
+  },
+  "derivatives/sub-xp103/head_motion/d_sub-xp103_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "50541755141d256bf80c37118248cb2ab48f903a888f36854aba1c07ccc61df8"
+  },
+  "derivatives/sub-xp103/head_motion/d_sub-xp103_task-motorloc_headmotion.tsv": {
+   "bytes": 15294,
+   "sha256": "7746eada9f185cfc69415409ce7bf0ba0e3fa133e90893931735fbb490fa24b2"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "a41ee3287e25538e42bafdcff41140987aa25c67de7692aeab3093099d8fa917"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "ee84ad08ba13802e6fe7f3a44d6992c46b69774ccfac62c5518face772eb8ea7"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 25090,
+   "sha256": "2f293f69b46ba225e6bc55e4aa4abe5e83740b731395c41f27bd0f7106022215"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20582400,
+   "sha256": "0073d32cc998899681014994229161b763585aefdbfd28a37b5d3e19443dc21e"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3853,
+   "sha256": "d78144ccd1562c75947ef514153354d3252e93f27e316e98da7d6ece7e48a2db"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 24440,
+   "sha256": "5ec98bf7187ed2f0f486684feef63dea98d9f7599314cc40bbead8a9de689d21"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20582400,
+   "sha256": "77268eb30fe7d8c2ca51d328ccb11dacb158582e92412dccae0a00cf41146795"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3847,
+   "sha256": "392572d41246ee61e9f65802dc287ddf84fa6e291967efae7824efe4f11b373f"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 23777,
+   "sha256": "fef89eeec6ab67916608430ddd6d880584a92c74c791fce0142e235775d492e9"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-motorloc_eeg_pp.dat": {
+   "bytes": 56348672,
+   "sha256": "1d8fe002d0f51ff023a6afdad914c921f8a708bf9edd92d7e8a82fb684df131b"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-motorloc_eeg_pp.vhdr": {
+   "bytes": 3806,
+   "sha256": "6bd98f6e69147c98284130a4386fa7074cf8ef42b505d875e68d0b4ff8479577"
+  },
+  "derivatives/sub-xp104/eeg_pp/sub-xp104_task-motorloc_eeg_pp.vmrk": {
+   "bytes": 44943,
+   "sha256": "5fa0509dc4ce1b91cf0cc74bc23c305c9ada4979da158f5c691314c174866370"
+  },
+  "derivatives/sub-xp104/head_motion/d_sub-xp104_task-eegNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "a50f4c68570d26a4ed87cd40589a85c8b0b7c1123ed3fc80497da7daa79e907b"
+  },
+  "derivatives/sub-xp104/head_motion/d_sub-xp104_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "ba2337046894b0fbb4a7465e1a49434604ed0540a960fad50b7a6b54d42c355f"
+  },
+  "derivatives/sub-xp104/head_motion/d_sub-xp104_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "b84f05c5d6bcb2ce65b1e3b5db75cfe637bb30bb4a00bd405e78f1939ed7cb3a"
+  },
+  "derivatives/sub-xp104/head_motion/d_sub-xp104_task-motorloc_headmotion.tsv": {
+   "bytes": 15294,
+   "sha256": "573786f6d898ed436df8b1fc1f7dd41278c56ef620a97f383f7ee4239502c744"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-MIpost_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "3417ff0f8808be84d22b44bbc6a3d00aed4b73f21032ab139864e0294e1097f5"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-MIpost_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "24eb0d46cce69129af34be0123d8d584651f6f2744e07006a8789a91f3a5343e"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-MIpost_eeg_pp.vmrk": {
+   "bytes": 14109,
+   "sha256": "5ac58ab4c99f87015d3321f1c2875bc6b376744b46565ffaecd462734b78f6bd"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-MIpre_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "70b2e3fb1e1d1b967a9529adea43191d652f1de0ca2a820f17530fc8365b5af9"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-MIpre_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "4b6a35d12daa58360c1c3c1400b16435fd58235bb92340bd68a3c3a46e97a73b"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-MIpre_eeg_pp.vmrk": {
+   "bytes": 15039,
+   "sha256": "84932c95dc92310474ea734ea4905a4e0804a87ec97d2f40d04b56a89febeaac"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "e648be995c54a3b674d4a9de41435e7d2222819a59dd08c5a283d8b4e0d335fe"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "8d8fa048a9cb88fd9991d286ad0d75e6ada457eede25a14fb4f73f89f694b591"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 27351,
+   "sha256": "39d3f053dee4cc99aa28477cd5f2ac2b8fdea5f1567ab26cb9ff7f126de491ca"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "fe071ed89baaaa42433f08eb2c02b9fff992500719a0e04a8268d4c4d926d6f0"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3854,
+   "sha256": "3f525e5a121f6df635a4a5b994e3fd8e65de3a4c32cbce648f93305c9217d926"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 27584,
+   "sha256": "6a265b51de474e2b321293b5fb1efedc0e24ff8c90b7631d0f54a1b335a8d1e7"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "3b50865eec134426e17ca64c731c2195f18ff69e025663e5cb750eebfa688c22"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "175886b0cddffc91af255389ab759d80949effdcb07db6feca8db7d5b3e6acc3"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 27008,
+   "sha256": "ea012520bf6f0d21c81d7f84fee12847696f48e521d6ad3daf802af364669488"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-motorloc_eeg_pp.dat": {
+   "bytes": 18128896,
+   "sha256": "1597ac8ca1d1f6e22cad0d73b491bdecfbedcbfa0d7fe650eda69b316eb1e754"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-motorloc_eeg_pp.vhdr": {
+   "bytes": 3777,
+   "sha256": "476f940e07312035ea8305c8a5df44f70e113067fed58af588d1e36c6d2cbcbc"
+  },
+  "derivatives/sub-xp105/eeg_pp/sub-xp105_task-motorloc_eeg_pp.vmrk": {
+   "bytes": 24863,
+   "sha256": "34a7b28799e5c2f6cc6a13547113bf84a38134025579be1e165f0eb83ce4d1e4"
+  },
+  "derivatives/sub-xp105/head_motion/d_sub-xp105_task-MIpost_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "46e2da2afb428574ce04548489c4e99f35c65948a374919202d9dc76355e0b47"
+  },
+  "derivatives/sub-xp105/head_motion/d_sub-xp105_task-MIpre_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "d6adc2eeac2a67dee864c007e359f745ad7f42d402ed3b122caa4f9cc6387909"
+  },
+  "derivatives/sub-xp105/head_motion/d_sub-xp105_task-eegNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "6062d484829ed1e6ea0060801bd40ee412a5adf2637a2629b736c0ae2e981954"
+  },
+  "derivatives/sub-xp105/head_motion/d_sub-xp105_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "532027cb95c232e792e4b4d31816bb759b789e8feb3eb82bccd893008fd9650a"
+  },
+  "derivatives/sub-xp105/head_motion/d_sub-xp105_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "0aa09277eff781be54e6b3c303ba1ad60842ff168f38bc633287853cedcd5d9d"
+  },
+  "derivatives/sub-xp105/head_motion/d_sub-xp105_task-motorloc_headmotion.tsv": {
+   "bytes": 15294,
+   "sha256": "51d5f910a08b527b6541845765731d2a6372198e3bd44a5bc525de23d52d32bb"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-MIpost_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "078649d0c2087fd8131c48b66d68689ae6ef189098ffd6a9391743bc5d253171"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-MIpost_eeg_pp.vhdr": {
+   "bytes": 3846,
+   "sha256": "db5c81e1d8b8ce550755cccf370dc4bc8480378873d3711bcd48bc99f9453190"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-MIpost_eeg_pp.vmrk": {
+   "bytes": 14322,
+   "sha256": "d8817ea30625c7792d7f9019941d7bb996b2dd0445c3c6c6a403e95ecf4b08ff"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-MIpre_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "829e763b8813122ba65bbf12f1be05bfadf0b9e9b87ac6b2505f6a2454fa13a6"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-MIpre_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "c9dcdc0a69e88ada5883ca59e6e8efe208efe143170bfa7784699c8336424bbb"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-MIpre_eeg_pp.vmrk": {
+   "bytes": 13650,
+   "sha256": "2483f9220b6e62ae669ada6e4cc0b8040533617ef6ccf404e6cde78341017391"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "803f721d4313ad9f24e3b1d184045fc4e2486013861680b82945f9c0fba46a63"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "73781b66bcf6c67f70aac48296ab222bae2e4710e541cd454cb9392a94b8b2f2"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 24639,
+   "sha256": "d4b47b4154c70223fb9937e2074480d8fce0b22d3a62f80d9c6ea35a4eb82e05"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "f732668965dbedbe2b10f9a28744e634a4866e38a1402615a283d74ee2a95a75"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3854,
+   "sha256": "bb482b36f9f121adb04643c8d7002b8d2e23fd9c1d0a7a60be3de8c2aa4d3de4"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 25304,
+   "sha256": "d19c08274d23d42d457874b7d0ca1b1bd16f40124ba4f1e04e17871dda41dcd5"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "677d7c52424ac9b69b170471a0ab185d547b0366cd44b69a4b112b82ae65f9e4"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "027d403713ccc3ffe4a3835e5cbe3a78f0e55946589cf3d73340fcc39e37c77a"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 25827,
+   "sha256": "a114ce1c3be696f050d132e870d5956f978dfd2cdd8c1eed4058a514221958e5"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-motorloc_eeg_pp.dat": {
+   "bytes": 17741824,
+   "sha256": "79c754aaf857a57760fcb11fe6ed869f419904ce918e05ec21774664e600a2c7"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-motorloc_eeg_pp.vhdr": {
+   "bytes": 3777,
+   "sha256": "2134e15a693e699cc772532656c3a8afc316c143b69b645cce44e5dca9753f22"
+  },
+  "derivatives/sub-xp106/eeg_pp/sub-xp106_task-motorloc_eeg_pp.vmrk": {
+   "bytes": 21168,
+   "sha256": "faa0dc23e567919b3ceb397c25e0e4f366f669d6bd8e3a1d0e293b27b41596dc"
+  },
+  "derivatives/sub-xp106/head_motion/d_sub-xp106_task-MIpost_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "cc086b93079a56b363af9e532fc7e8fea0743151767ca3923d5b0d00c1b97dcd"
+  },
+  "derivatives/sub-xp106/head_motion/d_sub-xp106_task-MIpre_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "2eda650021841a998f7c0ad6d45c80996b9e3c7dd9450732c11b6bb9305db82c"
+  },
+  "derivatives/sub-xp106/head_motion/d_sub-xp106_task-eegNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "2cfdcb9b92438ef81751651b26638258fac0059f5ce15ef45f9c8af361309b09"
+  },
+  "derivatives/sub-xp106/head_motion/d_sub-xp106_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "f0d9556ab9590ccc7492188aeedd62e3a596b6bda328b72e34834c70816928a3"
+  },
+  "derivatives/sub-xp106/head_motion/d_sub-xp106_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "0347d4d319b924a46077df1b47a8ef570731612288610b88d6ee869d8d0f3c2b"
+  },
+  "derivatives/sub-xp106/head_motion/d_sub-xp106_task-motorloc_headmotion.tsv": {
+   "bytes": 15294,
+   "sha256": "450e280b8fdee0df69ca0ca9c62bbd841b25569be7288340ee2ff93542c8b85e"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-MIpost_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "36101594e18f665d613f0e639d072e8676e053a277d191c2f6025ccd233f4192"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-MIpost_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "566377e456fde8cb89c8acf18b6873e8f1fa62f3cf668c766c12f496e6ba861b"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-MIpost_eeg_pp.vmrk": {
+   "bytes": 12997,
+   "sha256": "921afa656bf25e99240686b42e16c6c50f1522e1b84a727cae2bb8eea991af98"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-MIpre_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "916eb27a6e575d036ec47f795c452c6f0b952b5378a34e248f7a2ed8cd7adab1"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-MIpre_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "813faa2cfefc361427653df10ab427e3832b88e9b6de0abf7323456e83d04df6"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-MIpre_eeg_pp.vmrk": {
+   "bytes": 13369,
+   "sha256": "8eab34d1071468773de58efc9b553ad991c242fc300dbf209051edcba44d3661"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "2f6d219f8817eddf864298beef26d44bbb469b1e7bd047633cb21aa2787cb83b"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "e3485ade030b5e15fdfa01207721639f949cc48827f213ecadfdd9d22cca0b7f"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 25290,
+   "sha256": "8b760faf5e42995c06e9a12f924a55a909a5d55e4cf500c7a334eabce85186af"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "fa1f05db701ffb36bddaf2dbdea3205ff96c228d8969dfbcdf32f72b28c214af"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3854,
+   "sha256": "79b6bb1c3f71fdacbb977edb6b650129523ede86dde6bfff4f97e9cc0e8b9453"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 26318,
+   "sha256": "2dbc8ae7f18cec1febc941481b4f0df9234e4f69d584249cbce17a235cee11c3"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "41deeccfe6ecd497c2305b511e06c010d83d5d54104409c2a5143f705b3fb819"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "e9910fb8a98ba5b5033b01ca1c576e5216e19067be6599229a1b2339b1fb09d2"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 25231,
+   "sha256": "18c1956cb6f1dadaf85eaa2e7c958360bb02818d74e897116754dd4dde7b7cb5"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-motorloc_eeg_pp.dat": {
+   "bytes": 17541120,
+   "sha256": "9a8d673bf2d6ffea14544ad7459100f901ce3ece0ee6271d4e64adca1fc20b9c"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-motorloc_eeg_pp.vhdr": {
+   "bytes": 3777,
+   "sha256": "c160005cd521fb1bef308bebfc471fac80d32a17c356cdcf025d7c410b2cb829"
+  },
+  "derivatives/sub-xp107/eeg_pp/sub-xp107_task-motorloc_eeg_pp.vmrk": {
+   "bytes": 21229,
+   "sha256": "c9d5a12e0ca56163cac13131527c743534657296002e373e285201a0f527b63e"
+  },
+  "derivatives/sub-xp107/head_motion/d_sub-xp107_task-MIpost_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "15d6ef887946134d3a973026b3600f3e2bef0597389b83c23b401c4d160a52bb"
+  },
+  "derivatives/sub-xp107/head_motion/d_sub-xp107_task-MIpre_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "4f6f39ca2ad7f2a6c57428988b4f6566e0e124aad5efd869529aa2c7a1372b9c"
+  },
+  "derivatives/sub-xp107/head_motion/d_sub-xp107_task-eegNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "2d03117effd44dacd54b4989c5de1c62e1656e4731349dda1b26f5de9f9b2f0e"
+  },
+  "derivatives/sub-xp107/head_motion/d_sub-xp107_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "41f36fb3cfe08973d2d113f9517f2631318edba9843e580761d4935c4ab0957b"
+  },
+  "derivatives/sub-xp107/head_motion/d_sub-xp107_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "b67bc91045f455987f5ca49674f25ec6a768683418f86c4274c0085eeae405de"
+  },
+  "derivatives/sub-xp107/head_motion/d_sub-xp107_task-motorloc_headmotion.tsv": {
+   "bytes": 15294,
+   "sha256": "be795d4027ed1a5c40e0ac035ea2f5c7ef8624e76f5a8c6cccfee6921d8dc294"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-MIpost_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "a3518b1303eaa578d087c03ed261ccccc2ef3a5aaa0fcceef2ffe80165509bcd"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-MIpost_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "af09c2cd11c17fd6c969cb79d92e463cb226d692b0ea1ebca3968c47eac803ea"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-MIpost_eeg_pp.vmrk": {
+   "bytes": 12993,
+   "sha256": "4678b6fe1dffe5633fc838cb6d738ab7cc39b762cc731829ca27a49c0b314f5a"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-MIpre_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "3d5b16d427477144704134c08196314f859638172e1358fee9e15cf8ee9a4ae1"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-MIpre_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "4336ff55bd942e30ce20b787c58492c487c0f7287e08f59555df73c8fe403c9e"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-MIpre_eeg_pp.vmrk": {
+   "bytes": 13371,
+   "sha256": "56ac54e9867468f579ea2db9d95373316956e43112542aff36f43bd1ad73597d"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "154da449fbe903136f5e520e2c6938edeedc4ff4ca9d91509399148a88dbd9da"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "1c92315b0e55346bed8e7ab673a6ba308334864b344e7593d7da8f888c4d7c5c"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 25088,
+   "sha256": "98e9f4c9ea8fbf2899e3b2a75d77c147d19ad513b32bbbb3e9b487c75f4423f2"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "3b8a462ef2fba5551c595ed520d683115567cf195e63e15e1c27b357a7883649"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3854,
+   "sha256": "428952901b75ff2c5b58396c334a575fcabc15401f1ee8330aa656f468f32d50"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 24818,
+   "sha256": "a89ccaecbd76e71bcfaefbf9191aa1c4de228db3991c78065f157beda8f43609"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "31d3fc7b5323567e0b9f02769777cff47f3da39bafce442296d4513d892ab963"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "a1537188111e1f3d042aec054a171dc5c0591ea5193829dad63eff75ef3a8a2d"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 24811,
+   "sha256": "97e598992d4d280313bc0f095a7df9c5ef30e7e3b341ca0b577291bbcd0f4893"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-motorloc_eeg_pp.dat": {
+   "bytes": 17627136,
+   "sha256": "c7b9139caf375bc1398c82c33bbc541b3d927973b1dd48841d3e07474b869204"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-motorloc_eeg_pp.vhdr": {
+   "bytes": 3777,
+   "sha256": "552b65d38eaf8ef8d6d2ecbaf3e650093fe32673cfd21be2bb632e024be1add4"
+  },
+  "derivatives/sub-xp108/eeg_pp/sub-xp108_task-motorloc_eeg_pp.vmrk": {
+   "bytes": 22076,
+   "sha256": "789d633afbbed8c44d3789ac37283bdb9a7b573fd186370eccfa3621acdc8598"
+  },
+  "derivatives/sub-xp108/head_motion/d_sub-xp108_task-MIpost_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "884dff1f89f594f8baad48d5c253bd61e7cabd13cd8218f4a350129db88cd3dd"
+  },
+  "derivatives/sub-xp108/head_motion/d_sub-xp108_task-MIpre_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "2d46366930d89431ca59acf0978c2bc63c52bdee44df776bf9f8b6e7da847b40"
+  },
+  "derivatives/sub-xp108/head_motion/d_sub-xp108_task-eegNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "6e6314a3de7ce281eb77346f843fbe6e0d32bff20f650dc3a34c841683cfaf22"
+  },
+  "derivatives/sub-xp108/head_motion/d_sub-xp108_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "5e44a816c87ae22d4a8f6ce55feb6333569cac78f906a632e05252cd83a068fa"
+  },
+  "derivatives/sub-xp108/head_motion/d_sub-xp108_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "52225eaf147d8a46a9c95d65932ebb8ce55cd530849905fae37d269cf915830f"
+  },
+  "derivatives/sub-xp108/head_motion/d_sub-xp108_task-motorloc_headmotion.tsv": {
+   "bytes": 15294,
+   "sha256": "ee3146c7b4b6f174b00ecf6e9fab143ee78c9f8bb0004f8f576afde2ec181e5d"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "c114ea51a729c8cd575566ce6fa6c56ac5236a6a13e9190442d7c89ae5df693a"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "93c6e0a9e6cb6ccf453578eabdb1cfe3df2638879cffd77a81d585c7845aa88b"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 27423,
+   "sha256": "373c1b8e7d524e21d52b995c4918bda391a571d4df3720730da6293d38c498f6"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "de8ed7dc2a4b67301ef01e984202c74fd19fc948a0c89bb8953337c7a2fc0c5a"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3854,
+   "sha256": "3745f4ed33a851da3ace5188b8a21c42af1fd4e45413e0b557e4aa5cae41bd21"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 28689,
+   "sha256": "a8a987d7531839df181393137e18d8659e8cc1077f136042ec82b00269409e5c"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "4586b316071a3f9615a228f2aea200ce513cb2ee5984bd554c18e7f384f9b349"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "7a2acd2247e6da01429d4645e6d67c4dd54b7414bd02c81ee2a2a91811d1c312"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 29101,
+   "sha256": "29be53bb1a98b36f692836f86f175b00e1bf43a5c1b742af08cb1c056fef4db9"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-motorloc_eeg_pp.dat": {
+   "bytes": 21752832,
+   "sha256": "3f6e2428d4cd37fe7b8b97400b807ddd3c214555d97618faaa6ef52f09774c83"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-motorloc_eeg_pp.vhdr": {
+   "bytes": 3777,
+   "sha256": "1ff61fddc603ccbd562ca15cb5dce70daa17b2e8b45e4a64bcb933d88c1d901b"
+  },
+  "derivatives/sub-xp109/eeg_pp/sub-xp109_task-motorloc_eeg_pp.vmrk": {
+   "bytes": 26266,
+   "sha256": "02ecaa7f11aea40e5efe7c87d12bb29b1ec821480b3df95fc6240c30255fb8c2"
+  },
+  "derivatives/sub-xp109/head_motion/d_sub-xp109_task-MIpost_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "0e334310e62a2b27f51953987c774b82a06f0233d0d377e64e9d4c67cbc60b51"
+  },
+  "derivatives/sub-xp109/head_motion/d_sub-xp109_task-MIpre_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "5a77d17e073c83c49edad13d2338855dc1f348ee33d1abd3f4d217fa14975b7a"
+  },
+  "derivatives/sub-xp109/head_motion/d_sub-xp109_task-eegNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "96c68e2338e64e1eac8bd518bc644dd4309ff3575f842ad5f4748ab264125811"
+  },
+  "derivatives/sub-xp109/head_motion/d_sub-xp109_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "ef8f542c799ba869125ceb73db3ed10e32ef6741e9cf3fe7284b213cf36c94d2"
+  },
+  "derivatives/sub-xp109/head_motion/d_sub-xp109_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "23fc902fc71eda90c9478f6b3171bf05e84130985c38a2715687d4cc3db883fa"
+  },
+  "derivatives/sub-xp109/head_motion/d_sub-xp109_task-motorloc_headmotion.tsv": {
+   "bytes": 15294,
+   "sha256": "60e7738fc03820adf7d4cb9e6fd6b0493fe77cbc3206595207cef6c86e1c243e"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-MIpost_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "7f24d9efb6ad340ab2c243b3efed81bf2061f0136294b8dcfd86dd345c30527a"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-MIpost_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "bbdfd2988f5923d516c45c018eaa2552bf13e0a96243e90a5e4ade0e65bc7902"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-MIpost_eeg_pp.vmrk": {
+   "bytes": 14869,
+   "sha256": "5ec2191ddf161b67620ac8405b3c1c30e4d0ad4cf3f35c22e2977c16f463c893"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-MIpre_eeg_pp.dat": {
+   "bytes": 10342400,
+   "sha256": "60b5018e9919a9457a3cf1a4c1bf2b83efbcd652bfbe0d3930c1206359655699"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-MIpre_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "110fd28184bef77e9e56b51b7827710dcd4b221533d21c91ee9e8c8fb9c4ec8e"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-MIpre_eeg_pp.vmrk": {
+   "bytes": 15348,
+   "sha256": "7d2b8c3566433fea45e2f4c6c5a5f1f41851a2bca8cf5389349b79868e4ba2c5"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-eegNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "963b08294b907087a411df3d4d03f2048dd38e523bfe795d8e2e771df3665ac1"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-eegNF_eeg_pp.vhdr": {
+   "bytes": 3841,
+   "sha256": "2a02072e2730dabb466301ff78c540ffa42c2f52993540d4d2b5034487373081"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-eegNF_eeg_pp.vmrk": {
+   "bytes": 28781,
+   "sha256": "4638dab27efb6615de78a4565da2c587447aecf13e450bf74189cd5777abd364"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-eegfmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "98f665468f225b619d4d35615045961ac827e6653c07c5d04b7fde99d5a1674f"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-eegfmriNF_eeg_pp.vhdr": {
+   "bytes": 3854,
+   "sha256": "70cbe7730bb59a23a180063a0537cd4abec15e8f95f5d376b925c23a4af7e94a"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-eegfmriNF_eeg_pp.vmrk": {
+   "bytes": 29799,
+   "sha256": "efb33030d37ab5406f188f56112db71307b2219496ff8924df410ed460078543"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-fmriNF_eeg_pp.dat": {
+   "bytes": 20531200,
+   "sha256": "2f8c6f395b69d4c4c0605df1a1bca0a74155c163ce248748b8c3b4064f7669da"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-fmriNF_eeg_pp.vhdr": {
+   "bytes": 3844,
+   "sha256": "90a0a7a3a06d7e57d21f269d99a3726c978aacf15be2019183fc681f43269b74"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-fmriNF_eeg_pp.vmrk": {
+   "bytes": 29554,
+   "sha256": "d16c5d7fcac16d0403713231d417670b689c62fb9b3f053e67ca73e45e025ff9"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-motorloc_eeg_pp.dat": {
+   "bytes": 17905664,
+   "sha256": "b5bacc70ecb3f2709a88b8a7cff7105cc5eed19a63dcee624f9e95d6af7eb4d1"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-motorloc_eeg_pp.vhdr": {
+   "bytes": 3777,
+   "sha256": "b4140a3025b2cba47110eac973e3ac4b1d730b4b02aa83b23ad13b7e3dad16b3"
+  },
+  "derivatives/sub-xp110/eeg_pp/sub-xp110_task-motorloc_eeg_pp.vmrk": {
+   "bytes": 25949,
+   "sha256": "371d6234942c33ea635fd96d9b207a3a6e04ac3291a38c77a786e6cddadae777"
+  },
+  "derivatives/sub-xp110/head_motion/d_sub-xp110_task-MIpost_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "b77e6416afb850f2e82f1eca058ee79315c6d5276783b69ac379180ee632721a"
+  },
+  "derivatives/sub-xp110/head_motion/d_sub-xp110_task-MIpre_headmotion.tsv": {
+   "bytes": 9774,
+   "sha256": "2afce618d55bfda329857ddc3597cb454e8425a85fd4f3fbb2e5f8a56e16b1e9"
+  },
+  "derivatives/sub-xp110/head_motion/d_sub-xp110_task-eegNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "8d6ec163896ee33b643d3086de6c09aa4d0fe5978472d4b32f2cf0d2748a2c3f"
+  },
+  "derivatives/sub-xp110/head_motion/d_sub-xp110_task-eegfmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "200a3d3114308210ae4f152766f50a4d2e27e33a2e2cb67064d44a2a084e5886"
+  },
+  "derivatives/sub-xp110/head_motion/d_sub-xp110_task-fmriNF_headmotion.tsv": {
+   "bytes": 19342,
+   "sha256": "b61dd931e50db39871e7b29b9b96dc1f6751ad9633712f02487cea3876725975"
+  },
+  "derivatives/sub-xp110/head_motion/d_sub-xp110_task-motorloc_headmotion.tsv": {
+   "bytes": 15294,
+   "sha256": "2256316e0094f176e2c34dcf6f0ce5c4d76f1920b56d100129f4c1e162aff7a4"
+  },
+  "participants.json": {
+   "bytes": 345,
+   "sha256": "e5e08f4ea59efde6f889e590d12d603efbb4f3b7b9a9b2d180c23a5d240790e4"
+  },
+  "participants.tsv": {
+   "bytes": 173,
+   "sha256": "21c28a69827db678c9c47c594614ca16a3725ca215a93db3d3c611c3f54cfac6"
+  },
+  "stimuli/Rest_Xp1.png": {
+   "bytes": 13760,
+   "sha256": "a657ba1c8a8cd8f332272b12c2482607e8d79ebe37108f4242c4851eb21c5e7a"
+  },
+  "stimuli/Task-ME_Xp1.png": {
+   "bytes": 13462,
+   "sha256": "693b9d134d6c4856522525d05cb6d09ea9812eb08ab76354a2e6858df2fac76a"
+  },
+  "stimuli/Task-MI_Xp1.png": {
+   "bytes": 17954,
+   "sha256": "ab7399caceee6afc731ca7a4f1828f5ec0fedf6c5c1ecfd7e85b85b7e07b5405"
+  },
+  "stimuli/Task-NF_Xp1.png": {
+   "bytes": 55025,
+   "sha256": "44a2567d6065e07fbcf860efa402cbff0ff4ecde54ca097a2cfe0629a409fc06"
+  },
+  "sub-xp101/anat/sub-xp101_T1w.json": {
+   "bytes": 2143,
+   "sha256": "2531651e1c79666699e8988d1e49e71e742eb71fafd459f61caa424ab4ee69d8"
+  },
+  "sub-xp101/anat/sub-xp101_T1w.nii.gz": {
+   "bytes": 38685318,
+   "sha256": "11e3947ddfc68f9d7e16109abcd6b87f53f7787a7162837c7938975ad806a0d8"
+  },
+  "sub-xp101/eeg/sub-xp101_task-eegNF_eeg.eeg": {
+   "bytes": 336230400,
+   "sha256": "ca5107d953c81b90790932c87157d15ece6293fcefe77e403301b148de4f874a"
+  },
+  "sub-xp101/eeg/sub-xp101_task-eegNF_eeg.vhdr": {
+   "bytes": 11673,
+   "sha256": "00ac16f8354e13c46a77569ed82dfd417fc2ad50f5f0508e359321b046c292cb"
+  },
+  "sub-xp101/eeg/sub-xp101_task-eegNF_eeg.vmrk": {
+   "bytes": 7724,
+   "sha256": "a1a403a88f7d4d37fe2314f9447b02744b6d34d20ffedbc14eb03f8ec233817b"
+  },
+  "sub-xp101/eeg/sub-xp101_task-eegfmriNF_eeg.eeg": {
+   "bytes": 287283200,
+   "sha256": "237c1ed4ffc4b61b15dcd83414c574d310a3571211a76055cd861219a9e7a8fa"
+  },
+  "sub-xp101/eeg/sub-xp101_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11681,
+   "sha256": "c901c3185861a3aaa95218358850c0f69ff87ebe9e4a1f34cbf08c223b05d360"
+  },
+  "sub-xp101/eeg/sub-xp101_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7876,
+   "sha256": "ce3ee526e6572b31ad2c5817b1d46dbce4f1d273ad65f2f36d490400613552f4"
+  },
+  "sub-xp101/eeg/sub-xp101_task-fmriNF_eeg.eeg": {
+   "bytes": 312422400,
+   "sha256": "8dfc8b2fc794169b44ea32758f155d7899c5775dedfd7c4547c6cc6d9b6b1257"
+  },
+  "sub-xp101/eeg/sub-xp101_task-fmriNF_eeg.vhdr": {
+   "bytes": 11675,
+   "sha256": "1970e5387c5115766369fb9a5e1efd857831af0448d13b6888e56a218756b8e9"
+  },
+  "sub-xp101/eeg/sub-xp101_task-fmriNF_eeg.vmrk": {
+   "bytes": 7881,
+   "sha256": "c7cf48e617b75b27425b396681ca44e77f736fd696fd4a69a688fdb2165dcdf5"
+  },
+  "sub-xp101/eeg/sub-xp101_task-motorloc_eeg.eeg": {
+   "bytes": 215641600,
+   "sha256": "28b2edc17c3f3f56e694f80fca46ea717d866cc176c88303cc868a7cd267adff"
+  },
+  "sub-xp101/eeg/sub-xp101_task-motorloc_eeg.vhdr": {
+   "bytes": 11679,
+   "sha256": "a0d526a3e57ce98f99c104e0c4233d2f975839efda91e6eb5bca1dc778080524"
+  },
+  "sub-xp101/eeg/sub-xp101_task-motorloc_eeg.vmrk": {
+   "bytes": 6145,
+   "sha256": "a6316702123ef581ce635a918601678e9070785c1de8fc4a8a356647b45cbaf7"
+  },
+  "sub-xp101/func/sub-xp101_task-eegNF_bold.json": {
+   "bytes": 2864,
+   "sha256": "f894081701dabd85927dd466cb35d5aba33cdd1648dd92e9faccd574be238825"
+  },
+  "sub-xp101/func/sub-xp101_task-eegNF_bold.nii.gz": {
+   "bytes": 92993104,
+   "sha256": "b545ecade59ae43ecdc766449bafd84865b02f5e6fc00839309bc116eac64fc8"
+  },
+  "sub-xp101/func/sub-xp101_task-eegfmriNF_bold.json": {
+   "bytes": 2879,
+   "sha256": "92f1e19eca9d9be57e5ebe47046561bd14e1dfce067743b665e8980693e6260e"
+  },
+  "sub-xp101/func/sub-xp101_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 95501536,
+   "sha256": "5a93a65e153c7e5feed61749ca51d04394d0da0af24b154a724e59dddd47b225"
+  },
+  "sub-xp101/func/sub-xp101_task-fmriNF_bold.json": {
+   "bytes": 2865,
+   "sha256": "f5c7c2f9d1bf0b9045142a74b9a4c30dded2ab8ac4f4708c7ba1965c93c01838"
+  },
+  "sub-xp101/func/sub-xp101_task-fmriNF_bold.nii.gz": {
+   "bytes": 94636120,
+   "sha256": "ddc96325c1b43d768459c0e0872fcfd69f8f5b8a5f900ac82024a64c761e12cf"
+  },
+  "sub-xp101/func/sub-xp101_task-motorloc_bold.json": {
+   "bytes": 2914,
+   "sha256": "c2c3d01749fefdf05ff71131b3eee4ffc9426f495be11ead226a31a28de8dcd5"
+  },
+  "sub-xp101/func/sub-xp101_task-motorloc_bold.nii.gz": {
+   "bytes": 73119652,
+   "sha256": "e259218a2783b8c2d7bc3288034f19c30111d19c5a79f3432500d5b16e5001e3"
+  },
+  "sub-xp102/anat/sub-xp102_T1w.json": {
+   "bytes": 2143,
+   "sha256": "0f6cfeb506ee765caa2c92b08a46e0acdb5e86f314a2e4e9884347108c8e4369"
+  },
+  "sub-xp102/anat/sub-xp102_T1w.nii.gz": {
+   "bytes": 37299480,
+   "sha256": "46e761b49781bc26a041da8b183334071544fc1123bba6d90765eb2cb157d52c"
+  },
+  "sub-xp102/eeg/sub-xp102_task-MIpost_eeg.eeg": {
+   "bytes": 155865600,
+   "sha256": "f19f61af0ca39b5fb0dbd1ac9c42e1e4fbb16a8efb9fa6fba68687af4ed9ddad"
+  },
+  "sub-xp102/eeg/sub-xp102_task-MIpost_eeg.vhdr": {
+   "bytes": 11675,
+   "sha256": "60307af0729145acb4f2a781fec7b7d28f356de71808583e53d0ddc3afd2ccf1"
+  },
+  "sub-xp102/eeg/sub-xp102_task-MIpost_eeg.vmrk": {
+   "bytes": 4109,
+   "sha256": "f95daae2bcbf77fc2394a6276e80b76dec3aef6f8f79a8a2de73357026b5a594"
+  },
+  "sub-xp102/eeg/sub-xp102_task-MIpre_eeg.eeg": {
+   "bytes": 167680000,
+   "sha256": "f2369c6dce36bc5ac689f9dc04d4339c9283df9c2421064c305b449c0ae57289"
+  },
+  "sub-xp102/eeg/sub-xp102_task-MIpre_eeg.vhdr": {
+   "bytes": 11673,
+   "sha256": "d49c7fdca24dac35b1e0249ff2cf36f5f912b6c748068f5bf09eeddffc0d78d2"
+  },
+  "sub-xp102/eeg/sub-xp102_task-MIpre_eeg.vmrk": {
+   "bytes": 4173,
+   "sha256": "d37c8d7bac0c96f3d14539200e0fbf01cfb7a59118e88e624981f2f5db8e4dd0"
+  },
+  "sub-xp102/eeg/sub-xp102_task-eegNF_eeg.eeg": {
+   "bytes": 267955200,
+   "sha256": "4362c137adee191500a348c46ebeb6bed9f97ea672ecdd4fde46ffce2e95e1e3"
+  },
+  "sub-xp102/eeg/sub-xp102_task-eegNF_eeg.vhdr": {
+   "bytes": 11673,
+   "sha256": "03054da47fde16fc218a4070170261235373a29c3c30e495127b3007178bec1f"
+  },
+  "sub-xp102/eeg/sub-xp102_task-eegNF_eeg.vmrk": {
+   "bytes": 7720,
+   "sha256": "972b1826b3be767d4d916fea58139d7167e575c1549b025f4122676a874dc7a4"
+  },
+  "sub-xp102/eeg/sub-xp102_task-eegfmriNF_eeg.eeg": {
+   "bytes": 279948800,
+   "sha256": "e5f869a850ab98dcba6e9f09dc9b2318f7317a008d5e3b36e146868eabf6266e"
+  },
+  "sub-xp102/eeg/sub-xp102_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11681,
+   "sha256": "ba527003d035e040e7af577b92db60ae91c3985de7524ca9dc89b422640435ff"
+  },
+  "sub-xp102/eeg/sub-xp102_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7839,
+   "sha256": "b38b1c8e18a2d27c5a9d8b63a13c2d20fb2d9c25a01f841eb7ce8b6488c4f3b6"
+  },
+  "sub-xp102/eeg/sub-xp102_task-fmriNF_eeg.eeg": {
+   "bytes": 280153600,
+   "sha256": "5d45e289177a6d08d65bea4da401f3a9d9a37f8b7e03b91b365e566959d91338"
+  },
+  "sub-xp102/eeg/sub-xp102_task-fmriNF_eeg.vhdr": {
+   "bytes": 11675,
+   "sha256": "00409d6a4370cbcf9fdd84127669cc76e7b75bc17b17a97523b11d00af0ad7f5"
+  },
+  "sub-xp102/eeg/sub-xp102_task-fmriNF_eeg.vmrk": {
+   "bytes": 7859,
+   "sha256": "e95274916058682cdaf0b22f5cc873f30b87ad4703c6784de94ef448222a8b9c"
+  },
+  "sub-xp102/eeg/sub-xp102_task-motorloc_eeg.eeg": {
+   "bytes": 252377600,
+   "sha256": "8c212ed815081a131f839121604abd1ecb32ee70fdb9bb9f3bfec9467b604990"
+  },
+  "sub-xp102/eeg/sub-xp102_task-motorloc_eeg.vhdr": {
+   "bytes": 11679,
+   "sha256": "1f6945ba500d000a1096902fadf77e7384dbee31328ba845a41f660ebdf0f7ab"
+  },
+  "sub-xp102/eeg/sub-xp102_task-motorloc_eeg.vmrk": {
+   "bytes": 6298,
+   "sha256": "f2f4c5b89e3fc75549bf3f4cc936db82b8706b137db7a5629400083b01a7eb71"
+  },
+  "sub-xp102/func/sub-xp102_task-MIpost_bold.json": {
+   "bytes": 2874,
+   "sha256": "382791dbd880130e83f13f8188dbb236e1369a4d32f5f11a8ec0505fe1966d4c"
+  },
+  "sub-xp102/func/sub-xp102_task-MIpost_bold.nii.gz": {
+   "bytes": 47418195,
+   "sha256": "9db554ec17d6b7b0806d2f201e05e113fc922dd53d818094a2b8b94c34ec03ba"
+  },
+  "sub-xp102/func/sub-xp102_task-MIpre_bold.json": {
+   "bytes": 2924,
+   "sha256": "f202fff2867a4672aab53310e33182da6c4432d8a198b4ed7606a2edf477c3c9"
+  },
+  "sub-xp102/func/sub-xp102_task-MIpre_bold.nii.gz": {
+   "bytes": 48369471,
+   "sha256": "6532c0d86aa32d9bc7342610219bbae173dda35acd06f27b359833d130fe9f50"
+  },
+  "sub-xp102/func/sub-xp102_task-eegfmriNF_bold.json": {
+   "bytes": 2897,
+   "sha256": "4c0fa65ac0f7c2f6912b4dbeb93defa8f164c1dd4de2c22b6a73c146bd1c23bd"
+  },
+  "sub-xp102/func/sub-xp102_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 94157532,
+   "sha256": "37b04e03ff8a1a4ee08ffa90771ae0ab661be8d113634ca74028af4a57edcdbf"
+  },
+  "sub-xp102/func/sub-xp102_task-fmriNF_bold.json": {
+   "bytes": 2886,
+   "sha256": "b490a902dabf71c39c8e9e44a151f73a1c2a041f8ed244ef1dcf1641160b182b"
+  },
+  "sub-xp102/func/sub-xp102_task-fmriNF_bold.nii.gz": {
+   "bytes": 94653853,
+   "sha256": "9df822849ed45991d41d1471ea8151d953d0831a9929bc650209d9f2408dbb9c"
+  },
+  "sub-xp102/func/sub-xp102_task-motorloc_bold.json": {
+   "bytes": 2914,
+   "sha256": "62430de17d8aa9cfe58b5e08dc65793851486516687657772ef213884b8029d4"
+  },
+  "sub-xp102/func/sub-xp102_task-motorloc_bold.nii.gz": {
+   "bytes": 73627498,
+   "sha256": "6e80e7707008285e40ca05b7663cde278c4017f1dd4863305e04432716ffe573"
+  },
+  "sub-xp103/anat/sub-xp103_T1w.json": {
+   "bytes": 2155,
+   "sha256": "c3f54c5f7a62ea23aec9bc87d7578a7bc682a17c214613cf37008071e3db9657"
+  },
+  "sub-xp103/anat/sub-xp103_T1w.nii.gz": {
+   "bytes": 41827138,
+   "sha256": "8515df9532fd18105e78c179649f49baed50a509be4830eb032f186af29d2e01"
+  },
+  "sub-xp103/eeg/sub-xp103_task-MIpost_eeg.eeg": {
+   "bytes": 150156800,
+   "sha256": "a43bcaaa343d633063a7d07e1acc733b2b84c12db2eac1a984a563ae5205bb04"
+  },
+  "sub-xp103/eeg/sub-xp103_task-MIpost_eeg.vhdr": {
+   "bytes": 11814,
+   "sha256": "48e39a11a91417fec9b6d4bc08a22e746fd4389b9a60ae4c388c3d277ff6e667"
+  },
+  "sub-xp103/eeg/sub-xp103_task-MIpost_eeg.vmrk": {
+   "bytes": 4097,
+   "sha256": "d49f3c9159b5222ebef26b76e2c0ddcaf3096613f7a15d9c11fbc3eaae77e0e8"
+  },
+  "sub-xp103/eeg/sub-xp103_task-MIpre_eeg.eeg": {
+   "bytes": 152691200,
+   "sha256": "a6d5cfe8dc6807eaf21ac543026c77409618ff5765bcd4929d0dc1b2772c57a3"
+  },
+  "sub-xp103/eeg/sub-xp103_task-MIpre_eeg.vhdr": {
+   "bytes": 11812,
+   "sha256": "7a354403c56ca1192a263b8b2e4d09810c880d920eec2784ce96b24c45810bc7"
+  },
+  "sub-xp103/eeg/sub-xp103_task-MIpre_eeg.vmrk": {
+   "bytes": 4109,
+   "sha256": "7ff0d1eb81428399b0dd7618dd9b3c8a9f9d416efe1353783570b0504ecc02a9"
+  },
+  "sub-xp103/eeg/sub-xp103_task-eegNF_eeg.eeg": {
+   "bytes": 276672000,
+   "sha256": "571e59501121e539ee11cbae34a5c03b253dd68350f9955c2451670435f3362f"
+  },
+  "sub-xp103/eeg/sub-xp103_task-eegNF_eeg.vhdr": {
+   "bytes": 11812,
+   "sha256": "4c4e4074841b31ec2194e45c150d83c796ef526c191407f597d4e79000753f99"
+  },
+  "sub-xp103/eeg/sub-xp103_task-eegNF_eeg.vmrk": {
+   "bytes": 7858,
+   "sha256": "fe66580f0acd96b51e5f67d860f2b69867498db460908326c362ba568b6424d8"
+  },
+  "sub-xp103/eeg/sub-xp103_task-eegfmriNF_eeg.eeg": {
+   "bytes": 317286400,
+   "sha256": "7622ce9ef33a29103deaa8847f7d6d0cb1c679f886c0eb9e9629d0da358a7914"
+  },
+  "sub-xp103/eeg/sub-xp103_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11820,
+   "sha256": "e5528bfbab2ccec43f92d2499f34f7554a05eb1096cd755b8878f9b71d279f9a"
+  },
+  "sub-xp103/eeg/sub-xp103_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7900,
+   "sha256": "aa74707be9de03efcd47c0ef6ae5602423a2f1e5474a9ee1e0aabefa651dadb9"
+  },
+  "sub-xp103/eeg/sub-xp103_task-fmriNF_eeg.eeg": {
+   "bytes": 273548800,
+   "sha256": "bf17e33d3855186edb7754fe1247f584b4bfd4c3b1aaf819c34f014d3abdaf31"
+  },
+  "sub-xp103/eeg/sub-xp103_task-fmriNF_eeg.vhdr": {
+   "bytes": 11814,
+   "sha256": "271f2ac384c537389d43133ccfec3333649330cbf99394dd9a7193a695719574"
+  },
+  "sub-xp103/eeg/sub-xp103_task-fmriNF_eeg.vmrk": {
+   "bytes": 7733,
+   "sha256": "326d2b68e97ee187c5529529242e7d786ca58b38f81898e13f76242b99ad69a7"
+  },
+  "sub-xp103/eeg/sub-xp103_task-motorloc_eeg.eeg": {
+   "bytes": 235891200,
+   "sha256": "c12a2767b4c4d7e605312e8d7d8509ae87b196f011fe8751c9bac8ed4f30765a"
+  },
+  "sub-xp103/eeg/sub-xp103_task-motorloc_eeg.vhdr": {
+   "bytes": 11818,
+   "sha256": "e69830e8cb7c6ea16669cb48c81041d88bb3f8f0364f42cbcf97f9fa6cd467e3"
+  },
+  "sub-xp103/eeg/sub-xp103_task-motorloc_eeg.vmrk": {
+   "bytes": 6290,
+   "sha256": "e77b09c943ca123eddb32011b9beea618b999fbdb925f285a16653e6c9dc2ef5"
+  },
+  "sub-xp103/func/sub-xp103_task-MIpost_bold.json": {
+   "bytes": 2878,
+   "sha256": "5303a51b4417f637ceaf616fc0457f918621de2e759deb23f0f3534df3c3c45d"
+  },
+  "sub-xp103/func/sub-xp103_task-MIpost_bold.nii.gz": {
+   "bytes": 48679421,
+   "sha256": "ebf693d3e53c6f55b117e95f2762ce5d6b6ca920db94ea88dcb7e6741f46bfd9"
+  },
+  "sub-xp103/func/sub-xp103_task-MIpre_bold.json": {
+   "bytes": 2878,
+   "sha256": "b40c3aba5c25ea058d5682b9e6d548b50b6f78585120245fa1b37e721a15aff2"
+  },
+  "sub-xp103/func/sub-xp103_task-MIpre_bold.nii.gz": {
+   "bytes": 48605951,
+   "sha256": "5329061fbddd93bd0f2defee7b1824eaf58ba36ae39abbcc2703d22902443756"
+  },
+  "sub-xp103/func/sub-xp103_task-eegNF_bold.json": {
+   "bytes": 2917,
+   "sha256": "75ef59f7ea1fe7574f0fd0f8124edf33a9352df7d623b6dab5c20857a58190ad"
+  },
+  "sub-xp103/func/sub-xp103_task-eegNF_bold.nii.gz": {
+   "bytes": 96567202,
+   "sha256": "9d1fb55040f47a561055b3ca291c19a708db33afc3d04f9da1abe7dea338305a"
+  },
+  "sub-xp103/func/sub-xp103_task-eegfmriNF_bold.json": {
+   "bytes": 2925,
+   "sha256": "3cfd148a1af10baf4ece65d8b212076a0c56ca840d38380d67a001979331f7c9"
+  },
+  "sub-xp103/func/sub-xp103_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 96613227,
+   "sha256": "e941429954a5885142788e948fc13b3aded27468735c58b0697b11876df46f12"
+  },
+  "sub-xp103/func/sub-xp103_task-fmriNF_bold.json": {
+   "bytes": 2923,
+   "sha256": "a508e7a61d2fb079a1fc010d5f68d7c72c574b91ffd43190bd8b7e82dbd36aba"
+  },
+  "sub-xp103/func/sub-xp103_task-fmriNF_bold.nii.gz": {
+   "bytes": 96524964,
+   "sha256": "0f045c8ce6f8fe9260cec9db4b1e6ce8ccccfa8ddf88e3b8c471efb3a9ee150f"
+  },
+  "sub-xp103/func/sub-xp103_task-motorloc_bold.json": {
+   "bytes": 2928,
+   "sha256": "e3c2dbc088d5486b41045e35f6d2ad15db31eb5cbf84f4978f921f821994aa05"
+  },
+  "sub-xp103/func/sub-xp103_task-motorloc_bold.nii.gz": {
+   "bytes": 75989398,
+   "sha256": "522c87b884c0305207d0ba913c7a4642df53fed7f1f0ad7646a4c259ad412a79"
+  },
+  "sub-xp104/anat/sub-xp104_T1w.json": {
+   "bytes": 2152,
+   "sha256": "75c5ca4a555e5164863768e9a8d4c1d9d90414bc75806d764907fb0fc075130d"
+  },
+  "sub-xp104/anat/sub-xp104_T1w.nii.gz": {
+   "bytes": 40797293,
+   "sha256": "4df54652fc5288bcd5a1c9db85adcce7ae87acacd75d1c83acd086f0b3355d4f"
+  },
+  "sub-xp104/eeg/sub-xp104_task-eegNF_eeg.eeg": {
+   "bytes": 291571200,
+   "sha256": "7532e3b6243e75aa1c0f9f51022ac25d77c56d89b54f3e46ada9978e25fcd854"
+  },
+  "sub-xp104/eeg/sub-xp104_task-eegNF_eeg.vhdr": {
+   "bytes": 11812,
+   "sha256": "e76e85c12caddeab804142feec95aa0785a1680b86a15b5b79cf478e38c7c6f0"
+  },
+  "sub-xp104/eeg/sub-xp104_task-eegNF_eeg.vmrk": {
+   "bytes": 7858,
+   "sha256": "f03dc7a39b61e0e349e412341330c58753add837c6f78d8061dd889ea0b650c9"
+  },
+  "sub-xp104/eeg/sub-xp104_task-eegfmriNF_eeg.eeg": {
+   "bytes": 269760000,
+   "sha256": "2d24f37438d0e299b6c80f0ef0e14a818a20f43a99d5f260a481029f04bc0b34"
+  },
+  "sub-xp104/eeg/sub-xp104_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11820,
+   "sha256": "975a376bb17a80f9f3c7b0713a40d3a35720f9db60c57e9028af00031f54b28f"
+  },
+  "sub-xp104/eeg/sub-xp104_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7697,
+   "sha256": "f68af638baa81495a5d8788ba28f8e233182ff8a5f3c94a7f80bc3d4e6c725a9"
+  },
+  "sub-xp104/eeg/sub-xp104_task-fmriNF_eeg.eeg": {
+   "bytes": 272870400,
+   "sha256": "e3120cddbf89fc1142c6253233d01e2f4472c21f6da26e1136a4404674f9d1dc"
+  },
+  "sub-xp104/eeg/sub-xp104_task-fmriNF_eeg.vhdr": {
+   "bytes": 11814,
+   "sha256": "0e6c63e520ae088130b910e433a9b8095a91a1b05c4e5f2467b3dc715c5d7de3"
+  },
+  "sub-xp104/eeg/sub-xp104_task-fmriNF_eeg.vmrk": {
+   "bytes": 7698,
+   "sha256": "6a4a78f7c60bcbc332bfe659e9dfba8472e3a90618f2de5b78f7495ef9070908"
+  },
+  "sub-xp104/eeg/sub-xp104_task-motorloc_eeg.eeg": {
+   "bytes": 704358400,
+   "sha256": "494639995f7f12ac414fa881b269edf45e84527e42a7bee67180c80494f605b3"
+  },
+  "sub-xp104/eeg/sub-xp104_task-motorloc_eeg.vhdr": {
+   "bytes": 11818,
+   "sha256": "74fb27ea82624387715717de62beb5ac86d387bc9fa07e14874cdbc6fc4794e3"
+  },
+  "sub-xp104/eeg/sub-xp104_task-motorloc_eeg.vmrk": {
+   "bytes": 6289,
+   "sha256": "dc912e0df4e394bc637998876118f6dc8d0e1a6d38b16a1029dadd77a6679d6e"
+  },
+  "sub-xp104/func/sub-xp104_task-eegNF_bold.json": {
+   "bytes": 2889,
+   "sha256": "c76cf8630bbd41d1aa588bec57bc349e000e0481208088c192824dc9a01a105b"
+  },
+  "sub-xp104/func/sub-xp104_task-eegNF_bold.nii.gz": {
+   "bytes": 96253336,
+   "sha256": "f2a78a829d9b176022d79314f8e214662453bb63a3ff274a5cd3521c9796c747"
+  },
+  "sub-xp104/func/sub-xp104_task-eegfmriNF_bold.json": {
+   "bytes": 2908,
+   "sha256": "ab02961594c50ef3fe1ced1948242f96d966c73e2c832b364298e51de5c90da0"
+  },
+  "sub-xp104/func/sub-xp104_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 96072165,
+   "sha256": "ec0d3bcfaa3ec88f47a7ff0be427bc1712abb252dfbe22462482a8075fd3cbf3"
+  },
+  "sub-xp104/func/sub-xp104_task-fmriNF_bold.json": {
+   "bytes": 2879,
+   "sha256": "01b5ddfb21c34464cfcd48ff9deb2f5b1c77de40c2ac792bb8b561f98d463311"
+  },
+  "sub-xp104/func/sub-xp104_task-fmriNF_bold.nii.gz": {
+   "bytes": 95871996,
+   "sha256": "21afa52a9a81aae50275b4dc8d0c7d1d006d9be9b331445fc4db6877b6e235f9"
+  },
+  "sub-xp104/func/sub-xp104_task-motorloc_bold.json": {
+   "bytes": 2932,
+   "sha256": "1a9919d94ae9770ab831f5aff518ee19e5a81098aae11dd639e873e03e795c34"
+  },
+  "sub-xp104/func/sub-xp104_task-motorloc_bold.nii.gz": {
+   "bytes": 75673659,
+   "sha256": "c3e1b5d81d60c586e5da7b01ef82332415a7b047389ca2d933dd65e88f23c90d"
+  },
+  "sub-xp105/anat/sub-xp105_T1w.json": {
+   "bytes": 2141,
+   "sha256": "7e307433b8da567b5a6cc94777241766abb6220aa7107515abfb76b1a3d56695"
+  },
+  "sub-xp105/anat/sub-xp105_T1w.nii.gz": {
+   "bytes": 39304925,
+   "sha256": "2bf83aac55d3683207ecbf8db0e827a44570f5b95474f9ee4240f1fca38a7895"
+  },
+  "sub-xp105/eeg/sub-xp105_task-MIpost_eeg.eeg": {
+   "bytes": 149747200,
+   "sha256": "6b391e4fa29747f66bfa4c61df9a33957508cff197ba9f51e0463706c1ea0479"
+  },
+  "sub-xp105/eeg/sub-xp105_task-MIpost_eeg.vhdr": {
+   "bytes": 11814,
+   "sha256": "c8128a2e7c13bcd0d7ab66d30d6a95110ce170fb888a9f53a6345be9bf77298b"
+  },
+  "sub-xp105/eeg/sub-xp105_task-MIpost_eeg.vmrk": {
+   "bytes": 4102,
+   "sha256": "530a00419c2e8a88b06d509cb72ba4dce14b8718a70695f931a365c168624bff"
+  },
+  "sub-xp105/eeg/sub-xp105_task-MIpre_eeg.eeg": {
+   "bytes": 145932800,
+   "sha256": "980b8b40f421728d15354224b08370e06ff18bf8d7ea7b66d5995109760d6835"
+  },
+  "sub-xp105/eeg/sub-xp105_task-MIpre_eeg.vhdr": {
+   "bytes": 11812,
+   "sha256": "cedcba81ddb9b1b8a0ca734f705b4a6564586b2c1ca518f471c492e74fe6212d"
+  },
+  "sub-xp105/eeg/sub-xp105_task-MIpre_eeg.vmrk": {
+   "bytes": 4096,
+   "sha256": "1ba5e7c1cecb605632f31d39185e17034aa9c2455c25813166bd46bc2a5e684d"
+  },
+  "sub-xp105/eeg/sub-xp105_task-eegNF_eeg.eeg": {
+   "bytes": 279680000,
+   "sha256": "9892073d2747380573c515d22b521b49c88d769cf0054d5e046a30c74e60bae6"
+  },
+  "sub-xp105/eeg/sub-xp105_task-eegNF_eeg.vhdr": {
+   "bytes": 11812,
+   "sha256": "bb06c9551e44ea976ca35637a7a8d6763780515a73ce91f8c1c51d70d15fe509"
+  },
+  "sub-xp105/eeg/sub-xp105_task-eegNF_eeg.vmrk": {
+   "bytes": 7856,
+   "sha256": "a712339275bda70272778b423cbe3bcaa3e13c61c49cee2eabd4fb12a045f0c1"
+  },
+  "sub-xp105/eeg/sub-xp105_task-eegfmriNF_eeg.eeg": {
+   "bytes": 297664000,
+   "sha256": "232e6477c151c411647efd57c9a23b543501567b007ec77b1ef6a243c6de2f09"
+  },
+  "sub-xp105/eeg/sub-xp105_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11820,
+   "sha256": "02d148c3570b6945736e5edc19a02cdb1832b28620d60021c1b218d7b60adcbd"
+  },
+  "sub-xp105/eeg/sub-xp105_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7758,
+   "sha256": "514c8b16817e3721d2dfc2e2569f0040557b7c597e36f5b33449cec9b3880a58"
+  },
+  "sub-xp105/eeg/sub-xp105_task-fmriNF_eeg.eeg": {
+   "bytes": 283737600,
+   "sha256": "97cbe04ad0f90f081a1dcff61757e5770746e5d3deba5ba4de8dd990fbd63e94"
+  },
+  "sub-xp105/eeg/sub-xp105_task-fmriNF_eeg.vhdr": {
+   "bytes": 11814,
+   "sha256": "33840aa9dc2fb7f0dae33770ea4410e2965acc151d91ba5a73af6fa00f866a16"
+  },
+  "sub-xp105/eeg/sub-xp105_task-fmriNF_eeg.vmrk": {
+   "bytes": 7869,
+   "sha256": "a75ed4f4c415f98acac6b06616ea6bf9229aad83f2e3410362afad646d1d52ae"
+  },
+  "sub-xp105/eeg/sub-xp105_task-motorloc_eeg.eeg": {
+   "bytes": 226611200,
+   "sha256": "daeaa51bf0ec530052fe7520b38f476d6e6dcda3b8feb5ac7e5d27a437fcb5a6"
+  },
+  "sub-xp105/eeg/sub-xp105_task-motorloc_eeg.vhdr": {
+   "bytes": 11818,
+   "sha256": "5a377c24c8b496caecaebf97ce1b5f792dbb82d96c456f38dde0d4a35b1a5682"
+  },
+  "sub-xp105/eeg/sub-xp105_task-motorloc_eeg.vmrk": {
+   "bytes": 6256,
+   "sha256": "247b5a93fbaa70b2d2d73d47219deeae0e9f9ae25d6d537278bfce39317d75db"
+  },
+  "sub-xp105/func/sub-xp105_task-MIpost_bold.json": {
+   "bytes": 2871,
+   "sha256": "a3a84cc4b13d8e0ffc400a22be7b2a94c5ea40fd537c475764853069c7c8539f"
+  },
+  "sub-xp105/func/sub-xp105_task-MIpost_bold.nii.gz": {
+   "bytes": 48256604,
+   "sha256": "1d4228b446f642b4becb832ba9f2eee249dda1d1a43ff01d0ab0bce3a1db4580"
+  },
+  "sub-xp105/func/sub-xp105_task-MIpre_bold.json": {
+   "bytes": 2868,
+   "sha256": "1167932f8c1b9a705d80572ba71c13c42d1d5c2ddd962880f5ebea8a57e6014a"
+  },
+  "sub-xp105/func/sub-xp105_task-MIpre_bold.nii.gz": {
+   "bytes": 48204282,
+   "sha256": "1f35623ec8651f7019a568d29e40b4fd604936df63e0a74dbffefb965299335c"
+  },
+  "sub-xp105/func/sub-xp105_task-eegNF_bold.json": {
+   "bytes": 2877,
+   "sha256": "ae710ad2599491a93b06b441dbab656aed7bd346a21bea68c4b530274afc1fe1"
+  },
+  "sub-xp105/func/sub-xp105_task-eegNF_bold.nii.gz": {
+   "bytes": 95764806,
+   "sha256": "6711b1c4c0bfcb0c3e497ca29ae8516e467e59d6ba22b0eaa05a13b593248891"
+  },
+  "sub-xp105/func/sub-xp105_task-eegfmriNF_bold.json": {
+   "bytes": 2887,
+   "sha256": "8d74463d7130b3a5d4a90e85c38ca9b1dad00fc1c8468267a9ac7e9112a9feeb"
+  },
+  "sub-xp105/func/sub-xp105_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 96030113,
+   "sha256": "e2241bb5eb9a1e96676dac68055b341572a1f0a7399877367032375eb916a06d"
+  },
+  "sub-xp105/func/sub-xp105_task-fmriNF_bold.json": {
+   "bytes": 2881,
+   "sha256": "ec07695f52fe8085f88589e598660a437468b9e8f22956f6f36e835211b02fe9"
+  },
+  "sub-xp105/func/sub-xp105_task-fmriNF_bold.nii.gz": {
+   "bytes": 95891112,
+   "sha256": "fc6c9bce69ef658f37f6a15a68ca55a9105eb3f4ce60166dbb5163a8f1e5a262"
+  },
+  "sub-xp105/func/sub-xp105_task-motorloc_bold.json": {
+   "bytes": 2916,
+   "sha256": "2a76c35a2c728a049cf11c65dc5f44ff38e84d8192ade3ceec4c649ba24329e1"
+  },
+  "sub-xp105/func/sub-xp105_task-motorloc_bold.nii.gz": {
+   "bytes": 75294172,
+   "sha256": "77b8a30bf2e6b6b876165d5cfef4a19c0c22b498ac5e36a9e413e5d964f6708e"
+  },
+  "sub-xp106/anat/sub-xp106_T1w.json": {
+   "bytes": 2141,
+   "sha256": "44866595496d6ccd0aa97210d54b3410b2bd3d7a6fbfc3bb11dcc9ff3e2623c2"
+  },
+  "sub-xp106/anat/sub-xp106_T1w.nii.gz": {
+   "bytes": 39563302,
+   "sha256": "dabee9049789b51f4205f978edc6c48d5ac228c59779df066a9a50bc04d3e705"
+  },
+  "sub-xp106/eeg/sub-xp106_task-MIpost_eeg.eeg": {
+   "bytes": 142796800,
+   "sha256": "803686a62cdd36cc4f92067b17d74c582476c20a0e7d7f680c561f3a59df912f"
+  },
+  "sub-xp106/eeg/sub-xp106_task-MIpost_eeg.vhdr": {
+   "bytes": 11675,
+   "sha256": "fc44ce51104e46ba0c0a4d6e519c997232cd1f8ac832831159259255a2eccc14"
+  },
+  "sub-xp106/eeg/sub-xp106_task-MIpost_eeg.vmrk": {
+   "bytes": 2523,
+   "sha256": "895661b76c247b98c73f91db23d600056da5812cc313d13a00b24931e3650873"
+  },
+  "sub-xp106/eeg/sub-xp106_task-MIpre_eeg.eeg": {
+   "bytes": 224780800,
+   "sha256": "cc758a8a851e8404b30daa3bb211618b713ec4916d677a336053695a7d47dd25"
+  },
+  "sub-xp106/eeg/sub-xp106_task-MIpre_eeg.vhdr": {
+   "bytes": 11673,
+   "sha256": "cb0b2e8822c895c282c88be2797fad544156b493e649fc1f99bc2b21ebb478db"
+  },
+  "sub-xp106/eeg/sub-xp106_task-MIpre_eeg.vmrk": {
+   "bytes": 4096,
+   "sha256": "4f5027d21db6ddeccf1b31b54f4ce9cf767484edfb69ee3d0e2476a0ad130899"
+  },
+  "sub-xp106/eeg/sub-xp106_task-eegNF_eeg.eeg": {
+   "bytes": 276620800,
+   "sha256": "8919b530e6e9253768e5566f9b29baf6de474de38cf45ae94790619ff762e596"
+  },
+  "sub-xp106/eeg/sub-xp106_task-eegNF_eeg.vhdr": {
+   "bytes": 11673,
+   "sha256": "630369a233c124213501f44eb191fbff9ab2be1dea124417647ce1263a8c8ee2"
+  },
+  "sub-xp106/eeg/sub-xp106_task-eegNF_eeg.vmrk": {
+   "bytes": 7856,
+   "sha256": "55d23d0774ebaef122921c6fa1d4b1e3a9f0be44b1581ac3067058fcefc1b181"
+  },
+  "sub-xp106/eeg/sub-xp106_task-eegfmriNF_eeg.eeg": {
+   "bytes": 268019200,
+   "sha256": "fdc118326b900c04fd8f9857509eae64fbfaf0a0290289dc3822c173683137a8"
+  },
+  "sub-xp106/eeg/sub-xp106_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11681,
+   "sha256": "eac2d0e8f0d5d4bb796e9eaeaa9be998cb95f27675d9125ce34b64a970ea20ac"
+  },
+  "sub-xp106/eeg/sub-xp106_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7662,
+   "sha256": "1dad32baeff15ad13ce320cf0c7b5d5e403070bd141aa473fecbda50224d35c5"
+  },
+  "sub-xp106/eeg/sub-xp106_task-fmriNF_eeg.eeg": {
+   "bytes": 271616000,
+   "sha256": "0b1f6a3c065c4963c341fdec7e08661c95a22b062e2e12f2f16d50feb2f6dc5d"
+  },
+  "sub-xp106/eeg/sub-xp106_task-fmriNF_eeg.vhdr": {
+   "bytes": 11675,
+   "sha256": "db1775f3cb6f476c1de2b4a04cead2455ed54678e35c47395c392feab821c49f"
+  },
+  "sub-xp106/eeg/sub-xp106_task-fmriNF_eeg.vmrk": {
+   "bytes": 7758,
+   "sha256": "18cc863810bacc937b269b5a6334a2a51d515f68109cfe1f7745a279f723f1a7"
+  },
+  "sub-xp106/eeg/sub-xp106_task-motorloc_eeg.eeg": {
+   "bytes": 221772800,
+   "sha256": "992bdfcaa392995eefddedf59b76e1d84b047e1116f2d02b168f2273de19a49c"
+  },
+  "sub-xp106/eeg/sub-xp106_task-motorloc_eeg.vhdr": {
+   "bytes": 11679,
+   "sha256": "db3a32621953e69ddf4e08bf5889506eb5109055606ab9a1bdb4e8f379b7311b"
+  },
+  "sub-xp106/eeg/sub-xp106_task-motorloc_eeg.vmrk": {
+   "bytes": 6275,
+   "sha256": "b6a77f8657683de4c7f682f24c22cced068b487c0dff780919fb9a4524ea7664"
+  },
+  "sub-xp106/func/sub-xp106_task-MIpost_bold.json": {
+   "bytes": 2873,
+   "sha256": "63c4eeb38abb8ff724ae1d92ac8273af0c47d1cef8b7a2669e3e04a3059d0034"
+  },
+  "sub-xp106/func/sub-xp106_task-MIpost_bold.nii.gz": {
+   "bytes": 24370105,
+   "sha256": "acb85238d46282ae2c6e309ea91aa0af69f3bef1d802743676410a7681964ed8"
+  },
+  "sub-xp106/func/sub-xp106_task-MIpre_bold.json": {
+   "bytes": 2869,
+   "sha256": "bb3a2caa8365bb7a650bb5db068c37d41bab2eeb00e4ba3c4d94079e97103b9b"
+  },
+  "sub-xp106/func/sub-xp106_task-MIpre_bold.nii.gz": {
+   "bytes": 46615785,
+   "sha256": "35fb5c9f15ff250156492db5c0b04da207d824d7d3f1fbe3439436b4a635bd1e"
+  },
+  "sub-xp106/func/sub-xp106_task-eegNF_bold.json": {
+   "bytes": 2880,
+   "sha256": "eb30bf81b52ddf0206db5525414048f79f0266d89a269415129e59b290317a51"
+  },
+  "sub-xp106/func/sub-xp106_task-eegNF_bold.nii.gz": {
+   "bytes": 92928816,
+   "sha256": "e4614cf606a1c4acbc9813d44036eab43ac2632217af997b160d829407ff1fbc"
+  },
+  "sub-xp106/func/sub-xp106_task-eegfmriNF_bold.json": {
+   "bytes": 2891,
+   "sha256": "7e9077fa715153436aed6262cb55feb5b9bdf962711e98098bcb26d1f197bff2"
+  },
+  "sub-xp106/func/sub-xp106_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 92651495,
+   "sha256": "72c7561717bb11cce6b433fe936f1e0e07ec0a1a08bc59056d76dee99911651c"
+  },
+  "sub-xp106/func/sub-xp106_task-fmriNF_bold.json": {
+   "bytes": 2880,
+   "sha256": "97c314f7a3524c7f6c57b1698eecf9d95a2a25695951aa2357ff56c095f51421"
+  },
+  "sub-xp106/func/sub-xp106_task-fmriNF_bold.nii.gz": {
+   "bytes": 92931616,
+   "sha256": "2c92a09c763c58a9157d0f666eed6c92cb8f8c297cfbe681ff91f32db90573f7"
+  },
+  "sub-xp106/func/sub-xp106_task-motorloc_bold.json": {
+   "bytes": 2920,
+   "sha256": "885e6d12d7ad7d18aa51cc6bdb4d50c43916d702745bfb229a32b54aba629ee6"
+  },
+  "sub-xp106/func/sub-xp106_task-motorloc_bold.nii.gz": {
+   "bytes": 72757948,
+   "sha256": "796d90848670613ed3fe106eca69de2f4d1bda5aaa63eeddb81f556757406dbd"
+  },
+  "sub-xp107/anat/sub-xp107_T1w.json": {
+   "bytes": 2146,
+   "sha256": "7487b20606b28154b61958dcda96e24c780f41a61d357453e8082a05ed933066"
+  },
+  "sub-xp107/anat/sub-xp107_T1w.nii.gz": {
+   "bytes": 41510026,
+   "sha256": "f76f9f86f45174590673cd5ea0312eef64489ba53666aecbdf7f844c87241fa3"
+  },
+  "sub-xp107/eeg/sub-xp107_task-MIpost_eeg.eeg": {
+   "bytes": 148313600,
+   "sha256": "9c387dab33dbc3e6a207d912b0261c8534d9500af603d7cbf0fe2cac509b8f41"
+  },
+  "sub-xp107/eeg/sub-xp107_task-MIpost_eeg.vhdr": {
+   "bytes": 11675,
+   "sha256": "303a1ebbf415287ef84aed00fb80fff05310ec782882143a8594808c115da5cb"
+  },
+  "sub-xp107/eeg/sub-xp107_task-MIpost_eeg.vmrk": {
+   "bytes": 4095,
+   "sha256": "410e56f8ee8095c0051ab4ad91487395ce8f4c53fb6ec0698a9201a3a8d8d1a6"
+  },
+  "sub-xp107/eeg/sub-xp107_task-MIpre_eeg.eeg": {
+   "bytes": 148288000,
+   "sha256": "08eb48c1a9cd7dc2b6afac647ba3a0d5199e6e1bfbea3fe67dbb0f34fa5b649a"
+  },
+  "sub-xp107/eeg/sub-xp107_task-MIpre_eeg.vhdr": {
+   "bytes": 11812,
+   "sha256": "95ede31f6c7e8b77bfa8a6a13ed93de7d60039d5f103890ec3ad23d50538676d"
+  },
+  "sub-xp107/eeg/sub-xp107_task-MIpre_eeg.vmrk": {
+   "bytes": 4096,
+   "sha256": "a717dec602d8f93d2e74ca24e484e8ca204a6ee8a42deaf0227a483f774240b9"
+  },
+  "sub-xp107/eeg/sub-xp107_task-eegNF_eeg.eeg": {
+   "bytes": 268480000,
+   "sha256": "f01bb834fa0b0d0f1a971907c572621fa3cf9b93a768a4defc2ee42c53f0727c"
+  },
+  "sub-xp107/eeg/sub-xp107_task-eegNF_eeg.vhdr": {
+   "bytes": 11673,
+   "sha256": "37d25a0f1fc48902220ea5550843cbe4aee3077b8e58bd5976a209dd193e4ef8"
+  },
+  "sub-xp107/eeg/sub-xp107_task-eegNF_eeg.vmrk": {
+   "bytes": 7691,
+   "sha256": "d68ab03c91486081ef6d3346e2a1bbbb682e267526bc74c0831e4375abcbf154"
+  },
+  "sub-xp107/eeg/sub-xp107_task-eegfmriNF_eeg.eeg": {
+   "bytes": 283148800,
+   "sha256": "e8131dcad4e78bbfecd7c7c20159c00f876c167441554af55c5f7588153c1d93"
+  },
+  "sub-xp107/eeg/sub-xp107_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11681,
+   "sha256": "5c089c03cfb51b8b28f943805c6a8ee9294e54d0b69da2fe6b5e8b5aed1becf6"
+  },
+  "sub-xp107/eeg/sub-xp107_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7858,
+   "sha256": "da7a47d3a23473eda83c1b1f99a7e04ad675dce6c32cc4bf9db1bebe9b5f163b"
+  },
+  "sub-xp107/eeg/sub-xp107_task-fmriNF_eeg.eeg": {
+   "bytes": 268864000,
+   "sha256": "b8a9738ac6bab12f6564a42db7ea6c28030cdfc5e2711018bcc97ee1fdbc4e8e"
+  },
+  "sub-xp107/eeg/sub-xp107_task-fmriNF_eeg.vhdr": {
+   "bytes": 11675,
+   "sha256": "f1cbf4f5f1b7beb209525db61e8e936aa3924d4a5d65756982abf7d28854668a"
+  },
+  "sub-xp107/eeg/sub-xp107_task-fmriNF_eeg.vmrk": {
+   "bytes": 7661,
+   "sha256": "c3df3a1fae2ce97599990d28439c3e97e8ef9ff8f5c6d66e9255d194e35d03af"
+  },
+  "sub-xp107/eeg/sub-xp107_task-motorloc_eeg.eeg": {
+   "bytes": 219264000,
+   "sha256": "a099f30bb5542666a0e3f09be4c1fe3b08bc1ae3954a86dacbdb2f4a767c39a9"
+  },
+  "sub-xp107/eeg/sub-xp107_task-motorloc_eeg.vhdr": {
+   "bytes": 11818,
+   "sha256": "af9cbf321bd15297732c93de37da3c2c62fcf759c8d2bfac85dbe7e1866371ba"
+  },
+  "sub-xp107/eeg/sub-xp107_task-motorloc_eeg.vmrk": {
+   "bytes": 6184,
+   "sha256": "8deb5ede8d361f2f538e0e3297046af53ad5e115a5513b9ca89c5cd578fb72b1"
+  },
+  "sub-xp107/func/sub-xp107_task-MIpost_bold.json": {
+   "bytes": 2872,
+   "sha256": "cb6a5d7b3ca898bd7d0418c9e595a8d14ca8e9159da8b796545933db783c7a69"
+  },
+  "sub-xp107/func/sub-xp107_task-MIpost_bold.nii.gz": {
+   "bytes": 48509265,
+   "sha256": "0a05dc81a962f990b37c148ee3aff1334962c2a7c08015ed65ffb1d18883fb24"
+  },
+  "sub-xp107/func/sub-xp107_task-MIpre_bold.json": {
+   "bytes": 2865,
+   "sha256": "1992b10fd9a5cc18542e37d4ce12431867a4870e5dda179cbdcc82566901ae8a"
+  },
+  "sub-xp107/func/sub-xp107_task-MIpre_bold.nii.gz": {
+   "bytes": 48173642,
+   "sha256": "33c82348b6da96d381993a113b982620536c312ac80b919f66e760b354860c98"
+  },
+  "sub-xp107/func/sub-xp107_task-eegNF_bold.json": {
+   "bytes": 2883,
+   "sha256": "1cd3fd70a1157214455dbced461c46fa9eabdf47ae624f9bb9e03fc9a222cdc3"
+  },
+  "sub-xp107/func/sub-xp107_task-eegNF_bold.nii.gz": {
+   "bytes": 95542414,
+   "sha256": "240756a73cf69ebebfba7e4ea069ba9fdb05491e85b699b6cc92939b0e2c4f9a"
+  },
+  "sub-xp107/func/sub-xp107_task-eegfmriNF_bold.json": {
+   "bytes": 2893,
+   "sha256": "e9d4035e45f1254b5404d7541aec952b027942eab910fd6b04d14fc7d32d3102"
+  },
+  "sub-xp107/func/sub-xp107_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 96128765,
+   "sha256": "aa0c8a5032c4dc2357aaf1f5f882b0bbf8ff1bc2fa48f6e3df83d0fc2a8dd82c"
+  },
+  "sub-xp107/func/sub-xp107_task-fmriNF_bold.json": {
+   "bytes": 2885,
+   "sha256": "1951d7279616e07b389ac93bb370dda55e9d03292e3df0f634e7775380860dda"
+  },
+  "sub-xp107/func/sub-xp107_task-fmriNF_bold.nii.gz": {
+   "bytes": 96064400,
+   "sha256": "5b809173b3defcf9b3ae544fe6903dab24daab85d75b72c0e0d66893e48a4be6"
+  },
+  "sub-xp107/func/sub-xp107_task-motorloc_bold.json": {
+   "bytes": 2916,
+   "sha256": "94259f82ad059a6885e035d01e329f8a02b5c443c09cd86844cdb42bc4bbe5fb"
+  },
+  "sub-xp107/func/sub-xp107_task-motorloc_bold.nii.gz": {
+   "bytes": 75268309,
+   "sha256": "265a93cafc2acac18deacfa3331a6cde1df1042b18c78bdbc327afe187b3809a"
+  },
+  "sub-xp108/anat/sub-xp108_T1w.json": {
+   "bytes": 2144,
+   "sha256": "e5b8e7457627398f05c5fac4d6ca82f19d8d48392ff35b6be05e26c8ffe37220"
+  },
+  "sub-xp108/anat/sub-xp108_T1w.nii.gz": {
+   "bytes": 41299773,
+   "sha256": "ec4e551f059367481a2721880aab39c9f639ff381fcb464bf324fcd82fcadeaf"
+  },
+  "sub-xp108/eeg/sub-xp108_task-MIpost_eeg.eeg": {
+   "bytes": 142208000,
+   "sha256": "c656052b5eefeb9752c1c0a4667ad550cf1a64a6ee0c1259fc44318b5ccf3b5f"
+  },
+  "sub-xp108/eeg/sub-xp108_task-MIpost_eeg.vhdr": {
+   "bytes": 1867,
+   "sha256": "5355e1ae7d2faaac409038bfbacaa37a17379540b29c02c2e6fdf7cf8e182b06"
+  },
+  "sub-xp108/eeg/sub-xp108_task-MIpost_eeg.vmrk": {
+   "bytes": 4095,
+   "sha256": "609bd3da8b0f6b8f5360f193c58f1a10c18673d194a92fbc3aa51670513abf6a"
+  },
+  "sub-xp108/eeg/sub-xp108_task-MIpre_eeg.eeg": {
+   "bytes": 137254400,
+   "sha256": "4ef2f585a63bda719975384589eec58e687732703dcf6ad729c0fb884e2f1bb6"
+  },
+  "sub-xp108/eeg/sub-xp108_task-MIpre_eeg.vhdr": {
+   "bytes": 11673,
+   "sha256": "735ba733500e2791e85b32efe5895d8acf355a0194ee0b1003148a0497f2b29d"
+  },
+  "sub-xp108/eeg/sub-xp108_task-MIpre_eeg.vmrk": {
+   "bytes": 4055,
+   "sha256": "2fa0fba7fc42591ecf9e83760565577a9590eda837b35c177c5c03f9cc8f8eee"
+  },
+  "sub-xp108/eeg/sub-xp108_task-eegNF_eeg.eeg": {
+   "bytes": 291046400,
+   "sha256": "7ae19c5dcbb7696b6c8c46227e070756269e55ed2869d1133038547be9a579c3"
+  },
+  "sub-xp108/eeg/sub-xp108_task-eegNF_eeg.vhdr": {
+   "bytes": 11673,
+   "sha256": "af11c204a7585bd3ef09d7a8216dd6f255a63fc181031194ec2abd0d4c8953bf"
+  },
+  "sub-xp108/eeg/sub-xp108_task-eegNF_eeg.vmrk": {
+   "bytes": 7854,
+   "sha256": "29c9d9ca87d3f58082d578fcc5ae05a39c57153c766f7c6283cac918d96fd852"
+  },
+  "sub-xp108/eeg/sub-xp108_task-eegfmriNF_eeg.eeg": {
+   "bytes": 273152000,
+   "sha256": "b9d5dbeab1740c175911c11847d44f1fbd9dcfb6f349d564d41727cb68973f4b"
+  },
+  "sub-xp108/eeg/sub-xp108_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11681,
+   "sha256": "678317d58d9679aa5134f918c71e5bd03dc56f07c1871a5fd36e887d2cf08fbe"
+  },
+  "sub-xp108/eeg/sub-xp108_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7794,
+   "sha256": "71300db213123371afd33f9f28b55a60566d694e5ea359c033d354214cf56a47"
+  },
+  "sub-xp108/eeg/sub-xp108_task-fmriNF_eeg.eeg": {
+   "bytes": 268697600,
+   "sha256": "59d8bc30970acfc6fb6424e2fc8359e3149693686f18d23a59db0c592ecf549b"
+  },
+  "sub-xp108/eeg/sub-xp108_task-fmriNF_eeg.vhdr": {
+   "bytes": 11675,
+   "sha256": "9c2aba9d3c7aeb492d8d1a36af814c4136a0a170c274a01118ae131628b41f65"
+  },
+  "sub-xp108/eeg/sub-xp108_task-fmriNF_eeg.vmrk": {
+   "bytes": 7661,
+   "sha256": "f4e5a3ea5a28551ed1cadf979da7cbe0c155e19c25ef14f1b1dece16f48e11dc"
+  },
+  "sub-xp108/eeg/sub-xp108_task-motorloc_eeg.eeg": {
+   "bytes": 220339200,
+   "sha256": "5711bbfb3e1d7da60cbc3d490054e25e49b98774f06c1bcbfd533b54b90af919"
+  },
+  "sub-xp108/eeg/sub-xp108_task-motorloc_eeg.vhdr": {
+   "bytes": 11679,
+   "sha256": "48587bf21d0cbd3536d2b93c92f8c7dd919bb6d3996ee3232a89bef5aaad8420"
+  },
+  "sub-xp108/eeg/sub-xp108_task-motorloc_eeg.vmrk": {
+   "bytes": 6273,
+   "sha256": "840c7ede23a378835369599f238fc1698c366d027c7bd16f30501db358f4e9ff"
+  },
+  "sub-xp108/func/sub-xp108_task-MIpost_bold.json": {
+   "bytes": 2873,
+   "sha256": "b6a7a0845e5be82f0219b6c32c3da8232eaadb45246a92e3bb60df828969b393"
+  },
+  "sub-xp108/func/sub-xp108_task-MIpost_bold.nii.gz": {
+   "bytes": 47988276,
+   "sha256": "31b956cc919ff1e62899da945a59433f162e28d5cb283a03a5592b1cd9c14cd0"
+  },
+  "sub-xp108/func/sub-xp108_task-MIpre_bold.json": {
+   "bytes": 2868,
+   "sha256": "2a4724e35fe6e35ce30a65962c9671b0d510ed0c0300f903ad5f558dadc4ce02"
+  },
+  "sub-xp108/func/sub-xp108_task-MIpre_bold.nii.gz": {
+   "bytes": 47585144,
+   "sha256": "63dd13918dd2b6d5d54cf23135b8eb74dd08b9bd8f53c03de5b3e02c997e9506"
+  },
+  "sub-xp108/func/sub-xp108_task-eegNF_bold.json": {
+   "bytes": 2882,
+   "sha256": "3e51a7738e9efa3281091aec8ab972de490ee866ea217726118993259f63e030"
+  },
+  "sub-xp108/func/sub-xp108_task-eegNF_bold.nii.gz": {
+   "bytes": 94549424,
+   "sha256": "a24e194e527f8bd8b692c5a4d73831787e4a64fc13e4273561f9fba4a09ffafa"
+  },
+  "sub-xp108/func/sub-xp108_task-eegfmriNF_bold.json": {
+   "bytes": 2891,
+   "sha256": "e023ffa070c65ce5da5c9755d09f29fc7b092cf4654ac9c84e45f9c32f48544f"
+  },
+  "sub-xp108/func/sub-xp108_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 95021254,
+   "sha256": "573477020c193bccf9a238aad4e40a5f8fdc3bbfd70e3f46d0cb5225b5a86c88"
+  },
+  "sub-xp108/func/sub-xp108_task-fmriNF_bold.json": {
+   "bytes": 2886,
+   "sha256": "b9da180aff6befc8916fefa06b5c162f31b4c8ac71942aa820f142eb33b304d8"
+  },
+  "sub-xp108/func/sub-xp108_task-fmriNF_bold.nii.gz": {
+   "bytes": 94858479,
+   "sha256": "f974cfd977629222a0287d93146f90bda7e599066b1f885f8453290af65d5bbc"
+  },
+  "sub-xp108/func/sub-xp108_task-motorloc_bold.json": {
+   "bytes": 2916,
+   "sha256": "0bcdbfc663b5459ef2b4d04de226dda42b26a8a8e0fcc217ab9ac533be7b2f42"
+  },
+  "sub-xp108/func/sub-xp108_task-motorloc_bold.nii.gz": {
+   "bytes": 74457190,
+   "sha256": "5280a7fd75194ba5b69b47a91a916e34f69cc7673a7c996d82a7947efe996b52"
+  },
+  "sub-xp109/anat/sub-xp109_T1w.json": {
+   "bytes": 2141,
+   "sha256": "94b9bfe0c850d0e8c45163aca7f9439ce8552953ff2841711677c1f9c8944d2a"
+  },
+  "sub-xp109/anat/sub-xp109_T1w.nii.gz": {
+   "bytes": 38923777,
+   "sha256": "730edd98192815d01a7ba0aff9b2b1e4b2f079064e29839d9f8b08bdbcc5a29b"
+  },
+  "sub-xp109/eeg/sub-xp109_task-eegNF_eeg.eeg": {
+   "bytes": 282278400,
+   "sha256": "20e955ce7a7d8a5eccc9079272588166e7831cadb344086ac93a135c66fed7e3"
+  },
+  "sub-xp109/eeg/sub-xp109_task-eegNF_eeg.vhdr": {
+   "bytes": 11673,
+   "sha256": "2bbc434caf2a5b21ae7b94595e9f1b6dba6ec654dee8c1eeff9fb86135d7b5ea"
+  },
+  "sub-xp109/eeg/sub-xp109_task-eegNF_eeg.vmrk": {
+   "bytes": 7865,
+   "sha256": "69ed87b0c3f044d30f37a9e693f00db3194ed39a7b16862f031e30f535dc9f14"
+  },
+  "sub-xp109/eeg/sub-xp109_task-eegfmriNF_eeg.eeg": {
+   "bytes": 273356800,
+   "sha256": "2ecda98490ad813d0c9ae66d72f3d03d26e0cffb106a7818257ccb58907313f6"
+  },
+  "sub-xp109/eeg/sub-xp109_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11681,
+   "sha256": "3f401e562b1ffe272c9306b51017bfa83739d904840c0772ef09bca9a5264125"
+  },
+  "sub-xp109/eeg/sub-xp109_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7703,
+   "sha256": "16870272cb712f4600ff428721595555bdf2df000373d3345ff975cf362cdd39"
+  },
+  "sub-xp109/eeg/sub-xp109_task-fmriNF_eeg.eeg": {
+   "bytes": 268736000,
+   "sha256": "09fc003d7957aae36f45d484cd159c2e2577caa0b9325827416f51772d98ce9b"
+  },
+  "sub-xp109/eeg/sub-xp109_task-fmriNF_eeg.vhdr": {
+   "bytes": 11675,
+   "sha256": "4bb407f8aff49dd074e3c07c29a79518fc97f6876f208b22b8cdbacabba7088f"
+  },
+  "sub-xp109/eeg/sub-xp109_task-fmriNF_eeg.vmrk": {
+   "bytes": 7661,
+   "sha256": "c1fea2a919c566ed8d6ae512dbb76e18a2df20ef0f15ab6ab8494bda13e659cc"
+  },
+  "sub-xp109/eeg/sub-xp109_task-motorloc_eeg.eeg": {
+   "bytes": 271910400,
+   "sha256": "c32f57e9b12147093092357b37470ee566b96309259f7be08436598714975263"
+  },
+  "sub-xp109/eeg/sub-xp109_task-motorloc_eeg.vhdr": {
+   "bytes": 11679,
+   "sha256": "837d899799253202ceffe1850c593d6d434904f42dd1859f520769f7c4fbde39"
+  },
+  "sub-xp109/eeg/sub-xp109_task-motorloc_eeg.vmrk": {
+   "bytes": 6259,
+   "sha256": "0a89090e1f8d82dc301962865124a433caaae53d2b5621d0a419e546f40e8805"
+  },
+  "sub-xp109/func/sub-xp109_task-MIpost_bold.json": {
+   "bytes": 2870,
+   "sha256": "415781fe015d7501f87730fa65447c87266db99685a5eb9f979186b01bb373da"
+  },
+  "sub-xp109/func/sub-xp109_task-MIpost_bold.nii.gz": {
+   "bytes": 48181739,
+   "sha256": "b06da3f3e1d4d78063f270355e0e4ffc6fc3973613381121a709a6f1ac935763"
+  },
+  "sub-xp109/func/sub-xp109_task-MIpre_bold.json": {
+   "bytes": 2867,
+   "sha256": "4bf9fb68a51f5b2ae824d6088c88b5113674b5997d84827858c3ad9f28ddb472"
+  },
+  "sub-xp109/func/sub-xp109_task-MIpre_bold.nii.gz": {
+   "bytes": 47819199,
+   "sha256": "4c9d727d056950be5eeccdcfda093a7fe8546ce31205dff499474a77992d3026"
+  },
+  "sub-xp109/func/sub-xp109_task-eegNF_bold.json": {
+   "bytes": 2890,
+   "sha256": "0baccd92c95050b770c4b67d660a818ce3f010cf7147a55d505d100a1ad1c40a"
+  },
+  "sub-xp109/func/sub-xp109_task-eegNF_bold.nii.gz": {
+   "bytes": 95433753,
+   "sha256": "4143da4bcc6eae9cfb8e0a71f482ff01125eaa15d2120aac03807cfd5567110e"
+  },
+  "sub-xp109/func/sub-xp109_task-eegfmriNF_bold.json": {
+   "bytes": 2894,
+   "sha256": "931a13436d7c115b6f6731a47b4927008d2b431ad0855947f814625e0121b3fc"
+  },
+  "sub-xp109/func/sub-xp109_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 95304921,
+   "sha256": "d33a4952927b60efc9bc1bcf5b00a2895812fa1d14f3efa19029541eda9a914c"
+  },
+  "sub-xp109/func/sub-xp109_task-fmriNF_bold.json": {
+   "bytes": 2891,
+   "sha256": "2a7b9d3ebba339bed88118e0029e3e9d21b61fc1e98d76031f5c82b3ffecc90e"
+  },
+  "sub-xp109/func/sub-xp109_task-fmriNF_bold.nii.gz": {
+   "bytes": 95068648,
+   "sha256": "f488efa43a9c58a9ed9fb3722a2767d7302c9beda50f6b48537414aadf6d5b11"
+  },
+  "sub-xp109/func/sub-xp109_task-motorloc_bold.json": {
+   "bytes": 2917,
+   "sha256": "7f84d88e69c2c2a2e794043f596316a73874df20ae625adf04d62a417cfc005f"
+  },
+  "sub-xp109/func/sub-xp109_task-motorloc_bold.nii.gz": {
+   "bytes": 74788929,
+   "sha256": "726d915196c8962378c9883ea367899d8ffef4c3ac69b4748182dbc0ac2a8013"
+  },
+  "sub-xp110/anat/sub-xp110_T1w.json": {
+   "bytes": 2144,
+   "sha256": "d75749ba0fcef0a5823d0ac35769cac299ece8141f557c56308e9899eff71d7a"
+  },
+  "sub-xp110/anat/sub-xp110_T1w.nii.gz": {
+   "bytes": 41282271,
+   "sha256": "dde0bf527631953fa6ace122513fbe02643d80523a766cd94aab375db5ed6ecc"
+  },
+  "sub-xp110/eeg/sub-xp110_task-MIpost_eeg.eeg": {
+   "bytes": 143616000,
+   "sha256": "023d033bbcf2955d89b9f8bfbeeac0df33fb980b55647870d1ada5a5ba1ceac0"
+  },
+  "sub-xp110/eeg/sub-xp110_task-MIpost_eeg.vhdr": {
+   "bytes": 11814,
+   "sha256": "33f4ef692fb704ec666a9067744df6436959a4c2a531335234f649eed3ba1344"
+  },
+  "sub-xp110/eeg/sub-xp110_task-MIpost_eeg.vmrk": {
+   "bytes": 4095,
+   "sha256": "a5ec447b7c5f7650b973249e40c4d8d19088bb8673146bee75c0d51be5fffd52"
+  },
+  "sub-xp110/eeg/sub-xp110_task-MIpre_eeg.eeg": {
+   "bytes": 141248000,
+   "sha256": "8059a45ee4912be43a8e6a78a5c7960ef7d587252c7b812a2e73afad23c4f300"
+  },
+  "sub-xp110/eeg/sub-xp110_task-MIpre_eeg.vhdr": {
+   "bytes": 11812,
+   "sha256": "ce9507a84fb3fc5a667fe3ccdf6e865078af7ba5602e49d7314391a82730b63e"
+  },
+  "sub-xp110/eeg/sub-xp110_task-MIpre_eeg.vmrk": {
+   "bytes": 4061,
+   "sha256": "dea7bcd0cdbbb0450fe33c81e932bd79787a21ef511a68fdaf90f41f73a849cc"
+  },
+  "sub-xp110/eeg/sub-xp110_task-eegNF_eeg.eeg": {
+   "bytes": 281484800,
+   "sha256": "c18ddedb134b4e21259ce65015322444eac3b62f596ea6409dd3f6b63c8edc98"
+  },
+  "sub-xp110/eeg/sub-xp110_task-eegNF_eeg.vhdr": {
+   "bytes": 11812,
+   "sha256": "d3044b765c5d936ca5753fa8899ea511bf53b2d65b26e2895ed7049b78cf005e"
+  },
+  "sub-xp110/eeg/sub-xp110_task-eegNF_eeg.vmrk": {
+   "bytes": 7860,
+   "sha256": "6053247012d27f6ec62192bd84e6ac6a3853e47c7de9815c77f5495cee707df4"
+  },
+  "sub-xp110/eeg/sub-xp110_task-eegfmriNF_eeg.eeg": {
+   "bytes": 273907200,
+   "sha256": "d9adeb0039d580b3ae9b2cb359d58fc46a30b02e9208376f1c76affedc1fe4b0"
+  },
+  "sub-xp110/eeg/sub-xp110_task-eegfmriNF_eeg.vhdr": {
+   "bytes": 11820,
+   "sha256": "c3b8a323843da02a4b6525f64c473f4b703573bac24c7b73bd9a6a5908c206cf"
+  },
+  "sub-xp110/eeg/sub-xp110_task-eegfmriNF_eeg.vmrk": {
+   "bytes": 7735,
+   "sha256": "d6b3f0cd1ed83c08d12510f9012cc508d6180593a363a3fdb458cb80cbc63e9b"
+  },
+  "sub-xp110/eeg/sub-xp110_task-fmriNF_eeg.eeg": {
+   "bytes": 274470400,
+   "sha256": "85e292499c13b278db60603ef3c9f4b9494b0b7125b40ff53dcd4b805fcc7643"
+  },
+  "sub-xp110/eeg/sub-xp110_task-fmriNF_eeg.vhdr": {
+   "bytes": 11814,
+   "sha256": "c816fb15d52d94f63dd3a5b3e61b825be11996c1c01844109b5cced5dd88e398"
+  },
+  "sub-xp110/eeg/sub-xp110_task-fmriNF_eeg.vmrk": {
+   "bytes": 7795,
+   "sha256": "cf741e9578cebecaa93efaa97eafff8667585bfab24804b927b285e978741e5b"
+  },
+  "sub-xp110/eeg/sub-xp110_task-motorloc_eeg.eeg": {
+   "bytes": 223820800,
+   "sha256": "2d510b72e1211889d150b4401398cd59e17950e1b8f54b7493cead730570095d"
+  },
+  "sub-xp110/eeg/sub-xp110_task-motorloc_eeg.vhdr": {
+   "bytes": 11818,
+   "sha256": "3eb88345d7816c077481f9a1ee2589fa351a5c30532d5c6eae3bba8232c0577b"
+  },
+  "sub-xp110/eeg/sub-xp110_task-motorloc_eeg.vmrk": {
+   "bytes": 6277,
+   "sha256": "39a2b92e31001e291a95eb9929e5680b581d10a5f2636d7a6a0b50802846da74"
+  },
+  "sub-xp110/func/sub-xp110_task-MIpost_bold.json": {
+   "bytes": 2868,
+   "sha256": "9b5e99bd10a78bb5e4d071c63cb2849a6bb9d8fdb79e19909a1347242578d643"
+  },
+  "sub-xp110/func/sub-xp110_task-MIpost_bold.nii.gz": {
+   "bytes": 48062131,
+   "sha256": "c3ba33e6a15382d46fd425e414a643d1e7c0a56a2d2ca21d2dd506c5e092839a"
+  },
+  "sub-xp110/func/sub-xp110_task-MIpre_bold.json": {
+   "bytes": 2865,
+   "sha256": "67f7cd8f31de5330e7d344c72743db084e32284c107580329c15ed0d5e3e6fb2"
+  },
+  "sub-xp110/func/sub-xp110_task-MIpre_bold.nii.gz": {
+   "bytes": 48041789,
+   "sha256": "2ea492323b43f38d6205e8694a1237101cb89159d880087af3c51193c4b480b6"
+  },
+  "sub-xp110/func/sub-xp110_task-eegNF_bold.json": {
+   "bytes": 2879,
+   "sha256": "b07a855369525771efe705fe24174752e52457e6bef1706494a2bbb50cdf33f9"
+  },
+  "sub-xp110/func/sub-xp110_task-eegNF_bold.nii.gz": {
+   "bytes": 95577703,
+   "sha256": "e61dd856f30293972736aa12a010a65f8cc52926b90cd77fbb7f91208fafc274"
+  },
+  "sub-xp110/func/sub-xp110_task-eegfmriNF_bold.json": {
+   "bytes": 2891,
+   "sha256": "3cae6b853afb141694d57922c8170e46f085ffd53dccee38c0598db8e40abb30"
+  },
+  "sub-xp110/func/sub-xp110_task-eegfmriNF_bold.nii.gz": {
+   "bytes": 95438053,
+   "sha256": "9676761ff0de8dfd7d2aa349143436a56ec5e98a1b1c8bb3883c952b67ac320a"
+  },
+  "sub-xp110/func/sub-xp110_task-fmriNF_bold.json": {
+   "bytes": 2882,
+   "sha256": "9f77e7795364dff255eb632b1e879978c36bfc28b69e8b8c2a99a38f9533c4a4"
+  },
+  "sub-xp110/func/sub-xp110_task-fmriNF_bold.nii.gz": {
+   "bytes": 95547109,
+   "sha256": "c845e9a7386975f9738e9d50f30c5f197bb96e137267b902d3ba3fa030ae0ef7"
+  },
+  "sub-xp110/func/sub-xp110_task-motorloc_bold.json": {
+   "bytes": 2913,
+   "sha256": "1efc04ca2ebb7e7563e8c7a6639b8124c0fe41123cef52bc2d063d981c60eebb"
+  },
+  "sub-xp110/func/sub-xp110_task-motorloc_bold.nii.gz": {
+   "bytes": 75181602,
+   "sha256": "4cc25b121248c56e30bae1fd949e7e987811ae0c5ae53d21337cf8c442f53b77"
+  },
+  "task-MIpost_bold.json": {
+   "bytes": 1213,
+   "sha256": "4d3ddfb3ac0fc77a6ca41d845e7672d6e8c991924c003e474b41f320c5d0f140"
+  },
+  "task-MIpost_channels.tsv": {
+   "bytes": 1338,
+   "sha256": "7e4ba1278ae7e3ab3ade345393322f0461ad52dc9d2bc258a58d2166f596b598"
+  },
+  "task-MIpost_eeg.json": {
+   "bytes": 132,
+   "sha256": "719e9cb67b6d6cec19f2a8bab123eb898e6f84de3193fd7ddf8d2650a1d1df37"
+  },
+  "task-MIpost_events.tsv": {
+   "bytes": 313,
+   "sha256": "235f64e4691fa025d8643ba84ba9ceecd49a999175de0dbfd9fb534d31159bc2"
+  },
+  "task-MIpre_bold.json": {
+   "bytes": 1212,
+   "sha256": "776c10c92c64ddf29dd7af32292eaadcf58c51ef2fd27252a55db907f2d949bd"
+  },
+  "task-MIpre_channels.tsv": {
+   "bytes": 1338,
+   "sha256": "7e4ba1278ae7e3ab3ade345393322f0461ad52dc9d2bc258a58d2166f596b598"
+  },
+  "task-MIpre_eeg.json": {
+   "bytes": 131,
+   "sha256": "2aef49ab624fb59ac91c4a582abd8dc045991c48fe2fffa45d694fff1808b2e5"
+  },
+  "task-MIpre_events.tsv": {
+   "bytes": 313,
+   "sha256": "235f64e4691fa025d8643ba84ba9ceecd49a999175de0dbfd9fb534d31159bc2"
+  },
+  "task-eegNF_bold.json": {
+   "bytes": 1220,
+   "sha256": "df9ea048db7b09b30f89af477d69e95fd1d1edab4ccd6c25ca452c796eb33ffe"
+  },
+  "task-eegNF_channels.tsv": {
+   "bytes": 1338,
+   "sha256": "7e4ba1278ae7e3ab3ade345393322f0461ad52dc9d2bc258a58d2166f596b598"
+  },
+  "task-eegNF_eeg.json": {
+   "bytes": 131,
+   "sha256": "8c1d929c1721f7c4bb6ce9deb21c5776c3ff74fd097d00dd1d434fb332913675"
+  },
+  "task-eegNF_events.tsv": {
+   "bytes": 590,
+   "sha256": "8b4618fdc085fbf487c56dfaaf849f686db9f9a36bc0e0da239bf109120dac01"
+  },
+  "task-eegfmriNF_bold.json": {
+   "bytes": 1224,
+   "sha256": "4d51d7dd38b54fc2c53cc2c9a01984ac41b90e1592e333505ba239d48239c092"
+  },
+  "task-eegfmriNF_channels.tsv": {
+   "bytes": 1338,
+   "sha256": "7e4ba1278ae7e3ab3ade345393322f0461ad52dc9d2bc258a58d2166f596b598"
+  },
+  "task-eegfmriNF_eeg.json": {
+   "bytes": 135,
+   "sha256": "eb76be4648ed33c7a7a47ff1c4c0eeb6128690272e51fa7af402312760caa878"
+  },
+  "task-eegfmriNF_events.tsv": {
+   "bytes": 591,
+   "sha256": "b9b951226b0e68b24445ac29b3f4462f501b17dd23ebaadac1f2ba08c130bb9f"
+  },
+  "task-fmriNF_bold.json": {
+   "bytes": 1221,
+   "sha256": "8345a0b6891e3c8850e4bc35c2e5c0ba5f2e7881b0bd399e2a6e9998fa7ff5d1"
+  },
+  "task-fmriNF_channels.tsv": {
+   "bytes": 1338,
+   "sha256": "7e4ba1278ae7e3ab3ade345393322f0461ad52dc9d2bc258a58d2166f596b598"
+  },
+  "task-fmriNF_eeg.json": {
+   "bytes": 132,
+   "sha256": "f6d221b842efc465c918c51d2fca976bceb81d5b5d444df7f8324e8ab27f7267"
+  },
+  "task-fmriNF_events.tsv": {
+   "bytes": 592,
+   "sha256": "4e3ab62c73d2082e78e5d741506997f0330097ef24195af5feb7e09ecf145f00"
+  },
+  "task-motorloc_bold.json": {
+   "bytes": 1183,
+   "sha256": "34ad417e8307246490d6a0624875ed3719484da0ef417381f62bde5599acaa39"
+  },
+  "task-motorloc_channels.tsv": {
+   "bytes": 1338,
+   "sha256": "7e4ba1278ae7e3ab3ade345393322f0461ad52dc9d2bc258a58d2166f596b598"
+  },
+  "task-motorloc_eeg.json": {
+   "bytes": 134,
+   "sha256": "f7db1090e5c8ab9b42f2cf11f669d1a90f28f090b482694329f00280ea2c3cb6"
+  },
+  "task-motorloc_events.tsv": {
+   "bytes": 479,
+   "sha256": "04702ef247cbb5752dabb84411352677e7dba2f72ce048d76bcc91fed463f5c1"
+  }
+ },
+ "generated_utc": "2026-08-06T18:27:20+00:00",
+ "manifest_sha256": "9266e5769456f78f1cfb3fb96037a1879d78d09e57f6be2175e3dceb1a014e7a",
+ "n_files": 546,
+ "root": "/home/brandonin/Documents/scwbd-wt/ada/data/ds002336/2.0.2",
+ "total_bytes": 19012914056,
+ "version": "2.0.2"
+}
