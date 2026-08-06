@@ -198,3 +198,99 @@ confirming without asking that makes it worse, not better.*
 - `git_sha()` is `-dirty` on every checkpoint and distinguishes nothing. Use
   `corpus_git_sha` (now recorded in the training summary) and the split
   fingerprint.
+
+---
+
+# ADDENDUM — 2026-08-06, after the pilot launched and crashed
+
+The binding blocker in §1–§5 above is **resolved and closed** (Hodgkin's
+`FOUNDATION_FAMILY_BINDING`, merged at `3260e4a`). Audit clean on both arms,
+mutation test passed with an observed raise. Do not redo any of it.
+
+## Current blocker: `set_mechanistic_theta` is never called
+
+```
+scwbd.foundation.families.SpanViolation: family 'subcortex_accumb' has
+mechanistic backend 'basal_ganglia_gate' but no ParamPack was bound; call
+SCWBD.set_mechanistic_theta before rolling out. Running it on backend defaults
+would silently drop the anatomical conditioning.
+```
+
+`family_ops.py:275`. The training loop never calls it. **This is a wiring gap in
+`train.py`, not a defect in `family_ops`** — the error names the call it wants.
+
+Third guard today to fire correctly, and the most important of the three: it
+caught the run producing *completed, plausible numbers* with the anatomical
+conditioning silently dropped — the exact failure the per-family design exists
+to avoid.
+
+### Two questions that must be settled with 🌊 Hodgkin BEFORE writing the fix
+
+Guessing here reproduces the pattern that cost three rounds today.
+
+1. **Where does θ bind — construction or per-batch?** The simulated corpus
+   carries **per-trajectory θ**, so a construction-time bind would pin every
+   batch to one draw and quietly destroy the conditioning it exists to carry.
+   Strong prior that this must be per-batch, inside the loop, next to where
+   `theta` is already sampled — `train.py:real_losses` and its `sim_losses`
+   sibling both obtain `th` and hand it to `model.rollout(...)`. That is
+   almost certainly the seam. **Confirm before writing.**
+2. **Per-family or global?** The message names `subcortex_accumb`, but **seven**
+   subcortical families carry engineered backends
+   (`accumb, amyg, caud, hippo, pal, put, thal`). If each needs its own
+   `ParamPack`, the bind is per-family and the call signature matters.
+
+Note the asymmetry that makes this urgent: the **control arm has no mechanistic
+families**, so it will not hit this. A fix that satisfies only the treatment arm
+is not verified by the control passing.
+
+## Required before any relaunch: a smoke rollout
+
+Architect's instruction, and every launch-blocking defect today would have
+surfaced in under a minute: **one batch, forward and backward, before the run
+commits to hours.** Binding drift, capacity drift and this `SpanViolation` are
+all constructor- or first-rollout-time failures. Today they were found by
+launching and reading a log nobody was watching.
+
+Suggested: a `--smoke` flag on `scwbd.foundation.train` that builds, runs one
+batch fwd+bwd through **both** loss paths (`sim_losses` and `real_losses`, since
+this crash was in a rollout), reports `noise_floor_report()`, and exits non-zero
+on any raise. Then make it a precondition of launch rather than a habit.
+
+## Relaunch state — verified, do not re-derive
+
+| item | value |
+|---|---|
+| treatment | 2,512,492 params |
+| control | 2,500,444 at `hidden: 418` (−0.48%) |
+| binding audit | 0 problems / 0 unclaimed, both arms |
+| mutation test | PASS, `BindingDriftError` observed |
+| split | 44 / 11 / 54 of 109, R10 audit PASSED |
+| memory | 20 GB, fraction 0.164 |
+| corpus | complete, `/data/scwbd/sim_corpus_414` |
+
+Launch command and expected first lines are in §5.
+
+## Downstream
+
+⚡ Faraday's impulse pilot is staged at `awaiting_checkpoint` behind this run.
+**Check its `status` field, not the exit code** — all three states exit 0 by
+design, and `checkpoint_unreadable` looks like success to anything reading `$?`.
+First checkpoint lands 250 steps into T1.
+
+## Still owed (unchanged from §6–§7)
+
+- Positive `decorative_guards.md` entry — now **three** guards that fired
+  correctly today: `BindingDriftError`, Faraday's weight-movement check, and
+  this `SpanViolation`. The register has one positive example and should have
+  four. The common property worth naming: each asserts a claim *about the world*
+  that the world can falsify, rather than reporting a number it computes itself.
+- The negative pair: my decorative diagnosis, and the architect's confirmation
+  of it without checking.
+- **RL-10's companion, agreed and unwritten:** *a capacity match is a
+  measurement against a specific tree and does not survive a merge.* Evidence:
+  the control was matched at `hidden=314` against a treatment arm 34 commits
+  old, claimed +0.27%, was **−25.83%**. Had it launched, A1 would have measured
+  capacity and called it structure.
+- `theta_conditioned_pooled` (no config surface exists — the long pole), then
+  the 4-fold CV harness.

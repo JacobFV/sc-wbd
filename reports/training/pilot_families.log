@@ -1,412 +1,55 @@
 [mem] CUDA reserve capped at 20.0 GB (fraction=0.164 of 121.6 GB unified pool)
-compiler->torch binding is incomplete:
-  binding 'observation:anatomical_prior:nuisance' -> 'readout.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'observation:sim_wholebrain:nuisance' -> 'readout.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'observation:tribe_v2_teacher:nuisance' -> 'readout.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'operator:local_field:params' -> 'local.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'operator:local_field:residual' -> 'residual.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
+{
+  "parameters": {
+    "coupling": 3,
+    "msg_proj": 36,
+    "msg_readin": 1872,
+    "context": 17792,
+    "family_local": 1812212,
+    "family_residual": 364772,
+    "family_readout": 26082,
+    "assimilate": 234587,
+    "observation": 2001,
+    "eeg": 27481,
+    "bold": 3312,
+    "behaviour": 22342,
+    "TOTAL": 2512492
+  },
+  "posterior": 1694976
+}
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=44/11/54 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 290673 windows, train/val/test = 117639/29274/143760
 Traceback (most recent call last):
   File "<frozen runpy>", line 198, in _run_module_as_main
   File "<frozen runpy>", line 88, in _run_code
   File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 997, in <module>
     main()
-  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 991, in main
-    t = FoundationTrainer(cfg, resume=not a.no_resume, quick=a.quick)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 216, in __init__
-    self.compiler_report: dict[str, Any] = self._bind_compiler_masks()
-                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 274, in _bind_compiler_masks
-    raise BindingDriftError(
-BindingDriftError: compiler->torch binding is incomplete; refusing to train a model whose gradient masks would not govern the tensors they name:
-  binding 'observation:anatomical_prior:nuisance' -> 'readout.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'observation:sim_wholebrain:nuisance' -> 'readout.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'observation:tribe_v2_teacher:nuisance' -> 'readout.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'operator:local_field:params' -> 'local.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'operator:local_field:residual' -> 'residual.*' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Default_Temp_3:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SalVentAttn_FrOperIns_5:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_SomMot_20:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:7Networks_LH_Vis_1:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Laccumb:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lamyg:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lcaud:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:adaptation' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:adaptation' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:adaptation' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:adaptation' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:hemo' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:hemo' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:hemo' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:hemo' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_e' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_e' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_e' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_e' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_i' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_i' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_i' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:rate_i' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:spectral' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:spectral' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:spectral' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:spectral' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:uncertainty' -> 'local.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:uncertainty' -> 'local.films.*.region_scale' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:uncertainty' -> 'local.films.*.region_shift' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-  binding 'region:Lhippo:state:uncertainty' -> 'residual.embed' matches no parameter of SCWBD; the declaration and the implementation have drifted, so this permission is decorative
-
-Fix scwbd/foundation/compiler_bridge.py:FOUNDATION_BINDING / FOUNDATION_FROZEN_BINDING so every declared group names tensors that exist.  tests/foundation/test_compiler_binding.py covers this.
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 993, in main
+    return t.train()
+           ^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 905, in train
+    noise_floor_calibrations = [self.calibrate_noise_floor(tag="init")]
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/train.py", line 871, in calibrate_noise_floor
+    roll = self.model.rollout(y_context=src, theta=th, n_steps=tgt_e.shape[1], enforce_r05=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/model.py", line 763, in rollout
+    x, msg, me, re_ = self.step(
+                      ^^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/model.py", line 676, in step
+    f_mech = self.family_local(x, cpl, film, packs=getattr(self, "_family_packs", None))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/scwbd-wt/turing/scwbd/foundation/family_ops.py", line 275, in forward
+    raise SpanViolation(
+scwbd.foundation.families.SpanViolation: family 'subcortex_accumb' has mechanistic backend 'basal_ganglia_gate' but no ParamPack was bound; call SCWBD.set_mechanistic_theta before rolling out. Running it on backend defaults would silently drop the anatomical conditioning.
