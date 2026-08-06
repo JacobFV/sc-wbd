@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Thirteen times in this project an
+The generalisation was forced by evidence.  Fifteen times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -183,6 +183,73 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         still_reported=True,
     ),
     UninformativeField(
+        name="a gate whose threshold is read from the artifact it judges",
+        reads="PASS, at whatever bound the judged party currently declares",
+        why_it_cannot_discriminate=(
+            "THE MUTABLE-THRESHOLD VARIANT, found by bench re-running N9 rather than "
+            "accepting the relayed verdict. N9 reads discrepancy_fraction from "
+            "scwbd.runtime AT RUN TIME rather than copying it -- adopted as an anti-staleness "
+            "measure, and it does prevent staleness. It also makes the threshold editable by "
+            "the party being judged, AFTER seeing the result, with no record in the gate of "
+            "what the bound was. Agent Faraday measured max_relative_overestimate = 1.0628904 "
+            "against a DECLARED bound of 0.8 and correctly reported FAIL. Bench re-ran it and "
+            "measured 1.0628904 -- the physics reproduces EXACTLY -- against a bound of 2.29, "
+            "and the gate returned PASS. The runtime now declares "
+            "solution_discrepancy_fraction = (0.0, 1.35) composed with a geometry term. "
+            "The gate cannot distinguish 'the approximation is inside its bound' from 'the "
+            "bound was moved until the approximation fit', which is precisely agent "
+            "Hodgkin's criterion between REPAIRING an instrument and ACCOMMODATING a failure"
+        ),
+        remedy=(
+            "read the threshold at run time AND record it in the report, then FAIL when it "
+            "moves without a recorded, dated justification. Anti-staleness and "
+            "anti-mutability are different requirements and this design bought the first by "
+            "surrendering the second. Note the widening may be entirely justified -- the "
+            "derivation is documented at scwbd/runtime/backends.py:271 -- but a gate that "
+            "cannot tell a justified widening from an accommodating one is not adjudicating"
+        ),
+        found_by="agent J (bench), by re-running rather than relaying",
+        owner="bench (gate design); intervene + runtime (the bound)",
+        still_reported=True,
+        recurrence=(
+            "the live instance of the preregistration-inheritance row: a threshold that "
+            "moved between the run that reported it and the run that checked it"
+        ),
+    ),
+    UninformativeField(
+        name="a validation case on which the mechanism under test is degenerate",
+        reads="3.8e-12 -- round-off. A perfect result, from a correct test, on a real coil",
+        why_it_cannot_discriminate=(
+            "THE DEGENERATE-TEST-CASE VARIANT, and it is the most dangerous entry in this "
+            "register because nothing about it looks wrong. The fallback field model's "
+            "tangential-projection approximation is EXACT for a circular coil: for loops "
+            "coaxial with the head radius the primary vector potential is purely azimuthal, "
+            "phi-hat . r-hat = 0 everywhere, the Neumann data vanishes identically, there is "
+            "NO secondary field, and the projection is the exact answer. A validation suite "
+            "that used a circular coil -- the easier, more symmetric, more obvious phantom -- "
+            "would have certified the approximation as perfect. "
+            "CRUCIALLY THIS IS NOT THE RESOLUTION VARIANT: the error is a function of source "
+            "SYMMETRY, not of a discretisation parameter. Nothing converges to reveal it and "
+            "no amount of refinement finds it, because on that case there is no error to "
+            "refine away. Only changing the coil does"
+        ),
+        remedy=(
+            "agent Faraday's corollary to the guard rule, and it generalises past physics: "
+            "CHOOSE THE TEST CASE BY WHAT BREAKS THE MECHANISM, NOT BY WHAT IS CONVENIENT TO "
+            "COMPUTE. Ask which symmetry of the test case the mechanism under test is blind "
+            "to, then break it. N9 sweeps both the degenerate circular case and the "
+            "figure-eight case so the exact result cannot be quoted alone"
+        ),
+        found_by="agent Faraday",
+        owner="intervene (agent Faraday); the lesson is everyone's",
+        still_reported=True,
+        recurrence=(
+            "distinct from every other row: the instrument varies, measures the right "
+            "quantity, has adequate resolution and was chosen before the data -- and the "
+            "TEST CASE annihilates the effect"
+        ),
+    ),
+    UninformativeField(
         name="uniform-mesh error as a convergence indicator at contact geometry",
         reads="falling, then rising, then falling again under refinement",
         why_it_cannot_discriminate=(
@@ -273,6 +340,17 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         found_by="agent Turing (caught that the fix left the bar contaminated)",
         owner="training (agent I); bench adjudicates",
         still_reported=True,
+        recurrence=(
+            "THE SHARPEST ILLUSTRATION THIS REGISTER WILL GET, because nothing was skipped: "
+            "condition 2 was preregistered, honoured, escalated when it fired, and formally "
+            "adjudicated -- and it was STILL structurally incapable of discriminating a "
+            "model that underperformed from a number that was never achievable. Every "
+            "procedural safeguard was applied correctly to a guard that could not "
+            "discriminate. Process rigour does not manufacture discriminating power; only a "
+            "reference class does. Policy adopted from the ruling: A PREREGISTERED "
+            "THRESHOLD WITH NO REFERENCE CLASS IS A GUESS WITH A TIMESTAMP. Remedy in "
+            "force: scwbd.bench.adjudication.STAGE_II_BAR, set in matched-control form"
+        ),
     ),
     UninformativeField(
         name="a caveat that does not change the claim",
@@ -354,7 +432,20 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
             "retracted BY THEIR AUTHOR rather than caught by the reviewer. The author caught "
             "two of its three overclaims itself; the reviewer caught none by testing. "
             "Adopted protocol: when handed a structural finding, ask what would falsify it "
-            "and whether that test has been run, BEFORE relaying it"
+            "and whether that test has been run, BEFORE relaying it. "
+            "FOURTH INSTANCE, and the first where the defect was in the STATISTIC rather "
+            "than the claim: a relayed '2.21% mean relative difference' was the mean of "
+            "|differences|; the signed mean is 1.72%, the larger figure counting the one "
+            "step where the treatment was BETTER as though it were worse. Relayed without "
+            "being recomputed. "
+            "SUB-CASE supplied by the coordinator against itself, and it is the sharpest "
+            "form: accepting a GENEROUS argument from the party it DISADVANTAGES is the "
+            "same failure as accepting a flattering one from the party it favours. Agent "
+            "Turing offered an asymmetry argument that cut against its own artifact; it was "
+            "endorsed as sharp and relayed, and it was wrong on ground Turing themselves had "
+            "established two messages earlier. THE AUDIT WAS OF THE DIRECTION OF THE "
+            "INCENTIVE, NOT OF THE VALIDITY OF THE ARGUMENT. An argument that costs its "
+            "author something is not thereby correct"
         ),
         still_reported=True,
     ),

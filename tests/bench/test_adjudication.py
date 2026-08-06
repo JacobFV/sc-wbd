@@ -231,3 +231,138 @@ def test_layer3_ruling_separates_a_bad_bar_from_a_bad_model():
     assert "matched controls" in src.lower()
     # layer 1 is not softened
     assert "does not soften" in src
+
+
+# --------------------------------------------------------------------------
+# Stage II bar: preregistered by bench in matched-control form
+# --------------------------------------------------------------------------
+def test_stage_II_bar_is_stated_in_matched_control_form_with_its_reference_class():
+    from scwbd.bench.adjudication import STAGE_II_BAR as B
+
+    assert len(B.controls) == 3
+    joined = " ".join(B.controls)
+    assert "lr0" in joined and "shuffled_targets" in joined and "train_mean" in joined
+    assert "IDENTICAL budget" in B.reference_class
+    # set cleanly BECAUSE it does not require the trajectory
+    assert "no loss values, no scores, no curves" in B.set_before
+    assert "DISQUALIFIED" in B.set_before          # the Stage I contrast, recorded
+    assert B.margin_status.startswith("prior_specified_sensitivity")
+    assert "may not loosen them after the numbers are seen" in B.margin_status
+
+
+def test_stage_II_bar_requires_the_whole_reference_class():
+    from scwbd.bench.adjudication import evaluate_matched_control_bar
+
+    rep = evaluate_matched_control_bar(
+        learned={s: 1.0 for s in range(5)},
+        controls={"lr0": {s: 2.0 for s in range(5)}})     # two controls missing
+    assert rep.status == "COULD_NOT_RUN"
+    reason = " ".join(rep.blocking_reasons)
+    assert "shuffled_targets" in reason and "train_mean" in reason
+    assert "will not substitute a smaller one after the fact" in reason
+
+
+def test_stage_II_bar_passes_a_model_that_dominates_its_controls():
+    from scwbd.bench.adjudication import evaluate_matched_control_bar
+
+    ctrl = {n: {s: 2.0 for s in range(5)} for n in ("lr0", "shuffled_targets", "train_mean")}
+    rep = evaluate_matched_control_bar(learned={s: 0.4 for s in range(5)}, controls=ctrl)
+    assert rep.status == "PASS"
+    assert rep.artifacts["median_ratio"] == pytest.approx(0.2)
+
+
+def test_stage_II_bar_fails_a_model_level_with_its_controls():
+    from scwbd.bench.adjudication import evaluate_matched_control_bar
+
+    ctrl = {n: {s: 2.0 for s in range(5)} for n in ("lr0", "shuffled_targets", "train_mean")}
+    rep = evaluate_matched_control_bar(learned={s: 1.98 for s in range(5)}, controls=ctrl)
+    assert rep.status == "FAIL"
+    assert "still not a verdict on the architecture" in rep.manifest.consequence_if_failed
+
+
+def test_stage_II_bar_refuses_a_verdict_that_moves_with_the_seed():
+    from scwbd.bench.adjudication import evaluate_matched_control_bar
+
+    ctrl = {n: {s: 2.0 for s in range(5)} for n in ("lr0", "shuffled_targets", "train_mean")}
+    flip = {0: 0.4, 1: 1.9, 2: 0.4, 3: 1.9, 4: 0.4}     # verdict depends on the draw
+    rep = evaluate_matched_control_bar(learned=flip, controls=ctrl)
+    assert rep.status == "FAIL"
+    sub = next(s for s in rep.subchecks if s.name == "verdict_stable_across_seeds")
+    assert sub.status == "FAIL"
+    assert "coin flip" in sub.metrics[0].note
+
+
+def test_sampling_bias_travels_beside_layer_one_not_beneath_it():
+    import scwbd.bench.adjudication as adj
+
+    src = open(adj.__file__, encoding="utf-8").read()
+    assert "AND BESIDE IT, NOT BENEATH IT" in src
+    assert "must quote this in the same breath" in src
+
+
+def test_condition_3_lesson_is_carried_forward():
+    from scwbd.bench.adjudication import CONDITION_3_LESSON
+
+    assert "never tested against the false-hypothesis world" in CONDITION_3_LESSON
+    assert "should not have existed in that form" in CONDITION_3_LESSON
+
+
+# --------------------------------------------------------------------------
+# Condition 3c: the property both predecessors lacked
+# --------------------------------------------------------------------------
+def _series(n=60, seed=0, spikes=()):
+    rng = np.random.default_rng(seed)
+    x = 2.0 + rng.normal(0, 0.05, size=n)
+    for i in spikes:
+        x[i] = 20.0
+    return x
+
+
+def test_spike_guard_verdict_is_invariant_under_an_affine_rescale():
+    """THE test both predecessors would have failed.
+
+    Condition 3 compared against a running floor whose scale changed; 3b against
+    a sibling run whose pipeline changed. A normaliser fix rescales the metric —
+    and a within-run median/MAD z-score is equivariant, so the verdict cannot
+    move under it.
+    """
+    from scwbd.bench.adjudication import spike_guard
+
+    x = _series(spikes=(40, 44, 48, 52))
+    base = spike_guard(x)
+    for a, b in ((100.0, 0.0), (0.01, 5.0), (1.0, -1.7), (763.0, 12.5)):
+        moved = spike_guard(a * x + b)
+        assert moved.fired == base.fired, f"verdict moved under x -> {a}x + {b}"
+        assert moved.n_events == base.n_events
+
+
+def test_spike_guard_fires_on_an_injected_rate_increase():
+    from scwbd.bench.adjudication import spike_guard
+
+    quiet = spike_guard(_series())
+    assert not quiet.fired
+    loud = spike_guard(_series(spikes=(40, 44, 48, 52)))
+    assert loud.fired
+    assert "rose from" in loud.reason
+
+
+def test_spike_guard_does_not_fire_on_a_single_anecdote():
+    """Both predecessors fired on one event. One event is an anecdote."""
+    from scwbd.bench.adjudication import spike_guard
+
+    assert not spike_guard(_series(spikes=(45,))).fired
+
+
+def test_spike_guard_reports_blindness_rather_than_quiet():
+    from scwbd.bench.adjudication import spike_guard
+
+    r = spike_guard(np.full(60, 3.0))
+    assert r.degenerate and not r.fired
+    assert "BLIND here, not" in r.reason
+
+
+def test_spike_guard_needs_enough_points_to_speak():
+    from scwbd.bench.adjudication import spike_guard
+
+    r = spike_guard([1.0, 2.0, 3.0])
+    assert r.degenerate and "need at least" in r.reason

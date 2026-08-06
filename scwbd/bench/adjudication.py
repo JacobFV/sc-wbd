@@ -549,6 +549,21 @@ CONDITION_3_OVERRIDE = DecisionUnderReview(
 #: not have existed in that form.
 CONDITION_3_RULING = "JUSTIFIED_ON_THE_MERITS; RECORDING_REQUIREMENT_UPHELD"
 
+#: THE PART TO CARRY FORWARD, and it is not the override. Justified-on-the-merits
+#: is not the same as well-designed: condition 3 should never have shipped with a
+#: remedy whose efficacy against the world where its hypothesis is FALSE had never
+#: been tested. A trigger is only a trigger if executing its remedy would change
+#: the quantity it triggers on. That is the same question as the standing
+#: recommendation -- before committing a threshold, ask what it would read in the
+#: world where the hypothesis is false; if the answer is "the same", it is a
+#: tripwire, not a trigger -- applied to the REMEDY rather than to the reading.
+#: Both belong in a threshold's design review, before it is committed.
+CONDITION_3_LESSON = (
+    "a trigger whose remedy was never tested against the false-hypothesis world "
+    "should not be written; the override was the right call on a condition that "
+    "should not have existed in that form"
+)
+
 
 # ==========================================================================
 # ADJ3 — was the condition-2 bar appropriate? (preregistered, pending)
@@ -641,6 +656,16 @@ ADJ1_CONFOUNDS = ("preregistered horizon (step 900) never reached; data stops at
 #: Stage I did not meet its own preregistered quality bar. Bench does not soften
 #: that and does not decorate it.
 #:
+#: AND BESIDE IT, NOT BENEATH IT -- this is the one consideration that could
+#: overturn the stated fact, so it travels WITH layer 1 rather than in a
+#: footnote: 1.1200 is a minimum over 46 SAMPLED steps on a log_every=20 grid,
+#: which is an UPPER BOUND on the true running minimum. The true value can only
+#: be LOWER, possibly below 1.0. An ~11% excursion below the observed minimum
+#: would be required, larger than any variation in the final 200 logged steps, so
+#: it is unlikely -- but unlikely is not measured, and this is the same grid
+#: limitation that sank the periodicity claim. Anyone quoting "did not meet its
+#: bar" must quote this in the same breath.
+#:
 #: Q1 -- does a bar calibrated on a defective instrument evidence anything?
 #: RULING: the MEASUREMENT is interpretable; the COMPARISON is not. "Is running-min
 #: below 1.0 on the post-fix metric" is well posed and was answered. Whether 1.0
@@ -707,3 +732,319 @@ CONDITION_2_LAYER3_RULING = (
     "ASYMMETRY_ARGUMENT_REJECTED; SAMPLING_BIAS_FAVOURS_THE_MODEL; "
     "BAR_INAPPROPRIATE_NO_REFERENCE_CLASS"
 )
+
+
+# ==========================================================================
+# STAGE II BAR — preregistered by bench, matched-control form
+# ==========================================================================
+@dataclass(frozen=True)
+class MatchedControlBar:
+    """A quality bar expressed as dominance over controls, not as an absolute.
+
+    The form exists because of what happened to Stage I's condition 2. An
+    absolute threshold inherits the defects of the instrument it was calibrated
+    against: when a normaliser fix moved the metric's scale by two orders of
+    magnitude, the bar's *value* never moved and its *difficulty* moved
+    completely, and no one could tell from the number. A ratio against controls
+    trained and evaluated under the same conditions does not have that failure
+    mode, because an instrument rescale moves both sides together and cancels.
+
+    This is agent Hodgkin's move generalised: they replaced a boundary-sitting
+    self-comparison (``errs[-1] < 0.5*errs[0]``, which passed 4/8 seeds) with
+    lr=0 and shuffled-target controls, and got a 4-7x margin that held on all 8.
+    """
+
+    id: str
+    stage: str
+    metric: str
+    #: named controls that constitute the reference class. ALL are required.
+    controls: tuple[str, ...]
+    #: PASS if the learned/best-control ratio is at or below this
+    pass_ratio: float
+    #: FAIL if it is at or above this
+    fail_ratio: float
+    #: seeds the verdict must be stable across
+    n_seeds: int
+    reference_class: str
+    set_by: str
+    set_before: str
+    rationale: str
+    margin_status: str = "prior_specified_sensitivity"
+
+    def as_dict(self) -> dict[str, Any]:
+        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+
+
+#: THE STAGE II BAR. Set by bench, handed to agent Turing as a fait accompli.
+#: Set while Stage II was at roughly step 20-100 of 700 and bench had seen NO
+#: Stage II trajectory: no loss values, no scores, no curves. That is what makes
+#: it a preregistration rather than a guess with a timestamp.
+STAGE_II_BAR = MatchedControlBar(
+    id="BAR2_stage_II_matched_control",
+    stage="II (interface and pathway calibration)",
+    metric="held-out sim_forecast_nll at end of Stage II",
+    controls=(
+        "lr0: identical model, identical data order, identical budget, learning rate 0 "
+        "(weights frozen at Stage II entry). Bounds what the stage's INITIALISATION "
+        "already achieves; anything not above this is not learning.",
+        "shuffled_targets: identical everything, targets permuted across the batch. "
+        "Preserves every marginal and destroys the input-target pairing, so beating it "
+        "shows the model uses the correspondence rather than the marginals.",
+        "train_mean: predict the training mean with a fitted spread. The floor any "
+        "calibrated model must clear, and the control that catches a model which has "
+        "learned only the scale of its targets.",
+    ),
+    pass_ratio=0.75,
+    fail_ratio=0.95,
+    n_seeds=5,
+    reference_class=(
+        "The three controls above, trained and evaluated under IDENTICAL budget, data, "
+        "schedule, corpus and instrument as the model under test. This is the reference "
+        "class Stage I's condition 2 did not have, and its absence is why that bar could "
+        "not discriminate an underperforming model from an unachievable number."
+    ),
+    set_by="agent J (bench), independent of the party being judged",
+    set_before=(
+        "any Stage II trajectory was disclosed to bench: no loss values, no scores, no "
+        "curves. Bench was DISQUALIFIED from setting a replacement Stage I bar for exactly "
+        "the opposite reason -- the post-fix trajectory had already been relayed -- and "
+        "records both facts so the distinction is auditable rather than asserted."
+    ),
+    rationale=(
+        "The STRUCTURE is load-bearing and the numbers are not. If the model dominates its "
+        "controls the way agent Hodgkin's cerebellar forward model did (14-24% of either "
+        "control, a 4-7x margin), ANY threshold between 0.2 and 0.9 returns the same "
+        "verdict. If it sits near 1.0, no threshold rescues it. The bar only does work in "
+        "the narrow band between, which is precisely the band where noise decides -- hence "
+        "the mandatory seed-stability requirement, which is the check that would have "
+        "caught the cerebellar test passing 4/8 on RNG luck."
+    ),
+    margin_status=(
+        "prior_specified_sensitivity: 0.75 and 0.95 are declared, not estimated, because no "
+        "run-to-run variability estimate for Stage II exists yet. Per thesis §2.7 they are "
+        "swept, not advertised as calibrated. Supplying a seed-variance estimate later may "
+        "TIGHTEN them; it may not loosen them after the numbers are seen."
+    ),
+)
+
+
+def evaluate_matched_control_bar(
+    bar: MatchedControlBar = STAGE_II_BAR,
+    *,
+    learned: Mapping[int, float] | None = None,
+    controls: Mapping[str, Mapping[int, float]] | None = None,
+    seed: int = 0,
+) -> ClaimReport:
+    """Judge a stage against its matched-control bar. Bench decides; trainer measures.
+
+    ``learned`` and each entry of ``controls`` map seed -> score on the metric
+    (lower is better). Every control named in the bar must be present: a
+    reference class with a member missing is not the reference class that was
+    preregistered.
+    """
+    man = ClaimManifest(
+        claim_id=bar.id,
+        claim_text=(
+            f"Stage {bar.stage} learned something its matched controls did not: "
+            f"{bar.metric} at or below {bar.pass_ratio:.2f} of the best control, stably "
+            f"across {bar.n_seeds} seeds."
+        ),
+        falsified_by=(
+            f"a ratio at or above {bar.fail_ratio:.2f} against the best control, or a "
+            "verdict that moves with the seed"
+        ),
+        consequence_if_failed=(
+            "Report that Stage II did not clear its matched-control bar, WITH the ratio and "
+            "the controls named. Unlike an absolute threshold this is interpretable: the "
+            "controls moved with the model under any instrument change, so the comparison "
+            "survives. It is a finding about this model on this corpus at this budget, and "
+            "still not a verdict on the architecture."
+        ),
+        thesis_reference="body.tex §11.4 (matched controls); set by bench, not by the trainer",
+        acceptance_thresholds=bar.as_dict(),
+        non_goals=["A bar cleared is not a claim gate passed. G1-G5 are unaffected."],
+        seed=seed,
+    )
+    missing: list[str] = []
+    if learned is None:
+        missing.append("learned scores by seed")
+    named = [c.split(":", 1)[0] for c in bar.controls]
+    for name in named:
+        if not controls or name not in controls:
+            missing.append(f"control {name!r} (named in the preregistered reference class)")
+    if missing:
+        return ClaimReport(
+            manifest=man,
+            subchecks=[could_not_run(
+                "matched_controls", "The preregistered reference class.",
+                "missing: " + "; ".join(missing) + ". A reference class with a member "
+                "missing is not the reference class that was preregistered, and bench will "
+                "not substitute a smaller one after the fact.",
+                falsified_by=man.falsified_by)],
+            kind="adjudication",
+            artifacts={"subject": f"bar {bar.id}", "bar": bar.as_dict()},
+            notes=["Preregistered before any Stage II trajectory reached bench.",
+                   bar.margin_status],
+        ).finalize()
+
+    seeds = sorted(set(learned) & set.intersection(*(set(controls[n]) for n in named)))
+    per_seed: dict[int, float] = {}
+    verdicts: dict[int, bool] = {}
+    for s in seeds:
+        best = min(controls[n][s] for n in named)
+        r = float(learned[s]) / max(abs(best), 1e-12)
+        per_seed[s] = r
+        verdicts[s] = r <= bar.pass_ratio
+    ratios = np.array(list(per_seed.values()), dtype=float)
+    median = float(np.median(ratios)) if ratios.size else float("nan")
+    stable = len(set(verdicts.values())) <= 1
+    artifacts = {
+        "subject": f"bar {bar.id}", "bar": bar.as_dict(),
+        "ratio_by_seed": per_seed, "median_ratio": median,
+        "seed_stable": stable, "n_seeds": len(seeds),
+    }
+    subs = [
+        SubCheck(
+            name="dominates_matched_controls",
+            description=f"{bar.metric} relative to the best of {named}.",
+            metrics=[Metric(
+                name="bar.median_ratio_vs_best_control", value=median, kind="accuracy",
+                interval=Interval(float(ratios.min()), float(ratios.max()))
+                if ratios.size else None,
+                exact=not ratios.size, threshold=bar.pass_ratio, direction="less_is_better",
+                note=f"per-seed ratios {per_seed}")],
+            mandatory=True,
+            falsified_by=f"ratio at or above {bar.fail_ratio}",
+        ),
+        SubCheck(
+            name="verdict_stable_across_seeds",
+            description="A verdict that moves with the seed carries no information.",
+            metrics=[Metric(
+                name="bar.seed_stability", value=float(stable), kind="calibration",
+                exact=True, threshold=0.5, direction="greater_is_better",
+                note=(f"{sum(verdicts.values())}/{len(verdicts)} seeds pass. "
+                      + ("stable" if stable else
+                         "UNSTABLE -- indistinguishable from a coin flip, and this is the "
+                         "check that would have caught the cerebellar test at 4/8")))],
+            mandatory=True,
+            falsified_by="the verdict moves with the random stream",
+        ),
+    ]
+    if len(seeds) < bar.n_seeds:
+        subs.append(could_not_run(
+            "enough_seeds", f"The bar requires {bar.n_seeds} seeds.",
+            f"only {len(seeds)} seed(s) supplied; stability cannot be established",
+            falsified_by="the verdict moves with the random stream"))
+    return ClaimReport(manifest=man, subchecks=subs, artifacts=artifacts,
+                       kind="adjudication",
+                       notes=["Preregistered before any Stage II trajectory reached bench.",
+                              bar.margin_status, bar.rationale]).finalize()
+
+
+# ==========================================================================
+# CONDITION 3c — spike guard, designed by bench after two failed predecessors
+# ==========================================================================
+#: WHY BENCH IS WRITING THIS. Conditions 3 and 3b were both written by the party
+#: they judge, and both were structurally incapable of firing:
+#:
+#:   3   compared a spike against a RUNNING FLOOR whose scale later changed;
+#:   3b  compared a spike against a SIBLING RUN whose pipeline later changed.
+#:
+#: Both failed the same way: they required two quantities on a common scale, and
+#: the thing they compared against moved. 3b inherited the defect that killed its
+#: author's own a-fortiori argument, in different clothing. Agent Turing declined
+#: to write a third and applied the authorship corollary to themselves unprompted,
+#: which is the correct call and is recorded as such.
+#:
+#: THE FIX, and it is the same one as the Stage II bar: compare against a control
+#: computed WITHIN THE SAME RUN, from the same metric, over the same window. Then
+#: any rescale of the metric moves both sides together and cancels.
+#:
+#: The statistic is a robust within-run z-score:
+#:
+#:     z_t = (x_t - median(W_t)) / (1.4826 * MAD(W_t))
+#:
+#: where W_t is the trailing window of logged values EXCLUDING x_t itself.
+#: Median and MAD are equivariant under any affine rescale x -> a*x + b, so z is
+#: INVARIANT under it. That invariance is not asserted here, it is TESTED:
+#: test_spike_guard_verdict_is_invariant_under_an_affine_rescale applies exactly
+#: the kind of transformation the normaliser fix applied and requires the verdict
+#: to be unchanged. That test is the one both predecessors would have failed.
+#:
+#: The guard fires on a RATE CHANGE within the run, never on an absolute count,
+#: because an absolute count is a threshold with no reference class.
+CONDITION_3C_DESIGN = (
+    "within-run robust z-score (median/MAD over a trailing window, excluding the "
+    "point under test); fire on a rate increase relative to the same run's own "
+    "earlier block; invariance under affine rescale is a test, not a claim"
+)
+
+
+@dataclass(frozen=True)
+class SpikeGuardResult:
+    fired: bool
+    n_events: int
+    n_points: int
+    early_rate: float
+    late_rate: float
+    z_max: float
+    reason: str
+    degenerate: bool = False
+
+    def as_dict(self) -> dict[str, Any]:
+        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+
+
+def spike_guard(
+    values: Sequence[float],
+    *,
+    window: int = 10,
+    z_crit: float = 5.0,
+    rate_ratio: float = 3.0,
+    min_events: int = 2,
+) -> SpikeGuardResult:
+    """Condition 3c. Within-run, scale-invariant, and able to fail.
+
+    Returns ``fired=True`` only when the trailing half of the run shows a spike
+    RATE at least ``rate_ratio`` times the leading half's, with at least
+    ``min_events`` events. A single spike never fires it: one event is an
+    anecdote, and both predecessors fired on anecdotes.
+
+    ``degenerate=True`` marks the case the guard cannot speak to -- a window
+    with zero MAD, where every z is undefined. That is reported, not silently
+    treated as "no spikes", because a guard that cannot distinguish "quiet" from
+    "blind" is the failure this whole register documents.
+    """
+    x = np.asarray(list(values), dtype=float)
+    n = x.size
+    if n < window + 4:
+        return SpikeGuardResult(False, 0, n, 0.0, 0.0, float("nan"),
+                                f"only {n} points; need at least {window + 4}",
+                                degenerate=True)
+    zs: list[float] = []
+    degenerate = 0
+    for i in range(window, n):
+        w = x[max(0, i - window):i]
+        med = float(np.median(w))
+        mad = float(np.median(np.abs(w - med))) * 1.4826
+        if mad <= 1e-12:
+            degenerate += 1
+            zs.append(float("nan"))
+            continue
+        zs.append(float((x[i] - med) / mad))
+    z = np.asarray(zs, dtype=float)
+    events = np.abs(z) >= z_crit
+    n_ev = int(np.nansum(events))
+    half = z.size // 2
+    early = float(np.nansum(events[:half])) / max(half, 1)
+    late = float(np.nansum(events[half:])) / max(z.size - half, 1)
+    z_max = float(np.nanmax(np.abs(z))) if np.any(~np.isnan(z)) else float("nan")
+    if degenerate == z.size:
+        return SpikeGuardResult(False, 0, n, early, late, z_max,
+                                "every window had zero MAD: the guard is BLIND here, not "
+                                "quiet, and must not be read as 'no spikes'", degenerate=True)
+    fired = bool(n_ev >= min_events and late >= rate_ratio * max(early, 1.0 / max(half, 1)))
+    reason = (f"spike rate rose from {early:.3g} to {late:.3g} per logged step "
+              f"({n_ev} events at |z|>={z_crit})" if fired
+              else f"{n_ev} event(s), rate {early:.3g} -> {late:.3g}: no within-run increase")
+    return SpikeGuardResult(fired, n_ev, n, early, late, z_max, reason)
