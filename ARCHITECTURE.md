@@ -25,6 +25,14 @@ subsystem). **Item 6 (prospective human TMS/tFUS) is out of scope for this
 artifact, and no agent may implement a stimulation controller, a device command
 path, or a dosing computation for a person.**
 
+*Read this together with §7a, which it predates.* §7a records that
+**computational work in this repository is approved and is not gated** — the
+UT Arlington IRB approval covers it. The restriction above is about **live
+application**, and it holds for a capability reason that §7a does not touch:
+there is no trained checkpoint that could support a targeting claim. The two
+sections agree, and where the boundary is enforced is §7a's answer (one
+refusal at the export edge), not a per-call disclaimer.
+
 The reason is *capability*, not a hard-coded belief about anyone's paperwork.
 Governance is declared, recorded and carried in provenance: R11 admits a
 prospective request only when a validated `AuthorizationRecord`
