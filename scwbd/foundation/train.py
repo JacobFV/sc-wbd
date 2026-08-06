@@ -130,6 +130,9 @@ class SensorToParcel(nn.Module):
 class FoundationTrainer:
     """Owns the model, the mixture, the data and the staged curriculum."""
 
+    #: The posterior flow trains at this fraction of the stage LR.  See run_stage.
+    POSTERIOR_LR_SCALE: float = 0.1
+
     def __init__(
         self,
         cfg: FoundationConfig,
@@ -654,9 +657,31 @@ class FoundationTrainer:
 
         gate_model = _CombinedModule(modules)
         mixture = MixtureTrainer(gate_model, specs)
-        opt = torch.optim.AdamW(params, lr=stage.lr, weight_decay=stage.weight_decay, betas=(0.9, 0.95))
+        # The normalizing flow needs a lower LR than the rest of the model.
+        #
+        # Measured on run 2: with a single LR the posterior is stable at
+        # -log q ~ 8.2 through step 80 and then climbs (110 at step 100, seen_max
+        # 34 -> 848) at exactly the point OneCycle's ramp reaches max_lr.  The
+        # forecast head is unaffected (sim_forecast_nll keeps falling), so this is
+        # the flow's own conditioning-sensitivity, not a global instability: a
+        # coupling layer's translation is linear in its input far from the origin,
+        # so a step that is merely large for a residual block is destabilising for
+        # a density.
+        #
+        # A separate group at POSTERIOR_LR_SCALE keeps one schedule shape while
+        # letting the two parts move at their own rates.
+        post_ids = {id(q) for q in self.posterior.parameters()}
+        model_params = [q for q in params if id(q) not in post_ids]
+        post_params = [q for q in params if id(q) in post_ids]
+        groups = [{"params": model_params, "lr": stage.lr}]
+        if post_params:
+            groups.append({"params": post_params, "lr": stage.lr * self.POSTERIOR_LR_SCALE})
+        opt = torch.optim.AdamW(groups, lr=stage.lr, weight_decay=stage.weight_decay, betas=(0.9, 0.95))
         sched = torch.optim.lr_scheduler.OneCycleLR(
-            opt, max_lr=stage.lr, total_steps=max(stage.steps, 2), pct_start=min(0.3, stage.warmup / max(stage.steps, 1))
+            opt,
+            max_lr=[g["lr"] for g in groups],
+            total_steps=max(stage.steps, 2),
+            pct_start=min(0.3, stage.warmup / max(stage.steps, 1)),
         )
         self.model.train()
         self.posterior.train()
