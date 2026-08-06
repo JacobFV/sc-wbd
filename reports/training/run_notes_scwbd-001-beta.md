@@ -203,6 +203,47 @@ Pre-committed so the answer cannot be shaped after the fact: if boundaries spike
 systematically, it goes in `corpus_composition.md` as mechanism C and into the
 limitations list, whatever it does to the loss curve's appearance.
 
+## Restart 3 — the normaliser fix, and why condition 2's clock resets
+
+Stopped at **step 820** of Stage I and restarted from scratch on a fixed data
+pipeline. Third and final restart.
+
+**The decisive argument was not mine.** I framed this as "is the defect worth 35
+minutes", and on that framing my own inclination (don't thrash) was suspect and I
+said so. `main` reframed it: **condition 2 was being evaluated on a corrupted
+signal.** The preregistered bar — running-min `sim_forecast_nll` < 1.0 by step
+900 — was being tested against a loss computed from windows where 5.9 % carried
+`max|z|` up to 2427, concentrated in `wilson_cowan`, which supplies ~76 % of
+post-normalisation batch variance. **A preregistered test run on a known-corrupt
+dominant signal is uninterpretable whichever way it comes out**, and 🛡️ Popper
+could not have adjudicated it either.
+
+That is not leniency toward condition 2. It is the opposite: it is what giving it
+a *fair* test requires. The clock resets, the threshold does not move, and
+`main`'s four pre-commitments stand verbatim.
+
+Supporting reasons, in order: the defect is in the **loader**, so it would have
+affected every epoch of all five stages (~8 h), not just Stage I; the cost is
+~35 min against ~8 h remaining, ~7 %; and unlike the LR question — an a-priori
+argument about a contested effect that measured under 2 % — this is a
+**mechanism measured directly**, where the median collapses 111× while the peak
+does not. Different epistemic class.
+
+The fix, its validation, and the rejected `rms` candidate are documented in
+`corpus_composition.md` under mechanism C. Bounded: worst `max|z|`
+**2426.86 → 21.12**, p99 **740.60 → 10.27**, non-pathological windows returned
+**bit-identical** (×1.000000). Covered by `tests/foundation/test_normaliser.py`,
+which constructs the pathology directly and includes a premise-guard asserting
+the *old* rule would have blown up on the same input.
+
+**Two things kept separate on purpose, and they must stay separate in the final
+report:** the normaliser defect is *measured and robust*; its link to the ~31 %
+spike rate in `sim_forecast_nll` is *unestablished*. A "batch contains ≥1 extreme
+window" model predicts 98 %, not 31 %. The rate can be reproduced by tuning the
+extremeness threshold to roughly the top 0.5 %, which is precisely the
+retrospective fitting that produced the retracted period-60 claim. It has not
+been done and should not be, however tempting it becomes now that the fix is in.
+
 ## Provenance of the artifact
 
 Branch **`wt/turing`**. The run's commit is **`4be98fc`**

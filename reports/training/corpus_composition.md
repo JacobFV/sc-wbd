@@ -206,11 +206,29 @@ corpus (EEGMMIDB) with participant-level splits.
   `forbidden_inference`, and an undisclosed ledger records
   `{"disclosed": false}` so silence does not read as safe.
 
-## Mechanism C — the per-window normaliser inflates ~6 % of windows by 10–700×
+## Mechanism C — the per-window normaliser inflated ~6 % of windows (FIXED)
+
+> **Status: fixed in code, 2026-08-06, and the artifact was retrained from
+> scratch on the fixed pipeline.** Unlike A and B this was never in the corpus —
+> it was a preprocessing artifact in `SimCorpus.__getitem__`, so no regeneration
+> was needed. Recorded in full because SC-WBD-001-beta's first two training
+> attempts ran on the defective transform and because the failure shape is
+> instructive.
+>
+> | `max|z|` over 888 corpus windows | before | after |
+> |---|---|---|
+> | p50 | 4.18 | **4.18** (unchanged) |
+> | p95 | 116.59 | **8.00** |
+> | p99 | 740.60 | **10.27** |
+> | worst | **2426.86** | **21.12** |
+> | synthetic worst case | 3 416 664 | **13.7** |
+>
+> Non-pathological windows are returned **bit-identical** (measured shift
+> ×1.000000, max ×1.000001). The fix bounds the tail without moving ordinary data.
 
 **Different in kind from A and B.** Those are baked into the corpus and need
-regeneration. This is a **loader transform** (`SimCorpus.__getitem__`) and is
-fixable in code without touching a byte of the corpus.
+regeneration. This was a **loader transform** (`SimCorpus.__getitem__`), fixable
+in code without touching a byte of the corpus.
 
 `scale = median_over_regions(std_over_time)`, floored at `1e-6`. When many
 regions are near-silent within a window, the *median* collapses while the *max*
@@ -275,3 +293,49 @@ be matched by tuning the extremeness threshold to roughly the top 0.5 % — whic
 is precisely the retrospective fitting that produced the retracted period-60
 claim, so it is not being done. **The defect is measured; its link to the spikes
 is unestablished.**
+
+### The fix
+
+`scwbd/foundation/simulate.py:normalise_window`. The window scale is still the
+median per-region standard deviation, but **floored at a fixed fraction of the
+most active region's**:
+
+```python
+SCALE_PEAK_FLOOR = 0.25
+scale = max(median(sd), SCALE_PEAK_FLOOR * sd.max(), 1e-6)
+```
+
+The principle, stated so it can be argued with: **silence cannot inflate
+amplitude.** A window in which most parcels are quiet *is a quiet window* — it is
+not a window whose few active parcels are enormous. Flooring the denominator
+against the window's own peak encodes exactly that and nothing more.
+
+`0.25` was chosen from a sweep, not tuned to an outcome. Non-pathological windows
+are bit-identical for every value in 0.00–0.40, and the tail bound tightens
+monotonically, so it sits mid-plateau rather than on a knife edge:
+
+| q | p99 `max|z|` | worst `max|z|` | non-patho shift |
+|---|---|---|---|
+| 0.00 | 740.60 | 2426.86 | ×1.000 (the old rule) |
+| 0.10 | 22.96 | 41.57 | ×1.000 |
+| **0.25** | **10.27** | **21.12** | **×1.000** |
+| 0.40 | 6.63 | 13.20 | ×1.000 |
+
+Covered by `tests/foundation/test_normaliser.py` (10 tests), which construct the
+pathology directly — most parcels near-silent, a few normal — and assert the
+scale does not collapse. One test guards the premise by checking the *old* rule
+would have blown up on the same input, so the suite cannot go quietly vacuous.
+
+### A candidate rejected for scoring perfectly
+
+`rms` over regional sds was the obvious alternative and scored **1.00 at every
+percentile** on the first metric tried (window z-std). That is not a result: for
+that estimator `std(z) = std(x)/rms(sd) ≡ 1` **by construction**, so the metric
+could not have come out any other way.
+
+Re-validating on `max|z|` — what the model actually sees — separated the
+candidates properly and `rms` came second (worst 22.00, and it shifts *every*
+normal window by ×0.955 rather than leaving them alone).
+
+A perfect score is a reason to check whether the metric can fail, not a reason to
+adopt the candidate. See `reports/decorative_guards.md`.

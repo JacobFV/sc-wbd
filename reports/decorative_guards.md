@@ -24,6 +24,7 @@ Every instance below was green, plausible, and load-bearing.
 | 6 | `git diff 7f18528 HEAD -- scwbd configs` reported as a **verification claim** | that training source was unmodified during the run | `HEAD` is a **moving, worktree-local symbol**. The claim was true in `wt/turing` when written and false in 🛡️ Popper's worktree, where `7f18528` is not an ancestor of `master` (merge base `4d617af`) so the diff is dominated by unmerged work on both sides. | Popper trying to reproduce it and getting the opposite answer |
 | 7 | the **composite training loss** as the comparison metric | whether a change improved the model | it is a weighted sum whose terms move for unrelated reasons. It reported a large step-80 difference between two runs (3.717 vs 2.447) where `sim_forecast_nll` said **20.943 vs 20.980** — indistinguishable — and an early advantage that reversed by step 160. | comparing the same two runs on the interpretable metric instead |
 | 8 | **my own pre-committed stop trigger**, "spike > 10× the running floor" | that the learning rate had destabilised training | the spike is **rate-invariant** — 11.6× at lr 6.0e-4, 10.54× at 3.46e-4. It fires identically under both hypotheses it existed to separate, and prescribes a remedy already applied once without effect. | it fired, and checking whether the *other* run would also have fired it |
+| 9 | **window z-std** as the metric for choosing a normaliser | which candidate bounds the tail | for the `rms` candidate `std(z) = std(x)/rms(sd) ≡ 1` **by construction**. It scored a perfect 1.00 at p50/p90/p95/p99/max — a number it could not have failed to produce. | the perfect score itself looking wrong, and re-validating on `max|z|` |
 
 Number 4 is the sharpest: it sits *inside the mechanism built to catch stale
 artifacts*, and it was about to be handed to a brand-new provenance enforcement
@@ -192,6 +193,7 @@ the question:
 - the worktree it was written in, and any other (6)
 - a real change in forecast quality, and a reweighting of unrelated terms (7)
 - an unstable learning rate, and a reproducible hard batch (8)
+- a normaliser that bounds the tail, and one that defines the metric to 1 (9)
 
 If you cannot name a state of the world that would make the reading come out
 differently, you do not have a measurement.
@@ -249,7 +251,26 @@ because it signals awareness of the limitation it fails to apply.
 Operational test: state the caveat, then state the claim *as if the caveat were
 binding*. If the claim survives unchanged, one of the two is wrong.
 
-**5. Prefer a forward prediction to a retrospective fit.**
+**5. Treat a perfect score as a reason to check the metric, not to adopt the
+candidate.**
+
+> If a candidate scores **exactly** the ideal value, ask whether it *could* have
+> scored anything else.
+
+Choosing a replacement normaliser, `rms` scored **1.00 at every percentile** of
+window z-std — apparently flawless. It is flawless by algebra:
+`std(z) = std(x)/rms(sd) ≡ 1` for that estimator. The metric was not measuring
+the candidate, it was measuring its own definition.
+
+Re-validating on `max|z|` — the amplitude the model actually sees — ranked the
+candidates properly and put `rms` second. Had the perfect score been taken at
+face value, the adopted fix would have been chosen by a tautology.
+
+This is row 9, and note it is the *selection criterion* that was decorative
+rather than the guard. The same question works on both: **what reading would this
+have produced if the candidate were bad?**
+
+**6. Prefer a forward prediction to a retrospective fit.**
 
 Fitting a pattern to observed data costs nothing and proves nothing. Naming what
 the pattern predicts *next*, then checking, is cheap and decisive: the period-60
