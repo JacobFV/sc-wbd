@@ -145,3 +145,27 @@ def test_anatomy_prior_declares_the_frame_it_is_actually_in():
         "the prior is declaring MNI152NLin2009cAsym again; its support is the "
         "fsLR-32k/conte69 surface and its volumetric atlas is MNI152NLin6Asym"
     )
+
+
+def test_coverage_records_whether_a_brain_mask_was_used(atlas):
+    """An FOV count must not be quotable as a signal count.
+
+    Mutation this catches: dropping the ``basis`` field so both paths return
+    the same-looking object. The EPI array is a box; without a mask every
+    parcel inside the box reads as 'covered', which on a real subject gave
+    400/400 and would have been reported as full observation.
+    """
+    _, aff, names, _, _ = atlas
+    lab = np.zeros((6, 6, 6), dtype=np.int32)  # whole box is parcel 0
+    mask = np.zeros((6, 6, 6), dtype=bool)
+    mask[0, 0, 0] = True
+
+    fov = parcel_coverage(lab, 400, names, aff, subject="s", run="r")
+    masked = parcel_coverage(lab, 400, names, aff, subject="s", run="r", brain_mask=mask)
+
+    assert fov.basis == "field_of_view"
+    assert masked.basis == "brain_mask"
+    assert fov.n_voxels[0] == 216 and masked.n_voxels[0] == 1
+    assert "NOT A BRAIN MASK" in fov.notes
+    assert "NOT A BRAIN MASK" not in masked.notes
+    assert fov.summary()["basis"] == "field_of_view"
