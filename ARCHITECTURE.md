@@ -718,25 +718,69 @@ simulation and research use, but it is **not** what `tms-robotics` consumes.
 
 ---
 
-## 7a. Scope: this is a deep-learning project
+## 7a. Scope and posture
 
-Recorded 2026-08-06 on the project owner's instruction.
+Recorded 2026-08-06 on the project owner's instruction, after a full cycle in
+which the fleet produced excellent measurement discipline and **trained
+nothing**.
 
-**SC-WBD is deep-learning research on open data. Ethics approval, consent, and
-prospective-human authorization are not this project's concern.**
+**SC-WBD is deep-learning research.** It is not a medical product, not a
+clinical device, and not a regulated artifact. Treating it as one has cost more
+than it protected, and the correction is a change of posture, not a change of
+rigour.
 
-The authorization layer is being **removed from the repository**, not merely
-deprioritised — `AuthorizationRecord`, R11, `authorize_live_application`,
-`scwbd/intervene/deployment.py`, the `prospective_human` branches, and the
-IRB / consent / ethics prose. The reason is not that the code was wrong; it
-worked and was tested. It is that **a substantial, well-tested governance
-surface sitting in the tree is an attractor**: every agent that reads
-`scwbd/intervene` is pulled toward a domain this project does not occupy, and
-that attention is the cost being paid.
+### The distinction that was being missed
 
-What stays: the **TMS/tFUS physics**. `body.tex` §7.2 needs the forward model —
-E-field solvers, acoustics, and the field gates N3/N4/N6/N8, which pass and are
-real results. It does not need a permission system.
+Two things were conflated all cycle and only one of them earns its cost:
+
+| | keep | cut |
+|---|---|---|
+| **Measurement discipline** — participant-disjoint splits, matched controls, pre-registration, the decorative-guard register, regenerating numbers from source | ✔ It found the variance defect, the interface narrowing, the unread licence route, and a failing resolution pair. It is *how research gets done*, not a safety practice. | |
+| **Product-safety apparatus** — authorization records, live-use gates, per-call disclaimers, promotion eligibility, refusing to emit artifacts | | ✘ Imported from a domain we are not in. Excised. |
+
+The tell is what each one *does when it fires*. Measurement discipline makes a
+number trustworthy or tells you it is not. Product-safety apparatus stops you
+producing anything. **We had a great deal of the second, and it is why an entire
+cycle produced no trained model.**
+
+### Standing posture
+
+1. **Ship the artifact and label it. Never refuse to produce it.** R12 and its
+   relatives **annotate** — designation, arm, provenance, what was and was not
+   matched. A research checkpoint that is honestly labelled is strictly more
+   useful than one that was never written. Refusals belong on *claims in
+   papers*, not on *files on disk*.
+2. **Train first, characterise second.** A model that exists can be measured. A
+   gate list can only be argued with. Where a precondition genuinely changes
+   what a number *means* — the variance channel did — it blocks. Where it only
+   makes the report tidier, it runs in parallel and never blocks.
+3. **"Out of claim" is a note in the write-up, not a prohibition on the work.**
+   Measure everything the artifact can do; be careful only about what the
+   *paper* asserts. Narrowing what we *measure* to what we can *claim* is
+   backwards — measurement is how the claim gets earned.
+4. **Licensing is attribution, not a gate.** Hansen NC-SA propagating into a
+   checkpoint is a fact to record in the artifact's provenance, not a reason to
+   restructure the curriculum. At the research stage every checkpoint may carry
+   whatever it inherits, provided it *says so*.
+5. **A negative result is a result, not a failure to be prevented.** The
+   resolution pair failed at the boundary; that is publishable. The instinct to
+   avoid producing a failing artifact is the instinct being removed here.
+
+### What this programme is actually for
+
+The near-term deliverable is a trained whole-brain dynamics model that predicts
+impulse responses and generalises across subjects. Beyond it: TMS response
+prediction, EEG decoding and control, tFUS bidirectional interfaces, and
+eventually modelling the impact of language, images and sound well enough to
+plan individualised non-invasive cognitive interventions. Every one of those
+needs a model that **exists and predicts well**. None of them is served by a
+compiler that declines to write a checkpoint.
+
+Ambition is the correct default here. Selectively enabling and disabling
+meso-scale electrophysiology, hemodynamics, and tractometric correlates;
+heterogeneous sliced-modality training that does not wait for a homogeneous
+whole-body dataset; parametric per-connection transfer functions — these are
+the design, and they are what §5's family machinery exists to carry.
 
 ### The one compliance surface that is real
 
