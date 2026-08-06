@@ -222,7 +222,7 @@
   "rejected_point_estimate_prior_sd": 2.554235110393014e-10,
   "provenance": {
     "generator": "benchmarks/transforms/resolution_pair.py",
-    "generated_utc": "2026-08-06T18:37:19Z",
+    "generated_utc": "2026-08-06T19:22:47Z",
     "subject": "mne-sample::sample",
     "forward": "sample_audvis-eeg-oct-6-fwd.fif (BEM 5120-5120-5120)",
     "source_space": "oct-6, fixed normal orientation, use_cps=True",
@@ -247,7 +247,7 @@
     "numpy": "2.5.1",
     "torch": "2.13.0+cu130",
     "mne": "1.12.1",
-    "wall_seconds": 14.5
+    "wall_seconds": 16.5
   },
   "derived": {
     "roundtrip_ok": true,

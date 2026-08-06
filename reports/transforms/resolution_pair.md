@@ -28,6 +28,10 @@ which rewrites `reports/transforms/resolution_pair.json`. Wall time 24 s.
 That failure is the deliverable. It is not wired to R02 (§6 says why), and it is
 what forces the authority policy (§4).
 
+Two things need a ruling from someone other than me, both in §8: declaring the
+pair **turns R12's control test off** (measured), and the failure R02 targets is
+not yet representable in this artifact's forward pass (Fisher's corollary).
+
 ---
 
 ## 1. What was actually wrong
@@ -269,8 +273,8 @@ standing:
   that carries 5.6% of the lead field, and would need refinement for *every*
   observable query, which makes "sparse" vacuous.
 - **Consensus multilevel** requires two or more scales owning degrees of freedom
-  simultaneously. Exactly one node owns any (N-6). A compatibility potential
-  Ψ_ab between one view and nothing is not a policy (N-7).
+  simultaneously. Exactly one node owns any (N-13). A compatibility potential
+  Ψ_ab between one view and nothing is not a policy (N-14).
 - **Fine-authoritative** is the one under which the measured 5.6% is *never
   paid*: `x` owns the degrees of freedom, the EEG head reads `x` directly
   through `G`, and the parcel state is a differentiable materialization `R x`
@@ -280,7 +284,7 @@ standing:
 
 **SC-WBD-001-beta does not implement this policy.** All its state lives at the
 coarse node; it holds no source-space object, so `R` and `P` are declared and
-measured but never applied in the forward pass. That gap is filed as **N-6** in
+measured but never applied in the forward pass. That gap is filed as **N-13** in
 `ARCHITECTURE.md` §5b rather than left implicit — an undeclared narrowing is
 exactly what caused this task to exist.
 
@@ -378,14 +382,25 @@ Stated plainly, because each of these bounds what the numbers above support.
    ~100%) is large enough that subject variability is unlikely to reverse it,
    but "unlikely" is not "measured".
 2. **The measured coarse node is not the model's coarse node.** The declared
-   pair binds to `PARCEL_SCALE`, which the production model instantiates as
-   Schaefer-400 + Tian-54 = 454 regions. The measurement is Desikan-Killiany
-   68 on this subject, because no Schaefer annotation exists for the `sample`
-   subject and the fsLR→fsaverage→subject morph chain has no assets on disk. I
-   refused to fabricate it. The ×2/×4/×8 subdivision sweep in §3.5 reaches 542
-   coarse elements *by construction on this subject* and is the honest substitute:
-   it shows the conclusion does not change at the production region count. The
-   exact Schaefer-400 numbers are unmeasured.
+   pair binds to `PARCEL_SCALE`, which the real prior now instantiates as **414
+   regions in 9 declared families** (400 Schaefer2018 cortical + 14 subcortical;
+   `cerebellum` declared and empty). The measurement is Desikan-Killiany 68 on
+   the `sample` subject, because no Schaefer annotation exists for that subject
+   and the fsLR→fsaverage→subject morph chain has no assets on disk. I refused
+   to fabricate it.
+
+   I did **not** pick the pair against the old synthetic 454 — the pair names a
+   *scale*, not a region count, and nothing in `R`, `P` or the metrics depends
+   on how many parcels the production prior has. What does depend on it is
+   whether the measured verdict survives at 414, so the ×2/×4/×8 subdivision
+   sweep in §3.5 exists precisely to answer that **by measurement rather than
+   extrapolation**: at 542 coarse elements — more than 414 — η is 0.162 and the
+   relative error is still 0.885. The conclusion does not change at the
+   production region count. The exact Schaefer-400 numbers remain unmeasured.
+
+   Also unmeasured: 14 of the 414 regions are subcortical and outside the pair
+   entirely (see item 3), and the 9-family partition plays no role here — the
+   pair is between supports, not between families.
 3. **Cortex only.** 54 of the model's 454 regions are subcortical. The fine
    support is a cortical surface source space; subcortical regions are outside
    the pair entirely and no restriction is claimed for them.
@@ -393,7 +408,7 @@ Stated plainly, because each of these bounds what the numbers above support.
    not run it. MEG is far less sensitive to radial sources, so its η could
    differ substantially. Untested.
 5. **Declared, not applied.** `R` and `P` are validated maps that the forward
-   pass never calls (N-6). This is a validated *declaration*, not a working
+   pass never calls (N-13). This is a validated *declaration*, not a working
    refinement path. Nothing here demonstrates that fine-authoritative training
    works, only that the measurement forbids the alternatives.
 6. **The net-dipole-moment restriction is a diagnostic, not a declaration.** It
@@ -406,7 +421,96 @@ Stated plainly, because each of these bounds what the numbers above support.
 
 ---
 
-## 8. Files
+## 8. The seam with R12, and Fisher's corollary
+
+Two things surfaced when this landed on top of 📜 Noether's R12 work. Both are
+about whether a guard can still fire, and both need a ruling that is not mine.
+
+### 8.1 Declaring the pair turns R12's control test off. Measured.
+
+R12's control test is
+
+```python
+is_control_shaped = assignment.is_constant and not prolongation.declares_prolongation
+```
+
+and `read_prolongations` treats a compiled poset as authoritative over the
+config. So the moment `_poset()` emits a pair, `declares_prolongation` is True
+and R12 returns `# conformant, or partial in a way R12 does not police`.
+
+Measured, not reasoned. Same config (`configs/scwbd_001_beta.yaml`,
+`local_core: learned`), `arm:` stripped:
+
+| poset passed to `check_r12` | result |
+|---|---|
+| the old single-node poset | refuses: *"would be emitted with one operator ('learned') for every region…"* |
+| the pair declared | **no refusal** |
+
+**Ruled, 2026-08-06: RL-8** (`ARCHITECTURE.md` §5c). *A declaration does not
+discharge a refusal; only a validated one does.* R12 must consume **R02's
+verdict** rather than the presence of a declaration, and the fix is composition,
+not a third condition: R12 asks whether a prolongation was declared, R02 asks
+whether it is any good, and R12 may only be satisfied by a declaration R02
+passed. Under RL-8 the pair measured here — failing 12 of 12 — correctly does
+**not** switch R12 off, and `model.scale_prolongations` stays empty. The
+reconciliation in `designation.py` is 📜 Noether's; nothing in this branch
+changes it.
+
+The original design reasoning, kept because it is why the hole existed —
+`designation.py` says so in as many words: "Both
+conditions are required. One backend with a real multiresolution lattice … is a
+partial implementation and somebody else's refusal to write." My pair is
+exactly that case, and it is the first thing in the production path to occupy
+it. The design anticipated the gap; nothing had opened it before.
+
+I tried the coordinator's instruction to wire the pair into
+`model.scale_prolongations`, and backed it out. With the field populated,
+**three of Noether's own tests fail**, two of them decisively:
+`test_r12_fires_on_the_released_run1_config` and
+`test_r12_fires_on_every_undeclared_single_backend_config_in_the_repo`. A config
+key that switches a refusal off is not a declaration, it is an exemption. So:
+
+- the pair lives in the **poset**, where R02 validates it — that is my lane and
+  the deliverable;
+- `model.scale_prolongations` stays **empty**, pinned by a test that fails if
+  anyone fills it in without settling this;
+- both control configs carry a note naming 📜 Noether;
+- **I did not change `designation.py`.** I wrote the one-line fix
+  (`is_control_shaped = assignment.is_constant`, on the grounds that the
+  comparison R12 names is `11.4:structured_regional_state`, which is
+  differentiator (i) only), watched it break two of Noether's tests that encode
+  the opposite intent, and reverted it. It is her semantics to set.
+
+What is *not* at risk: `ArmDeclaration.designation()` never consults the poset,
+so both control configs still emit
+`SC-WBD-001-beta-CONTROL[11.4:structured_regional_state]`. The exposure is a
+future run that omits `arm:`.
+
+### 8.2 Fisher's corollary: is the failure R02 targets representable here?
+
+Asked of my own guard, the answer is uncomfortable and belongs in the report.
+
+R02 targets "a coarse observation converted into unsupported fine structure".
+In SC-WBD-001-beta that conversion **cannot occur in the forward pass**, because
+the forward pass never calls `P` (N-13). So R02, against this artifact, polices a
+*declaration and its evidence*, not an execution path. Its six firings in §6 are
+real firings on real breakages of a real declaration — but nobody should read
+them as proof that a live prolongation is being policed, because there is no
+live prolongation.
+
+Where the failure *is* representable today: any consumer that prolongs a
+parcel-level prediction to source space — the `TargetingService` returning an
+E-field on the cortical surface is the obvious one. That path is exactly what
+`P` returning a `FineDistribution` with 7430 unresolved directions exists to
+protect, and it is exactly what the §3 boundary numbers say to distrust.
+
+The honest one-line summary: **R02 now has something to check and demonstrably
+checks it; the thing it checks is not yet something the model does.** Closing
+that is N-13, and N-13 is a run-3 change.
+
+---
+
+## 9. Files
 
 | file | what |
 |---|---|
@@ -418,13 +522,25 @@ Stated plainly, because each of these bounds what the numbers above support.
 | `scwbd/compiler/checks.py` | `check_r02` reports round-trip failures |
 | `tests/transforms/test_resolution_pair.py` | operators, distribution, staleness, and two lead fields whose boundary answers are 0 and 1 by construction |
 | `tests/foundation/test_resolution_pair_r02.py` | the six firings, the control, and two end-to-end compiles |
-| `ARCHITECTURE.md` §5b | N-3 updated; N-6 and N-7 added |
+| `ARCHITECTURE.md` §5b | N-12 updated; N-13 and N-14 added |
+| `configs/scwbd_001_beta.yaml`, `configs/run2/scwbd-001.yaml` | arm prose corrected (the poset is no longer single-node); `scale_prolongations` left empty with the reason |
+
+### Two bookkeeping defects found on the way
+
+**`ARCHITECTURE.md` §5b now carries the pair narrowing twice.** After the
+sequential renumber, **N-9** and **N-12** are the same narrowing: N-9 is the
+pre-measurement wording, N-12 is the version updated with the pair, the
+operators and the R02 result. Everything in this branch cites **N-12**. I did
+not delete N-9 — §5b says no agent may remove a row — but it is stale and a
+reader who lands on it will think the pair is still unbuilt. Architect's to
+collapse. The underlying cause is that an ordinal register cannot be written
+concurrently by ten agents; slugs would not have collided.
 
 ### Unrelated defect found on the way
 
-The main checkout's `assets` symlink
-(`/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/assets`)
-points at **itself**, so `load_anatomy` fails there with `OSError: [Errno 40]
-Too many levels of symbolic links`. Created 2026-08-06 11:23, not by me. I
-repointed my worktree's copy at `/data/scwbd/assets` (untracked, no commit).
-Whoever owns the main checkout should fix theirs.
+The main checkout's `assets` symlink pointed at **itself** between 11:23 and
+11:31 on 2026-08-06, so `load_anatomy` failed there with `OSError: [Errno 40]
+Too many levels of symbolic links`. Not mine; repaired upstream at 11:31. I
+repointed my worktree's copy at `/data/scwbd/assets` (untracked, no commit) and
+that fix is still required — a worktree does not inherit the main checkout's
+symlink.

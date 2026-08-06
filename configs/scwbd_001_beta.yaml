@@ -6,11 +6,32 @@
 # WHICH ARM THIS IS (refusal R12)
 # ---------------------------------------------------------------------------
 # This run has ONE operator for all regions (`model.local_core` below is a
-# single string) and declares NO cross-scale prolongation
-# (`model.scale_prolongations` is empty; compiler_bridge._poset() emits one
-# node and no maps). body.tex sec. 0.2 names exactly two differentiators --
+# single string). body.tex sec. 0.2 names exactly two differentiators --
 # heterogeneous operator-valued regional state, and non-nested source-native
-# resolutions -- and this configuration has neither.
+# resolutions -- and this configuration lacks the first.
+#
+# The second differentiator is in a state that needs saying precisely.
+# `compiler_bridge._poset()` now emits the one validated fine/coarse pair of
+# ARCHITECTURE.md sec. 5b N-12 with measured residuals
+# (reports/transforms/resolution_pair.md), so the compiled poset is no longer
+# single-node. That does NOT make this the treatment arm:
+#
+#   * the pair is DECLARED, not APPLIED -- all state still lives at the coarse
+#     node and the forward pass never calls R or P (narrowing N-13);
+#   * it is measured NOT to validate at its boundary -- the parcel support
+#     carries 5.6% of the whitened EEG lead field.
+#
+# `model.scale_prolongations` is nevertheless LEFT EMPTY here, deliberately, and
+# 📜 Noether (R12 owner) needs to rule before it is filled in. Populating it was
+# tried on 2026-08-06 and measured to defeat R12: with the field set and `arm:`
+# stripped, `test_r12_fires_on_the_released_run1_config` and
+# `test_r12_fires_on_every_undeclared_single_backend_config_in_the_repo` both
+# stop firing, because R12's control test is `is_constant AND no prolongation`
+# and by design "Both conditions are required" (designation.py). A config field
+# that switches a refusal off is worse than an undeclared pair, so the pair
+# stays declared where R02 can validate it -- in the poset -- and out of the
+# field that only R12 reads. The gap this exposes is the "somebody else's
+# refusal to write" the R12 docstring already names.
 #
 # It is therefore the equal-capacity generic CONTROL arm of sec. 11.4's first
 # required ablation, not the model. It was previously emitted under the model's
@@ -25,11 +46,13 @@ arm:
   role: control
   controls_for: "11.4:structured_regional_state"
   justification: >
-    One learned operator for all regions and a single-scale poset with no
-    prolongation: the equal-capacity generic control against which structured
-    heterogeneous regional state (body.tex 2.1) and non-nested source-native
-    resolutions (4.2) must be measured. Everything else -- corpus, curriculum,
-    parameter budget, seed, clocks -- is held at the treatment arm's values.
+    One learned operator for all regions: the equal-capacity generic control
+    against which structured heterogeneous regional state (body.tex 2.1) must
+    be measured. Everything else -- corpus, curriculum, parameter budget, seed,
+    clocks -- is held at the treatment arm's values. The one fine/coarse pair
+    the compiled poset now carries does not change the arm: it is declared and
+    measured but never applied in the forward pass (N-13), and it is measured
+    not to preserve the EEG observable at its boundary.
 
 model:
   # 454 = the SYNTHETIC prior's region count, not a real parcellation.

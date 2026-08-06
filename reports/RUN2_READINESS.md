@@ -19,6 +19,14 @@ else runs in parallel and never blocks.
 
 **That is the whole blocking list.** When X2 lands, training starts.
 
+**🧭 Gauss's D4 landed and is parallel, not blocking.** The pair
+`cortical_source_dipole ≤ parcel` is declared in `_poset()` and R02 fires on 6
+mutations of the production schema plus 2 end-to-end compiles. The pair is
+measured **not** to validate at its boundary — the parcel support carries 5.6%
+of the whitened EEG lead field, residual 1.86 against a 1.92 noise sd/ch signal.
+**That FAIL is the filed result**, and it is a finding about what regional state
+*is*, not a blocker: orientation buys 9× what parcel count buys.
+
 ---
 
 ## Parallel — improves the write-up, never delays the run
