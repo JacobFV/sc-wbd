@@ -49,6 +49,22 @@ __all__ = [
 _LOG2PI = math.log(2.0 * math.pi)
 
 
+def _tile_rows(x: Tensor, batch: int) -> Tensor:
+    """Broadcast/tile the leading dim of a per-step slice up to ``batch``.
+
+    The deterministic drive is identical across replicates, so materialising
+    ``[n_replicates * n_epochs, n_steps, n]`` would cost tens of gigabytes for
+    a tensor with ``n_epochs`` distinct rows.  Tiling one step at a time is
+    three orders of magnitude smaller and exactly equivalent, provided the
+    batch is laid out replicate-major (row ``r*E + e`` <-> epoch ``e``).
+    """
+    if x.shape[0] == batch:
+        return x
+    if batch % x.shape[0] == 0:
+        return x.repeat(batch // x.shape[0], *([1] * (x.dim() - 1)))
+    raise ValueError(f"cannot tile leading dim {x.shape[0]} up to {batch}")
+
+
 def _expand_batch(x: Tensor, batch: int) -> Tensor:
     if x.dim() == 0:
         raise ValueError("scalar tensors are not valid state-space operators")
@@ -149,8 +165,9 @@ class LinearGaussianSSM:
         cand = [self.F.shape[0], self.Q.shape[0], self.m0.shape[0], self.P0.shape[0]]
         cand += [ch.H.shape[0] for ch in self.channels]
         cand += [ch.R.shape[0] for ch in self.channels]
-        if self.inputs is not None:
-            cand.append(self.inputs.shape[0])
+        # `inputs` is deliberately excluded: the deterministic drive is tiled
+        # per step (see _tile_rows), so its leading dim is a number of distinct
+        # epochs, not a batch size.
         return max(cand)
 
     def channel(self, name: str) -> ObservationChannel:
@@ -259,8 +276,6 @@ def kalman_filter(
 
     sched = ssm.schedule()
     inputs = ssm.inputs
-    if inputs is not None:
-        inputs = _expand_batch(inputs, b)
     fmul = ssm.left_mul if ssm.left_mul is not None else (lambda X: F @ X)
 
     for k in range(ssm.n_steps):
@@ -317,7 +332,7 @@ def kalman_filter(
         if k + 1 < ssm.n_steps:
             m = fmul(m.unsqueeze(-1)).squeeze(-1)
             if inputs is not None:
-                m = m + inputs[:, k, :]
+                m = m + _tile_rows(inputs[:, k, :], b)
             # F P F^T computed as F (F P)^T (P symmetric) so one routine suffices
             P = fmul(fmul(P).transpose(-1, -2)) + Q
             P = 0.5 * (P + P.transpose(-1, -2))
@@ -389,7 +404,6 @@ def multiepoch_kalman_filter(
     if inputs is not None:
         if inputs.dim() != 4:
             raise ValueError("inputs must be [B, E, T, n] for multiepoch filtering")
-        inputs = _expand_batch(inputs, b)
     sched = ssm.schedule()
     fmul = ssm.left_mul if ssm.left_mul is not None else (lambda X: F @ X)
 
@@ -440,7 +454,12 @@ def multiepoch_kalman_filter(
                     fmul(m.transpose(1, 2)).transpose(1, 2)
                 )
                 if inputs is not None:
-                    m = m + inputs[:, :, k, :]
+                    xi = inputs[:, :, k, :]
+                    if xi.shape[0] != b:
+                        xi = _expand_batch(xi, b)
+                    if xi.shape[1] != E:
+                        xi = xi.repeat(1, E // xi.shape[1], 1)
+                    m = m + xi
                 P = fmul(fmul(P).transpose(-1, -2)) + Q
                 P = 0.5 * (P + P.transpose(-1, -2))
         return (m, P, ll, *acc)
@@ -480,14 +499,12 @@ def rts_smoother(ssm: LinearGaussianSSM, fr: FilterResult) -> SmootherResult:
     lag1 = [None] * T
     sm[T - 1], sc[T - 1] = fm[:, T - 1], fc[:, T - 1]
     inputs = ssm.inputs
-    if inputs is not None:
-        inputs = _expand_batch(inputs, b)
     for k in range(T - 2, -1, -1):
         Pk = fc[:, k]
         mk = fm[:, k]
         m_pred = (F @ mk.unsqueeze(-1)).squeeze(-1)
         if inputs is not None:
-            m_pred = m_pred + inputs[:, k, :]
+            m_pred = m_pred + _tile_rows(inputs[:, k, :], b)
         P_pred = F @ Pk @ F.transpose(-1, -2) + Q
         P_pred = 0.5 * (P_pred + P_pred.transpose(-1, -2))
         Lc = torch.linalg.cholesky(P_pred)
@@ -511,8 +528,16 @@ def simulate_lgssm(
     seed: int,
     batch: int | None = None,
     masks: dict[str, Tensor] | None = None,
-) -> tuple[dict[str, Tensor], Tensor]:
-    """Draw states and native-clock observations.  Deterministic given ``seed``."""
+    store_states: bool = False,
+) -> tuple[dict[str, Tensor], Tensor | None]:
+    """Draw states and native-clock observations.  Deterministic given ``seed``.
+
+    ``store_states`` defaults to **False**: the latent trajectory is
+    ``[batch, n_steps, n]``, which at benchmark scale (thousands of epochs x
+    thousands of 1 ms steps x a 105-dimensional augmented state) is tens of
+    gigabytes, while the observations it produces are three orders of magnitude
+    smaller.  Callers that want the trajectory must ask for it.
+    """
     b = batch or ssm.batch
     _, n, F, Q, m0, P0 = _prepare(ssm)
     F, Q, m0, P0 = (_expand_batch(t, b) for t in (F, Q, m0, P0))
@@ -525,16 +550,21 @@ def simulate_lgssm(
 
     L0 = torch.linalg.cholesky(P0 + 1e-14 * torch.eye(n, dtype=dtype, device=device))
     LQ = torch.linalg.cholesky(Q + 1e-14 * torch.eye(n, dtype=dtype, device=device))
+    # Q is rank-deficient by construction (process noise enters only the x
+    # block; the delay line and hemodynamic cascade are deterministic given x).
+    # Drawing n innovations per step instead of rank(Q) wastes ~35x the RNG.
+    nz = (LQ.abs().amax(dim=0).amax(dim=0) > 0).nonzero()
+    rq = int(nz.max()) + 1 if nz.numel() else 0
+    LQr = LQ[:, :, :rq]
     z = m0 + (L0 @ randn(b, n, 1)).squeeze(-1)
     inputs = ssm.inputs
-    if inputs is not None:
-        inputs = _expand_batch(inputs, b)
 
     sched = ssm.schedule()
     out: dict[str, list[Tensor]] = {ch.name: [] for ch in ssm.channels}
-    states = []
+    states: list[Tensor] = []
     for k in range(ssm.n_steps):
-        states.append(z)
+        if store_states:
+            states.append(z)
         for ch, _j in sched.get(k, ()):
             H = _expand_batch(ch.H, b)
             R = _expand_batch(ch.R, b)
@@ -542,11 +572,13 @@ def simulate_lgssm(
             y = (H @ z.unsqueeze(-1)).squeeze(-1) + (LR @ randn(b, ch.p, 1)).squeeze(-1)
             out[ch.name].append(y)
         if k + 1 < ssm.n_steps:
-            z = (F @ z.unsqueeze(-1)).squeeze(-1) + (LQ @ randn(b, n, 1)).squeeze(-1)
+            z = (F @ z.unsqueeze(-1)).squeeze(-1)
+            if rq:
+                z = z + (LQr @ randn(b, rq, 1)).squeeze(-1)
             if inputs is not None:
-                z = z + inputs[:, k, :]
+                z = z + _tile_rows(inputs[:, k, :], b)
     data = {k: torch.stack(v, dim=1) for k, v in out.items() if v}
-    return data, torch.stack(states, dim=1)
+    return data, (torch.stack(states, dim=1) if store_states else None)
 
 
 def deterministic_response(ssm: LinearGaussianSSM) -> dict[str, Tensor]:
@@ -556,8 +588,6 @@ def deterministic_response(ssm: LinearGaussianSSM) -> dict[str, Tensor]:
     """
     b, n, F, _, m0, _ = _prepare(ssm)
     inputs = ssm.inputs
-    if inputs is not None:
-        inputs = _expand_batch(inputs, b)
     sched = ssm.schedule()
     out: dict[str, list[Tensor]] = {ch.name: [] for ch in ssm.channels}
     z = m0
@@ -568,7 +598,7 @@ def deterministic_response(ssm: LinearGaussianSSM) -> dict[str, Tensor]:
         if k + 1 < ssm.n_steps:
             z = (F @ z.unsqueeze(-1)).squeeze(-1)
             if inputs is not None:
-                z = z + inputs[:, k, :]
+                z = z + _tile_rows(inputs[:, k, :], b)
     return {k: torch.stack(v, dim=1) for k, v in out.items() if v}
 
 

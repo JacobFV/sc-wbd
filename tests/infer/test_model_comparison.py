@@ -43,7 +43,7 @@ from scwbd.infer.model_comparison import (
 )
 from scwbd.infer.types import CalibrationClaimError, UnresolvedCausalAmbiguity
 
-torch.set_default_dtype(torch.float64)
+DEFAULT_DTYPE = torch.float64   # consumed by the conftest autouse fixture
 
 T = 60
 Q0 = 0.4

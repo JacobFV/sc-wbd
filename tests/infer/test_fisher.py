@@ -29,7 +29,7 @@ from scwbd.infer.linear_gaussian import (
     make_model,
 )
 
-torch.set_default_dtype(torch.float64)
+DEFAULT_DTYPE = torch.float64   # consumed by the conftest autouse fixture
 
 
 def test_analytic_operator_derivatives_match_autodiff(tiny_setup):

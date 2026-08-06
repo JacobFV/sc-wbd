@@ -260,13 +260,12 @@ def _build_population(
     mdl = make_model(eta, cfg, bd.proto, include_impulse=bd.include_impulse)
     ssm = mdl.ssm(("eeg", "bold"), epoch=0)
     E = cfg.n_epochs
-    inp = mdl.inputs[0].unsqueeze(0).expand(R, E, cfg.n_steps, mdl.n)
     F = mdl.F.repeat_interleave(E, 0)
     sim = LinearGaussianSSM(
         F, mdl.Q.repeat_interleave(E, 0), mdl.m0.repeat_interleave(E, 0),
         mdl.P0.repeat_interleave(E, 0),
         [replace_channel(c, E) for c in ssm.channels], cfg.n_steps,
-        inp.reshape(R * E, cfg.n_steps, mdl.n),
+        mdl.inputs[0],          # [E, T, n]; tiled per step by the simulator
         structured_left_mul(F, cfg),
     )
     data, _ = simulate_lgssm(sim, seed=seed + 4242, batch=R * E)
@@ -381,9 +380,7 @@ def detect_misspecified_module(
     ssm.P0 = mdl.P0.repeat_interleave(E, 0)
     ssm.left_mul = structured_left_mul(ssm.F, cfg)
     ssm.channels = [replace_channel(c, E) for c in ssm.channels]
-    ssm.inputs = mdl.inputs[0].unsqueeze(0).expand(R, E, cfg.n_steps, mdl.n).reshape(
-        R * E, cfg.n_steps, mdl.n
-    )
+    ssm.inputs = mdl.inputs[0]      # [E, T, n]; tiled per step
     d = {k: v.reshape(R * E, *v.shape[2:]) for k, v in data.items() if k in bd.channels}
     m = {k: v.repeat_interleave(E, 0) for k, v in masks.items() if k in bd.channels}
     res = kalman_filter(ssm, d, m, whiten=True)
@@ -650,7 +647,7 @@ def run_synthetic_slice(
                     if k == "eeg" else v)
                 for k, v in masks.items()
             }
-        f = _objective_with_masks(b, fit_data, masks)
+        f = _objective_with_masks(b, fit_data, masks, include_prior=False)
         # population predictive: the posterior-mean parameters from TRAIN only
         ubar = torch.tensor(
             np.tile(fit["u"].mean(0), (test_idx.size, 1)),
@@ -664,9 +661,11 @@ def run_synthetic_slice(
             for k in fit_data
         ))
         hl[nm] = {
-            "total": float(nlp.sum()),
+            "total_negative_log_likelihood": float(nlp.sum()),
             "per_observation": float(nlp.sum()) / max(n_obs, 1.0),
-            "se": float(nlp.std(unbiased=True) / math.sqrt(test_idx.size)),
+            "se_per_observation": float(
+                nlp.std(unbiased=True) / math.sqrt(test_idx.size) / max(n_obs, 1.0)
+            ),
             "n_observations": n_obs,
         }
     jn = hl["joint_native"]["per_observation"]
@@ -705,7 +704,7 @@ def run_synthetic_slice(
     return SliceReport(criteria, detail)
 
 
-def _objective_with_masks(bd: BuiltDesign, fit_data, masks):
+def _objective_with_masks(bd: BuiltDesign, fit_data, masks, include_prior: bool = True):
     """Objective for records with per-record missing windows (masks shared across
     epochs, which is what the shared-Riccati filter requires)."""
     from .filters import multiepoch_kalman_filter
@@ -719,11 +718,13 @@ def _objective_with_masks(bd: BuiltDesign, fit_data, masks):
     def neg_log_posterior(u: Tensor, checkpoint_every: int = 0) -> Tensor:
         mdl = make_model(u, cfg, proto, include_impulse=bd.include_impulse)
         ssm = mdl.ssm(bd.channels, epoch=0, eeg_steps=bd.fit_eeg_steps)
-        ssm.inputs = mdl.inputs.expand(u.shape[0], E, cfg.n_steps, mdl.n)
+        ssm.inputs = mdl.inputs          # [1, E, T, n]; broadcast, never copied
         res = multiepoch_kalman_filter(
             ssm, fit_data, masks, n_epochs=E, checkpoint_every=checkpoint_every
         )
         ll = res["log_likelihood"].sum(1)
+        if not include_prior:
+            return -ll
         z = (u - u0.to(u)) / sd.to(u)
         return -(ll - 0.5 * (z**2).sum(-1))
 

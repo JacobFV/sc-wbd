@@ -209,8 +209,11 @@ def _jacobian_forward_sensitivity(
             out[nm][:, :, j, :] = (t1 + t2).permute(0, 2, 1)
         if k + 1 < cfg.n_steps:
             drive = torch.einsum("inm,me->ine", dF, Z)
-            cols = torch.cat([Z, S.reshape(P * n, E).reshape(P, n, E).permute(1, 0, 2)
-                              .reshape(n, P * E)], dim=1).unsqueeze(0)
+            # one structured transition for the state and all P sensitivities:
+            # columns are [E state columns | P*E sensitivity columns]
+            cols = torch.cat(
+                [Z, S.permute(1, 0, 2).reshape(n, P * E)], dim=1
+            ).unsqueeze(0)
             newcols = fmul(cols)[0]
             Z = newcols[:, :E] + b[:, k, :].transpose(0, 1)
             S = newcols[:, E:].reshape(n, P, E).permute(1, 0, 2) + drive
@@ -567,8 +570,8 @@ def _loglik_per_replicate(
     mdl = make_model(u_row, cfg, proto, include_impulse=include_impulse, device=device)
     ssm = mdl.ssm(channels, epoch=0, eeg_steps=eeg_steps)
     E = cfg.n_epochs
-    inp = mdl.inputs[0].unsqueeze(0).expand(n_replicates, E, cfg.n_steps, mdl.n)
-    ssm.inputs = inp.reshape(1, n_replicates * E, cfg.n_steps, mdl.n)
+    # tiled lazily by the filter: E distinct rows, not n_replicates*E copies
+    ssm.inputs = mdl.inputs
     res = multiepoch_kalman_filter(
         ssm,
         {k: v.reshape(1, n_replicates * E, *v.shape[2:]) for k, v in data.items()},
@@ -604,10 +607,9 @@ def monte_carlo_fisher(
     mdl = make_model(u, cfg, proto, include_impulse=include_impulse, device=device)
     E = cfg.n_epochs
     ssm = mdl.ssm(channels, epoch=0, eeg_steps=eeg_steps)
-    inp = mdl.inputs[0].unsqueeze(0).expand(n_replicates, E, cfg.n_steps, mdl.n)
     sim = LinearGaussianSSM(
         mdl.F, mdl.Q, mdl.m0, mdl.P0, ssm.channels, cfg.n_steps,
-        inp.reshape(n_replicates * E, cfg.n_steps, mdl.n),
+        mdl.inputs[0],          # [E, T, n]; tiled per step by the simulator
         structured_left_mul(mdl.F, cfg),
     )
     data, _ = simulate_lgssm(sim, seed=seed, batch=n_replicates * E)

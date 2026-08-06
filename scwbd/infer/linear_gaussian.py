@@ -487,16 +487,26 @@ class SystemModel:
             )
         if "bold" in channels:
             chans.append(ObservationChannel("bold", self.H_bold, self.R_bold, self.bold_steps))
-        if with_inputs:
-            inp = self.inputs if epoch is None else self.inputs[:, epoch]
-            if epoch is None and self.inputs.dim() == 4:
-                inp = self.inputs.reshape(-1, *self.inputs.shape[2:])
-        else:
+        F, Q, m0, P0 = self.F, self.Q, self.m0, self.P0
+        if not with_inputs:
             inp = None
+        elif epoch is not None:
+            inp = self.inputs[:, epoch]
+        else:
+            # epoch=None means "batch over epochs": flatten [B, E, T, n] to
+            # [B*E, T, n] and repeat the operators to match, so that row b*E+e
+            # is subject b's epoch e.
+            E = self.inputs.shape[1]
+            inp = self.inputs.reshape(-1, *self.inputs.shape[2:])
+            if E > 1:
+                F = F.repeat_interleave(E, 0)
+                Q = Q.repeat_interleave(E, 0)
+                m0 = m0.repeat_interleave(E, 0)
+                P0 = P0.repeat_interleave(E, 0)
         return LinearGaussianSSM(
-            F=self.F, Q=self.Q, m0=self.m0, P0=self.P0,
+            F=F, Q=Q, m0=m0, P0=P0,
             channels=chans, n_steps=self.cfg.n_steps, inputs=inp,
-            left_mul=structured_left_mul(self.F, self.cfg) if fast else None,
+            left_mul=structured_left_mul(F, self.cfg) if fast else None,
         )
 
     def multiepoch_ssm(

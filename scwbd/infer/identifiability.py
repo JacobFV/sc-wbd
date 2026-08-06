@@ -284,12 +284,11 @@ def _simulate(
     mdl = make_model(u_true, bd.cfg, bd.proto, include_impulse=bd.include_impulse)
     ssm = mdl.ssm(("eeg", "bold"), epoch=0)
     E = bd.cfg.n_epochs
-    inp = mdl.inputs[0].unsqueeze(0).expand(n_replicates, E, bd.cfg.n_steps, mdl.n)
     from .filters import LinearGaussianSSM
 
     sim = LinearGaussianSSM(
         mdl.F, mdl.Q, mdl.m0, mdl.P0, ssm.channels, bd.cfg.n_steps,
-        inp.reshape(n_replicates * E, bd.cfg.n_steps, mdl.n),
+        mdl.inputs[0],          # [E, T, n]; tiled per step by the simulator
         structured_left_mul(mdl.F, bd.cfg),
     )
     data, _ = simulate_lgssm(sim, seed=seed, batch=n_replicates * E)
@@ -309,8 +308,13 @@ def _prepare_fit_data(bd: BuiltDesign, data: dict[str, Tensor]) -> dict[str, Ten
 
 
 def _objective(
-    bd: BuiltDesign, fit_data: dict[str, Tensor], *, n_replicates: int
+    bd: BuiltDesign, fit_data: dict[str, Tensor], *, n_replicates: int,
+    include_prior: bool = True,
 ) -> Callable[[Tensor], Tensor]:
+    """Negative log posterior (or, with ``include_prior=False``, negative log
+    likelihood -- which is what a *held-out* score must be: the prior term is
+    not evidence about new data and would differ between designs only because
+    their estimates differ)."""
     cfg = bd.fit_cfg
     proto = bd.fit_proto
     E = cfg.n_epochs
@@ -320,15 +324,39 @@ def _objective(
     def neg_log_posterior(u: Tensor, checkpoint_every: int = 0) -> Tensor:
         mdl = make_model(u, cfg, proto, include_impulse=bd.include_impulse)
         ssm = mdl.ssm(bd.channels, epoch=0, eeg_steps=bd.fit_eeg_steps)
-        ssm.inputs = mdl.inputs.expand(u.shape[0], E, cfg.n_steps, mdl.n)
+        ssm.inputs = mdl.inputs          # [1, E, T, n]; broadcast, never copied
         res = multiepoch_kalman_filter(
             ssm, fit_data, n_epochs=E, checkpoint_every=checkpoint_every
         )
         ll = res["log_likelihood"].sum(1)
+        if not include_prior:
+            return -ll
         z = (u - u0.to(u)) / sd.to(u)
         return -(ll - 0.5 * (z**2).sum(-1))
 
     return neg_log_posterior
+
+
+def _segment_for(batch: int, n_state: int, budget_gib: float = 6.0) -> int:
+    """Checkpoint segment length that keeps the backward pass inside a budget.
+
+    Peak activation memory during recomputation is roughly
+    ``segment x batch x n^2 x 8 bytes`` per live tensor, and the Riccati step
+    holds a handful.  Sizing this from the batch (rather than fixing it) is
+    what lets the Hessian pass batch all 9 finite-difference directions.
+    """
+    per_step = batch * n_state * n_state * 8 * 6
+    return max(20, min(400, int(budget_gib * 1024**3 / max(per_step, 1))))
+
+
+def _tile_data(data: dict[str, Tensor], reps: int) -> dict[str, Tensor]:
+    """Repeat each record ``reps`` times along the replicate axis.
+
+    Used to evaluate several perturbed parameter vectors against the *same*
+    data in one batched filter pass; row ``i*R + r`` is direction ``i``,
+    replicate ``r``.
+    """
+    return {k: v.repeat(reps, *([1] * (v.dim() - 1))) for k, v in data.items()}
 
 
 def _grad(f, u: Tensor, checkpoint_every: int) -> tuple[Tensor, Tensor]:
@@ -386,7 +414,7 @@ def recover(
     n_replicates: int = 128,
     seed: int = 0,
     n_newton: int = 6,
-    checkpoint_every: int = 250,
+    checkpoint_every: int | None = None,
     level: float = 0.95,
     heldout_data: dict[str, Tensor] | None = None,
     verbose: bool = False,
@@ -401,6 +429,8 @@ def recover(
     estimate.
     """
     u_true = regime.eta_true()
+    if checkpoint_every is None:
+        checkpoint_every = _segment_for(n_replicates, bd.fit_cfg.n_state)
     data = _simulate(bd, u_true, n_replicates=n_replicates, seed=seed)
     fit_data = _prepare_fit_data(bd, data)
     f = _objective(bd, fit_data, n_replicates=n_replicates)
@@ -445,14 +475,25 @@ def recover(
     step_rem = torch.linalg.solve(Hpre, g.unsqueeze(-1)).squeeze(-1)
     grad_norm = torch.sqrt(torch.clamp((g * step_rem).sum(-1), min=0.0))
 
-    # observed information by forward differences of the analytic gradient
+    # Observed information by forward differences of the analytic gradient.
+    # All N_PARAM perturbation directions go through ONE filter pass: the
+    # Riccati recursion is launch-bound on this device, so a 9x larger batch
+    # costs far less than 9 sequential passes.
+    steps_h = (1e-4 * sd).to(u)
+    pert = torch.cat(
+        [u + torch.nn.functional.one_hot(
+            torch.tensor(i, device=u.device), N_PARAM
+        ).to(u) * steps_h[i] for i in range(N_PARAM)],
+        dim=0,
+    )
+    f_big = _objective(bd, _tile_data(fit_data, N_PARAM), n_replicates=n_replicates)
+    _, g_big = _grad(
+        f_big, pert, _segment_for(N_PARAM * n_replicates, bd.fit_cfg.n_state)
+    )
     H = torch.zeros(n_replicates, N_PARAM, N_PARAM, dtype=u.dtype, device=u.device)
     for i in range(N_PARAM):
-        h = 1e-4 * float(sd[i])
-        du = torch.zeros_like(u)
-        du[:, i] = h
-        _, g2 = _grad(f, u + du, checkpoint_every)
-        H[:, :, i] = (g2 - g) / h
+        gi = g_big[i * n_replicates : (i + 1) * n_replicates]
+        H[:, :, i] = (gi - g) / steps_h[i]
     H = 0.5 * (H + H.transpose(-1, -2))
     ev = torch.linalg.eigvalsh(H)
     ok = ev[:, 0] > 0
@@ -495,18 +536,21 @@ def recover(
 
     hl: dict[str, float] = {}
     if heldout_data is not None:
-        fh = _objective(bd, _prepare_fit_data(bd, heldout_data), n_replicates=n_replicates)
+        hd = _prepare_fit_data(bd, heldout_data)
+        fh = _objective(bd, hd, n_replicates=n_replicates, include_prior=False)
         with torch.no_grad():
-            nlp = fh(u)
-        n_obs = sum(
-            v.shape[1] * v.shape[2] * v.shape[3]
-            for v in _prepare_fit_data(bd, heldout_data).values()
-        )
+            nll = fh(u)
+        n_obs = sum(v.shape[1] * v.shape[2] * v.shape[3] for v in hd.values())
         hl = {
-            "total_negative_log_posterior": float(nlp.mean()),
-            "per_observation": float(nlp.mean()) / n_obs,
-            "se": float(nlp.std(unbiased=True) / math.sqrt(n_replicates)),
+            "total_negative_log_likelihood": float(nll.mean()),
+            "per_observation": float(nll.mean()) / n_obs,
+            "se_per_observation": float(
+                nll.std(unbiased=True) / math.sqrt(n_replicates) / n_obs
+            ),
             "n_observations": int(n_obs),
+            "note": "negative log likelihood per used observation on an "
+                    "independent record; the prior term is excluded because it "
+                    "is not evidence about held-out data",
         }
     return RecoveryResult(
         design=bd.spec.name,
@@ -544,7 +588,7 @@ def profile_likelihood(
     span: float = 2.0,
     seed: int = 12345,
     n_newton: int = 5,
-    checkpoint_every: int = 250,
+    checkpoint_every: int | None = None,
 ) -> dict[str, Any]:
     """Profile log-likelihood over a grid for each preregistered parameter.
 
@@ -552,6 +596,8 @@ def profile_likelihood(
     (batched: one filter run covers the whole grid for all parameters).
     """
     u_true = regime.eta_true()
+    if checkpoint_every is None:
+        checkpoint_every = _segment_for(len(names) * n_grid, bd.fit_cfg.n_state)
     data = _simulate(bd, u_true, n_replicates=1, seed=seed)
     fit_data = {k: v.expand(len(names) * n_grid, *v.shape[1:])
                 for k, v in _prepare_fit_data(bd, data).items()}
@@ -643,6 +689,8 @@ def run_benchmark(
     with_profiles: bool = True,
     with_monte_carlo_fisher: bool = True,
     mc_replicates: int = 256,
+    profile_grid: int = 7,
+    profile_newton: int = 5,
     recovery_designs: Sequence[str] | None = None,
     heavy_regimes: Sequence[str] | None = None,
     checkpoint_path: str | None = None,
@@ -727,7 +775,10 @@ def run_benchmark(
                 )
                 entry["recovery"] = rec.to_dict()
             if with_profiles and do_heavy:
-                entry["profile_likelihood"] = profile_likelihood(bd, regime, seed=seed + 3)
+                entry["profile_likelihood"] = profile_likelihood(
+                    bd, regime, seed=seed + 3, n_grid=profile_grid,
+                    n_newton=profile_newton,
+                )
             entry["seconds"] = time.time() - t0
             if verbose:
                 m = rep.metrics

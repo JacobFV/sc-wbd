@@ -43,6 +43,8 @@ __all__ = [
     "UnresolvedCausalAmbiguity",
     "default_device",
     "as_builtin",
+    "cap_gpu_memory",
+    "gpu_memory_report",
     "resolve_device",
     "seed_everything",
     "torch_dtype",
@@ -75,6 +77,47 @@ def default_device() -> torch.device:
 
 def resolve_device(device: str | torch.device | None) -> torch.device:
     return default_device() if device is None else torch.device(device)
+
+
+def cap_gpu_memory(gigabytes: float = 20.0, *, device: int = 0) -> dict[str, Any]:
+    """Impose a **device-side** cap on this process's CUDA allocations.
+
+    Host cgroup limits (``systemd-run -p MemoryMax=``) do not bound CUDA
+    allocations on GB10 unified memory: the GPU allocation is not charged to
+    the cgroup, so ``memory.current`` reads green while the caching allocator
+    grows without bound.  ``torch.cuda.set_per_process_memory_fraction`` is
+    enforced by the allocator itself and therefore actually fires.
+
+    Returns the applied settings so a run can record them in its provenance
+    instead of asserting them.
+    """
+    if not torch.cuda.is_available():
+        return {"applied": False, "reason": "no cuda device"}
+    total = torch.cuda.get_device_properties(device).total_memory
+    frac = min(max(gigabytes * (1024**3) / total, 0.01), 1.0)
+    torch.cuda.set_per_process_memory_fraction(frac, device)
+    return {
+        "applied": True,
+        "device": torch.cuda.get_device_name(device),
+        "total_gib": total / 1024**3,
+        "cap_gib": gigabytes,
+        "fraction": frac,
+        "mechanism": "torch.cuda.set_per_process_memory_fraction (allocator-enforced)",
+        "note": "host cgroup MemoryMax does not bound CUDA allocations on unified "
+                "memory; verify with nvidia-smi --query-compute-apps",
+    }
+
+
+def gpu_memory_report(device: int = 0) -> dict[str, Any]:
+    """Live allocator state, for provenance.  Reserved != allocated."""
+    if not torch.cuda.is_available():
+        return {"cuda": False}
+    return {
+        "cuda": True,
+        "allocated_gib": torch.cuda.memory_allocated(device) / 1024**3,
+        "reserved_gib": torch.cuda.memory_reserved(device) / 1024**3,
+        "max_reserved_gib": torch.cuda.max_memory_reserved(device) / 1024**3,
+    }
 
 
 def seed_everything(seed: int) -> torch.Generator:

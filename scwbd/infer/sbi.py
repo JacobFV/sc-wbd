@@ -114,7 +114,15 @@ class _MaskedLinear(nn.Linear):
 
 
 class _MADE(nn.Module):
-    """One autoregressive conditioner producing (shift, log-scale)."""
+    """One autoregressive conditioner producing (shift, log-scale).
+
+    The context reaches the outputs through **two** paths: the masked hidden
+    stack, and an unmasked direct map.  The direct map matters: for ``dim == 1``
+    (and for the first variable in any ordering) the autoregressive output mask
+    is empty by construction, so without it the conditioner would be a constant
+    and the "conditional" flow would silently return the prior -- a
+    normalised, plausible-looking density that ignores the data.
+    """
 
     def __init__(self, dim: int, ctx: int, hidden: int, reverse: bool):
         super().__init__()
@@ -130,15 +138,18 @@ class _MADE(nn.Module):
         self.l2 = _MaskedLinear(hidden, hidden, m2)
         self.shift = _MaskedLinear(hidden, dim, m3)
         self.logscale = _MaskedLinear(hidden, dim, m3)
-        nn.init.zeros_(self.shift.weight)
-        nn.init.zeros_(self.shift.bias)
-        nn.init.zeros_(self.logscale.weight)
-        nn.init.zeros_(self.logscale.bias)
+        self.ctx_shift = nn.Linear(ctx, dim)
+        self.ctx_logscale = nn.Linear(ctx, dim)
+        for lin in (self.shift, self.logscale, self.ctx_shift, self.ctx_logscale):
+            nn.init.zeros_(lin.weight)
+            nn.init.zeros_(lin.bias)
 
     def forward(self, x: Tensor, ctx: Tensor) -> tuple[Tensor, Tensor]:
         h = torch.tanh(self.l1(x) + self.c1(ctx))
         h = torch.tanh(self.l2(h))
-        return self.shift(h), torch.tanh(self.logscale(h)) * 3.0
+        shift = self.shift(h) + self.ctx_shift(ctx)
+        logscale = torch.tanh(self.logscale(h) + self.ctx_logscale(ctx)) * 3.0
+        return shift, logscale
 
 
 class ConditionalMAF(nn.Module):
@@ -151,15 +162,13 @@ class ConditionalMAF(nn.Module):
     def __init__(self, dim: int, ctx: int, n_flows: int = 5, hidden: int = 128):
         super().__init__()
         self.dim = dim
-        self.flows = nn.ModuleList(
-            [_MADE(dim, ctx, hidden, reverse=bool(i % 2)) for i in range(n_flows)]
-        )
         self.embed = nn.Sequential(
             nn.Linear(ctx, hidden), nn.SiLU(), nn.Linear(hidden, hidden), nn.SiLU()
         )
         self.ctx_out = hidden
-        for f in self.flows:
-            f.c1 = nn.Linear(hidden, f.c1.out_features)
+        self.flows = nn.ModuleList(
+            [_MADE(dim, hidden, hidden, reverse=bool(i % 2)) for i in range(n_flows)]
+        )
 
     def log_prob(self, theta: Tensor, context: Tensor) -> Tensor:
         c = self.embed(context)
@@ -200,14 +209,15 @@ class NPEResult:
     detail: dict[str, Any] = field(default_factory=dict)
 
     def posterior_samples(self, x: Tensor, n: int = 2000, seed: int = 0) -> np.ndarray:
-        g = torch.Generator(device="cpu"); g.manual_seed(seed)
-        xs = (x - torch.tensor(self.x_mean, dtype=x.dtype, device=x.device)) / torch.tensor(
-            self.x_scale, dtype=x.dtype, device=x.device
+        p = next(self.flow.parameters())
+        x = torch.as_tensor(x, dtype=p.dtype, device=p.device).reshape(1, -1)
+        xs = (x - torch.tensor(self.x_mean, dtype=p.dtype, device=p.device)) / torch.tensor(
+            self.x_scale, dtype=p.dtype, device=p.device
         )
-        z = self.flow.sample(n, xs.reshape(1, -1).to(next(self.flow.parameters()).dtype))
-        return (
-            z.cpu().numpy() * self.theta_scale + self.theta_mean
-        )
+        g = torch.Generator(device=p.device)
+        g.manual_seed(int(seed))
+        z = self.flow.sample(n, xs, generator=g)
+        return z.detach().cpu().numpy() * self.theta_scale + self.theta_mean
 
 
 def _standardise(a: Tensor) -> tuple[Tensor, np.ndarray, np.ndarray]:
@@ -260,7 +270,7 @@ def train_npe(
             loss.backward()
             torch.nn.utils.clip_grad_norm_(flow.parameters(), 5.0)
             opt.step()
-            tot += float(loss) * b.numel()
+            tot += float(loss.detach()) * b.numel()
         sched.step()
         hist.append(tot / max(idx.numel(), 1))
         flow.eval()

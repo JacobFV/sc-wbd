@@ -221,6 +221,10 @@ def _theta_lmin(entry: Mapping[str, Any], key: str = "fisher_T4") -> float:
     return float(entry[key]["metrics"]["theta_profile_min_eigenvalue_nonprior"])
 
 
+def _theta_logdet(entry: Mapping[str, Any], key: str = "fisher_T4") -> float:
+    return float(entry[key]["metrics"]["theta_profile_log10_det_likelihood"])
+
+
 def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
     """Apply the *preregistered* rule to the results.  No tuning permitted."""
     regimes = results["regimes"]
@@ -228,9 +232,13 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
     for rname, rres in regimes.items():
         d = rres["designs"]
         lmin = {k: _theta_lmin(v) for k, v in d.items()}
+        logdet = {k: _theta_logdet(v) for k, v in d.items()}
         # naive resampling is judged on its own estimator's information
         if "fisher_coarse_estimator" in d.get("joint_resampled", {}):
             lmin["joint_resampled"] = _theta_lmin(
+                d["joint_resampled"], "fisher_coarse_estimator"
+            )
+            logdet["joint_resampled"] = _theta_logdet(
                 d["joint_resampled"], "fisher_coarse_estimator"
             )
         best_single = max(lmin.get("eeg_only", 0.0), lmin.get("fmri_only", 0.0))
@@ -243,8 +251,11 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
             r = rec.get(k)
             return float(r["delay_error"]["rmse_seconds"]) if r else float("nan")
 
+        have_rec = {k for k, v in rec.items() if v}
         c2_delay = delay_rmse("joint_native") < delay_rmse("joint_resampled")
         c2 = bool(c2_info and c2_delay)
+        if not {"joint_native", "joint_resampled"} <= have_rec:
+            c2 = None                     # not evaluated, not failed
         matched = lmin.get("joint_native_impulse_matched")
         c3 = bool(matched is not None and matched >= 1.05 * jn)
         cov_ok = True
@@ -256,8 +267,8 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
                 cov_detail[p] = c
                 cov_ok = cov_ok and bool(c["nominal_inside_wilson95"])
         else:
-            cov_ok = False
-        c4 = bool(cov_ok)
+            cov_ok = None                 # not evaluated, not failed
+        c4 = None if cov_ok is None else bool(cov_ok)
 
         def theta_rmse(k):
             r = rec.get(k)
@@ -265,12 +276,15 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
                 return float("nan")
             return float(np.mean([r["rmse_in_prior_sd"][p] for p in PREREGISTERED_SUBSET]))
 
-        c5 = bool(
-            theta_rmse("joint_native")
-            <= min(theta_rmse("eeg_only"), theta_rmse("fmri_only")) + 1e-12
-            and delay_rmse("joint_native")
-            <= min(delay_rmse("eeg_only"), delay_rmse("fmri_only")) + 1e-12
-        )
+        if not {"joint_native", "eeg_only", "fmri_only"} <= have_rec:
+            c5 = None                     # not evaluated, not failed
+        else:
+            c5 = bool(
+                theta_rmse("joint_native")
+                <= min(theta_rmse("eeg_only"), theta_rmse("fmri_only")) + 1e-12
+                and delay_rmse("joint_native")
+                <= min(delay_rmse("eeg_only"), delay_rmse("fmri_only")) + 1e-12
+            )
         per_regime[rname] = {
             "theta_profile_min_eigenvalue_nonprior": lmin,
             "best_single_modality": best_single,
@@ -284,13 +298,42 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
             "C3_intervention_information": c3,
             "C4_calibrated_recovery": c4,
             "C5_recovery_improvement": c5,
+            # --- secondary, POST HOC: not part of the preregistered verdict ---
+            # lambda_min over the theta block is dominated by the delay
+            # direction, which a 1 s instrument cannot inform at all; the
+            # log-determinant is the total-information view and is reported so
+            # that "fMRI adds nothing" and "fMRI adds nothing *about the
+            # delay*" are not confused with one another.
+            "secondary_post_hoc": {
+                "theta_profile_log10_det_likelihood": logdet,
+                "fusion_logdet_gain_over_best_single": (
+                    logdet.get("joint_native", float("nan"))
+                    - max(logdet.get("eeg_only", -np.inf),
+                          logdet.get("fmri_only", -np.inf))
+                ),
+                "note": "reported, not used by the verdict; the manifest fixed "
+                        "the criteria before the run",
+            },
         }
     allr = list(per_regime.values())
-    C = {k: all(r[k] for r in allr) for k in
-         ("C1_fusion_information", "C2_native_beats_resampled",
-          "C3_intervention_information", "C4_calibrated_recovery",
-          "C5_recovery_improvement")}
-    if C["C1_fusion_information"] and C["C4_calibrated_recovery"] and (
+    keys = ("C1_fusion_information", "C2_native_beats_resampled",
+            "C3_intervention_information", "C4_calibrated_recovery",
+            "C5_recovery_improvement")
+
+    def combine(k: str):
+        vals = [r[k] for r in allr]
+        if any(v is None for v in vals):
+            # A criterion whose inputs were never computed is NOT_EVALUATED.
+            # Collapsing that to False would let an unfinished sweep masquerade
+            # as a negative result, which is the opposite of reporting honestly.
+            return None
+        return all(vals)
+
+    C = {k: combine(k) for k in keys}
+    unevaluated = [k for k, v in C.items() if v is None]
+    if unevaluated:
+        verdict = "INCOMPLETE"
+    elif C["C1_fusion_information"] and C["C4_calibrated_recovery"] and (
         C["C2_native_beats_resampled"] or C["C3_intervention_information"]
     ):
         verdict = "SUPPORTED"
@@ -304,9 +347,15 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "verdict": verdict,
         "criteria_all_regimes": C,
+        "unevaluated_criteria": unevaluated,
+        "regimes_evaluated": list(per_regime),
         "per_regime": per_regime,
         "consequence": (
-            "The shared latent fusion claim stands at the scope tested."
+            "One or more preregistered criteria were NOT EVALUATED (missing "
+            f"inputs: {unevaluated}); no verdict on the central premise is "
+            "claimed from this run."
+            if verdict == "INCOMPLETE"
+            else "The shared latent fusion claim stands at the scope tested."
             if verdict == "SUPPORTED"
             else "The claim that cross-method integration resolves these dynamics "
                  "must be narrowed; the compiler may still be useful as a "
@@ -458,7 +507,7 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
 
 def _fmt(x: Any, n: int = 4) -> str:
     if x is None:
-        return "-"
+        return "_not evaluated_"
     if isinstance(x, bool):
         return "yes" if x else "**no**"
     if isinstance(x, (int, np.integer)):

@@ -24,6 +24,32 @@ from scwbd.infer.linear_gaussian import (
 DEVICE = os.environ.get("SCWBD_TEST_DEVICE", "cpu")
 
 
+@pytest.fixture(autouse=True)
+def _default_dtype(request):
+    """Pin the global default dtype per test, and restore it afterwards.
+
+    Module-level ``torch.set_default_dtype`` runs at *collection* time, so the
+    last module collected silently decides the dtype for every test that
+    executes later.  That is global state leaking across the suite: each module
+    passed in isolation while three failed in the full run.  Owning the setting
+    here makes it order-independent.
+    """
+    prev = torch.get_default_dtype()
+    want = getattr(request.module, "DEFAULT_DTYPE", torch.float64)
+    torch.set_default_dtype(want)
+    yield
+    torch.set_default_dtype(prev)
+
+
+def pytest_configure(config):
+    # registered locally: pyproject.toml is owned by the architect
+    config.addinivalue_line(
+        "markers",
+        "slow: statistical tests with enough Monte-Carlo replicates for the "
+        "coverage estimate to have a meaningful error bar",
+    )
+
+
 @pytest.fixture(scope="session")
 def tiny_cfg() -> SystemConfig:
     """A deliberately small but *structurally complete* configuration.
