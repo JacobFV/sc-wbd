@@ -386,6 +386,26 @@ five held-out-calibrated baselines get `(horizon, C)`. Run 1 has the **lowest
 MSE of the seven arms** and the second-worst NLL; the failure is in the variance
 channel, not the conditional mean.
 
+> **CORRECTION — this section does not describe a repair of run 1.** An earlier
+> draft of this report, and of `uncertainty.py`'s docstring, said the
+> constant-variance asymmetry "is where run 1 was lost". That was my sentence and
+> it is **wrong**. Turing's decomposition of the +0.4469 excess over the
+> Gaussian-entropy floor, conditional mean held fixed:
+>
+> | term | nats | what it is |
+> |---|---|---|
+> | scale | **0.4467** | 100 % of the gap to the flat ceiling — one scalar asserting variance 1.31 against a held-out residual variance of 3.97, uniformly overconfident by 3.0×. A **training-schedule** defect (`eeg.log_noise` trainable in stage V only; 900 steps in 134 s against an optimum with a closed form). |
+> | channel | 0.1113 | a **fitting** failure — the model already has 64 per-channel parameters and left them flat to 3 %. |
+> | state | 0.1896 / 0.2587 | per-window scalar beyond flat / per-window per-channel beyond per-channel. **This is the only one of the three that needs an architectural change**, and it is ~20× the horizon term. |
+> | horizon | 0.0096 | 1.7 % of the gap. Dropped outright. |
+>
+> So: none of run 1's FAIL is attributable to the absence of a state-dependent
+> variance. What is built below is a **new capability that must earn its own
+> result**. The bar is the matched-calibration ceiling **L4 = 2.0205**; only
+> sub-2.0205 counts as new content. If this lands in the same change as the
+> schedule fix the two are confounded, and the confound would be indistinguishable
+> from a success.
+
 **Verified from source, not taken on report.** `git diff --stat master --
 heads.py evaluate.py train.py baselines.py` is empty on this branch;
 `_calibrate_variance` does return `(h_eff, C)`; `lv` has no path from `x`.
@@ -432,7 +452,9 @@ Three things the P0 did not name, found by checking:
 index after assimilation *is* the horizon step, so integrating `u` forward makes
 the variance grow with `h` without the head being told what `h` is. No `horizon=`
 argument was added anywhere. The permitted-but-unrequired residual (b) was **not
-shipped** — it could not have been distinguished from (a) without an ablation.
+shipped** — I could not distinguish it from (a) without an ablation, and Turing
+subsequently measured the whole horizon term at **0.0096 nats, 1.7 % of the gap**.
+The measurement is the reason it stays out; my instinct was not.
 
 ### Measured, on untrained models, 3×40-step rollouts on the real prior
 
