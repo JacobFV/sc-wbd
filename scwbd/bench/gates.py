@@ -263,6 +263,60 @@ G1_NEGATIVE_TRANSFER_RULING = (
 #:     returned "the optimiser, not the designs".
 G1_SUPPORTED_CLAIM = "native clocks beat resampling; a modality's value is not automatic"
 
+#: G5 ADJUDICATION: the Stage V over-permission, and bench's ruling on it.
+#:
+#: FACT (agent Turing, reports/gates/stage5_over_permission.md @ 723380c):
+#: train.py:stage_sources() documented "intersect each card's A_k with the stage
+#: allowlist (restrict only)" and did not intersect -- it filtered whole card
+#: patterns by top-level-module overlap and kept them at the CARD's breadth.
+#: Declared 6 tensors / 856 params; actually permitted 10 / 2,137; undeclared
+#: eeg.source_proj.* = 1,281 params, which is 37.6% of the individualizer's
+#: 3,411. Confirmed to have MOVED, not merely been permitted
+#: (eeg.source_proj.0.weight max|delta| 3.567e-03).
+#:
+#: BENCH'S RULING: NOT a G5 failure, and a G5 PASS IS NOT CLEAN HERE. The reason
+#: is the one this bench enforces everywhere else: it is a MATCHED-CAPACITY
+#: confound. G5's claim is that INDIVIDUALIZATION improves future prediction. If
+#: an undeclared source->sensor projection carrying 37.6% of the individualizer's
+#: capacity adapted on the same real EEG, a pass cannot separate "individualization
+#: helped" from "1,281 extra adapting parameters helped". That is the same defect
+#: as an unmatched parameter count, arriving through a permission bug rather than
+#: through a baseline choice.
+#:
+#: CONTROL REQUESTED, and preregistered BEFORE it runs: freeze eeg.source_proj.*
+#: and rerun Stage V from stage_IV_assembly.pt, all else identical. Then score G5
+#: on the preregistered metric against the same baselines.
+#:   * advantage SURVIVES the freeze -> individualization claim is clean at the
+#:     supported level; the over-permission was real and did not carry the result.
+#:   * advantage DISAPPEARS or shrinks inside the equivalence margin -> the
+#:     measured effect was undeclared capacity, and G5 must be reported as
+#:     confounded rather than failed.
+#:   * control not run -> G5 cannot be reported as clean, whatever it scores.
+#: Fixing the interpretation of each outcome now is what stops it being chosen
+#: after the number is seen.
+#:
+#: SEQUENCING: the control produces a checkpoint and may run immediately, but it
+#: CANNOT BE SCORED until the evaluation path is clean. Agent Neyman found 10 of
+#: 12 comparisons defective -- max_batches=40 drew 640 windows from
+#: participant-ordered folds, so every baseline was fit on ONE participant (S001)
+#: and every model scored on ONE different participant (S008), with every reported
+#: interval [nan, nan]. NO REAL-EEG HOLDOUT NUMBER MAY BE QUOTED until that path
+#: is cleared, and that includes the control's.
+G5_STAGE_V_OVER_PERMISSION = (
+    "NOT_A_FAILURE; PASS_NOT_CLEAN; CONTROL_REQUESTED_freeze_eeg.source_proj; "
+    "SCORING_BLOCKED_ON_EVALUATION_PATH"
+)
+
+#: What agent Turing's first reading got wrong, recorded because it PROTECTS a
+#: result rather than damaging one: they initially read 31,193 params
+#: over-permitted INCLUDING eeg.L, the lead field -- which would have meant the
+#: biophysical forward model was fit freely and would have contradicted the BEM
+#: validation behind N6/N8. It is false. eeg.L is a registered BUFFER, not a
+#: Parameter; it holds 29,056 of those numbers; its Stage IV->V delta is exactly
+#: 0.000e+00. They ran the checkpoint diff instead of asserting the consequence.
+#: The lead field did not move, and N6/N8 are unaffected.
+STAGE_V_LEAD_FIELD_UNCHANGED = True
+
 _NON_GOALS = [
     "This gate does not claim a validated digital twin of any specific person.",
     "This gate does not claim that any admitted operator is neurally realized.",
