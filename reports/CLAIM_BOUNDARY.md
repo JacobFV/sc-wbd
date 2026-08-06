@@ -816,11 +816,20 @@ it decisively.**
 
 `sha256 = 5cfa14eb5b0c5efd7bcdec1c10c2e04ad0c98abf172d6e16f682ea2198a36dbb`. The
 split fingerprint exists; the checkpoint to compare it against does not carry
-one. **Every figure in §3.4 and §3.5 inherits this.** A further provenance note,
-not previously recorded: `evaluation.json:git_sha` is
-`eb2d88df8809442d7ab7185393ebf98012a5e06a-**dirty**` — the evaluation was run
-from a working tree with uncommitted changes, so the code that produced these
-numbers is not fully identified by any commit.
+one. **Every figure in §3.4 and §3.5 inherits this.**
+
+> **A provenance note, and a correction to my own first draft of it.** I wrote
+> that `evaluation.json:git_sha` being
+> `eb2d88df8809442d7ab7185393ebf98012a5e06a-**dirty**` shows the evaluation ran
+> from a tree with uncommitted changes. **That inference is wrong**, and
+> `reports/decorative_guards.md` row 4 already says why: the run writes to
+> *tracked* files, so `git_sha()` is `-dirty` for **every checkpoint this project
+> has ever produced**. The suffix is structurally incapable of reading clean and
+> therefore carries no information about this run. The correct statement is the
+> weaker one: **the code that produced these numbers is not identified by any
+> commit, and the field that would identify it cannot.** I quoted a decorative
+> guard as evidence, in the document that exists to stop that, one section after
+> naming two more of them.
 
 ### 3.5.7 What this section does and does not change
 
@@ -831,6 +840,32 @@ numbers is not fully identified by any commit.
 | **What may be said of the thesis** | Nothing. The treatment arm has never been built. |
 | **What may be said of the control** | That it lost, that the loss sits in the variance channel, and that the loss is not explained. |
 | **A1_structured_state** | `COULD_NOT_RUN`, unchanged — all three arms missing. The pre-registration for run 2 is `reports/ablations/PREREG_A1_run2.md`, filed **before** any heterogeneous model exists. |
+
+### 3.5.8 Three of the findings above are one class, and it now has a name
+
+§3.5.5 (the candidate scored without the variance calibration its baselines
+received) and §3.5.6a (`subject_specific_ar` reduced to `ar16` by the split) were
+filed above as separate defects. They are not. Together with two found since —
+🌊 Hodgkin's A1 treatment arm exporting 2 dims to its EEG head against the
+control's 18, and `heads.py:238`'s `log_noise`, one learned scalar per channel
+with no path from state — they are **four instances of one failure**:
+
+> **Capacity matching guards the model. Nothing guarded the path from the model
+> to the number.**
+
+Trace what a score depends on — inputs, conditioning, state, observation
+interface, head parameterisation, score, split, optimiser — and the manipulated
+variable is stage 3. Budgets cover stages 3 and 8. **All four defects sit on
+stages 4 through 7**, each with the same shape: a thing that is not the
+hypothesis, differing between arms, at a place nobody was looking because it is
+not "the model".
+
+Worked out in `reports/ablations/PREREG_A1_run2.md` §3.5.2, enforced as a second
+matching axis (`scwbd.bench.matching.check_path_parity`), and filed as rows 11
+and 12 of `reports/decorative_guards.md`. **The bearing on this document is that
+§3.5's re-scoping is now the weaker of two conclusions about run 1:** the artifact
+was not only the wrong arm, it was scored through a path that was never checked
+for parity against the baselines it was compared to.
 
 ---
 

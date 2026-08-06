@@ -52,11 +52,33 @@ Every instance below was green, plausible, and load-bearing.
 | 7 | the **composite training loss** as the comparison metric | whether a change improved the model | it is a weighted sum whose terms move for unrelated reasons. It reported a large step-80 difference between two runs (3.717 vs 2.447) where `sim_forecast_nll` said **20.943 vs 20.980** — indistinguishable — and an early advantage that reversed by step 160. | comparing the same two runs on the interpretable metric instead |
 | 8 | **my own pre-committed stop trigger**, "spike > 10× the running floor" | that the learning rate had destabilised training | the spike is **rate-invariant** — 11.6× at lr 6.0e-4, 10.54× at 3.46e-4. It fires identically under both hypotheses it existed to separate, and prescribes a remedy already applied once without effect. | it fired, and checking whether the *other* run would also have fired it |
 | 9 | **window z-std** as the metric for choosing a normaliser | which candidate bounds the tail | for the `rms` candidate `std(z) = std(x)/rms(sd) ≡ 1` **by construction**. It scored a perfect 1.00 at p50/p90/p95/p99/max — a number it could not have failed to produce. | the perfect score itself looking wrong, and re-validating on `max|z|` |
+| 10 | the §11.4 **smoothing check** on ablation A1, reading `default_effect` | that the winning arm did not win by smoothing away the effect of interest | `default_effect` is **global dynamic range**, and A1's failure mode — every region collapsed onto one shared dynamic — **preserves global dynamic range exactly**. The one failure the check exists to catch is the one input it cannot see. | asking, of a check that had never run, *what would its own failure mode do to its reading?* |
+| 11 | `matched_capacity`, on **every** §11.4 ablation | arms compared "at matched capacity **and compute**" (module docstring) | `check_matched` compared `n_parameters` and nothing else, while `Budget` declared `flops`, `train_steps` and `wall_seconds`. A comparison could be compute-unmatched by any factor and still read green. | reading `Budget`'s fields against the loop that consumes them |
+| 12 | `matched_capacity` again, on ablation A1 | that the two arms differed only in the hypothesis | budgets guard the **model**; nothing guarded the path from the model to the number. The A1 treatment arm's `EEGHead` received a shared interface view exporting `("rate_e","rate_i")` = **2 dims** against the control's `("rate_e","rate_i","spectral")` = **18** — every field `Budget` declares could match exactly. A1 would have concluded heterogeneity does not help. | 🌊 Hodgkin, tracing what his own head actually received rather than what the layout declared — self-reported before shipping |
 
 Number 4 is the sharpest: it sits *inside the mechanism built to catch stale
 artifacts*, and it was about to be handed to a brand-new provenance enforcement
 gate that would have consumed a field structurally incapable of ever reading
 clean.
+
+Rows **10, 11 and 12** were all found *before* the instrument had ever been run.
+Ten and eleven are in `scwbd/bench` — the module whose entire job is to make run
+2's comparison honest — found by 🛡️ Popper against their own code; twelve was
+self-reported by 🌊 Hodgkin against his own branch before it shipped. That brings
+the count of decorative guards found **inside the machinery built to catch them**
+to seven.
+
+Row 12 is the one that generalises furthest, and `reports/ablations/PREREG_A1_run2.md`
+§3.5.2 works it out: **capacity matching guards the model, and nothing guarded
+the path from the model to the number.** Trace that path — inputs, conditioning,
+state, observation interface, head parameterisation, score, split, optimiser —
+and **four of this project's between-arm defects sit on it, none of them in the
+budgets**: row 12 (interface), the variance head with no path from state
+(`heads.py:238`), the §11.2 calibration asymmetry where five baselines were
+calibrated and the candidate was not, and `subject_specific_ar` reduced to `ar16`
+by a participant-disjoint split. All four have the same shape: *a thing that is
+not the hypothesis, differing between arms, at a place nobody was looking because
+it is not "the model".*
 
 ### The absence variant (4 and 5)
 
@@ -122,6 +144,74 @@ not:
 Rule: **for a comparison, choose the narrowest metric that answers the actual
 question**, and choose it *before* seeing which one is favourable. An aggregate is
 for monitoring, not for adjudicating.
+
+### The preserved-quantity variant (10) — the cleanest case in this register
+
+**Worked in full, because it is the most transferable one here and because it was
+caught before the instrument ever ran.**
+
+`body.tex` §11.4 ends with a warning that is easy to agree with and hard to
+execute:
+
+> *a lower variance model is not preferred when it achieves stability by
+> smoothing away the effect of interest.*
+
+`scwbd.bench.statistics.smoothing_check` executes it, and executes it well. It
+applies an `effect` callable identically to the truth and to both predictions, so
+*"the model is smoother"* and *"the model lost the effect"* are separated rather
+than conflated, and it bootstraps the retention ratio. **The mechanism is sound.
+All of its discriminating power lives in that one callable**, and the default is
+`ablations.default_effect` — the mean across features of the across-observation
+standard deviation, i.e. **global dynamic range**.
+
+Now write down A1's failure mode. A1 is *structured regional state versus one
+scalar or pooled vector per region*. The way a heterogeneous model fails is by
+**collapsing every region onto one shared dynamic** — it stops differentiating
+regions. So take any signal and rescale each channel to the pooled temporal
+standard deviation:
+
+> **Between-region differentiation is destroyed. Global dynamic range is
+> unchanged — not approximately, exactly.**
+
+That is the whole finding. The check would have run, returned a retention ratio
+near 1.0, reported "not smoothing", and been **structurally incapable of any
+other reading** on the one input it exists to catch. It would then have sat in the
+report as evidence that the candidate's win was earned.
+
+**Why this variant is worth naming separately.** Rows 4 and 5 are *absence* — a
+quantity that never arrives. Row 7 is a *wrong question* asked of a fine
+instrument. Row 10 is neither: the instrument is right, the question is right,
+and the **conserved quantity** is wrong. The check measures something the failure
+mode happens to preserve. That is invisible to code review, invisible to tests
+that assert the check runs, and invisible to a passing negative control unless the
+negative control is built out of the failure mode itself.
+
+**The test that settles it** (`tests/bench/test_ablations.py`) constructs the
+collapse and asserts *both* halves, because only the pair is informative:
+
+```python
+assert default_effect(collapsed) == pytest.approx(default_effect(truth), rel=0.05)  # BLIND
+assert A1_EFFECT(collapsed) < 0.05 * A1_EFFECT(truth)                               # SEES
+```
+
+The replacement, `A1_EFFECT`, is the across-region dispersion of per-region
+temporal dynamics — preregistered in `reports/ablations/PREREG_A1_run2.md` §5.2
+before any heterogeneous model existed. `run_ablation` now **refuses** an
+explicitly-supplied different callable, and takes the spec's own effect when none
+is passed, so the wrong one is unreachable by omission as well as by choice.
+
+**The generalisable question**, which cost nothing and found both this and row 11:
+
+> **Take the failure this guard exists to catch. Apply it to the guard's input.
+> Does the reading move?**
+>
+> If it does not, the guard is decorative — however sound its mechanism, however
+> green its tests, and *especially* if it has never been run.
+
+This is stronger than "write a negative control", because it says what the
+negative control has to be made of: not a world where the claim is merely false,
+but a world **built out of the specific failure mode**. A negative control
+assembled some other way can pass while the guard stays blind.
 
 ### The invested-conclusion variant — the human one
 

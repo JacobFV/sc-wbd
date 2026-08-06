@@ -115,6 +115,14 @@ claim of §11.4's final paragraph is not granted**. It may still be reported as 
 calibration result. It may not be reported as evidence that structured regional
 state predicts something a pooled vector cannot.
 
+**Third required column: the handicap-removal ceiling.** Every arm also reports
+`NLL* = ½·log(2πe·MSE)` from its own MSE, and the excess `NLL − NLL*`. Given the
+mean, that excess is attributable **entirely** to the predictive variance, so it
+separates *"the model predicts better"* from *"the variance head was fixed"* —
+which run 2 must do, because the variance head **is** being fixed between run 1
+and run 2 (§3.5.4, §7/P9). Without this column the fix and the hypothesis are
+confounded in the primary endpoint.
+
 ---
 
 ## 3. Capacity matching when the arms have structurally different state
@@ -167,18 +175,151 @@ training.
   binding criterion, `matched_capacity` fails and the ablation reports
   `COULD_NOT_RUN`, not a win.
 
-### 3.4 A gap in the existing matcher, named here so it is not discovered later
+### 3.4 A gap in the matcher — named at filing, closed the same day
 
-`scwbd.bench.matching.check_matched` compares **`n_parameters` only**
-(`matching.py`, `r = cb.n_parameters / b.n_parameters`), and `Budget.known`
-returns `True` when `n_parameters is not None` — so `flops`, `train_steps` and
-`wall_seconds` are carried in the dataclass and **never checked**. The module
-docstring of `ablations.py` says arms run "at matched capacity **and compute**".
-**Compute matching is documented and unenforced.** For A1 the parameter-only
-check would also declare "matched" a pair whose state widths differ by any
-factor. B2, B3 and B4 above are therefore **not** satisfied by the existing
-matcher and must be checked explicitly by the scoring path; §7 makes that a
-precondition on scoring rather than a hope.
+**As filed:** `scwbd.bench.matching.check_matched` compared **`n_parameters`
+only**, while `Budget` declared `flops`, `train_steps` and `wall_seconds` and
+`ablations.py`'s docstring promised arms "at matched capacity **and compute**".
+Compute matching was documented and unenforced, and the parameter-only check
+would have declared "matched" a pair whose state widths differ by any factor —
+which for A1 is the entire difficulty. Filed as row **11** of
+`reports/decorative_guards.md`.
+
+**Closed 2026-08-06, by enforcing rather than by narrowing the docstring.**
+Narrowing would have left B2/B3/B4 above unenforceable, which is the same "prose
+is not a guard" failure this document criticises in R12. Three rules now hold:
+
+1. **Every field in `matching.BINDING_FIELDS` binds when both sides declare it**
+   — `n_parameters`, `flops`, `train_steps`, and the two added for this
+   preregistration, `state_width` (B2) and `n_configs_trained` (B4).
+2. **Declared on one side only is a defect, not a skip** → `COULD_NOT_RUN`.
+   Arms whose accounting does not cover the same quantities are not comparable.
+3. **A field no arm declares is named in the verdict.** A *passing*
+   `matched_capacity` row now carries `NOT CHECKED (no arm declared them): …` in
+   its own reason string, plus a `capacity.binding_fields_checked` metric, so a
+   green row cannot be read as more than it is. This is what stops the fix from
+   being cosmetic.
+
+`check_matched(..., require=(...))` turns an unchecked field into a blocker, and
+`AblationSpec.require_budgets` carries it per ablation. **A1 declares
+`("state_width", "train_steps", "n_configs_trained")`**, so B2/B3/B4 are enforced
+by the scoring path rather than by §7's good intentions. One test per binding
+field, each demonstrated to fire, in `tests/bench/test_matching.py`.
+
+**`wall_seconds` is deliberately advisory** — reported, never enforced. Four
+concurrent agents share one ~121 GB pool, so wall-clock measures contention, not
+an arm's capacity. `thesis_contract.tex` asks for matched *compute*, which
+`flops` and `train_steps` carry, so this is a scoping decision and not a
+divergence from the thesis; `require=("wall_seconds",)` raises rather than
+pretending to enforce it.
+
+---
+
+### 3.5 PATH PARITY — the second matching axis, and the answer to "does this generalise?"
+
+**Added 2026-08-06 (amendment A-1, §9) after 🌊 Hodgkin self-reported, on his own
+branch and before shipping, that the A1 treatment arm's `EEGHead` received a
+shared interface view exporting `("rate_e","rate_i")` = 2 dims against the
+control arm's `("rate_e","rate_i","spectral")` = 18.**
+
+**Every field `Budget` declares could have matched exactly.** A1 would have
+concluded that heterogeneous regional state does not help — and it would have
+been wrong, with a green harness, because the treatment arm was handicapped **at
+the observation boundary rather than at the hypothesis**.
+
+#### 3.5.1 It is a constraint, not a budget
+
+It does not belong in §3.1 as "B6", and the reason is directional. Budgets are
+**one-sided**: a candidate that wins with fewer parameters has produced evidence,
+which is why `check_matched` only fails an *over*-budget candidate. Interface
+width has no such direction:
+
+| | candidate wins | candidate loses |
+|---|---|---|
+| candidate's interface **narrower** | strengthened | **confounded** ← Hodgkin's case |
+| candidate's interface **wider** | **confounded** | strengthened |
+
+Both directions invalidate, depending on an outcome that is unknown when the rule
+is fixed. **So the only preregisterable rule is exact equality**, and a
+tolerance would be meaningless.
+
+It is also not about *width*. Two arms can each present 18 dims of different
+typed quantities and be just as confounded. **The constraint is on the ordered
+tuple of exported port names and widths, per head** — verified by comparing what
+the arms actually export at score time, not by declaration.
+
+#### 3.5.2 The generalisation — what else crosses an arm boundary unmatched
+
+The instance matters less than the question it answers, so here is the question
+answered generally. Trace what a score depends on, from the manipulated variable
+to the scalar:
+
+| # | stage | guarded before today? | has it already produced a defect here? |
+|---|---|---|---|
+| 1 | inputs — corpus, shards, windows, context, normalisation | no | not yet |
+| 2 | conditioning — anatomy artifact, connectome, priors | partly (§7/P2) | yes: run 1's `synthetic_fallback` |
+| 3 | **state — the manipulated variable** | this *is* the hypothesis | — |
+| 4 | observation interface: state → head | **no** | **yes — Hodgkin, 2 vs 18 dims** |
+| 5 | head parameterisation, mean **and variance** | **no** | **yes — P0: `log_noise` is one learned scalar per channel, no path from state (`heads.py:238`/`:258`)** |
+| 6 | score: metric, units, calibration protocol | no | **yes — §3.5.5 of CLAIM_BOUNDARY: five baselines calibrated, candidate not** |
+| 7 | split: which windows, which participants | partly | **yes — `subject_specific_ar` ≡ `ar16` under a participant-disjoint split** |
+| 8 | optimiser: steps, schedule, seeds, search budget | yes (B3, B4) | not yet |
+
+> **Capacity matching guards the model. Nothing guarded the path from the model
+> to the number — and four of this project's between-arm defects live on that
+> path, none of them in the budgets.**
+
+That is the transferable statement, and it is why this is a **second axis**
+rather than a sixth budget. Stages 4, 5, 6 and 7 all have the same shape: *a
+thing that is not the hypothesis, differing between arms, at a place nobody was
+looking because it is not "the model".*
+
+#### 3.5.3 The rule, and its mechanism
+
+**Every arm must present the same path from state to scalar score.** Fixed in
+code as `scwbd.bench.matching.ArmPath` / `check_path_parity` / `parity_subcheck`,
+wired into `run_ablation` via `AblationSpec.require_path_parity`, which **A1
+sets**. Fields compared, each with a test that fires
+(`tests/bench/test_matching.py`): `observation_ports` (ordered, named, per head),
+`variance_model`, `calibration_protocol`, `score_metric`, `split_fingerprint`,
+`context_length`, `input_normalisation`, `anatomy_provenance`.
+
+Two deliberate differences from `check_matched`, both stated so neither is
+mistaken for an oversight:
+
+1. **Equality, not a budget** — §3.5.1.
+2. **Undeclared blocks.** An unchecked *budget* field passes and is named,
+   because nothing has ever declared those fields and failing them would be
+   retroactive. Path parity is new and carries no legacy, so it starts strict:
+   **parity that was not verified is not parity.** Comparison is generic over
+   the dataclass fields, so adding a field extends the check automatically — a
+   guard that must be manually extended falls behind the thing it guards.
+
+#### 3.5.4 P0's variance defect enters here, and the fix must be scored against a ceiling
+
+P0 came back **yes**: run 2 inherits run 1's variance defect in full —
+`heads.py:238`/`:258`, `log_noise` is one learned scalar per channel, broadcast,
+with no path from state; `BOLDHead` is identical. Both are being fixed before run
+2 trains. That is stage 5 above.
+
+**Fixing it will lower NLL, and that is removal of a handicap the baselines never
+had, not evidence of improvement.** So the ceiling is preregistered **now**, per
+arm, before any post-fix number exists:
+
+> **Handicap-removal ceiling.** For any arm, `NLL* = ½·log(2πe·MSE)` computed
+> from that arm's **own** held-out MSE is the best score achievable by fixing the
+> variance alone, holding the conditional mean fixed. **Improvement up to `NLL*`
+> is handicap removal. Only improvement beyond `NLL*` is new predictive
+> content** — and even that must clear the §4.2 floor.
+
+Every arm therefore reports **NLL, MSE, and the excess `NLL − NLL*`**. For run
+1's artifact the ceiling is already computed and filed before the fix:
+**`NLL* = 2.1083`** from `MSE = 3.9697` (`CLAIM_BOUNDARY.md` §3.5.4). A post-fix
+number at or above 2.1083 is the handicap coming off and nothing else; at 2.1083
+the artifact passes persistence (2.2787) and still loses to `ar16` (2.0132),
+`var4` (2.0185) and `population_gaussian` (2.0484). **That bound was written
+before the fix was applied and is not to be restated afterwards as a prediction
+that came true.**
 
 ---
 
@@ -358,6 +499,21 @@ run, with the sign where it is known:
 | **S4** | anatomy provenance | both arms must consume the **same** anatomy artifact, with `provenance` and `is_biological` recorded. Differing anatomy between arms → `COULD_NOT_RUN`. Note `run2_plan.md` P4: `AnatomyPrior.gradient` is all zeros on the real prior, which would make `ei_gradient` inert and could degrade the family partition itself. | unknown |
 | **S5** | corpus / site | single recording setup (`reports/data_inventory.md`); leave-site-out is unconstructible (§3.1). Bounded only by the worst-stratum check on the strata that do exist. | unknown |
 | **S6** | checkpoint selection | selection on the **val** fold only, same rule and same step budget for every arm, declared before training. | one-sided toward whichever arm is selected more aggressively |
+| **S7** | **observation-interface coverage** *(added 2026-08-06, amendment A-1)* | once §3.5 forces the arms onto one shared interface, the *choice* of that interface may still narrow what the treatment arm can express — a family whose informative components are not among the exported ports cannot show its advantage. Bounded by the **fraction of the candidate's declared per-family state that reaches any head**, reported per family. | **one-sided against the treatment arm** — it can only hide an effect, never manufacture one |
+
+**Why the interface *mismatch* is NOT in this table, and putting it there would
+weaken it.** An S-term is something that **cannot be eliminated** and must
+therefore be bounded and carried into `E`. An interface mismatch **can and must
+be eliminated**, and where it is present the comparison is not
+biased-by-a-bounded-amount — it is **invalid**. Filing it as an S-term would let
+a large mismatch be "bounded" and traded off against `Δ` under R-SYS, when in
+fact any mismatch voids the run. It is therefore a **hard precondition** (§7/P8)
+and a `COULD_NOT_RUN`, never a term in `E`.
+
+What *does* belong in the table is the residue that survives after the mismatch
+is fixed: the shared interface's coverage, S7. That distinction is the whole
+answer to "does this change S1–S6" — **one half is a gate, the other half is a
+term, and collapsing them would soften the gate.**
 
 **Binding rule R-SYS.** Let `Δ` be the candidate's advantage over its **nearest**
 control and `E` the sum of the bounded terms plus the S2 between-seed range.
@@ -391,6 +547,8 @@ Scoring before these hold produces a number that will have to be withdrawn.
 | **P5** | B2/B3/B4 checked explicitly; the existing matcher checks B1 only (§3.4). | otherwise "matched capacity and compute" is prose. | not met |
 | **P6** | `per_window_mse` collected and paired-bootstrapped for every arm. | the two-column rule (§2); `evaluate.py:398-418` currently discards it. | not met |
 | **P7** | R12 exists and fires. `ARCHITECTURE.md:243` names it; `grep -rn "R12" scwbd/ --include=*.py` returns nothing in this checkout. | a control arm that can be emitted under the SC-WBD name is how run 1 happened. 📜 Noether owns this. | not met |
+| **P8** | **Path parity (§3.5): every arm declares an `ArmPath` and they are identical.** Mismatch or undeclared → `COULD_NOT_RUN`, never a discounted number. | 🌊 Hodgkin's 2-vs-18 interface would have inverted A1's conclusion with every budget matching. Four of this project's between-arm defects live on this path and none in the budgets. | **enforced on `wt/popper`** — `AblationSpec.require_path_parity=True` for A1; arms are still to be built |
+| **P9** | **The variance head is state-dependent in every arm, and each arm reports its handicap-removal ceiling `NLL* = ½·log(2πe·MSE)` (§3.5.4).** | P0 returned **yes**: run 2 inherits the defect. Fixing it lowers NLL by removing a handicap, and without the ceiling that is indistinguishable from the model getting better. | fix in progress on `wt/hodgkin`; ceiling for run 1 already filed at **2.1083** |
 
 ---
 
@@ -414,9 +572,94 @@ letting a clean path launder a limited artifact.
 
 ---
 
+## 8b. Standing commitment — INCONCLUSIVE is a result, and will not be softened
+
+**Written 2026-08-06, while it costs nothing, because that is the only time such
+a commitment means anything.** The architect asked for it in writing before run 2
+exists. Here it is, and it binds bench.
+
+> **If run 2's numbers land inside the INCONCLUSIVE band, that is the result. It
+> will be reported as INCONCLUSIVE, in those words, and not as a near-miss, a
+> trend, a promising direction, or a partial win.**
+
+The band is not vague. It is entered when **F5** fires: the systematic-error
+envelope `E ≥ |Δ|`, or the between-seed range of either arm `≥ |Δ|` (§6.3). Both
+are computable before any prose is written, and **S2 — the seed range — runs
+first**, before the between-arm delta is looked at, so the question *"is this
+resolvable at all?"* is answered before anyone has an answer they prefer.
+
+**The four softenings that will not be available**, each named now so that
+proposing one later is visibly a change of rule rather than a judgement call:
+
+1. **Dropping a systematic-error term to shrink `E`.** S1–S6 are fixed. A term
+   may be *bounded more tightly by measurement*; it may not be dropped because it
+   is inconvenient. Re-bounding is an §9 amendment with its evidence attached.
+2. **Reporting the bootstrap interval and omitting `E`.** A tight interval next
+   to an unbounded systematic term is the shape of this project's `N9` error, its
+   Stage I condition-2 error, and the §11.2 calibration asymmetry. The interval
+   bounds sampling variance and nothing else. Both numbers appear or neither does.
+3. **Adding seeds until the range shrinks.** The seed count is fixed at **≥ 3
+   per arm, declared before training**. Adding seeds *after* seeing the range,
+   to move a verdict, is optional stopping. More seeds may be run — but the
+   verdict is computed at the preregistered count and **both** are reported.
+4. **Promoting a secondary endpoint.** The primary is held-out per-window NLL
+   with the co-primary MSE (§2). If the primary is inconclusive and something
+   else is not, the something else is **exploratory** and is labelled that way in
+   the same sentence that reports it.
+
+**Why this is worth committing to rather than trusting to good faith.** Good
+faith was never the binding constraint here. `reports/decorative_guards.md`
+records that Stage I's condition 2 was preregistered before the data existed,
+never moved, honoured to the letter, escalated, and adjudicated by a party who
+was not its author — and was *still* uninterpretable. Every procedural protection
+was applied correctly by people acting honestly. What failed was that nobody had
+written down, in advance, what an uninformative result would look like and that
+it would be reported as one.
+
+**An INCONCLUSIVE A1 is not a wasted run.** It measures that this corpus, at this
+seed count, with these unbounded systematic terms, **cannot resolve the §11.4
+bullet** — which is a fact about the experiment we are able to run, it is
+actionable (more seeds, a second site, external hemodynamic constraints, a
+verified split), and it is the kind of result this project has repeatedly found
+to be its most transferable output. Reporting it as a near-win would destroy that
+information and replace it with an impression.
+
+---
+
 ## 9. Amendments
 
-*(none — appended below with UTC timestamp and reason; never overwritten)*
+*(appended with UTC timestamp and reason; never overwritten)*
+
+### A-1 — 2026-08-06T00:00Z — path parity, S7, and the handicap-removal ceiling
+
+**Filed under this document's own amendment rule rather than absorbed silently,
+because a preregistration that edits itself invisibly is not one.**
+
+**Admissible:** no run-2 arm exists and no run-2 held-out number has been
+produced or observed by anyone. The primary endpoint is **unchanged** and remains
+confirmatory. The trigger was a defect self-reported by 🌊 Hodgkin on his own
+branch *before shipping*, and a P0 answer, neither of which is a result.
+
+**What changed:**
+
+| | change | why |
+|---|---|---|
+| **§3.5 (new)** | Path parity as a **second matching axis**: every arm presents the same observation interface, variance model, calibration protocol, metric, split, context, normalisation and anatomy provenance. Enforced by `matching.ArmPath` / `check_path_parity`, wired to A1 via `AblationSpec.require_path_parity`. | the treatment arm's `EEGHead` exported 2 dims against the control's 18 with **every budget field identical**. A1 would have concluded heterogeneity does not help, with a green harness. |
+| **§3.5.2** | The generalisation: an eight-stage trace from manipulated variable to scalar, marking which stages were guarded. **Four of this project's between-arm defects sit on stages 4–7; none in the budgets.** | the architect asked whether this generalises. It does, and the trace is more useful than the instance. |
+| **§6.3, S7 (new)** | Observation-**interface coverage** as a systematic-error term, one-sided against the treatment arm. | the residue that survives once the mismatch is fixed: a shared interface can still fail to carry what a family knows. |
+| **§6.3, prose** | Explicit: interface **mismatch** is *not* an S-term and adding it there would **weaken** it — an S-term is bounded and traded against `Δ`; a mismatch voids the run. Gate, not term. | asked directly whether S1–S6 changes. Half of it does (S7); the other half must not, and saying why is the substance. |
+| **§2, §3.5.4, §7/P9** | Per-arm **handicap-removal ceiling** `NLL* = ½·log(2πe·MSE)` as a required third column. | P0 returned **yes** — run 2 inherits the variance defect and it is being fixed. Fixing it lowers NLL by removing a handicap the baselines never had. Without the ceiling that is indistinguishable from the model improving. |
+| **§7, P8/P9 (new)** | Preconditions for the two above. | |
+
+**Nothing was relaxed.** Every change adds a constraint or a required column. No
+threshold moved, no arm was dropped, no systematic-error term was removed, and
+§8b's commitment is untouched.
+
+**One number is now on the record before the work it judges:** run 1's ceiling is
+**2.1083** nats, derived from its own held-out `MSE = 3.9697` before the variance
+fix was applied. A post-fix score at or above it is the handicap coming off and
+nothing more. It is filed here so it cannot later be produced as a prediction
+that came true.
 
 ---
 
