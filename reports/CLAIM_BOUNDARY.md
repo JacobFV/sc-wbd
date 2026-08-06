@@ -483,6 +483,68 @@ boundary observables), and all ten §11.4 ablations.
 
 ---
 
+## 3.4 THE MEASURED NEGATIVE RESULT — §11.2's baseline comparison, and it failed
+
+`body.tex` §11.2 requires comparison against *"simple autoregressive, dense
+neural, population, and subject-specific statistical baselines."* That comparison
+has now run on a path agent Neyman audited and cleared.
+
+**Verdict: FAIL.** Not `COULD_NOT_RUN` — the path is clean, the comparison ran,
+and **nothing is inconclusive**. Verified by bench directly from
+`reports/training/evaluation.json` (`f04d87f`): `scwbd_beaten_by` lists all five,
+`inconclusive_vs_scwbd` is empty. 1,080 test windows / 27 participants, paired
+participant-clustered 95 % intervals on the per-window NLL difference, every one
+excluding zero.
+
+| baseline | Δ (positive = SC-WBD worse) | 95 % CI |
+|---|---:|---|
+| `ar16` (4,160 params) | **+0.5419** | [+0.4155, +0.6901] |
+| `subject_specific_ar` | +0.5419 | [+0.4155, +0.6901] |
+| `var4` | +0.5366 | [+0.4076, +0.6830] |
+| `population_gaussian` | +0.5068 | [+0.3760, +0.6622] |
+| **`persistence`** | **+0.2765** | [+0.1441, +0.4336] |
+| `dense_neural` | −1.8049 | [−2.0944, −1.5522] |
+
+**SC-WBD-001-beta, at 1,757,613 parameters, is beaten by copying the last
+observed sample forward.** The only model it beats is `dense_neural` — its own
+equal-capacity control. This is stated without softening.
+
+**Three bounds, none of which soften it, all of which constrain what may be
+inferred from it:**
+
+1. **`anatomy.is_biological: FALSE`** — `provenance: synthetic_fallback`,
+   `n_regions: 454`, lead field `analytic_sphere_fallback`. **The artifact tested
+   is not the artifact the thesis describes: it contains no real human anatomy.**
+   So this **does not falsify G2** — that gate was never exercised, because the
+   model never had anatomy to test.
+2. **`subject_specific_ar` is bit-identical to `ar16`** — same NLL, same CI, same
+   paired Δ to four decimals. The thesis's hardest baseline is still not running
+   and its 77,248 parameters are decoration. **Four distinct baselines, not
+   five** — which does not change the verdict.
+3. **`real_split.verified: false`** — `stage_V_individual.pt` predates the
+   fingerprint field, so the evaluation split **cannot be proven** identical to
+   the one that trained the model. An unproven assumption, recorded in the
+   artifact rather than in a log.
+
+**Licensed:** *this artifact, trained on this corpus with a synthetic connectome,
+does not beat trivial baselines on held-out real EEG.*
+**Not licensed:** any claim about the architecture, about anatomy (G2
+unexercised), about fusion (G1), or about multiresolution (G3). **A model without
+anatomy cannot falsify a claim about anatomy.**
+
+> **Agent Neyman's framing, adopted as the rule for reading this section:** *the
+> path is clean and the artifact is limited, and those are different findings.* A
+> clean measurement of a limited thing is a valid number about a limited thing.
+> Merging the two would let a clean-code verdict launder a claim the data cannot
+> support — in **either** direction.
+
+**Posterior calibration at Stage V**, for the record and not as a trend: R²
+−0.307 to 0.273, `z_sd` 0.95–2.41, min KS p 5.1e-57, coverage MAE 0.0678. Agent
+Turing offers the Stage III → V `z_sd` movement (1.02–1.40 → 0.95–2.41) as an
+**observation, not a finding**, since the sample sizes differ (1,888 vs 514
+proportional). Bench records it the same way. The preregistered SBC is still the
+verdict and bench still runs it.
+
 ## 4. The one question that was resolved by being voided
 
 **G1's negative-transfer question is UNMEASURED, not unresolved.** The decisive

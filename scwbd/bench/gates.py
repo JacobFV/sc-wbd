@@ -489,6 +489,72 @@ G5_RERUN_RULING = (
 #: The lead field did not move, and N6/N8 are unaffected.
 STAGE_V_LEAD_FIELD_UNCHANGED = True
 
+#: ============================================================================
+#: THE §11.2 BASELINE COMPARISON: MEASURED, CLEAN, AND FAILED.
+#: ============================================================================
+#: body.tex §11.2 requires that "performance must be compared with simple
+#: autoregressive, dense neural, population, and subject-specific statistical
+#: baselines." That comparison has now run on a path agent Neyman audited and
+#: cleared. Verified by bench directly from reports/training/evaluation.json
+#: (f04d87f): scwbd_beaten_by = [persistence, ar16, var4, population_gaussian,
+#: subject_specific_ar]; inconclusive_vs_scwbd = []. 1,080 test windows / 27
+#: participants, paired participant-clustered 95% intervals on the per-window NLL
+#: difference, every one excluding zero.
+#:
+#: VERDICT: **FAIL**, and it is a FAIL rather than a COULD_NOT_RUN. The path is
+#: clean, the comparison ran, nothing is inconclusive. SC-WBD-001-beta at
+#: 1,757,613 parameters scores NLL 2.5552 against ar16's 2.0132 at 4,160
+#: parameters, and is beaten by PERSISTENCE -- copying the last observed sample
+#: forward -- by +0.2765 [+0.1441, +0.4336]. The only model it beats is
+#: dense_neural, its own equal-capacity control.
+#:
+#: THREE BOUNDS ON WHAT THIS MEANS, none of which soften it and all of which
+#: constrain what may be inferred FROM it:
+#:
+#: 1. anatomy.is_biological = FALSE. provenance = synthetic_fallback, n_regions
+#:    454, lead field analytic_sphere_fallback. THE ARTIFACT TESTED IS NOT THE
+#:    ARTIFACT THE THESIS DESCRIBES: it contains no real human anatomy. So this
+#:    result does NOT falsify G2 ("anatomical topology improves inference") --
+#:    that gate was never exercised, because the model never had anatomy. It is
+#:    a measured fact about THIS artifact, not about the architecture.
+#: 2. subject_specific_ar is BIT-IDENTICAL to ar16 -- same NLL, same CI, same
+#:    paired delta to four decimals (agent Neyman's C1-M3). The thesis's hardest
+#:    baseline is still not running and its 77,248 parameters are decoration. So
+#:    there are FOUR distinct baselines here, not five. It does not change the
+#:    verdict: four still beat it decisively.
+#: 3. real_split.verified = FALSE. stage_V_individual.pt predates the fingerprint
+#:    field, so the evaluation split CANNOT BE PROVEN identical to the one that
+#:    trained the model. Not a mismatch -- an unproven assumption, recorded in the
+#:    artifact rather than in a log.
+#:
+#: WHAT IT LICENSES: "this artifact, trained on this corpus with a synthetic
+#: connectome, does not beat trivial baselines on held-out real EEG." That is a
+#: real negative result and bench will not soften it.
+#: WHAT IT DOES NOT LICENSE: "the architecture does not work", "structured state
+#: does not help", or any statement about anatomy, fusion, or multiresolution.
+#: Those gates were not run, and a model without anatomy cannot falsify a claim
+#: about anatomy.
+#:
+#: AGENT NEYMAN'S FRAMING, ADOPTED AS THE RULE FOR READING IT: the path is clean
+#: and the artifact is limited, and THOSE ARE DIFFERENT FINDINGS. A clean
+#: measurement of a limited thing is a valid number about a limited thing.
+#: Merging the two would let a clean-code verdict launder a claim the data cannot
+#: support -- in either direction.
+BASELINE_COMPARISON_VERDICT = (
+    "FAIL: beaten by persistence, ar16, var4, population_gaussian and "
+    "subject_specific_ar; all paired participant-clustered intervals exclude 0; "
+    "nothing inconclusive. Bounded by anatomy.is_biological=False, a "
+    "non-functional subject_specific_ar, and an unverified split."
+)
+BASELINE_COMPARISON_LICENSES = (
+    "this artifact on this corpus with a SYNTHETIC connectome does not beat "
+    "trivial baselines on held-out real EEG"
+)
+BASELINE_COMPARISON_DOES_NOT_LICENSE = (
+    "any claim about the architecture, about anatomy (G2 unexercised: the model "
+    "had none), about fusion (G1), or about multiresolution (G3)"
+)
+
 _NON_GOALS = [
     "This gate does not claim a validated digital twin of any specific person.",
     "This gate does not claim that any admitted operator is neurally realized.",
