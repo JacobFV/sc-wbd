@@ -85,3 +85,55 @@ construction — the absence variant, in the provenance the compiler consumes.
 It happens to be *true* for this run, which is exactly what makes it dangerous:
 the field was never evidence, and this run does not establish that it ever will
 be.
+
+## What the single-site limitation does and does not block (🛡️ Popper)
+
+The site warning does **not** block G5, and the reasoning is sharper than the
+conclusion:
+
+> **Site is constant across every arm.** Individualised, population, anatomy-only
+> and session-adapted all draw from the same recording setup. **A constant cannot
+> explain a difference between arms**, so site does not confound the contrast G5
+> actually measures.
+
+What remains unsupported is exactly two things:
+
+1. that any measured advantage **replicates at another site**;
+2. that the individualisation is not exploiting **signal characteristics specific
+   to this setup** that happen to individuate here.
+
+**Licensed claim, narrowed before anything is measured:**
+
+> *"Individualization improves future prediction **within this recording
+> setup**."*
+
+Encoded in `scwbd/bench/corpus.py` so the narrowing is applied by the bench
+rather than remembered at write-up time — the same mechanism-over-instruction
+principle as the leakage gate itself.
+
+### D03 (site/device shortcuts) — COULD_NOT_RUN, corpus named
+
+Not skipped. **None of the three controls is constructible on this corpus:**
+
+| control | why it cannot run |
+|---|---|
+| leave-site-out | requires a second site; there is one |
+| nuisance-only classifier | requires site labels that vary; they do not |
+| within-site permutation | cannot falsify a site shortcut on its own |
+
+Same form as G4's `control_graph: none` — the gate is **unexercised, not
+failed**, and saying so is the only honest status. A green D03 here would have
+meant nothing.
+
+## A note on what Ada's auditor did right
+
+It **passed and warned.** Zero violations, disjointness independently recomputed,
+and it still flagged what the clean result cannot license.
+
+An audit that reported only its own verdict would have returned green and taught
+nobody anything — and the green would have been *correct*, which is what makes
+that failure mode hard to see. **The warning is the part that carried
+information**, and it came attached to a pass rather than a failure.
+
+Worth copying into any future audit: report what the result **cannot** support,
+not only whether it holds.
