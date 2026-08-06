@@ -29,7 +29,38 @@ __all__ = [
     "count_parameters",
     "human_bytes",
     "flatten_dict",
+    "logical_param_name",
 ]
+
+#: Name segments ``torch.compile`` inserts into ``named_parameters()``.
+#: ``torch.compile(mod)`` returns an ``OptimizedModule`` holding the original
+#: under ``_orig_mod``, so ``local.embed`` silently becomes
+#: ``local._orig_mod.embed`` the moment a submodule is compiled.
+_COMPILE_WRAPPER_SEGMENTS = frozenset({"_orig_mod", "_orig_module"})
+
+
+def logical_param_name(name: str) -> str:
+    """A parameter's name with ``torch.compile`` wrapper segments removed.
+
+    Every permission in this codebase -- source cards, stage allowlists, the
+    compiler's parameter groups -- is written against the *logical* module tree
+    the architecture describes.  ``torch.compile`` is an execution detail that
+    rewrites that tree's names, and a glob written as ``local.embed`` stops
+    matching when it does.  The failure is silent and asymmetric: prefix globs
+    like ``local.*`` keep matching, exact names do not, so a permission set can
+    half-apply and still look enforced.
+
+    This ran in production on 2026-08-05.  ``cfg.model.compile`` is true on CUDA,
+    which compiled ``model.local`` and ``model.residual``; every per-region
+    binding (``local.embed``, ``residual.embed``, ``local.films.*.region_scale``)
+    then matched nothing, while the coarser operator globs still matched -- so
+    the run trained with per-region permissions that governed no tensor.
+    Normalising here, at the single point where names meet patterns, is what
+    keeps the declaration true of the model that actually runs.
+    """
+    if "_orig_mod" not in name:
+        return name
+    return ".".join(p for p in name.split(".") if p not in _COMPILE_WRAPPER_SEGMENTS)
 
 
 def repo_root() -> Path:

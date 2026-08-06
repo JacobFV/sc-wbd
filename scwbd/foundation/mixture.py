@@ -44,6 +44,8 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 import torch
 from torch import Tensor, nn
 
+from .util import logical_param_name
+
 __all__ = [
     "SourceSpec",
     "SourceRole",
@@ -213,6 +215,12 @@ class SourceSpec:
 
     # -- gradient permission ---------------------------------------------
     def permits(self, param_name: str) -> bool:
+        # Match against the *logical* name: a card's ``A_k`` is written against
+        # the module tree the architecture describes, and torch.compile renames
+        # tensors underneath it.  See util.logical_param_name -- without this a
+        # compiled run silently loses every exact-name permission while keeping
+        # the prefix globs, which is worse than losing all of them.
+        param_name = logical_param_name(param_name)
         if any(fnmatch.fnmatch(param_name, pat) for pat in self.frozen):
             return False
         return any(fnmatch.fnmatch(param_name, pat) for pat in self.gradient_permission)

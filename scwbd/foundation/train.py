@@ -45,7 +45,18 @@ from .posterior import AmortizedPosterior
 from .simulate import THETA_NAMES, CorpusSpec, SimCorpus, ThetaPrior, generate_corpus
 from .util import JsonlLogger, Timer, count_parameters, env_fingerprint, git_sha, set_determinism
 
-__all__ = ["FoundationTrainer", "STAGE_PERMISSIONS", "main"]
+__all__ = ["FoundationTrainer", "BindingDriftError", "STAGE_PERMISSIONS", "main"]
+
+
+class BindingDriftError(RuntimeError):
+    """The compiler compiled, but its groups no longer name tensors we have.
+
+    Distinct from :class:`~scwbd.foundation.compiler_bridge.CompilerUnavailable`
+    on purpose: an absent compiler is a degraded-but-honest mode the source cards
+    can cover, whereas a *present* compiler whose bindings miss means the
+    permission system is reporting enforcement it is not performing.  Only the
+    first is recoverable, so only the first falls back.
+    """
 
 #: What each stage is allowed to touch.  Intersected with (never added to) the
 #: source card's own ``A_k``.
@@ -196,6 +207,23 @@ class FoundationTrainer:
             compiled = cb.compile_foundation(self.anat.to("cpu"), list(probe.values()))
             binds = cb.bind_masks(self.model, compiled)
             audit = cb.audit_binding(self.model, compiled)
+            if audit["problems"]:
+                # Fail closed.  "The compiler is unavailable" and "the compiler
+                # is available and says our binding table no longer describes
+                # this model" are opposite situations, and only the first is a
+                # reason to fall back to the cards' own globs.  Training through
+                # the second produces a checkpoint whose gradient masks are
+                # decorative -- which is what happened on 2026-08-05 -- so it is
+                # raised past the fallback handler below rather than warned
+                # about in a log nobody reads until the postmortem.
+                raise BindingDriftError(
+                    "compiler->torch binding is incomplete; refusing to train a model whose "
+                    "gradient masks would not govern the tensors they name:\n  "
+                    + "\n  ".join(audit["problems"])
+                    + "\n\nFix scwbd/foundation/compiler_bridge.py:FOUNDATION_BINDING / "
+                    "FOUNDATION_FROZEN_BINDING so every declared group names tensors that "
+                    "exist.  tests/foundation/test_compiler_binding.py covers this."
+                )
             # Modules the compiled schema does not model at all (the Stage-V
             # individualizer lives outside the operator graph) keep the card's
             # own declaration; the compiler cannot restrict what it never saw,
@@ -221,11 +249,13 @@ class FoundationTrainer:
                 "n_groups": len(compiled.gradient_masks.group_names),
                 "schedule": cb.schedule_plan(compiled),
                 "binding_audit": {
-                    k: v for k, v in audit.items() if k in ("unclaimed_parameters", "empty_bindings", "unbound_groups", "declared_empty_groups")
+                    k: v for k, v in audit.items() if k in ("unclaimed_parameters", "empty_bindings", "unbound_groups", "declared_empty_groups", "frozen_groups", "problems")
                 },
                 "per_source": changed,
                 "outside_compiler_schema": outside,
             }
+        except BindingDriftError:
+            raise
         except Exception as exc:  # noqa: BLE001 - the compiler is authoritative but not yet mandatory
             rep = {"used": False, "reason": f"{type(exc).__name__}: {exc}"}
             print(f"[warn] compiler bridge unavailable ({rep['reason']}); using the source cards' own "
@@ -272,7 +302,7 @@ class FoundationTrainer:
                 num_workers=d.num_workers,
                 drop_last=True,
                 persistent_workers=d.num_workers > 0,
-                pin_memory=True,
+                pin_memory=d.pin_memory,
             )
         )
         self.sim_val_loader = torch.utils.data.DataLoader(

@@ -82,7 +82,12 @@ class DataConfig:
     context: int = 24  # assimilation window, model steps
     fs_hz: float = 125.0
     batch: int = 192
-    num_workers: int = 8
+    num_workers: int = 4
+    #: Pin the loader's host buffers.  Default **off**: the GB10 has one unified
+    #: LPDDR5X pool, so there is no host->device copy for pinning to overlap --
+    #: it just makes pages unevictable in the same budget CUDA allocates from.
+    #: On a discrete GPU this is worth turning back on.
+    pin_memory: bool = False
     val_fraction: float = 0.05
     real_test_fraction: float = 0.25
     seed: int = 20260805
