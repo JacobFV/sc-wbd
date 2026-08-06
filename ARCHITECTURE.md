@@ -359,6 +359,40 @@ control arm.
 
 ---
 
+## 2a. What we are building, restated
+
+Recorded 2026-08-06 on the owner's correction, because the fleet had drifted
+into building infrastructure around a model rather than the model.
+
+**`body.tex` §4.2 is the target and it is more than heterogeneous sources:**
+
+> *Resolution may be simultaneous rather than substitutive.* The complete
+> private regional state remains `X_i ∈ 𝒳_i`. Its scale/source collection
+> `𝒮_i` consists of typed views `V_{i,s}^{(r)}(X_i)` … **There is no
+> requirement that scales be dyadic, isotropic, nested, or shared by all
+> sources.**
+
+One carrier; **many simultaneous typed views at arbitrary resolutions**.
+Scalar→vector regional state (O-5) is one rung on that ladder, not the ladder.
+`𝒮_i` — the *collection* — does not exist today: `Support` has no composition
+operators, exactly one resolution pair is declared, and that pair **failed** its
+boundary check. Getting `𝒮_i` built is what O-1 and O-2 are for.
+
+**Fleet size is a means, not a measure.** Twelve parallel agents were right when
+there were twelve independent subsystems to build. There are not now — there is
+one model to train and one set of questions to ask of it. A meaningful fraction
+of one day went to coordination overhead: stale branches producing correct
+analyses of defects that did not exist in the merged tree, three agents
+converging on the same non-question, register-id collisions repaired twice, and
+`ARCHITECTURE.md` conflicting on most merges. **That cost is the architect's,
+not any agent's** — it followed from not requiring merge-before-work (RL-10)
+until it had already been paid twice.
+
+Standing rule: **an agent exists to answer a question the model poses, or it
+does not exist.** Retire on delivery rather than keeping a name warm.
+
+---
+
 ## 2b. Ontology: carriers, views, and annotations
 
 Recorded 2026-08-06 in answer to a direct question: *what ontological changes
