@@ -131,7 +131,24 @@ class FoundationTrainer:
     """Owns the model, the mixture, the data and the staged curriculum."""
 
     #: The posterior flow trains at this fraction of the stage LR.  See run_stage.
-    POSTERIOR_LR_SCALE: float = 0.1
+    #:
+    #: 0.1 was not enough.  With the conditioning normalised, nuisance_dim at 0
+    #: and the coupling translation bounded, -log q still drifted 8 -> 30 -> 67
+    #: by step 1020 while the forecast head kept improving (nll 1.49 -> 0.52).
+    #: Each earlier fix slowed the drift without stopping it; a density chasing
+    #: a conditioning distribution that changes every batch -- sliced-trajectory
+    #: training re-draws the observed subgraph each step -- needs a smaller step
+    #: than a residual stack, not merely a smaller one than before.
+    POSTERIOR_LR_SCALE: float = 0.02
+
+    #: Weight decay for the posterior group.
+    #:
+    #: The drift is the coupling nets' weights growing, which grows the
+    #: translation, which grows |z|.  Decay opposes that directly, where a
+    #: smaller step only delays it.  Applied to the flow alone: decaying the
+    #: dynamics operators would pull them toward zero drift, which is a
+    #: statement about the brain rather than about optimisation.
+    POSTERIOR_WEIGHT_DECAY: float = 1e-2
 
     def __init__(
         self,
@@ -675,7 +692,13 @@ class FoundationTrainer:
         post_params = [q for q in params if id(q) in post_ids]
         groups = [{"params": model_params, "lr": stage.lr}]
         if post_params:
-            groups.append({"params": post_params, "lr": stage.lr * self.POSTERIOR_LR_SCALE})
+            groups.append(
+                {
+                    "params": post_params,
+                    "lr": stage.lr * self.POSTERIOR_LR_SCALE,
+                    "weight_decay": self.POSTERIOR_WEIGHT_DECAY,
+                }
+            )
         opt = torch.optim.AdamW(groups, lr=stage.lr, weight_decay=stage.weight_decay, betas=(0.9, 0.95))
         sched = torch.optim.lr_scheduler.OneCycleLR(
             opt,
