@@ -244,6 +244,57 @@ extremeness threshold to roughly the top 0.5 %, which is precisely the
 retrospective fitting that produced the retracted period-60 claim. It has not
 been done and should not be, however tempting it becomes now that the fix is in.
 
+### ⚠ Condition 2's threshold was calibrated on the corrupted metric
+
+Recorded **before the bar resolves**, so this cannot be raised afterwards by
+whichever party the outcome disfavours.
+
+The restart fixed the *signal* condition 2 is evaluated on. It did **not** fix
+the *threshold*, which I chose by looking at pre-fix numbers. Both were
+contaminated by the same defect; only one was repaired.
+
+| | pre-fix | post-fix |
+|---|---|---|
+| `sim_forecast_nll` at step 1 | **184.338** | **1.692** |
+| at step 20 | 14.445 | 1.571 |
+| at step 40 | 2.793 | 1.550 |
+| best reached | 1.459 (step 660) | — |
+
+The inflated windows contributed enormous squared error to exactly this
+quantity, so removing them deflated it by two orders of magnitude at the start
+of training. Consequently:
+
+- **pre-fix**, "< 1.0" required a ~99.5 % descent from 184.3, and the run never
+  got below 1.459;
+- **post-fix**, nll *begins* at 1.692 — better than the entire pre-fix run's
+  best — and "< 1.0" requires roughly a 41 % improvement.
+
+**The threshold's value is unchanged and has not been moved by me. Its difficulty
+has changed materially.** A pass on the fixed pipeline is therefore **not**
+equivalent to passing the bar as originally conceived, and must not be reported
+as though it were.
+
+This is the same shape as the fired trigger: a preregistered number that no
+longer measures what it was written to measure. The difference is that this one
+was caught *before* it resolved, which is the only reason it is not a dispute.
+
+Disposition is `main`'s and 🛡️ Popper's, not mine — Popper already owns whether
+the bar was appropriate, which now extends to whether it survives a change in the
+metric's scale. I have no clean preference and note that keeping the bar favours
+the artifact while voiding it favours me, since it would retire a bar I may be
+about to fail.
+
+### Cross-run comparisons of absolute loss are no longer meaningful
+
+The normaliser change altered the targets, so pre- and post-fix `loss` and
+`sim_forecast_nll` are values of **different objectives**. Comparing their
+magnitudes across the restart says nothing about model quality — I nearly
+reported "post-fix loss is higher" as if it did.
+
+Relative measures survive: the spike **rate** (fraction of steps above 3× the
+running floor) is scale-free and remains comparable. Matched-step comparisons
+*within* a single pipeline remain valid.
+
 ### Pre-committed wording for whatever the spike rate does
 
 Written **before** the post-fix rate is known, because the outcome that would be
