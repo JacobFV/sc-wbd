@@ -8,7 +8,7 @@
     "checkpoint": {
       "found": false
     },
-    "staged_at": "2026-08-06T19:57:55Z",
+    "staged_at": "2026-08-06T20:09:37Z",
     "note": "This is not a failure. The analysis is fixed and will run unchanged when a checkpoint lands."
   },
   "preregistration": "reports/intervene/impulse_pilot_preregistration.md",
