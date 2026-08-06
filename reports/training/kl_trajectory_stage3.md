@@ -57,3 +57,40 @@ samples each, entirely past activation.
 The distinction is recorded because the retraction should not make a later, better
 supported claim in the same direction harder to state — see
 `reports/decorative_guards.md`, overcorrection.
+
+---
+
+## UPDATE, step 1600 — the trend extends and one of my caveats is FALSIFIED
+
+| Stage III steps | n | median KL | range | Δ |
+|---|---|---|---|---|
+| 0–400 | 21 | 10.32 | −2.84 … 13.97 | — |
+| 400–800 | 20 | 12.40 | 10.28 … 13.56 | +2.08 |
+| 800–1200 | 20 | 13.45 | 12.40 … 15.22 | +1.05 |
+| **1200–1600** | **20** | **15.46** | **14.42 … 16.45** | **+2.01** |
+
+**Falsified:** I filed *"increments are decelerating — +2.08 then +1.04 — so this
+may be asymptoting rather than diverging."* The fourth increment is **+2.01**.
+**The deceleration was not sustained**, and the hedge I attached to protect
+against over-reading the trend has itself been overtaken.
+
+That hedge was doing real work in the original filing — it was the reason not to
+treat the rise as divergence. **It should no longer be relied on**, and I am
+recording its failure rather than quietly dropping it, because a caveat that
+disappears between versions is indistinguishable from one that was never made.
+
+**Strengthened:** four monotonic block medians, n≈20 each, across 1600 steps, and
+the newest block's range (14.42–16.45) sits almost entirely **above** the
+previous block's (12.40–15.22). This is no longer compatible with oscillation
+around a level.
+
+**Still not claimed:**
+- **Not divergence.** A rise that is not decelerating is not thereby unbounded;
+  I have no model of where this settles and no reference class for KL here.
+- **No threshold.** Unchanged: KL is a diagnostic, **SBC carries the verdict.**
+- Both readings from the original filing remain open and remain **unranked**.
+
+The prediction filed before SBC is unchanged in form and now rests on more data:
+*if* SBC ranks are non-uniform, this trajectory is the candidate mechanism and its
+direction should be consistent with posterior over-concentration; *if* uniform,
+this was appropriate adaptation and means nothing alone.
