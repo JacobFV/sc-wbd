@@ -38,12 +38,13 @@ It is not superseded quietly; it is superseded explicitly.
 
 ## 1. What blocked the run, and what each defect had in common
 
-Six defects stood between a configured run and a first training step. Five
-share one shape.
+Seven defects stood between a configured run and a first training step and
+the first prediction. **Six share one shape.**
 
 | # | defect | why it hid |
 |---|---|---|
 | 1 | `set_mechanistic_theta` never called in the trainer (3 sites) | the control arm has no mechanistic families |
+| 1b | …nor in `impulse_response` or `run_impulse_pilot` | same |
 | 2 | `FamilyStateLayout.zero_pad` multiplied by a CPU mask | tests run on CPU |
 | 3 | `index`/`gather`/`scatter` returned CPU index tensors | tests run on CPU |
 | 4 | `residual_penalty` read `self.residual`; the family arm uses `family_residual` | control arm only |
@@ -102,12 +103,34 @@ individualisation 900 = **8700 steps**.
 `reports/ablations/PREREG_A1_run2.md`, which was filed while A1 was
 `COULD_NOT_RUN` and no heterogeneous arm existed.
 
-## 5. Impulse response
+## 5. Impulse response — the first 002 prediction
 
-**PENDING.** `reports/intervene/impulse_pilot_preregistration.md` was committed
-at `007bee2` while `checkpoints/` was empty, so no result can move its
-thresholds. `trained_on_perturbation_data` stays `False` regardless: the model
-sees resting dynamics and no TEP.
+Criterion committed at `007bee2` while `checkpoints/` was empty. Thresholds:
+`< 0.10` collapsed · `< 0.5×` untrained attenuated · else survived.
+
+```
+CRR trained     1.3871
+CRR untrained   1.3929
+ratio           0.9959        reading: SURVIVED
+```
+
+Two coil poses produce measurably different predicted EEG, and training does
+not wash out the pose dependence.
+
+**Read the ratio, not the verdict.** At 0.996× the untrained model, training
+changed the contrast by 0.4%. The pose dependence is carried by the lead field
+and the `E·n̂` projection — the *physics* — not by anything the model learned.
+That is what a model trained on resting dynamics with no TEP should show, and
+it is why `trained_on_perturbation_data` stays **False** whatever the number.
+
+A "survived" verdict here means focal input propagates pose-dependently. It
+does not mean it propagates *correctly*, and no held-out TEP exists to check
+that against.
+
+**The guard held before the result did.** Pointed at a stale 454-region
+checkpoint the harness returned `status: checkpoint_unreadable` with an empty
+`crr` and fabricated nothing — despite `torch.load` "succeeding" with size
+mismatches on every BOLD parameter. Don't check the report, check the thing.
 
 ---
 
