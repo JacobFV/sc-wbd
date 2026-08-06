@@ -594,6 +594,28 @@ inside the module it polices is a self-assessment, not a refusal — and R12
 exists precisely because `foundation` emitted a control-arm artifact under the
 model's name with nothing outside it able to object.
 
+**RL-9 — check the thing, not the report of the thing.** ⚡ Faraday's, and the
+sharpest verification rule this project has produced. A `strict=False` load
+with a captured-but-unchecked `load_report` will report success while loading
+nothing, so every "trained" number is the untrained model wearing a
+checkpoint's name. The fix is not to check the report — **snapshot the weights,
+count how many tensors actually moved, and refuse at zero.** A report can be
+empty for the wrong reason; a weight that did not move cannot be. Record the
+count as a number in provenance, not a boolean.
+
+*Corollary:* having found one guard reading the wrong thing, do not fix it and
+move on — **assume the same author made the same error elsewhere in the same
+file, and go look.** Faraday's second defect was found only because the first
+one prompted the search.
+
+**RL-10 — merge `master` immediately before any launch or measurement.** A
+launch-blocking `BindingDriftError` cost two agents a full round of careful,
+correct analysis of a defect that did not exist in the merged tree: the fix was
+already upstream and the branch was 34 commits behind. Long-lived branches plus
+ten agents makes stale-tree diagnosis the default failure, and it is
+indistinguishable from a real defect from inside the branch. This one is the
+architect's fault, not either agent's.
+
 **RL-8 — a declaration does not discharge a refusal; only a validated
 declaration does.** 🧭 Gauss measured that R12's control test is
 `is_constant AND not declares_prolongation`, so **declaring a prolongation
