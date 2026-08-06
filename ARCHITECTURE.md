@@ -333,6 +333,43 @@ inside the module it polices is a self-assessment, not a refusal — and R12
 exists precisely because `foundation` emitted a control-arm artifact under the
 model's name with nothing outside it able to object.
 
+**RL-6 — between-arm parity is checked along the whole path from state to
+scalar, not only in the budgets.** Popper's trace, and the most transferable
+thing found this cycle. Any comparison between two arms passes through:
+
+```
+1 inputs  2 conditioning  3 state (the hypothesis)  4 observation interface
+5 head parameterisation   6 score   7 split          8 optimiser
+```
+
+Capacity budgets cover **stages 3 and 8 only**. Four of this project's
+between-arm defects sit on stages 4–7 and none of them is a budget:
+
+| stage | defect |
+|---|---|
+| 4 observation interface | treatment arm's EEG mean path narrowed to 2 exported dims against the control's 18 |
+| 5 head parameterisation | `log_noise` with no path from state (`heads.py:238`) |
+| 6 score | five baselines held-out calibrated, SC-WBD not calibrated at all |
+| 7 split | `subject_specific_ar` reduced to `ar16` by a participant-disjoint split |
+
+Each looked like a separate finding. They are one class. A matched budget with
+an unmatched stage 4–7 is an unmatched comparison wearing a green check.
+
+*Corollary (Fisher).* Ask of any guard not only "can it fire" but **"is the
+failure it targets representable in the model it runs against"**. C1/C2/C3 run
+on a linear-Gaussian surrogate where state-independent innovation covariance is
+a theorem, so the stage-5 defect was not merely undetected — it was
+unrepresentable. Every check was green and every check was correct.
+
+**RL-7 — a fixed handicap and the hypothesis may not be confounded in the
+primary endpoint.** When a defect shared by both arms is repaired between runs,
+the repair's ceiling is preregistered before the fix: `NLL* = ½·log(2πe·MSE)`
+from the arm's own held-out MSE is the best achievable by fixing predictive
+variance alone. Improvement up to `NLL*` is **handicap removal**; only beyond
+it is new predictive content. Run 1's ceiling is **2.1083** (from
+`MSE = 3.9697`), filed before the fix — at which the artifact passes
+persistence and still loses to `ar16`, `var4` and `population_gaussian`.
+
 ---
 
 ## 6. Downstream consumer: `~/Documents/robotics` (`tms-robotics`)
