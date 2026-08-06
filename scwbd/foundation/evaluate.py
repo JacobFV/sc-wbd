@@ -47,7 +47,9 @@ __all__ = ["evaluate_model", "real_eeg_holdout", "posterior_calibration", "sourc
 # real EEG held-out likelihood
 # ======================================================================
 @torch.no_grad()
-def _scwbd_scores(trainer, loader, *, max_batches: int | None = None) -> dict[str, Any]:
+def _scwbd_scores(
+    trainer, loader, *, max_batches: int | None = None, n_theta_samples: int = 32
+) -> dict[str, Any]:
     """Per-window sensor-space NLL and MSE of the foundation model."""
     model, cfg = trainer.model, trainer.cfg
     model.eval()
@@ -63,28 +65,46 @@ def _scwbd_scores(trainer, loader, *, max_batches: int | None = None) -> dict[st
         ctx_e, tgt_e = eeg[:, :c], eeg[:, c:]
         src = trainer.sensor_to_parcel(ctx_e)
         src = src / src.std(dim=(1, 2), keepdim=True).clamp_min(1e-6)
-        th = trainer.posterior.sample(ctx_e, 1)[:, 0][:, : len(THETA_NAMES)]
-        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=cfg.model.use_bf16):
-            roll = model.rollout(y_context=src, theta=th, n_steps=tgt_e.shape[1], enforce_r05=False)
-            mu, lv = model.eeg(roll.state)
-        # RAW data units. The baselines score the raw target through
-        # baselines._gaussian_nll, so rescaling by the target's own per-window std
-        # here compared the densities of two DIFFERENT random variables:
-        # NLL_scaled = NLL_raw - log(s). Measured mean log(s) = 0.598 on the real
-        # test split -- roughly 17x the entire spread between the non-trivial
-        # baselines (0.035 nats).
+        # MARGINALISE over the posterior rather than scoring one draw. The metric
+        # names a predictive density, p(y | context) = E_theta[p(y | theta)], and a
+        # single sample is a plug-in estimator of a different quantity. With a wide,
+        # weakly-informative posterior (Stage III: z_sd 1.0-1.4, R^2 <= 0.21) one
+        # draw is materially worse than the distribution it came from.
         y = tgt_e.float()
-        m = mu.float()
-        v = lv.float().clamp(-14, 14)
-        nll = 0.5 * (math.log(2 * math.pi) + v + (y - m) ** 2 * torch.exp(-v))
-        nlls.append(nll.mean(dim=(1, 2)).cpu().numpy())
-        mses.append(((y - m) ** 2).mean(dim=(1, 2)).cpu().numpy())
+        n_elem = float(y.shape[1] * y.shape[2])
+        th_all = trainer.posterior.sample(ctx_e, n_theta_samples)  # (B, K, P)
+        joint_ll: list[Tensor] = []
+        mu_sum = None
+        for k in range(n_theta_samples):
+            th = th_all[:, k][:, : len(THETA_NAMES)]
+            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=cfg.model.use_bf16):
+                roll = model.rollout(
+                    y_context=src, theta=th, n_steps=tgt_e.shape[1], enforce_r05=False
+                )
+                mu, lv = model.eeg(roll.state)
+            m_k = mu.float()
+            v_k = lv.float().clamp(-14, 14)
+            # RAW data units: the baselines score the raw target through
+            # baselines._gaussian_nll, so rescaling by the target's own per-window
+            # std would compare densities of two DIFFERENT random variables
+            # (NLL_scaled = NLL_raw - log s; mean log s = 0.598 here, ~17x the
+            # 0.035-nat spread between the non-trivial baselines).
+            nll_el = 0.5 * (math.log(2 * math.pi) + v_k + (y - m_k) ** 2 * torch.exp(-v_k))
+            joint_ll.append(-nll_el.sum(dim=(1, 2)))  # (B,) log p(y | theta_k)
+            mu_sum = m_k if mu_sum is None else mu_sum + m_k
+        # log (1/K) sum_k p(y | theta_k), then back to nats per channel per sample
+        L = torch.stack(joint_ll, dim=1)  # (B, K)
+        logp = torch.logsumexp(L, dim=1) - math.log(float(n_theta_samples))
+        nlls.append((-logp / n_elem).cpu().numpy())
+        m_bar = mu_sum / float(n_theta_samples)
+        mses.append(((y - m_bar) ** 2).mean(dim=(1, 2)).cpu().numpy())
         # Secondary, separately labelled: amplitude-normalised score. Defensible as
-        # *a* metric; NOT comparable to the baselines.
-        s_ = tgt_e.std(dim=(1, 2), keepdim=True).clamp_min(1e-8)
-        v_n = (lv.float() - 2 * torch.log(s_)).clamp(-14, 14)
-        nll_n = 0.5 * (math.log(2 * math.pi) + v_n + ((y - m) / s_) ** 2 * torch.exp(-v_n))
-        nlls_norm.append(nll_n.mean(dim=(1, 2)).cpu().numpy())
+        # *a* metric; NOT comparable to the baselines. Change of variables by a
+        # constant per window, so it is the marginal score shifted by log s.
+        s_ = tgt_e.std(dim=(1, 2), keepdim=True).clamp_min(1e-8).float()
+        nlls_norm.append(
+            ((-logp / n_elem) - torch.log(s_).reshape(-1)).cpu().numpy()
+        )
         subs.extend(list(batch["subject"]))
     model.train()
     return {
@@ -102,7 +122,14 @@ def _scwbd_scores(trainer, loader, *, max_batches: int | None = None) -> dict[st
     }
 
 
-def real_eeg_holdout(trainer, *, max_batches: int | None = 40, n_boot: int = 2000, seed: int = 0) -> dict[str, Any]:
+def real_eeg_holdout(
+    trainer,
+    *,
+    max_batches: int | None = 40,
+    n_boot: int = 2000,
+    seed: int = 0,
+    n_theta_samples: int = 32,
+) -> dict[str, Any]:
     """SC-WBD vs every required baseline on a participant-level holdout.
 
     Windows within a participant are correlated, so the interval is a **cluster
@@ -145,7 +172,9 @@ def real_eeg_holdout(trainer, *, max_batches: int | None = 40, n_boot: int = 200
     tr_x, te_x = tr_x.to(dev), te_x.to(dev)
     ctx, tgt = te_x[:, :c], te_x[:, c:]
 
-    scw = _scwbd_scores(trainer, test_loader, max_batches=max_batches)
+    scw = _scwbd_scores(
+        trainer, test_loader, max_batches=max_batches, n_theta_samples=n_theta_samples
+    )
     n_model_params = sum(p.numel() for p in trainer.model.parameters())
 
     models: dict[str, Any] = {
@@ -370,7 +399,14 @@ def backend_comparison(trainer, *, max_batches: int = 6) -> dict[str, Any]:
 # ======================================================================
 # driver
 # ======================================================================
-def evaluate_model(trainer, *, quick: bool = False, out: str | Path | None = None) -> dict[str, Any]:
+def evaluate_model(
+    trainer, *, quick: bool = False, out: str | Path | None = None, seed: int = 0
+) -> dict[str, Any]:
+    # Seed the whole evaluation. The posterior is sampled stochastically, and
+    # measured run-to-run sd of the headline is 0.0075 nats -- larger than the
+    # ar16 <-> var4 gap of 0.0053. An unseeded evaluation cannot distinguish two
+    # baselines it is required to rank.
+    set_determinism(seed)
     t = Timer()
     trainer.build_data()
     rep: dict[str, Any] = {
@@ -379,6 +415,7 @@ def evaluate_model(trainer, *, quick: bool = False, out: str | Path | None = Non
         "evaluated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "config": trainer.cfg.as_dict(),
         "n_parameters": trainer.model.parameter_report(),
+        "eval_seed": seed,
         "anatomy": trainer.anat.summary(),
         "lead_field": trainer.model.eeg.lead_field_meta,
         "sensor_to_parcel": trainer.sensor_to_parcel.summary(),
@@ -414,6 +451,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
     p.add_argument("--checkpoint", default=None)
     p.add_argument("--out", default="reports/training/evaluation.json")
     p.add_argument("--quick", action="store_true")
+    p.add_argument("--seed", type=int, default=0)
     p.add_argument("--ablate-sources", action="store_true")
     a = p.parse_args(argv)
     cfg = load_config(a.config)
@@ -447,7 +485,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
         print(f"loaded {ckpt} ({len(payload.get('model', {}))} model tensors, no key mismatch)", flush=True)
     else:
         print(f"[warn] no checkpoint at {ckpt}: evaluating an untrained model", flush=True)
-    rep = evaluate_model(tr, quick=a.quick, out=a.out)
+    rep = evaluate_model(tr, quick=a.quick, out=a.out, seed=a.seed)
     if a.ablate_sources:
         rep["source_ablation"] = source_ablation(tr, steps=60 if a.quick else 200)
         Path(a.out).write_text(json.dumps(rep, indent=2, default=_jsonable))
