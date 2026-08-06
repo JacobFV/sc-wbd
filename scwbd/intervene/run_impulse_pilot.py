@@ -273,27 +273,94 @@ def run_pilot(
     untrained = SCWBD(untrained_cfg, prior).eval()
 
     # -- trained arm, if a checkpoint exists --------------------------------
+    #
+    # Three states, deliberately distinct. "Not arrived" and "arrived and
+    # unreadable" are different facts and a harness that reports the same thing
+    # for both is the silent-load-failure pattern (reports/decorative_guards.md,
+    # the `strict=False` plus discarded load report entry). The first version of
+    # this function had exactly that: it captured `load_report` into provenance
+    # and never looked at it, so a checkpoint whose keys did not match would
+    # have loaded nothing and still reported `ran`.
     trained = None
+    load_failure: str | None = None
     if checkpoint is not None and Path(checkpoint).exists():
-        payload = torch.load(Path(checkpoint), map_location=device, weights_only=False)
-        cfg_dict = (payload.get("config") or {}).get("model", payload.get("config") or {})
         try:
-            cfg = ModelConfig(**{k: v for k, v in cfg_dict.items() if k in ModelConfig.__annotations__})
-        except Exception:  # noqa: BLE001 - a config we cannot read is a reportable state
-            cfg = untrained_cfg
-        set_determinism(0)
-        trained = SCWBD(cfg, prior)
-        report = load_checkpoint(Path(checkpoint), model=trained, strict=False)
-        trained = trained.eval()
-        ckpt_meta = {
-            "found": True,
-            "path": str(checkpoint),
-            "step": payload.get("step"),
-            "stage": payload.get("stage"),
-            "saved_utc": payload.get("saved_utc"),
-            "git_sha": payload.get("git_sha"),
-            "load_report": report.get("load_report", {}),
-        }
+            payload = torch.load(Path(checkpoint), map_location=device, weights_only=False)
+        except Exception as exc:  # noqa: BLE001
+            payload, load_failure = None, f"torch.load failed: {type(exc).__name__}: {exc}"
+        if payload is not None and payload.get("format") != "scwbd-foundation-checkpoint/1":
+            load_failure = f"unrecognised checkpoint format {payload.get('format')!r}"
+            payload = None
+
+        if payload is not None:
+            cfg_dict = (payload.get("config") or {}).get("model", payload.get("config") or {})
+            try:
+                cfg = ModelConfig(
+                    **{k: v for k, v in cfg_dict.items() if k in ModelConfig.__annotations__}
+                )
+            except Exception:  # noqa: BLE001
+                cfg = untrained_cfg
+            set_determinism(0)
+            candidate = SCWBD(cfg, prior)
+            # Snapshot the init so "did the weights actually change" is
+            # answerable. A load report can be empty for the wrong reason;
+            # this cannot.
+            before = {k: v.detach().clone() for k, v in candidate.state_dict().items()}
+            report: dict[str, Any] = {}
+            strict_ok = True
+            try:
+                load_checkpoint(Path(checkpoint), model=candidate, strict=True)
+            except Exception:  # noqa: BLE001 - retry loosely, but SAY so
+                strict_ok = False
+                try:
+                    report = load_checkpoint(Path(checkpoint), model=candidate, strict=False)
+                except Exception as exc:  # noqa: BLE001
+                    load_failure = f"load_checkpoint failed: {type(exc).__name__}: {exc}"
+
+            if load_failure is None:
+                after = candidate.state_dict()
+                changed = sum(
+                    1 for k, v in after.items()
+                    if k in before and not torch.equal(before[k], v)
+                )
+                if changed == 0:
+                    # The decisive check. Whatever the load report said, no
+                    # weight moved, so this is the untrained model wearing a
+                    # checkpoint's name and every "trained" number would be a
+                    # relabelled untrained one.
+                    load_failure = (
+                        "checkpoint loaded but not one weight tensor changed; "
+                        "the trained arm would be the untrained model relabelled"
+                    )
+                else:
+                    trained = candidate.eval()
+                    ckpt_meta = {
+                        "found": True,
+                        "path": str(checkpoint),
+                        "step": payload.get("step"),
+                        "stage": payload.get("stage"),
+                        "saved_utc": payload.get("saved_utc"),
+                        "git_sha": payload.get("git_sha"),
+                        "strict_load": strict_ok,
+                        "load_report": (report or {}).get("load_report", {}),
+                        "tensors_changed_by_load": changed,
+                        "tensors_total": len(before),
+                    }
+
+    if load_failure is not None:
+        return PilotResult(
+            status="checkpoint_unreadable",
+            crr={}, reading=load_failure, null={}, control={},
+            provenance={
+                "checkpoint": {"found": True, "path": str(checkpoint), "error": load_failure},
+                "note": (
+                    "A checkpoint exists and could not be used. This is NOT "
+                    "`awaiting_checkpoint` -- reporting the same state for "
+                    "'not arrived' and 'arrived and unreadable' would hide a "
+                    "real failure behind a legitimate one."
+                ),
+            },
+        )
 
     if trained is None:
         return PilotResult(

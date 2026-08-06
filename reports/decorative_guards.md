@@ -1543,3 +1543,82 @@ Two standing recommendations, in the register's usual form:
    much as the sweep: alongside "crossing the bound refuses" there is "a value
    inside it does not", without which an axis that refused unconditionally
    would pass too.
+
+---
+
+## Entry: an instrument that fires on the disclaimer as readily as on the thing disclaimed
+
+⚡ Faraday, in my own test, caught by the test failing rather than by review.
+
+`scwbd/intervene/run_impulse_pilot.py` is a forward-model harness: it must not
+select a coil pose. To enforce that I wrote a test asserting no optimiser lives
+in the module:
+
+```python
+src = Path(P.__file__).read_text()
+for banned in ("argmax", "optimi", "best_pose", "search", "rank("):
+    assert banned not in src
+```
+
+It failed immediately, on the module's own docstring — the sentence *"does not
+optimise a coil position, rank poses, or recommend anything."* The scan matched
+`optimi` inside the disclaimer stating the property it was written to check.
+
+**The general form: an instrument that fires on a statement about X as readily
+as on X cannot distinguish them.** Text-scanning for a behaviour is exactly
+that class. Had the docstring been phrased differently the test would have gone
+green while proving nothing about the code, because it was never reading the
+code — it was reading prose that happened to sit in the same file. Green would
+have meant "the module does not contain a certain string", which is not the
+property anyone cared about.
+
+This is a near-relative of the entries above, with one difference worth
+recording: the earlier cases are instruments that *cannot vary*. This one
+varies freely — it just varies with the wrong thing. A test coupled to
+documentation wording will go red when someone rewords a comment and green when
+someone adds a real optimiser under a name not on the list. Both directions are
+wrong and neither is visible from the pass/fail.
+
+**Remedy — check the parsed code, not the source text:**
+
+```python
+tree = ast.parse(Path(P.__file__).read_text())
+called = {n.func.attr if isinstance(n.func, ast.Attribute) else getattr(n.func, "id", "")
+          for n in ast.walk(tree) if isinstance(n, ast.Call)}
+for banned in ("argmax", "argmin", "topk", "sort", "argsort", "minimize", "maximize"):
+    assert banned not in called
+```
+
+Docstrings and comments are not `Call` nodes, so the instrument now reads only
+what executes. It still has the honest limitation that it cannot catch an
+optimiser written under an unlisted name — but that limitation is now the
+*only* one, rather than being hidden behind a second failure mode that made the
+test look stricter than it was.
+
+### The second one, in the same module, found because the first made me look
+
+Having written one guard that read the wrong thing, I checked the other. The
+harness loaded a checkpoint with `strict=False`, captured the resulting
+`load_report` into provenance, and **never checked it**. A checkpoint whose
+keys did not match would have loaded nothing, reported status `ran`, and every
+"trained" number would have been the untrained model wearing a checkpoint's
+name. That is verbatim the `strict=False` plus discarded load report entry
+already in this register, reproduced inside the harness written to be
+trustworthy — by someone who had read that entry.
+
+Remedy, and it is the shape worth copying: **do not check the report, check the
+thing.** Snapshot the weights before loading, count how many tensors actually
+changed, and refuse if the answer is zero. A load report can be empty for the
+wrong reason; a weight that did not move cannot be. The count is recorded in
+provenance so the next reader gets a number rather than a boolean.
+
+Three checkpoint states now exist where there were two — `awaiting_checkpoint`,
+`checkpoint_unreadable`, `ran` — because "not arrived" and "arrived and
+unreadable" are different facts and reporting the same thing for both hides a
+real failure behind a legitimate one.
+
+**The transferable part:** having found one guard reading the wrong thing, the
+right next move is not to fix it and move on. It is to assume the same author
+made the same error elsewhere in the same file, and go and look. Both defects
+here were mine, in a module I had written specifically to be careful, and the
+second was found only because the first embarrassed me into checking.
