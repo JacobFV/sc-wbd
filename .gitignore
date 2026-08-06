@@ -1,2 +1,19 @@
 .env
 paper/output/
+
+# environments
+.venv/
+
+# large, hash-manifest-tracked artifacts (ARCHITECTURE.md sec. 1)
+assets/
+data/
+checkpoints/
+
+# generated figures; the machine-readable claim reports themselves are tracked
+reports/**/*.png
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/

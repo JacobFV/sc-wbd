@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scwbd"
+version = "0.1.0"
+description = "SC-WBD-001-beta: compiled, multiresolution, multirate whole-brain modeling"
+readme = "ARCHITECTURE.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+authors = [{ name = "SuperCognition Labs" }]
+keywords = ["neuroscience", "whole-brain-modeling", "multimodal", "uncertainty"]
+classifiers = [
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "pydantic>=2.9",
+  "numpy>=2.0",
+  "scipy>=1.14",
+  "torch>=2.5",
+  "pyyaml>=6.0",
+  "h5py>=3.11",
+  "scikit-learn>=1.5",
+  "pandas>=2.2",
+  "matplotlib>=3.9",
+  "rich>=13.0",
+  "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["scwbd"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["error::DeprecationWarning:scwbd.*"]
