@@ -221,9 +221,33 @@ CLAIMS: dict[str, dict[str, str]] = {
 #: on an artifact of pooling would be as damaging to this project as a claim that
 #: passes on one -- more so, because a wrongly-recorded falsification is the one
 #: error this bench cannot argue it was built to prevent.
+#: SUPERSEDED by the decisive test. Agent Fisher ran the EEG-restricted
+#: comparison and the answer is NEITHER candidate: NONE OF THE FOUR FITS
+#: CONVERGED (median Newton decrement, posterior SDs: joint_native 12,237.6;
+#: eeg_only 409.3; fmri_only 100,477.9; joint_resampled 53,675.2), and
+#: fmri_only NEVER LEFT THE PRIOR MEAN (drift 0.0). The comparison measures the
+#: optimiser, not the designs. FALSIFIER NOT FIRED; OBSERVATION WITHDRAWN;
+#: CRITERION UNMEASURED RATHER THAN FAILED. Re-running with a converged
+#: optimiser is real work nobody has done.
+#:
+#: BENCH RULES ON ITS OWN NUMBER, since one of the inputs was mine to check:
+#: my pooling decomposition used fmri_only's 20,221.67 nats/observation as
+#: "the misspecified channel's own loss". It is not that. It is the loss of a
+#: model sitting at its prior mean, having never started. So:
+#:   * the CONCLUSION survives and is strengthened -- I said "not established",
+#:     the truth is "not measurable from this data";
+#:   * the DECOMPOSITION IS WITHDRAWN as a quantitative claim. +11.4735 and the
+#:     -2.2499 residual are arithmetic on an input that is not a measurement of
+#:     what its label says, and the residual's inference -- "the joint fit is
+#:     better than pooling" -- compared two unconverged fits.
+#: I verified that the COMPARISON was valid (same population?) and never asked
+#: whether the INPUTS were measurements. A correct conclusion drawn from an
+#: uninterrogated input is not a correct analysis; it is a lucky one. Had the
+#: pooling explanation been false, the arithmetic would have looked equally
+#: clean.
 G1_NEGATIVE_TRANSFER_RULING = (
-    "NOT_ESTABLISHED; APPARENT_DEGRADATION_FULLY_EXPLAINED_BY_POOLING_OVER_A_MIXED_"
-    "OBSERVATION_POPULATION; DECISIVE_TEST_IS_EEG_RESTRICTED_LOSS"
+    "FALSIFIER_NOT_FIRED; OBSERVATION_WITHDRAWN; CRITERION_UNMEASURED_NOT_FAILED; "
+    "BENCH_POOLING_DECOMPOSITION_WITHDRAWN_AS_QUANTITATIVE_CLAIM_CONCLUSION_UPHELD"
 )
 
 #: What the two §0.3 artifacts DO support for G1, stated narrowly so the
@@ -234,7 +258,9 @@ G1_NEGATIVE_TRANSFER_RULING = (
 #:   * adding a modality is NOT automatically beneficial: fMRI contributes
 #:     essentially nothing about coupling and delay (gain 1.000001);
 #:   * whether a misspecified channel actively HARMS the shared inference is
-#:     UNRESOLVED pending the EEG-restricted comparison.
+#:     UNMEASURED -- the EEG-restricted comparison was run and is void for
+#:     non-convergence. Not unresolved-pending-a-test; the test ran and
+#:     returned "the optimiser, not the designs".
 G1_SUPPORTED_CLAIM = "native clocks beat resampling; a modality's value is not automatic"
 
 _NON_GOALS = [

@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Twenty-two times in this project an
+The generalisation was forced by evidence.  Twenty-four times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -237,6 +237,31 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         still_reported=False,
     ),
     UninformativeField(
+        name="an artifact that cannot be told from its own superseded copy",
+        reads="authoritative -- because nothing in it says otherwise",
+        why_it_cannot_discriminate=(
+            "the disputed N9 row was not stale relative to the runner that produced it; THE "
+            "RUNNER MOVED UNDER IT, after the run-time threshold read landed but before the "
+            "subject moved to solution_discrepancy_fraction and the envelope reached 60 mm. "
+            "So it read the composite 2.29, measured 1.0629, and recorded a trivial pass -- "
+            "and a reader finding that file had NO WAY TO TELL from its contents that it was "
+            "the superseded grading. Two files, one gate, both saying PASS"
+        ),
+        remedy=(
+            "agent Faraday's construction, which bench is adopting as general practice: an "
+            "artifact must carry DISCRIMINATORS A READER CAN CHECK WITHOUT KNOWING ANY "
+            "HISTORY. Their grading_history records the superseded grading and states that "
+            "any N9 artifact showing an upper bound of 2.29, or a 70 mm minimum head radius, "
+            "predates the adjudicated grading. Someone who finds the wrong file can now tell "
+            "it is the wrong file FROM THE FILE. Provenance that requires the reader to "
+            "already know the history is not provenance"
+        ),
+        found_by="agent Faraday (who also flagged that landing the branch, not regeneration, "
+                 "was the actual fix -- so the fix would not be miscredited)",
+        owner="bench (gate IDs and artifact retention)",
+        still_reported=False,
+    ),
+    UninformativeField(
         name="a gate whose threshold is read from the artifact it judges",
         reads="PASS, at whatever bound the judged party currently declares",
         why_it_cannot_discriminate=(
@@ -313,6 +338,32 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         still_reported=False,
     ),
     UninformativeField(
+        name="a failure mode that is known, documented, and reintroduced anyway",
+        reads="fixed -- there is a comment right there explaining it",
+        why_it_cannot_discriminate=(
+            "KNOWING A FAILURE MODE DOES NOT IMMUNISE THE NEXT CONSTRUCT AGAINST IT; ONLY A "
+            "CHECK DOES. A comment, a register row and a memory of having been burned are "
+            "all indistinguishable from an actual guard right up until the moment the next "
+            "construct needs one. I found and fixed a wrapper-identity bug in CachedSolver, "
+            "left a comment explaining that the proxy must present the WRAPPED solver's "
+            "identity -- and reintroduced the identical bug two edits later in a closure, "
+            "where it shipped inside a PASS that had been cited externally. THIRD FORM OF "
+            "THIS IN ONE SESSION: agent Turing's, the coordinator's pgrep self-match, and "
+            "mine. The shared shape is that each author had already articulated the exact "
+            "failure before committing it again"
+        ),
+        remedy=(
+            "A MECHANISM, NOT A MEMORY. The wrapper-identity case is now functools.wraps "
+            "plus finalize()'s refusal to let a numerical check PASS without recording its "
+            "subject -- the second of which would have caught it even if the first were "
+            "forgotten again. Prefer the guard that fires over the note that reminds"
+        ),
+        found_by="agent J (bench), on its own reintroduced defect",
+        owner="everyone; the pattern is authorship-independent",
+        still_reported=False,
+        recurrence="three independent instances in one session, all self-reported",
+    ),
+    UninformativeField(
         name="verification skipped at the moment of concluding (reviewer-side)",
         reads="green -- from a suite that was not fully run",
         why_it_cannot_discriminate=(
@@ -355,6 +406,15 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
             "comparability of populations"
         ),
         remedy=(
+            "PAIRED WITH THE 'ALREADY BUILT IT' ROW, per agent Fisher: WHEN A RESULT IS "
+            "SATISFYING, ASK WHICH CHECK YOU HAVE ALREADY RUN SOMEWHERE ELSE AND HAVE NOT "
+            "RUN HERE. Fisher applied a convergence gate to C4/C5 in the benchmark, wrote "
+            "that 'a coverage statistic from an estimator that has not reached the MAP is a "
+            "number computed on a path the real inference does not take', and did not apply "
+            "it to the slice. Bench then did arithmetic on those same unconverged outputs "
+            "while having ruled, that same session, that exactly such numbers are void -- so "
+            "the check both parties skipped is one both parties had already written down. "
+            "Not a missing capability; a missing habit. "
             "compare on a COMMON population: joint_native's loss restricted to the EEG "
             "observations against eeg_only's, on the same rows. Bench requested that test "
             "rather than asserting its outcome. And the general rule this makes explicit: a "
