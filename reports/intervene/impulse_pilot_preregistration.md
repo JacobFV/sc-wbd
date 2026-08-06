@@ -121,3 +121,39 @@ criterion is fixed in advance.
 
 Nothing here optimises a coil position, ranks poses, or recommends anything.
 The two poses are fixed constants in this document.
+
+
+---
+
+## 6. Staging addendum
+
+*Added with the harness, before any checkpoint exists. Nothing above is
+changed — this records only how the fixed criterion is executed.*
+
+**Harness:** `scwbd/intervene/run_impulse_pilot.py`.
+
+    PYTHONPATH=. python -m scwbd.intervene.run_impulse_pilot
+
+With no checkpoint it reports `awaiting_checkpoint` and **exits 0**. That is a
+state, not a failure; conflating the two is how a pipeline reports success for
+work it never did.
+
+**The trained branch has already been executed**, against a surrogate
+checkpoint (untrained weights plus N(0, 0.02) noise, so it is genuinely a
+different model). That dry run is *not a result* — it is proof the branch that
+matters will not run for the first time on the real artifact. Observed on the
+surrogate: control `CRR = 0.0` exactly, trained `0.8299`, untrained `1.3929`.
+Those numbers are about a surrogate and carry no scientific content.
+
+**Cost.** One arm (2 poses x 2 rollouts, 64 steps, 414 parcels) is ~24 s. The
+200-permutation null therefore costs ~40 min after an exact optimisation: the
+unperturbed baseline is a function of model, context and `theta` only, so it
+does not vary across permutations and is computed once instead of 400 times.
+`TestBaselineReuseIsExact` pins that the reuse changes nothing, because if the
+baseline ever did depend on the drive, every evoked response in the null would
+be silently wrong.
+
+**Drift guard.** `TestTheCodeMatchesThePreregistration` asserts every threshold
+in the harness is still the one written above. A preregistration the code has
+quietly drifted from is worse than none: it reads as a commitment while no
+longer describing what ran.
