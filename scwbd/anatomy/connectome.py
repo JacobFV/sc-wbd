@@ -62,6 +62,7 @@ __all__ = [
     "ControlKind",
     "SUBCORTICAL_ATLASES",
     "DEFAULT_SUBCORTICAL_ATLAS",
+    "structural_cache_tag",
 ]
 
 #: Which subcortical parcellations may supply the 14 structures the ENIGMA/HCP
@@ -999,6 +1000,28 @@ def _hierarchy_prior(parc: Parcellation, present: np.ndarray) -> np.ndarray:
 # ---------------------------------------------------------------------------
 # builder
 # ---------------------------------------------------------------------------
+def structural_cache_tag(
+    atlas: str, include_subcortex: bool, subcortical_atlas: str | None, length: str
+) -> str:
+    """The cache/artifact stem for one structural prior.
+
+    Exported so that nothing reconstructs it by hand. ``scwbd.anatomy.build``
+    used to rebuild this string inline as ``...withsctx...``, which silently
+    hardcoded the ``Aseg14`` (Harvard-Oxford) variant while
+    :func:`load_structural_prior` defaulted to ``Aseg14T`` (Melbourne/Tian).
+    The build therefore *created* the Tian connectome and *registered the path
+    of* a stale Harvard-Oxford one -- so the manifest attributed the shipped
+    414-parcel connectome to an atlas production does not use, and to a
+    non-commercial licence it does not inherit.
+
+    A name that encodes a licence-bearing choice must be produced by one
+    function, not two.
+    """
+    sub = subcortical_atlas or DEFAULT_SUBCORTICAL_ATLAS
+    sctx = ("with" + ("" if sub == "Aseg14" else "-" + sub)) if include_subcortex else "no"
+    return f"{atlas}__enigma_hcp__{sctx}sctx__{length}"
+
+
 def load_structural_prior(
     atlas: str = "Schaefer400x7",
     *,
@@ -1048,8 +1071,7 @@ def load_structural_prior(
     # subcortical delay, so it belongs in the cache key. Leaving it out would let
     # a cache built under one atlas be served for another -- silently, and with
     # the delays of the wrong one.
-    sctx_tag = ("with" + ("" if sub_atlas == "Aseg14" else "-" + sub_atlas)) if include_subcortex else "no"
-    tag = f"{atlas}__enigma_hcp__{sctx_tag}sctx__{length}"
+    tag = structural_cache_tag(atlas, include_subcortex, sub_atlas, length)
     cache = derived_dir("connectome") / f"{tag}.npz"
     if cache.exists() and not rebuild:
         return StructuralPrior.load(cache)

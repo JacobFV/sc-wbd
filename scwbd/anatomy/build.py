@@ -22,7 +22,12 @@ from typing import Any
 
 from . import sources as S
 from .atlases import ATLAS_SPECS, load_parcellation
-from .connectome import _ENIGMA_KEYS, load_structural_prior
+from .connectome import (
+    _ENIGMA_KEYS,
+    DEFAULT_SUBCORTICAL_ATLAS,
+    load_structural_prior,
+    structural_cache_tag,
+)
 from .geometry import parcel_geometry
 from .manifest import Manifest, git_commit
 from .maps import load_maps
@@ -57,12 +62,28 @@ BUILD_VOLUME = [
     ("Schaefer100x7", "MNI152", "1mm"),
     ("Schaefer200x7", "MNI152", "1mm"),
     ("Schaefer300x7", "MNI152", "1mm"),
+    ("Schaefer500x7", "MNI152", "1mm"),
+    ("Schaefer600x7", "MNI152", "1mm"),
+    ("Schaefer800x7", "MNI152", "1mm"),
+    ("Schaefer1000x7", "MNI152", "1mm"),
+    ("Schaefer100x17", "MNI152", "1mm"),
+    ("Schaefer200x17", "MNI152", "1mm"),
+    ("Schaefer300x17", "MNI152", "1mm"),
+    ("Schaefer400x17", "MNI152", "1mm"),
+    ("Schaefer500x17", "MNI152", "1mm"),
+    ("Schaefer600x17", "MNI152", "1mm"),
+    ("Schaefer800x17", "MNI152", "1mm"),
+    ("Schaefer1000x17", "MNI152", "1mm"),
     ("DesikanKilliany", None, None),  # surface-only; skipped by the guard below
     ("TianS1", "MNI152", "1mm"),
     ("TianS2", "MNI152", "1mm"),
     ("TianS3", "MNI152", "1mm"),
     ("TianS4", "MNI152", "1mm"),
     ("Aseg14", "MNI152", "1mm"),
+    # The DEFAULT subcortical atlas (DEFAULT_SUBCORTICAL_ATLAS). Its absence
+    # here is why the 414-parcel prior's subcortex was unattributed and the
+    # attribution gate refused the whole anatomy prior.
+    ("Aseg14T", "MNI152", "1mm"),
     ("Buckner7", "MNI152", "1mm"),
     ("Buckner17", "MNI152", "1mm"),
     ("SUITAnatom", "MNI152", "1mm"),
@@ -130,7 +151,7 @@ def build(*, rebuild: bool = False, verbose: bool = True) -> dict[str, Any]:
             p = load_parcellation(name, space, density, rebuild=rebuild)
             f = derived_dir("parcellations") / f"{name}__{space}-{density}.npz"
             _register_derived(man, f, "scwbd.anatomy.atlases.load_parcellation",
-                              _atlas_inputs(name))
+                              _atlas_inputs(name, p))
             report["built"].append(str(f.name))
             log(f"  ok {name} {space}/{density} n={p.n_parcels}")
         except Exception as exc:  # noqa: BLE001
@@ -146,7 +167,7 @@ def build(*, rebuild: bool = False, verbose: bool = True) -> dict[str, Any]:
             parcel_geometry(p, rebuild=rebuild)
             f = derived_dir("geometry") / f"{name}__{space}-{density}__geom.npz"
             _register_derived(man, f, "scwbd.anatomy.geometry.parcel_geometry",
-                              _atlas_inputs(name) + ["conte69"])
+                              _atlas_inputs(name, p) + ["conte69"])
             report["built"].append(str(f.name))
             log(f"  ok {name}")
         except Exception as exc:  # noqa: BLE001
@@ -181,10 +202,17 @@ def build(*, rebuild: bool = False, verbose: bool = True) -> dict[str, Any]:
             try:
                 sp = load_structural_prior(name, include_subcortex=include_sub,
                                            rebuild=rebuild)
-                tag = f"{name}__enigma_hcp__{'with' if include_sub else 'no'}sctx__euclidean"
+                # Derived, never reconstructed: see structural_cache_tag.__doc__.
+                tag = structural_cache_tag(name, include_sub, None, "euclidean")
                 f = derived_dir("connectome") / f"{tag}.npz"
-                _register_derived(man, f, "scwbd.anatomy.connectome.load_structural_prior",
-                                  _connectome_inputs(sp))
+                # The subcortical parcels come from the subcortical atlas, and
+                # the Melbourne licence's one condition is that work using it
+                # cites Tian 2020. Attributing the 414-parcel connectome to
+                # ENIGMA alone omits a required citation.
+                ci = _connectome_inputs(sp)
+                if include_sub:
+                    ci = sorted(set(ci) | set(_atlas_inputs(DEFAULT_SUBCORTICAL_ATLAS)))
+                _register_derived(man, f, "scwbd.anatomy.connectome.load_structural_prior", ci)
                 report["built"].append(str(f.name))
                 c = sp.class_counts()
                 log(f"  ok {name} sctx={include_sub}: hard={c['hard']} soft={c['soft']} "
@@ -261,19 +289,71 @@ def _connectome_inputs(sp: Any) -> list[str]:
     return sorted(keys)
 
 
-def _atlas_inputs(name: str) -> list[str]:
+#: Extra source keys an atlas reads beyond the one its own provenance names --
+#: chiefly the ENIGMA toolbox, which supplies the label files for the atlases it
+#: redistributes. Kept as a literal because it records a *packaging* fact that
+#: no built object carries; the primary source is always derived, never listed.
+_ATLAS_EXTRA_INPUTS: dict[str, list[str]] = {
+    "DesikanKilliany": ["enigmatoolbox"],
+    "Glasser360": ["enigmatoolbox"],
+    "EconomoKoskinas": ["enigmatoolbox"],
+}
+
+
+def _atlas_inputs(name: str, parc: Any | None = None) -> list[str]:
+    """Source keys an atlas actually reads, derived from its own provenance.
+
+    This used to be a hand-maintained ``{name: [keys]}`` literal, and it failed
+    exactly the way literals fail: ``Aseg14T`` -- the **default** subcortical
+    atlas, and half of what makes the prior 414 parcels -- was absent, so it
+    fell through to ``[]``. An asset with no declared inputs has no attribution,
+    which is what made the attribution gate refuse the whole anatomy prior.
+
+    The primary key is now recovered by matching the parcellation's own
+    ``provenance.source_url`` against :data:`scwbd.anatomy.sources.SRC`, the
+    same identity trick :func:`_connectome_inputs` uses for its base matrix. A
+    literal cannot be wrong in a way anybody notices; a derived value fails
+    loudly when the thing it derives from moves.
+    """
+    # The atlas that DEFINES the parcellation. Its citation is required by
+    # several of these licences and is not recoverable from the redistributor's
+    # url, so it is named here and always included.
     if name.startswith("Schaefer"):
-        return ["schaefer2018", "enigmatoolbox"]
-    return {
-        "DesikanKilliany": ["desikan2006", "enigmatoolbox"],
-        "Glasser360": ["glasser2016", "enigmatoolbox"],
-        "EconomoKoskinas": ["voneconomo", "enigmatoolbox"],
-        "Destrieux": ["destrieux2010"],
-        "Aseg14": ["harvardoxford"],
-        "Buckner7": ["buckner2011"],
-        "Buckner17": ["buckner2011"],
-        "SUITAnatom": ["diedrichsen2009"],
-    }.get(name, ["tian2020"] if name.startswith("Tian") else [])
+        primary = ["schaefer2018"]
+    elif name.startswith("Tian") or name.startswith("Aseg14T"):
+        primary = ["tian2020"]
+    else:
+        primary = {
+            "DesikanKilliany": ["desikan2006"],
+            "Glasser360": ["glasser2016"],
+            "EconomoKoskinas": ["voneconomo"],
+            "Destrieux": ["destrieux2010"],
+            "Aseg14": ["harvardoxford"],
+            "Buckner7": ["buckner2011"],
+            "Buckner17": ["buckner2011"],
+            "SUITAnatom": ["diedrichsen2009"],
+        }.get(name, [])
+
+    # Whoever we actually read the bytes from, derived from the built object.
+    # This is UNIONED with the primary, never substituted for it: the Schaefer
+    # labels arrive via the ENIGMA toolbox, so a url match alone silently
+    # replaced "schaefer2018" with "enigmatoolbox" and dropped the citation the
+    # parcellation's own licence asks for.
+    derived: list[str] = []
+    if parc is not None:
+        url = str(getattr(getattr(parc, "provenance", None), "source_url", "") or "")
+        if url:
+            derived = [k for k, v in S.SRC.items() if str(v.get("url", "")) == url]
+
+    out = sorted(set(primary) | set(derived) | set(_ATLAS_EXTRA_INPUTS.get(name, [])))
+    if not out:
+        raise ValueError(
+            f"atlas {name!r} resolves to NO source keys, so anything derived from "
+            "it would ship unattributed. Refusing to register an asset with an "
+            "empty inputs list -- that is the state the attribution gate exists "
+            "to catch, and it is how Aseg14T reached the manifest with no licence."
+        )
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
