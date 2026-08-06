@@ -1036,3 +1036,24 @@ negative log-density, which goes below zero where density exceeds 1).
 
 Recorded as a diagnostic observation. **No threshold invoked, because none was
 declared** — and an undeclared metric is not a silent pass.
+
+### KL reporting — the 5–14 band is RETIRED
+
+I had written *"I will not report KL again unless it leaves the 5–14 band."* That
+band was **descriptive** — a range observed, not a criterion derived — and
+attaching a reporting decision to it turned it into a threshold by drift. KL was
+ruled a **diagnostic, not a criterion**, so a threshold arriving that way is the
+same object the ruling forbids, minus the justification.
+
+**Retired.** The replacement is a trajectory statement, which commits to no value
+and cannot fire:
+
+> **KL over Stage III: step change at activation (−2.4 → ~+10 by step 80), then
+> oscillation in 12.4–14.1 across 50 samples with no trend.** Median of the last
+> ten 13.32; one sample at 14.08.
+
+**SBC uniformity carries the verdict**, as ruled. KL's trajectory is evidence
+about *why* if SBC fails, and nothing on its own if SBC passes.
+
+For the final report the form is fixed: *"KL rose during Stage III; SBC was/was
+not uniform at the end,"* second clause carrying the verdict.

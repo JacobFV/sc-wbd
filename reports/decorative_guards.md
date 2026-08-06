@@ -238,6 +238,47 @@ This is recommendation 7 again — prefer a mechanism to an instruction. A proto
 aimed at claims ("what would falsify this?") cannot catch a defect one level
 below the claim.
 
+#### Sub-case: a descriptive range that becomes a threshold by drift
+
+A threshold can arrive **without anyone deciding to set one.**
+
+KL was ruled a **diagnostic, not a criterion** — report the trajectory, do not
+threshold it, because no reference class exists to justify a value. I then
+observed the series oscillating and wrote *"I will not report KL again unless it
+leaves the 5–14 band."* The band was **descriptive**: a range I had seen.
+
+Attaching a reporting decision to it made it a **criterion**. Nobody decided to
+threshold KL; the threshold assembled itself out of an observation plus a
+commitment. When a sample later came in at 14.08 — **one of 50, 0.6 % over an
+edge chosen by eye, in a series with no trend** — the proxy fired where the
+governing condition ("rises without turning over") did not.
+
+> **A descriptive range with a decision attached to it is a threshold, however it
+> was arrived at.** Drift produces the same object as decision, minus the
+> justification.
+
+Two rules follow:
+
+1. **Report the trajectory, not the band.** *"KL oscillates in 12.4–14.1 across
+   50 samples, no trend"* is the finding. It states the shape, commits to no
+   value, and cannot fire.
+2. **When a proxy and the condition it proxies disagree, the condition governs** —
+   that is what makes it a proxy. Noticing the disagreement is the moment to
+   retire the proxy, not to adjudicate it.
+
+**And the visibility point, which is separable from the call itself.** The failure
+mode is not *wrongly ignoring a trigger* — it is **silently** deciding a trigger
+did not count, because the silence is what makes the decision unreviewable. State
+the call and the reasoning, so a second party can disagree. Here one could have,
+and did not; but the disagreement had to be *possible* for the agreement to mean
+anything.
+
+Note the contrast with instance 8: **condition 3 was preregistered with a declared
+remedy and it fired, so it was honoured, escalated, and superseded on the record.**
+This band was descriptive from the start. Treating the two identically would be
+its own error — the register's patterns are heuristics for finding defects, not a
+rule that every instance carries equal weight.
+
 #### Sub-case: a true explanation that does not exhaust the cause
 
 Distinct from the rows above. Those are true propositions that do not establish
