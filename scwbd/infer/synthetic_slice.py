@@ -583,7 +583,10 @@ def run_synthetic_slice(
                 if not bool(worse.any()):
                     break
                 a = torch.where(worse.unsqueeze(-1), a * 0.4, a)
-            u = (u - a * step).detach()
+            with torch.no_grad():
+                vc = f(u - a * step)
+            accept = (torch.isfinite(vc) & (vc <= val)).unsqueeze(-1)
+            u = torch.where(accept, u - a * step, u).detach()
             val, g = _grad(f, u, 250)
         Hobs = torch.zeros(R, N_PARAM, N_PARAM, dtype=dt, device=dev)
         for i in range(N_PARAM):
@@ -592,7 +595,14 @@ def run_synthetic_slice(
             _, g2 = _grad(f, u + du, 250)
             Hobs[:, :, i] = (g2 - g) / h
         Hobs = 0.5 * (Hobs + Hobs.transpose(-1, -2))
-        pdok = torch.linalg.eigvalsh(Hobs)[:, 0] > 0
+        # An observed information matrix can be numerically indefinite or so
+        # ill-conditioned that eigh itself fails; that is a diagnosis (the
+        # record does not determine the parameter), not a reason to stop.
+        try:
+            ev0 = torch.linalg.eigvalsh(Hobs)[:, 0]
+        except Exception:                                     # noqa: BLE001
+            ev0 = torch.full((R,), -1.0, dtype=dt, device=dev)
+        pdok = torch.isfinite(ev0) & (ev0 > 0)
         Hs = torch.where(pdok.view(-1, 1, 1), Hobs, H.unsqueeze(0).expand_as(Hobs))
         cov = torch.linalg.inv(Hs)
         ps = torch.sqrt(torch.clamp(torch.diagonal(cov, dim1=-2, dim2=-1), min=0))

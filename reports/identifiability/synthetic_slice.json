@@ -1,0 +1,569 @@
+{
+ "criteria": {
+  "refusal_of_invalid_schema": {
+   "pass": true,
+   "n_refused": 4,
+   "n_tested": 4,
+   "valid_schema_accepted": true,
+   "detail": {
+    "R01_unknown_clock": {
+     "refused": true,
+     "code": "R01",
+     "message": "[R01] eeg_head_without_clock: clock is unknown. Remedy: Supply a calibrated manifest with a declared clock, or keep the source disconnected.",
+     "remedy": "Supply a calibrated manifest with a declared clock, or keep the source disconnected."
+    },
+    "R08_bias_point_estimate": {
+     "refused": true,
+     "code": "R08",
+     "message": "[R08] bold_head_with_unsupported_bias: bias declared design-estimable without an estimator. Remedy: Classify the term as design-estimable with a named estimator, externally bounded, or prior-specified sensitivity propagated as a range.",
+     "remedy": "Classify the term as design-estimable with a named estimator, externally bounded, or prior-specified sensitivity propagated as a range."
+    },
+    "R09_pseudo_as_likelihood": {
+     "refused": true,
+     "code": "R09",
+     "message": "[R09] compatibility_penalty_as_likelihood: a non-generative agreement penalty is used as a likelihood while claiming a calibrated posterior. Remedy: Report a generalized/pseudo-posterior and calibrate it empirically, or validate and promote the factor to a generative likelihood.",
+     "remedy": "Report a generalized/pseudo-posterior and calibrate it empirically, or validate and promote the factor to a generative likelihood."
+    },
+    "R10_split_below_parent": {
+     "refused": true,
+     "code": "R10",
+     "message": "[R10] session_level_split: split grouping ['session_id'] does not reach the immutable parent level. Remedy: Group by immutable lineage identifiers before splitting and fail the run when parentage is unresolved.",
+     "remedy": "Group by immutable lineage identifiers before splitting and fail the run when parentage is unresolved."
+    }
+   }
+  },
+  "no_leakage_across_parents": {
+   "pass": true,
+   "grouped_split": {
+    "n_train": 32,
+    "n_test": 16,
+    "n_train_parents": 8,
+    "n_test_parents": 4,
+    "shared_parents": [],
+    "shared_raw_records": [],
+    "leakage_free": true,
+    "refusal": null
+   },
+   "ungrouped_control_detected_as_leaking": true,
+   "note": "an ungrouped split is included as a positive control: a leakage audit that never fires is not evidence"
+  },
+  "recovery_intervals_nominal_coverage": {
+   "pass": false,
+   "per_parameter": {
+    "a21": {
+     "name": "a21",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 5,
+     "empirical": 0.15625,
+     "standard_error": 0.06418623720763665,
+     "wilson95_lo": 0.0686442028250571,
+     "wilson95_hi": 0.3175414959753039,
+     "nominal_inside_wilson95": false
+    },
+    "a32": {
+     "name": "a32",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 6,
+     "empirical": 0.1875,
+     "standard_error": 0.06899813176818631,
+     "wilson95_lo": 0.08889544689565954,
+     "wilson95_hi": 0.3530915520137596,
+     "nominal_inside_wilson95": false
+    },
+    "a13": {
+     "name": "a13",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 17,
+     "empirical": 0.53125,
+     "standard_error": 0.08821554523934542,
+     "wilson95_lo": 0.3644951711897464,
+     "wilson95_hi": 0.6913061289193116,
+     "nominal_inside_wilson95": false
+    },
+    "tau": {
+     "name": "tau",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 16,
+     "empirical": 0.5,
+     "standard_error": 0.08838834764831845,
+     "wilson95_lo": 0.33630882869327483,
+     "wilson95_hi": 0.6636911713067252,
+     "nominal_inside_wilson95": false
+    }
+   },
+   "n_records": 32,
+   "note": "coverage is over simulated subjects drawn from the prior (hierarchical/Bayesian coverage), with Wilson error bars"
+  },
+  "subgroup_calibration": {
+   "pass": true,
+   "detail": {
+    "nominal": 0.95,
+    "overall": {
+     "name": "overall",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 16,
+     "empirical": 0.5,
+     "standard_error": 0.08838834764831845,
+     "wilson95_lo": 0.33630882869327483,
+     "wilson95_hi": 0.6636911713067252,
+     "nominal_inside_wilson95": false
+    },
+    "per_group": {
+     "0": {
+      "coverage": {
+       "name": "0",
+       "nominal": 0.95,
+       "n_replicates": 16,
+       "n_covered": 8,
+       "empirical": 0.5,
+       "standard_error": 0.125,
+       "wilson95_lo": 0.27999563610326017,
+       "wilson95_hi": 0.7200043638967398,
+       "nominal_inside_wilson95": false
+      },
+      "pit": {
+       "n": 16,
+       "n_bins": 10,
+       "counts": [
+        4,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        2,
+        1,
+        7
+       ],
+       "bin_edges": [
+        0.0,
+        0.1,
+        0.2,
+        0.30000000000000004,
+        0.4,
+        0.5,
+        0.6000000000000001,
+        0.7000000000000001,
+        0.8,
+        0.9,
+        1.0
+       ],
+       "expected_per_bin": 1.6,
+       "chi2_statistic": 30.25,
+       "chi2_pvalue": 0.00039774789292670084,
+       "ks_statistic": 0.375,
+       "ks_pvalue": 0.015752547236039915,
+       "mean": 0.6245046009204599,
+       "uniform_at_005": false
+      },
+      "log_score": {
+       "log_score": 371.9879611245022,
+       "se": 236.05670991702198,
+       "n": 16
+      },
+      "crps": {
+       "crps": 0.58924031742982,
+       "se": 0.17257769427352748,
+       "n": 16
+      },
+      "n": 16
+     },
+     "1": {
+      "coverage": {
+       "name": "1",
+       "nominal": 0.95,
+       "n_replicates": 16,
+       "n_covered": 8,
+       "empirical": 0.5,
+       "standard_error": 0.125,
+       "wilson95_lo": 0.27999563610326017,
+       "wilson95_hi": 0.7200043638967398,
+       "nominal_inside_wilson95": false
+      },
+      "pit": {
+       "n": 16,
+       "n_bins": 10,
+       "counts": [
+        2,
+        0,
+        0,
+        2,
+        0,
+        0,
+        2,
+        0,
+        0,
+        10
+       ],
+       "bin_edges": [
+        0.0,
+        0.1,
+        0.2,
+        0.30000000000000004,
+        0.4,
+        0.5,
+        0.6000000000000001,
+        0.7000000000000001,
+        0.8,
+        0.9,
+        1.0
+       ],
+       "expected_per_bin": 1.6,
+       "chi2_statistic": 54.0,
+       "chi2_pvalue": 1.8878278659809408e-08,
+       "ks_statistic": 0.5353249642871274,
+       "ks_pvalue": 8.20182961515523e-05,
+       "mean": 0.7371732090908496,
+       "uniform_at_005": false
+      },
+      "log_score": {
+       "log_score": 618.238926329401,
+       "se": 545.5006746308226,
+       "n": 16
+      },
+      "crps": {
+       "crps": 0.5135549150480658,
+       "se": 0.17684189105616954,
+       "n": 16
+      },
+      "n": 16
+     }
+    },
+    "worst_coverage_group": "0",
+    "worst_coverage": 0.5,
+    "worst_log_score_group": "1",
+    "coverage_spread": 0.0
+   },
+   "note": "grouped by session index: shared session calibration error is the stratum most likely to break aggregate calibration"
+  },
+  "heldout_log_loss_beats_baselines": {
+   "pass": false,
+   "per_observation_negative_log_posterior": {
+    "joint_native": 26.039573004725835,
+    "eeg_only": 16.81600399533434,
+    "fmri_only": 20221.669528847055,
+    "joint_resampled": 369.0344066672176
+   },
+   "detail": {
+    "joint_native": {
+     "total_negative_log_likelihood": 22010730.269434653,
+     "per_observation": 26.039573004725835,
+     "se_per_observation": 0.0025909396781287246,
+     "n_observations": 845280.0
+    },
+    "eeg_only": {
+     "total_negative_log_likelihood": 14206160.175258452,
+     "per_observation": 16.81600399533434,
+     "se_per_observation": 0.002581854659718464,
+     "n_observations": 844800.0
+    },
+    "fmri_only": {
+     "total_negative_log_likelihood": 9706401.373846587,
+     "per_observation": 20221.669528847055,
+     "se_per_observation": 138.45266136547386,
+     "n_observations": 480.0
+    },
+    "joint_resampled": {
+     "total_negative_log_likelihood": 501886.79306741594,
+     "per_observation": 369.0344066672176,
+     "se_per_observation": 5.3393047780313445,
+     "n_observations": 1360.0
+    }
+   },
+   "note": "log loss is per *used* observation, so designs consuming different numbers of samples remain comparable; lower is better"
+  },
+  "misspecified_module_detected": {
+   "pass": true,
+   "flagged_modules": [
+    "bold[0]",
+    "bold[1]",
+    "bold[2]",
+    "eeg[0]",
+    "eeg[1]",
+    "eeg[2]",
+    "eeg[3]"
+   ],
+   "truth": "bold[2] carries an AR(1) coloured residual absent from the model",
+   "false_positive_modules": [
+    "bold[0]",
+    "bold[1]",
+    "eeg[0]",
+    "eeg[1]",
+    "eeg[2]",
+    "eeg[3]"
+   ],
+   "detail": {
+    "alpha": 0.05,
+    "n_tests": 14,
+    "tests": [
+     {
+      "module": "eeg[0]",
+      "statistic": "variance",
+      "z": 24769.329033480848,
+      "value": 54.89733422179696,
+      "n": 422400,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[0]",
+      "statistic": "lag1_autocorrelation",
+      "z": -91.9994851929199,
+      "value": -0.1416080721056778,
+      "n": 422400,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[1]",
+      "statistic": "variance",
+      "z": 24410.55587322425,
+      "value": 54.11665433733088,
+      "n": 422400,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[1]",
+      "statistic": "lag1_autocorrelation",
+      "z": -93.1087662763266,
+      "value": -0.1433155072648542,
+      "n": 422400,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[2]",
+      "statistic": "variance",
+      "z": 24508.22869805762,
+      "value": 54.32918754230044,
+      "n": 422400,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[2]",
+      "statistic": "lag1_autocorrelation",
+      "z": -92.39266986424815,
+      "value": -0.1422132724844793,
+      "n": 422400,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[3]",
+      "statistic": "variance",
+      "z": 55050.62686911278,
+      "value": 120.78855105333636,
+      "n": 422400,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[3]",
+      "statistic": "lag1_autocorrelation",
+      "z": -8.641869724781934,
+      "value": -0.013301797380155038,
+      "n": 422400,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[0]",
+      "statistic": "variance",
+      "z": 262939.3919695132,
+      "value": 20788.184130086214,
+      "n": 320,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[0]",
+      "statistic": "lag1_autocorrelation",
+      "z": -2.170348949779278,
+      "value": -0.30693369198600584,
+      "n": 320,
+      "p_value": 0.029980421012955505,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[1]",
+      "statistic": "variance",
+      "z": 223962.18916797786,
+      "value": 17706.765688207524,
+      "n": 320,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[1]",
+      "statistic": "lag1_autocorrelation",
+      "z": -3.3310886733511067,
+      "value": -0.47108707793205357,
+      "n": 320,
+      "p_value": 0.0008650704117270092,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[2]",
+      "statistic": "variance",
+      "z": 374857.00472930906,
+      "value": 29636.04829532816,
+      "n": 320,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[2]",
+      "statistic": "lag1_autocorrelation",
+      "z": -3.379189859905235,
+      "value": -0.47788961297116217,
+      "n": 320,
+      "p_value": 0.0007269978259212273,
+      "holm_reject": true
+     }
+    ],
+    "flagged_modules": [
+     "bold[0]",
+     "bold[1]",
+     "bold[2]",
+     "eeg[0]",
+     "eeg[1]",
+     "eeg[2]",
+     "eeg[3]"
+    ],
+    "any_flagged": true
+   }
+  }
+ },
+ "all_pass": false,
+ "detail": {
+  "schema_source": "scwbd.schema.examples.three_region.build_three_region_schema",
+  "n_parents": 12,
+  "n_sessions": 2,
+  "n_derivatives_per_session": 2,
+  "nuisances": {
+   "known_transform_bias_tilt": 0.1,
+   "shared_session_calibration_sd_log_gain": 0.15,
+   "missing_fraction_per_channel": 0.12,
+   "misspecified_bold_parcel": 2,
+   "misspecified_ar1_coefficient": 0.75,
+   "unequal_supports": "4 EEG sensors @ 1 ms vs 3 BOLD parcels @ 1 s"
+  },
+  "fits": {
+   "joint_native": {
+    "estimate_mean": [
+     10.732116069315836,
+     6.013831524012749,
+     43.43072201982874,
+     -4.827828135106996,
+     1.7162601746994903,
+     -0.5285887854738494,
+     -2.761512410183175,
+     1.1296575226661607,
+     74.34481955877526
+    ],
+    "posterior_sd_mean": [
+     2.1305669949498505,
+     3.8180676158224305,
+     5.719533561806244,
+     0.07138577957389004,
+     0.020162753395567324,
+     0.0228043580837782,
+     0.13910645056583376,
+     0.570929558159104,
+     0.2773608133004163
+    ]
+   },
+   "eeg_only": {
+    "estimate_mean": [
+     -22.015359098049615,
+     44.75900663237157,
+     13.170762347829779,
+     -7.482746742070214,
+     3.1520923701770793,
+     -3.6135722672969246,
+     0.47000362924573524,
+     0.0,
+     0.0
+    ],
+    "posterior_sd_mean": [
+     1.6968314565522677,
+     3.0841812178531045,
+     5.2189872030506,
+     0.07570154465863509,
+     0.02156974277399203,
+     0.02645646574714786,
+     0.1999999999959999,
+     0.599999999892,
+     0.29999999998650023
+    ]
+   },
+   "fmri_only": {
+    "estimate_mean": [
+     30.0,
+     25.0,
+     -18.0,
+     -4.422848629194136,
+     0.0,
+     0.0,
+     0.47000362924573524,
+     0.0,
+     0.0
+    ],
+    "posterior_sd_mean": [
+     9.350456074003167,
+     9.684167509836529,
+     9.955048191713992,
+     0.24999875548777675,
+     0.29999999998650023,
+     0.1999999999959999,
+     0.1417040140922117,
+     0.5999998348459777,
+     0.27255949082742364
+    ]
+   },
+   "joint_resampled": {
+    "estimate_mean": [
+     29.168367684076035,
+     24.882825035660453,
+     -17.421398025380665,
+     -4.422848629194136,
+     0.08721891562616951,
+     -0.04282727157601501,
+     0.20703315058985605,
+     0.021015572891797115,
+     0.26046388623839767
+    ],
+    "posterior_sd_mean": [
+     9.693740291555653,
+     9.932743836395797,
+     9.9028042866721,
+     0.2499999999924408,
+     0.27751063428384154,
+     0.19632869547616977,
+     0.1999999999961988,
+     0.5994198656649392,
+     0.2997738854539343
+    ]
+   }
+  },
+  "parameter_names": [
+   "a21",
+   "a32",
+   "a13",
+   "tau",
+   "gain_eeg",
+   "tilt_eeg",
+   "beta_hrf",
+   "c_under",
+   "gain_bold"
+  ]
+ }
+}

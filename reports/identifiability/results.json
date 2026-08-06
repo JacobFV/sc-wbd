@@ -2,8 +2,8 @@
  "decision": {
   "consequence": "Criteria ['C1_fusion_information', 'C2_native_beats_resampled', 'C3_intervention_information'] were fully evaluated and FAILED; criteria ['C4_calibrated_recovery', 'C5_recovery_improvement'] could not be evaluated in every regime and are reported as NOT EVALUATED rather than as failures. On the evidence that was evaluable, the claim that cross-method integration resolves these dynamics must be narrowed; the compiler may still be useful as a provenance system (thesis_contract.tex sec. 0.3).",
   "convergence_gated_regimes": [
-   "weak_coupling_long_delay",
-   "low_snr_short_delay"
+   "low_snr_short_delay",
+   "weak_coupling_long_delay"
   ],
   "criteria_all_regimes": {
    "C1_fusion_information": false,
@@ -351,9 +351,9 @@
    }
   },
   "regimes_evaluated": [
+   "low_snr_short_delay",
    "reference",
-   "weak_coupling_long_delay",
-   "low_snr_short_delay"
+   "weak_coupling_long_delay"
   ],
   "rule": {
    "criteria": {
@@ -384,7 +384,7 @@
  "environment": {
   "cuda_available": true,
   "device_name": "NVIDIA GB10",
-  "git_revision": "fbd80388cb09f630fff0da2e24659a828095ce27",
+  "git_revision": "29ac35a07e7b15e75d1bdb57ceddc50af82b1fe3",
   "numpy": "2.5.1",
   "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
   "python": "3.12.13",

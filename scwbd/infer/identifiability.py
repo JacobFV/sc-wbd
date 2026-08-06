@@ -470,7 +470,14 @@ def recover(
             if not bool(worse.any()):
                 break
             alpha = torch.where(worse.unsqueeze(-1), alpha * 0.4, alpha)
-        u = (u - alpha * step).detach()
+        # Accept only where the objective actually improved and stayed finite.
+        # Taking the step regardless after the backtrack budget is exhausted can
+        # move a replicate somewhere the filter returns NaN, which then poisons
+        # every later iteration -- a silent failure that looks like divergence.
+        with torch.no_grad():
+            vc = f(u - alpha * step)
+        accept = (torch.isfinite(vc) & (vc <= val)).unsqueeze(-1)
+        u = torch.where(accept, u - alpha * step, u).detach()
         val, g = _grad(f, u, checkpoint_every)
         history.append(float(val.mean()))
         if verbose:
@@ -501,8 +508,11 @@ def recover(
         gi = g_big[i * n_replicates : (i + 1) * n_replicates]
         H[:, :, i] = (gi - g) / steps_h[i]
     H = 0.5 * (H + H.transpose(-1, -2))
-    ev = torch.linalg.eigvalsh(H)
-    ok = ev[:, 0] > 0
+    try:
+        ev0 = torch.linalg.eigvalsh(H)[:, 0]
+    except Exception:                                         # noqa: BLE001
+        ev0 = torch.full((n_replicates,), -1.0, dtype=H.dtype, device=H.device)
+    ok = torch.isfinite(ev0) & (ev0 > 0)
     Hs = torch.where(
         ok.view(-1, 1, 1), H,
         Hpre.unsqueeze(0).expand_as(H),
@@ -651,7 +661,14 @@ def profile_likelihood(
             if not bool(worse.any()):
                 break
             alpha = torch.where(worse.unsqueeze(-1), alpha * 0.4, alpha)
-        u = (u - alpha * step).detach()
+        # Accept only where the objective actually improved and stayed finite.
+        # Taking the step regardless after the backtrack budget is exhausted can
+        # move a replicate somewhere the filter returns NaN, which then poisons
+        # every later iteration -- a silent failure that looks like divergence.
+        with torch.no_grad():
+            vc = f(u - alpha * step)
+        accept = (torch.isfinite(vc) & (vc <= val)).unsqueeze(-1)
+        u = torch.where(accept, u - alpha * step, u).detach()
         val, g = _grad(f, u, checkpoint_every)
     v = val.double().cpu().numpy().reshape(len(names), n_grid)
     out = {}

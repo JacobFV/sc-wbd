@@ -1,0 +1,11 @@
+  fitted joint_native: mean nlp 2278025.4
+  fitted eeg_only: mean nlp 890833.0
+  fitted fmri_only: mean nlp 594096.2
+  fitted joint_resampled: mean nlp 88930.9
+  PASS  refusal_of_invalid_schema
+  PASS  no_leakage_across_parents
+  FAIL  recovery_intervals_nominal_coverage
+  PASS  subgroup_calibration
+  FAIL  heldout_log_loss_beats_baselines
+  PASS  misspecified_module_detected
+[written] reports/identifiability/synthetic_slice.json
