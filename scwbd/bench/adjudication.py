@@ -1115,3 +1115,79 @@ ADJ4_POSTHOC_GATE_RULING = (
 #: the resampling result as support for source-native FUSION; it supports
 #: source-native TIMING.
 IDENTIFIABILITY_VINDICATED_CLAIM = "native clocks, not multimodal fusion"
+
+
+# ==========================================================================
+# SBC_FINAL — preregistered by bench, executed by bench (Stage V)
+# ==========================================================================
+#: WHY BENCH RUNS IT. Agent Turing proposed that the verdict measurement should
+#: not be executed by the agent whose work it grades, and the argument is
+#: correct: it is the generate/adjudicate separation this project already runs,
+#: applied one level deeper. So agent Turing supplies the final checkpoint and
+#: the harness; bench inspects the harness rather than trusting it, runs it, and
+#: returns the verdict.
+#:
+#: DISCLOSURE, REQUIRED AND GIVEN: **the Stage III result has conditioned my
+#: reading and I did not run blind.** I cannot: the numbers were relayed to me
+#: (R2 from -0.447 to 0.300, z_sd 0.85-1.48) before this preregistration existed.
+#: Claiming blindness would be false. The specific bias this creates is NOT that
+#: I will be too harsh -- it is that a POOR final result will look EXPECTED and
+#: therefore go under-scrutinised, and that a GOOD one will attract scrutiny a
+#: poor one would have escaped. Naming the asymmetry is the only mitigation
+#: available; the structural one is that the thresholds below are fixed NOW,
+#: before the Stage V checkpoint exists, so they cannot be tuned to what it says.
+#:
+#: THE STAGE III RESULT IS A DIAGNOSTIC AND MUST NOT BECOME THE VERDICT. It is
+#: not preregistered, it is a mid-flight checkpoint, and a mid-flight number
+#: substituting for a preregistered one is precisely the failure this bench's
+#: register documents 24 times over.
+@dataclass(frozen=True)
+class SBCVerdictBar:
+    """Preregistered acceptance criteria for the final SBC. Fixed before the data."""
+
+    id: str = "SBC_FINAL_stage_V"
+    #: Primary discriminator. Turing's z_sd split is adopted because it separates
+    #: the two failures that need different remedies, and only one can mislead.
+    honest_uncertainty_band: tuple[float, float] = (0.80, 1.20)
+    #: Recovery floor. Not a bar -- a FLOOR. Below zero the posterior is worse
+    #: than predicting the prior mean, which is not a weak inference, it is none.
+    min_r2: float = 0.0
+    #: Rank uniformity is reported on EDGE MASS, not on a KS p-value: KS power
+    #: scales with n_datasets x n_samples, so p-values are not comparable across
+    #: checkpoints (Turing's caveat, adopted). Edge mass is a fraction of the
+    #: rank range and is.
+    max_edge_mass_excess: float = 0.02
+    n_datasets: int = 512
+    n_samples: int = 256
+
+    def classify(self, r2: float, z_sd: float) -> str:
+        """Three outcomes that must never be collapsed into each other."""
+        lo, hi = self.honest_uncertainty_band
+        if z_sd > hi and r2 < self.min_r2:
+            return "CONFIDENTLY_WRONG"      # the only class that can mislead
+        if lo <= z_sd <= hi and r2 < self.min_r2:
+            return "HONESTLY_UNINFORMATIVE"  # says nothing, and says so
+        if r2 >= self.min_r2 and lo <= z_sd <= hi:
+            return "RECOVERED"
+        return "MIXED"
+
+
+SBC_FINAL_BAR = SBCVerdictBar()
+
+#: WHAT THE STAGE III FINDING BEARS ON, adopting agent Turing's narrowing over
+#: the coordinator's original framing, because Turing's is correct:
+#:
+#:   NOT G5. G5 is scored by incremental calibrated log score against
+#:   anatomy-only / population / session-adapted baselines -- PREDICTIVE
+#:   PERFORMANCE, not theta recovery. A model can improve that score through
+#:   individualisation while still failing to invert its own simulator. Grounds
+#:   to SCRUTINISE a G5 pass; not grounds to pre-fail it, and bench will not
+#:   record it as bearing on G5.
+#:
+#:   IT BEARS ON ARCHITECTURE.md:231 -- the amortised posterior described as
+#:   "the 'characterize a general human brain' capability". At the Stage III
+#:   checkpoint that capability is NOT DEMONSTRATED, on the easy case: the same
+#:   simulator that generated the training corpus, no model mismatch, no real
+#:   data. A posterior that cannot invert its own simulator has not earned an
+#:   inference claim about brains.
+STAGE_III_BEARS_ON = "ARCHITECTURE.md:231 amortised-posterior capability, NOT G5"

@@ -279,6 +279,42 @@ remedies. Conflating them would itself be a decorative claim.**
   baseline anywhere in this project to set such a bar from. **A preregistered
   threshold with no reference class is a guess with a timestamp.**
 
+### 3.2b Not demonstrated at the Stage III checkpoint — the amortised posterior
+`ARCHITECTURE.md:231` describes the amortised posterior as *"the 'characterize a
+general human brain' capability."* **At the Stage III checkpoint that capability
+is not demonstrated.** Agent Turing's SBC diagnostic (512 held-out simulated
+datasets, 256 samples) reports per-parameter R² from **−0.447** to **0.300** —
+two parameters *worse than predicting the prior mean* — on the **easy** case:
+the same simulator that generated the training corpus, no model mismatch, no
+real data.
+
+The `z_sd` split is the part that matters, because the two failures need
+different remedies and only one can mislead a reader:
+
+| class | parameters | reads |
+|---|---|---|
+| honestly uninformative (`z_sd` ≈ 1) | `log_G`, `log_velocity`, `drive`, `ei_global` | says nothing, and says so |
+| **confidently wrong** | `ei_gradient` (1.48), `log_sigma` (1.32) | says something, wrongly, with confidence |
+
+**This bears on `ARCHITECTURE.md:231`, not on G5.** G5 is scored by incremental
+calibrated log score against anatomy-only / population / session-adapted
+baselines — *predictive performance*, not θ recovery. A model could improve that
+score through individualisation while still failing to invert its own simulator.
+It is grounds to **scrutinise** a G5 pass, not to pre-fail one. (This corrects a
+framing relayed to bench; agent Turing's narrower version is the correct one and
+is adopted.)
+
+**Status of the number:** diagnostic, **not** the verdict. It is not
+preregistered and it is mid-flight. The preregistered SBC runs at Stage V, is
+executed by **bench** rather than by the agent whose work it grades, and its
+acceptance criteria are fixed in `scwbd.bench.adjudication.SBC_FINAL_BAR`
+*before* that checkpoint exists. Two caveats carried from the filing: Stage II
+and Stage III KS p-values are **not comparable** (128/64 vs 512/256 is mostly
+power), so any cross-checkpoint comparison must rest on **edge mass**; and agent
+Turing's own preregistered prediction **failed** — they predicted the too-wide
+parameter would dominate and the offenders were over-confident, the opposite
+signature — recorded as failed in their §6.
+
 ### 3.3 Simply not yet run
 G1, G2, G3 (no candidate model or datasets supplied), N2, N5 (no solver or
 boundary observables), and all ten §11.4 ablations.

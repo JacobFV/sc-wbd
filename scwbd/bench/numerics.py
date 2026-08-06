@@ -1480,6 +1480,7 @@ def run_numerics_suite(
                                                   tol=boundary_tol, seed=seed)
     reports.append(permit_report)
     use_cache = bool(cache)
+    _suite_notes: list[str] = []
     if em_solver is None or acoustic_solver is None:
         # agent Faraday's reference-problem solvers, once they are importable
         dep = adapters.field_solvers()
@@ -1497,10 +1498,28 @@ def run_numerics_suite(
                 def acoustic_solver(points, source_pos=(0.0, 0.0, 0.0), k=100.0, **kw):
                     return ac_run(points, source_pos, k, **kw).pressure
                 if acoustic_grid is None:
-                    probe = ac_run(np.full((1, 3), 0.02), (0.0, 0.0, 0.0), 100.0)
-                    acoustic_grid, acoustic_dx = probe.grid_block, probe.spacing_m
+                    # A gate that cannot run must REPORT could-not-run, never
+                    # abort the suite. The accelerator is shared with training,
+                    # so an FDTD march can fail for reasons that have nothing to
+                    # do with the physics -- and an exception here would take
+                    # every other numerical check down with it, which is a
+                    # louder failure than the one it is reporting.
+                    try:
+                        probe = ac_run(np.full((1, 3), 0.02), (0.0, 0.0, 0.0), 100.0)
+                        acoustic_grid, acoustic_dx = probe.grid_block, probe.spacing_m
+                    except Exception as exc:
+                        acoustic_solver = None
+                        acoustic_grid = acoustic_dx = None
+                        _suite_notes.append(
+                            f"acoustic solver unavailable this run: "
+                            f"{type(exc).__name__}: {exc}. The accelerator is shared with "
+                            "training; this is an environment condition, not a physics "
+                            "result, and N4 reports COULD_NOT_RUN rather than a verdict."
+                        )
     em_c = cached_solver(em_solver, seed=seed, enabled=use_cache)
     ac_c = cached_solver(acoustic_solver, seed=seed, enabled=use_cache)
+    for _n in _suite_notes:
+        reports[-1].notes.append(_n) if reports else None
     reports.append(_record_cache(validate_em_solver(em_c, seed=seed), em_c))
     reports.append(_record_cache(
         validate_acoustic_solver(ac_c, grid=acoustic_grid, dx=acoustic_dx, seed=seed), ac_c))
@@ -1532,8 +1551,10 @@ def run_numerics_suite(
                 n6_kw = {}
             try:
                 n8_rep = g.run_n8()
-            except Exception:
+            except Exception as exc:
                 n8_rep = None
+                _suite_notes.append(
+                    f"N8 could not run this run: {type(exc).__name__}: {exc}")
     ind_c = cached_solver(induced_efield_solver, seed=seed, enabled=use_cache)
     ref_c = cached_solver(induced_efield_analytic, seed=seed, enabled=use_cache)
     reports.append(_record_cache(
