@@ -2,23 +2,74 @@
 
 Implements `reports/intervene/impulse_pilot_preregistration.md`, criterion fixed at `007bee2` while `checkpoints/` was empty.
 
-**Status: `awaiting_checkpoint`**
+**Status: `ran`**
 
-staged; no trained checkpoint exists yet
+## Reading: **survived**
+
+| | CRR |
+|---|---|
+| trained | 1.3871 |
+| untrained | 1.3929 |
+| ratio | 0.9959 |
+
+Thresholds fixed in advance: collapsed `< 0.1`; attenuated `< 0.5 x` untrained; else survived.
+
+## Control
+
+same-pose CRR = 0 (must be 0; ok = True)
+
+## What this does not establish
+
+`trained_on_perturbation_data` remains **False**. The model has seen resting dynamics and no TMS-evoked response, so a surviving contrast means the trained dynamics propagate a focal input pose-dependently, not that they do so correctly. No held-out TEP exists to check against.
 
 ```json
 {
-  "status": "awaiting_checkpoint",
-  "crr": {},
-  "reading": "staged; no trained checkpoint exists yet",
-  "shuffled_normal_null": {},
-  "control": {},
+  "status": "ran",
+  "crr": {
+    "trained": 1.3871015744875945,
+    "untrained": 1.392872295139151,
+    "ratio_trained_over_untrained": 0.9958569635768512
+  },
+  "reading": "survived",
+  "shuffled_normal_null": {
+    "skipped": true
+  },
+  "control": {
+    "same_pose_crr": 0.0,
+    "must_be_zero": true,
+    "ok": true,
+    "note": "if this is non-zero the statistic is measuring nondeterminism and no other number here means anything"
+  },
   "provenance": {
     "checkpoint": {
-      "found": false
+      "found": true,
+      "path": "checkpoints/scwbd-002-pilot/last.pt",
+      "step": 250,
+      "stage": "T1_measured_founding",
+      "saved_utc": "2026-08-06T22:49:11Z",
+      "git_sha": "a1311f0aec2f6fcb04344e96a05ff2daa535d610-dirty",
+      "strict_load": true,
+      "load_report": {},
+      "tensors_changed_by_load": 194,
+      "tensors_total": 298
     },
-    "staged_at": "2026-08-06T20:09:37Z",
-    "note": "This is not a failure. The analysis is fixed and will run unchanged when a checkpoint lands."
+    "coil_a": [
+      0.0,
+      0.0,
+      0.1
+    ],
+    "coil_b": [
+      0.0,
+      0.1,
+      0.0
+    ],
+    "n_steps": 64,
+    "gain": 50.0,
+    "batch": 4,
+    "n_regions": 414,
+    "trained_on_perturbation_data": false,
+    "response_mapping_validated": false,
+    "claim": "a prediction about this model's dynamics under a computed field; the model has seen resting dynamics and no TMS-evoked response, so a surviving contrast means focal input propagates pose-dependently, not correctly"
   },
   "preregistration": "reports/intervene/impulse_pilot_preregistration.md",
   "preregistration_sha": "007bee2",

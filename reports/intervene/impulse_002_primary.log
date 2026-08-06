@@ -1,0 +1,22 @@
+status: checkpoint_unreadable
+load_checkpoint failed: RuntimeError: Error(s) in loading state_dict for SCWBD:
+	size mismatch for log_dt_scale: copying a param with shape torch.Size([454]) from checkpoint, the shape in current model is torch.Size([414]).
+	size mismatch for tau_prior: copying a param with shape torch.Size([454]) from checkpoint, the shape in current model is torch.Size([414]).
+	size mismatch for coupling.Wcat: copying a param with shape torch.Size([3, 454, 1816]) from checkpoint, the shape in current model is torch.Size([3, 414, 1656]).
+	size mismatch for local.embed: copying a param with shape torch.Size([454, 16]) from checkpoint, the shape in current model is torch.Size([414, 16]).
+	size mismatch for local.films.0.region_scale: copying a param with shape torch.Size([454, 64]) from checkpoint, the shape in current model is torch.Size([414, 64]).
+	size mismatch for local.films.0.region_shift: copying a param with shape torch.Size([454, 64]) from checkpoint, the shape in current model is torch.Size([414, 64]).
+	size mismatch for local.films.1.region_scale: copying a param with shape torch.Size([454, 64]) from checkpoint, the shape in current model is torch.Size([414, 64]).
+	size mismatch for local.films.1.region_shift: copying a param with shape torch.Size([454, 64]) from checkpoint, the shape in current model is torch.Size([414, 64]).
+	size mismatch for residual.embed: copying a param with shape torch.Size([454, 16]) from checkpoint, the shape in current model is torch.Size([414, 16]).
+	size mismatch for assimilate.embed: copying a param with shape torch.Size([454, 16]) from checkpoint, the shape in current model is torch.Size([414, 16]).
+	size mismatch for eeg.L: copying a param with shape torch.Size([64, 454]) from checkpoint, the shape in current model is torch.Size([64, 414]).
+	size mismatch for bold.log_kappa: copying a param with shape torch.Size([454]) from checkpoint, the shape in current model is torch.Size([414]).
+	size mismatch for bold.log_gamma: copying a param with shape torch.Size([454]) from checkpoint, the shape in current model is torch.Size([414]).
+	size mismatch for bold.log_tau: copying a param with shape torch.Size([454]) from checkpoint, the shape in current model is torch.Size([414]).
+	size mismatch for bold.alpha: copying a param with shape torch.Size([454]) from checkpoint, the shape in current model is torch.Size([414]).
+	size mismatch for bold.rho: copying a param with shape torch.Size([454]) from checkpoint, the shape in current model is torch.Size([414]).
+	size mismatch for bold.neural_gain: copying a param with shape torch.Size([454]) from checkpoint, the shape in current model is torch.Size([414]).
+	size mismatch for bold.log_noise: copying a param with shape torch.Size([454]) from checkpoint, the shape in current model is torch.Size([414]).
+	size mismatch for behaviour.pool: copying a param with shape torch.Size([32, 454]) from checkpoint, the shape in current model is torch.Size([32, 414]).
+wrote reports/intervene/impulse_pilot.json

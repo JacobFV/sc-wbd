@@ -400,6 +400,19 @@ def predict_impulse_response(
         dt_s=dt_s,
     )
 
+    # Bind theta-conditioned ParamPacks before rolling out.  Sixth site to need
+    # this: the trainer (3), predict(), and here.  Every one was a path declared
+    # for both arms and exercised only on the control, which has no mechanistic
+    # families.  Without it a family-state checkpoint raises SpanViolation.
+    _bind = getattr(model, "set_mechanistic_theta", None)
+    if _bind is not None and getattr(model, "family_layout", None) is not None:
+        _anat = getattr(model, "anat", None) or getattr(model, "_anat", None)
+        if _anat is None:
+            from scwbd.foundation.anatomy import load_anatomy
+
+            _anat = load_anatomy()
+        _bind(theta, _anat)
+
     with torch.no_grad():
         perturbed = model.rollout(
             y_context=y_context, theta=theta, n_steps=n_steps,

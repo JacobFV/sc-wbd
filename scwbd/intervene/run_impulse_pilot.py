@@ -171,6 +171,11 @@ def _baseline_eeg(model: Any, prior: Any) -> Tensor:
     """
     y, th = _make_context(prior)
     with torch.no_grad():
+        _b = getattr(model, "set_mechanistic_theta", None)
+        if _b is not None and getattr(model, "family_layout", None) is not None:
+            from scwbd.foundation.anatomy import load_anatomy
+
+            _b(th, load_anatomy())
         roll = model.rollout(y_context=y, theta=th, n_steps=N_STEPS)
         mu, _ = model.eeg(roll.state)
     return mu
