@@ -162,8 +162,7 @@ def build(*, rebuild: bool = False, verbose: bool = True) -> dict[str, Any]:
             ms = load_maps(p, rebuild=rebuild)
             f = derived_dir("maps") / f"{name}__{space}-{density}__maps.npz"
             _register_derived(man, f, "scwbd.anatomy.maps.load_maps",
-                              ["hansen_receptors", "neuromaps", "margulies2016",
-                               "hcps1200_maps", "sydnor2021"])
+                              _maps_inputs(ms))
             report["built"].append(str(f.name))
             log(f"  ok {name}: {len(ms.maps)} maps, {len(ms.receptor_names)} receptors")
             # A map that was expected and could not be built is a result, not a
@@ -185,8 +184,7 @@ def build(*, rebuild: bool = False, verbose: bool = True) -> dict[str, Any]:
                 tag = f"{name}__enigma_hcp__{'with' if include_sub else 'no'}sctx__euclidean"
                 f = derived_dir("connectome") / f"{tag}.npz"
                 _register_derived(man, f, "scwbd.anatomy.connectome.load_structural_prior",
-                                  ["enigma_hcp_sc", "hansen_schaefer_sc",
-                                   "netneuro_lausanne_sc", "markov2014"])
+                                  _connectome_inputs(sp))
                 report["built"].append(str(f.name))
                 c = sp.class_counts()
                 log(f"  ok {name} sctx={include_sub}: hard={c['hard']} soft={c['soft']} "
@@ -220,6 +218,47 @@ def build(*, rebuild: bool = False, verbose: bool = True) -> dict[str, Any]:
         f"{sum(e.n_bytes for e in man.entries.values()) / 1e9:.2f} GB)")
     report["manifest"] = str(p)
     return report
+
+
+def _maps_inputs(ms: Any) -> list[str]:
+    """Source keys this ``MapSet`` actually loaded.
+
+    Read off the built object rather than declared beside the call, because a
+    literal cannot be wrong in a way anybody notices.  The hardcoded list this
+    replaced was wrong in both directions on every maps asset: it omitted
+    ``hill2010`` and ``raichle_metabolism`` (two unknown-licence sources that
+    are genuinely read) and listed ``neuromaps`` (which is not a source key on
+    any loaded map).  An audit driven off ``inputs`` could not see either.
+    """
+    return sorted({m.source_key for m in ms.maps.values()})
+
+
+def _connectome_inputs(sp: Any) -> list[str]:
+    """Source keys this ``StructuralPrior`` actually loaded.
+
+    Two parts, and the second is easy to miss.  ``provenance["streams"]`` names
+    the independent streams layered on; ``provenance["source"]`` is the *base*
+    weight matrix and does not appear among them -- on ``DesikanKilliany`` the
+    stream list is ``["hansen_lausanne_sc"]`` alone, yet the weights are
+    ENIGMA/HCP.  Recovering the base key by identity against ``S.SRC`` keeps it
+    derived instead of restating a literal that could drift from the loader.
+    """
+    keys = {st["source_key"] for st in sp.provenance.get("streams", [])}
+    base = sp.provenance.get("source") or {}
+    # Match on ``name``, not identity. The provenance dict is JSON round-tripped
+    # through the .npz cache, so ``is`` against ``S.SRC`` fails for any prior
+    # loaded from disk -- which is every prior in a normal build. That bug was
+    # in the first version of this function and it dropped ``enigma_hcp_sc``
+    # from DesikanKilliany, i.e. it under-reported a real dependency while
+    # looking like it worked.
+    name = base.get("name")
+    if name is not None:
+        hit = next((k for k, v in S.SRC.items() if v.get("name") == name), None)
+        # An unregistered base source is recorded, never dropped: the point of
+        # this field is that it can say what loaded, so a miss has to be
+        # visible in the manifest rather than absent from it.
+        keys.add(hit if hit is not None else f"unregistered:{name}")
+    return sorted(keys)
 
 
 def _atlas_inputs(name: str) -> list[str]:

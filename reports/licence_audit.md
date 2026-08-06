@@ -384,3 +384,132 @@ complete:
   and does not answer it. Neither do I.
 - **`unknown` here means unknown.** It is not a soft `no` and it is emphatically
   not a soft `yes`.
+
+---
+
+## 8. §4 applied: `inputs` is now computed from the built object
+
+⚡ Faraday, 2026-08-06. §4 recommended taking `inputs` from the built object
+rather than a literal, and did not apply it because a training run was live.
+Applied here. No training run is live.
+
+**This is attribution, not a gate.** Nothing added refuses to build, refuses to
+train, or restructures anything to keep a licence out. Per `ARCHITECTURE.md`
+§7a a checkpoint may carry whatever it inherits provided it says so; the change
+is to make what it says true.
+
+### 8.1 Why the field is load-bearing
+
+`scwbd.release.licence.anatomy_nc_inputs` resolves `MANIFEST.json`'s `inputs`
+against `scwbd.anatomy.sources.SRC` to decide which assets inherit a
+non-commercial or share-alike term. **A wrong `inputs` therefore produces a
+wrong licence answer for the release**, silently, with no other symptom. §4
+called this an audit-reliability problem; it is also a correctness problem in
+the release path.
+
+### 8.2 The change
+
+`scwbd/anatomy/build.py` gains `_maps_inputs(ms)` and `_connectome_inputs(sp)`.
+The two call sites pass those instead of hardcoded lists.
+
+One subtlety worth recording because the first version of the fix got it wrong:
+`provenance["source"]` (the base ENIGMA/HCP weight matrix) is **not** among
+`provenance["streams"]`, and it is JSON round-tripped through the `.npz` cache,
+so an identity check against `SRC` fails for every prior loaded from disk —
+which is every prior in a normal build. The identity version silently dropped
+`enigma_hcp_sc` from DesikanKilliany: it under-reported a real dependency while
+appearing to work. Matching on `name` fixes it, and an unregistered base source
+is now recorded as `unregistered:<name>` rather than dropped — visibly wrong
+beats invisibly absent.
+
+### 8.3 Measured effect: 19 assets corrected, 8 false NC claims removed
+
+Re-derived by running `python -m scwbd.anatomy.build` and diffing:
+
+| asset group | literal said | actually reads | direction |
+|---|---|---|---|
+| `Glasser360`, `Schaefer200/300/400` connectomes (8 assets) | `+ hansen_schaefer_sc` | `enigma_hcp_sc` only | **over-claimed CC-BY-NC-SA-4.0** |
+| `DesikanKilliany` connectome (2) | `hansen_schaefer_sc` | `hansen_lausanne_sc` | **wrong work credited** |
+| `Schaefer100x7` connectome (2) | `+ markov2014`, `+ netneuro_lausanne_sc` | `enigma_hcp_sc`, `hansen_schaefer_sc` | over-lists |
+| every `*__maps.npz` (7) | `+ neuromaps` | also `hill2010`, `raichle_metabolism` | under-lists two unknowns |
+
+Resolved through `anatomy_nc_inputs`:
+
+| | before | after |
+|---|---|---|
+| assets flagged non-commercial | **21** | **13** |
+| false NC claims removed | — | **8** |
+| newly flagged NC | — | **0** |
+
+**Nothing became more restricted.** Every change removes a claim that was not
+true or corrects which work is credited. That matters for the direction of the
+error: an asset falsely marked NC is one a downstream consumer treats as
+encumbered when it is not, and nobody ever complains about a restriction that
+should not be there.
+
+The attribution correction is the one CC-BY actually cares about: the DK
+connectome credited a Schaefer-100 matrix it never read, while the Lausanne
+matrix it did read went uncredited.
+
+### 8.4 Does Hansen reach a trained parameter?
+
+Measured, not inferred. `scwbd/foundation/anatomy.py` reads exactly three
+quantities from `BrainPrior` into `theta`:
+
+| trained input | comes from | source key |
+|---|---|---|
+| `gradient` | `maps["fc_gradient1"]` | **`margulies2016`** |
+| `ei_prior` | `ei_ordering()` | **`hcps1200_maps`** |
+| `timescale` | `timescale_prior()` | `hcps1200_maps` |
+
+**No Hansen quantity reaches `theta` on any atlas path.** `ei_ordering()`
+reports `licence_keys = ["hcps1200_maps"]` and `maps_used = [myelin_t1t2,
+cortical_thickness, intrinsic_timescale_meg]`, which is the E/I substitution
+working as §3 described.
+
+The connectome is a separate route and the answer differs by atlas:
+
+| atlas | connectome carries Hansen? |
+|---|---|
+| `Schaefer400x7` (run-2, 414 parcels) | **no** — `enigma_hcp_sc` only |
+| `Schaefer200x7`, `Schaefer300x7`, `Glasser360` | **no** |
+| `Schaefer100x7` (what `tests/anatomy` exercises) | **yes** — `hansen_schaefer_sc` |
+| `DesikanKilliany` | **yes** — `hansen_lausanne_sc` |
+
+So the production path inherits no share-alike term through either route, and
+the test path does. That asymmetry is worth knowing precisely because the suite
+runs on the atlas that carries it — a "no Hansen" claim checked only against
+the test configuration would be checking the wrong thing.
+
+**The object still carries Hansen**, exactly as §3 says: 21 Hansen-derived maps
+including `ei_proxy` sit on every `BrainPrior`, because `receptor_profile()` and
+thesis §5 need them. Ada's framing holds and is the right one: *dropping Hansen
+removes share-alike; it does not make the family Hansen-free.* The two
+questions stay separate and both are answerable from the artifact.
+
+No legal determination is offered here. Whether share-alike creates a
+derivative-work argument over fitted weights is a question for a lawyer, it does
+not block research, and the point of this section is that the facts are now
+recorded accurately enough to hand to one.
+
+### 8.5 The guard, and proof it fires
+
+`tests/anatomy/test_manifest_inputs.py`, 19 tests. Section 3 is mutation tests
+that replay the exact historical literals and assert the comparison rejects
+them; section 4 checks the manifest **on disk** against the loaders, because a
+correct function whose output was never written changes nothing.
+
+Demonstrated rather than asserted: reverting `build.py` to the old literals,
+regenerating, and re-running turns **4 tests red**, each naming the defect —
+
+```
+FAILED ...::test_recorded_connectome_inputs_match_the_loader[Schaefer100x7]
+FAILED ...::test_recorded_connectome_inputs_match_the_loader[Schaefer400x7]
+FAILED ...::test_recorded_connectome_inputs_match_the_loader[DesikanKilliany]
+FAILED ...::test_recorded_maps_inputs_match_the_loader
+E  manifest records [... 'neuromaps' ...], loader reads [... 'hill2010', 'raichle_metabolism' ...]
+```
+
+The fix was then restored, the manifest regenerated, and all 19 pass. Per
+`reports/decorative_guards.md`, a guard nobody has seen fail is indistinguishable
+from one that cannot.
