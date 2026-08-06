@@ -71,16 +71,61 @@ therefore substantially **data-driven — a reproducible hard batch — not pure
 learning-rate instability.** Lowering the rate reduced its magnitude (3.717 →
 2.447), as a smaller step into a bad direction should, but did not remove it.
 
-This refines the diagnosis rather than overturning the decision. The rescale was
-justified on two other grounds that still hold — the a-priori batch/lr scaling
-argument, and the loss *floor* rising as lr crossed ~5e-4 — and the floors above
-confirm it. But "the spikes were caused by too high an lr" was too strong, and
-the corrected statement is: *the spikes mark a specific hard batch, and lr sets
-how badly the model is thrown by it.*
+### The intervention was correct; one of the two arguments for it was not
 
-Worth checking at the end of Stage I whether step 80's batch is anomalous in the
-mixture (e.g. a shard boundary or a `linear_gaussian` block), since that would be
-a corpus property rather than an optimisation one.
+The rescale rested on two legs. **Only one survives.**
+
+- **Survives — the a-priori scaling argument.** Rates written for batch 192 and
+  run at batch 64 is a real mismatch regardless of what step 80 turns out to be.
+- **Does not survive — "the loss floor rose because lr crossed ~5e-4".** That
+  inference read a batch-ordering artifact as an optimiser effect. The same
+  elevated readings appear at the same sampled steps in both runs because the
+  same batches are drawn there.
+
+What vindicates the rescale is therefore **outcome evidence, not the diagnosis**:
+floors improved at every matched step (0.331 → 0.225, 0.339 → 0.256,
+1.015 → 0.802, 0.632 → 0.627). The intervention was right; half its stated
+justification was not.
+
+Recorded this way deliberately. **A decision written up as fully justified, when
+half its support later failed, is itself an uninformative instrument** — it reads
+the same whether the reasoning was sound or lucky. This one was half lucky.
+
+### A precision caveat on "exactly step 80"
+
+`stage.log_every = 20`, so the loss series is **sampled every 20 steps**. "The
+spike is at exactly step 80" overstates what the data can support: what is
+observed is that *the step-80 sample point* is elevated in both runs. The
+underlying hard batch could sit anywhere in roughly steps 61–80 and would be
+invisible except where it lands on the sampling grid, and there may be other
+spikes between grid points that were never seen at all.
+
+The reproducibility claim is unaffected — same seed, same shuffle, same grid, so
+the two runs are comparable at matched points — but the *localisation* is
+±20 steps. My earlier phrasing claimed a resolution the instrument does not have.
+
+### Step-80 investigation — method, to run at end of Stage I
+
+Deferred to Stage I completion so it does not contend with the live run.
+
+1. **Localise properly.** Re-run steps ~40–120 with `log_every: 1` on the CI-sized
+   config, same seed, to find the true spike step rather than the grid point.
+2. **Identify the batch.** Reconstruct the deterministic sampler order —
+   `set_determinism(20260805)`, `SimCorpus(..., trajectory_subset="train",
+   val_fraction=0.05, seed=20260805)`, `DataLoader(..., batch_size=64,
+   shuffle=True, drop_last=True)` — and map that batch's dataset indices to
+   shard and backend.
+3. **Classify.** If the batch is a shard boundary or a `linear_gaussian` block,
+   this is a **corpus** property, not an optimisation one, and belongs in
+   `corpus_composition.md` beside mechanisms A and B — plausibly a third
+   mechanism.
+4. **Generalise or don't.** If it is a shard boundary, check **every** shard
+   boundary. One spiking boundary is an anecdote; all 37 spiking is a structural
+   property of how the corpus was sharded, and a much more serious finding.
+
+Pre-committed so the answer cannot be shaped after the fact: if boundaries spike
+systematically, it goes in `corpus_composition.md` as mechanism C and into the
+limitations list, whatever it does to the loss curve's appearance.
 
 ## Provenance of the artifact
 
