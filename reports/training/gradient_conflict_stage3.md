@@ -85,3 +85,79 @@ of a pair is not evidence of compatibility. `anatomical_prior` appears only agai
 `sim_wholebrain`, and only on `bold`. Stages I and II produced **zero** conflict
 pairs — not because the sources agreed, but because fewer than two sources were
 active on shared modules.
+
+---
+
+# Addendum — mixture weights, and why the calibration source does not do the damage it looks like it should
+
+## `montage_calibration` holds the largest weight in the mixture
+
+| source | role | weight | raw reliability |
+|---|---|---|---|
+| **montage_calibration** | calibration | **0.510** | 1.7168 |
+| eegmmidb_real | likelihood | 0.387 | 1.3023 |
+| sim_wholebrain | prior | 0.090 | 0.3018 |
+| anatomical_prior | prior | 0.014 | 0.0455 |
+| negative_control_shuffled | negative_control | **0.000** | 0.0000 |
+
+A source that "estimates gains and offsets — it is not evidence about a brain"
+carries **more weight than the measured EEG**. `mixture.py:92-96` names this exact
+hazard: *"a precise but systematically distorted source could dominate the joint
+objective."*
+
+## The guard is applied, and it is arithmetically insufficient
+
+`ROLE_AUTHORITY["calibration"] = 0.12` **is** applied — inside
+`SourceSpec.reliability()` (line 224), not bypassed. I reconstructed the arithmetic
+exactly (it reproduces every reported weight to 4 decimals, with `kappa = 24` and
+`hierarchy_depth` 1 for the montage card, 3 for the EEG card):
+
+| factor | montage | real EEG | montage's edge |
+|---|---|---|---|
+| authority | 0.12 | 1.00 | **0.12×** |
+| variance `v` | 0.0508 | 0.3633 | **7.15×** |
+| hierarchy `1/√depth` | 1.000 | 0.577 | **1.73×** |
+| saturation `n/(n+κ)` | 0.727 | 0.820 | 0.89× |
+| **product** | 1.7168 | 1.3023 | **1.32×** |
+
+The 8.3× authority penalty is overwhelmed by a 7.15× variance advantage times a
+1.73× hierarchy advantage. **The guard fires and loses.** This is a third category
+for the register — not a decorative guard, and not an absent one: a guard that
+runs, is correctly implemented, and is simply **too small for the force it opposes**.
+
+## But the blast radius is 6 parameters, because a *second*, independent mechanism holds
+
+The gradient-permission audit is the reason this is not a crisis:
+
+| source | permitted tensors | blocked |
+|---|---|---|
+| montage_calibration | **6** | 140 |
+| anatomical_prior | 10 | 136 |
+| eegmmidb_real | 62 | 84 |
+| sim_wholebrain | 128 | 18 |
+| negative_control_shuffled | **0** | 146 |
+
+`montage_calibration` may touch only `eeg.log_gain`, `eeg.offset`, `eeg.log_noise`,
+`eeg.nuisance*`. **It cannot reach the operator at all.** Its 51% share buys it a
+large gradient on six observation-nuisance tensors and nothing else.
+
+**This is defence in depth working as designed** — the weighting guard failed and
+the permission guard caught it. It is also the strongest argument for why the
+binding had to be fixed: had the binding stayed incomplete, the weighting failure
+above would have been unopposed, and a gain-and-offset estimator would have been
+the loudest voice training a brain model.
+
+**What is still unmeasured:** whether a 51% share on six nuisance tensors makes the
+EEG head's gain/offset move too fast relative to the operator. I have no evidence
+either way and am not asserting it is harmless — only that it is contained.
+
+## Two independent corroborations
+
+- `sim_wholebrain`'s audit lists `coupling.*` in **`frozen`**. That is the Finding-1
+  freeze, confirmed from a different artifact than the conflict log that caused it.
+- `anatomical_prior` and `sim_wholebrain` are **both permitted on `bold.*`** — the
+  structural explanation for their cosine of 0.99999998. The same loss reaches
+  `bold` through two cards, so the "agreement" is one term counted twice, as
+  Finding 2 inferred numerically.
+- `negative_control_shuffled`: weight **0.0**, permitted tensors **0**, frozen `*`.
+  The negative control genuinely contributes no gradient. That guard is real.

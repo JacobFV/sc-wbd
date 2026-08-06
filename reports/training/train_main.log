@@ -525,3 +525,12 @@ stage=IV_assembly  step=2200  global_step=7000  loss=0.6909  lr=3.968e-05  wall_
 stage=IV_assembly  step=2220  global_step=7020  loss=0.6464  lr=3.87e-05  wall_s=3323  traj_s_per_s=16.4  gpu_reserved_gb=36.45  sim_forecast_nll=1.243  npe_loss=-12.07  kl=19.72  rho=0.00712
 stage=IV_assembly  step=2240  global_step=7040  loss=0.4939  lr=3.773e-05  wall_s=3350  traj_s_per_s=16.4  gpu_reserved_gb=36.45  sim_forecast_nll=1.186  npe_loss=-12.58  kl=19.26  rho=0.00741
 stage=IV_assembly  step=2260  global_step=7060  loss=0.5479  lr=3.677e-05  wall_s=3378  traj_s_per_s=16.4  gpu_reserved_gb=36.45  sim_forecast_nll=1.205  npe_loss=-11.39  kl=19.61  rho=0.007696
+stage=IV_assembly  step=2280  global_step=7080  loss=0.4917  lr=3.581e-05  wall_s=3406  traj_s_per_s=16.5  gpu_reserved_gb=36.45  sim_forecast_nll=1.173  npe_loss=-12.69  kl=19.31  rho=0.007776
+stage=IV_assembly  step=2300  global_step=7100  loss=0.5938  lr=3.485e-05  wall_s=3435  traj_s_per_s=16.5  gpu_reserved_gb=36.45  sim_forecast_nll=1.164  npe_loss=-10.29  kl=19.15  rho=0.007498
+stage=IV_assembly  step=2320  global_step=7120  loss=0.4832  lr=3.391e-05  wall_s=3464  traj_s_per_s=16.5  gpu_reserved_gb=36.45  sim_forecast_nll=1.231  npe_loss=-8.404  kl=19.08  rho=0.007456
+stage=IV_assembly  step=2340  global_step=7140  loss=0.4569  lr=3.297e-05  wall_s=3493  traj_s_per_s=16.5  gpu_reserved_gb=36.45  sim_forecast_nll=1.241  npe_loss=-11.4  kl=18.93  rho=0.007434
+stage=IV_assembly  step=2360  global_step=7160  loss=0.5166  lr=3.204e-05  wall_s=3526  traj_s_per_s=16.4  gpu_reserved_gb=36.45  sim_forecast_nll=1.185  npe_loss=-10.9  kl=19.05  rho=0.00729
+stage=IV_assembly  step=2380  global_step=7180  loss=0.6426  lr=3.112e-05  wall_s=3555  traj_s_per_s=16.5  gpu_reserved_gb=36.45  sim_forecast_nll=1.293  npe_loss=-11.83  kl=19.18  rho=0.007213
+stage=IV_assembly  step=2400  global_step=7200  loss=1.033  lr=3.021e-05  wall_s=3585  traj_s_per_s=16.5  gpu_reserved_gb=36.45  sim_forecast_nll=1.318  npe_loss=-12.78  kl=18.87  rho=0.00774
+stage=IV_assembly  step=2420  global_step=7220  loss=0.6401  lr=2.93e-05  wall_s=3621  traj_s_per_s=16.4  gpu_reserved_gb=36.45  sim_forecast_nll=1.299  npe_loss=-12.25  kl=19.18  rho=0.007696
+stage=IV_assembly  step=2440  global_step=7240  loss=0.4348  lr=2.841e-05  wall_s=3651  traj_s_per_s=16.4  gpu_reserved_gb=36.45  sim_forecast_nll=1.329  npe_loss=-13.38  kl=19.45  rho=0.007333
