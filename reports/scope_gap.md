@@ -335,3 +335,73 @@ those blind spots are invisible from inside the apparatus — every check was
 green and every check was correct. Ask of any future guard not only "can it
 fire" but "is the failure it targets representable in the model it runs
 against".
+
+### P0 cause identified: a scalar that was never calibrated
+
+🔥 Turing, 2026-08-06, pre-registered at `4c5c1de` **before** the run, method in
+`reports/training/PREREG_p0_variance_decomposition.md`. Reproduction from the
+checkpoint rather than from `evaluation.json`: MSE 3.9691 (filed 3.9697), NLL
+2.5550 (filed 2.5552), excess +0.4467 (Popper's +0.4469). Popper's finding is
+confirmed. One nit against my §6 text: the baseline excess range is −0.1025 to
+−0.1249, so persistence sits just outside the "−0.10 to −0.12" I quoted.
+
+**Decomposition of SC-WBD's variance penalty**, identical procedure on all
+seven arms, conditional mean held fixed:
+
+```
+scale   (L0−L1)  0.4467   <- 100% of the gap to the flat ceiling
+channel (L1−L2)  0.1113
+horizon (L2−L3)  0.0096   <- 2.1% of the excess
+state   (L1−L5)  0.1896   per-window scalar, beyond flat
+state   (L2−L6)  0.2587   per-window per-channel, beyond per-channel
+```
+
+Procedure validated: every baseline's L0−L4 is 0.0000 to four decimals — the
+reimplementation reproduces their own calibration exactly.
+
+**Horizon-flatness is worth 0.0096 nats. It is not the cause.** The cause is a
+**scale error in a single scalar**: `eeg.log_noise` has mean 0.2732 and sd
+**0.0299** across 64 channels — flat to 3% — asserting variance 1.31 when the
+held-out residual variance is 3.97. The model is uniformly overconfident by
+**3.0×**. Because its emitted variance is essentially flat, the optimally
+rescaled version of SC-WBD's own parameterisation *is* the flat oracle.
+
+**Why:** `train.py:78` makes `eeg.log_noise` trainable in **stage V only**, and
+stage V ran **900 steps at lr 5.77e-5, 134 seconds**. The stationary point is
+`log(3.97) = 1.379`; it started at 0 and reached 0.273 — about 20% of the way,
+still drifting. **A parameter whose optimum has a closed form was left to SGD
+for two minutes.**
+
+**Second finding, same class:** `bold.log_noise` is exactly −4.0000 for all 454
+regions, sd exactly 0. It never received a gradient. No real BOLD entered run
+1's corpus so nothing was scored on it, but the head must not be presented as
+fitted.
+
+**Model *and* instrument, both true, as the pre-registration provided for.**
+At L4 the paired participant-clustered interval against persistence is
+**−0.2582 [−0.2868, −0.2307]**, excluding zero: matched, the FAIL does not
+reproduce, and SC-WBD goes from beaten-by-five to beaten-by-none. That is the
+instrument finding and it does **not** rescue the model — §2.1 contracts
+`X^uncertainty` as regional state and the artifact emits a constant.
+
+**The MSE claim, now stated.** With the paired interval restored, on the
+conditional mean SC-WBD beats **every** baseline, participant-clustered:
+
+```
+vs persistence          −3.1962  [−3.9428, −2.5099]
+vs population_gaussian  −0.3906  [−0.5731, −0.2477]
+vs ar16 / subject_ar    −0.1665  [−0.3099, −0.0574]
+vs var4                 −0.1030  [−0.2142, −0.0034]
+```
+
+**The run-1 FAIL was entirely in the variance channel.**
+
+**Consequence for the heads split.** The (a)-primary ruling stands but the
+load-bearing term is not where either of us assumed. Scale (0.4467) is a
+*training-schedule* defect that no observation interface touches. Channel
+(0.1113) is a fitting failure — SC-WBD already has 64 per-channel parameters
+and left them flat. Only state (0.19–0.26) needs Hodgkin's interface, and it is
+~20× the horizon term. So `predictive_logvar` is worth building and is where
+any genuine NLL claim must be won — **but none of the run-1 FAIL is
+attributable to its absence.** The residual `horizon=h` embedding is dropped
+outright: 1.7% of the gap is not worth the A1 confound.
