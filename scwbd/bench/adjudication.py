@@ -1219,4 +1219,67 @@ SBC_HARNESS_ATTACK_LIST = (
     "backend coverage", "tie-aware ranks (strict < deflates)",
     "no silent dim truncation", "val split provenance",
     "normalisation drift", "declared non-bug",
+    "LOAD INTEGRITY -- assert on load_report, never a silent return",
 )
+
+#: ITEM 7, ADDED AFTER THE LIST WAS WRITTEN, and it is the one that could have
+#: voided the final verdict without leaving a mark. evaluate.py:405 loads with
+#: strict=False and DISCARDS load_checkpoint's return value; the load_report
+#: carrying missing/unexpected keys is populated and never read. 29 of 85 model
+#: keys carry torch.compile's _orig_mod. prefix, and the trainer compiles only
+#: when cfg.model.compile and device.type == "cuda". So loading that checkpoint
+#: ON CPU silently drops all 29 keys and scores the `local` operator at random
+#: initialisation -- while printing "loaded {ckpt}".
+#:
+#: THIS AIMS AT ME SPECIFICALLY. CPU is the obvious way to run the final SBC
+#: without contending with a live training job, and it is exactly what agent
+#: Turing did for the Stage III diagnostic. A CPU load through a permissive path
+#: would have made my verdict measure a partially random model and look entirely
+#: normal.
+#:
+#: BENCH'S RULE FOR THE FINAL RUN: prefer CUDA; if CPU is unavoidable, reconcile
+#: the key count and handle _orig_mod. explicitly. NEVER infer a successful load
+#: from the absence of an exception. Assert on load_report.missing and
+#: .unexpected being empty, and record the loaded-key count in the verdict's
+#: provenance so a reader can check it without knowing this history.
+#:
+#: Agent Turing's framing, which is exactly this register's shape: "if the
+#: binding is incomplete the gradient masks are decorative; here, if the load is
+#: incomplete the evaluation is decorative." A permissive interface plus an
+#: unread diagnostic, reporting success either way. Their own diagnostic was
+#: safe only because load_checkpoint defaults to strict=True -- "safe by
+#: default, not by foresight, and that is the argument for defaults that fail
+#: closed." train.py:765 (resume) has the identical pattern, unexposed only
+#: because every resume ran on CUDA with compile: true.
+SBC_LOAD_INTEGRITY_RULE = (
+    "prefer CUDA; assert load_report.missing == unexpected == [] and reconcile "
+    "the key count; never infer a load from the absence of an exception"
+)
+
+#: BENCH'S INDEPENDENT CHECK OF THE TIE-BUG CLEARANCE, from the raw ranks
+#: (sbc_stage3_diagnostic_allval.json, 1888 x 6) rather than from the relay.
+#: This cleared MY OWN sharpest objection, which is the direction in which this
+#: bench audits hardest.
+#:
+#: The discriminating argument, available from the ranks alone: A STRICT `<`
+#: CAN ONLY DEFLATE. Ties push rank DOWN, so tie deflation produces excess mass
+#: at rank 0 and CANNOT produce excess mass at rank MAX. Measured edge counts
+#: out of 1,888, with 256 samples (uniform expectation ~0.39% per extreme bin):
+#:
+#:   ei_gradient   rank0 = 64 (3.4%)   rankMAX = 78 (4.1%)   -- SYMMETRIC
+#:   log_sigma     rank0 = 72 (3.8%)   rankMAX =  1 (0.1%)   -- asymmetric
+#:
+#: ei_gradient carries MORE mass at the top than at the bottom. The tie bug
+#: cannot produce that, so it cannot explain ei_gradient's edge mass of 0.278.
+#: My concern -- that the bug and an over-confident posterior share a signature
+#: -- is WRONG as stated: they share the low-rank half of it, and the symmetric
+#: excess is the over-confidence signature alone. INDEPENDENTLY CLEARED.
+#:
+#: log_sigma's mass IS asymmetric toward zero (mean rank 0.266, confirming the
+#: reported figure exactly), which is consistent with either a real downward
+#: bias or tie deflation. I could NOT separate those from this artifact, which
+#: contains ranks and not posterior samples; agent Turing's direct measurement
+#: of zero ties is the discriminator there and is ACCEPTED ON THEIR EVIDENCE,
+#: recorded as accepted rather than implied verified.
+SBC_TIE_BUG_CLEARED_FOR = "ei_gradient (symmetric edge mass; a strict < cannot inflate)"
+
