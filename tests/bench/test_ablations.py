@@ -246,3 +246,100 @@ def test_A1_registry_carries_the_run2_preregistration():
         "RUN1_IS_A_CONTROL_CLASS_ARTIFACT_NOT_RUN2S_CONTROL_ARM",
     ):
         assert token in A1_RUN2_PREREGISTRATION
+
+
+def test_A1_blocks_on_the_budgets_its_preregistration_declared_binding():
+    """PREREG_A1_run2 §3.1 B2/B3/B4 bind, and arms that do not declare them block.
+
+    Parameter parity does NOT say two arms with structurally different state are
+    matched, which is the whole difficulty of this ablation.  Arms that declare
+    only `n_parameters` must therefore be COULD_NOT_RUN on capacity, not PASS.
+    """
+    spec = ABLATIONS["A1_structured_state"]
+    assert spec.require_budgets == ("state_width", "train_steps", "n_configs_trained")
+
+    d = make_graph_dataset(seed=0, n_train=120, n_test=200)
+    rep = run_ablation(
+        "A1_structured_state",
+        train=d["train"],
+        test=d["test"],
+        arms={a: RidgeGaussian() for a in spec.required_arms},
+        thresholds=FIXTURE_THRESHOLDS,
+    )
+    sub = next(s for s in rep.subchecks if s.name == "matched_capacity")
+    assert sub.status == "COULD_NOT_RUN"
+    assert "required budget fields not declared" in sub.reason
+    for f in spec.require_budgets:
+        assert f in sub.reason
+    assert rep.status != "PASS"
+
+
+def test_an_ablation_without_required_budgets_still_records_what_went_unchecked():
+    """The green-row regression: silence must never read as coverage."""
+    d = make_graph_dataset(seed=12, n_train=200, n_test=300)
+    arms = {"typed_operators": RidgeGaussian(name="typed", mask=d["anatomy"]),
+            "generic_equal_parameter": RidgeGaussian(name="generic", mask=d["anatomy"])}
+    rep = run_ablation("A5_typed_operators", train=d["train"], test=d["test"], arms=arms,
+                       thresholds=FIXTURE_THRESHOLDS, seed=0)
+    sub = next(s for s in rep.subchecks if s.name == "matched_capacity")
+    assert sub.status == "PASS"  # unchanged: undeclared fields do not fail an arm
+    assert "NOT CHECKED" in sub.reason
+    cap = rep.artifacts["capacity"]
+    assert "flops" in cap["unchecked_fields"]
+    assert cap["required_budgets"] == []
+
+
+def test_A1_blocks_when_no_arm_path_is_supplied():
+    """Budgets can match exactly while an arm is handicapped at the boundary."""
+    spec = ABLATIONS["A1_structured_state"]
+    assert spec.require_path_parity
+    d = make_graph_dataset(seed=0, n_train=120, n_test=200)
+    rep = run_ablation(
+        "A1_structured_state", train=d["train"], test=d["test"],
+        arms={a: RidgeGaussian() for a in spec.required_arms},
+        thresholds=FIXTURE_THRESHOLDS,
+    )
+    sub = next(s for s in rep.subchecks if s.name == "path_parity")
+    assert sub.status == "COULD_NOT_RUN"
+    assert "observation boundary" in sub.reason
+
+
+def test_A1_path_parity_fires_on_a_narrowed_observation_interface():
+    """🌊 Hodgkin's defect, end to end through run_ablation."""
+    from scwbd.bench.matching import ArmPath
+
+    spec = ABLATIONS["A1_structured_state"]
+    full = dict(
+        observation_ports=(("eeg", (("rate_e", 1), ("rate_i", 1), ("spectral", 16))),),
+        variance_model="state_dependent_logvar",
+        calibration_protocol="as_emitted",
+        score_metric="gaussian_nll_raw_units",
+        split_fingerprint="5cfa14eb",
+        context_length=64,
+        input_normalisation="per_window_std",
+        anatomy_provenance="schaefer400_real",
+    )
+    narrowed = dict(full)
+    narrowed["observation_ports"] = (("eeg", (("rate_e", 1), ("rate_i", 1))),)
+
+    d = make_graph_dataset(seed=0, n_train=120, n_test=200)
+    paths = {a: ArmPath(**full) for a in spec.required_arms}
+    paths["structured_state"] = ArmPath(**narrowed)  # the treatment arm, handicapped
+    rep = run_ablation(
+        "A1_structured_state", train=d["train"], test=d["test"],
+        arms={a: RidgeGaussian() for a in spec.required_arms},
+        arm_paths=paths, thresholds=FIXTURE_THRESHOLDS,
+    )
+    sub = next(s for s in rep.subchecks if s.name == "path_parity")
+    assert sub.status == "COULD_NOT_RUN"
+    assert any("observation_ports" in m for m in rep.artifacts["path_parity"]["mismatches"])
+    assert rep.status != "PASS"
+
+    # identical paths clear this subcheck (so it discriminates, not just blocks)
+    ok = run_ablation(
+        "A1_structured_state", train=d["train"], test=d["test"],
+        arms={a: RidgeGaussian() for a in spec.required_arms},
+        arm_paths={a: ArmPath(**full) for a in spec.required_arms},
+        thresholds=FIXTURE_THRESHOLDS,
+    )
+    assert next(s for s in ok.subchecks if s.name == "path_parity").status == "PASS"
