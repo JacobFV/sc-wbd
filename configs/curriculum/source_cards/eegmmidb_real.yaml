@@ -1,0 +1,54 @@
+# TIER 1 -- likelihood, measured, full provenance.
+# PhysioNet EEG Motor Movement/Imagery Database. 109 participants, 64 channels,
+# 160 Hz, ODC-BY 1.0. This is the source that FOUNDS the representation: every
+# lower tier admitted later must have its mask contained in this one.
+#
+# Derived from configs/source_cards/eegmmidb_real.yaml. Differences, all of them:
+#   + observes:                 so the measured-information rule (X05) is evaluable
+#   + dataset_id / provenance:  so the tier derivation is explicit, not defaulted
+#   (nothing was widened; the permission set is unchanged)
+id: eegmmidb_real
+role: likelihood
+is_simulated: false
+losses: [likelihood, forecast, calibration, posterior]
+gradient_permission:
+  - "local.*"
+  - "residual.*"
+  - "coupling.*"
+  - "msg_proj.*"
+  - "msg_readin.*"
+  - "assimilate.*"
+  - "context.*"
+  - "readout.*"
+  - "eeg.*"
+  - "log_dt_scale"
+  - "individualizer.*"
+frozen:
+  - "bold.*"   # no haemodynamics were measured; an EEG corpus may not train BOLD.
+               # Now a measured fact rather than a judgement: the expected Fisher
+               # information of the EEG observation block for beta_hrf, c_under and
+               # gain_bold is exactly 0.0 in all three identifiability regimes.
+n_eff: 109.0
+n_rows: 1526.0
+n_participants: 109
+n_sites: 1
+hierarchy_depth: 3
+measurement_variance: 0.35
+bias_halfwidth: 0.20
+bias_status: prior_specified_sensitivity
+model_discrepancy: 0.0
+validity_overlap: 1.0
+notes: >
+  Scalp EEG during rest, real and imagined movement. Single site, single montage,
+  no individual head models: supports population-level EEG prediction claims only.
+  290,673 windows on disk; the leakage-audited split is 189,765/29,238/71,670
+  windows over 71/11/27 of the 109 participants (train_main.log lines 22, 126-129).
+compiler_permission:
+  - "operator:local_field:*"
+  - "operator:long_range:*"
+  - "operator:assimilation:*"
+  - "region:*:state:*"
+  - "port:*.message_out"
+  - "port:*.message_in"
+  - "port:*.eeg_out"
+  - "observation:eegmmidb_real:nuisance"

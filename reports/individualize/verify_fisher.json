@@ -1,0 +1,126 @@
+{
+ "purpose": "regenerated from source on CPU; the committed run used CUDA, so agreement is also a device-parity check",
+ "committed_file": "reports/identifiability/results.json",
+ "config": {
+  "epoch_seconds": 3.0,
+  "n_epochs": 30,
+  "n_delay_taps": 26,
+  "hrf_stages": 8,
+  "dtype": "float64",
+  "seed": 20260805,
+  "source": "reports/identifiability/manifest.json extra.command"
+ },
+ "rtol": 1e-09,
+ "atol": 1e-11,
+ "rows": [
+  {
+   "regime": "reference",
+   "design": "eeg_only",
+   "recomputed": 16.00845584330448,
+   "committed": 16.008455843316167,
+   "relative_error": 7.301408778994626e-13,
+   "absolute_error": 1.1688428003253648e-11,
+   "agrees": true,
+   "criterion": "relative",
+   "seconds": 16.73457098007202
+  },
+  {
+   "regime": "reference",
+   "design": "fmri_only",
+   "recomputed": 2.9294015374228234e-06,
+   "committed": 2.9294012802422767e-06,
+   "relative_error": 8.779287033180269e-08,
+   "absolute_error": 2.5718054674612697e-13,
+   "agrees": true,
+   "criterion": "absolute (cancellation-limited)",
+   "seconds": 5.729395627975464
+  },
+  {
+   "regime": "reference",
+   "design": "joint_native",
+   "recomputed": 16.00847965525169,
+   "committed": 16.00847965526301,
+   "relative_error": 7.070593850514178e-13,
+   "absolute_error": 1.1318945780658396e-11,
+   "agrees": true,
+   "criterion": "relative",
+   "seconds": 16.639328002929688
+  },
+  {
+   "regime": "weak_coupling_long_delay",
+   "design": "eeg_only",
+   "recomputed": 1.8395446706045366,
+   "committed": 1.8395446706036982,
+   "relative_error": 4.557869355364774e-13,
+   "absolute_error": 8.384404281969182e-13,
+   "agrees": true,
+   "criterion": "relative",
+   "seconds": 20.229200839996338
+  },
+  {
+   "regime": "weak_coupling_long_delay",
+   "design": "fmri_only",
+   "recomputed": 4.6778347708815886e-07,
+   "committed": 4.6778345457449915e-07,
+   "relative_error": 4.8128379670849225e-08,
+   "absolute_error": 2.2513659705502946e-14,
+   "agrees": true,
+   "criterion": "absolute (cancellation-limited)",
+   "seconds": 7.8698790073394775
+  },
+  {
+   "regime": "weak_coupling_long_delay",
+   "design": "joint_native",
+   "recomputed": 1.8395453934394754,
+   "committed": 1.8395453934386143,
+   "relative_error": 4.680987927618683e-13,
+   "absolute_error": 8.610889778992714e-13,
+   "agrees": true,
+   "criterion": "relative",
+   "seconds": 20.396214246749878
+  },
+  {
+   "regime": "low_snr_short_delay",
+   "design": "eeg_only",
+   "recomputed": 13.736239424008232,
+   "committed": 13.7362394240023,
+   "relative_error": 4.3192548269285636e-13,
+   "absolute_error": 5.9330318435968366e-12,
+   "agrees": true,
+   "criterion": "relative",
+   "seconds": 11.987115144729614
+  },
+  {
+   "regime": "low_snr_short_delay",
+   "design": "fmri_only",
+   "recomputed": 7.676950514494214e-07,
+   "committed": 7.676950004583828e-07,
+   "relative_error": 6.64209595555188e-08,
+   "absolute_error": 5.099103857642023e-14,
+   "agrees": true,
+   "criterion": "absolute (cancellation-limited)",
+   "seconds": 4.884375810623169
+  },
+  {
+   "regime": "low_snr_short_delay",
+   "design": "joint_native",
+   "recomputed": 13.737417491695085,
+   "committed": 13.737417491689163,
+   "relative_error": 4.3111259493593623e-13,
+   "absolute_error": 5.922373702560435e-12,
+   "agrees": true,
+   "criterion": "relative",
+   "seconds": 15.963172674179077
+  }
+ ],
+ "n_disagreements": 0,
+ "environment": {
+  "git_revision": "3ea7ea52461b3be6b45df03ffe4b8393055f723e",
+  "python": "3.12.13",
+  "numpy": "2.5.1",
+  "torch": "2.13.0+cu130",
+  "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+  "device": "cpu",
+  "cuda_visible_devices": ""
+ }
+}

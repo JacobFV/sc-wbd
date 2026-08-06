@@ -1,0 +1,55 @@
+# The integrity ordering. Project-level, deliberately NOT inside a run config:
+# a run may not redefine the ordering it is being checked against.
+#
+# The tiers themselves are defined in code (scwbd/curriculum/tiers.py) and each
+# source's tier is DERIVED from its own card, never listed here. What lives here
+# is the policy: which tier founds, and which departures from the ordering are
+# permitted-and-recorded rather than silently taken.
+
+schema: scwbd-curriculum/1.0.0
+
+# Reference only. `scwbd.curriculum.tiers.TIERS` is authoritative; this table is
+# regenerable with `python -m scwbd.curriculum tiers`.
+ordering_reference:
+  1: {name: likelihood_measured,      derivation: "role == likelihood and not is_simulated"}
+  2: {name: boundary_and_calibration, derivation: "role in (boundary_target, calibration)"}
+  3: {name: population_prior,         derivation: "role == prior and is_simulated declared false"}
+  4: {name: simulator_conditioned,    derivation: "is_simulated == true (whatever the role)"}
+  5: {name: distillation,             derivation: "is_teacher or role == distillation"}
+  0: {name: no_gradient,              derivation: "role in (negative_control, evaluation_only)"}
+
+policy:
+  founding_tier: 1
+
+  # Empty on purpose. Every absence writes something.
+  silently_optional_tiers: []
+
+  # A founding exemption permits a lower tier to be the SOLE author of a
+  # parameter. It is not a loophole; it is the record that one exists. Each must
+  # name what would discharge it, so the list can be audited for entries that
+  # have quietly become permanent.
+  founding_exemptions:
+    - globs: ["posterior.*"]
+      granted_to_tier: 4
+      reason: >-
+        The amortised posterior maps an observed window onto ground-truth theta.
+        No measured recording carries a theta label, so no tier-1 source can
+        found it -- not as a wiring gap but in principle. Refusing the permission
+        would delete simulation-based inference from the model; granting it
+        silently would let the simulator found part of the representation with
+        nothing in the artifact saying so. It is granted, and this entry is the
+        saying-so. Consequence to carry into every claim: the posterior head of
+        any SC-WBD checkpoint is simulator-founded, and its calibration is a
+        claim about the simulator's parameter->trajectory map, not about brains.
+      dischargeable_by: >-
+        a measured source with independently established theta (e.g. a
+        perturbational design where coupling is manipulated and recorded), or by
+        restricting posterior claims to simulator-conditioned statements.
+
+notes: >-
+  body.tex 6.3 states that simulated data "remain simulator-conditioned evidence
+  and cannot establish biological validity", and 6.4 that "soft constraints
+  update only within their priors". Neither sentence fixes an ORDER, which is the
+  gap this file closes: the roles are already non-equivalent (Appendix B), so the
+  curriculum should admit them in the order of that non-equivalence rather than
+  in the order the data happened to become available.

@@ -1,0 +1,61 @@
+# TIER 4 -- simulator-conditioned. body.tex 6.3: simulated data "exercise physics,
+# embodiment, missingness, causal interventions, and rare regimes, but remain
+# simulator-conditioned evidence and cannot establish biological validity."
+#
+# In the corrected curriculum this source arrives LAST among the training tiers.
+# Its job is to extend the operator into regimes 46.5 hours of resting/imagery
+# EEG from 109 people does not contain -- not to teach the operator what a brain
+# looks like.
+#
+# Withdrawn relative to configs/source_cards/sim_wholebrain.yaml:
+#   - bold.*   : no measured source can found it and the slow tier was never built
+# Retained under a NAMED EXEMPTION (configs/curriculum/tiers.yaml):
+#   - posterior.* : no measured recording carries a theta label, so nothing else
+#                   can found the amortised posterior. Granted, and recorded, so
+#                   that "the posterior head is simulator-founded" is a written
+#                   property of the artifact rather than a discovery.
+id: sim_wholebrain
+role: prior
+is_simulated: true
+losses: [prior, forecast, posterior, mechanism, scale]
+gradient_permission:
+  - "local.*"
+  - "residual.*"
+  - "coupling.*"
+  - "msg_proj.*"
+  - "msg_readin.*"
+  - "assimilate.*"
+  - "context.*"
+  - "readout.*"
+  - "log_dt_scale"
+  - "posterior.*"
+frozen:
+  - "eeg.*"             # a simulator never calibrates a real electrode montage
+  - "individualizer.*"  # and never touches an individual's parameters
+  - "bold.*"            # withdrawn: see header
+  - "behaviour.*"
+n_eff: 40000.0
+n_rows: 100000000.0
+n_participants: 0
+hierarchy_depth: 1
+measurement_variance: 0.02
+bias_halfwidth: 0.45
+bias_status: prior_specified_sensitivity
+model_discrepancy: 0.55
+validity_overlap: 0.35
+notes: >
+  Delayed connectome-coupled neural-mass SDEs (Wilson-Cowan, Jansen-Rit, reduced
+  Wong-Wang, Stuart-Landau, linear Gaussian). 37 shards, 37,888 trajectories,
+  454,656 trajectory-seconds, 49 GB, fast tier only. Generated on the SYNTHETIC
+  ellipsoid connectome (index_fast.json anatomy.provenance = synthetic_fallback,
+  454 regions), not on the 414-parcel ENIGMA/HCP prior: the shapes differ, so
+  adopting the real prior requires regenerating the corpus. 40.69 % of it carries
+  no anatomy-derived regional timescale (as generated).
+compiler_permission:
+  - "operator:local_field:*"
+  - "operator:long_range:*"
+  - "operator:assimilation:*"
+  - "region:*:state:*"
+  - "port:*.message_out"
+  - "port:*.message_in"
+  - "observation:sim_wholebrain:nuisance"

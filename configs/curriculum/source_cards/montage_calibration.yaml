@@ -1,0 +1,23 @@
+# TIER 2 -- calibration. Estimates gains, offsets and sensor noise. NEVER
+# biological supervision (Appendix B rejection condition: "uses a calibration
+# source as biological supervision").
+id: montage_calibration
+role: calibration
+is_simulated: false
+losses: [calibration]
+gradient_permission: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"]
+frozen: ["local.*", "coupling.*", "residual.*", "assimilate.*", "readout.*", "bold.*", "context.*", "msg_*", "posterior.*", "individualizer.*", "behaviour.*", "log_dt_scale"]
+n_eff: 64.0
+n_rows: 64.0
+hierarchy_depth: 1
+measurement_variance: 0.05
+bias_halfwidth: 0.05
+bias_status: prior_specified_sensitivity
+validity_overlap: 1.0
+notes: >
+  Per-channel gain/offset/noise nuisance for the EEG head. Its mask is contained
+  in eegmmidb_real's, which is what makes it admissible at tier 2 rather than a
+  second founding source.
+compiler_permission:
+  - "port:*.eeg_out"
+  - "observation:montage_calibration:nuisance"

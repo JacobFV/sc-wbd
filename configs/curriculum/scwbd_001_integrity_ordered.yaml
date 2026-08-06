@@ -1,0 +1,373 @@
+# SC-WBD-001 -- INTEGRITY-ORDERED curriculum.
+#
+# Corrects the ordering error in configs/scwbd_001_beta.yaml, which trains
+# Stages I-II (1,600 steps) on simulated data alone and first admits measured
+# EEG at Stage III. Pretraining on simulation makes the simulator's
+# idiosyncrasies the model's prior, so measured data arrives having to argue
+# against a representation it did not found.
+#
+# Validate before launching:
+#   python -m scwbd.curriculum validate configs/curriculum/scwbd_001_integrity_ordered.yaml
+#
+# ---------------------------------------------------------------------------
+# THIS IS A MATCHED CONTROL, NOT A REDESIGN.
+# ---------------------------------------------------------------------------
+# Total steps, batch, learning-rate schedule shape, seed, model and posterior
+# architecture are IDENTICAL to scwbd_001_beta.yaml. 8,700 steps then, 8,700
+# steps now. The two runs differ in (a) the order tiers are admitted and (b) the
+# per-tier gradient masks -- and in nothing else, so a difference between the
+# artifacts is attributable. reports/decorative_guards.md: "an absolute number
+# encodes an assumption about what is achievable, and that assumption is
+# invisible once the number is written down. A control encodes no such
+# assumption. Prefer controls."
+#
+# ---------------------------------------------------------------------------
+# STEP COUNTS, AND THE MEASUREMENT EACH ONE RESTS ON
+# ---------------------------------------------------------------------------
+# Everything below was regenerated on 2026-08-06, not copied:
+#
+#   measured corpus (eegmmidb)  290,673 windows on disk; leakage-audited split
+#                               189,765 / 29,238 / 71,670 windows over
+#                               71 / 11 / 27 of 109 participants
+#                               (reports/training/train_main.log lines 22, 126-129)
+#                               window = context 24 + forecast 48 = 72 model
+#                               steps at 125 Hz = 0.576 s; 46.5 h of EEG
+#   simulated corpus            37 shards, 37,888 trajectories, 454,656
+#                               trajectory-seconds, 49 GB, fast tier only
+#                               (/data/scwbd/sim_corpus/index_fast.json)
+#                               SimCorpus yields ONE window per trajectory, so
+#                               the 5 % val split leaves ~35,994 train items
+#
+# At batch 64 that is 2,966 steps per measured epoch and 563 steps per simulated
+# epoch. The measured corpus is therefore 5.27x LARGER per epoch than the
+# simulated one, which contradicts the intuition that starting from measured data
+# forces short early stages: it does not. What is small about the measured corpus
+# is its independence -- 71 training participants against the simulator's 40,000
+# declared independent parameter sets -- and that is what bounds Stage 1, not
+# bytes. One epoch is the most measured data that exists; a second epoch is a
+# re-read of the same 71 people.
+#
+# Wall clock: measured 2.4-2.8 s/step over steps 160-200 on a quiet machine and
+# 2.95 s/step over steps 200-380; 5.1 s/step averaged over the first 200 steps
+# under load (reports/training/run_notes_scwbd-001-beta.md, decorative_guards.md).
+# 8,700 steps is ~7.1 h at 2.95 s/step and ~12.3 h at 5.1 s/step. The 12 h wall
+# cap is retained unchanged.
+
+model:
+  n_regions: 454
+  local_core: learned
+  hidden: 288
+  n_local_layers: 3
+  region_embed: 96
+  context_dim: 128
+  message_dim: 12
+  n_delay_bins: 8
+  n_spectral_modes: 8
+  n_adaptation: 2
+  n_uncertainty: 4
+  dt_model: 0.008
+  hemo_ratio: 25
+  residual_rho_max: 0.35
+  residual_init_scale: 0.05
+  encoder_channels: 96
+  encoder_layers: 3
+  dropout: 0.0
+  control_graph: none
+  scalar_state_ablation: false
+  dense_coupling_ablation: false
+  n_eeg_channels: 64
+  n_behaviour: 4
+  use_bf16: true
+  compile: true
+
+posterior:
+  summary_channels: 128
+  summary_layers: 4
+  flow_layers: 8
+  flow_hidden: 320
+  n_bands: 7
+  n_pcs: 16
+  dropout: 0.0
+  nuisance_dim: 2
+
+data:
+  sim_index_fast: /data/scwbd/sim_corpus/index_fast.json
+  # index_slow.json DOES NOT EXIST and slow/ is empty: the slow tier was never
+  # generated. Left pointing at the absent path deliberately -- the loader's
+  # failure is the record. No haemodynamic claim is available from this run.
+  sim_index_slow: /data/scwbd/sim_corpus/index_slow.json
+  real_eeg_root: /data/scwbd/eegmmidb/1.0.0
+  real_sleep_root: /data/scwbd/sleep-edfx/1.0.0
+  window: 48
+  context: 24
+  fs_hz: 125.0
+  batch: 64
+  num_workers: 4
+  pin_memory: false
+  val_fraction: 0.05
+  real_test_fraction: 0.25
+  seed: 20260805
+
+train:
+  run_name: scwbd-001-integrity-ordered
+  out_dir: checkpoints/scwbd-001-integrity-ordered
+  report_dir: reports/training
+  seed: 20260805
+  device: cuda
+  amp_dtype: bfloat16
+  cuda_reserve_gb: 40.0
+  max_wall_seconds: 43200
+  resume: true
+
+  stages:
+    # =====================================================================
+    # 1. TIER 1 ALONE -- measured EEG founds the representation
+    # =====================================================================
+    - name: T1_measured_founding
+      steps: 2966
+      lr: 3.46e-4
+      lambda_posterior: 0.0     # the posterior head is simulator-founded; it does
+                                # not train here, because nothing measured can
+                                # supply a theta label (see tiers.yaml exemption)
+      lambda_anat: 0.0          # tier 3 has not been admitted yet
+      lambda_port: 0.05
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: I_regional + II_interface
+          admits: [1]
+          tier_permissions:
+            1: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "eeg.*", "log_dt_scale"]
+          objective: [likelihood, forecast, port]
+          rationale: >-
+            2,966 = ceil(189,765 measured train windows / batch 64): exactly one
+            pass over every measured window there is. The regional operator, the
+            long-range operator, the assimilation encoder and the EEG head are all
+            learned here, from sensor-space likelihood, before any lower-integrity
+            source exists. Scope I and II are merged because the model-scope axis
+            (thesis 6.1-6.5) and the integrity axis are orthogonal -- 001-beta
+            conflated them, which is why its ordering error was invisible in the
+            config.
+          absence: []
+
+    # =====================================================================
+    # 2. + TIER 2 -- boundary target / calibration
+    # =====================================================================
+    - name: T2_boundary_calibration
+      steps: 500
+      lr: 2.31e-4
+      lambda_posterior: 0.0
+      lambda_anat: 0.0
+      lambda_cal: 0.1
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: II_interface
+          admits: [1, 2]
+          tier_permissions:
+            1: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "eeg.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"]
+          objective: [likelihood, forecast, calibration]
+          rationale: >-
+            500 steps x batch 64 = 32,000 windows against 4 trainable nuisance
+            tensors over 64 channels. Sized by what is being estimated, not by
+            corpus size: a calibration factor has tiny measurement variance and
+            would win a pure inverse-variance contest, which is why ROLE_AUTHORITY
+            caps it at 0.12 (Appendix D). Tier 1 keeps training throughout, so the
+            calibration is fitted against a live likelihood rather than to a frozen
+            model.
+          absence:
+            - tier: 2
+              role: boundary_target
+              detail: >-
+                No boundary-target source is wired into the foundation trainer.
+                Real BEM surfaces, source spaces and forward solutions ARE on disk
+                (mne-sample subject `sample` 3-layer BEM + sol, mne-somato sub-01,
+                mne-spm-face `spm`, and an fsaverage template head under
+                ~/mne_data), and 31 digitised electrode files exist in ds004024.
+                They are reachable only from tests/observe: the training EEG head
+                calls scwbd.foundation.heads.build_lead_field, which looks for
+                names scwbd/observe/__init__.py does not export, and falls back to
+                provenance `analytic_sphere_fallback` -- a homogeneous single
+                sphere with real standard_1005 electrode geometry and nothing else.
+                No phantom data exists anywhere in the repository.
+              consequence: >-
+                Tier 2 is represented in this run by the montage calibration factor
+                alone. No lead-field or head-model claim is available from this
+                artifact.
+
+    # =====================================================================
+    # 3. + TIER 3 -- population prior (not subject)
+    # =====================================================================
+    - name: T3_population_prior
+      steps: 1000
+      lr: 1.73e-4
+      lambda_posterior: 0.0
+      lambda_anat: 0.05
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: III_sliced
+          admits: [1, 2, 3]
+          tier_permissions:
+            1: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "eeg.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"]
+            3: ["coupling.gain_*", "coupling.global_scale"]
+          objective: [likelihood, forecast, calibration, prior]
+          rationale: >-
+            1,000 steps. The anatomical prior contributes a topology regulariser,
+            not data: its n_eff is 1 (one group-average object -- the 207 HCP
+            subjects were averaged away, and averaging is not sampling), so its
+            saturating reliability term is 1/(1+24) = 0.04 and it cannot dominate
+            however long it runs. The length is set by how long the coupling gains
+            need to settle within the prior, not by a corpus. Its mask is three
+            tensors: coupling.gain_soft, coupling.gain_proposed,
+            coupling.global_scale -- all of them already founded by tier 1 in
+            stage 1.
+          absence:
+            - tier: 3
+              detail: >-
+                Every registered real population-prior dataset is unavailable:
+                ukbiobank-brain-imaging (MTA + fees), hcp-young-adult (ConnectomeDB
+                terms), adni (DSPC application). None was downloaded, so tier 3 is
+                represented in this run by the derived anatomy prior only.
+              consequence: >-
+                No population-level anatomical generalisation claim is available.
+            - tier: 3
+              detail: >-
+                BLOCKING. The anatomy prior's card declares `is_simulated: false`
+                and the object the trainer loads reports provenance
+                `synthetic_fallback` with is_biological() == False. The 3.3 GB of
+                real ENIGMA/HCP assets are on disk and BrainPrior.load() succeeds;
+                scwbd/foundation/anatomy.py:193 reads obj.weights where the field
+                is obj.structural.weights, the exception is swallowed, and the run
+                silently gets a synthetic ellipsoid. Refusal X09 fires on this
+                config for exactly that reason and this run must not launch until
+                it is fixed. Note the shapes differ (454 synthetic regions vs 414
+                real parcels), so adopting the real prior also requires
+                regenerating the simulated corpus.
+
+    # =====================================================================
+    # 4. + TIER 4 -- simulator-conditioned, LAST among the training tiers
+    # =====================================================================
+    - name: T4_simulator_extension
+      steps: 3334
+      lr: 1.15e-4
+      lambda_posterior: 1.0     # the amortised posterior trains here and only here
+      lambda_anat: 0.05
+      lambda_perturb: 0.0
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: III_sliced + IV_assembly
+          admits: [1, 2, 3, 4]
+          tier_permissions:
+            1: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "eeg.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"]
+            3: ["coupling.gain_*", "coupling.global_scale"]
+            4: ["local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+                "assimilate.*", "context.*", "readout.*", "log_dt_scale", "posterior.*"]
+          objective: [likelihood, forecast, calibration, prior, posterior, mechanism, scale]
+          rationale: >-
+            3,334 steps -- the largest block, and deliberately the last. At batch
+            64 that is 213,376 simulated windows, 5.93 passes over the ~35,994
+            train trajectories, enough for the simulator to cover its parameter
+            prior repeatedly. This is where simulation earns its place: rare
+            regimes, controlled interventions, whole-brain coupling and missingness
+            that 46.5 hours of resting and imagery EEG from 109 people does not
+            contain. Tier 1 trains throughout, so measured evidence is a live
+            constraint on the extension rather than a memory of one. Tier 4's mask
+            is contained in tier 1's except for posterior.*, which carries a named
+            founding exemption in configs/curriculum/tiers.yaml.
+          absence:
+            - tier: 4
+              detail: >-
+                bold.* is frozen for every source in this run. Three independent
+                reasons, none of which is a preference: (a) the only measured
+                modality available is EEG, whose expected Fisher information for
+                beta_hrf, c_under and gain_bold is exactly 0.0 in all three
+                identifiability regimes; (b) the simulated slow/BOLD tier was never
+                generated; (c) the 663 MB of real BOLD on disk (ds000117, 2
+                subjects, 18 runs) has no loader. In 001-beta the simulator was the
+                sole author of the haemodynamic head.
+              consequence: >-
+                bold.* stays at its compiled initialisation. No haemodynamic,
+                fMRI-forecast or cross-modal-fusion claim is available from this
+                artifact -- which is what was already true of 001-beta, stated
+                rather than left to be inferred.
+
+    # =====================================================================
+    # 5. TIER 5 -- distillation. RUNS ZERO STEPS, AND SAYS WHY.
+    # =====================================================================
+    - name: T5_distillation
+      steps: 0
+      enabled: false
+      lr: 1.0e-4
+      ckpt_every: 250
+      extra:
+        curriculum:
+          scope: III_sliced
+          admits: []
+          tier_permissions: {}
+          objective: []
+          rationale: >-
+            Present with zero steps rather than omitted. A curriculum that simply
+            has no tier-5 stage and one whose tier-5 stage was skipped for cause
+            read identically afterwards; this file makes them different.
+          absence:
+            - tier: 5
+              detail: >-
+                TRIBE v2 is not on disk anywhere in this environment, and no
+                teacher-vs-measured discrepancy measurement exists in reports/ as
+                of 2026-08-06. body.tex 6.3 requires a preregistered branch with
+                no-teacher, generic-feature, time-shuffled and report-mismatched
+                controls, retained only if it beats every one of them.
+              consequence: >-
+                No distillation was applied and none may be claimed. Enabling this
+                stage requires the discrepancy measurement first, not merely the
+                weights.
+
+    # =====================================================================
+    # 6. TIER 1 ALONE -- individualisation closes on measured data
+    # =====================================================================
+    - name: T1_individualisation
+      steps: 900
+      lr: 5.77e-5
+      lambda_posterior: 0.3
+      ckpt_every: 150
+      extra:
+        curriculum:
+          scope: V_individual
+          admits: [1]
+          tier_permissions:
+            1: ["individualizer.*", "eeg.log_gain", "eeg.offset", "eeg.log_noise",
+                "eeg.nuisance*"]
+          objective: [likelihood, posterior]
+          rationale: >-
+            900 steps, unchanged from 001-beta so the individualisation block is
+            itself a matched control. Tier 1 alone: an individual's parameters are
+            the one thing a simulator, a population prior and a teacher may never
+            touch. The curriculum therefore both opens and closes on measured data.
+          absence:
+            - tier: 1
+              detail: >-
+                eegmmidb has ONE session per participant, so it supports no
+                future-session holdout and the G5 individualisation claim is not
+                evaluable on it. sleep-edfx does have a night 1 -> night 2 holdout
+                and is disabled pending a 2-channel montage adapter.
+              consequence: >-
+                This stage fits individual parameters that cannot be tested on a
+                held-out session of the same person from this corpus.
+
+mixture_cards: configs/curriculum/source_cards
+
+notes: >
+  Population/general adult model. Not a validated twin of any person. Admission
+  order is tier 1 (measured) -> 2 (calibration) -> 3 (population prior) -> 4
+  (simulator-conditioned) -> 5 (distillation, off), with each tier's gradient mask
+  contained in the concurrently-admitted higher tiers. Checked by
+  `python -m scwbd.curriculum validate`; see reports/curriculum_design.md.

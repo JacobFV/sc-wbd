@@ -1,0 +1,56 @@
+# Curriculum-only fields for the cards in ./source_cards.
+#
+# Why this is a sidecar and not part of the card:
+#   scwbd.foundation.mixture.SourceSpec.load_dir constructs SourceSpec(**yaml),
+#   so ANY key the dataclass does not declare raises TypeError and the trainer
+#   cannot load the directory at all. A card the trainer cannot load is a worse
+#   failure than a split record. scwbd.curriculum.tiers.load_mixture_cards merges
+#   this file back in, so every check sees one record; and it raises on an entry
+#   with no matching card, so a stale key here cannot sit unnoticed.
+#
+# Fields:
+#   observes   the measured modalities this source carries. Used by refusal X05
+#              to apply the per-modality Fisher information rules. An EMPTY list
+#              is a positive statement -- "this source observes nothing" -- and
+#              is what a prior, a teacher and a simulator-latent source declare.
+#              A MISSING entry means the question was never answered, and X05 is
+#              reported NOT EVALUABLE rather than passed.
+#   runtime_provenance_check
+#              names a probe that loads the object the card claims to describe
+#              and compares. Refusal X09.
+
+schema: scwbd-curriculum/1.0.0
+
+sources:
+  eegmmidb_real:
+    dataset_id: eegmmidb
+    observes: [eeg]
+
+  sleepedf_real:
+    dataset_id: sleep-edfx
+    observes: [eeg]
+
+  montage_calibration:
+    observes: [eeg]
+
+  anatomical_prior:
+    # A prior is not an observation model. The empty list says so explicitly.
+    observes: []
+    # The claim `is_simulated: false` is about an object; this checks the object.
+    # Probe: scwbd.foundation.anatomy.load_anatomy(n_cortex=400) -- the same call
+    # scwbd/foundation/train.py:178 makes.
+    runtime_provenance_check: anatomy
+
+  sim_wholebrain:
+    # The corpus stores regional activity, not a sensor modality. The
+    # identifiability laboratory has no Fisher block for `parcel_activity`, so
+    # no information rule applies to this source and none is claimed. Notably it
+    # does NOT observe `bold`: the slow tier was never generated
+    # (/data/scwbd/sim_corpus/index_slow.json does not exist, slow/ is empty).
+    observes: [parcel_activity]
+
+  tribe_v2_teacher:
+    observes: []
+
+  negative_control_shuffled:
+    observes: [eeg]

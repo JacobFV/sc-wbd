@@ -1,0 +1,560 @@
+{
+  "config": "configs/curriculum/scwbd_001_integrity_ordered.yaml",
+  "verdict": "REFUSED",
+  "refusal_codes": [
+    "X06_trainer_gate_contradicts_config",
+    "X09_declared_provenance_contradicted"
+  ],
+  "refusals": [
+    {
+      "code": "X06_trainer_gate_contradicts_config",
+      "stage": "T1_measured_founding",
+      "message": "the config declares this stage admits tiers [1], but scwbd.foundation.train.FoundationTrainer.run_stage would admit [] (sources []). Source admission is hard-coded there by stage NAME, so this ordering cannot be enacted by editing the config alone.",
+      "evidence": {
+        "declared_admits": [
+          1
+        ],
+        "trainer_admits": [],
+        "trainer_source_ids": [],
+        "trainer_gates": {
+          "sim_excluded_stage": "V_individual",
+          "real_admitted_stages": [
+            "III_sliced",
+            "IV_assembly",
+            "V_individual"
+          ]
+        }
+      }
+    },
+    {
+      "code": "X06_trainer_gate_contradicts_config",
+      "stage": "T2_boundary_calibration",
+      "message": "the config declares this stage admits tiers [1, 2], but scwbd.foundation.train.FoundationTrainer.run_stage would admit [] (sources []). Source admission is hard-coded there by stage NAME, so this ordering cannot be enacted by editing the config alone.",
+      "evidence": {
+        "declared_admits": [
+          1,
+          2
+        ],
+        "trainer_admits": [],
+        "trainer_source_ids": [],
+        "trainer_gates": {
+          "sim_excluded_stage": "V_individual",
+          "real_admitted_stages": [
+            "III_sliced",
+            "IV_assembly",
+            "V_individual"
+          ]
+        }
+      }
+    },
+    {
+      "code": "X06_trainer_gate_contradicts_config",
+      "stage": "T3_population_prior",
+      "message": "the config declares this stage admits tiers [1, 2, 3], but scwbd.foundation.train.FoundationTrainer.run_stage would admit [] (sources []). Source admission is hard-coded there by stage NAME, so this ordering cannot be enacted by editing the config alone.",
+      "evidence": {
+        "declared_admits": [
+          1,
+          2,
+          3
+        ],
+        "trainer_admits": [],
+        "trainer_source_ids": [],
+        "trainer_gates": {
+          "sim_excluded_stage": "V_individual",
+          "real_admitted_stages": [
+            "III_sliced",
+            "IV_assembly",
+            "V_individual"
+          ]
+        }
+      }
+    },
+    {
+      "code": "X06_trainer_gate_contradicts_config",
+      "stage": "T4_simulator_extension",
+      "message": "the config declares this stage admits tiers [1, 2, 3, 4], but scwbd.foundation.train.FoundationTrainer.run_stage would admit [] (sources []). Source admission is hard-coded there by stage NAME, so this ordering cannot be enacted by editing the config alone.",
+      "evidence": {
+        "declared_admits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "trainer_admits": [],
+        "trainer_source_ids": [],
+        "trainer_gates": {
+          "sim_excluded_stage": "V_individual",
+          "real_admitted_stages": [
+            "III_sliced",
+            "IV_assembly",
+            "V_individual"
+          ]
+        }
+      }
+    },
+    {
+      "code": "X06_trainer_gate_contradicts_config",
+      "stage": "T1_individualisation",
+      "message": "the config declares this stage admits tiers [1], but scwbd.foundation.train.FoundationTrainer.run_stage would admit [] (sources []). Source admission is hard-coded there by stage NAME, so this ordering cannot be enacted by editing the config alone.",
+      "evidence": {
+        "declared_admits": [
+          1
+        ],
+        "trainer_admits": [],
+        "trainer_source_ids": [],
+        "trainer_gates": {
+          "sim_excluded_stage": "V_individual",
+          "real_admitted_stages": [
+            "III_sliced",
+            "IV_assembly",
+            "V_individual"
+          ]
+        }
+      }
+    },
+    {
+      "code": "X09_declared_provenance_contradicted",
+      "stage": null,
+      "message": "source 'anatomical_prior' declares `is_simulated: false` and is therefore ranked tier 3, but the object the trainer actually loads reports provenance 'synthetic_fallback' with is_biological()=False. The population prior this stage admits is a labelled synthetic stand-in, which belongs to tier 4, not tier 3.",
+      "evidence": {
+        "source": "anatomical_prior",
+        "declared_is_simulated": false,
+        "runtime_provenance": "synthetic_fallback",
+        "runtime_is_biological": false,
+        "probe": "scwbd.foundation.anatomy.load_anatomy(n_cortex=400)"
+      }
+    }
+  ],
+  "not_evaluable": [
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_applicable",
+      "source": "anatomical_prior",
+      "reason": "declares `observes: []` -- a non-observational source (a prior or a teacher). The per-modality Fisher rules describe observation models and say nothing about it."
+    },
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_evaluable",
+      "source": "sim_wholebrain",
+      "reason": "observes ['parcel_activity'], for which the identifiability laboratory has no Fisher block. No blindness can be established, so no permission is refused on this ground and none is licensed either."
+    },
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_applicable",
+      "source": "tribe_v2_teacher",
+      "reason": "declares `observes: []` -- a non-observational source (a prior or a teacher). The per-modality Fisher rules describe observation models and say nothing about it."
+    }
+  ],
+  "tiers": {
+    "anatomical_prior": {
+      "tier": 3,
+      "reason": "declares is_simulated: false",
+      "refusal": null
+    },
+    "eegmmidb_real": {
+      "tier": 1,
+      "reason": "role=likelihood on measured data",
+      "refusal": null
+    },
+    "montage_calibration": {
+      "tier": 2,
+      "reason": "role=calibration",
+      "refusal": null
+    },
+    "negative_control_shuffled": {
+      "tier": 0,
+      "reason": "role=negative_control contributes an audit, never a gradient; it takes no place in the integrity ordering",
+      "refusal": null
+    },
+    "sim_wholebrain": {
+      "tier": 4,
+      "reason": "declares is_simulated: true",
+      "refusal": null
+    },
+    "sleepedf_real": {
+      "tier": 1,
+      "reason": "role=likelihood on measured data",
+      "refusal": null
+    },
+    "tribe_v2_teacher": {
+      "tier": 5,
+      "reason": "teacher-derived",
+      "refusal": null
+    }
+  },
+  "parameter_universe": {
+    "n_tensors": 152,
+    "provenance": "SCWBD(454 regions, anatomy provenance='synthetic_fallback', is_biological=False) + AmortizedPosterior + Individualizer, named through scwbd.foundation.train._CombinedModule"
+  },
+  "information_rules": [
+    {
+      "modality": "bold",
+      "lab_parameter": "tau",
+      "globs": [],
+      "kind": "negligible",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 4.007876421454734e-07,
+        "reference": 9.144143324789386e-07,
+        "weak_coupling_long_delay": 1.0069729897351577e-06
+      },
+      "binds_a_trainable_tensor": false,
+      "note": "network conduction delay -- a frozen buffer cut from tract length (FOUNDATION_BINDING['operator:long_range:delay'] == ()); not trainable in this model. No trainable tensor corresponds to this parameter in SC-WBD-001-beta, so the refusal is recorded and binds nothing."
+    },
+    {
+      "modality": "bold",
+      "lab_parameter": "gain_eeg",
+      "globs": [
+        "eeg.log_gain",
+        "eeg.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "EEG lead-field global gain. bold may not update ['eeg.log_gain', 'eeg.*']."
+    },
+    {
+      "modality": "bold",
+      "lab_parameter": "tilt_eeg",
+      "globs": [
+        "eeg.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "EEG electrode-placement tilt. bold may not update ['eeg.*']."
+    },
+    {
+      "modality": "eeg",
+      "lab_parameter": "beta_hrf",
+      "globs": [
+        "bold.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "haemodynamic cascade time constant. eeg may not update ['bold.*']."
+    },
+    {
+      "modality": "eeg",
+      "lab_parameter": "c_under",
+      "globs": [
+        "bold.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "HRF undershoot weight. eeg may not update ['bold.*']."
+    },
+    {
+      "modality": "eeg",
+      "lab_parameter": "gain_bold",
+      "globs": [
+        "bold.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "BOLD global gain. eeg may not update ['bold.*']."
+    }
+  ],
+  "information_provenance": {
+    "results": "reports/identifiability/results.json",
+    "manifest": "reports/identifiability/manifest.json",
+    "design": "joint_native",
+    "artifact": "SC-WBD linear identifiability laboratory",
+    "status": "preregistered_before_run",
+    "seed": 20260805,
+    "written_at": "2026-08-06T03:12:56-0700",
+    "n_regimes": 3,
+    "epoch_seconds": 3.0,
+    "n_epochs": 30,
+    "monte_carlo_disabled": true,
+    "non_goals": [
+      "no whole-brain training",
+      "no real datasets",
+      "no field solvers",
+      "no human stimulation protocol"
+    ],
+    "statistic": "diagonal of the per-modality expected Fisher block, prior-standardised basis"
+  },
+  "curriculum": {
+    "run_name": "scwbd-001-integrity-ordered",
+    "config": "configs/curriculum/scwbd_001_integrity_ordered.yaml",
+    "mixture_cards": "configs/curriculum/source_cards",
+    "fully_declared": true,
+    "total_steps": 8700,
+    "stages": [
+      {
+        "name": "T1_measured_founding",
+        "order": 0,
+        "steps": 2966,
+        "scope": "I_regional + II_interface",
+        "admits": [
+          1
+        ],
+        "tier_permissions": {
+          "1": [
+            "local.*",
+            "residual.*",
+            "coupling.*",
+            "msg_proj.*",
+            "msg_readin.*",
+            "assimilate.*",
+            "context.*",
+            "readout.*",
+            "eeg.*",
+            "log_dt_scale"
+          ]
+        },
+        "objective": [
+          "likelihood",
+          "forecast",
+          "port"
+        ],
+        "absence": [],
+        "declared": true,
+        "provenance": "config",
+        "enabled": true
+      },
+      {
+        "name": "T2_boundary_calibration",
+        "order": 1,
+        "steps": 500,
+        "scope": "II_interface",
+        "admits": [
+          1,
+          2
+        ],
+        "tier_permissions": {
+          "1": [
+            "local.*",
+            "residual.*",
+            "coupling.*",
+            "msg_proj.*",
+            "msg_readin.*",
+            "assimilate.*",
+            "context.*",
+            "readout.*",
+            "eeg.*",
+            "log_dt_scale"
+          ],
+          "2": [
+            "eeg.log_gain",
+            "eeg.offset",
+            "eeg.log_noise",
+            "eeg.nuisance*"
+          ]
+        },
+        "objective": [
+          "likelihood",
+          "forecast",
+          "calibration"
+        ],
+        "absence": [
+          {
+            "tier": 2,
+            "role": "boundary_target",
+            "detail": "No boundary-target source is wired into the foundation trainer. Real BEM surfaces, source spaces and forward solutions ARE on disk (mne-sample subject `sample` 3-layer BEM + sol, mne-somato sub-01, mne-spm-face `spm`, and an fsaverage template head under ~/mne_data), and 31 digitised electrode files exist in ds004024. They are reachable only from tests/observe: the training EEG head calls scwbd.foundation.heads.build_lead_field, which looks for names scwbd/observe/__init__.py does not export, and falls back to provenance `analytic_sphere_fallback` -- a homogeneous single sphere with real standard_1005 electrode geometry and nothing else. No phantom data exists anywhere in the repository.",
+            "consequence": "Tier 2 is represented in this run by the montage calibration factor alone. No lead-field or head-model claim is available from this artifact."
+          }
+        ],
+        "declared": true,
+        "provenance": "config",
+        "enabled": true
+      },
+      {
+        "name": "T3_population_prior",
+        "order": 2,
+        "steps": 1000,
+        "scope": "III_sliced",
+        "admits": [
+          1,
+          2,
+          3
+        ],
+        "tier_permissions": {
+          "1": [
+            "local.*",
+            "residual.*",
+            "coupling.*",
+            "msg_proj.*",
+            "msg_readin.*",
+            "assimilate.*",
+            "context.*",
+            "readout.*",
+            "eeg.*",
+            "log_dt_scale"
+          ],
+          "2": [
+            "eeg.log_gain",
+            "eeg.offset",
+            "eeg.log_noise",
+            "eeg.nuisance*"
+          ],
+          "3": [
+            "coupling.gain_*",
+            "coupling.global_scale"
+          ]
+        },
+        "objective": [
+          "likelihood",
+          "forecast",
+          "calibration",
+          "prior"
+        ],
+        "absence": [
+          {
+            "tier": 3,
+            "detail": "Every registered real population-prior dataset is unavailable: ukbiobank-brain-imaging (MTA + fees), hcp-young-adult (ConnectomeDB terms), adni (DSPC application). None was downloaded, so tier 3 is represented in this run by the derived anatomy prior only.",
+            "consequence": "No population-level anatomical generalisation claim is available."
+          },
+          {
+            "tier": 3,
+            "detail": "BLOCKING. The anatomy prior's card declares `is_simulated: false` and the object the trainer loads reports provenance `synthetic_fallback` with is_biological() == False. The 3.3 GB of real ENIGMA/HCP assets are on disk and BrainPrior.load() succeeds; scwbd/foundation/anatomy.py:193 reads obj.weights where the field is obj.structural.weights, the exception is swallowed, and the run silently gets a synthetic ellipsoid. Refusal X09 fires on this config for exactly that reason and this run must not launch until it is fixed. Note the shapes differ (454 synthetic regions vs 414 real parcels), so adopting the real prior also requires regenerating the simulated corpus."
+          }
+        ],
+        "declared": true,
+        "provenance": "config",
+        "enabled": true
+      },
+      {
+        "name": "T4_simulator_extension",
+        "order": 3,
+        "steps": 3334,
+        "scope": "III_sliced + IV_assembly",
+        "admits": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "tier_permissions": {
+          "1": [
+            "local.*",
+            "residual.*",
+            "coupling.*",
+            "msg_proj.*",
+            "msg_readin.*",
+            "assimilate.*",
+            "context.*",
+            "readout.*",
+            "eeg.*",
+            "log_dt_scale"
+          ],
+          "2": [
+            "eeg.log_gain",
+            "eeg.offset",
+            "eeg.log_noise",
+            "eeg.nuisance*"
+          ],
+          "3": [
+            "coupling.gain_*",
+            "coupling.global_scale"
+          ],
+          "4": [
+            "local.*",
+            "residual.*",
+            "coupling.*",
+            "msg_proj.*",
+            "msg_readin.*",
+            "assimilate.*",
+            "context.*",
+            "readout.*",
+            "log_dt_scale",
+            "posterior.*"
+          ]
+        },
+        "objective": [
+          "likelihood",
+          "forecast",
+          "calibration",
+          "prior",
+          "posterior",
+          "mechanism",
+          "scale"
+        ],
+        "absence": [
+          {
+            "tier": 4,
+            "detail": "bold.* is frozen for every source in this run. Three independent reasons, none of which is a preference: (a) the only measured modality available is EEG, whose expected Fisher information for beta_hrf, c_under and gain_bold is exactly 0.0 in all three identifiability regimes; (b) the simulated slow/BOLD tier was never generated; (c) the 663 MB of real BOLD on disk (ds000117, 2 subjects, 18 runs) has no loader. In 001-beta the simulator was the sole author of the haemodynamic head.",
+            "consequence": "bold.* stays at its compiled initialisation. No haemodynamic, fMRI-forecast or cross-modal-fusion claim is available from this artifact -- which is what was already true of 001-beta, stated rather than left to be inferred."
+          }
+        ],
+        "declared": true,
+        "provenance": "config",
+        "enabled": true
+      },
+      {
+        "name": "T5_distillation",
+        "order": 4,
+        "steps": 0,
+        "scope": "III_sliced",
+        "admits": [],
+        "tier_permissions": {},
+        "objective": [],
+        "absence": [
+          {
+            "tier": 5,
+            "detail": "TRIBE v2 is not on disk anywhere in this environment, and no teacher-vs-measured discrepancy measurement exists in reports/ as of 2026-08-06. body.tex 6.3 requires a preregistered branch with no-teacher, generic-feature, time-shuffled and report-mismatched controls, retained only if it beats every one of them.",
+            "consequence": "No distillation was applied and none may be claimed. Enabling this stage requires the discrepancy measurement first, not merely the weights."
+          }
+        ],
+        "declared": true,
+        "provenance": "config",
+        "enabled": false
+      },
+      {
+        "name": "T1_individualisation",
+        "order": 5,
+        "steps": 900,
+        "scope": "V_individual",
+        "admits": [
+          1
+        ],
+        "tier_permissions": {
+          "1": [
+            "individualizer.*",
+            "eeg.log_gain",
+            "eeg.offset",
+            "eeg.log_noise",
+            "eeg.nuisance*"
+          ]
+        },
+        "objective": [
+          "likelihood",
+          "posterior"
+        ],
+        "absence": [
+          {
+            "tier": 1,
+            "detail": "eegmmidb has ONE session per participant, so it supports no future-session holdout and the G5 individualisation claim is not evaluable on it. sleep-edfx does have a night 1 -> night 2 holdout and is disabled pending a 2-channel montage adapter.",
+            "consequence": "This stage fits individual parameters that cannot be tested on a held-out session of the same person from this corpus."
+          }
+        ],
+        "declared": true,
+        "provenance": "config",
+        "enabled": true
+      }
+    ]
+  }
+}
