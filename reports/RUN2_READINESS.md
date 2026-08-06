@@ -46,7 +46,7 @@ was shown to be capable of failing.
 | **C2** | Every θ dimension affects the simulator | 🗺️ Ptolemy | open — `ei_gradient` was inert |
 | **C3** | `-raw` contains real hemodynamic/MRI ground truth, not EEG alone | 🗄️ Ada | **MET** — `ds002336` 19.0 GB simultaneous EEG+BOLD (CC0), `ds000113` retinotopy+physio. BOLD 2.08 h → 8.20 h. Cause was an absent reader, not policy |
 | **C4** | Licence routing is **read** by the checkpoint policy, not merely populated | 🗄️ Ada | **MET** — found unread by running it: a mixture card linked to no dataset card bound to `UNKNOWN_TERM`. Split per dataset; verified end to end |
-| **C5** | Every emitted artifact carries its citation set (Tian licence condition) | 🗄️ Ada | partial — `attribution.py` built; `require_complete()` **not called from the release path** (one line, `scwbd/release/**`) |
+| **C5** | Every emitted artifact carries its citation set (Tian licence condition) | 🗄️ Ada | **MET** — `save()` calls `require_complete()` before writing; refusal names the source *and* why; escape hatch still records `NOT COMPLIANT`; on by default |
 
 ## D. The tree
 
@@ -60,6 +60,7 @@ was shown to be capable of failing.
 | **D6** | `test_fallback_anatomy_is_labelled_as_not_biological` fixed — subject drift, fix is `force_fallback=True` | 🌊 Hodgkin | open |
 | **D7** | **R12 is bypassable by naming.** `evaluate.py:444` and `:784` write `"SC-WBD-001-beta"` as a string literal, and `runtime/serving.discover_checkpoint` takes the *directory name* as the designation without reading `model_id`. A refusal on the designation cannot bind if the designation is set by a path. | 🔥 Turing · 💎 Lovelace · 🤖 Asimov | open |
 | **D8** | `refuse_r12` receives `config`, so the prolongation half of the predicate runs at the checkpoint call site | 🌊 Hodgkin | open — one-line change, 📜 Noether specified it |
+| **D9** | **BOLD→Schaefer registration.** Deferred explicitly: ~2–3 days, and the one missing component is a registration engine — `flirt`/`ants`/`mri_vol2vol`/`3dAllineate` all absent, `antspy`/`nipype` not installed. ds002336 BOLD affines disagree by up to **23.25 mm**. Until it lands the paired episode cannot reach the model. | 🧠 Cajal | **deferred, declared** |
 
 ---
 
