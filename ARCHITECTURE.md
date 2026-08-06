@@ -557,6 +557,32 @@ inside the module it polices is a self-assessment, not a refusal — and R12
 exists precisely because `foundation` emitted a control-arm artifact under the
 model's name with nothing outside it able to object.
 
+**RL-8 — a declaration does not discharge a refusal; only a validated
+declaration does.** 🧭 Gauss measured that R12's control test is
+`is_constant AND not declares_prolongation`, so **declaring a prolongation
+switches the control-arm refusal off** — same config, `arm:` stripped: old
+poset refuses, pair declared, no refusal. A config key that turns a refusal off
+is an exemption, not a declaration.
+
+**The fix is composition, not a third condition.** R12 must read **R02's
+verdict**, not the mere presence of a declaration. A prolongation that fails
+its boundary check does not discharge R12's second condition — so a single-
+operator artifact cannot escape the control designation by declaring a
+prolongation it has not validated. R12 asks whether one was declared; R02 asks
+whether it is any good; and R12 may only be satisfied by a declaration R02
+passed.
+
+Gauss's own pair **fails** at the boundary (12 of 12 ensembles), so under this
+rule it correctly does *not* switch R12 off. They wrote the one-line change,
+found it broke two of Noether's tests encoding the opposite intent, and
+**reverted rather than landing it** — the right call, and the reason this is a
+ruling rather than a patch. The `scale_prolongations` field stays **empty**;
+the pair lives in the poset where R02 validates it.
+
+*General form:* wherever two refusals compose, the weaker one must consume the
+stronger one's verdict rather than its declaration. Otherwise the pair is an
+opt-out mechanism for whichever agent files first.
+
 **RL-6 — between-arm parity is checked along the whole path from state to
 scalar, not only in the budgets.** Popper's trace, and the most transferable
 thing found this cycle. Any comparison between two arms passes through:
