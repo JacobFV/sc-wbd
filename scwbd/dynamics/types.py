@@ -232,6 +232,13 @@ class ParamPack:
     device: torch.device | None = None
     dtype: torch.dtype = DTYPE
     defaults: Mapping[str, float] = field(default_factory=dict)
+    #: Where non-default parameter values came from, keyed by parameter name.
+    #: Populated by :meth:`DynamicsBackend.theta_from_prior`, which records the
+    #: anatomical prior's own citation text and the transform applied to it, so a
+    #: parameter drawn from an atlas proxy is never mistaken for a measurement.
+    #: Carried through ``with_``/``to``/``detach``: provenance that silently
+    #: vanished on a device move would be worse than no provenance at all.
+    provenance: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.device = default_device(self.device)
@@ -274,19 +281,22 @@ class ParamPack:
             device=self.device,
             dtype=self.dtype,
             defaults=self.defaults,
+            provenance=dict(self.provenance),
         )
 
     def to(self, device: str | torch.device) -> "ParamPack":
         dev = torch.device(device)
         vals = {k: (v.to(dev) if isinstance(v, Tensor) else v) for k, v in self.values.items()}
-        return ParamPack(vals, self.batch, self.n_regions, dev, self.dtype, self.defaults)
+        return ParamPack(vals, self.batch, self.n_regions, dev, self.dtype, self.defaults,
+                         dict(self.provenance))
 
     def names(self) -> list[str]:
         return sorted(set(self.values) | set(self.defaults))
 
     def detach(self) -> "ParamPack":
         vals = {k: (v.detach() if isinstance(v, Tensor) else v) for k, v in self.values.items()}
-        return ParamPack(vals, self.batch, self.n_regions, self.device, self.dtype, self.defaults)
+        return ParamPack(vals, self.batch, self.n_regions, self.device, self.dtype, self.defaults,
+                         dict(self.provenance))
 
     # -- constructors ------------------------------------------------------
     @classmethod

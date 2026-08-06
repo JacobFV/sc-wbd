@@ -20,6 +20,7 @@ are no Python loops over regions anywhere in a backend.
 from __future__ import annotations
 
 import abc
+import math
 from dataclasses import dataclass
 from typing import Any, ClassVar, Mapping, Sequence
 
@@ -28,7 +29,17 @@ from torch import Tensor, nn
 
 from .types import DTYPE, ParamPack, Prior, assert_solver_dtype, default_device, make_generator
 
-__all__ = ["DynamicsBackend", "BackendInfo", "CouplingKind", "register_backend", "get_backend", "list_backends"]
+__all__ = [
+    "DynamicsBackend",
+    "BackendInfo",
+    "CouplingKind",
+    "register_backend",
+    "get_backend",
+    "list_backends",
+    "resolve_prior_field",
+    "sample_prior_list",
+    "map_fragility",
+]
 
 CouplingKind = str  # "additive" | "phase_difference"
 
@@ -226,16 +237,39 @@ class DynamicsBackend(nn.Module, abc.ABC):
             "falsifier": self.info.falsifier,
         }
 
-    # -- adapters to agent C / agent A ------------------------------------
+    # -- adapters to the anatomy prior (agent C) ---------------------------
+    #: Backend parameter names that carry the *excitatory* population timescale,
+    #: in order of preference.  Only the first one present is modulated.
+    timescale_params: ClassVar[tuple[str, ...]] = ("tau_E", "tau_e", "tau_s", "tau")
+
+    #: ``name -> (low, high)`` in the parameter's own units: the range over which
+    #: the backend is calibrated and numerically well-behaved.  Distinct from
+    #: ``param_priors`` on purpose — everything in ``param_priors`` is *sampled*
+    #: by :meth:`sample_theta`, whereas this only bounds values pushed in from
+    #: outside (see :meth:`theta_from_prior`).  ``None`` means unbounded on that
+    #: side.
+    param_support: ClassVar[Mapping[str, tuple[float | None, float | None]]] = {}
+
+    def support_of(self, name: str) -> tuple[float | None, float | None]:
+        """Calibrated bounds for a parameter: ``param_support``, else its prior."""
+        if name in self.param_support:
+            lo, hi = self.param_support[name]
+            return (None if lo is None else float(lo), None if hi is None else float(hi))
+        p = self.param_priors.get(name)
+        if p is None:
+            return (None, None)
+        lo, hi = getattr(p, "low", None), getattr(p, "high", None)
+        return (None if lo is None else float(lo), None if hi is None else float(hi))
+
     @classmethod
     def from_prior(cls, brain_prior: Any, **kw: Any) -> "DynamicsBackend":
-        """Instantiate using ``scwbd.anatomy.BrainPrior`` regional priors.
+        """Instantiate a backend bound to a :class:`scwbd.anatomy.BrainPrior`.
 
-        Duck-typed: any object exposing ``ei_prior`` (regional E/I ratio) and/or
-        ``timescale_prior`` (intrinsic timescale) is accepted.  Subclasses may
-        override to map those onto their own parameters; the base version just
-        constructs the backend and stashes the prior for
-        :meth:`theta_from_prior`.
+        The prior is *stashed, not consumed*: its per-parcel distributions are
+        read at sampling time by :meth:`theta_from_prior`, never snapshotted
+        here.  That is deliberate — the anatomical maps behind the E/I proxy are
+        still being revised upstream, and a cached copy would silently freeze a
+        stale version of them into every trajectory we generate.
         """
         obj = cls(**kw)
         obj._brain_prior = brain_prior  # type: ignore[attr-defined]
@@ -248,31 +282,278 @@ class DynamicsBackend(nn.Module, abc.ABC):
         *,
         seed: int,
         device: str | torch.device | None = None,
+        apply: Sequence[str] = ("ei_ratio", "timescale", "velocity"),
     ) -> ParamPack:
-        """Sample regional heterogeneity from agent C's priors.
+        """Sample a batch of parameter sets carrying the anatomy prior's regional structure.
 
-        Recognised attributes on ``brain_prior``: ``n_regions``, ``ei_prior``
-        (per-region excitation/inhibition ratio, ``(N,)`` tensor or Prior list),
-        ``timescale_prior`` (per-region intrinsic timescale in seconds).
-        Unknown attributes are ignored rather than silently faked.
+        ``brain_prior`` is duck-typed against :class:`scwbd.anatomy.BrainPrior`:
+
+        ``ei_ratio_prior()``   per-parcel excitation/inhibition ratio (dimensionless)
+        ``timescale_prior()``  per-parcel intrinsic timescale (seconds)
+        ``velocity_prior()``   scalar conduction velocity (m/s)
+
+        Each is a list of :class:`~scwbd.schema.priors.PriorBase` *distributions*,
+        and each batch element gets its **own draw**.  The batch axis therefore
+        carries genuine prior spread rather than one point estimate broadcast B
+        times — which is the whole reason the batch axis exists.
+
+        Two mappings here are not identities, and both are recorded in
+        ``theta.provenance``:
+
+        **E/I is inverted.**  The prior's ratio is *excitation over inhibition*
+        (higher = more excitable).  The backend parameter spelled ``ei_ratio`` is
+        a gain on the **inhibitory** term (``c_ei * ei_ratio`` in Wilson-Cowan,
+        ``-J_i * ei_ratio * S_I`` in Wong-Wang), so it runs the other way.  We
+        therefore set ``ei_ratio = centre / draw``.  Mapping the two directly
+        because they share a name would invert the cortical E/I gradient
+        end-to-end and still look entirely plausible.
+
+        **Timescale is relative, not absolute.**  The prior describes intrinsic
+        *autocorrelation* timescales (tens to hundreds of ms); a backend's
+        ``tau_E``/``tau_e`` is a synaptic or membrane constant, a different
+        physical quantity that happens to share the symbol.  Writing the prior's
+        seconds straight into ``tau_e`` would be a category error and would push
+        Wilson-Cowan far outside its calibrated regime, so the prior is applied
+        as a dimensionless modulation about its own centre.  The absolute
+        intrinsic timescale remains an emergent network property — which is what
+        makes it a prediction we can be wrong about rather than an input.
+
+        Both normalisations use the prior's own geometric centre, so an upstream
+        recalibration of the underlying maps shifts the regional *pattern*
+        without silently rescaling every parameter.
         """
-        n_regions = int(getattr(brain_prior, "n_regions", 0)) or int(
-            getattr(brain_prior, "weights").shape[-1]
-        )
+        n_regions = self._prior_n_regions(brain_prior)
         theta = self.sample_theta(batch, n_regions, seed=seed, device=device)
         dev = theta.device
-        ei = getattr(brain_prior, "ei_prior", None)
-        if ei is not None and "ei_ratio" in self.defaults:
-            ei_t = torch.as_tensor(ei, device=dev, dtype=theta.dtype).reshape(1, -1)
-            theta.set("ei_ratio", ei_t.expand(batch, -1))
-        tau = getattr(brain_prior, "timescale_prior", None)
-        if tau is not None:
-            tau_t = torch.as_tensor(tau, device=dev, dtype=theta.dtype).reshape(1, -1)
-            for key in ("tau", "tau_e", "tau_E"):
-                if key in self.defaults:
-                    theta.set(key, tau_t.expand(batch, -1) * float(self.defaults[key]) / float(tau_t.mean()))
-                    break
+
+        if "ei_ratio" in apply and "ei_ratio" in self.defaults:
+            name, priors = resolve_prior_field(brain_prior, "ei_ratio_prior", "ei_prior")
+            if priors is not None:
+                draw = sample_prior_list(priors, batch, seed=seed + 101, n_regions=n_regions)
+                centre = _geometric_centre(priors)
+                # inverted on purpose; see the docstring
+                gain = centre / torch.as_tensor(draw, device=dev, dtype=theta.dtype).clamp_min(1e-6)
+                theta.set("ei_ratio", gain)
+                theta.provenance["ei_ratio"] = {
+                    "source": f"{type(brain_prior).__name__}.{name}",
+                    "transform": (
+                        "backend ei_ratio (an inhibitory gain) = geometric_centre(prior) / draw; "
+                        "the prior is excitation/inhibition and runs in the opposite direction"
+                    ),
+                    "centre": centre,
+                    "sampled_per_batch_element": True,
+                    # NMDA and GABA-A are the two route-fragile maps in the panel
+                    # and are exactly what this contrast is built from; if the
+                    # ledger says the per-parcel sign is not robust, that travels
+                    # with the parameter instead of being left upstream.
+                    "route_fragility": map_fragility(brain_prior, "ei_proxy")
+                    or {"disclosed": False, "note": "prior exposes no ledger for ei_proxy"},
+                    **_provenance_index(priors),
+                }
+
+        if "timescale" in apply:
+            key = next((k for k in self.timescale_params if k in self.defaults), None)
+            name, priors = resolve_prior_field(brain_prior, "timescale_prior")
+            if key is not None and priors is not None:
+                draw = sample_prior_list(priors, batch, seed=seed + 202, n_regions=n_regions)
+                centre = _geometric_centre(priors)
+                scale = torch.as_tensor(draw, device=dev, dtype=theta.dtype) / centre
+                tau = scale * float(self.defaults[key])
+                # The hierarchy prior is much wider than the backend's calibrated
+                # range, and its lower tail can drive tau below the step size,
+                # where an explicit solver simply rings.  Clamp to the backend's
+                # own declared support and *report* how much was clamped rather
+                # than emitting quietly unstable trajectories.
+                lo, hi, n_clamped = _clamp_to_support(tau, *self.support_of(key))
+                theta.set(key, tau)
+                theta.provenance[key] = {
+                    "source": f"{type(brain_prior).__name__}.{name}",
+                    "transform": (
+                        f"{key} = {float(self.defaults[key]):g} s * draw / geometric_centre(prior); "
+                        "applied as a dimensionless modulation because the prior is an intrinsic "
+                        "autocorrelation timescale and this parameter is a synaptic constant"
+                    ),
+                    "centre_s": centre,
+                    "backend_default_s": float(self.defaults[key]),
+                    "clamped_to_support": [lo, hi],
+                    "n_clamped": n_clamped,
+                    "fraction_clamped": n_clamped / max(1, batch * n_regions),
+                    "sampled_per_batch_element": True,
+                    **_provenance_index(priors),
+                }
+
+        if "velocity" in apply:
+            name, vp = resolve_prior_field(brain_prior, "velocity_prior")
+            if vp is not None and hasattr(vp, "sample"):
+                v = sample_prior_list([vp], batch, seed=seed + 303, n_regions=1)
+                theta.set("velocity", torch.as_tensor(v, device=dev, dtype=theta.dtype).reshape(batch, 1))
+                theta.provenance["velocity"] = {
+                    "source": f"{type(brain_prior).__name__}.{name}",
+                    "transform": "conduction velocity in m/s, one draw per parameter set",
+                    "sampled_per_batch_element": True,
+                    **_provenance_index([vp]),
+                }
+
         return theta
+
+    @staticmethod
+    def _prior_n_regions(brain_prior: Any) -> int:
+        for attr in ("n_parcels", "n_regions"):
+            v = getattr(brain_prior, attr, None)
+            if v:
+                return int(v)
+        w = getattr(brain_prior, "weights", None)
+        if w is not None:
+            return int(w.shape[-1])
+        raise ValueError(
+            "cannot determine region count from the prior: expected n_parcels, n_regions or weights"
+        )
+
+
+def resolve_prior_field(brain_prior: Any, *names: str) -> tuple[str | None, Any]:
+    """Fetch a prior field that may be a zero-arg method, a property, or an array.
+
+    Returns ``(attribute_name, value)``, or ``(None, None)`` if none of ``names``
+    is present.  Absent fields yield ``None`` rather than a fabricated default:
+    a prior we do not have must not become a number we pretend to have.
+    """
+    for name in names:
+        obj = getattr(brain_prior, name, None)
+        if obj is None:
+            continue
+        if callable(obj):
+            try:
+                obj = obj()
+            except TypeError:
+                continue
+        if obj is not None:
+            return name, obj
+    return None, None
+
+
+def _derive_seed(seed: int, i: int) -> int:
+    """Per-parcel seed: independent across parcels, reproducible across runs."""
+    return int((int(seed) * 1_000_003 + 7 * i + 11) % (2**63 - 1))
+
+
+def sample_prior_list(priors: Any, batch: int, *, seed: int, n_regions: int | None = None):
+    """Draw ``(batch, N)`` from a per-parcel list of prior distributions.
+
+    Accepts either a sequence of :class:`~scwbd.schema.priors.PriorBase` (each
+    parcel sampled independently from its own distribution, with a derived seed
+    per parcel) or a plain per-parcel array of point values, which is broadcast
+    across the batch.  The distribution path is the one that matters: it is what
+    makes each batch element a distinct parameter set drawn from the prior.
+    """
+    import numpy as np
+
+    seq = list(priors) if not isinstance(priors, (str, bytes)) else []
+    if seq and hasattr(seq[0], "sample"):
+        cols = [
+            np.asarray(p.sample(_derive_seed(seed, i), batch), dtype=float).reshape(batch)
+            for i, p in enumerate(seq)
+        ]
+        return np.stack(cols, axis=1)
+    arr = np.asarray(priors, dtype=float).reshape(1, -1)
+    if n_regions is not None and arr.shape[1] != n_regions:
+        raise ValueError(f"prior array has {arr.shape[1]} entries but the model has {n_regions} regions")
+    return np.broadcast_to(arr, (batch, arr.shape[1])).copy()
+
+
+def _geometric_centre(priors: Any) -> float:
+    """Geometric mean of a prior list's own central values.
+
+    Used as the normalising constant so that a parcel at the prior's centre maps
+    to a modulation of exactly 1.0.  Anchoring to the prior rather than to the
+    sampled batch keeps the mapping deterministic and independent of batch size.
+    """
+    import numpy as np
+
+    seq = list(priors)
+    vals = []
+    for p in seq:
+        m = float(p.mean()) if hasattr(p, "mean") else float(p)
+        if math.isfinite(m) and m > 0.0:
+            vals.append(m)
+    if not vals:
+        return 1.0
+    return float(np.exp(np.mean(np.log(vals))))
+
+
+def _clamp_to_support(
+    x: Tensor, lo: float | None, hi: float | None
+) -> tuple[float | None, float | None, int]:
+    """Clamp ``x`` in place to a declared support; report how much moved.
+
+    Returns ``(low, high, n_clamped)``.  A parameter with no declared bounds is
+    left alone — we clamp to stated calibration, never to a guess.
+    """
+    if lo is None and hi is None:
+        return None, None, 0
+    outside = torch.zeros_like(x, dtype=torch.bool)
+    if lo is not None:
+        outside |= x < lo
+    if hi is not None:
+        outside |= x > hi
+    n = int(outside.sum())
+    x.clamp_(min=lo, max=hi)
+    return lo, hi, n
+
+
+def map_fragility(brain_prior: Any, map_name: str) -> dict[str, Any]:
+    """Route-fragility disclosure for the anatomy map a parameter leans on.
+
+    Agent C's ledgers record ``validity_domain["route_fragile_ingredients"]`` --
+    maps whose value depends on how the PET volume was sampled into parcels --
+    and a ``forbidden_inference`` string.  For ``ei_proxy`` the fragile
+    ingredients are NMDA and GABA-A, which are exactly the two markers the E/I
+    contrast is built from, and the ledger states that the *sign* of the contrast
+    in a given parcel is not robust to a defensible change of route.
+
+    We propagate that rather than re-deriving it: a regional E/I pattern whose
+    sign may flip must not reach the training corpus looking like a measurement.
+    Returns ``{}`` when the prior exposes no ledger (older BrainPrior objects),
+    which is a silence we report, not a clean bill of health.
+    """
+    maps = getattr(brain_prior, "maps", None)
+    if maps is None:
+        return {}
+    try:
+        m = maps[map_name]
+    except Exception:
+        return {}
+    led = getattr(m, "ledger", None)
+    if led is None:
+        return {}
+    vd = getattr(led, "validity_domain", None) or {}
+    out: dict[str, Any] = {}
+    frag = vd.get("route_fragile_ingredients") if hasattr(vd, "get") else None
+    if frag:
+        out["route_fragile_ingredients"] = dict(frag)
+    forb = getattr(led, "forbidden_inference", None)
+    if forb:
+        out["forbidden_inference"] = str(forb)
+    interp = vd.get("interpretation") if hasattr(vd, "get") else None
+    if interp:
+        out["interpretation"] = str(interp)
+    return out
+
+
+def _provenance_index(priors: Any) -> dict[str, Any]:
+    """Compress per-parcel citation strings to a distinct list plus an index.
+
+    Keeps every parcel's citation recoverable without storing N copies of the
+    same paragraph, and makes the "no receptor coverage" parcels visible as a
+    distinct provenance entry rather than blending them into the covered ones.
+    """
+    texts: list[str] = []
+    idx: list[int] = []
+    for p in list(priors):
+        t = str(getattr(p, "provenance", "") or "")
+        if t not in texts:
+            texts.append(t)
+        idx.append(texts.index(t))
+    return {"distinct_provenance": texts, "parcel_provenance_index": idx}
 
 
 def sigmoid_offset(x: Tensor, a: Tensor, b: Tensor) -> Tensor:
