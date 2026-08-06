@@ -114,13 +114,18 @@
   "environment": {
     "cuda_available": true,
     "device_name": "NVIDIA GB10",
-    "git_revision": "f0b2b20f5cedf8e5b5851f644657bc017af96ddd",
+    "git_revision": "b6348a8bd63c8f88dfebe0aacce9fa1456b2b125",
     "numpy": "2.5.1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "python": "3.12.13",
     "torch": "2.13.0+cu130"
   },
   "extra": {
+    "arms_computed": {
+      "monte_carlo_fisher": false,
+      "profile_likelihood": true,
+      "recovery": true
+    },
     "command": {
       "cmd": "benchmark",
       "device": null,
@@ -131,7 +136,7 @@
       "newton": 12,
       "newton_tol": 0.05,
       "no_monte_carlo": true,
-      "no_profiles": true,
+      "no_profiles": false,
       "no_recovery": false,
       "no_resume": false,
       "out": "reports/identifiability",
@@ -151,8 +156,7 @@
       "eeg_only",
       "fmri_only",
       "joint_native",
-      "joint_resampled",
-      "joint_native_impulse"
+      "joint_resampled"
     ]
   },
   "instrument": {
@@ -167,7 +171,7 @@
     "state_dimension": 105
   },
   "model_designation": "SC-WBD-001-beta",
-  "n_monte_carlo_fisher_replicates": 256,
+  "n_monte_carlo_fisher_replicates": 0,
   "n_recovery_replicates": 32,
   "non_goals": [
     "no whole-brain training",
@@ -307,5 +311,5 @@
   "seed": 20260805,
   "status": "preregistered_before_run",
   "thesis_reference": "thesis_contract.tex sec. 0.3 (T1-T4), sec. 0.6 item 2, sec. 11",
-  "written_at": "2026-08-06T05:09:47-0700"
+  "written_at": "2026-08-06T05:55:01-0700"
 }

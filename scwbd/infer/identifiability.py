@@ -802,6 +802,11 @@ def run_signature(
     Resuming across a settings change would silently splice together results
     computed under different budgets, which is exactly the kind of quiet
     inconsistency a claim report must never contain.
+
+    Switching an *optional* arm on or off deliberately does **not** change the
+    signature: profiles and the Monte-Carlo Fisher are additive diagnostics
+    stored under their own keys, and their presence or absence cannot alter any
+    other number in the entry.  Their sizes enter only while they are enabled.
     """
     import hashlib
     import json
@@ -810,12 +815,13 @@ def run_signature(
         "epoch_seconds": cfg.epoch_seconds, "n_epochs": cfg.n_epochs,
         "dtype": cfg.dtype, "dt": cfg.dt, "n_regions": cfg.n_regions,
         "n_delay_taps": cfg.n_delay_taps, "hrf_stages": cfg.hrf_stages,
-        "seed": seed, "n_replicates": n_replicates, "n_newton": n_newton,
-        "mc_replicates": mc_replicates, "with_recovery": with_recovery,
-        "newton_tol": newton_tol,
-        "with_profiles": with_profiles,
-        "with_monte_carlo_fisher": with_monte_carlo_fisher,
+        "seed": seed, "with_recovery": with_recovery,
     }
+    if with_recovery:
+        payload |= {"n_replicates": n_replicates, "n_newton": n_newton,
+                    "newton_tol": newton_tol}
+    if with_monte_carlo_fisher:
+        payload["mc_replicates"] = mc_replicates
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True).encode()
     ).hexdigest()[:16]

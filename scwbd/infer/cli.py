@@ -58,11 +58,24 @@ def cmd_benchmark(args) -> int:
         r for r in REGIMES if r.name in set(args.regimes)
     ]
     designs = DESIGNS if not args.primary_only else [d for d in DESIGNS if d.primary]
+    # The manifest must record what this run will *actually* compute, not the
+    # defaults of the flags it ignored: an arm that is switched off has zero
+    # replicates, and the recovery arm may be restricted to a subset.
+    recovery_designs = (
+        [] if args.no_recovery
+        else list(args.recovery_designs or [d.name for d in designs if d.primary])
+    )
     write_manifest(
         out, cfg=cfg, regimes=regimes, designs=designs, seed=args.seed,
-        n_replicates=args.replicates, mc_replicates=args.mc_replicates,
+        n_replicates=0 if args.no_recovery else args.replicates,
+        mc_replicates=0 if args.no_monte_carlo else args.mc_replicates,
         extra={"command": {k: v for k, v in vars(args).items() if k != "func"},
-               "recovery_designs": [d.name for d in designs if d.primary],
+               "recovery_designs": recovery_designs,
+               "arms_computed": {
+                   "recovery": not args.no_recovery,
+                   "profile_likelihood": not args.no_profiles,
+                   "monte_carlo_fisher": not args.no_monte_carlo,
+               },
                "profile_and_monte_carlo_regime": regimes[0].name},
     )
     print(f"[preregistered] {out/'manifest.json'}")

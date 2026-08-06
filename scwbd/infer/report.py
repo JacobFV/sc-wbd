@@ -436,6 +436,24 @@ def preregistration_delta(outdir: str | Path) -> str:
         f"**Decision criteria unchanged: {'yes' if same_rule else 'NO — SEE BELOW'}.** "
         "Only the compute budget was reduced.\n"
     )
+    arms = now.get("extra", {}).get("arms_computed")
+    if arms:
+        off = [k for k, v in arms.items() if not v]
+        L.append(
+            "\nArms computed: " + ", ".join(f"`{k}`" for k, v in arms.items() if v)
+            + (("; **not computed:** " + ", ".join(f"`{k}`" for k in off))
+               if off else "")
+            + ". A zero below means the arm was switched off, not that it ran "
+              "with no replicates.\n"
+        )
+    rd = now.get("extra", {}).get("recovery_designs")
+    pre_rd = pre.get("extra", {}).get("recovery_designs")
+    if rd is not None and pre_rd is not None and set(rd) != set(pre_rd):
+        L.append(
+            "\nRecovery arm restricted to " + ", ".join(f"`{d}`" for d in rd)
+            + " (preregistered: " + ", ".join(f"`{d}`" for d in pre_rd)
+            + "). The dropped designs are not used by any criterion.\n"
+        )
     if rows:
         L.append("\n| quantity | preregistered | achieved |")
         L.append("|---|---|---|")
