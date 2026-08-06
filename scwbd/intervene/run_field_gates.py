@@ -42,6 +42,7 @@ from .numerics import (
 
 __all__ = ["em_gate_points", "acoustic_gate_points", "n6_points",
            "n8_points", "n8_dipole_pos",
+           "N9_PINNED_BOUND", "bound_has_moved",
            "run_n3", "run_n4", "run_n6", "run_n8", "run_n9", "main"]
 
 #: the gate's preregistered tolerances, restated here so a drift is visible
@@ -581,12 +582,66 @@ def run_n8(*, self_convergence: bool = True, audits: bool = True) -> Any:
 # N9: the runtime's fallback approximation, gated rather than labelled
 # ---------------------------------------------------------------------------
 
-#: geometry envelope for N9. Head radii spanning adult heads, and standoffs up
-#: to A_safe's own ``tms.coil_scalp_distance_mm`` maximum of 40 mm -- so the
-#: envelope is the one the system already declares, not one chosen to flatter.
-N9_HEAD_RADII_M = (0.070, 0.075, 0.085, 0.092)
+#: geometry envelope for N9.  Standoffs up to A_safe's own
+#: ``tms.coil_scalp_distance_mm`` maximum of 40 mm, and head radii down to
+#: **60 mm** -- not because a 60 mm head is adult (it is not; adult radii are
+#: ~80-100 mm, where the error is 0.74-0.89) but because nothing in the runtime's
+#: ``HeadModel`` enforces an adult radius.  The bound has to cover what the code
+#: admits, not what biology suggests.  Agent Asimov made that argument when they
+#: declined to justify a smaller bound the easy way, and it is the same
+#: discipline as calibrating the BEM envelope on the concentrated source: pick
+#: the worst case the system can actually reach.
+N9_HEAD_RADII_M = (0.060, 0.065, 0.070, 0.075, 0.085, 0.092, 0.100)
 N9_STANDOFFS_M = (0.000, 0.005, 0.010, 0.020, 0.030, 0.040)
 N9_REFERENCE_DEGREE = 250
+
+#: The bound this gate is *pinned* to, with its justification and date.
+#:
+#: Reading the threshold from ``scwbd.runtime`` at run time is what stops this
+#: gate going stale against a snapshot -- but it opens a second hole, which agent
+#: Popper named: a threshold that can move is weaker than one that cannot, and
+#: nothing would announce a silent loosening.  So the run-time read stays and the
+#: value is pinned here as well.  Any movement fails
+#: ``bound_provenance`` until this record is updated, and updating it is a commit
+#: -- dated, attributed and reviewable by construction.
+#:
+#: A tightening fails too.  That is deliberate: the check is "did this move
+#: without anyone saying why", not "did this get worse".
+N9_PINNED_BOUND: dict[str, Any] = {
+    "solution_discrepancy_fraction": (0.0, 1.35),
+    "justified_on": "2026-08-06",
+    "justified_by": "agent Asimov (scwbd.runtime), reviewed by agent Popper (scwbd.bench)",
+    "source": "scwbd.runtime.backends.AnalyticSphericalEField",
+    "justification": (
+        "Split from the former composite discrepancy_fraction=(-0.8,+0.8), which "
+        "declared one interval for two physically distinct things: this "
+        "approximation's error against the exact solution of the same geometry, and "
+        "that geometry's error against a real head. Upper bound 1.35 covers the "
+        "measured worst case 1.3204 at a 60 mm head radius with 40 mm standoff. "
+        "60 mm is not an adult head -- it is the smallest radius the runtime's "
+        "HeadModel admits, and a bound must cover what the code admits. Lower bound "
+        "0.0 is attained (circular coil, where the approximation is exact) and the "
+        "approximation never underestimates."
+    ),
+}
+
+
+def bound_has_moved(
+    observed: tuple[float, float], pinned: tuple[float, float] | None = None
+) -> bool:
+    """Has the judged party's declared bound moved away from the pinned value?
+
+    Extracted so the provenance guard can be exercised without running the full
+    sweep. A guard nobody can show firing is indistinguishable from one that
+    cannot fire.
+    """
+    ref = tuple(
+        float(v) for v in (pinned or N9_PINNED_BOUND["solution_discrepancy_fraction"])
+    )
+    return not (
+        math.isclose(float(observed[0]), ref[0], rel_tol=0.0, abs_tol=1e-12)
+        and math.isclose(float(observed[1]), ref[1], rel_tol=0.0, abs_tol=1e-12)
+    )
 
 
 def _n9_sweep(coil_kind: str = "figure8") -> list[dict[str, float]]:
@@ -652,61 +707,142 @@ def run_n9(*, include_axisymmetric: bool = True) -> Any:
     worst_mean_rel = max(r["mean_relative_error"] for r in rows)
     min_cos = min(r["peak_direction_cosine"] for r in rows)
 
-    # the declared interval is read from the runtime rather than copied here, so
-    # this gate tracks the real value instead of a snapshot that goes stale --
-    # which is this repository's recurring failure mode
-    declared: float | None = None
+    # Read the declared interval from the runtime AT RUN TIME rather than copying
+    # it, so this gate tracks the real value instead of a snapshot that goes
+    # stale.  Point it at ``solution_discrepancy_fraction`` -- the term that
+    # claims to cover THIS error -- and not at the composite
+    # ``discrepancy_fraction``, which also carries the sphere-vs-head geometry
+    # prior.  Testing an approximation's own error against an interval that also
+    # holds something else is the conflation this gate exists to catch, one level
+    # up; agent Asimov asked for the change and they are right.
+    solution: tuple[float, float] | None = None
+    composite: tuple[float, float] | None = None
     declared_reason = ""
     try:
         from scwbd.runtime.backends import AnalyticSphericalEField
 
-        interval = AnalyticSphericalEField().discrepancy_fraction
-        declared = float(max(abs(interval[0]), abs(interval[1])))
+        backend = AnalyticSphericalEField()
+        composite = tuple(float(v) for v in backend.discrepancy_fraction)
+        raw = getattr(backend, "solution_discrepancy_fraction", None)
+        if raw is not None:
+            solution = (float(raw[0]), float(raw[1]))
     except Exception as exc:  # pragma: no cover - depends on sibling module
         declared_reason = f"{type(exc).__name__}: {exc}"
 
     subs: list[SubCheck] = []
 
-    if declared is None:
+    if solution is None:
         subs.append(could_not_run(
-            "declared_bound_covers_error",
-            "Does the consumer's declared discrepancy interval cover the measured error?",
-            "scwbd.runtime.backends.AnalyticSphericalEField could not be read, so the "
-            f"declared interval is unknown and cannot be checked: {declared_reason}",
-            falsified_by="the declared interval does not cover the measured error",
+            "solution_bound_covers_error",
+            "Does the term that claims to cover THIS error actually cover it?",
+            "scwbd.runtime.backends.AnalyticSphericalEField exposes no "
+            "solution_discrepancy_fraction"
+            + (f" ({declared_reason})" if declared_reason else "")
+            + ". The composite discrepancy_fraction cannot stand in: it also carries the "
+            "sphere-vs-head geometry prior, so a pass against it would be the same "
+            "conflation this gate exists to catch, one level up.",
+            falsified_by="the declared solution-discrepancy interval does not cover the "
+                         "approximation's measured error",
         ))
     else:
         subs.append(SubCheck(
-            name="declared_bound_covers_error",
+            name="solution_bound_covers_error",
             description=(
-                "The fallback declares a discrepancy_fraction that is supposed to carry "
-                "BOTH the sphere-vs-head geometry prior AND this approximation's own "
-                "overestimate. The approximation alone must fit inside it with room left."
+                "solution_discrepancy_fraction is the backend's claim about its error "
+                "against the exact solution of the SAME geometry. That is exactly what "
+                "this gate measures, so it is the interval to test against."
+            ),
+            metrics=[
+                Metric(
+                    name="fallback.max_relative_overestimate",
+                    value=float(worst["relative_overestimate"]),
+                    kind="numerical", exact=True,
+                    threshold=float(solution[1]), direction="less_is_better",
+                    note=(f"worst over the envelope, at head radius "
+                          f"{worst['head_radius_m'] * 1e3:.0f} mm and standoff "
+                          f"{worst['standoff_m'] * 1e3:.0f} mm; declared solution "
+                          f"interval {solution}"),
+                ),
+                Metric(
+                    name="fallback.composite_bound_would_have_been",
+                    value=float(max(abs(composite[0]), abs(composite[1])))
+                    if composite else float("inf"),
+                    kind="audit", exact=True,
+                    note="the composite discrepancy_fraction, recorded to show what this "
+                         "check would have been graded against had it kept pointing at "
+                         "the wrong term -- a threshold twice as loose, passing trivially",
+                ),
+            ],
+            mandatory=True,
+            falsified_by="the declared solution-discrepancy interval does not cover the "
+                         "approximation's own measured error over its declared envelope",
+        ))
+        subs.append(SubCheck(
+            name="approximation_never_underestimates",
+            description=(
+                "The declared interval is one-sided (lower bound 0.0). That is a claim "
+                "about the physics, not a convenience, so it gets tested: the tangential "
+                "projection drops a term and must therefore never come out low."
             ),
             metrics=[Metric(
-                name="fallback.max_relative_overestimate",
-                value=float(worst["relative_overestimate"]),
+                name="fallback.min_relative_overestimate",
+                value=float(best["relative_overestimate"]),
                 kind="numerical", exact=True,
-                threshold=declared, direction="less_is_better",
-                note=(f"worst over the declared envelope, at head radius "
-                      f"{worst['head_radius_m'] * 1e3:.0f} mm and standoff "
-                      f"{worst['standoff_m'] * 1e3:.0f} mm; declared interval "
-                      f"+-{declared}"),
+                threshold=float(solution[0]), direction="greater_is_better",
+                note=f"minimum over the envelope, at head radius "
+                     f"{best['head_radius_m'] * 1e3:.0f} mm and standoff "
+                     f"{best['standoff_m'] * 1e3:.0f} mm",
             )],
             mandatory=True,
-            falsified_by="the declared discrepancy interval does not cover the "
-                         "approximation's own measured error over its declared envelope",
+            falsified_by="the approximation underestimates somewhere in the envelope, so "
+                         "a one-sided interval is the wrong shape for it",
+        ))
+
+    if solution is not None:
+        pinned = tuple(float(v) for v in N9_PINNED_BOUND["solution_discrepancy_fraction"])
+        moved = bound_has_moved(solution, pinned)
+        direction = (
+            "LOOSENED" if solution[1] > pinned[1] or solution[0] < pinned[0]
+            else "tightened"
+        )
+        note = (
+            f"runtime declares {solution}, matching the value pinned and justified on "
+            f"{N9_PINNED_BOUND['justified_on']} by {N9_PINNED_BOUND['justified_by']}"
+            if not moved else
+            f"pinned {pinned} justified on {N9_PINNED_BOUND['justified_on']}; runtime "
+            f"now declares {solution} ({direction}). Update N9_PINNED_BOUND in "
+            "scwbd.intervene.run_field_gates with the new value, a date and a "
+            "justification, in the same commit that moves it."
+        )
+        subs.append(SubCheck(
+            name="bound_provenance",
+            description=(
+                "Has the threshold moved since it was last justified? The bound is read "
+                "from the judged party at run time, which is what stops this gate going "
+                "stale -- and that is exactly what would let it be loosened silently. "
+                "So it is also pinned here, and any movement fails until the pin is "
+                "updated: a commit, hence dated and attributable by construction. A "
+                "tightening fails too; the question is 'did this move without anyone "
+                "saying why', not 'did this get worse'."
+            ),
+            metrics=[Metric(
+                name="fallback.bound_moved_since_justified",
+                value=1.0 if moved else 0.0,
+                kind="numerical", exact=True,
+                # boolean indicator; the comparison is strict, so 0.5 is the
+                # threshold that separates "did not move" from "moved"
+                threshold=0.5, direction="less_is_better",
+                note=note,
+            )],
+            mandatory=True,
+            falsified_by="the judged party's declared bound changed without a dated "
+                         "justification",
         ))
 
     subs.append(SubCheck(
         name="error_is_characterised",
         description="Is the error bounded and orderly over the envelope, or wild?",
         metrics=[
-            Metric(name="fallback.min_relative_overestimate",
-                   value=float(best["relative_overestimate"]),
-                   kind="numerical", exact=True,
-                   note=f"at head radius {best['head_radius_m'] * 1e3:.0f} mm, standoff "
-                        f"{best['standoff_m'] * 1e3:.0f} mm"),
             Metric(name="fallback.peak_direction_cosine_min", value=min_cos,
                    kind="numerical", exact=True, threshold=0.99,
                    direction="greater_is_better",
@@ -772,7 +908,8 @@ def run_n9(*, include_axisymmetric: bool = True) -> Any:
         ),
         thesis_reference="body.tex §11.1",
         acceptance_thresholds={
-            "declared_discrepancy_fraction": declared,
+            "solution_discrepancy_fraction": list(solution) if solution else None,
+            "composite_discrepancy_fraction": list(composite) if composite else None,
             "envelope_head_radii_m": list(N9_HEAD_RADII_M),
             "envelope_standoffs_m": list(N9_STANDOFFS_M),
         },
@@ -791,11 +928,45 @@ def run_n9(*, include_axisymmetric: bool = True) -> Any:
                          f"(degree {N9_REFERENCE_DEGREE})",
             "solver_provenance": {
                 "consumer": "scwbd.runtime.backends.AnalyticSphericalEField",
-                "declared_discrepancy_fraction": declared,
+                "solution_discrepancy_fraction": list(solution) if solution else None,
+                "composite_discrepancy_fraction": list(composite) if composite else None,
                 "equivalence_pinned_by":
                     "tests/intervene/test_fallback_approximation.py -- asserts the runtime "
                     "backend computes this same expression, so the gate's subject is the "
                     "object actually in the runtime path",
+            },
+            "grading_history": {
+                "current": {
+                    "graded_against": "solution_discrepancy_fraction",
+                    "upper_bound": 1.35,
+                    "envelope_min_head_radius_m": min(N9_HEAD_RADII_M),
+                },
+                "superseded": {
+                    "graded_against": "discrepancy_fraction (composite: this "
+                                      "approximation's error PLUS the sphere-vs-head "
+                                      "geometry prior)",
+                    "upper_bound": 2.29,
+                    "envelope_min_head_radius_m": 0.070,
+                    "why_superseded":
+                        "grading an approximation's own error against an interval that "
+                        "also carries someone else's uncertainty is the conflation this "
+                        "gate exists to catch, one level up. It also passed trivially "
+                        "(1.0629 vs 2.29). Both the subject and the envelope changed, so "
+                        "any artifact showing upper_bound 2.29 or a 70 mm minimum radius "
+                        "predates the adjudicated grading and should not be cited.",
+                },
+                "note_on_claim_id":
+                    "this runner emits N9_fallback_field_approximation. A scoreboard row "
+                    "named N9_fallback_field_bound covering the same subject exists; agent "
+                    "Popper owns gate ids and should settle on one. Recorded here so the "
+                    "two are linkable rather than silently divergent.",
+            },
+            "bound_provenance": {
+                "pinned": list(N9_PINNED_BOUND["solution_discrepancy_fraction"]),
+                "observed": list(solution) if solution else None,
+                "justified_on": N9_PINNED_BOUND["justified_on"],
+                "justified_by": N9_PINNED_BOUND["justified_by"],
+                "justification": N9_PINNED_BOUND["justification"],
             },
             "figure_eight_sweep": rows,
             "axisymmetric_sweep": axisym,
@@ -818,7 +989,22 @@ def run_n9(*, include_axisymmetric: bool = True) -> Any:
             "magnitude, and the two should not inherit the same bound.",
             "The declared interval is read from scwbd.runtime at run time rather than "
             "copied into this gate, so it tracks the real value instead of a snapshot "
-            "that silently goes stale.",
+            "that silently goes stale. It is read from solution_discrepancy_fraction, "
+            "the term that claims to cover THIS error, not from the composite "
+            "discrepancy_fraction which also carries the geometry prior -- grading "
+            "against the composite would repeat, one level up, the conflation the gate "
+            "was built to catch.",
+            "The envelope reaches down to a 60 mm head radius. That is not an adult "
+            "head; adult radii are ~80-100 mm, where the overestimate is 0.74-0.89. It "
+            "is here because nothing in the runtime's HeadModel enforces an adult "
+            "radius, and a bound has to cover what the code admits rather than what "
+            "biology suggests.",
+            "The threshold is read at run time AND pinned here with a dated "
+            "justification. The run-time read stops the gate going stale against a "
+            "snapshot; the pin stops the bound moving without anyone saying why. Agent "
+            "Popper raised the second problem as the cost of my solution to the first, "
+            "and both properties are obtainable together -- a hardcoded snapshot has "
+            "neither.",
         ],
     )
     return rep.finalize()
