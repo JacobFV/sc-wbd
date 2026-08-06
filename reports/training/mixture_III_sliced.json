@@ -1,0 +1,3209 @@
+{
+  "mixture_weights": {
+    "weights": {
+      "anatomical_prior": 0.01352091780716504,
+      "eegmmidb_real": 0.38684699339382894,
+      "montage_calibration": 0.5099882830937199,
+      "negative_control_shuffled": 0.0,
+      "sim_wholebrain": 0.08964380570528607
+    },
+    "raw_reliability": {
+      "anatomical_prior": 0.04551724137931035,
+      "eegmmidb_real": 1.3022938402773516,
+      "montage_calibration": 1.7168405365126675,
+      "negative_control_shuffled": 0.0,
+      "sim_wholebrain": 0.30177971648383517
+    },
+    "inputs": {
+      "anatomical_prior": {
+        "role": "prior",
+        "n_eff": 1.0,
+        "n_rows": 1.0,
+        "measurement_variance": 0.4,
+        "bias_halfwidth": 0.5,
+        "model_discrepancy": null,
+        "validity_overlap": 1.0
+      },
+      "eegmmidb_real": {
+        "role": "likelihood",
+        "n_eff": 109.0,
+        "n_rows": 1526.0,
+        "measurement_variance": 0.35,
+        "bias_halfwidth": 0.2,
+        "model_discrepancy": 0.0,
+        "validity_overlap": 1.0
+      },
+      "montage_calibration": {
+        "role": "calibration",
+        "n_eff": 64.0,
+        "n_rows": 64.0,
+        "measurement_variance": 0.05,
+        "bias_halfwidth": 0.05,
+        "model_discrepancy": null,
+        "validity_overlap": 1.0
+      },
+      "negative_control_shuffled": {
+        "role": "negative_control",
+        "n_eff": 109.0,
+        "n_rows": 1526.0,
+        "measurement_variance": 0.35,
+        "bias_halfwidth": 0.2,
+        "model_discrepancy": null,
+        "validity_overlap": 0.0
+      },
+      "sim_wholebrain": {
+        "role": "prior",
+        "n_eff": 40000.0,
+        "n_rows": 100000000.0,
+        "measurement_variance": 0.02,
+        "bias_halfwidth": 0.45,
+        "model_discrepancy": 0.55,
+        "validity_overlap": 0.35
+      }
+    },
+    "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
+  },
+  "per_source_contribution": {
+    "anatomical_prior": 0.04000161971535439,
+    "eegmmidb_real": 1.1446013999980724,
+    "sim_wholebrain": -0.1846030197134268
+  },
+  "gradient_permission_audit": {
+    "anatomical_prior": {
+      "n_permitted": 10,
+      "n_blocked": 136,
+      "patterns": [
+        "coupling.gain_*",
+        "coupling.global_scale",
+        "bold.*"
+      ],
+      "frozen": [
+        "eeg.*",
+        "individualizer.*",
+        "local.*"
+      ],
+      "blocked_sample": [
+        "log_dt_scale",
+        "msg_proj.weight",
+        "msg_proj.bias",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias",
+        "local._orig_mod.embed",
+        "local._orig_mod.inp.weight",
+        "local._orig_mod.inp.bias"
+      ]
+    },
+    "eegmmidb_real": {
+      "n_permitted": 62,
+      "n_blocked": 84,
+      "patterns": [
+        "local.*",
+        "residual.*",
+        "coupling.*",
+        "msg_proj.*",
+        "msg_readin.*",
+        "assimilate.*",
+        "context.*",
+        "eeg.*",
+        "log_dt_scale",
+        "individualizer.*"
+      ],
+      "frozen": [
+        "bold.*"
+      ],
+      "blocked_sample": [
+        "readout.0.weight",
+        "readout.0.bias",
+        "readout.2.weight",
+        "readout.2.bias",
+        "bold.log_kappa",
+        "bold.log_gamma",
+        "bold.log_tau",
+        "bold.alpha",
+        "bold.rho",
+        "bold.neural_gain",
+        "bold.log_noise",
+        "behaviour.pool"
+      ]
+    },
+    "montage_calibration": {
+      "n_permitted": 6,
+      "n_blocked": 140,
+      "patterns": [
+        "eeg.log_gain",
+        "eeg.offset",
+        "eeg.log_noise",
+        "eeg.nuisance*"
+      ],
+      "frozen": [
+        "local.*",
+        "coupling.*",
+        "residual.*",
+        "assimilate.*",
+        "readout.*",
+        "bold.*"
+      ],
+      "blocked_sample": [
+        "log_dt_scale",
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_proj.weight",
+        "msg_proj.bias",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias"
+      ]
+    },
+    "negative_control_shuffled": {
+      "n_permitted": 0,
+      "n_blocked": 146,
+      "patterns": [],
+      "frozen": [
+        "*"
+      ],
+      "blocked_sample": [
+        "log_dt_scale",
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_proj.weight",
+        "msg_proj.bias",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias"
+      ]
+    },
+    "sim_wholebrain": {
+      "n_permitted": 128,
+      "n_blocked": 18,
+      "patterns": [
+        "local.*",
+        "residual.*",
+        "coupling.*",
+        "msg_proj.*",
+        "msg_readin.*",
+        "assimilate.*",
+        "context.*",
+        "readout.*",
+        "log_dt_scale",
+        "bold.*",
+        "posterior.*"
+      ],
+      "frozen": [
+        "eeg.*",
+        "coupling.*",
+        "individualizer.*"
+      ],
+      "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "eeg.log_gain",
+        "eeg.offset",
+        "eeg.log_noise",
+        "eeg.nuisance",
+        "eeg.source_proj.0.weight",
+        "eeg.source_proj.0.bias",
+        "eeg.source_proj.2.weight",
+        "eeg.source_proj.2.bias",
+        "eeg.nuisance_drive.weight"
+      ]
+    }
+  },
+  "gradient_conflict": {
+    "steps": 260,
+    "pairs": [
+      {
+        "source_a": "eegmmidb_real",
+        "source_b": "sim_wholebrain",
+        "module": "coupling",
+        "mean_cosine": -0.25896473499861633,
+        "min_cosine": -0.9990750551223755,
+        "frac_negative": 0.6363636363636364,
+        "n": 22
+      },
+      {
+        "source_a": "eegmmidb_real",
+        "source_b": "sim_wholebrain",
+        "module": "assimilate",
+        "mean_cosine": 0.0006698378734290599,
+        "min_cosine": -0.4457165598869324,
+        "frac_negative": 0.44,
+        "n": 50
+      },
+      {
+        "source_a": "eegmmidb_real",
+        "source_b": "sim_wholebrain",
+        "module": "local",
+        "mean_cosine": 0.014892302732914687,
+        "min_cosine": -0.1580009013414383,
+        "frac_negative": 0.46,
+        "n": 50
+      },
+      {
+        "source_a": "eegmmidb_real",
+        "source_b": "sim_wholebrain",
+        "module": "log_dt_scale",
+        "mean_cosine": 0.01630394476465881,
+        "min_cosine": -0.14367017149925232,
+        "frac_negative": 0.38,
+        "n": 50
+      },
+      {
+        "source_a": "eegmmidb_real",
+        "source_b": "sim_wholebrain",
+        "module": "context",
+        "mean_cosine": 0.01641141649335623,
+        "min_cosine": -0.5544236302375793,
+        "frac_negative": 0.44,
+        "n": 50
+      },
+      {
+        "source_a": "eegmmidb_real",
+        "source_b": "sim_wholebrain",
+        "module": "residual",
+        "mean_cosine": 0.026071944441646337,
+        "min_cosine": -0.2978472411632538,
+        "frac_negative": 0.42,
+        "n": 50
+      },
+      {
+        "source_a": "eegmmidb_real",
+        "source_b": "sim_wholebrain",
+        "module": "msg_readin",
+        "mean_cosine": 0.0318716580979526,
+        "min_cosine": -0.4316149950027466,
+        "frac_negative": 0.42,
+        "n": 50
+      },
+      {
+        "source_a": "eegmmidb_real",
+        "source_b": "sim_wholebrain",
+        "module": "msg_proj",
+        "mean_cosine": 0.05429974501952529,
+        "min_cosine": -0.7043465971946716,
+        "frac_negative": 0.44,
+        "n": 50
+      },
+      {
+        "source_a": "anatomical_prior",
+        "source_b": "sim_wholebrain",
+        "module": "bold",
+        "mean_cosine": 0.9999999797344208,
+        "min_cosine": 0.9999998807907104,
+        "frac_negative": 0.0,
+        "n": 50
+      }
+    ]
+  },
+  "conflict_decisions": [
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "adapter",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.2756495013833046,
+      "n": 20,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "partial_pool",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.22372138642129444,
+      "n": 21,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "freeze",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "eegmmidb_real",
+        "sim_wholebrain"
+      ],
+      "module": "coupling",
+      "action": "reject",
+      "yielding_source": "sim_wholebrain",
+      "mean_cosine": -0.25896473499861633,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    }
+  ],
+  "adapters_enabled": [
+    "sim_wholebrain:coupling"
+  ],
+  "skipped_nonfinite_steps": {},
+  "stage": "III_sliced"
+}
