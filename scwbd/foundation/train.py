@@ -656,13 +656,23 @@ class FoundationTrainer:
             if step % stage.ckpt_every == 0:
                 self._save("last.pt", stage.name, step, metrics={"loss": total})
         wall = time.time() - t0
+        # Record completion BEFORE writing the checkpoints, so the artifacts say
+        # the stage is done.  Appending afterwards (as this did) means every
+        # stage-end checkpoint records the stage as *incomplete*, and any resume
+        # replays a stage that had already run to its final step -- with a fresh
+        # OneCycle schedule, silently re-training it.  Observed: Stage II ran
+        # 700/700, wrote stage_II_interface.pt, and the resume still reported
+        # ``completed stages: ['I_regional']``.
+        #
+        # The mid-stage saves inside the loop above correctly exclude the current
+        # stage: at that point it genuinely is incomplete.
+        self.completed_stages.append(stage.name)
         self._save("last.pt", stage.name, step, metrics={"loss": best})
         self._save(f"stage_{stage.name}.pt", stage.name, step, metrics={"loss": best})
         rep = mixture.report()
         rep["stage"] = stage.name
         self._mixture_reports.append(rep)
         (self.report_dir / f"mixture_{stage.name}.json").write_text(json.dumps(rep, indent=2, default=float))
-        self.completed_stages.append(stage.name)
         return {
             "stage": stage.name,
             "steps": step,
