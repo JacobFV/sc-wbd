@@ -219,3 +219,80 @@ def test_controls_survive_a_roundtrip(tmp_path, controls):
         q = StructuralPrior.load(p)
         assert q.control_kind == name
         np.testing.assert_allclose(q.weights, c.weights)
+
+
+# ---------------------------------------------------------------------------
+# the module-level interface scwbd.bench.gates.run_g2 probes for
+# ---------------------------------------------------------------------------
+#: Must match ``conftest.SMALL_ATLAS``; these tests call the module-level
+#: helpers by name rather than through the ``sc_small`` fixture.
+SMALL_ATLAS = "Schaefer100x7"
+
+
+def test_bench_adapter_can_find_the_controls():
+    """G2 reported COULD_NOT_RUN because this symbol did not exist.
+
+    ``StructuralPrior.controls`` is a method returning priors; the gate probes
+    for ``scwbd.anatomy.controls.graph_controls`` returning plain adjacencies.
+    The controls being implemented is not the same as the gate being able to
+    reach them, and that difference kept G2 and Appendix-D row D07 blocked.
+    """
+    from scwbd.bench import adapters
+
+    dep = adapters.anatomy_controls()
+    assert dep.available, dep.blocker
+
+
+def test_graph_controls_supplies_every_key_g2_requires():
+    from scwbd.anatomy.controls import graph_controls
+
+    c = graph_controls(SMALL_ATLAS, seed=0)
+    for k in ("dense", "randomized", "distance_matched"):
+        assert k in c, f"run_g2 requires {k!r}"
+        assert isinstance(c[k], np.ndarray)
+
+
+def test_graph_controls_match_the_adjacency_they_null(sc_small):
+    """Adjacency and nulls must describe the same nodes in the same order."""
+    from scwbd.anatomy.controls import anatomy_adjacency, graph_controls
+
+    a = anatomy_adjacency(SMALL_ATLAS)
+    assert a.shape == (sc_small.n_parcels, sc_small.n_parcels)
+    for k, v in graph_controls(SMALL_ATLAS, seed=0).items():
+        assert v.shape == a.shape, k
+        assert np.allclose(v, v.T), f"{k} is not symmetric"
+        assert np.allclose(np.diag(v), 0.0), f"{k} has self-loops"
+
+
+def test_graph_controls_are_deterministic_given_a_seed():
+    from scwbd.anatomy.controls import graph_controls
+
+    a = graph_controls(SMALL_ATLAS, seed=7)
+    b = graph_controls(SMALL_ATLAS, seed=7)
+    c = graph_controls(SMALL_ATLAS, seed=8)
+    for k in a:
+        assert np.array_equal(a[k], b[k]), f"{k} not reproducible at a fixed seed"
+    assert not np.array_equal(a["randomized"], c["randomized"]), "seed is ignored"
+
+
+def test_graph_controls_reject_an_unknown_control():
+    from scwbd.anatomy.controls import graph_controls
+
+    with pytest.raises(ValueError, match="unknown control"):
+        graph_controls(SMALL_ATLAS, names=("dense", "not_a_control"))
+
+
+def test_control_report_shows_what_each_null_preserved():
+    """The gate's verdict is uninterpretable without these numbers."""
+    from scwbd.anatomy.controls import control_report
+
+    r = control_report(SMALL_ATLAS, seed=0)
+    assert r["randomized"]["degree_sequence_preserved"]
+    assert r["distance_matched"]["degree_sequence_preserved"]
+    # distance_matched keeps the decay; randomized does not
+    emp = r["empirical"]["r_weight_distance"]
+    assert abs(r["distance_matched"]["r_weight_distance"] - emp) < abs(
+        r["randomized"]["r_weight_distance"] - emp
+    ), "distance_matched should be the distance-faithful null, not randomized"
+    # and randomized must actually destroy the topology
+    assert abs(r["randomized"]["r_weight_empirical"]) < 0.4

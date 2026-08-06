@@ -398,10 +398,41 @@ retains *r* = 0.911 with the empirical weights and is by far the strictest of th
 five. `graph_only`'s *r*(w, distance) is undefined because every present edge
 carries the same weight; that is the control working, not a failure.
 
-`tests/anatomy/test_controls.py` holds **24 tests** over these properties —
+`tests/anatomy/test_controls.py` holds **30 tests** over these properties —
 degree preservation, weight-multiset preservation, strength rank, edge-length
 distribution, determinism under seed, evidence downgrade, and save/load
-round-trip. All pass. Gate **G2 and Appendix-D row D07 are unblocked**.
+round-trip. All pass.
+
+#### Why G2 was blocked, and what actually unblocked it
+
+The controls were implemented and tested the whole time. What was missing was
+the *symbol the gate looks for*. `scwbd.bench.adapters.anatomy_controls()`
+probes `scwbd.anatomy.controls.graph_controls`; the controls existed only as
+`StructuralPrior.controls()`, a **method returning priors**, while `run_g2`
+wants a module-level function returning `{name: adjacency array}`. The probe
+failed, so G2 and Appendix-D row D07 reported `COULD_NOT_RUN` against a
+capability that was already present.
+
+`scwbd/anatomy/controls.py` supplies that interface:
+
+```python
+from scwbd.anatomy import anatomy_adjacency, graph_controls, control_report
+
+run_g2(anatomy=anatomy_adjacency("Schaefer400x7"),
+       controls=graph_controls("Schaefer400x7", seed=0), ...)
+```
+
+`anatomy_adjacency` and `graph_controls` are built from the *same* loaded prior,
+so the adjacency and its nulls always share a parcellation and node order —
+mixing an adjacency from one atlas with controls from another is the failure
+this pairing exists to prevent. `control_report()` returns the table above as
+JSON for the gate manifest, because G2's verdict is not interpretable unless the
+reader can check that `distance_matched` really did keep the distance decay.
+
+Note that `run_g2` **probes but does not auto-load**: the caller must pass
+`anatomy=` and `controls=` explicitly. With them supplied, both agent-C inputs
+resolve; G2 now waits only on `model_for_graph` (agent E / I) and the train/test
+datasets. **Both agent-C blockers on G2 and D07 are cleared.**
 
 ---
 
