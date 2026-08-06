@@ -46,11 +46,13 @@ data:
   window: 48                  # model steps forecast (0.384 s)
   context: 24                 # assimilation window (0.192 s)
   fs_hz: 125.0
-  # 128, not 192: at 192 the run allocated 38.93 GB and hit the 40 GB device cap
-  # mid-step (2026-08-06). Measured ~0.203 GB/sample, so 128 projects to ~26 GB
-  # and leaves headroom for fragmentation. The cap is the budget; the batch is
-  # the variable that gives.
-  batch: 128
+  # 64. Measured, after two failures (2026-08-06):
+  #   batch 192 -> hit the 40 GB device cap mid-step
+  #   batch 128 -> 35.27 GB reserved at step 1, hit the cap shortly after
+  # The working set is largely batch-INDEPENDENT (the 33% cut from 192 barely
+  # moved it), so the 0.203 GB/sample linear model I first assumed was wrong.
+  # 64 is the next honest bisection, not a derived number.
+  batch: 64
   # 4, not 10: each persistent worker holds its own copy of the batch plus its
   # HDF5 read buffers in the single 121 GB unified pool the GPU allocates from.
   # Ten of them plus pinning is what put this run in the 2026-08-05 OOM.
@@ -73,7 +75,13 @@ train:
   # held 97.9 GB and took the machine to 8 GB free. See
   # reports/training/platform_memory_limits.md.
   cuda_reserve_gb: 40.0
-  max_wall_seconds: 18000     # 5 h
+  # 12 h. Measured 4.3-4.7 s/step at batch 64 on a quiet machine, so the
+  # designed 8,700-step curriculum needs ~10.5-11.3 h. At the old 5 h cap the
+  # run stopped around step 3,860: Stages I-III only, with Stage IV assembly
+  # and Stage V individualization never executing. A checkpoint without Stage V
+  # cannot be tested against G5 at all, so the shorter run is not a cheaper
+  # version of this artifact -- it is a different one.
+  max_wall_seconds: 43200     # 12 h
   resume: true
   stages:
     - name: I_regional

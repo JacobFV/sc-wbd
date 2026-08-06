@@ -83,20 +83,100 @@ the adversarial test caught before the fix shipped.
 5. `nvidia-smi --query-gpu=memory.used` returns `[N/A]` on this platform.
    `--query-compute-apps` works. Use it.
 
+## Sizing the batch: what the working set actually costs
+
+Measured with `gpu_reserved_gb` sampled at step 1 and again at plateau:
+
+| batch | step 1 | plateau | verdict |
+|---|---|---|---|
+| 64 | 17.92 GB | **33.3 GB** (flat at steps 20 and 40) | fits, 6.7 GB headroom |
+| 128 | 35.27 GB | hit the 40 GB cap | does not fit |
+| 192 | not logged | 97.9 GB (the uncapped run) | does not fit |
+
+≈0.27 GB/sample at step 1, growing ≈1.86× to plateau. The model reproduces the
+uncapped run's 97.9 GB at batch 192, which is why it is now trusted. Batch 128
+would need ≈66 GB and batch 192 ≈98 GB, so **64 is the largest batch that fits a
+40 GB budget.**
+
+### The measurement error that cost two wrong estimates
+
+The first two batch estimates were wrong, and both came from reading
+`allocated by PyTorch` out of the OOM message. **At OOM that number always sits
+at the ceiling, whatever the batch was** — 38.93 GB at batch 192, 39.70 GB at
+batch 128, both against a 40 GB cap. It looks like a measurement of the working
+set and is actually a measurement of the cap.
+
+From it I inferred first that memory was batch-linear at 0.203 GB/sample, then —
+when the 33% cut from 192 to 128 barely moved the number — that the working set
+was batch-*independent*. Both conclusions were drawn from a statistic that could
+not have distinguished them. The working set is in fact close to batch-linear.
+
+The fix is to log `gpu_reserved_gb` at step 1, before the allocator has grown to
+fill whatever room it is given.
+
+**An instrument that always reads the same value cannot discriminate between
+hypotheses.** Reasoning confidently from one is worse than having no instrument,
+because the output has the shape of evidence.
+
+## Throughput is latency-bound, not throughput-bound
+
+Per-step wall time is **independent of batch size**: 4.6 s/step at batch 192 and
+4.3-4.7 s/step at batch 64, measured on a quiet machine across steps 1→20 and
+20→40.
+
+This is an architectural property, not a tuning artifact. The forward pass
+integrates 72 sequential model steps (48 forecast + 24 assimilation context)
+through delayed long-range coupling. Each step depends on the last, so the
+critical path is a chain of 72 kernel launches whose length no amount of
+parallel work shortens. The GPU is latency-bound on that chain and has capacity
+to spare *within* each step.
+
+The consequence for budgeting is direct and slightly counterintuitive:
+
+- **the memory budget buys data per step, not wall clock.** Cutting batch
+  192 → 64 cost no wall-clock time per step and 3× the data: `traj_s_per_s`
+  fell 13.0 → 4.3 for the same 4.6 s.
+- so a run capped at 40 GB is not slower than one capped at 98 GB; it is
+  *less informative per hour*.
+
+This is what makes **gradient checkpointing** the right next lever rather than a
+generic optimisation. It trades recomputation — spare capacity inside each step,
+which is exactly what is idle — for memory per sample, which is the binding
+constraint on batch. It should buy a larger batch inside the same 40 GB, and
+therefore more data per hour at unchanged wall clock. Approved as planned work
+for the next run, to be implemented and tested on its own rather than in front
+of a 10 h training run.
+
 ## The general lesson
 
-This is the second defect in this project where **a green-looking guard was
-structurally incapable of firing**, and both had the same tell: an asymmetry
-between where the check ran and where the work happened.
+Three defects in this project have now had **the same shape: an instrument that
+looked informative and could not have been.** They are worth reading together,
+because the third was found by someone who had already been burned by the first
+two and still walked into it.
 
-- `torch.compile` renamed parameters to `local._orig_mod.*`, so exact-name
-  gradient permissions silently matched nothing on CUDA while prefix globs kept
-  matching — and every CPU test passed. (See
-  `scwbd/foundation/util.py:logical_param_name` and
-  `tests/foundation/test_compiler_binding.py`.)
-- `MemoryMax` measured host pages while the allocation happened on the device.
+| # | instrument | what it appeared to report | why it could not |
+|---|---|---|---|
+| 1 | `FOUNDATION_BINDING` glob match | which tensors a source may train | `torch.compile` renamed them to `local._orig_mod.*`; exact names matched nothing on CUDA, prefix globs still matched, every CPU test passed |
+| 2 | cgroup `memory.current` vs `MemoryMax` | the job's memory footprint | it charges host pages; the allocation was on the device |
+| 3 | `allocated by PyTorch` in an OOM message | the working set at that batch | at OOM it always equals the cap, for every batch |
 
-In both cases the instrument reported control it was not exercising. When a
-safety check and the thing it guards live in different namespaces — name space,
-address space, accounting space — assume it is decorative until you have made
-it fail on purpose.
+In each case the reading was **stable, plausible, and constant with respect to
+the thing being asked about.** That is the tell. A permission set that
+half-applies looks enforced; a cgroup reporting 8 GB looks safe; an OOM
+reporting 39 GB looks like a working-set measurement.
+
+Two habits follow, and they are cheap:
+
+1. **Make the guard fail on purpose before trusting it.** Every check in
+   `tests/foundation/test_compiler_binding.py` is verified to fire by breaking
+   a binding deliberately. The CUDA cap was verified by demanding 16 GB against
+   a 4 GB ceiling — which caught a real bug in the fix (`torch.device("cuda")`
+   carries no index and the call rejects it) *before* it shipped.
+2. **Ask what reading would falsify the hypothesis.** If the instrument returns
+   the same value under both branches — CPU and CUDA, capped and uncapped,
+   batch 64 and batch 192 — it is not evidence, and confident reasoning from it
+   is worse than admitting ignorance, because the output has the shape of data.
+
+When a check and the thing it guards live in different spaces — name space,
+address space, accounting space — assume it is decorative until it has failed
+for you on demand.
