@@ -41,11 +41,15 @@
 #       Halving them would halve the waste and shrink the hippocampal code; that
 #       trade is a live question, not a settled one. See N-1's "measured cost".
 #
-# Capacity is NOT matched to the base file: 2,376,452 parameters here against
-# 1,675,373 there (1.42x), measured by SCWBD.parameter_report(). §11.4 wants an
+# Capacity is NOT matched to the base file: 2,520,811 parameters here against
+# 1,688,130 there (1.49x), measured by SCWBD.parameter_report(). §11.4 wants an
 # equal-capacity comparison, so whoever runs the pair must raise `hidden` on the
 # control arm until `scwbd.dynamics.assert_equal_capacity` passes. Do not report
 # a comparison made at these two numbers.
+#
+# (Both figures re-measured after X_i^uncertainty landed; it adds an uncertainty
+# propagator and an observation interface to BOTH arms, so the ratio moved from
+# 1.42x to 1.49x rather than one arm growing alone.)
 
 base: scwbd-001.yaml
 

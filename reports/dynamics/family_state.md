@@ -270,9 +270,13 @@ config that produced the weights.
 `SCWBD.parameter_report()` on `configs/run2/scwbd-001.yaml`:
 
 ```
-control   (family_state=false)   1 675 373
-treatment (family_state=true)    2 376 452     = 1.418x
+control   (family_state=false)   1 688 130
+treatment (family_state=true)    2 520 811     = 1.493x
 ```
+
+Re-measured after the `X_i^uncertainty` work of §9 added propagators and an
+observation interface to **both** arms; the earlier figures in this report
+(1 675 373 / 2 376 452, 1.418×) predate it and are superseded.
 
 §11.4 asks for an **equal-capacity** comparison. These are not equal. Most of
 the gap is `family_residual` (364 772 vs 103 421 — four distinct family
