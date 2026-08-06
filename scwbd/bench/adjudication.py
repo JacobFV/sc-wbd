@@ -1191,3 +1191,32 @@ SBC_FINAL_BAR = SBCVerdictBar()
 #:   data. A posterior that cannot invert its own simulator has not earned an
 #:   inference claim about brains.
 STAGE_III_BEARS_ON = "ARCHITECTURE.md:231 amortised-posterior capability, NOT G5"
+
+
+#: HARNESS INSPECTION PLAN for the final SBC. Agent Turing handed over an attack
+#: list on their own harness (reports/gates/sbc_handover_to_popper.md, six
+#: items) and named where they would start if trying to break their own numbers.
+#: Bench will not trust the harness; these are the checks, fixed in advance:
+#:
+#:   1. SAMPLING REPRESENTATIVENESS. Already bit once: the first 512 of 1,888
+#:      val windows at shuffle=False contained ZERO samples from two of five
+#:      backends. Bench will assert backend coverage before reading any rank.
+#:   2. TIES IN sbc_ranks (strict `<`). Deflates ranks when posterior samples
+#:      pile at a prior bound -- which is exactly what an over-confident
+#:      posterior does, so the bug and the finding have the SAME signature.
+#:      Bench will re-rank with a tie-aware rule and confirm the verdict is
+#:      unchanged. Turing named this as where they would start; so does bench.
+#:   3. SILENT dim TRUNCATION via min(). Can compare the wrong columns while
+#:      labelling them correctly -- the register's silent-adapter family exactly.
+#:      Bench will assert shape equality and refuse rather than truncate.
+#:   4-6. Val-split reconstruction, normalisation/numerics drift, and the
+#:      declared non-bug, checked in that order.
+#:
+#: Items 2 and 3 are the ones that could manufacture the escalated finding, and
+#: neither has been ruled out yet. That is stated here, before the Stage V
+#: checkpoint exists, so it cannot look like a conclusion reached afterwards.
+SBC_HARNESS_ATTACK_LIST = (
+    "backend coverage", "tie-aware ranks (strict < deflates)",
+    "no silent dim truncation", "val split provenance",
+    "normalisation drift", "declared non-bug",
+)

@@ -282,19 +282,51 @@ remedies. Conflating them would itself be a decorative claim.**
 ### 3.2b Not demonstrated at the Stage III checkpoint — the amortised posterior
 `ARCHITECTURE.md:231` describes the amortised posterior as *"the 'characterize a
 general human brain' capability."* **At the Stage III checkpoint that capability
-is not demonstrated.** Agent Turing's SBC diagnostic (512 held-out simulated
-datasets, 256 samples) reports per-parameter R² from **−0.447** to **0.300** —
-two parameters *worse than predicting the prior mean* — on the **easy** case:
-the same simulator that generated the training corpus, no model mismatch, no
-real data.
+is not demonstrated.** Agent Turing's SBC diagnostic reports per-parameter R²
+from **−0.465 to 0.209**, on the **easy** case: the same simulator that generated
+the training corpus, no model mismatch, no real data.
+
+**Numbers are Addendum B** (`escalation_stage3_posterior_recovery.md` @ `b6a60b5`,
+verified by bench at lines 217–222), over all **1,888** validation windows — not
+the original 512-window table. Agent Turing found a backend-biased sample in
+their own harness *after* escalating from it: the first 512 windows with
+`shuffle=False` contained **zero** samples from two of five backends. The bias
+ran **both ways** — it flattered `ei_global` (0.300 → 0.209) and penalised
+`log_G` (−0.089 → −0.006) — which is why correcting it was not a choice about
+outcome.
+
+| parameter | R² (1,888) | z_sd | edge mass | class |
+|---|---:|---:|---:|---|
+| `log_sigma` | **−0.465** | 1.27 | 0.217 | worse than the prior mean |
+| `log_G` | −0.006 | 1.02 | 0.127 | no better than the prior mean |
+| `ei_gradient` | 0.036 | **1.40** | **0.278** | **confidently wrong** |
+| `log_velocity` | 0.052 | 1.01 | 0.152 | honestly uninformative |
+| `drive` | 0.123 | 0.95 | 0.064 | honestly uninformative |
+| `ei_global` | 0.209 | 1.03 | 0.119 | weak |
+
+> **Correction to an earlier revision of this document.** I wrote *"two
+> parameters worse than predicting the prior mean."* **It is one.** `log_sigma`
+> at −0.465 stands; `log_G` at −0.006 is indistinguishable from zero, and the
+> honest statement is *no better than* the prior mean, not *worse than*. The
+> error was mine — I published the pre-correction table — and it ran in the
+> direction that made the finding sound worse than it is.
 
 The `z_sd` split is the part that matters, because the two failures need
-different remedies and only one can mislead a reader:
+different remedies and only one can mislead a reader: four parameters sit in the
+honest band (`z_sd` ≈ 1 — they say nothing, and say so), while **`ei_gradient`
+(1.40, edge mass 0.278) is confidently wrong.** `min KS p` moving 1.3e-57 →
+1.31e-201 is **power** (1,888 vs 512), not degradation.
 
-| class | parameters | reads |
-|---|---|---|
-| honestly uninformative (`z_sd` ≈ 1) | `log_G`, `log_velocity`, `drive`, `ei_global` | says nothing, and says so |
-| **confidently wrong** | `ei_gradient` (1.48), `log_sigma` (1.32) | says something, wrongly, with confidence |
+**Not mitigated by the anatomy prior defect.** A separate `gradient` defect
+(agent Ptolemy) zeroes the gradient on the `_from_agent_c` path, which would make
+`ei_gradient` unidentifiable by construction. **That path was not used**: this
+run set `anatomy_force_fallback: true` and the corpus index records
+`n_regions: 454`, the synthetic fallback, which builds a genuine z-scored
+gradient. Agent Turing measured backend sensitivity to θ₃ as **0.000000** under
+the defect and **0.596–12.588** under the fallback actually used. **Zero of six
+explained.** *(Bench verified Addendum B's table from the file; Addendum A's
+sensitivity measurement is accepted on agent Turing's stated evidence and was not
+independently re-run.)*
 
 **This bears on `ARCHITECTURE.md:231`, not on G5.** G5 is scored by incremental
 calibrated log score against anatomy-only / population / session-adapted
