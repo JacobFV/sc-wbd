@@ -40,10 +40,37 @@ from torch import Tensor, nn
 
 from .anatomy import EVIDENCE_CLASSES, AnatomyPrior
 from .config import ModelConfig
+from .families import FamilyStateLayout, SpanViolation, derive_families, shared_components
 from .heads import BOLDHead, BehaviourHead, EEGHead, LeadField, build_lead_field
 from .state import ComponentSpec, StateLayout, default_layout, scalar_layout
 
-__all__ = ["SCWBD", "TypedDelayCoupling", "RegionalOperator", "LearnedResidual", "R05Violation", "RolloutResult"]
+__all__ = [
+    "SCWBD",
+    "TypedDelayCoupling",
+    "RegionalOperator",
+    "LearnedResidual",
+    "R05Violation",
+    "RolloutResult",
+    "build_family_layout",
+]
+
+
+def build_family_layout(cfg: ModelConfig, anat: AnatomyPrior) -> FamilyStateLayout:
+    """Derive the family partition and its padded layout from the prior + config."""
+    part = derive_families(
+        anat,
+        cores=dict(cfg.family_cores),
+        default_core=cfg.local_core,
+        n_spectral_modes=cfg.n_spectral_modes,
+        n_adaptation=cfg.n_adaptation,
+        n_uncertainty=cfg.n_uncertainty,
+        d_key=cfg.d_key,
+        d_value=cfg.d_value,
+        d_grid=cfg.d_grid,
+        d_context=cfg.d_context,
+        d_prediction=cfg.d_prediction,
+    )
+    return FamilyStateLayout(part, device=anat.weights.device)
 
 
 class R05Violation(RuntimeError):
@@ -399,7 +426,12 @@ class SCWBD(nn.Module):
         self.anat_summary = anat.summary()
         self.n_regions = anat.n_regions
         self.theta_dim = theta_dim
-        self.layout = self.build_layout(cfg)
+        #: heterogeneous region-indexed state (body.tex §2.1) when enabled;
+        #: ``None`` means this instance is the §11.4 equal-capacity control.
+        self.family_layout: FamilyStateLayout | None = (
+            build_family_layout(cfg, anat) if cfg.family_state else None
+        )
+        self.layout = self.build_layout(cfg, self.family_layout)
         L = self.layout
 
         self.coupling = TypedDelayCoupling(
@@ -421,15 +453,67 @@ class SCWBD(nn.Module):
             nn.Linear(theta_dim + 3 + n_context_extra, cfg.context_dim), nn.GELU(), nn.Linear(cfg.context_dim, cfg.context_dim)
         )
         self.mechanistic = None
-        if cfg.local_core != "learned":
-            self.mechanistic = MechanisticCore(cfg.local_core, L, self.n_regions)
-        self.local = RegionalOperator(L, self.n_regions, cfg, in_extra=long_dim)
-        self.residual = LearnedResidual(L, self.n_regions, cfg, in_extra=long_dim)
-        self.assimilate = Assimilator(L, self.n_regions, cfg)
+        self.family_local = None
+        self.family_residual = None
+        self.family_readout = None
+        self.local = None
+        self.residual = None
+        self.readout = None
+        if self.family_layout is not None:
+            from .family_ops import FamilyLocalOperator, FamilyReadout, FamilyResidual
 
-        self.readout = nn.Sequential(nn.Linear(self.export_dim, cfg.hidden // 2), nn.GELU(), nn.Linear(cfg.hidden // 2, 2))
+            self.family_local = FamilyLocalOperator(
+                self.family_layout, cfg, in_extra=long_dim, message_dim=cfg.message_dim
+            )
+            self.family_residual = FamilyResidual(self.family_layout, cfg, in_extra=long_dim)
+            self.family_readout = FamilyReadout(self.family_layout, cfg)
+        else:
+            if cfg.local_core != "learned":
+                self.mechanistic = MechanisticCore(cfg.local_core, L, self.n_regions)
+            self.local = RegionalOperator(L, self.n_regions, cfg, in_extra=long_dim)
+            self.residual = LearnedResidual(L, self.n_regions, cfg, in_extra=long_dim)
+            self.readout = nn.Sequential(
+                nn.Linear(self.export_dim, cfg.hidden // 2), nn.GELU(), nn.Linear(cfg.hidden // 2, 2)
+            )
+        self.assimilate = Assimilator(L, self.n_regions, cfg)
         self.register_buffer("tau_prior", anat.timescale_prior.float().clone())
         self.log_dt_scale = nn.Parameter(torch.zeros(self.n_regions))
+
+        # -- the typed observation boundary (body.tex §2.1 X_i^uncertainty) ---
+        # Built for BOTH §11.4 arms. Giving the treatment arm a state-dependent
+        # predictive variance and leaving the control arm on heads.py's broadcast
+        # `log_noise` parameter would make A1 measure the variance path instead
+        # of the structured state -- the same class of error as an interface that
+        # silently narrows one arm. `None` restores run-1 behaviour and is kept
+        # only so the repair itself can be ablated.
+        self.observation = None
+        self.uncertainty_propagator = None
+        if cfg.state_dependent_variance:
+            from .uncertainty import (
+                UNCERTAINTY_COMPONENT,
+                FamilyObservationInterface,
+                FlatObservationInterface,
+                UncertaintyPropagator,
+            )
+
+            if self.family_layout is not None:
+                self.observation = FamilyObservationInterface(self.family_layout, cfg)
+            elif UNCERTAINTY_COMPONENT not in L:
+                # `scalar_state_ablation` is one scalar per region by definition
+                # and has no uncertainty component to source a variance from.
+                # That arm keeps heads.py's broadcast parameter, and the manifest
+                # says so rather than the model pretending otherwise.
+                self.observation = None
+            else:
+                self.observation = FlatObservationInterface(L, cfg)  # noqa: F821 - see guard above
+                self.uncertainty_propagator = UncertaintyPropagator(
+                    L.dim,
+                    L.spec(UNCERTAINTY_COMPONENT).dim,
+                    in_extra=long_dim,
+                    hidden=max(cfg.hidden // 4, 32),
+                    dt=cfg.dt_model,
+                )
+                self._unc_slice = L.slice(UNCERTAINTY_COMPONENT)
 
         lf = lead_field if lead_field is not None else build_lead_field(anat, device=anat.weights.device)
         self.eeg = EEGHead(L, lf)
@@ -439,7 +523,42 @@ class SCWBD(nn.Module):
 
     # -- construction -----------------------------------------------------
     @staticmethod
-    def build_layout(cfg: ModelConfig) -> StateLayout:
+    def build_layout(cfg: ModelConfig, family_layout: FamilyStateLayout | None = None) -> StateLayout:
+        """The layout the *observation heads* address the state through.
+
+        With families on this is the **shared interface**: the components every
+        family declares at identical offsets (``rate_e``, ``rate_i``, ``hemo``,
+        ``uncertainty``) plus one opaque ``private`` block covering the rest of
+        the padded width.  ``private`` is not a component — it is the part of the
+        state that is only reachable through ``SCWBD.family_layout`` by
+        ``(family, component)`` name.  A head that read it directly would be
+        reading whatever the family at that region happens to keep there, which
+        is exactly the out-of-span read narrowing N-1 forbids.
+        """
+        if family_layout is not None:
+            shared = shared_components(n_uncertainty=cfg.n_uncertainty)
+            rest = family_layout.dim - sum(c.dim for c in shared)
+            if rest < 0:
+                raise SpanViolation(
+                    f"padded family dim {family_layout.dim} is smaller than the shared interface "
+                    f"prefix ({sum(c.dim for c in shared)})"
+                )
+            extra = (
+                (
+                    ComponentSpec(
+                        "private",
+                        rest,
+                        "family_native",
+                        "fast",
+                        False,
+                        False,
+                        "family-private state + pad; address via SCWBD.family_layout, never directly",
+                    ),
+                )
+                if rest
+                else ()
+            )
+            return StateLayout(shared + extra)
         if cfg.scalar_state_ablation:
             return scalar_layout()
         lay = default_layout(
@@ -476,17 +595,41 @@ class SCWBD(nn.Module):
         return self.context(z)
 
     def set_mechanistic_theta(self, theta: Tensor, anat: AnatomyPrior) -> None:
-        """Bind a batched ``ParamPack`` for a mechanistic ``local_core``."""
+        """Bind batched ``ParamPack``s for every mechanistic core.
+
+        With families on this binds **one pack per mechanistic family**, sliced
+        to that family's parcels, so each engineered backend sees the anatomical
+        conditioning of its own regions and not a brain-wide average.  A family
+        whose backend has no declared theta mapping raises
+        (``simulate.ParameterMappingError``) rather than silently running on
+        backend defaults.
+        """
+        from .simulate import _regional_theta
+
+        B = theta.shape[0]
+
+        def _pack_for(backend, backend_name: str, idx: Tensor | None) -> Any:
+            n = self.n_regions if idx is None else int(idx.numel())
+            pack = backend.make_theta(B, n, device=theta.device)
+            for k, v in _regional_theta(theta, anat, backend_name, defaults=dict(backend.defaults)).items():
+                v = v.float()
+                if v.ndim == 2 and v.shape[0] == 1 and B > 1:
+                    v = v.expand(B, -1)
+                pack.set(k, v if idx is None else v.index_select(-1, idx))
+            return pack
+
+        if self.family_local is not None:
+            packs: dict[str, Any] = {}
+            for name, core in self.family_local.mech.items():
+                idx = self.family_layout.index(name).to(theta.device)
+                packs[name] = _pack_for(core.backend, core.backend_name, idx)
+            self._family_packs = packs
+            self._mech_pack = None
+            return
         if self.mechanistic is None:
             self._mech_pack = None
             return
-        from .simulate import _regional_theta
-
-        b = self.mechanistic.backend
-        pack = b.make_theta(theta.shape[0], self.n_regions, device=theta.device)
-        for k, v in _regional_theta(theta, anat, self.mechanistic.backend_name, defaults=dict(b.defaults)).items():
-            pack.set(k, v.float())
-        self._mech_pack = pack
+        self._mech_pack = _pack_for(self.mechanistic.backend, self.mechanistic.backend_name, None)
 
     # -- one step ---------------------------------------------------------
     def step(
@@ -505,18 +648,41 @@ class SCWBD(nn.Module):
         Returns ``(x_next, message, mech_energy, residual_energy)``.
         """
         cpl = self.coupling(history, lags, weights=weights)  # (B,N,C)
-        long_feat = self.msg_readin(cpl)
-        if self.mechanistic is not None and mech_pack is not None:
-            f_mech = self.mechanistic(x, cpl, mech_pack) * self.cfg.dt_model
+        if self.family_local is not None:
+            # F_local dispatched per family; F_long enters through each family's
+            # declared in-port, not as a raw slice of a shared feature vector.
+            f_mech = self.family_local(x, cpl, film, packs=getattr(self, "_family_packs", None))
+            long_feat = self.msg_readin(cpl)
+            f_res = self.family_residual(x, long_feat)
         else:
-            dt_scale = torch.sigmoid(self.log_dt_scale).to(x.dtype).reshape(1, -1, 1) * 2.0
-            f_mech = self.local(x, long_feat, film) * dt_scale
-        f_res = self.residual(x, long_feat)
+            long_feat = self.msg_readin(cpl)
+            if self.mechanistic is not None and mech_pack is not None:
+                f_mech = self.mechanistic(x, cpl, mech_pack) * self.cfg.dt_model
+            else:
+                dt_scale = torch.sigmoid(self.log_dt_scale).to(x.dtype).reshape(1, -1, 1) * 2.0
+                f_mech = self.local(x, long_feat, film) * dt_scale
+            f_res = self.residual(x, long_feat)
+            if self.uncertainty_propagator is not None:
+                # X_i^uncertainty gets ONE law in the control arm too, replacing
+                # whatever the generic operator happened to write there. Both
+                # §11.4 arms must share the variance path or A1 measures it
+                # instead of the structured state.
+                sl = self._unc_slice
+                a, b = sl.start, sl.stop
+                du = self.uncertainty_propagator(x, x[..., sl], long_feat).to(x.dtype)
+                f_mech = torch.cat([f_mech[..., :a], du, f_mech[..., b:]], dim=-1)
+                f_res = torch.cat(
+                    [f_res[..., :a], torch.zeros_like(f_res[..., a:b]), f_res[..., b:]], dim=-1
+                )
         dx = f_mech + f_res
         if u is not None:
             dx = dx + u
         x_next = torch.nan_to_num(x + dx, nan=0.0, posinf=0.0, neginf=0.0).clamp(-30.0, 30.0)
-        msg = self.msg_proj(torch.cat([self.layout.get(x_next, n) for n in self._exported], dim=-1))
+        msg = (
+            self.family_local.ports.message(x_next)
+            if self.family_local is not None
+            else self.msg_proj(torch.cat([self.layout.get(x_next, n) for n in self._exported], dim=-1))
+        )
         return x_next, msg, f_mech.detach().float().pow(2).mean(), f_res.detach().float().pow(2).mean()
 
     # -- rollout ----------------------------------------------------------
@@ -543,14 +709,28 @@ class SCWBD(nn.Module):
         dev = theta.device
         ctx = self.make_context(theta, context_extra)
         x = self.assimilate(y_context, context_mask) if x0 is None else x0
+        if self.family_layout is not None:
+            # Construction-time zeroing of the pad. This is the ONE sanctioned
+            # call to zero_pad: the assimilation encoder is a dense (B,N,D) net
+            # and has no family structure, so its output must be brought into
+            # the layout before the step loop. Doing this inside the loop would
+            # make assert_clean incapable of firing.
+            x = self.family_layout.zero_pad(x)
+            self.family_layout.assert_clean(x, where="after assimilation")
         lags = self.coupling.lags_for_velocity(theta[:, 1].exp())
-        msg0 = self.msg_proj(torch.cat([self.layout.get(x, n) for n in self._exported], dim=-1))
+        msg0 = (
+            self.family_local.ports.message(x)
+            if self.family_local is not None
+            else self.msg_proj(torch.cat([self.layout.get(x, n) for n in self._exported], dim=-1))
+        )
         # steady pre-window (the assimilated state held constant), not zeros:
         # zero-padding the delay line is an imputation, and imputation is forbidden.
         history = self.coupling.new_history(B, dev, dtype=x.dtype, fill=msg0)
 
         weights = self.coupling.effective_weights(x.dtype)
-        film = self.local.prepare(ctx, x.dtype)
+        film = (
+            self.family_local.prepare(ctx, x.dtype) if self.family_local is not None else self.local.prepare(ctx, x.dtype)
+        )
         mech_pack = getattr(self, "_mech_pack", None)
         states, mech_e, res_e = [], [], []
         hemo = self.bold.initial(B, self.n_regions, dev) if with_hemo else None
@@ -568,13 +748,22 @@ class SCWBD(nn.Module):
                 hemo = self.bold.step(hemo, drive.float())
                 hemos.append(hemo)
         X = torch.stack(states, dim=1)  # (B,T,N,D)
-        feat = torch.cat([self.layout.get(X, n) for n in self._exported], dim=-1)
-        out = self.readout(feat)
+        if self.family_layout is not None:
+            # The guard that justifies N-1. Checked on the whole trajectory, not
+            # only the last state: a pad write at any step persists additively.
+            self.family_layout.assert_clean(X, where="end of rollout")
+            out = self.family_readout(X)
+        else:
+            feat = torch.cat([self.layout.get(X, n) for n in self._exported], dim=-1)
+            out = self.readout(feat)
         act, logvar = out[..., 0], out[..., 1].clamp(-4.0, 6.0)
         rho = (torch.stack(res_e).mean() / (torch.stack(mech_e).mean() + 1e-12)).sqrt()
         self._rho_ema = 0.98 * self._rho_ema + 0.02 * float(rho)
         # R05 applies only when there *is* a mechanistic term to be dominated.
-        if enforce_r05 and self.mechanistic is not None and not self.training and self._rho_ema > self.cfg.residual_rho_max:
+        has_mech = self.mechanistic is not None or (
+            self.family_local is not None and len(self.family_local.mech) > 0
+        )
+        if enforce_r05 and has_mech and not self.training and self._rho_ema > self.cfg.residual_rho_max:
             raise R05Violation(self._rho_ema, self.cfg.residual_rho_max)
         return RolloutResult(
             state=X,
@@ -584,7 +773,7 @@ class SCWBD(nn.Module):
             rho=rho,
             diagnostics={
                 "rho_ema": self._rho_ema,
-                "rho_enforced": self.mechanistic is not None,
+                "rho_enforced": has_mech,
                 "mech_energy": float(torch.stack(mech_e).mean()),
                 "residual_energy": float(torch.stack(res_e).mean()),
                 **{f"gain_{k}": v for k, v in self.coupling.class_gains().items()},
@@ -603,13 +792,58 @@ class SCWBD(nn.Module):
         """``R_ports``: non-exported components may not carry the message.
 
         Penalises the predictability of the exported message from the *private*
-        components, which is the numerical side-channel §6.2 forbids.
+        components, which is the numerical side-channel §6.2 forbids.  With
+        families on, "private" is per family — the components that family does
+        not expose through a declared out-port — and the pad is excluded, so the
+        penalty is not diluted by channels that do not exist.
         """
+        if self.family_layout is not None:
+            terms = []
+            for f in self.family_layout:
+                exported = {c for p in f.out_ports() for c in p.components}
+                priv = [c.name for c in f.layout.components if c.name not in exported and c.clock == "fast"]
+                if priv:
+                    terms.append(
+                        torch.cat([self.family_layout.get(X, f.name, n) for n in priv], dim=-1).float().pow(2).mean()
+                    )
+            return (torch.stack(terms).mean() * 1e-3) if terms else X.new_zeros(())
         private = [n for n in self.layout.clock_names("fast") if n not in self._exported]
         if not private:
             return X.new_zeros(())
         p = torch.cat([self.layout.get(X, n) for n in private], dim=-1).float()
         return p.pow(2).mean() * 1e-3
+
+    # -- provenance -------------------------------------------------------
+    def family_report(self) -> dict[str, Any]:
+        """What the artifact must record about its region-indexed state.
+
+        Written into the checkpoint and read by ``manifest.refuse_r12``.
+        """
+        obs = {
+            "observation_interface": (self.observation.describe() if self.observation is not None else None),
+            "predictive_variance": (
+                "state_dependent_via_X_uncertainty" if self.observation is not None else "broadcast_parameter"
+            ),
+        }
+        if self.family_layout is None:
+            return {
+                **obs,
+                "family_state": False,
+                "ablation_arm": "control",
+                "local_core": self.cfg.local_core,
+                "state_dim": self.layout.dim,
+                "note": (
+                    "One operator and one state dimension for every parcel. This is the "
+                    "equal-capacity generic-operator CONTROL of body.tex §11.4, not a model of "
+                    "heterogeneous region-indexed state."
+                ),
+            }
+        d = self.family_layout.describe()
+        d.update(obs)
+        d["family_state"] = True
+        d["ablation_arm"] = "treatment"
+        d["operators"] = self.family_local.describe()
+        return d
 
     def parameter_report(self) -> dict[str, int]:
         groups: dict[str, int] = {}

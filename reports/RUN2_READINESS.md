@@ -1,0 +1,84 @@
+# Run 2 readiness gate
+
+Owner: architect. Opened 2026-08-06.
+
+**Run 2 training does not start until every row below is `MET`.** This exists
+because run 1 started with four unmet preconditions nobody had written down,
+and cost a full training run to discover them one at a time.
+
+A row is `MET` only when someone has **executed** the check and reported the
+result. "Implemented" is not `MET`. "Tests pass" is not `MET` unless the test
+was shown to be capable of failing.
+
+---
+
+## A. The model
+
+| # | precondition | owner | state |
+|---|---|---|---|
+| **A1** | Heterogeneous per-family state, enforced span guard with firing tests | 🌊 Hodgkin | **MET** — merged `c663e9b`; 5 firing tests |
+| **A2** | Anatomy prior declares families, derived not assumed | 🧠 Cajal | **MET** — 9 families on 414 parcels; guards verified by mutation |
+| **A3** | R12 defined with R01–R11, enforced at checkpoint emission | 📜 Noether | **MET** — 28 tests; fires on populated-families-only construction |
+| **A4** | `eeg.log_noise` is a function of state and horizon step | 🔥 Turing | open |
+| **A5** | `bold.log_noise` likewise, via `signal(..., logvar=)` filled by `rollout` at the matching slow-clock step | 🔥 Turing + 🌊 Hodgkin | open — off-by-`hemo_ratio` must be named in a test |
+| **A6** | The scale defect is fixed at its root: `log_noise` initialised at its closed form, trainable outside stage V | 🔥 Turing | open — run 1 left a closed-form parameter to SGD for 134 s |
+| **A7** | `bold.log_noise` receives a gradient at all | 🔥 Turing | open — currently −4.0000 across all regions, `unique=1` |
+
+## B. The comparison
+
+| # | precondition | owner | state |
+|---|---|---|---|
+| **B1** | A1's arms vary **state structure only**; operator assignment identical across arms | 🛡️ Popper | binding ruling filed; enforce at config |
+| **B2** | Third arm `theta_conditioned_pooled` present, θ carrying the spin-test features | 🛡️ Popper | registered, falsifier **F8** |
+| **B3** | Test split **sized before any arm trains** and recorded in the prereg | architect | **decided**: full available split. MDE 0.1404 at n=27 vs 0.0699 at n=109 |
+| **B4** | `check_path_parity` declared for every arm; undeclared **blocks** | 🛡️ Popper | implemented |
+| **B5** | `check_variance_convergence` (P10) — equally unconverged arms refused too | 🛡️ Popper | implemented |
+| **B6** | `n_parameters_effective` binding (P11) | 🛡️ Popper | implemented |
+| **B7** | `L4` recomputed per arm; `2.0205` is an **upper bound only** | 🔥 Turing / 🛡️ Popper | disagreement open — Popper's band is `[1.9834, 2.0058]` |
+| **B8** | `evaluate.py` retains `per_window_mse` | 🔥 Turing | open |
+| **B9** | `subject_specific_ar` actually differs from `ar16`, or is withdrawn | 🛡️ Popper | open — participant-disjoint split sends every test window to `ar16` |
+
+## C. The corpus
+
+| # | precondition | owner | state |
+|---|---|---|---|
+| **C1** | Simulated corpus regenerated at **414** parcels under the new state layout | 🗺️ Ptolemy | not started — blocked on A4–A7 |
+| **C2** | Every θ dimension affects the simulator | 🗺️ Ptolemy | open — `ei_gradient` was inert |
+| **C3** | `-raw` contains real hemodynamic/MRI ground truth, not EEG alone | 🗄️ Ada | open |
+| **C4** | Licence routing is **read** by the checkpoint policy, not merely populated | 🗄️ Ada | open |
+| **C5** | Every emitted artifact carries its citation set (Tian licence condition) | 🗄️ Ada | open |
+
+## D. The tree
+
+| # | precondition | owner | state |
+|---|---|---|---|
+| **D1** | Authorization layer excised, no half-removed state | ⚡ Faraday | in progress |
+| **D2** | `bench/leakage.py` D10's false reason string fixed — it propagates into 54 checked-in reports | ⚡ Faraday | open |
+| **D3** | `wt/fisher` reconciled; identifiability artifacts regenerated, not reconciled | 📐 Fisher | in progress |
+| **D4** | One validated restriction/prolongation pair so R02 has something to check | 🧭 Gauss | **no report yet** |
+| **D5** | Full `tests/runtime/` run to completion | 🤖 Asimov | open |
+| **D6** | `test_fallback_anatomy_is_labelled_as_not_biological` fixed — subject drift, fix is `force_fallback=True` | 🌊 Hodgkin | open |
+
+---
+
+## What is explicitly **out of claim** for run 2
+
+Recorded now so it is not quietly reintroduced when the numbers arrive.
+
+- **The 7 subcortical families** — 14 of 414 parcels, 3.1%. No family-level
+  effect there is measurable at any participant count this corpus supports.
+- **Operator typing (§11.4 bullet 5 / A5).** A1 tests state structure. The
+  θ-confound is fatal to operator typing and we do not have the evidence to
+  separate them.
+- **Anything sub-`L4` claimed as content without the per-arm recomputation.**
+- **The licence sentence**: *a two-family cortical state partition beats a
+  uniform one at matched capacity* — **not** "operator-valued heterogeneous
+  regional state".
+
+## Standing hazard
+
+Run 1's headline was reproducible, participant-clustered, correctly computed —
+and measured the wrong thing, because four stages of the state→scalar path
+(RL-6) were unmatched between arms while the budgets were matched. Every row
+above is a stage on that path or a precondition for reading it. A green
+scoreboard is not evidence that the comparison was fair.

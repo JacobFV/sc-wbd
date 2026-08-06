@@ -108,6 +108,12 @@ from .scheduler import (
     prediction_error_trigger,
     sustained_activity_trigger,
 )
+from .family_backends import (
+    BasalGangliaBackend,
+    CerebellarForwardBackend,
+    HippocampalCodeBackend,
+    ThalamicRelayBackend,
+)
 from .simulator import SimConfig, SimResult, WholeBrainSimulator, fc_correlation, functional_connectivity
 from .subcortical import (
     BasalGangliaGate,
@@ -154,6 +160,10 @@ __all__ = [
     # subcortical
     "ThalamicRelay", "BasalGangliaGate", "Cerebellum", "ReceptorSpec",
     "NeuromodulatoryField", "NeuromodulatorBank",
+    # per-family engineered backends (§5) -- these are what makes the subcortical,
+    # cerebellar and hippocampal modules reachable from the foundation model
+    "ThalamicRelayBackend", "BasalGangliaBackend", "HippocampalCodeBackend",
+    "CerebellarForwardBackend",
     # simulator
     "WholeBrainSimulator", "SimConfig", "SimResult", "functional_connectivity", "fc_correlation",
     # types

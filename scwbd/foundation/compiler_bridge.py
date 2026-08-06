@@ -785,6 +785,23 @@ _COMPONENT_UNITS: dict[str, str] = {
     "spectral": "dimensionless",
     "hemo": "dimensionless",
     "uncertainty": "dimensionless",
+    # per-family components (scwbd.foundation.families)
+    "relay": "dimensionless",
+    "trn": "dimensionless",
+    "nuclei": "dimensionless",
+    "striatum": "dimensionless",
+    "gate": "dimensionless",
+    "k": "dimensionless",
+    "v": "dimensionless",
+    "g": "dimensionless",
+    "c": "dimensionless",
+    "rho": "dimensionless",
+    "relevance": "dimensionless",
+    "autonomic": "dimensionless",
+    "prediction": "dimensionless",
+    "error": "dimensionless",
+    "eligibility": "dimensionless",
+    "mech": "dimensionless",
 }
 _COMPONENT_KINDS: dict[str, str] = {
     "rate_e": "population",
@@ -793,16 +810,51 @@ _COMPONENT_KINDS: dict[str, str] = {
     "spectral": "frequency",
     "hemo": "metabolic",
     "uncertainty": "uncertainty",
+    # per-family components. body.tex §2.1's component vocabulary is
+    # (sheet, layer, population, frequency, memory, metabolic, uncertainty);
+    # the schema adds (field, channels, event, latent).
+    "relay": "population",
+    "trn": "population",
+    "nuclei": "population",
+    "striatum": "population",
+    "gate": "channels",
+    "k": "memory",  # H_t.k -- cue / index
+    "v": "memory",  # H_t.v -- bound content
+    "g": "field",  # H_t.g -- multiscale relational / grid-like code
+    "c": "memory",  # H_t.c -- temporal & contextual state
+    "rho": "uncertainty",  # H_t.rho -- retrieval confidence
+    "relevance": "channels",
+    "autonomic": "channels",
+    "prediction": "latent",
+    "error": "latent",
+    "eligibility": "memory",
+    "mech": "latent",
 }
 
 
 def _state_spec(layout: FoundationStateLayout, dt_model: float, dt_slow: float) -> "StateSpec":
-    """Mirror ``foundation.state.default_layout`` into the schema's StateSpec."""
+    """Mirror one family's (or the control arm's) component list into a StateSpec.
+
+    Fails closed on a component with no declared unit and kind.  ``latent`` as a
+    silent default would let a new state component compile into the permission
+    system with no declared physical type — which is how the ABI stops
+    describing the tensors the model holds.
+    """
     support_units = Unit("m")
     components: dict[str, Any] = {}
     for comp in layout:
+        if comp.name not in _COMPONENT_KINDS:
+            raise SchemaBuildError(
+                f"state component {comp.name!r} has no declared schema kind or unit in "
+                "compiler_bridge._COMPONENT_KINDS/_COMPONENT_UNITS. Declare it (body.tex §2.1's "
+                "vocabulary is sheet/layer/population/frequency/memory/metabolic/uncertainty, "
+                "plus field/channels/event/latent) rather than letting it compile as 'latent': a "
+                "component with no declared physical type is an ABI the compiler cannot check. "
+                "In particular the 'private' block of SCWBD.layout must never reach here — compile "
+                "from the per-family layouts (SCWBD.family_layout), not from the interface view."
+            )
         units = _COMPONENT_UNITS.get(comp.name, comp.units if comp.units != "log_var" else "dimensionless")
-        kind = _COMPONENT_KINDS.get(comp.name, "latent")
+        kind = _COMPONENT_KINDS[comp.name]
         slow = comp.clock == "slow"
         temporal = TemporalSupport(
             clock=ClockId(SLOW_CLOCK if slow else FAST_CLOCK),
@@ -1582,6 +1634,7 @@ def build_foundation_schema(
     *,
     n_representative_regions: int = 8,
     layout: FoundationStateLayout | None = None,
+    family_layout: Any = None,
     dt_model: float = 0.008,
     hemo_ratio: int = 25,
     individualization: bool = True,
@@ -1618,6 +1671,12 @@ def build_foundation_schema(
     if hemo_ratio < 1:
         raise SchemaBuildError(f"hemo_ratio must be >= 1, got {hemo_ratio}")
 
+    if family_layout is not None and layout is not None:
+        raise SchemaBuildError(
+            "pass either `layout` (the control arm's single state space) or `family_layout` "
+            "(the region-indexed one), not both: which of the two describes the weights is "
+            "exactly the thing R12 exists to keep unambiguous."
+        )
     lay = layout if layout is not None else default_layout()
     dt_slow = dt_model * hemo_ratio
 
@@ -1630,14 +1689,26 @@ def build_foundation_schema(
             head_sources.setdefault(observation_head_for(spec), []).append(spec.id)
         source_ids = {k: tuple(v) for k, v in head_sources.items()}
 
+        # body.tex §2.1 indexes the state SPACE by region, so with families on
+        # the schema carries one StateSpec per family, not one for the brain.
+        # A single shared StateSpec over a heterogeneous model would compile an
+        # ABI that describes tensors the model does not hold.
         state = _state_spec(lay, dt_model, dt_slow)
+        family_states: dict[str, Any] = {}
+        family_of: dict[int, str] = {}
+        if family_layout is not None:
+            for f in family_layout:
+                family_states[f.name] = _state_spec(f.layout, dt_model, dt_slow)
+                for r in f.regions:
+                    family_of[int(r)] = f.name
         regions = []
         for idx, rid, system in exemplars:
+            fam = family_of.get(int(idx))
             regions.append(
                 Region(
                     id=rid,
-                    label=f"{system} parcel {rid}",
-                    state=state,
+                    label=f"{system} parcel {rid}" + (f" [family {fam}]" if fam else ""),
+                    state=family_states[fam] if fam else state,
                     ports=_ports(
                         rid,
                         dt_model=dt_model,

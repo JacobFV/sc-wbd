@@ -23,7 +23,7 @@ from .authorization import (
     validate_authorization,
 )
 from .base import SchemaModel
-from .refusals import REFUSAL_CODES, RefusalCode
+from .refusals import NON_OVERRIDABLE_CODES, REFUSAL_CODES, REFUSALS, RefusalCode
 
 __all__ = [
     "ClaimClass",
@@ -73,6 +73,13 @@ class ClaimOverride(SchemaModel):
             raise ValueError(f"override of {self.code} requires a justification")
         if not self.approved_by.strip():
             raise ValueError(f"override of {self.code} requires an approver")
+        if self.code in NON_OVERRIDABLE_CODES:
+            raise ValueError(
+                f"{self.code} is not overridable. An override buys visibility by "
+                f"demoting the claim class, but {self.code} is about what the "
+                "artifact is *called*, and a demoted claim class does not rename "
+                f"it. Remedy: {REFUSALS[self.code].remedy}"
+            )
         return self
 
 

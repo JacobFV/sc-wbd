@@ -228,6 +228,46 @@ def _regional_theta(theta: Tensor, anat: AnatomyPrior, backend_name: str, *, def
             "self_gain": (0.4 * (ei - 1.0)).clamp(-0.35, 0.35),
             "sigma": (sig * 1.5).clamp(0.01, 0.35) * ones,
         }
+    # -- per-family engineered backends (§5) -------------------------------
+    # Each gets its OWN mapping for the same reason the cortical backends do:
+    # "more excitation relative to inhibition" is a different symbol in each
+    # formalism, and a shared mapping is exactly the semantic collapse §5 names.
+    elif backend_name == "thalamic_relay":
+        out = {
+            "G": (G * 0.8).clamp(0.0, 2.5) * ones,
+            "ei_ratio": ei,
+            # a longer intrinsic timescale de-inactivates the T-current more
+            # slowly, so tau_h tracks the regional timescale prior
+            "tau_h": (tau_prior * 3.0).clamp(0.03, 0.30),
+            "sigma": (sig * 0.4).clamp(1e-4, 0.08) * ones,
+        }
+    elif backend_name == "basal_ganglia_gate":
+        out = {
+            "G": (G * 1.0).clamp(0.0, 2.5) * ones,
+            "ei_ratio": ei,
+            # dopaminergic gain is a CONTROL PARAMETER on corticostriatal
+            # transmission (§5), not a reward. It is driven by the theta drive
+            # term and nothing here consumes an outcome.
+            "dopamine": (drive - 1.0).clamp(-0.9, 0.9) * ones,
+            "sigma": (sig * 0.2).clamp(1e-4, 0.04) * ones,
+        }
+    elif backend_name == "hippocampal_code":
+        out = {
+            "G": (G * 0.9).clamp(0.0, 2.0) * ones,
+            # theta rhythm is a regional oscillatory prior, not free
+            "theta_hz": (7.0 * (1.0 + 0.15 * grad)).clamp(4.0, 10.0),
+            # retrieval sharpness rises with E/I (less inhibitory smoothing)
+            "beta": (8.0 * ei).clamp(1.0, 24.0),
+            "tau_c": (tau_prior * 6.0).clamp(0.05, 1.0),
+            "sigma": (sig * 0.2).clamp(1e-4, 0.04) * ones,
+        }
+    elif backend_name == "cerebellar_forward_model":
+        out = {
+            "G": (G * 0.7).clamp(0.0, 2.0) * ones,
+            "gain": ei.clamp(0.2, 2.0),
+            "tau_elig": (tau_prior * 4.0).clamp(0.02, 0.30),
+            "sigma": (sig * 0.2).clamp(1e-4, 0.04) * ones,
+        }
     else:
         raise ParameterMappingError(f"no theta->parameter mapping declared for backend {backend_name!r}")
 
