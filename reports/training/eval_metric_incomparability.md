@@ -88,3 +88,60 @@ the same instinct that makes per-window normalisation correct for *inputs*, thre
 lines above, where `src` is normalised and nothing downstream compares it to
 anything. **The bug is not the normalisation; it is normalising one side of a
 comparison.**
+
+---
+
+# Addendum — rest of the evaluation-path audit
+
+Same question applied to the remaining components. **Two of three come back clean,
+and one of the findings runs against the model, not for it.**
+
+## `bootstrap_ci` — CLEAN, and genuinely a cluster bootstrap
+
+`baselines.py:1332`. Verified it does what its docstring claims: `_cluster_index`
+maps windows to participants, `_cluster_means` aggregates per participant, and each
+replicate draws **whole participants with replacement**
+(`num = sums[draws].sum(axis=1) / den = counts[draws].sum(axis=1)`). The replicate
+mean is unweighted over drawn windows, matching the point estimate's weighting —
+so the interval and the point estimate are the same functional.
+
+`_boot_draws` depends only on `(n_clusters, n_boot, seed)`, so **draws are shared
+across models**, which is correct for paired comparison. I checked that the group
+vectors are aligned: `_scwbd_scores` and `collect()` iterate the same `shuffle=False`
+loader with the same `max_batches`, so `scw["subjects"]` and `te_s` are the same
+windows in the same order.
+
+This was the item I most expected to find broken, given that a window-level
+bootstrap mislabelled as participant-clustered is the classic version of this
+mistake and would have understated the interval several-fold. It is not broken.
+
+## Single posterior draw — **understates** SC-WBD
+
+`_scwbd_scores` line 65: `th = trainer.posterior.sample(ctx_e, 1)[:, 0]`.
+
+SC-WBD is scored using **one** posterior sample of θ per window, not the posterior
+mean and not an average over draws. That injects sampling noise into every
+prediction and **penalises** SC-WBD relative to a properly marginalised score.
+
+Given the Stage III finding that the posterior is wide and weakly informative
+(z_sd ≈ 1.0–1.4, R² ≤ 0.21), this is not a small effect: a single draw from a wide
+posterior is a materially worse θ than its mean.
+
+**I am flagging this even though it runs in my favour to leave it alone.** The
+correct comparison marginalises over the posterior — `logsumexp` over K draws — and
+I would rather the model be scored properly than benefit from a handicap that makes
+a bad result look like modesty. It belongs in the same patch, but as a **separate,
+separately-labelled change**, so the units fix and the marginalisation fix cannot be
+confused in the diff.
+
+## Paired intervals available but unused — weaker than it needs to be
+
+`real_eeg_holdout` decides `scwbd_beaten_by` from **point estimates only**
+(`[k for k, v in ranking if v < ref]`). `baselines._paired_ci` computes a
+participant-clustered interval on the **per-window difference**, which is far more
+powerful than comparing two overlapping marginal intervals, and it is not called.
+
+Not a defect — the `interpretation` field does say overlapping intervals mean the
+comparison is inconclusive — but the harness owns a better statistic than the one
+it reports, and the paired difference is the statistic that should decide whether
+SC-WBD beat a baseline.
