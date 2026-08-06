@@ -17,6 +17,9 @@ treats that name as a **claim** and supplies the machinery to check it:
   makes a tag mean something.
 * :mod:`~scwbd.release.collapse` — refuses to mint distinct tags for
   byte-identical artifacts.
+* :mod:`~scwbd.release.publish` — builds an artifact's card from generated
+  provenance, runs the attribution gate, and pushes. Dry run by default; the
+  namespace is never inferred. See ``reports/publishing.md``.
 
 Nothing here imports ``torch``: release and audit run while a training job may
 hold the GPU.
