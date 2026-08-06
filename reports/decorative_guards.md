@@ -1,5 +1,32 @@
 # Decorative guards: checks that cannot fail, instruments that cannot discriminate
 
+> ## 📌 HEADLINE FINDING — for the final report
+>
+> ### Every safeguard worked, and the result is still uninterpretable.
+>
+> Condition 2 of the training trigger — *running-min `sim_forecast_nll` < 1.0 by
+> step 900* — was **preregistered** before the data existed, **never moved**,
+> **honoured to the letter** when it resolved, **escalated** the moment a sibling
+> clause fired, and **adjudicated** by a party who was not its author. Every
+> procedural safeguard this project has was applied, correctly, in order.
+>
+> The result is still uninterpretable, because no reference class exists that
+> could say whether `< 1.0` was ever achievable for a 1.76 M-parameter model on
+> 37 simulated shards with ~40 % of its regional-timescale prior missing or
+> clamped.
+>
+> **The lesson is therefore not "be more disciplined."** Discipline was not the
+> binding constraint and more of it would not have helped:
+>
+> > **Process discipline cannot manufacture a reference class.** A threshold
+> > without one is a guess with a timestamp, however faithfully it is honoured.
+>
+> This is a genuine limit of preregistration as a technique, found by **executing
+> it properly rather than by theorising about it** — and it is the most
+> transferable thing this build produced. The remedy is to state a threshold's
+> reference class when setting it, or to set a **matched control** instead of an
+> absolute value.
+
 A repo-wide review heuristic, extracted from four independent defects found in a
 single night (2026-08-05/06). It started as a section of
 `reports/training/platform_memory_limits.md` and outgrew it.
@@ -184,6 +211,33 @@ as accepting a flattering one from the party it favours.** Both substitute a
 judgement about *incentive* for a judgement about *validity*. The first feels
 like rigour, which makes it the more durable of the two.
 
+#### Sub-case: a transformation that feels conservative and is a different measurement
+
+`abs()` applied to a treatment/control difference **feels** conservative — it
+looks like refusing to claim a direction. It is not conservative; it is a
+different measurement.
+
+Reporting the mean of |differences| gave **2.21 %**; the signed mean is
+**1.72 %**. The absolute value converts the one step where the treatment was
+*better* into a penalty, inflating the apparent harm. **In a treatment/control
+comparison the sign is the quantity of interest**, so discarding it does not
+widen an error bar — it answers a different question.
+
+The same shape as the true-but-irrelevant rationalisation: nothing about
+`abs()` is *incorrect*, and it carries a connotation of caution that discourages
+anyone from checking which quantity it produces.
+
+**The remedy is a tool, not vigilance.** No amount of scrutinising the *claim*
+would have found this — the defect was inside the statistic. `compare_rescale.py`
+now emits the signed mean, the largest single deviation, and which steps favoured
+the treatment, so re-running it cannot reproduce the error.
+
+> **Regenerate from source; do not audit the table.**
+
+This is recommendation 7 again — prefer a mechanism to an instruction. A protocol
+aimed at claims ("what would falsify this?") cannot catch a defect one level
+below the claim.
+
 #### Sub-case: establishing a constraint and then violating it yourself
 
 The fact that refutes that claim was established **by its own author, two
@@ -196,6 +250,39 @@ than never having found it**, because the record shows you knew. A newly-derived
 constraint does not automatically attach itself to subsequent reasoning; it has
 to be applied deliberately, and the moment of greatest risk is the very next
 argument, while the finding still feels like context rather than a rule.
+
+**Operational remedy — do this at the moment of derivation, not later:**
+
+> When you derive a constraint, apply it **backwards** to what you have already
+> said and **forwards** to what you are about to say, explicitly, before moving
+> on.
+
+Backwards, because earlier claims were made without it and some of them will now
+be false. Forwards, because the next argument is where it will be forgotten.
+Neither happens by itself: a constraint discovered mid-task arrives feeling like
+a *result*, and results get reported, whereas rules get applied.
+
+Worked example, run when this remedy was adopted. The new constraint was
+*regenerate from source, do not audit the table.* Applied backwards to every
+number published in this project:
+
+| number | provenance |
+|---|---|
+| corpus shares 19.07 / 21.62 / 27.03 / 40.69 % | regenerated from `index_fast.json` |
+| normaliser p50/p95/p99/max, before and after | regenerated from 888 corpus windows |
+| backend variance shares 76.3 / 23.1 / 0.6 % | regenerated from the corpus |
+| spike rates 31 % and 0/45 | computed from `train_main.log` |
+| condition 2 running-min 1.1200 | computed from `train_main.log` |
+| **ADJ1 2.21 %** | **from a script that had the bug** |
+
+One hit, already corrected. The remaining `abs()` uses in `compare_rescale.py`
+were checked individually and are correct: one guards a denominator against a
+negative baseline, the other is explicitly the largest single |deviation|, where
+magnitude is the intended quantity.
+
+The audit took two minutes and would have been worth running even if it had found
+nothing — **"I checked" is a different epistemic state from "I have no reason to
+think so."**
 
 ### What a preregistration inherits
 

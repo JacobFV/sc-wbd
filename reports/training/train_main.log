@@ -80,3 +80,5 @@ stage=II_interface  step=160  global_step=1060  loss=1.025  lr=0.0002252  wall_s
 stage=II_interface  step=180  global_step=1080  loss=0.9993  lr=0.0002208  wall_s=537  traj_s_per_s=8.2  gpu_reserved_gb=33.31  sim_forecast_nll=1.202  npe_loss=9.994  kl=-2.618  rho=0.005691
 stage=II_interface  step=200  global_step=1100  loss=0.9869  lr=0.0002152  wall_s=579.1  traj_s_per_s=8.5  gpu_reserved_gb=33.31  sim_forecast_nll=1.202  npe_loss=9.607  kl=-2.707  rho=0.005526
 stage=II_interface  step=220  global_step=1120  loss=1.003  lr=0.0002086  wall_s=632.3  traj_s_per_s=8.6  gpu_reserved_gb=33.31  sim_forecast_nll=1.218  npe_loss=9.637  kl=-3.041  rho=0.005943
+stage=II_interface  step=240  global_step=1140  loss=1.01  lr=0.0002009  wall_s=713.4  traj_s_per_s=8.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.243  npe_loss=9.368  kl=-2.749  rho=0.005799
+stage=II_interface  step=260  global_step=1160  loss=1.011  lr=0.0001923  wall_s=769.9  traj_s_per_s=8.3  gpu_reserved_gb=33.31  sim_forecast_nll=1.233  npe_loss=9.251  kl=-2.752  rho=0.005885
