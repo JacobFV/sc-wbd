@@ -1797,3 +1797,50 @@ register is that a guard must be shown to fire. This entry adds a second
 question to ask of any guard with a default: *does the suite ever let the
 default choose?* A control that is only ever reached by an explicit argument
 tests the callee and leaves every caller unguarded.
+
+---
+
+## The arm-asymmetry class — six instances in one day
+
+Architect, 2026-08-06, after clearing seven defects between a configured run-2
+and its first prediction.
+
+**Six of the seven had one shape: a path declared for both arms and exercised
+on only one.** Not one guard failing — one *test-coverage geometry* failing,
+six times, in six different files, each invisible to the others.
+
+| # | site | exercised on | consequence had it not crashed |
+|---|---|---|---|
+| 1–3 | `train.py`, three rollout sites | control arm has no mechanistic families | seven engineered subcortical backends run on defaults; the anatomical conditioning that is the point of per-family backends is silently dropped, and the run **completes** |
+| 4 | `FamilyStateLayout.zero_pad` | tests run on CPU | — |
+| 5 | `index`/`gather`/`scatter` | tests run on CPU | — |
+| 6 | `residual_penalty` | control arm only | the regulariser that stops the learned residual replacing the mechanistic term is absent from **exactly the arm whose mechanistic backends it protects** |
+| 7 | `runtime.predict()` | built and tested against run 1 | — |
+| 8 | `impulse_response`, `run_impulse_pilot` | same | — |
+
+Numbers 1–3 and 6 are the dangerous ones: they do not produce a wrong number,
+they produce a **right-looking** number from a model that silently lost the
+mechanism the experiment exists to test.
+
+**The rule:**
+
+> A test that never runs the shipping configuration on the shipping device is
+> not testing the shipping code.
+
+Two axes have to be crossed, not just one — configuration (control vs family)
+**and** device (CPU vs CUDA). A suite that is green on `family_state=False` and
+CPU says nothing about a run that ships `family_state=True` on a GPU.
+
+**Repair:** `tests/foundation/test_arm_parity.py`, seven tests that build the
+*family* arm and exercise exactly these branches — including one asserting the
+arm actually *has* mechanistic families, so the rest cannot pass vacuously, and
+one that deliberately clears `_family_packs` and requires `SpanViolation` to
+fire. Forward **and** backward, because the crash was in a rollout and a
+build-only smoke test would have missed it.
+
+**This is the same shape as three entries already in this register** — the
+synthetic-anatomy fallback (the path exercised and the path shipped diverged),
+`families=None` hiding the `derive_families` bug, and the `dry_run` default no
+test ever let choose. It is worth naming as a class rather than logging a
+fourth instance: **wherever a codebase has two arms, the tests will drift onto
+the simpler one, and the simpler one is never the one that ships.**
