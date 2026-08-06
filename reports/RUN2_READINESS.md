@@ -44,9 +44,7 @@ unresolved, and fine to leave unresolved).
 materially changes what the run can detect — so do it, but it is a config
 value, not a gate.
 
-**Corpus and data** — every θ dimension provably affects the simulator (find
-inert ones, fix or drop them, do not stall); BOLD→Schaefer registration
-(🧠 Cajal, ~2–3 days, gated on the partial-slab check); licence routing and
+**Corpus and data** — every θ dimension provably affects the simulator (**MET** — 30/30 move the trajectory; `ei_gradient` was fixed by `eb2d88d`); BOLD→Schaefer registration (🧠 Cajal, in progress — **the cortical-clipping concern that gated it is withdrawn**: FOV median is 1.000 for every subject measured and at worst 7 of 400 parcels fall outside the acquisition); licence routing and
 citation sets (both **MET**).
 
 **Tree hygiene** — authorization excision (**done**, 125 files, −6273 lines);
