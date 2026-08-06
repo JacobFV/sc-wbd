@@ -30,7 +30,7 @@ def recovery():
     """MAP recovery for the joint native-clock design in the reference regime."""
     cfg = SystemConfig(
         device=DEVICE, dtype="float64", epoch_seconds=3.0, n_epochs=10,
-        n_delay_taps=20, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
+        n_delay_taps=22, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
     )
     bd = build_design(DESIGNS[2], cfg, REGIMES[0], seed=4242)
     return recover(bd, REGIMES[0], n_replicates=N_REPLICATES, seed=17, n_newton=5)
@@ -113,7 +113,7 @@ def test_naive_resampling_loses_the_delay():
     """
     cfg = SystemConfig(
         device=DEVICE, dtype="float64", epoch_seconds=3.0, n_epochs=10,
-        n_delay_taps=20, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
+        n_delay_taps=22, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
     )
     reg = REGIMES[0]
     native = recover(build_design(DESIGNS[2], cfg, reg, seed=4242), reg,
@@ -129,7 +129,7 @@ def test_naive_resampling_loses_the_delay():
 def test_recovery_is_deterministic():
     cfg = SystemConfig(
         device=DEVICE, dtype="float64", epoch_seconds=2.0, n_epochs=2,
-        n_delay_taps=14, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
+        n_delay_taps=22, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
     )
     bd = build_design(DESIGNS[0], cfg, REGIMES[0], seed=1)
     a = recover(bd, REGIMES[0], n_replicates=4, seed=5, n_newton=2)

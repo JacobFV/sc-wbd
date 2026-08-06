@@ -42,7 +42,7 @@ pytestmark = pytest.mark.skipif(
 def _setup(device: str):
     cfg = SystemConfig(
         device=device, dtype="float64", epoch_seconds=2.0, n_epochs=2,
-        n_delay_taps=14, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
+        n_delay_taps=22, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
     )
     u0 = default_eta()
     proto = build_protocol(cfg, seed=7)

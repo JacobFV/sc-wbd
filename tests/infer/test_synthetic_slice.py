@@ -100,7 +100,7 @@ def test_end_to_end_slice_reports_every_criterion():
 
     cfg = SystemConfig(
         device=DEVICE, dtype="float64", epoch_seconds=3.0, n_epochs=4,
-        n_delay_taps=20, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
+        n_delay_taps=22, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
     )
     rep = run_synthetic_slice(cfg=cfg, seed=101, n_parents=6, n_sessions=2,
                               n_derivatives=2, n_newton=3, verbose=False)

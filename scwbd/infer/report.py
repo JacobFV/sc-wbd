@@ -315,6 +315,21 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
             "theta_profile_min_eigenvalue_nonprior": lmin,
             "best_single_modality": best_single,
             "fusion_gain_ratio": (jn / best_single) if best_single > 0 else float("inf"),
+            # Absolute gap, which is regime-dependent in a way the ratio hides:
+            # "EEG loses essentially nothing" is true everywhere but ~200x less
+            # true in the low-SNR regime, which is the clinically relevant one.
+            "fusion_gain_absolute_over_eeg_only": jn - lmin.get("eeg_only", 0.0),
+            # The relative form is the one the claim rests on and the one 🧩 Rao
+            # reported; it ranks the regimes differently from the absolute form
+            # because lambda_min itself differs by an order between regimes.
+            "fusion_gain_relative_over_eeg_only": (
+                jn / lmin["eeg_only"] - 1.0 if lmin.get("eeg_only", 0.0) > 0 else None
+            ),
+            "eeg_over_fmri_orders_of_magnitude": (
+                math.log10(lmin["eeg_only"] / lmin["fmri_only"])
+                if lmin.get("fmri_only", 0.0) > 0 and lmin.get("eeg_only", 0.0) > 0
+                else None
+            ),
             "impulse_gain_ratio_matched": (matched / jn) if (matched and jn > 0) else None,
             "delay_rmse_seconds": {k: delay_rmse(k) for k in d},
             "theta_rmse_prior_sd": {k: theta_rmse(k) for k in d},
@@ -565,6 +580,18 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
     return made
 
 
+def _fmt_sig(x: Any, metrics: Mapping[str, Any], key: str) -> str:
+    """Format an eigenvalue at the precision its reproducibility supports."""
+    u = metrics.get(key + "_numerics") or metrics.get("theta_profile_min_eigenvalue_numerics")
+    if x is None:
+        return "_not evaluated_"
+    v = float(x)
+    if u and u.get("numerically_zero"):
+        return "0 _(num. zero)_"
+    figs = int((u or {}).get("significant_figures", 4))
+    return f"{v:.{max(min(figs, 6), 2)}g}"
+
+
 def _fmt(x: Any, n: int = 4) -> str:
     if x is None:
         return "_not evaluated_"
@@ -636,8 +663,8 @@ def write_report(
             m = v["fisher_T4"]["metrics"]
             A(f"| `{d}` | {m['rank_likelihood']}/{m['n_parameters']} | "
               f"{_fmt(m['condition_number_total'])} | "
-              f"{_fmt(m['min_eigenvalue_nonprior'])} | "
-              f"{_fmt(m['theta_profile_min_eigenvalue_nonprior'])} | "
+              f"{_fmt_sig(m['min_eigenvalue_nonprior'], m, 'min_eigenvalue_nonprior')} | "
+              f"{_fmt_sig(m['theta_profile_min_eigenvalue_nonprior'], m, 'theta_profile_min_eigenvalue')} | "
               f"{_fmt(m['log10_det_likelihood'])} | "
               f"{_fmt(m['max_abs_posterior_correlation'])} "
               f"({'/'.join(m['max_abs_posterior_correlation_pair'])}) |")
@@ -653,6 +680,17 @@ def write_report(
                 A(f"| `{d}` (1 s model) | {m['rank_likelihood']}/{m['n_parameters']} | "
                   f"{_fmt(m['min_eigenvalue_nonprior'])} | "
                   f"{_fmt(m['theta_profile_min_eigenvalue_nonprior'])} |")
+        A(
+            "\nEigenvalues are printed at the precision their **measured** "
+            "reproducibility supports. Recomputing the whole pipeline under three "
+            "BLAS thread counts (1/8/20, which changes summation order) reproduces "
+            "a well-conditioned theta-profile lambda_min to 1.3e-12 relative "
+            "(~12 significant figures); a near-cancelling one inherits that "
+            "amplified by lambda_max/lambda_min, so `fmri_only` is reproducible to "
+            "only ~7 figures. Entries shown as `0 (num. zero)` are inside their own "
+            "noise floor -- their sign is not even stable across thread counts -- "
+            "and must not be read as small positive information.\n"
+        )
         if any("recovery" in v for v in rr["designs"].values()):
             A("\n### Recovery (MAP + observed-information intervals)\n")
             A("| design | delay RMSE (ms) | θ RMSE (prior sd) | "
@@ -701,6 +739,18 @@ def write_report(
         for title, body in extra_sections.items():
             A(f"\n## {title}\n")
             A(body)
+    A("\n## Related artifact\n")
+    A("Agent 🧩 Rao's per-parameter-group decomposition of these same designs -- "
+      "coupling / delay / EEG-lead-field / haemodynamic, per modality "
+      "combination, distinguishing structural zeros from small-but-nonzero "
+      "values -- is at `reports/individualize/identifiability_by_modality.md` "
+      "(machine-readable: `identifiability_by_modality.json`). It converts the "
+      "single lambda_min reported here into a per-group capability statement, "
+      "which is the form a downstream individualization claim actually needs. "
+      "Rao also supplied `assert_delay_line_adequate`, adopted here: a delay "
+      "line shorter than `tau/dt + 3*sinc_sigma` inflates the conduction-delay "
+      "information by ~25 orders of magnitude with nothing raised, and the "
+      "inflated reading is the one that says *spectacularly identifiable*.\n")
     A("\n## What would disable this module\n")
     A(DECISION_RULE["what_would_disable_this_module"])
     A("\n---\n")

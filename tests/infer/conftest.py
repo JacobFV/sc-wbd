@@ -61,7 +61,13 @@ def tiny_cfg() -> SystemConfig:
     return SystemConfig(
         device=DEVICE, dtype="float64",
         epoch_seconds=2.0, n_epochs=2,
-        n_delay_taps=14, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
+        # n_delay_taps must satisfy tau/dt + 3*sinc_sigma = 12 + 6 = 18
+        # (linear_gaussian.assert_delay_line_adequate).  The fixture previously
+        # used 14, which truncated the fractional-delay kernel: the cross-
+        # validation tests stayed valid because every path used the same kernel,
+        # but the delay information itself was distorted.  The guard caught it
+        # the moment it was adopted.
+        n_delay_taps=22, hrf_stages=6, hrf_peak_stage=3, hrf_under_stage=6,
     )
 
 

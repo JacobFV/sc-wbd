@@ -82,7 +82,10 @@
      "joint_resampled": 0.003499999999999996,
      "joint_resampled_exactmodel": null
     },
+    "eeg_over_fmri_orders_of_magnitude": 7.25267913970029,
+    "fusion_gain_absolute_over_eeg_only": 0.0011780676868635709,
     "fusion_gain_ratio": 1.0000857634793991,
+    "fusion_gain_relative_over_eeg_only": 8.576347939914797e-05,
     "impulse_gain_ratio_matched": 1.0593323525377887,
     "median_newton_decrement_by_design": {
      "eeg_only": 20.48354160423089,
@@ -193,7 +196,10 @@
      "joint_resampled": 0.0,
      "joint_resampled_exactmodel": null
     },
+    "eeg_over_fmri_orders_of_magnitude": 6.7375705753843524,
+    "fusion_gain_absolute_over_eeg_only": 2.381194684275556e-05,
     "fusion_gain_ratio": 1.0000014874605694,
+    "fusion_gain_relative_over_eeg_only": 1.4874605693826481e-06,
     "impulse_gain_ratio_matched": 0.8391521474378948,
     "median_newton_decrement_by_design": {
      "eeg_only": 0.45306597868874987,
@@ -304,7 +310,10 @@
      "joint_resampled": 0.005000000000000006,
      "joint_resampled_exactmodel": null
     },
+    "eeg_over_fmri_orders_of_magnitude": 6.594665481671276,
+    "fusion_gain_absolute_over_eeg_only": 7.228349161447767e-07,
     "fusion_gain_ratio": 1.0000003929423014,
+    "fusion_gain_relative_over_eeg_only": 3.929423013637745e-07,
     "impulse_gain_ratio_matched": 0.8386324524550927,
     "median_newton_decrement_by_design": {
      "eeg_only": 22.732889158800212,
@@ -384,7 +393,7 @@
  "environment": {
   "cuda_available": true,
   "device_name": "NVIDIA GB10",
-  "git_revision": "3733365d40a1827d102ba767be7047787c46d0fb",
+  "git_revision": "d00ec86d71d3931a8a4661587be08672b5a8e162",
   "numpy": "2.5.1",
   "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
   "python": "3.12.13",
@@ -841,6 +850,13 @@
         ],
         "max_eigenvalue_nonprior": 469.79094278273294,
         "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 6.201240444732075e-10,
+         "numerically_zero": true,
+         "relative_uncertainty": "inf",
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 0.0,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -996,6 +1012,13 @@
         ],
         "theta_profile_log10_det_likelihood": 5.930260575076283,
         "theta_profile_min_eigenvalue_nonprior": 13.7362394240023,
+        "theta_profile_min_eigenvalue_nonprior_raw": 13.7362394240023,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 1.170763149334866e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 8.52317081259598e-12,
+         "significant_figures": 11
+        },
         "theta_profile_min_eigenvalue_total": 14.815622937151836,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -1787,7 +1810,14 @@
          "gain_bold"
         ],
         "max_eigenvalue_nonprior": 2.290385948548934,
-        "min_eigenvalue_nonprior": 1.9027641804781186e-22,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 3.0233094520845933e-12,
+         "numerically_zero": true,
+         "relative_uncertainty": 15889039131.08617,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 1.9027641804781186e-22,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -1943,6 +1973,13 @@
         ],
         "theta_profile_log10_det_likelihood": -14.373066628977622,
         "theta_profile_min_eigenvalue_nonprior": 7.676950004583828e-07,
+        "theta_profile_min_eigenvalue_nonprior_raw": 7.676950004583828e-07,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 1.3977330718024662e-13,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.8206879958419608e-07,
+         "significant_figures": 6
+        },
         "theta_profile_min_eigenvalue_total": 1.000001238035111,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -2836,6 +2873,13 @@
         ],
         "max_eigenvalue_nonprior": 469.7911264963931,
         "min_eigenvalue_nonprior": 3.671446023843401e-09,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 6.201242869752388e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.16890464491319704,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 3.671446023843401e-09,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -2991,6 +3035,13 @@
         ],
         "theta_profile_log10_det_likelihood": 5.9313872199337325,
         "theta_profile_min_eigenvalue_nonprior": 13.737417491689163,
+        "theta_profile_min_eigenvalue_nonprior_raw": 13.737417491689163,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 1.1719497729949683e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 8.531077793216754e-12,
+         "significant_figures": 11
+        },
         "theta_profile_min_eigenvalue_total": 14.817200032405616,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -3458,6 +3509,13 @@
         ],
         "max_eigenvalue_nonprior": 470.33944452572973,
         "min_eigenvalue_nonprior": 3.785875547471472e-09,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 6.208480667739632e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.16399061696273087,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 3.785875547471472e-09,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -3613,6 +3671,13 @@
         ],
         "theta_profile_log10_det_likelihood": 5.930302558456702,
         "theta_profile_min_eigenvalue_nonprior": 13.73636269323276,
+        "theta_profile_min_eigenvalue_nonprior_raw": 13.73636269323276,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 1.1707875391047216e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 8.523271882457734e-12,
+         "significant_figures": 11
+        },
         "theta_profile_min_eigenvalue_total": 14.8159190721265,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -4506,6 +4571,13 @@
         ],
         "max_eigenvalue_nonprior": 2671.157390255094,
         "min_eigenvalue_nonprior": 8.02626586776921e-09,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 3.5259277551367243e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.43929864936267143,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 8.02626586776921e-09,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -4661,6 +4733,13 @@
         ],
         "theta_profile_log10_det_likelihood": 8.554545228157977,
         "theta_profile_min_eigenvalue_nonprior": 95.31409279393394,
+        "theta_profile_min_eigenvalue_nonprior_raw": 95.31409279393394,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 4.165653685049229e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 4.370448863270661e-12,
+         "significant_figures": 11
+        },
         "theta_profile_min_eigenvalue_total": 96.32842103257332,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -5128,6 +5207,13 @@
         ],
         "max_eigenvalue_nonprior": 2672.2534370889016,
         "min_eigenvalue_nonprior": 8.155303412738575e-09,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 3.52737453695735e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.43252523645504043,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 8.155303412738575e-09,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -5283,6 +5369,13 @@
         ],
         "theta_profile_log10_det_likelihood": 8.554187184779545,
         "theta_profile_min_eigenvalue_nonprior": 95.31319763153688,
+        "theta_profile_min_eigenvalue_nonprior_raw": 95.31319763153688,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 4.1629328540900914e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 4.367635288224425e-12,
+         "significant_figures": 11
+        },
         "theta_profile_min_eigenvalue_total": 96.32659404198127,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -6175,7 +6268,14 @@
          "gain_eeg"
         ],
         "max_eigenvalue_nonprior": 2812.9315443956552,
-        "min_eigenvalue_nonprior": 1.4992168659749313e-11,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 3.713069638602265e-09,
+         "numerically_zero": true,
+         "relative_uncertainty": 247.66728035624647,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 1.4992168659749313e-11,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -6331,6 +6431,13 @@
         ],
         "theta_profile_log10_det_likelihood": 7.64450435134387,
         "theta_profile_min_eigenvalue_nonprior": 14.552490789264848,
+        "theta_profile_min_eigenvalue_nonprior_raw": 14.552490789264848,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.99054283056839e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 2.7421716930493803e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 15.555847537657547,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -6797,7 +6904,14 @@
          "gain_eeg"
         ],
         "max_eigenvalue_nonprior": 2813.166248504149,
-        "min_eigenvalue_nonprior": 1.5501548059572223e-11,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 3.7133794480254765e-09,
+         "numerically_zero": true,
+         "relative_uncertainty": 239.54894270914193,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 1.5501548059572223e-11,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -6953,6 +7067,13 @@
         ],
         "theta_profile_log10_det_likelihood": 7.644399987638297,
         "theta_profile_min_eigenvalue_nonprior": 14.552520984190686,
+        "theta_profile_min_eigenvalue_nonprior_raw": 14.552520984190686,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.9904557220135436e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 2.7421061452848104e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 15.552533743566695,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -7534,6 +7655,13 @@
         ],
         "max_eigenvalue_nonprior": 2.695818448563699,
         "min_eigenvalue_nonprior": 3.6137378719892062e-09,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 3.5584803521040827e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0009847090403779877,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 3.6137378719892062e-09,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -7689,6 +7817,13 @@
         ],
         "theta_profile_log10_det_likelihood": -3.7068814528280156,
         "theta_profile_min_eigenvalue_nonprior": 0.03940521706177631,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.03940521706177631,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 5.96981087973026e-13,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.5149798237048848e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 1.0545977248853093,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -8256,7 +8391,14 @@
          "a21"
         ],
         "max_eigenvalue_nonprior": 0.18218735411438378,
-        "min_eigenvalue_nonprior": -8.442967257058223e-34,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 2.404873074309866e-13,
+         "numerically_zero": true,
+         "relative_uncertainty": 2.848374275405865e+20,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": -8.442967257058223e-34,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -8412,6 +8554,13 @@
         ],
         "theta_profile_log10_det_likelihood": -901.5109119198878,
         "theta_profile_min_eigenvalue_nonprior": 0.0,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.0,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 4.070633583765429e-14,
+         "numerically_zero": true,
+         "relative_uncertainty": "inf",
+         "significant_figures": 0
+        },
         "theta_profile_min_eigenvalue_total": 1.0,
         "theta_profile_rank_likelihood": 1,
         "theta_subset": [
@@ -8879,6 +9028,13 @@
         ],
         "max_eigenvalue_nonprior": 2.6880458281675605,
         "min_eigenvalue_nonprior": 3.6151191786208797e-09,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 3.54822049318118e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.000981494749651595,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 3.6151191786208797e-09,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -9034,6 +9190,13 @@
         ],
         "theta_profile_log10_det_likelihood": -3.7079479824567856,
         "theta_profile_min_eigenvalue_nonprior": 0.03941603938994539,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.03941603938994539,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 5.961409702474501e-13,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.5124324500231734e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 1.0545804815122528,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -9930,6 +10093,13 @@
         ],
         "max_eigenvalue_nonprior": 2.695818448563699,
         "min_eigenvalue_nonprior": 3.6137378719892062e-09,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 3.5584803521040827e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0009847090403779877,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 3.6137378719892062e-09,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -10085,6 +10255,13 @@
         ],
         "theta_profile_log10_det_likelihood": -3.7068814528280156,
         "theta_profile_min_eigenvalue_nonprior": 0.03940521706177631,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.03940521706177631,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 5.96981087973026e-13,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.5149798237048848e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 1.0545977248853093,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -10552,6 +10729,13 @@
         ],
         "max_eigenvalue_nonprior": 2.6880458281675605,
         "min_eigenvalue_nonprior": 3.6151191786208797e-09,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 3.54822049318118e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.000981494749651595,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 3.6151191786208797e-09,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -10707,6 +10891,13 @@
         ],
         "theta_profile_log10_det_likelihood": -3.7079479824567856,
         "theta_profile_min_eigenvalue_nonprior": 0.03941603938994539,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.03941603938994539,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 5.961409702474501e-13,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.5124324500231734e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 1.0545804815122528,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -11214,6 +11405,13 @@
         ],
         "max_eigenvalue_nonprior": 1170.0867598381476,
         "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.5445145229863548e-09,
+         "numerically_zero": true,
+         "relative_uncertainty": "inf",
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 0.0,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -11369,6 +11567,13 @@
         ],
         "theta_profile_log10_det_likelihood": 7.0402356721144255,
         "theta_profile_min_eigenvalue_nonprior": 16.008455843316167,
+        "theta_profile_min_eigenvalue_nonprior_raw": 16.008455843316167,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 2.686441823543371e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.6781392595495157e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 17.008512433270592,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -12262,7 +12467,14 @@
          "beta_hrf"
         ],
         "max_eigenvalue_nonprior": 11.300503874554227,
-        "min_eigenvalue_nonprior": 6.041530102508496e-22,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.491666511441158e-11,
+         "numerically_zero": true,
+         "relative_uncertainty": 24690210693.840706,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 6.041530102508496e-22,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -12418,6 +12630,13 @@
         ],
         "theta_profile_log10_det_likelihood": -11.13434060638336,
         "theta_profile_min_eigenvalue_nonprior": 2.9294012802422767e-06,
+        "theta_profile_min_eigenvalue_nonprior_raw": 2.9294012802422767e-06,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 9.63032135982721e-13,
+         "numerically_zero": false,
+         "relative_uncertainty": 3.287470864705409e-07,
+         "significant_figures": 6
+        },
         "theta_profile_min_eigenvalue_total": 1.0000131318991794,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -13413,6 +13632,13 @@
         ],
         "max_eigenvalue_nonprior": 1170.08682062756,
         "min_eigenvalue_nonprior": 2.598263073375493e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.5445146032283791e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.05944411938325579,
+         "significant_figures": 1
+        },
+        "min_eigenvalue_nonprior_raw": 2.598263073375493e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -13568,6 +13794,13 @@
         ],
         "theta_profile_log10_det_likelihood": 7.044221594391399,
         "theta_profile_min_eigenvalue_nonprior": 16.00847965526301,
+        "theta_profile_min_eigenvalue_nonprior_raw": 16.00847965526301,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 2.6953499199123544e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.6837013744938737e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 17.022044116024574,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -14035,6 +14268,13 @@
         ],
         "max_eigenvalue_nonprior": 1173.3463934634626,
         "min_eigenvalue_nonprior": 2.830526709839327e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.5488172393717707e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.054718340370640356,
+         "significant_figures": 1
+        },
+        "min_eigenvalue_nonprior_raw": 2.830526709839327e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -14190,6 +14430,13 @@
         ],
         "theta_profile_log10_det_likelihood": 7.040243757560255,
         "theta_profile_min_eigenvalue_nonprior": 16.00851476469325,
+        "theta_profile_min_eigenvalue_nonprior_raw": 16.00851476469325,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 2.686447188389313e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.6781364341895523e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 17.008574839061254,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -15185,6 +15432,13 @@
         ],
         "max_eigenvalue_nonprior": 8914.863932144941,
         "min_eigenvalue_nonprior": 6.188423512357757e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.1767620390431322e-08,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.19015538233497403,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 6.188423512357757e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -15340,6 +15594,13 @@
         ],
         "theta_profile_log10_det_likelihood": 9.991450776242939,
         "theta_profile_min_eigenvalue_nonprior": 149.05105228276906,
+        "theta_profile_min_eigenvalue_nonprior_raw": 149.05105228276906,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 9.3329631394177e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 6.261588225296032e-12,
+         "significant_figures": 11
+        },
         "theta_profile_min_eigenvalue_total": 150.23337598760216,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -15807,6 +16068,13 @@
         ],
         "max_eigenvalue_nonprior": 8921.187439973248,
         "min_eigenvalue_nonprior": 6.477743298649478e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.1775967420764687e-08,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.18179120224198783,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 6.477743298649478e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -15962,6 +16230,13 @@
         ],
         "theta_profile_log10_det_likelihood": 9.990155731423972,
         "theta_profile_min_eigenvalue_nonprior": 149.03828889436068,
+        "theta_profile_min_eigenvalue_nonprior_raw": 149.03828889436068,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 9.312941797794532e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 6.248690767240092e-12,
+         "significant_figures": 11
+        },
         "theta_profile_min_eigenvalue_total": 150.03853678858073,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -16956,7 +17231,14 @@
          "beta_hrf"
         ],
         "max_eigenvalue_nonprior": 9641.37043174991,
-        "min_eigenvalue_nonprior": 9.867540691018179e-11,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.2726608969909882e-08,
+         "numerically_zero": true,
+         "relative_uncertainty": 128.97447670516462,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 9.867540691018179e-11,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -17112,6 +17394,13 @@
         ],
         "theta_profile_log10_det_likelihood": 8.727261533181963,
         "theta_profile_min_eigenvalue_nonprior": 13.433550079929804,
+        "theta_profile_min_eigenvalue_nonprior_raw": 13.433550079929804,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 8.907917522095957e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 6.63109711810633e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 14.436571185804569,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -17578,7 +17867,14 @@
          "beta_hrf"
         ],
         "max_eigenvalue_nonprior": 9643.341910735653,
-        "min_eigenvalue_nonprior": 1.0998160290849186e-10,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.2729211322171063e-08,
+         "numerically_zero": true,
+         "relative_uncertainty": 115.73945992369438,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 1.0998160290849186e-10,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -17734,6 +18030,13 @@
         ],
         "theta_profile_log10_det_likelihood": 8.7267569533368,
         "theta_profile_min_eigenvalue_nonprior": 13.433553760816428,
+        "theta_profile_min_eigenvalue_nonprior_raw": 13.433553760816428,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 8.907195613136714e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 6.630557908747577e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 14.433554667538287,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -18417,6 +18720,13 @@
         ],
         "max_eigenvalue_nonprior": 11.386373719576335,
         "min_eigenvalue_nonprior": 2.5500805469071674e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.5030013309840764e-11,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0005893936694693712,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 2.5500805469071674e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -18572,6 +18882,13 @@
         ],
         "theta_profile_log10_det_likelihood": -1.5961139565763065,
         "theta_profile_min_eigenvalue_nonprior": 0.12180686086041521,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.12180686086041521,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.0477158228908666e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 2.502088799729764e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 1.1427990944936042,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -19139,7 +19456,14 @@
          "gain_eeg"
         ],
         "max_eigenvalue_nonprior": 0.6821457830158096,
-        "min_eigenvalue_nonprior": -9.634416882416998e-18,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 9.004324335808688e-13,
+         "numerically_zero": true,
+         "relative_uncertainty": 93459.98253658463,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": -9.634416882416998e-18,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -19295,6 +19619,13 @@
         ],
         "theta_profile_log10_det_likelihood": -900.7459471273785,
         "theta_profile_min_eigenvalue_nonprior": 0.0,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.0,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 2.369336821716284e-13,
+         "numerically_zero": true,
+         "relative_uncertainty": "inf",
+         "significant_figures": 0
+        },
         "theta_profile_min_eigenvalue_total": 1.0,
         "theta_profile_rank_likelihood": 1,
         "theta_subset": [
@@ -19762,6 +20093,13 @@
         ],
         "max_eigenvalue_nonprior": 11.445863791007158,
         "min_eigenvalue_nonprior": 2.5574968643579417e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.5108540204129448e-11,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0005907549844805945,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 2.5574968643579417e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -19917,6 +20255,13 @@
         ],
         "theta_profile_log10_det_likelihood": -1.5996577726143826,
         "theta_profile_min_eigenvalue_nonprior": 0.12201594117354231,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.12201594117354231,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.0318569970242964e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 2.4848040082829097e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 1.1426968279687788,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -20915,6 +21260,13 @@
         ],
         "max_eigenvalue_nonprior": 11.386373719576335,
         "min_eigenvalue_nonprior": 2.5500805469071674e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.5030013309840764e-11,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0005893936694693712,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 2.5500805469071674e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -21070,6 +21422,13 @@
         ],
         "theta_profile_log10_det_likelihood": -1.5961139565763065,
         "theta_profile_min_eigenvalue_nonprior": 0.12180686086041521,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.12180686086041521,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.0477158228908666e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 2.502088799729764e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 1.1427990944936042,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -21537,6 +21896,13 @@
         ],
         "max_eigenvalue_nonprior": 11.445863791007158,
         "min_eigenvalue_nonprior": 2.5574968643579417e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.5108540204129448e-11,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0005907549844805945,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 2.5574968643579417e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -21692,6 +22058,13 @@
         ],
         "theta_profile_log10_det_likelihood": -1.5996577726143826,
         "theta_profile_min_eigenvalue_nonprior": 0.12201594117354231,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.12201594117354231,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.0318569970242964e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 2.4848040082829097e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 1.1426968279687788,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -22301,6 +22674,13 @@
         ],
         "max_eigenvalue_nonprior": 1431.72088439149,
         "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.889871567396767e-09,
+         "numerically_zero": true,
+         "relative_uncertainty": "inf",
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 0.0,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -22456,6 +22836,13 @@
         ],
         "theta_profile_log10_det_likelihood": 5.654423022601232,
         "theta_profile_min_eigenvalue_nonprior": 1.8395446706036982,
+        "theta_profile_min_eigenvalue_nonprior_raw": 1.8395446706036982,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.3441124324987726e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.8179022700227814e-10,
+         "significant_figures": 9
+        },
         "theta_profile_min_eigenvalue_total": 2.8395452800751024,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -23247,7 +23634,14 @@
          "beta_hrf"
         ],
         "max_eigenvalue_nonprior": 12.294279786520608,
-        "min_eigenvalue_nonprior": -2.1786511433725852e-22,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.6228449318207203e-11,
+         "numerically_zero": true,
+         "relative_uncertainty": 74488517207.41907,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": -2.1786511433725852e-22,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -23403,6 +23797,13 @@
         ],
         "theta_profile_log10_det_likelihood": -12.105876942405741,
         "theta_profile_min_eigenvalue_nonprior": 4.6778345457449915e-07,
+        "theta_profile_min_eigenvalue_nonprior_raw": 4.6778345457449915e-07,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 1.5157547273084258e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 3.240291447860576e-06,
+         "significant_figures": 5
+        },
         "theta_profile_min_eigenvalue_total": 1.0000102829507893,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -24296,6 +24697,13 @@
         ],
         "max_eigenvalue_nonprior": 1431.7208963713576,
         "min_eigenvalue_nonprior": 2.5445668431276713e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.8898715832101922e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.07427085628795052,
+         "significant_figures": 1
+        },
+        "min_eigenvalue_nonprior_raw": 2.5445668431276713e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -24451,6 +24859,13 @@
         ],
         "theta_profile_log10_det_likelihood": 5.659806705732226,
         "theta_profile_min_eigenvalue_nonprior": 1.8395453934386143,
+        "theta_profile_min_eigenvalue_nonprior_raw": 1.8395453934386143,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.359107668314908e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.8260531543806133e-10,
+         "significant_figures": 9
+        },
         "theta_profile_min_eigenvalue_total": 2.841087395937061,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -24918,6 +25333,13 @@
         ],
         "max_eigenvalue_nonprior": 1435.206190916837,
         "min_eigenvalue_nonprior": 2.7426780547157387e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.894472172010225e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.06907380794303891,
+         "significant_figures": 1
+        },
+        "min_eigenvalue_nonprior_raw": 2.7426780547157387e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -25073,6 +25495,13 @@
         ],
         "theta_profile_log10_det_likelihood": 5.654427590500932,
         "theta_profile_min_eigenvalue_nonprior": 1.8395480328369471,
+        "theta_profile_min_eigenvalue_nonprior_raw": 1.8395480328369471,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.3441157160061594e-10,
+         "numerically_zero": false,
+         "relative_uncertainty": 1.8179007323058976e-10,
+         "significant_figures": 9
+        },
         "theta_profile_min_eigenvalue_total": 2.8395489689852593,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -25966,6 +26395,13 @@
         ],
         "max_eigenvalue_nonprior": 11144.031322469493,
         "min_eigenvalue_nonprior": 6.754821081760234e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.4710121345659731e-08,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.21777218326893763,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 6.754821081760234e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -26121,6 +26557,13 @@
         ],
         "theta_profile_log10_det_likelihood": 9.526951418723712,
         "theta_profile_min_eigenvalue_nonprior": 51.34660533441344,
+        "theta_profile_min_eigenvalue_nonprior_raw": 51.34660533441344,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 1.0733401524140722e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 2.0903819160459666e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 52.40776591453668,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -26588,6 +27031,13 @@
         ],
         "max_eigenvalue_nonprior": 11150.532014769924,
         "min_eigenvalue_nonprior": 7.01752554584102e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.47187022594963e-08,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.209742054565365,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 7.01752554584102e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -26743,6 +27193,13 @@
         ],
         "theta_profile_log10_det_likelihood": 9.525482449922267,
         "theta_profile_min_eigenvalue_nonprior": 51.344405358020545,
+        "theta_profile_min_eigenvalue_nonprior_raw": 51.344405358020545,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 1.0710931385415385e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 2.086095127741551e-11,
+         "significant_figures": 10
+        },
         "theta_profile_min_eigenvalue_total": 52.34446781681953,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -27635,7 +28092,14 @@
          "gain_bold"
         ],
         "max_eigenvalue_nonprior": 11973.398260079102,
-        "min_eigenvalue_nonprior": 5.3170014766246796e-11,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.5804885703304414e-08,
+         "numerically_zero": true,
+         "relative_uncertainty": 297.2518584542056,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 5.3170014766246796e-11,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -27791,6 +28255,13 @@
         ],
         "theta_profile_log10_det_likelihood": 7.315115337761586,
         "theta_profile_min_eigenvalue_nonprior": 1.5427024647018934,
+        "theta_profile_min_eigenvalue_nonprior_raw": 1.5427024647018934,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 1.0790402152708608e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 6.994480400207118e-10,
+         "significant_figures": 9
+        },
         "theta_profile_min_eigenvalue_total": 2.543039131262309,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -28257,7 +28728,14 @@
          "beta_hrf"
         ],
         "max_eigenvalue_nonprior": 11975.943004942026,
-        "min_eigenvalue_nonprior": 5.968046588184544e-11,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.5808244766523475e-08,
+         "numerically_zero": true,
+         "relative_uncertainty": 264.88139013224895,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": 5.968046588184544e-11,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -28413,6 +28891,13 @@
         ],
         "theta_profile_log10_det_likelihood": 7.314412229456268,
         "theta_profile_min_eigenvalue_nonprior": 1.5427026794464265,
+        "theta_profile_min_eigenvalue_nonprior_raw": 1.5427026794464265,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 1.0789891214904101e-09,
+         "numerically_zero": false,
+         "relative_uncertainty": 6.994148230024386e-10,
+         "significant_figures": 9
+        },
         "theta_profile_min_eigenvalue_total": 2.5427028269778833,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -28994,6 +29479,13 @@
         ],
         "max_eigenvalue_nonprior": 12.370356975079893,
         "min_eigenvalue_nonprior": 2.520068095651777e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.632887120710546e-11,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0006479535705912044,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 2.520068095651777e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -29149,6 +29641,13 @@
         ],
         "theta_profile_log10_det_likelihood": -2.7700155483021796,
         "theta_profile_min_eigenvalue_nonprior": 0.015690283841818548,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.015690283841818548,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 4.902525232993979e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 3.124561214072825e-10,
+         "significant_figures": 9
+        },
         "theta_profile_min_eigenvalue_total": 1.0172082419952542,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -29716,7 +30215,14 @@
          "gain_eeg"
         ],
         "max_eigenvalue_nonprior": 0.849220179446673,
-        "min_eigenvalue_nonprior": -1.6706500860722944e-17,
+        "min_eigenvalue_nonprior": 0.0,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.1209706368696084e-12,
+         "numerically_zero": true,
+         "relative_uncertainty": 67097.87083571852,
+         "significant_figures": 0
+        },
+        "min_eigenvalue_nonprior_raw": -1.6706500860722944e-17,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -29872,6 +30378,13 @@
         ],
         "theta_profile_log10_det_likelihood": -900.558026642003,
         "theta_profile_min_eigenvalue_nonprior": 0.0,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.0,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 3.652138922858973e-13,
+         "numerically_zero": true,
+         "relative_uncertainty": "inf",
+         "significant_figures": 0
+        },
         "theta_profile_min_eigenvalue_total": 1.0,
         "theta_profile_rank_likelihood": 1,
         "theta_subset": [
@@ -30339,6 +30852,13 @@
         ],
         "max_eigenvalue_nonprior": 12.43407414484508,
         "min_eigenvalue_nonprior": 2.527226798907496e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.6412977871195508e-11,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0006494461786449373,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 2.527226798907496e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -30494,6 +31014,13 @@
         ],
         "theta_profile_log10_det_likelihood": -2.775605234226273,
         "theta_profile_min_eigenvalue_nonprior": 0.015715860039844206,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.015715860039844206,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 4.877101264535865e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 3.103298993609651e-10,
+         "significant_figures": 9
+        },
         "theta_profile_min_eigenvalue_total": 1.0171999506545126,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -31390,6 +31917,13 @@
         ],
         "max_eigenvalue_nonprior": 12.370356975079893,
         "min_eigenvalue_nonprior": 2.520068095651777e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.632887120710546e-11,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0006479535705912044,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 2.520068095651777e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -31545,6 +32079,13 @@
         ],
         "theta_profile_log10_det_likelihood": -2.7700155483021796,
         "theta_profile_min_eigenvalue_nonprior": 0.015690283841818548,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.015690283841818548,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 4.902525232993979e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 3.124561214072825e-10,
+         "significant_figures": 9
+        },
         "theta_profile_min_eigenvalue_total": 1.0172082419952542,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [
@@ -32012,6 +32553,13 @@
         ],
         "max_eigenvalue_nonprior": 12.43407414484508,
         "min_eigenvalue_nonprior": 2.527226798907496e-08,
+        "min_eigenvalue_nonprior_numerics": {
+         "absolute_uncertainty": 1.6412977871195508e-11,
+         "numerically_zero": false,
+         "relative_uncertainty": 0.0006494461786449373,
+         "significant_figures": 3
+        },
+        "min_eigenvalue_nonprior_raw": 2.527226798907496e-08,
         "n_parameters": 9,
         "posterior_correlation": [
          [
@@ -32167,6 +32715,13 @@
         ],
         "theta_profile_log10_det_likelihood": -2.775605234226273,
         "theta_profile_min_eigenvalue_nonprior": 0.015715860039844206,
+        "theta_profile_min_eigenvalue_nonprior_raw": 0.015715860039844206,
+        "theta_profile_min_eigenvalue_numerics": {
+         "absolute_uncertainty": 4.877101264535865e-12,
+         "numerically_zero": false,
+         "relative_uncertainty": 3.103298993609651e-10,
+         "significant_figures": 9
+        },
         "theta_profile_min_eigenvalue_total": 1.0171999506545126,
         "theta_profile_rank_likelihood": 4,
         "theta_subset": [

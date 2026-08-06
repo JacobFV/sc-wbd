@@ -66,6 +66,9 @@ from .filters import LinearGaussianSSM, ObservationChannel, deterministic_respon
 from .types import DTYPE, resolve_device, torch_dtype
 
 __all__ = [
+    "InadequateDelayLine",
+    "assert_delay_line_adequate",
+    "delay_line_margin_taps",
     "PARAM_NAMES",
     "THETA_NAMES",
     "ParamSpec",
@@ -418,6 +421,75 @@ def delay_weights_grad(tau: Tensor, cfg: SystemConfig) -> Tensor:
 # --------------------------------------------------------------------------
 # Model assembly
 # --------------------------------------------------------------------------
+
+
+class InadequateDelayLine(ValueError):
+    """The delay line is too short (or too short-lagged) to represent ``tau``."""
+
+
+def delay_line_margin_taps(cfg: SystemConfig, tau_seconds: float) -> tuple[float, float]:
+    """``(upper_margin, lower_margin)`` in taps for the windowed-sinc kernel.
+
+    Both must be non-negative.  Returns ``(inf, inf)`` for ``D == 0``, the
+    deliberate no-delay-line configuration.
+    """
+    D = int(cfg.n_delay_taps)
+    if D == 0:
+        return float("inf"), float("inf")
+    d = float(tau_seconds) / cfg.dt
+    reach = 3.0 * cfg.sinc_sigma
+    return D - (d + reach), d - reach
+
+
+def assert_delay_line_adequate(cfg: SystemConfig, eta) -> None:
+    """Refuse a configuration whose delay line cannot represent ``tau``.
+
+    Found by agent 🧩 Rao (``scwbd.individualize.profile``), reimplemented here
+    so that ``scwbd.infer`` does not depend on a module that depends on it.
+
+    The fractional-delay weights are a Gaussian-windowed sinc evaluated at
+    ``x = tau/dt - p`` over taps ``p = 0..D``, **normalised by their own sum**.
+    If ``D < tau/dt`` the peak at ``x = 0`` is never reached, every raw weight
+    lies in the far tail, and the normalisation divides by a number near zero.
+    Nothing raises.  What comes out is a finite, plausible information matrix
+    inflated by ~25 orders of magnitude -- and the inflated reading is the one
+    that says *spectacularly identifiable*.  Rao measured, at ``tau = 12 ms``:
+
+        n_delay_taps = 10   I[tau, tau] = 1.78932e+25
+        n_delay_taps = 26   I[tau, tau] = 2.21145
+
+    This is the same failure shape as an unconverged optimiser reporting good
+    coverage: **an instrument that reads better when it is broken.**
+
+    The lower bound is an addition: for ``tau/dt < 3 sigma`` the kernel is
+    truncated at ``p = 0`` on its positive-lag side, which biases the
+    interpolation rather than inflating it.  Milder, but it is the same
+    boundary and a future short-delay regime would hit it.
+
+    ``D == 0`` is permitted: that is the naive-resampling control, where
+    ``d mu / d tau == 0`` exactly and the degeneracy is visible, not disguised.
+    """
+    D = int(cfg.n_delay_taps)
+    if D == 0:
+        return
+    eta = np.asarray(eta, dtype=float)
+    tau = float(np.asarray(natural_from_unconstrained(eta)["tau"]).reshape(-1).max())
+    up, lo = delay_line_margin_taps(cfg, tau)
+    if up < 0:
+        raise InadequateDelayLine(
+            f"n_delay_taps={D} cannot represent tau={tau:.6g} s at dt={cfg.dt:g} s: "
+            f"the windowed-sinc kernel needs at least tau/dt + 3*sinc_sigma = "
+            f"{tau / cfg.dt + 3 * cfg.sinc_sigma:.1f} taps. Below that its "
+            "normalisation divides by the far tail and the Fisher information is "
+            "inflated by many orders of magnitude with nothing raised."
+        )
+    if lo < 0:
+        raise InadequateDelayLine(
+            f"tau={tau:.6g} s is only {tau / cfg.dt:.1f} taps at dt={cfg.dt:g} s, "
+            f"less than 3*sinc_sigma={3 * cfg.sinc_sigma:.1f}: the fractional-delay "
+            "kernel is truncated at p=0 on its positive-lag side and the "
+            "interpolation is biased. Use a finer base clock or a longer delay."
+        )
 
 
 def structured_left_mul(F: Tensor, cfg: SystemConfig):

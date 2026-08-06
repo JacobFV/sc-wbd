@@ -203,3 +203,86 @@ def test_fisher_is_deterministic(tiny_setup):
     a = expected_fisher(u0, cfg, proto)
     b = expected_fisher(u0, cfg, proto)
     assert np.array_equal(a.I_likelihood, b.I_likelihood)
+
+
+def test_short_delay_line_is_refused_not_silently_inflated(tiny_setup):
+    """The delay-line guard (found by agent Rao) must fire before measurement.
+
+    A delay line shorter than ``tau/dt + 3*sinc_sigma`` leaves the windowed-sinc
+    kernel entirely in its own far tail and the normalisation divides by ~0.
+    Nothing raises, and the resulting Fisher information is inflated by ~25
+    orders of magnitude -- with the inflated reading being the one that says
+    "spectacularly identifiable".  This is the same shape as an unconverged
+    optimiser reporting good coverage: an instrument that reads *better* when it
+    is broken, which is the kind that does not get questioned.
+    """
+    from dataclasses import replace as _replace
+
+    from scwbd.infer.linear_gaussian import (
+        InadequateDelayLine,
+        assert_delay_line_adequate,
+        delay_line_margin_taps,
+    )
+
+    cfg, proto, u0 = tiny_setup
+    tau = float(np.exp(u0[PARAM_INDEX["tau"]]))
+
+    assert_delay_line_adequate(cfg, u0)                    # the fixture is adequate
+    up, lo = delay_line_margin_taps(cfg, tau)
+    assert up >= 0 and lo >= 0
+
+    short = _replace(cfg, n_delay_taps=int(tau / cfg.dt) - 2)
+    with pytest.raises(InadequateDelayLine, match="cannot represent"):
+        assert_delay_line_adequate(short, u0)
+    # and the guard is wired into the measurement path, not merely available
+    with pytest.raises(InadequateDelayLine):
+        expected_fisher(u0, short, proto, design="eeg_only")
+
+    # D == 0 is the naive-resampling control and stays permitted: there the
+    # degeneracy is exact and visible rather than disguised.
+    assert_delay_line_adequate(coarse_config(cfg), u0)
+
+
+def test_short_delay_line_would_have_inflated_the_answer(tiny_setup):
+    """Demonstrate the inflation the guard prevents, with the guard bypassed."""
+    from dataclasses import replace as _replace
+
+    from scwbd.infer.linear_gaussian import build_operator_derivatives
+
+    cfg, _proto, u0 = tiny_setup
+    tau = float(np.exp(u0[PARAM_INDEX["tau"]]))
+    ut = torch.tensor(u0, dtype=torch.float64).reshape(1, -1)
+    ok = build_operator_derivatives(ut, cfg)["dF"][0, PARAM_INDEX["tau"]]
+    short = _replace(cfg, n_delay_taps=max(int(tau / cfg.dt) - 4, 1))
+    bad = build_operator_derivatives(ut, short)["dF"][0, PARAM_INDEX["tau"]]
+    inflation = float(bad.abs().max()) / max(float(ok.abs().max()), 1e-300)
+    assert inflation > 1e3, (
+        "expected the truncated kernel to inflate d F / d tau by orders of "
+        f"magnitude; got {inflation:g}"
+    )
+
+
+def test_near_cancelling_eigenvalue_is_reported_as_numerically_zero(tiny_setup):
+    """An eigenvalue inside its own reproducibility floor is reported as 0.
+
+    Measured across BLAS thread counts, a well-conditioned theta-profile
+    lambda_min reproduces to ~1.3e-12 relative; a near-cancelling one inherits
+    that amplified by lambda_max/lambda_min.  Printing 15 digits of a quantity
+    whose *sign* is not stable is a claim the measurement does not support.
+    """
+    from scwbd.infer.fisher import _eig_uncertainty, _report_eig
+
+    solid = np.array([1e-3, 1.0, 16.0])
+    assert not _eig_uncertainty(solid)["numerically_zero"]
+    assert _report_eig(solid) == 1e-3
+
+    noise = np.array([-8.1e-21, 1.0, 149.0])
+    u = _eig_uncertainty(noise)
+    assert u["numerically_zero"]
+    assert _report_eig(noise) == 0.0
+    assert u["significant_figures"] == 0
+
+    cfg, proto, u0 = tiny_setup
+    m = expected_fisher(u0, cfg, proto, design="fmri_only").metrics
+    assert "theta_profile_min_eigenvalue_numerics" in m
+    assert "min_eigenvalue_nonprior_raw" in m

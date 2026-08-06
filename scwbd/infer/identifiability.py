@@ -60,6 +60,7 @@ from .linear_gaussian import (
     SystemConfig,
     build_protocol,
     calibrate_observation_noise,
+    assert_delay_line_adequate,
     calibrate_stimulus_amplitude,
     coarse_config,
     coarsen_protocol,
@@ -169,6 +170,10 @@ def build_design(
 ) -> BuiltDesign:
     """Instantiate one design: instrument, protocol and estimator model."""
     u_true = regime.eta_true()
+    # Refuse a delay line too short for this regime's delay before anything is
+    # measured: the failure is silent and inflates the answer (see
+    # linear_gaussian.assert_delay_line_adequate).
+    assert_delay_line_adequate(base_cfg, u_true)
     proto = build_protocol(base_cfg, seed=seed)
     amp = calibrate_stimulus_amplitude(
         base_cfg, u_true, proto, evoked_ratio=regime.evoked_ratio
