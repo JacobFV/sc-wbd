@@ -434,6 +434,20 @@ Note that `run_g2` **probes but does not auto-load**: the caller must pass
 resolve; G2 now waits only on `model_for_graph` (agent E / I) and the train/test
 datasets. **Both agent-C blockers on G2 and D07 are cleared.**
 
+> **Handoff to 🛡️ Popper — one assertion in `tests/bench/` now needs updating.**
+> `tests/bench/test_could_not_run.py::test_g2_refuses_to_invent_the_anatomy_controls`
+> asserts that G2's refusal message contains the phrase
+> *"control is the experiment"*. That phrase lived in the
+> `adapters.anatomy_controls()` **fallback** blocker — the branch taken only when
+> the probe fails — and it is now unreachable, because the probe succeeds.
+>
+> The test's *intent* still holds and is still enforced: called with
+> `controls=None`, G2 still returns `COULD_NOT_RUN`, now with
+> `"missing: graph controls (agent C): dense, randomized, distance_matched"`.
+> Only the wording changed. Asserting on `"graph controls (agent C)"` restores
+> it. That file is Popper's, so it is flagged here rather than edited.
+> Current state: `tests/bench` 120 passed, 1 failed (this one).
+
 ---
 
 ## 5. Regional heterogeneity
@@ -618,7 +632,34 @@ python -m scwbd.anatomy.build            # build what is missing
 python -m scwbd.anatomy.build --rebuild  # rebuild everything from upstream
 python -m scwbd.anatomy.build --verify   # re-hash every manifest entry
 pytest tests/anatomy -q
+
+# the route comparison of S1.6 (slow: the volumetric arm is ~22 s per tracer)
+python -m scwbd.anatomy.route_check --atlas Schaefer400x7 --atlas Schaefer100x7
 ```
+
+**Rebuild the maps whenever the sampling route changes.** The cached `.npz`
+files do not know which route produced them, and a stale cache silently served
+volumetric-route values against surface-route code for an entire revision
+(§0.1). `--verify` catches a corrupted artifact; it does **not** catch an
+artifact that is intact but was built by superseded code. Delete
+`assets/derived/maps/*.npz` and rebuild if in doubt.
+
+**Do not run two builds concurrently.** The incomplete artifacts described in
+§0.1 and §1.5 were produced by overlapping build processes under memory
+pressure: `load_maps` catches per-map exceptions and continues, so a build that
+loses a race degrades quietly rather than failing. Serial builds are cheap.
+
+Cost and memory, measured (GB10, unified memory, one 14 GB cgroup):
+
+| step | wall clock | peak RSS |
+|---|---|---|
+| `load_maps(Schaefer400x7, rebuild=True)` — 39 PET volumes, surface route | 11.2 s | 0.79 GB |
+| single volumetric-route tracer (1 mm resample + parcel means) | 3.5 s | 0.79 GB |
+| `pytest tests/anatomy` (220 tests) | 3.9 s | 1.15 GB |
+| `route_check` two atlases, 39 tracers each | ~28 min | < 1 GB |
+
+Nothing here approaches the cap; the volumetric route is slow because it
+resamples a 1 mm MNI152 volume per tracer, not because it is large in memory.
 
 ```python
 from scwbd.anatomy import BrainPrior
