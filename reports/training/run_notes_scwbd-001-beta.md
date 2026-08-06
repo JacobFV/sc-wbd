@@ -966,3 +966,73 @@ way.
 
 `gpu_reserved_gb` = 33.31, flat from step 20 onward, against the 40 GB device cap.
 `nvidia-smi` agrees at ~34,390 MiB. No creep across 200 steps.
+
+## Stage III — the posterior loss activates (diagnostics, not criteria)
+
+`lambda_posterior` is **0.0** in Stages I and II and unset (non-zero default) in
+Stage III, so **Stage III is the first stage where the amortised posterior loss
+is optimised** rather than merely logged. The change in `npe_loss` and `kl` at
+the boundary is that term switching on, by design.
+
+### RULING — KL is a diagnostic; SBC is the criterion
+
+`main`'s call, and it applies the condition-2 lesson *before* rather than after:
+
+> A KL threshold invented now would have **no reference class** — no
+> capacity-matched baseline, no prior run, and no principled value separating
+> "posterior appropriately adapting away from a prior it should adapt away from"
+> from "posterior drifting". **A guess with a timestamp.**
+
+**SBC has a real reference class and is already a committed deliverable:** rank
+histograms are uniform under correct calibration. That is a *distributional*
+prediction with a proper test, not a chosen constant.
+
+- **KL:** log it, plot it, report the trajectory. **Do not threshold it.**
+- **SBC uniformity:** the criterion. If ranks are uniform the posterior is
+  calibrated *whatever* KL did; if not, KL's trajectory becomes evidence about
+  **why** — the proper role of a diagnostic.
+
+The honest report form is: *"KL rose during Stage III; SBC was/was not uniform at
+the end,"* with the second clause carrying the verdict.
+
+### The KL "climb" does not survive more data — retracted
+
+I flagged KL as "climbing monotonically" from **five** samples:
+5.83 → 9.02 → 9.56 → 13.1 → 10.99.
+
+With eleven:
+
+```
+step    1   20   40    60     80   100   120   140    160   180   200
+kl  -2.84 -2.53 -2.36  3.31 13.97  5.83  9.02  9.56  13.10 10.99 10.93
+```
+
+It is not a monotonic climb. It is a **step change at activation** (−2.4 → ~+10)
+followed by **oscillation in roughly 5–14**, already turning over at the point I
+called it a trend.
+
+**Same arithmetic as the retracted period-60 claim** — a trend fitted to a short
+run, in a series whose generating process had just changed. Five samples across a
+regime change cannot distinguish trend from transient, and I said "watching
+rather than claiming" while using the word *monotonically*, which is a claim.
+
+### `npe_loss` excursions are posterior-specific, not batch-linked
+
+Checked as `main` asked, and the answer is clean:
+
+| step | `npe_loss` | `sim_forecast_nll` | median fcst |
+|---|---|---|---|
+| 80 | **52.38** | 1.429 | 1.417 |
+| 160 | **72.25** | **1.373** | 1.417 |
+
+Both excursions land on steps where forecast NLL is **normal** — step 160 is
+*below* median. **The same batch that produced an ordinary forecast loss produced
+a 70× NPE loss.**
+
+So these are **not** hard batches, and they do **not** connect to the normaliser
+work. They are specific to the posterior/flow, on a term that has just begun
+being optimised. Negative `npe_loss` values are expected throughout (it is a
+negative log-density, which goes below zero where density exceeds 1).
+
+Recorded as a diagnostic observation. **No threshold invoked, because none was
+declared** — and an undeclared metric is not a silent pass.
