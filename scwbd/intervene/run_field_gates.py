@@ -41,7 +41,8 @@ from .numerics import (
 )
 
 __all__ = ["em_gate_points", "acoustic_gate_points", "n6_points",
-           "run_n3", "run_n4", "run_n6", "main"]
+           "n8_points", "n8_dipole_pos",
+           "run_n3", "run_n4", "run_n6", "run_n8", "main"]
 
 #: the gate's preregistered tolerances, restated here so a drift is visible
 RELATIVE_TOL = 0.05
@@ -295,6 +296,9 @@ def run_n6(*, convergence: bool = True, subdivisions: Sequence[int] = (1, 2, 3, 
                 "error": float((got - ref_field).norm() / ref_field.norm()),
             })
 
+    ref = SphericalInductionReference(radius=N6_SPHERE_RADIUS, degree=48)
+    pos_t = torch.as_tensor(np.asarray(N6_DIPOLE_POS, dtype=float))
+
     rep = validate_induced_efield_solver(
         charge_bem_induced_efield,
         analytic=spectral_induced_efield,
@@ -302,13 +306,12 @@ def run_n6(*, convergence: bool = True, subdivisions: Sequence[int] = (1, 2, 3, 
         solver_kwargs=kw,
         tol=RELATIVE_TOL,
         convergence=rows or None,
+        # the reference must declare its own accuracy AT THIS geometry, or the
+        # gate cannot tell whether it measured the solver or the reference
+        convergence_ratio=ref.convergence_ratio(pos_t),
+        reference_degree=ref.degree,
         seed=SEED,
     )
-
-    ref = SphericalInductionReference(
-        radius=N6_SPHERE_RADIUS, degree=48
-    )
-    pos_t = torch.as_tensor(np.asarray(N6_DIPOLE_POS, dtype=float))
     rep.artifacts["solver_provenance"] = {
         "solver": "scwbd.intervene.tms.efield.ChargeBEM "
                   f"(icosphere subdiv 4, {20 * 4 ** 4} panels, single shell)",
@@ -367,6 +370,213 @@ def run_n6(*, convergence: bool = True, subdivisions: Sequence[int] = (1, 2, 3, 
     return rep.finalize()
 
 
+# ---------------------------------------------------------------------------
+# N8: the CONTACT regime -- the geometry tms-robotics actually uses
+# ---------------------------------------------------------------------------
+
+# Preregistered before the N8 run.  These are the repo's standing numerics
+# tolerances, identical to N3/N4/N6 -- not numbers picked to fit a result.
+# Full disclosure of the ordering, since the gate asks for preregistration: the
+# graded-mesh refinement study below was measured while scoping whether contact
+# was reachable at all, BEFORE N8's contract existed. The tolerance was not
+# adjusted afterwards; it is the same 0.05 every other numerics gate uses.
+N8_TOL = 0.05
+N8_EXPECTED_ORDER = 1.5
+
+#: 4 mm standoff on an 85 mm sphere: a/R_c = 0.9551, above the gate's 0.95 floor.
+N8_SPHERE_RADIUS = 0.085
+N8_STANDOFF_M = 0.004
+#: off-axis on purpose, so the reference's rotation path is exercised rather
+#: than the one symmetric case where it is trivially correct
+N8_DIRECTION = (0.03, -0.04, 0.0715)
+N8_DIPOLE_MDOT = ((0.0, 1e6, 0.0),)
+#: graded family: near-source panels held at ~1 mm while the GLOBAL mesh refines
+N8_GRADED_FAMILY = ((1, 5), (2, 4), (3, 3), (4, 2))
+
+
+def n8_dipole_pos() -> tuple[tuple[float, float, float], ...]:
+    d = np.asarray(N8_DIRECTION, dtype=float)
+    d = d / np.linalg.norm(d)
+    return (tuple((d * (N8_SPHERE_RADIUS + N8_STANDOFF_M)).tolist()),)
+
+
+def n8_points(n: int = 256, seed: int = SEED) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    direction = rng.normal(size=(n, 3))
+    direction /= np.linalg.norm(direction, axis=1, keepdims=True)
+    return direction * N8_CORTEX_RADIUS
+
+
+N8_CORTEX_RADIUS = 0.070
+
+
+def run_n8(*, self_convergence: bool = True, audits: bool = True) -> Any:
+    """N8: the induced field where the coil actually sits."""
+    import torch
+
+    from scwbd.bench.numerics import validate_induced_efield_contact
+
+    from .spectral_reference import AxialInductionReference, contact_induced_efield
+    from .tms.efield import (
+        ChargeBEM,
+        TriMesh,
+        contact_bem_induced_efield,
+        graded_icosphere,
+        icosphere,
+    )
+
+    pts = n8_points()
+    pos = n8_dipole_pos()
+    kw = {
+        "dipole_pos": pos,
+        "dipole_mdot": N8_DIPOLE_MDOT,
+        "sphere_radius": N8_SPHERE_RADIUS,
+    }
+    t_pts = torch.as_tensor(pts, dtype=torch.float64)
+    t_pos = torch.as_tensor(np.asarray(pos, dtype=float))
+    t_mdot = torch.as_tensor(np.asarray(N8_DIPOLE_MDOT, dtype=float))
+    ratio = N8_SPHERE_RADIUS / float(np.linalg.norm(np.asarray(pos[0], dtype=float)))
+    direction = t_pos[0] / t_pos[0].norm()
+
+    # --- self-convergence: successive differences, no reference involved -----
+    rows: list[dict[str, float]] = []
+    if self_convergence:
+        fields = []
+        for base, levels in N8_GRADED_FAMILY:
+            mesh = graded_icosphere(
+                N8_SPHERE_RADIUS, base, direction, levels, half_angle_rad=0.35
+            )
+            bem = ChargeBEM([mesh], [0.33], [0.0])
+            fields.append((
+                math.sqrt(4 * math.pi * N8_SPHERE_RADIUS**2 / (20 * 4**base)),
+                bem.total_field(t_pts, t_pos, t_mdot),
+                mesh.n_faces,
+            ))
+        for i in range(len(fields) - 1):
+            h_coarse, e_coarse, n_coarse = fields[i]
+            _, e_fine, _ = fields[i + 1]
+            rows.append({
+                "h": h_coarse,
+                "n_elements": float(n_coarse),
+                "error": float((e_coarse - e_fine).norm() / e_fine.norm()),
+            })
+
+    rep = validate_induced_efield_contact(
+        contact_bem_induced_efield,
+        reference=contact_induced_efield,
+        self_convergence=rows or None,
+        points=pts,
+        solver_kwargs=kw,
+        convergence_ratio=ratio,
+        tol=N8_TOL,
+        expected_order=N8_EXPECTED_ORDER,
+        seed=SEED,
+    )
+
+    # --- declare the reference's own accuracy AT THIS geometry --------------
+    ref = AxialInductionReference(radius=N8_SPHERE_RADIUS, degree=400)
+    from .tms.efield import analytic_sphere_efield
+
+    measured = float(
+        (ref.induced_field(t_pts, t_pos, t_mdot)
+         - analytic_sphere_efield(t_pts, t_pos, t_mdot)).norm()
+        / analytic_sphere_efield(t_pts, t_pos, t_mdot).norm()
+    )
+    solver_err = None
+    for sub in rep.subchecks:
+        for met in sub.metrics:
+            if met.name == "contact_efield.mean_relative_error":
+                solver_err = float(met.value)
+    bound = ref.truncation_estimate(t_pos)
+    rep.artifacts["reference_validity_domain"] = {
+        "a_over_Rc": ratio,
+        "reference_degree": 400,
+        "a_priori_bound_ratio_pow_degree": bound,
+        "measured_vs_closed_form": measured,
+        "solver_error": solver_err,
+        "bound_over_solver_error": (bound / solver_err) if solver_err else None,
+        "requirement": "bound/solver_error <= 0.1",
+    }
+    rep.artifacts["solver_provenance"] = {
+        "solver": "scwbd.intervene.tms.efield.contact_bem_induced_efield "
+                  "(graded icosphere, base subdiv 4 + 2 levels under the source)",
+        "reference": "scwbd.intervene.spectral_reference.AxialInductionReference "
+                     "(m = +-1 multipole, degree 400, per-element rotation)",
+        "geometry": {
+            "sphere_radius_m": N8_SPHERE_RADIUS,
+            "standoff_m": N8_STANDOFF_M,
+            "a_over_Rc": ratio,
+            "field_points": f"{len(pts)} on the {N8_CORTEX_RADIUS} m cortical shell",
+        },
+    }
+    rep.artifacts["self_convergence_family"] = rows
+
+    if audits:
+        uniform: list[dict[str, float]] = []
+        ref_field = ref.induced_field(t_pts, t_pos, t_mdot)
+        for k in (1, 2, 3, 4):
+            verts, faces = icosphere(k)
+            bem = ChargeBEM(
+                [TriMesh(verts * N8_SPHERE_RADIUS, faces)], [0.33], [0.0]
+            )
+            got = bem.total_field(t_pts, t_pos, t_mdot)
+            uniform.append({
+                "subdivision": float(k),
+                "n_elements": float(bem.n_faces),
+                "panel_to_standoff": bem.near_source_resolution(t_pos)[
+                    "panel_to_standoff"
+                ],
+                "error": float((got - ref_field).norm() / ref_field.norm()),
+            })
+        rep.artifacts["uniform_mesh_audit"] = uniform
+        monotone = all(
+            uniform[i]["error"] > uniform[i + 1]["error"]
+            for i in range(len(uniform) - 1)
+        )
+        rep.artifacts["uniform_mesh_refinement_is_monotone"] = monotone
+        rep.notes.append(
+            "AUDIT -- why grading is required, not merely preferable. On UNIFORM meshes at "
+            "this geometry the errors are "
+            + ", ".join(
+                f"{r['error']:.4f} ({int(r['n_elements'])} panels, ratio "
+                f"{r['panel_to_standoff']:.2f})" for r in uniform
+            )
+            + f". Monotone under refinement: {monotone}. Refining one level makes the answer "
+            "WORSE at the coarse end, so a user watching the error would have no way to "
+            "distinguish that from convergence. scwbd.intervene.tms.efield refuses beyond "
+            "panel_to_standoff = 1.0 for this reason."
+        )
+
+    rep.notes.append(
+        "The N8 contract says the N6 spectral reference does not extend to contact, since "
+        "its bound at a/R_c = 0.955 exceeds the solver error. That is correct for the "
+        "GENERAL reference (degree 48, O(L^2) basis): its bound there is 1.10e-1. It is not "
+        "correct for the reference used here. Rotating a single source onto the axis makes "
+        "the Neumann data exactly azimuthal order one, so the basis is O(L) instead of "
+        "O(L^2) and degree 400 is cheap; the bound becomes "
+        f"{bound:.2e} and the measured agreement with the closed form {measured:.1e}. The "
+        "contact regime is therefore validatable against an INDEPENDENT reference, not only "
+        "by self-consistency. Suggest amending the N8 docstring."
+    )
+    rep.notes.append(
+        "Both branches of the contract are supplied: an independent contact reference AND a "
+        "Richardson self-convergence study. The self-convergence subcheck proves the "
+        "discretisation converges to something; the reference subcheck is what says it "
+        "converges to the right thing."
+    )
+    rep.notes.append(
+        "Tolerance provenance: 0.05 is the repo's standing numerics tolerance, identical to "
+        "N3/N4/N6. Disclosure, since this gate asks for preregistration: the graded "
+        "refinement study was measured while scoping whether contact was reachable at all, "
+        "before N8's contract was written. The tolerance was not adjusted afterwards."
+    )
+    rep.notes.append(
+        "A PASS here licenses no claim about target engagement, network effect or clinical "
+        "utility, and no claim-bearing run has been made."
+    )
+    return rep.finalize()
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default="reports/intervene",
@@ -375,7 +585,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--ppw", type=int, default=20)
     ap.add_argument("--device", default=None)
     ap.add_argument("--no-convergence", action="store_true")
-    ap.add_argument("--only", choices=("n3", "n4", "n6"), default=None)
+    ap.add_argument("--only", choices=("n3", "n4", "n6", "n8"), default=None)
     args = ap.parse_args(argv)
 
     out = Path(args.out)
@@ -391,6 +601,8 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.only in (None, "n6"):
         reports.append(run_n6(convergence=conv))
+    if args.only in (None, "n8"):
+        reports.append(run_n8(self_convergence=conv, audits=conv))
 
     for rep in reports:
         jp, mp = rep.write(out)

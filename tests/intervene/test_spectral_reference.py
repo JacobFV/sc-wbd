@@ -28,6 +28,7 @@ import torch
 
 from scwbd.intervene.spectral_reference import (
     MU0,
+    AxialInductionReference,
     SphericalInductionReference,
     primary_induced_field,
     real_solid_basis,
@@ -242,3 +243,78 @@ def test_the_bem_adapter_refuses_a_source_inside_the_head():
             dipole_mdot=((0.0, 1e6, 0.0),),
             sphere_radius=_A,
         )
+
+
+# ---------------------------------------------------------------------------
+# the contact-geometry reference (gate N8)
+# ---------------------------------------------------------------------------
+
+_CONTACT = torch.tensor([[0.03, -0.04, 0.0715]], dtype=_DT)
+_CONTACT = _CONTACT / _CONTACT.norm() * 0.089  # 4 mm standoff, a/R_c = 0.9551
+
+
+def test_the_axial_series_is_the_general_recursion_restricted_to_m_equals_one():
+    """Two derivations of the same functions, so the fast one is not a new formula."""
+    from scwbd.intervene.spectral_reference import axial_series
+
+    g = torch.Generator().manual_seed(4)
+    p = torch.randn(50, 3, generator=g, dtype=_DT)
+    re_gen, im_gen = regular_solid_harmonics(p, 12)
+    re_ax, im_ax = axial_series(p, 12)
+    for i, l in enumerate(range(1, 13)):
+        # the general recursion carries a 1/(l+m)! scale; ratios must be constant
+        ratio = re_ax[i] / re_gen[(l, 1)]
+        assert float(ratio.std() / ratio.abs().mean()) < 1e-12, l
+        ratio_i = im_ax[i] / im_gen[(l, 1)]
+        assert float(ratio_i.std() / ratio_i.abs().mean()) < 1e-12, l
+
+
+def test_it_reaches_the_closed_form_at_contact_where_the_general_one_cannot():
+    """The whole reason gate N8 can conclude."""
+    pts = _interior()
+    closed = analytic_sphere_efield(pts, _CONTACT, _MD)
+    axial = AxialInductionReference(radius=_A, degree=400).induced_field(
+        pts, _CONTACT, _MD
+    )
+    assert float((axial - closed).norm() / closed.norm()) < 1e-12
+    # the general reference at the same geometry is useless: its a-priori bound
+    # is larger than the solver error it would be measuring
+    general = SphericalInductionReference(radius=_A, degree=48)
+    assert general.truncation_estimate(_CONTACT) > 1e-2
+
+
+def test_the_two_spectral_constructions_agree_where_both_are_valid():
+    pts = _interior()
+    axial = AxialInductionReference(radius=_A, degree=200).induced_field(pts, _RC, _MD)
+    general = SphericalInductionReference(radius=_A, degree=48).induced_field(
+        pts, _RC, _MD
+    )
+    assert float((axial - general).norm() / general.norm()) < 1e-7
+
+
+def test_off_axis_sources_exercise_the_rotation_path():
+    """The m=+-1 collapse only holds in the rotated frame, so rotation is load-bearing."""
+    pts = _interior()
+    off = torch.tensor([[0.05, 0.06, -0.03]], dtype=_DT)
+    off = off / off.norm() * 0.095
+    got = AxialInductionReference(radius=_A, degree=300).induced_field(pts, off, _MD)
+    closed = analytic_sphere_efield(pts, off, _MD)
+    assert float((got - closed).norm() / closed.norm()) < 1e-10
+
+
+def test_multiple_elements_superpose():
+    pts = _interior(60)
+    pos = torch.stack([_CONTACT[0], torch.tensor([0.0, 0.0, 0.092], dtype=_DT)])
+    mdot = torch.tensor([[0.0, 1e6, 0.0], [1e6, 0.0, 0.0]], dtype=_DT)
+    ref = AxialInductionReference(radius=_A, degree=300)
+    got = ref.induced_field(pts, pos, mdot)
+    parts = sum(
+        ref.induced_field(pts, pos[i : i + 1], mdot[i : i + 1]) for i in range(2)
+    )
+    assert torch.allclose(got, parts, rtol=1e-12, atol=0.0)
+
+
+def test_a_source_inside_the_conductor_is_refused():
+    ref = AxialInductionReference(radius=_A, degree=16)
+    with pytest.raises(ValueError, match="inside the conductor"):
+        ref.induced_field(_interior(10), torch.tensor([[0.0, 0.0, 0.05]], dtype=_DT), _MD)

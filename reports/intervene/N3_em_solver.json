@@ -134,8 +134,8 @@
     ]
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T08:11:37+00:00",
-    "git_rev": "696f94d",
+    "timestamp_utc": "2026-08-06T08:48:35+00:00",
+    "git_rev": "f233f77",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -143,6 +143,29 @@
       "numpy": "2.5.1",
       "scipy": "1.18.0",
       "torch": "2.13.0+cu130"
-    }
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/intervene/run_field_gates.py",
+      "scwbd/intervene/spectral_reference.py",
+      "scwbd/intervene/tms/efield.py",
+      "tests/intervene/test_spectral_reference.py",
+      "tests/intervene/test_tms_efield.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
   }
 }

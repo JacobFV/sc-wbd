@@ -25,8 +25,11 @@ import torch
 
 from scwbd.intervene.tms.coil import MU0, CircularCoil, FigureEightCoil, biphasic
 from scwbd.intervene.tms.efield import (
+    MAX_PANEL_TO_STANDOFF,
     ChargeBEM,
     ImpossibleGeometry,
+    bem_error_envelope,
+    graded_icosphere,
     LayeredSphereBEM,
     SphericalHeadModel,
     TriMesh,
@@ -401,3 +404,77 @@ def test_bem_refuses_sources_inside_the_conductor():
     with pytest.raises(ImpossibleGeometry) as exc:
         bem.assert_sources_outside(torch.tensor([[0.0, 0.0, 0.01]], dtype=_DT))
     assert exc.value.code == "R06"
+
+
+# ---------------------------------------------------------------------------
+# contact geometry: graded meshing and the resolution guard (gate N8)
+# ---------------------------------------------------------------------------
+
+
+def _contact_source():
+    p = torch.tensor([[0.03, -0.04, 0.0715]], dtype=_DT)
+    return p / p.norm() * 0.089  # 4 mm off an 85 mm scalp
+
+
+def test_graded_icosphere_is_a_closed_surface_refined_only_where_asked():
+    head = SphericalHeadModel()
+    u = _contact_source()[0] / _contact_source()[0].norm()
+    coarse = graded_icosphere(head.radius, 3, u, 0)
+    graded = graded_icosphere(head.radius, 3, u, 2)
+    assert graded.n_faces > coarse.n_faces
+    # still closed: enclosed volume within the flat-panel error of the sphere
+    exact = 4 / 3 * math.pi * head.radius**3
+    assert abs(graded.enclosed_volume() - exact) / exact < 0.01
+    # refinement is local: panels far from u keep the base size
+    cen = graded.centroids()
+    cen = cen / cen.norm(dim=-1, keepdim=True)
+    _, area = graded.normals_areas()
+    near = (cen @ u) > math.cos(0.2)
+    far = (cen @ u) < math.cos(1.2)
+    assert float(area[near].mean()) < 0.1 * float(area[far].mean())
+
+
+def test_the_resolution_guard_refuses_a_mesh_that_cannot_resolve_the_source():
+    head = SphericalHeadModel()
+    pos = _contact_source()
+    v, f = icosphere(3)
+    coarse = ChargeBEM([TriMesh(v * head.radius, f)], [0.33], [0.0])
+    res = coarse.near_source_resolution(pos)
+    assert res["panel_to_standoff"] > MAX_PANEL_TO_STANDOFF
+    with pytest.raises(ImpossibleGeometry, match="does not resolve"):
+        coarse.assert_resolves_sources(pos)
+
+    u = pos[0] / pos[0].norm()
+    graded = ChargeBEM([graded_icosphere(head.radius, 4, u, 2)], [0.33], [0.0])
+    ok = graded.assert_resolves_sources(pos)
+    assert ok["panel_to_standoff"] < 0.3
+
+
+def test_the_error_envelope_is_a_measured_step_not_a_guess():
+    assert bem_error_envelope(0.2) == 0.01
+    assert bem_error_envelope(0.5) == 0.02
+    assert bem_error_envelope(0.95) == 0.04
+    assert math.isnan(bem_error_envelope(1.5))  # outside: no bound is claimed
+    # monotone in the resolution ratio
+    vals = [bem_error_envelope(r) for r in (0.1, 0.4, 0.8)]
+    assert vals == sorted(vals)
+
+
+@pytest.mark.slow
+def test_the_bem_ledger_carries_the_resolution_that_governs_its_error():
+    """A ledger saying only 'charge_bem_5120_faces' cannot tell validated from not."""
+    head = SphericalHeadModel()
+    coil, pulse = FigureEightCoil(), biphasic()
+    pts, _ = head.cortical_shell(162)
+    pose = _pose_at_scalp_distance(head, 0.004)
+    v, f = icosphere(4)
+    bem = ChargeBEM([TriMesh(v * head.radius, f)], [0.33], [0.0])
+    dose = efield_from_coil(
+        coil, pulse, pose.matrix(), pts, head=head, solver="bem", bem=bem
+    )
+    vd = dose.ledger.validity_domain
+    assert "near_source_resolution" in vd
+    assert vd["near_source_resolution"]["panel_to_standoff"] <= MAX_PANEL_TO_STANDOFF
+    assert vd["near_source_resolution"]["relative_error_bound"] > 0.0
+    # the declared numerical variance follows the measured envelope, not a constant
+    assert dose.ledger.variance["numerical"] > 0.0

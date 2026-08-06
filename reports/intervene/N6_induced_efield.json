@@ -73,7 +73,7 @@
     {
       "name": "reference_provenance",
       "description": "Does the closed-form reference come from the same module as the solver?",
-      "status": "COULD_NOT_RUN",
+      "status": "PASS",
       "mandatory": false,
       "reason": "",
       "falsified_by": "",
@@ -84,12 +84,61 @@
           "units": "dimensionless",
           "kind": "audit",
           "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "solver=scwbd.intervene.tms.efield, reference=scwbd.intervene.spectral_reference; shared provenance is not disqualifying, but it is a weaker test than an independent implementation and must not be described as independent validation",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "reference_validity_domain",
+      "description": "The multipole/series reference converges like ratio**degree. Its a-priori error bound at this geometry must sit well below the solver error being measured, or the gate is measuring the reference.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the reference is no more accurate than the solver it measures",
+      "metrics": [
+        {
+          "name": "reference.convergence_ratio",
+          "value": 0.7727272727272728,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.9,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a/R_c at the validated geometry; the series converges like ratio**degree, so a ratio approaching 1 is not fixable by raising the degree",
+          "passed": true
+        },
+        {
+          "name": "reference.a_priori_bound",
+          "value": 4.2194859653233165e-06,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
           "threshold": null,
           "direction": "greater_is_better",
           "require_interval_beats_threshold": false,
           "exact": true,
-          "note": "solver=scwbd.intervene.tms.efield, reference=scwbd.intervene.spectral_reference; shared provenance is not disqualifying, but it is a weaker test than an independent implementation and must not be described as independent validation",
+          "note": "ratio**degree with degree=48",
           "passed": null
+        },
+        {
+          "name": "reference.bound_over_measured_error",
+          "value": 0.0019636363998383807,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.1,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a-priori reference bound 4.22e-06 / measured solver error 0.00215; the reference must be the more accurate of the two by a clear margin",
+          "passed": true
         }
       ]
     },
@@ -120,6 +169,8 @@
   "baselines_run": [],
   "notes": [
     "Induction, not conduction: this gate is what N3 does NOT cover.",
+    "STANDOFF ONLY. The reference series converges like (a/R_c)**degree. At a contact geometry (a/R_c ~ 0.955 for a coil element 4 mm off an 85 mm scalp) no feasible degree brings its bound below the solver error, so this gate validates the discretisation against a STANDOFF equivalent dipole, not against a contact coil. tms-robotics positions a coil in contact; that regime is gate N8_induced_efield_contact and it has not run.",
+    "The validity domain is a metric in this report, not a footnote: a reader who checks only the headline error still sees reference.convergence_ratio.",
     "The reference is INDEPENDENT of the solver, in code and in derivation. The solver is a surface-charge BEM; the reference solves the interior Neumann problem spectrally -- multipole expansion in regular solid harmonics, coefficients by quadrature on the sphere, gradient by automatic differentiation. They share no function and no formula. `reference_shares_module_with_solver` is 0 for that reason, and it is the reason rather than an accident of file layout.",
     "The reference is validated in its own right, not asserted: it converges geometrically to the closed form (9.7e-9 relative at degree 48), it reproduces the Heller-van Hulsteyn theorem r.E = 0 to the same order, and in the far-source limit it reduces to the elementary Faraday solution E = -(1/2) Bdot x r. Those three checks are in tests/intervene/test_spectral_reference.py.",
     "DISCLOSURE -- validity domain of the reference. The multipole series converges like (a/R_c)^L; here a/R_c = 0.7727, so the a-priori bound at degree 48 is 4.22e-06 and the MEASURED agreement with the closed form is 9.7e-9 -- respectively three and six orders below the ~4.8e-3 solver error being measured, which is the condition for calling this a reference. A coil element a few millimetres off the scalp has a/R_c -> 1 and would need a prohibitive degree: this reference is a yardstick for a standoff source, NOT for a coil in contact. Near-surface geometry is exactly what the BEM exists for, and validating it there needs a different reference -- N6 does not claim to have done so.",
@@ -128,6 +179,14 @@
   "artifacts": {
     "subject": "scwbd.intervene.tms.efield.charge_bem_induced_efield",
     "reference": "scwbd.intervene.spectral_reference.spectral_induced_efield",
+    "reference_validity_domain": {
+      "convergence_ratio": 0.7727272727272728,
+      "reference_degree": 48,
+      "a_priori_bound": 4.2194859653233165e-06,
+      "measured_solver_error": 0.0021488122575394337,
+      "bound_over_measured_error": 0.0019636363998383807,
+      "does_not_cover": "contact geometry. A coil element in contact with the scalp has a/R_c ~ 0.955, where no feasible degree brings the series bound below the solver error. This gate validates a STANDOFF equivalent dipole; the contact regime is gate N8_induced_efield_contact and has not run."
+    },
     "solver_provenance": {
       "solver": "scwbd.intervene.tms.efield.ChargeBEM (icosphere subdiv 4, 5120 panels, single shell)",
       "reference": "scwbd.intervene.spectral_reference.SphericalInductionReference (multipole degree 48, Neumann problem by spherical-harmonic transform, gradient by autograd)",
@@ -207,8 +266,8 @@
     "reference_convergence_ratio": 0.7727272727272728
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T08:16:17+00:00",
-    "git_rev": "696f94d",
+    "timestamp_utc": "2026-08-06T08:52:32+00:00",
+    "git_rev": "f233f77",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -216,6 +275,29 @@
       "numpy": "2.5.1",
       "scipy": "1.18.0",
       "torch": "2.13.0+cu130"
-    }
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/intervene/run_field_gates.py",
+      "scwbd/intervene/spectral_reference.py",
+      "scwbd/intervene/tms/efield.py",
+      "tests/intervene/test_spectral_reference.py",
+      "tests/intervene/test_tms_efield.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
   }
 }

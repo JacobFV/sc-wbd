@@ -52,6 +52,10 @@ from .coil import MU0, CoilGeometry, TMSPulse
 __all__ = [
     "ImpossibleGeometry",
     "charge_bem_induced_efield",
+    "contact_bem_induced_efield",
+    "graded_icosphere",
+    "MAX_PANEL_TO_STANDOFF",
+    "bem_error_envelope",
     "assert_sources_exterior",
     "analytic_sphere_efield",
     "primary_efield_dipoles",
@@ -78,6 +82,52 @@ _MIN_SCALP_CLEARANCE_M = 1e-4
 
 #: target size of a (field point x dipole) working block, in elements
 _MAX_PAIR_BLOCK = 16_000_000
+
+#: Largest near-source panel, as a fraction of the source standoff, at which the
+#: charge BEM has been validated.  Calibrated on gate N7's WORST case -- a single
+#: concentrated dipole, where near-field errors do not average out:
+#:
+#: ====== ==================== ====================
+#: ratio  concentrated source  distributed coil
+#: ====== ==================== ====================
+#: 0.26   0.49 %               --
+#: 0.49   --                   0.13 %
+#: 0.51   1.9 %                --
+#: 0.95   --                   0.52 %
+#: 1.01   3.2 %                --
+#: 1.83   --                   2.2 %
+#: 1.90   15.9 %               --
+#: ====== ==================== ====================
+#:
+#: A distributed coil is roughly 6x more forgiving at the same ratio, because
+#: each element's near-field error is a different sign and they partly cancel.
+#: The envelope is set by the concentrated case so it holds for both; a
+#: threshold fitted to coils would silently pass a point source.  Beyond it the
+#: error reaches 16 % AND refinement stops being monotonic -- so a user refining
+#: one level would watch the answer get worse with no way to distinguish that
+#: from convergence.  :func:`efield_from_coil` refuses there.
+MAX_PANEL_TO_STANDOFF = 1.0
+
+#: Measured error envelope versus near-source resolution, from gate N7. Used to
+#: put a *calibrated* numerical variance in the ledger instead of a guessed one.
+_N7_ERROR_ENVELOPE: tuple[tuple[float, float], ...] = (
+    (0.3, 0.01),
+    (0.6, 0.02),
+    (1.0, 0.04),
+)
+
+
+def bem_error_envelope(panel_to_standoff: float) -> float:
+    """Relative-error bound for a charge-BEM field, from gate N7's measurements.
+
+    Conservative step function over the measured table above, so the ledger
+    carries a number traceable to a refinement study rather than a constant
+    someone once typed.
+    """
+    for limit, err in _N7_ERROR_ENVELOPE:
+        if float(panel_to_standoff) <= limit:
+            return err
+    return float("nan")
 
 
 class ImpossibleGeometry(InterventionRefusal):
@@ -609,6 +659,67 @@ class ChargeBEM:
                 offending_object={"n_sources_inside": n_in},
             )
 
+    def near_source_resolution(self, dipole_pos: Tensor) -> dict[str, float]:
+        """How well the mesh resolves the closest source element.
+
+        Returns the standoff of the nearest panel, that panel's nominal edge
+        ``sqrt(area)``, and their ratio -- the quantity that actually governs
+        accuracy here, because the kernel is near-singular at the source and it
+        is the *local* panel size relative to the standoff that decides whether
+        the near field is resolved. A global element count says nothing.
+        """
+        pos = dipole_pos.to(_DT).reshape(-1, 3)
+        d = (pos[:, None, :] - self.c[None, :, :]).norm(dim=-1)  # [D,T]
+        idx = d.argmin(dim=1)
+        # PERPENDICULAR distance to the nearest panel's plane, not the distance
+        # to its centroid: an element sitting over a panel corner is h/sqrt(3)
+        # away in-plane, which would inflate the denominator and make the guard
+        # read as safer than it is. The standoff that governs the near-singular
+        # kernel is the normal one, and it is the one gate N7 calibrated against.
+        offset = pos - self.c[idx]
+        standoff = (offset * self.n[idx]).sum(-1).abs()
+        panel = self.a[idx].sqrt()
+        ratio = panel / standoff.clamp_min(1e-12)
+        worst = int(ratio.argmax())
+        return {
+            "standoff_m": float(standoff[worst]),
+            "panel_edge_m": float(panel[worst]),
+            "panel_to_standoff": float(ratio[worst]),
+        }
+
+    def assert_resolves_sources(
+        self,
+        dipole_pos: Tensor,
+        *,
+        max_ratio: float = MAX_PANEL_TO_STANDOFF,
+        context: str = "ChargeBEM",
+    ) -> dict[str, float]:
+        """Refuse a mesh too coarse to resolve the near-source field.
+
+        This is the guard that gate N7 exists to justify. Beyond the envelope a
+        concentrated source reaches 16 % error and refinement stops being
+        monotonic -- the coarser meshes score *better* -- so an unwary user
+        refining by one level would watch the answer get worse with no way to
+        tell that from convergence. Returning a number there is precisely the
+        failure this package exists to prevent.
+        """
+        res = self.near_source_resolution(dipole_pos)
+        if res["panel_to_standoff"] > float(max_ratio):
+            raise ImpossibleGeometry(
+                f"{context}: the mesh does not resolve the near-source field. The "
+                f"closest source element stands {res['standoff_m'] * 1e3:.2f} mm off a "
+                f"panel of edge {res['panel_edge_m'] * 1e3:.2f} mm "
+                f"(ratio {res['panel_to_standoff']:.2f}, validated envelope "
+                f"<= {float(max_ratio)}). Gate N7 measures 15.9 % error for a "
+                "concentrated source at ratio 1.90, and refinement there is not "
+                "monotonic -- a coarser mesh scores better -- so no error bound can be "
+                "attached to a result computed here.",
+                remedy="use scwbd.intervene.tms.efield.graded_icosphere to refine the "
+                "panels under the source, or move the source outside the near field",
+                offending_object=res,
+            )
+        return res
+
     def _matrix(self, chunk: int = 256) -> Tensor:
         if self._M is not None:
             return self._M
@@ -761,11 +872,27 @@ def efield_from_coil(
                 raise ValueError("bem solver needs a ChargeBEM or a SphericalHeadModel")
             bem = LayeredSphereBEM(head)
         bem.assert_sources_outside(pos, context="efield_from_coil[bem]")
+        resolution = bem.assert_resolves_sources(pos, context="efield_from_coil[bem]")
         e = bem.total_field(points, pos, mdot)
         model = f"charge_bem_{bem.n_faces}_faces"
-        num_var = float((0.02 * e.norm(dim=-1).max()) ** 2)
+        rel_bound = bem_error_envelope(resolution["panel_to_standoff"])
+        num_var = float((rel_bound * e.norm(dim=-1).max()) ** 2)
+        bem_resolution = resolution
+        bem_resolution["relative_error_bound"] = rel_bound
     else:
         raise ValueError(f"unknown solver {solver!r}")
+    validity: dict[str, Any] = {
+        "solver": model,
+        "didt_A_per_s": didt,
+        "geometry": "spherically_symmetric" if solver == "analytic" else "mesh",
+    }
+    if solver == "bem":
+        # carry the measured near-source resolution, not just the panel count:
+        # it is the quantity the error actually depends on, and a ledger that
+        # records only "charge_bem_5120_faces" cannot tell a validated result
+        # from an unvalidated one (gate N7)
+        validity["near_source_resolution"] = bem_resolution
+        validity["panel_to_standoff_limit"] = MAX_PANEL_TO_STANDOFF
     return PhysicalDose(
         modality="tms",
         quantity="E_field",
@@ -775,13 +902,69 @@ def efield_from_coil(
         ledger=Ledger(
             variance={"numerical": num_var},
             bias_status="externally_bounded",
-            validity_domain={
-                "solver": model,
-                "didt_A_per_s": didt,
-                "geometry": "spherically_symmetric" if solver == "analytic" else "mesh",
-            },
+            validity_domain=validity,
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# graded meshing for contact geometry
+# ---------------------------------------------------------------------------
+
+def graded_icosphere(
+    radius: float,
+    base_subdiv: int,
+    direction: Tensor,
+    levels: int,
+    half_angle_rad: float = 0.35,
+) -> TriMesh:
+    """Icosphere refined **only** near ``direction``.
+
+    A coil in contact sits millimetres from the scalp, so the near-source panels
+    must be small compared with that standoff while the rest of the surface does
+    not.  Uniform refinement to the required near-source size is quadratically
+    wasteful and, for a dense BEM, unaffordable: 1 mm panels over an 85 mm sphere
+    is ~80 000 unknowns and a 53 GB matrix.  Grading gets the same near-source
+    resolution in ~7 000 panels.
+
+    Piecewise-constant collocation places one unknown per panel and needs no
+    continuity between panels, so hanging nodes are harmless and no conforming
+    closure is required.  The mesh is therefore returned as panel soup --
+    duplicated vertices, one triangle each -- which is what every consumer here
+    (:meth:`TriMesh.centroids`, :meth:`TriMesh.normals_areas`,
+    :func:`triangle_field_integral`) actually reads.
+    """
+    v, f = icosphere(int(base_subdiv))
+    tri = (v.to(_DT) * float(radius))[f]  # [T,3,3]
+    u = direction.to(_DT).reshape(3)
+    u = u / u.norm()
+    cos_cut = math.cos(float(half_angle_rad))
+    for _ in range(int(levels)):
+        centre = tri.mean(dim=1)
+        centre = centre / centre.norm(dim=-1, keepdim=True)
+        near = (centre @ u) > cos_cut
+        if not bool(near.any()):
+            break
+        keep, sel = tri[~near], tri[near]
+        a, b, c = sel[:, 0], sel[:, 1], sel[:, 2]
+
+        def _mid(p: Tensor, q: Tensor) -> Tensor:
+            m = 0.5 * (p + q)
+            return m / m.norm(dim=-1, keepdim=True) * float(radius)
+
+        ab, bc, ca = _mid(a, b), _mid(b, c), _mid(c, a)
+        children = torch.cat(
+            [
+                torch.stack([a, ab, ca], dim=1),
+                torch.stack([b, bc, ab], dim=1),
+                torch.stack([c, ca, bc], dim=1),
+                torch.stack([ab, bc, ca], dim=1),
+            ]
+        )
+        tri = torch.cat([keep, children])
+    verts = tri.reshape(-1, 3)
+    faces = torch.arange(verts.shape[0], dtype=torch.long).reshape(-1, 3)
+    return TriMesh(verts, faces)
 
 
 # ---------------------------------------------------------------------------
@@ -822,6 +1005,52 @@ def charge_bem_induced_efield(
         [TriMesh(verts * float(sphere_radius), faces)], [0.33], [0.0]
     )
     bem.assert_sources_outside(pos, context="charge_bem_induced_efield")
+    return bem.total_field(pts, pos, mdot).detach().cpu().numpy()
+
+
+#: recommended contact mesh: icosphere subdiv 4 with two graded levels under the
+#: source. 7403 panels, ``panel_to_standoff`` 0.26 at a 4 mm standoff, and gate
+#: N7 measures 0.49 % error there with observed order 2.06.
+CONTACT_BASE_SUBDIV = 4
+CONTACT_GRADED_LEVELS = 2
+
+
+def contact_bem_induced_efield(
+    points,
+    *,
+    dipole_pos,
+    dipole_mdot,
+    sphere_radius: float = 0.085,
+    base_subdiv: int = CONTACT_BASE_SUBDIV,
+    levels: int = CONTACT_GRADED_LEVELS,
+):
+    """Gate adapter for N7: the BEM on a **graded** mesh, for contact geometry.
+
+    Same signature as :func:`charge_bem_induced_efield` plus the grading
+    controls.  A uniform mesh is not an option here and not merely less
+    accurate: see :data:`MAX_PANEL_TO_STANDOFF`.
+    """
+    import numpy as _np
+
+    pts = torch.as_tensor(_np.asarray(points, dtype=float), dtype=_DT)
+    pos = torch.as_tensor(_np.asarray(dipole_pos, dtype=float), dtype=_DT)
+    mdot = torch.as_tensor(_np.asarray(dipole_mdot, dtype=float), dtype=_DT)
+    centroid = pos.mean(dim=0)
+    u = centroid / centroid.norm()
+    # cover the whole source footprint, not a fixed cap: a figure-eight spans
+    # ~50 mm of scalp and grading only the patch under its centre would leave
+    # the wings -- which carry the current -- sitting over coarse panels
+    spread = torch.arccos(
+        ((pos / pos.norm(dim=-1, keepdim=True)) @ u).clamp(-1.0, 1.0)
+    ).max()
+    half_angle = float(spread) + 0.12
+    mesh = graded_icosphere(
+        float(sphere_radius), int(base_subdiv), centroid, int(levels),
+        half_angle_rad=half_angle,
+    )
+    bem = ChargeBEM([mesh], [0.33], [0.0])
+    bem.assert_sources_outside(pos, context="contact_bem_induced_efield")
+    bem.assert_resolves_sources(pos, context="contact_bem_induced_efield")
     return bem.total_field(pts, pos, mdot).detach().cpu().numpy()
 
 
