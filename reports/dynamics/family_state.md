@@ -676,3 +676,75 @@ run uses.
 | `scwbd/foundation/anatomy.py` | `AnatomyPrior.family_partition`, populated from `scwbd.anatomy.derive_families` — the handoff of §9b |
 | `tests/foundation/test_contracts.py` | the decorative anatomy guard repaired (§9b.5) |
 | `ARCHITECTURE.md` §5b | N-1 updated with the measured cost; **N-6 … N-11** added |
+
+---
+
+## 11. Post-merge status (2026-08-06, after merging `master`)
+
+`wt/hodgkin` now carries `master` (`7be19f7`). Resolutions and what is red, stated
+rather than left to be discovered.
+
+**The architect's P0 — seven ungoverned tensors — is fixed and merged.**
+`observation.head.*` and `uncertainty_propagator.*` were trainable with no entry
+in `FOUNDATION_BINDING`, i.e. outside the gradient-permission system while it
+continued to look enforced. That was mine, introduced by `c9b2ff9`, and the
+guard that caught it (`test_no_trainable_parameter_is_ungoverned`) is one that
+can fire and did. Verified after the merge: **0 unclaimed and 0 dead patterns**
+across seven model variants (control, control+mechanistic, treatment, scalar
+ablation, no-variance, treatment no-variance, dense-coupling ablation).
+
+**The Yeo-7 fallback is removed**, per ruling. `_cortical_key` emits one cortical
+family; the `_YEO` regex is deleted, not orphaned. It does **not** error — §7a
+says ship and label — it emits the coarsest thing certainly true and stamps a
+note that any cortical-heterogeneity claim from it is unsupported.
+
+**Cajal's partition is what a run now uses**, verified from source:
+
+| | source | families |
+|---|---|---|
+| real prior | `anatomy_declared` | 9 — `cortex_unimodal`(138), `cortex_association`(262), `subcortex_{accumb,amyg,caud,hippo,pal,put,thal}`(2 each) |
+| synthetic | `derived_by_foundation` | 3 — `cortex`, `subcortex_unassigned`, `cerebellum` |
+
+All seven subcortical families resolve to their engineered backends. That only
+works because of the short-token fix: the table had only long forms
+(`hippocamp`, `thalam`, `putamen`), which matched **1 of Cajal's 7** — the other
+six would have taken the generic core silently while the config said
+`family_state: true`.
+
+**A1's licensed question is now two-way, not eleven-way.** Association vs
+unimodal against one pooled cortical operator. §1's eleven families describe the
+removed fallback and are no longer what a run uses.
+
+### Red, and why — 14 of 45 in `test_family_state.py`
+
+Not stale guards; each needs a decision, so they are recorded rather than
+renamed green. `test_uncertainty_state.py` is 21/21; `test_compiler_binding.py`
+is green.
+
+1. **Fallback-refusal tests (2)** — obsolete by my own change. I built the
+   fallback to refuse; the ruling removed the split and §7a forbids withholding.
+   Rewrite against the new contract.
+2. **Declared-partition fixtures (6)** — they build fakes on
+   `AnatomyPrior.family_partition`, the field I added and the merge correctly
+   dropped for Cajal's `families`. `copy.copy(anat)` now carries the real
+   partition, so the fake is ignored and the test exercises nothing. **The code
+   is right; the fixtures address a field that no longer exists.**
+3. **R12 tests (6)** — my `_r12_predicate` seam now finds Noether's canonical
+   predicate and delegates, which is what it was for. Theirs labels rather than
+   refuses. The local fallback predicate should be **deleted**, not repaired:
+   one definition, one enforcement point.
+
+### Not done
+
+**Orientation-bearing state.** Cajal shipped `normal` (414,3), `normal_coherence`
+and `normal_covered`; Gauss measured a scalar-per-parcel support at 5.6 % of the
+whitened lead field against **51.7 %** for a net dipole moment — ~9×, where more
+parcels buy ≤1.29×. Nothing in my family layout carries orientation yet. What it
+needs: a 3-vector `dipole` component on cortical families, its out-port declared
+in `Hz·m` (a moment, not a rate), and the EEG head projecting through
+`normal × coherence` rather than a scalar amplitude. **Coherence is the part that
+matters** — a unit normal always looks equally informative, while coherence says
+how much of the parcel survives cancellation between opposing sulcal banks, and a
+parcel at 0.28 contributes about a quarter of what its area suggests. This is the
+largest available improvement to what the model is actually for and it is the
+next thing I would do.
