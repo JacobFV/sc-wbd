@@ -252,8 +252,25 @@ differently, you do not have a measurement.
 
 ## Standing recommendations
 
-Five habits, in the order they are worth. The first two are general; the last
-three were each bought with a specific mistake in this project.
+Six habits, in the order they are worth. The first two are general; the rest were
+each bought with a specific mistake in this project.
+
+**On where these came from**, recorded because attribution has been the theme and
+because the pattern is more useful than the list. Recommendations 3, 4 and 6 were
+written by the agent who had just made the corresponding error, generalised from
+it, and then applied to the *next* failure — 3 out of instance 8, a guard its own
+author had written; 4 out of the retracted periodicity claim; 6 out of the same
+retraction's forward-prediction test. The coordinator contributed the third layer
+of the reporting rule and, more consequentially, the **governance**: refusing to
+let a fired trigger be amended, and insisting the reporting layers stay separate.
+
+The division is worth naming. **Method came from whoever made the mistake;
+restraint came from whoever was not invested in the outcome.** Neither role
+substitutes for the other, and the second is the one a lone author cannot fill.
+
+*(An earlier version of this note credited all four to the coordinator. That was
+wrong in the coordinator's favour, which is still wrong — see the
+invested-conclusion variant, reviewer's version.)*
 
 **1. Make the guard fail on purpose before trusting it.**
 Not "write a test that passes when things are fine" — that is what all four had.
@@ -392,3 +409,32 @@ artifact has recorded its own identity."** Two consequences:
 This was found six minutes before it would have fired, while preparing to commit
 *this document* — the one arguing for provenance discipline — during a live run
 whose provenance it would have silently rewritten.
+
+### …and then it fired anyway, on the author
+
+Run 3 launched at `94b6ddc`. Its step-150 checkpoint stamped **`da05ad5`** — a
+commit made ten minutes *after* the run began. Three commits landed in the
+interval, and `_SHA` cached on the first checkpoint save.
+
+The source was byte-identical (`git diff 94b6ddc da05ad5 -- scwbd configs tests`
+is empty), so the damage is cosmetic. The *mechanism* is not.
+
+**The rule as written was "commit nothing until the artifact freezes its
+identity." The rule as followed was "commit nothing that changes source."** The
+three commits touched only `reports/`, so under the substituted rule they were
+obviously safe — and they were, for the model, and not for the stamp.
+
+Two things make this the most instructive entry in the register:
+
+1. **The author of the rule broke it.** Having written it down created confidence
+   that it was being followed, and that confidence replaced re-reading it. A rule
+   you wrote is the one you are least likely to check yourself against.
+2. **The substitution was invisible because the weaker rule is a true statement.**
+   "Docs-only commits cannot change the model" is correct. It simply is not the
+   proposition the rule was protecting. A rationalisation that is *false* gets
+   caught; one that is *true but irrelevant* does not.
+
+**Ask of any rule you believe you are following: what is the last time I re-read
+it, rather than recalled it?** And prefer rules that cannot be complied with
+approximately — the real fix here is to capture the SHA at process start, so the
+binding moment is not a race against the author's own good intentions.
