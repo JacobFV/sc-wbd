@@ -372,6 +372,90 @@ most flattering is also the most likely to be misreported.
 Establishing the link properly would require holding everything else fixed and
 varying only the normaliser, which is not what happened here.
 
+## STAGE I RESULT — condition 2, reported in three layers
+
+Stage I completed at step 900 (03:12, wall 2941 s). Stage II is running.
+
+### Layer 1 — the literal fact
+
+> **Running-min `sim_forecast_nll` over Stage I: 1.1200 (step 760).**
+> **The preregistered bar was < 1.0 by step 900.**
+> **NOT MET.**
+
+No qualifier. The commitment is honoured to the letter. **Stage I did not meet its
+own preregistered quality bar**, by 12.0 %.
+
+### Layer 2 — the interpretation
+
+**This is not the test that was preregistered**, and the reason is documented
+above: the bar was chosen by looking at pre-fix numbers, and the normaliser fix
+changed the metric's scale by two orders of magnitude.
+
+| | run the bar was written for | run it judged |
+|---|---|---|
+| `sim_forecast_nll` at step 1 | 184.338 | 1.692 |
+| what "< 1.0" demanded | a **99.5 %** descent | roughly **41 %** |
+| running-min achieved | 1.459 (step 660, run stopped at 820) | **1.120** (step 760) |
+
+So the bar was **not met on the easier version of the test.** That is a stronger
+statement than failing the original would have been, and it is the one direction
+in which this outcome is *less* ambiguous than a pass would have been — a pass
+would have been confounded by the scale change, a failure on the easier test is
+not rescued by it.
+
+**A sampling caveat that cuts the other way and must be stated:** `log_every = 20`,
+so the running-min is a minimum over **46 samples**, not over 900 steps. A value
+below 1.0 at an unlogged step cannot be excluded. Over the final 200 steps the
+logged values span **1.120–1.292**, so an 11 % excursion below the observed
+minimum would be larger than any variation actually seen — unlikely, but *not
+measured*. The honest form is: **the bar was not met on the sampled series**, and
+per-step logging would be required to say more. Same grid-resolution limitation
+as the retracted periodicity claim.
+
+### Layer 3 — the adjudication
+
+**Deferred to 🛡️ Popper, with no opinion from me.** The questions that are theirs:
+
+1. whether a bar calibrated on a defective instrument evidences anything at all;
+2. whether "not met by 12 %" on the easier version of the test supports a
+   stronger or weaker conclusion than failing the original would have;
+3. whether a minimum over 46 samples is admissible as a "running minimum".
+
+I have not formed a view on any of them and will not state one.
+
+### Consequences, per `main`'s pre-commitments (unchanged, made before this resolved)
+
+- **No third rescale.** Rate-invariance is established; a third application of the
+  same remedy was ruled out in advance.
+- **Training continues through Stages II–V regardless** — already underway. **G5
+  cannot be tested at all without Stage V.**
+- This is a finding about **this model, this corpus and this budget**, and
+  **must not be written as a verdict on the architecture.**
+
+### Final spike rate — pre-committed wording
+
+**0 / 45 sampled steps** above 3× the running floor, against **31 %** pre-fix.
+
+Per the wording fixed before the data existed: **the spike rate fell from ~31 % to
+0 %.** It is **not** reported that the normaliser fix explained the spikes. Run 3
+differs from runs 1 and 2 in **both** normaliser and learning rate, so nothing
+here attributes the difference to either, and the "≥1 extreme window" model
+predicted 98 % rather than 31 %. Attribution would require a fourth run varying
+one factor, which `main` has declined for a process question.
+
+The honest statement: **run 3 is smooth where runs 1 and 2 were not; the runs
+differ in normaliser and learning rate, so this does not attribute the difference
+to either.**
+
+### The batch-composition investigation — standing revised
+
+With **zero spikes post-fix**, the phenomenon no longer occurs in the artifact.
+The investigation can only be run against the **superseded** runs, which makes it
+**diagnostic history about a replaced pipeline, not a property of
+SC-WBD-001-beta**. It therefore cannot become a "mechanism C" claim about this
+model's training. Mechanism C in `corpus_composition.md` stands on its own direct
+measurements and needs no support from the spike question.
+
 ## ⚠ Provenance stamp is INCORRECT — read this before citing the checkpoint
 
 **Summary, stated first so it cannot be missed:**
