@@ -55,7 +55,7 @@ from .connectome import (
     StructuralPrior,
     load_structural_prior,
 )
-from .geometry import ParcelGeometry, parcel_geometry
+from .geometry import ParcelGeometry, ParcelOrientation, parcel_geometry, parcel_orientation
 from .maps import MapSet, RECEPTOR_GROUPS, load_maps
 from .paths import derived_dir
 
@@ -682,6 +682,55 @@ class BrainPrior:
         out = np.full((self.n_parcels, v.shape[1]), np.nan)
         out[: v.shape[0]] = v
         return out, self.maps.receptor_names
+
+    def dipole_orientation(self) -> ParcelOrientation:
+        """Per-parcel net dipole orientation and folding coherence.
+
+        Padded to the full parcel set: the orientation is a property of the
+        cortical sheet, so the subcortical parcels are ``nan`` with
+        ``covered=False`` rather than given a direction they do not have.
+
+        The reason this exists rather than a scalar per parcel: 🧭 Gauss
+        measured that a scalar support carries 5.6% of the whitened lead field
+        at 68 parcels and 16.2% at 542, while the three-component net dipole
+        moment carries 51.7%.  Orientation is worth about 9x what extra parcels
+        are worth, and until now every per-parcel field here was
+        orientation-free.
+
+        ``coherence`` is the load-bearing number, not the direction: cortical
+        folding makes opposing banks inside one parcel cancel, so a parcel's
+        sensor-visible moment is ``coherence * area``, not ``area``.
+        """
+        o = parcel_orientation(self.parcellation)
+        n = self.n_parcels
+        if o.n_parcels == n:
+            return o
+        k = o.n_parcels
+        normal = np.full((n, 3), np.nan)
+        coh = np.full(n, np.nan)
+        area = np.full(n, np.nan)
+        eff = np.full(n, np.nan)
+        cov = np.zeros(n, dtype=bool)
+        normal[:k] = o.normal
+        coh[:k] = o.coherence
+        area[:k] = o.area_mm2
+        eff[:k] = o.effective_area_mm2
+        cov[:k] = o.covered
+        from dataclasses import replace
+
+        return replace(
+            o,
+            labels=self.labels,
+            normal=normal,
+            coherence=coh,
+            area_mm2=area,
+            effective_area_mm2=eff,
+            covered=cov,
+            notes=o.notes
+            + f" Padded from {k} cortical to {n} parcels; the "
+            f"{n - k} non-cortical parcels have no cortical sheet and are "
+            "nan/covered=False, not zero.",
+        )
 
     def hierarchy_rank(self) -> np.ndarray:
         """Rank on the sensorimotor-association axis; ``nan`` off cortex."""
