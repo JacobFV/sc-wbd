@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Declared narrowings — SC-WBD</title>
+<meta name="description" content="Every place the implementation is narrower than the paper, in an append-only register, plus the standing rulings that bind more than one contributor.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Declared narrowings — SC-WBD">
+<meta property="og:description" content="Every place the implementation is narrower than the paper, in an append-only register, plus the standing rulings that bind more than one contributor.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+<script>
+/* Applied before paint so an explicit theme choice does not flash. */
+(function () {
+  try {
+    var t = localStorage.getItem("scwbd-theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body class="">
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="../index.html">SC&#8209;WBD</a>
+    <nav>
+        <a href="../index.html">Overview</a>
+        <a href="../engineering/index.html" class="active">Engineering</a>
+        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../attribution.html">Attribution</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="pagehead">
+      <p class="kicker">Engineering · 05</p>
+      <h1>Declaring where the implementation is narrower than the paper</h1>
+      <p class="standfirst">A stated narrowing is a decision the team can attack. An unstated one is invisible to a process built entirely out of attacking stated things.</p>
+    </div>
+<div class="prose">
+
+<p class="lede">This register exists because it did not. The architecture
+document once narrowed the specification's heterogeneous regional state to a
+uniform feature vector, in a subordinate clause, and the narrowing was
+implemented faithfully and never noticed. <a href="control-arm.html">Essay 01</a>
+is what that cost.</p>
+
+<div class="callout">
+<span class="callout-label">The governing rule</span>
+<p>Every divergence between the architecture document and the paper is listed in
+the register. <strong>A divergence that is not listed is a defect, not a
+decision.</strong></p>
+<p>Any contributor may add a row. No contributor may remove one. <strong>Adding a
+row is not approval</strong> — it makes the narrowing visible so that it can be
+challenged.</p>
+</div>
+
+<h2>What a row has to contain</h2>
+
+<p>Four fields, and the third is the one that does the work: what it
+<strong>narrows</strong> (which section of the paper), the <strong>narrowing</strong>
+itself, <strong>why</strong>, and whether it is <em>permanent</em> or
+<em>scheduled</em>. A row without a reason is a confession, not a decision.</p>
+
+<p>Some representative rows, chosen because they show the range:</p>
+
+<h3>Padded family state</h3>
+
+<p>Family state is stored padded to the largest family's dimension, with
+per-family spans, rather than as a ragged layout. <strong>Why:</strong> ragged
+state breaks the batched trainer. Padding is observationally equivalent
+<em>only if</em> out-of-span reads are impossible — so the span mask is enforced:
+a family reading outside its span raises, it does not silently return zeros.
+<strong>That guard is what makes this a narrowing rather than a defect.</strong>
+Five tests make each violation fire, including a read that leaves the span, a
+too-wide write, and any non-zero element in the padding.</p>
+
+<p>The cost is measured and unflattering: at the partition it was computed
+against, more than half the state plane is padding, because two hippocampal
+parcels set the dimension for all 414 regions. That figure is currently flagged
+<strong>stale</strong> rather than re-guessed — it was computed against a family
+count that no longer exists, and the register says so instead of quietly carrying
+it forward.<span class="note"><input type="checkbox" id="engineering-declared-narrowings-n1" class="note-toggle"><label for="engineering-declared-narrowings-n1" class="note-ref">1</label><span class="note-body"><span class="note-n">1</span>This is a small thing that matters a lot. The alternative —
+recomputing it quickly and confidently — is how a number that nobody has actually
+regenerated ends up in three downstream reports. The standing habit is
+<em>regenerate from source, or mark it stale;</em> never re-derive from memory.</span></span></p>
+
+<h3>Hippocampal episodic memory: state shape, not storage</h3>
+
+<p>The rollout's hippocampal backend retrieves against a fixed random codebook.
+The four episodic write/read hypotheses that are implemented are compared
+<em>offline</em> and are not driven by the rollout. <strong>Why:</strong> a
+differentiable rollout has nowhere to carry a growing store of episodes. The
+state <em>shape</em>, the multiscale scaffold and the retrieval-confidence channel
+are in the rollout; episodic storage is not.</p>
+
+<p>As the row puts it: saying so is the difference between a narrowing and a
+claim that the section is implemented.</p>
+
+<h3>The amygdala row, which admits to having nothing</h3>
+
+<p>The paper is explicit that amygdalar systems are <em>not</em> a scalar fear or
+valence node. The amygdalar family declares relevance and autonomic components
+and runs on the generic learned core. <strong>Why:</strong> there is no engineered
+amygdalar backend in this repository. Giving it one of the other four would be a
+semantic collapse; giving it the generic core and saying so is the honest
+option.</p>
+
+<h3>Safety limits bind only on the axes a proposal supplies</h3>
+
+<p>With one exception, and the exception is the interesting part. A plan declaring
+live application must cover <em>every</em> declared axis for its modality or it
+refuses. <strong>Why:</strong> most axes have no producer for most proposals, so
+requiring full coverage everywhere would make every simulated study refuse and
+the rule would simply be switched off. But two thermal-dose axes for focused
+ultrasound have <em>no producer anywhere in the codebase</em>, so under uniform
+omission a live plan was silently unchecked on thermal dose. Coverage is enforced
+exactly where the consequence is physical, and the exemption is marked <em>delete
+this when a thermal producer lands</em>.</p>
+
+<h3>A required-but-unread safety flag</h3>
+
+<p>Reversibility sat in a configuration file as <code>required = true</code> with
+no minimum or maximum, so the loader skipped it and <strong>nothing ever read
+it</strong> — a cited, reviewed, decorative guard on the safety path. It was
+moved to a section that is read, enforced on the live path, and fired by a
+test.</p>
+
+<h2>The register broke, and the breakage is the finding</h2>
+
+<p>Rows were originally keyed by ordinal — N-1, N-2, and so on. Ten contributors
+filing rows concurrently collided on four of them, were renumbered, and then
+collided <em>again</em> when three more branches merged.</p>
+
+<blockquote>
+<p>An ordinal is assigned by position, and position is exactly what a concurrent
+merge changes.</p>
+</blockquote>
+
+<p>The register now uses stable slugs and has no numbers. Older prose elsewhere
+citing “N-4” or “N-7” was written against one of two or three different rows, and
+the only reliable way to read it is by what the row is <em>about</em>.</p>
+
+<div class="callout">
+<span class="callout-label">Why this is not a footnote</span>
+<p>A register that exists to stop undeclared narrowings <strong>must survive
+concurrent writes</strong>, or it silently develops entries that mean two things
+— which is worse than the problem it solves. The failure was in the addressing
+scheme, not in anyone's work.</p>
+</div>
+
+<h2>Standing rulings</h2>
+
+<p>Arbitrations that bind more than one contributor. Each is a decision, not a
+fact — <em>argue with it before implementing against it, not after.</em> Four are
+worth reproducing here because they generalise past this project.</p>
+
+<h3>Heads read declared out-ports, never a shared state slice</h3>
+
+<p>Mean and variance must cross the same typed interface. A shared-slice view once
+silently narrowed one arm's mean path to 2 exported dimensions against the
+other's 18 — which would have concluded that heterogeneous state does not help,
+with a completely green harness.</p>
+
+<p>The ruling was <strong>amended on a declared disagreement, and the amendment
+was the objector's.</strong> The original said the observation interface is absent
+on the control arm, to leave the paper's control untouched. That makes the
+state-dependent variance path a property of <em>which arm you are in</em>, so the
+ablation would measure the variance path rather than the structured state — the
+identical class of error as the mean-path regression, pointing the other way.
+<em>Last time the interface silently narrowed one arm; this would silently widen
+the other.</em> Both arms now build the interface by default, and the disable path
+survives as a declared config choice rather than a property of an arm.</p>
+
+<h3>Between-arm parity is checked along the whole path from state to scalar</h3>
+
+<p>Any comparison between two arms passes through eight stages: inputs,
+conditioning, state, observation interface, head parameterisation, score, split,
+optimiser. <strong>Capacity budgets cover stages 3 and 8 only.</strong> Four of
+this project's between-arm defects sat on stages 4 through 7, and none of them was
+a budget.</p>
+
+<p>A matched budget with an unmatched stage 4–7 is an unmatched comparison wearing
+a green check.</p>
+
+<h3>A declaration does not discharge a refusal; only a validated declaration does</h3>
+
+<p>Covered in <a href="resolution-pair.html">essay 04</a>. Wherever two refusals
+compose, the weaker one must consume the stronger one's verdict rather than its
+declaration — otherwise the pair is an opt-out mechanism for whoever files
+first.</p>
+
+<h3>A fixed handicap and the hypothesis may not be confounded in the primary endpoint</h3>
+
+<p>When a defect shared by both arms is repaired between runs, the repair's
+ceiling is preregistered <em>before</em> the fix. And this ruling is on the site
+because it was <strong>falsified by measurement and corrected by the person who
+falsified it</strong>.</p>
+
+<p>The original version said that a particular analytic bound is the best
+achievable by fixing predictive variance alone, so improvement beyond it is new
+predictive content. <strong>That is false.</strong> Calibrating variance per
+horizon and channel on held-out data involves no new predictive content
+whatsoever — it is exactly what all six baselines already do — and passes that
+bound routinely. Empirically, <em>every</em> statistical baseline sits below it.
+Under the original rule, a persistence forecaster would have been credited with
+new predictive content for calibrating its residual variance. It has none.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Ceiling</th><th class="num">Value</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Flat calibration</td><td class="num">2.1083</td><td>one global scalar variance; below it is arithmetic</td></tr>
+<tr><td><strong>Matched calibration</strong></td><td class="num">2.0205</td><td>per-(horizon, channel), fitted on held-out windows — the instrument every baseline gets</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Only the second is the bar, and reaching it requires state-dependence — which
+is exactly the claim under test. The caveat is carried rather than dropped: that
+figure is in-sample for our arm and genuinely held out for the baselines, so it
+<em>flatters us</em>, and it still only ties the strongest baseline.</p>
+
+<h3>Recorded disagreement, left unresolved</h3>
+
+<p>Two contributors could not reconcile that matched-calibration ceiling. One
+derived 2.0205 from the checkpoint; the other, working from the baselines' own
+calibration gain, derived a band of [1.9834, 2.0058] and could not reproduce the
+first figure. Since a content claim requires falling <em>below</em> the ceiling,
+2.0205 is the <strong>more permissive</strong> of the two by 0.015–0.037.</p>
+
+<p>It is adopted as an <strong>upper bound only</strong>, recomputed per arm, and
+the disagreement is recorded rather than smoothed. Neither party won; the
+conservative reading is in force until someone settles it.</p>
+
+<h2>The statistical power decision, made before the data</h2>
+
+<p>One more entry that belongs here, because it is a narrowing of ambition rather
+than of architecture.</p>
+
+<p>Derived from run 1's own paired comparisons, the minimum detectable effect at
+27 test participants is <strong>0.1404 nats</strong>. Against that:</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Effect</th><th class="num">Size</th><th>Detectable at n=27</th></tr></thead>
+<tbody>
+<tr><td>Horizon term of the variance excess</td><td class="num">0.0096</td><td><span class="chip fail">no — 15× below</span></td></tr>
+<tr><td>Matched-calibration gain</td><td class="num">0.1025–0.1249</td><td><span class="chip fail">no</span></td></tr>
+<tr><td><em>Minimum detectable effect</em></td><td class="num">0.1404</td><td>—</td></tr>
+<tr><td>State term</td><td class="num">0.19–0.26</td><td><span class="chip pass">yes</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The ablation could not see an effect the size of the entire calibration gain.
+And 27-in-test was a <strong>choice, not a constraint</strong> — the corpus holds
+109, which takes the minimum detectable effect to 0.0699.</p>
+
+<p>So run 2 scores on the full available split, sized <em>before any arm
+trains</em>, with the size recorded in the pre-registration. An inconclusive
+result at n=27 would have been uninterpretable — indistinguishable from a true
+null — and the run would have been spent to learn nothing.</p>
+
+<p>The same analysis retired a claim: the seven subcortical families are 14 of 414
+parcels, and no family-level effect there is measurable at any participant count
+this corpus supports. They are explicitly <strong>out of claim</strong>, and they
+will still be measured.</p>
+
+<blockquote>
+<p>Measure everything the artifact can do; be careful only about what the paper
+asserts. The pre-registration governs the one comparison it was written for. It
+does not govern curiosity.</p>
+</blockquote>
+
+<p class="lede"><a href="infrastructure.html">Next: the failures that were not
+science →</a></p>
+
+</div>
+
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p><strong>SC-WBD-001 series.</strong> A research programme, not a product.
+    Nothing on this site is a medical device, a clinical claim, or advice.
+    No trained model here has been shown to beat its baselines.</p>
+    <p>Data sources carry their own licences, several of them non-commercial and
+    share-alike. See <a href="../attribution.html">attribution</a>.</p>
+    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+  </div>
+</footer>
+
+<script>
+document.getElementById("theme-toggle").addEventListener("click", function () {
+  var el = document.documentElement;
+  var cur = el.getAttribute("data-theme");
+  if (!cur) {
+    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  var next = cur === "dark" ? "light" : "dark";
+  el.setAttribute("data-theme", next);
+  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
+});
+</script>
+
+</body>
+</html>

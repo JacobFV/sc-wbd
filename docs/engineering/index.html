@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engineering — SC-WBD</title>
+<meta name="description" content="Engineering essays on what actually went wrong building SC-WBD, and what each failure was worth.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Engineering — SC-WBD">
+<meta property="og:description" content="Engineering essays on what actually went wrong building SC-WBD, and what each failure was worth.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+<script>
+/* Applied before paint so an explicit theme choice does not flash. */
+(function () {
+  try {
+    var t = localStorage.getItem("scwbd-theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body class="">
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="../index.html">SC&#8209;WBD</a>
+    <nav>
+        <a href="../index.html">Overview</a>
+        <a href="../engineering/index.html" class="active">Engineering</a>
+        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../attribution.html">Attribution</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="pagehead">
+      <p class="kicker">Engineering</p>
+      <h1>What went wrong, and what it was worth</h1>
+      <p class="standfirst">Six essays on defects found while building SC-WBD. Most were found by instruments we had built to find defects; several were found inside those instruments.</p>
+    </div>
+<div class="prose">
+
+<p class="lede">These are written for engineers and researchers, and they assume
+you would rather read the failure than the summary. Nothing here is
+retrospective tidying — every claim is traceable to a committed file, including
+the ones that make us look bad.</p>
+
+<ul class="cards">
+
+<li><a href="control-arm.html">
+  <span class="card-num">01</span>
+  <span class="card-title">We built the control arm of our own ablation and shipped it under the model's name</span>
+  <p class="card-desc">Our paper's first required comparison is structured regional
+  state versus a pooled vector. We built the second one, named it after the
+  first, and measured it losing. The controlling defect was not the narrowing —
+  it was that nobody had written the narrowing down.</p>
+</a></li>
+
+<li><a href="variance-channel.html">
+  <span class="card-num">02</span>
+  <span class="card-title">The most expensive 134 seconds</span>
+  <p class="card-desc">A parameter with a closed-form optimum was left to
+  gradient descent for two minutes, got 20% of the way there, and lost the
+  entire run. The model had the best conditional mean of all seven arms and the
+  second-worst score.</p>
+</a></li>
+
+<li><a href="decorative-guards.html">
+  <span class="card-num">03</span>
+  <span class="card-title">Decorative guards: checks that cannot fail</span>
+  <p class="card-desc">A catalogue of instruments whose reading was constant with
+  respect to the question being asked. All were green. All looked like evidence.
+  Plus the inverse category — guards asserting a defect still exists, which fail
+  the moment someone fixes it.</p>
+</a></li>
+
+<li><a href="resolution-pair.html">
+  <span class="card-num">04</span>
+  <span class="card-title">A measured FAIL, kept as the deliverable</span>
+  <p class="card-desc">We built the fine/coarse resolution pair the paper asks
+  for, measured whether it validates at its boundary, and it does not. The
+  failing measurement is the result — and it says something specific about what
+  regional state can carry.</p>
+</a></li>
+
+<li><a href="declared-narrowings.html">
+  <span class="card-num">05</span>
+  <span class="card-title">Declaring where the implementation is narrower than the paper</span>
+  <p class="card-desc">Every divergence between what we wrote and what we built,
+  in a register any contributor may add to and none may delete from. A stated
+  narrowing is a decision you can attack. An unstated one is invisible to a
+  process built entirely out of attacking stated things.</p>
+</a></li>
+
+<li><a href="infrastructure.html">
+  <span class="card-num">06</span>
+  <span class="card-title">The failures that were not science</span>
+  <p class="card-desc">A trailing slash in <code>.gitignore</code> that could not
+  match a symlink and gave seven checkouts <code>ELOOP</code>. An anatomy loader
+  whose exception was swallowed by a bare <code>except</code>. A provenance field
+  that was structurally incapable of ever reading clean.</p>
+</a></li>
+
+</ul>
+
+<h2>The one heuristic worth taking away</h2>
+
+<p>If you read nothing else here, take this. It found two of the most expensive
+defects in the list above, before either instrument had ever been run, and it
+costs nothing:</p>
+
+<div class="callout">
+<span class="callout-label">The operational check</span>
+<p>For every quantity your code names as varying, ask <strong>what it is a
+function of</strong> — and read the answer off the expression rather than the
+docstring. If the expression's free variables do not include the thing it claims
+to depend on, it is decorative. No run required, no data required.</p>
+</div>
+
+<p>The companion question, for guards specifically:</p>
+
+<div class="callout">
+<span class="callout-label">The companion check</span>
+<p>Take the failure this guard exists to catch. Apply it to the guard's input.
+<strong>Does the reading move?</strong> If not, the guard is decorative —
+however sound its mechanism, however green its tests, and especially if it has
+never been run.</p>
+</div>
+
+<p>And the corollary that is harder to see, because from inside the apparatus
+every check is green and every check is correct:</p>
+
+<blockquote>
+<p>Ask of any guard not only <em>“can it fire”</em> but <strong>“is the failure
+it targets representable in the model it runs against”</strong>. A verification
+apparatus built on a surrogate inherits the surrogate's assumptions as blind
+spots.</p>
+</blockquote>
+
+</div>
+
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p><strong>SC-WBD-001 series.</strong> A research programme, not a product.
+    Nothing on this site is a medical device, a clinical claim, or advice.
+    No trained model here has been shown to beat its baselines.</p>
+    <p>Data sources carry their own licences, several of them non-commercial and
+    share-alike. See <a href="../attribution.html">attribution</a>.</p>
+    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+  </div>
+</footer>
+
+<script>
+document.getElementById("theme-toggle").addEventListener("click", function () {
+  var el = document.documentElement;
+  var cur = el.getAttribute("data-theme");
+  if (!cur) {
+    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  var next = cur === "dark" ? "light" : "dark";
+  el.setAttribute("data-theme", next);
+  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
+});
+</script>
+
+</body>
+</html>
