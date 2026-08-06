@@ -93,6 +93,16 @@ class ParcelCoverage:
     #: read as "every parcel is observed". The field is mandatory so an
     #: FOV count can never be quoted as a signal count.
     basis: str
+    #: ``(P,)`` observed volume / expected volume, or ``nan`` when no expectation
+    #: was supplied.
+    #:
+    #: ``covered`` alone is the wrong statistic and this field exists because it
+    #: misled me: a parcel 60% outside the slab still has voxels, so binary
+    #: coverage reported 400/400 for a subject with 59% vertex tissue and 400/400
+    #: for one with 100%. The clipping was entirely real and entirely invisible
+    #: until the per-parcel volumes were compared against what the atlas says the
+    #: parcel should be.
+    fraction_observed: np.ndarray | None = None
     notes: str = ""
 
     @property
@@ -111,6 +121,21 @@ class ParcelCoverage:
             ),
             "epi_voxel_mm3": round(self.epi_voxel_mm3, 3),
             "basis": self.basis,
+            **(
+                {}
+                if self.fraction_observed is None
+                else {
+                    "fraction_observed_median": round(
+                        float(np.nanmedian(self.fraction_observed)), 4
+                    ),
+                    "n_parcels_under_50pct": int(
+                        np.nansum(self.fraction_observed < 0.5)
+                    ),
+                    "n_parcels_under_10pct": int(
+                        np.nansum(self.fraction_observed < 0.1)
+                    ),
+                }
+            ),
         }
 
 
@@ -251,21 +276,54 @@ def register_epi_to_template(
         verbosity=0,
     )
 
-    def _fit(static, static_aff, moving, moving_aff):
-        """Return world->world affine mapping STATIC world to MOVING world."""
+    def _fit(static, static_aff, moving, moving_aff, *, allow_scale: bool):
+        """Return world->world affine mapping STATIC world to MOVING world.
+
+        ``allow_scale`` is NOT a tuning knob. Within a subject and session the
+        EPI and the T1w are the same head, so the only free parameters are
+        rotation and translation -- 6 DOF. Fitting 12 DOF there lets the
+        optimiser *scale the anatomy to fill the acquisition*, and with a
+        partial-FOV slab that is precisely what it does: every parcel lands
+        inside the box and clipping becomes invisible. Between subject and
+        template the scale difference is real, so 12 DOF is correct there.
+        """
         c = transform_centers_of_mass(static, static_aff, moving, moving_aff)
         rig = areg.optimize(
             static, moving, RigidTransform3D(), None, static_aff, moving_aff,
             starting_affine=c.affine,
         )
+        if not allow_scale:
+            return np.asarray(rig.affine, dtype=float)
         aff = areg.optimize(
             static, moving, AffineTransform3D(), None, static_aff, moving_aff,
             starting_affine=rig.affine,
         )
         return np.asarray(aff.affine, dtype=float)
 
-    epi_from_t1w = _fit(t1w, t1w_affine, epi_ref, epi_affine)
-    t1w_from_template = _fit(template, template_affine, t1w, t1w_affine)
+    # EPI <- T1w: RIGID. See _fit.__doc__ -- a 12 DOF fit here hides FOV clipping.
+    epi_from_t1w = _fit(t1w, t1w_affine, epi_ref, epi_affine, allow_scale=False)
+    t1w_from_template = _fit(template, template_affine, t1w, t1w_affine, allow_scale=True)
+
+    # Record the scale actually applied at each stage. A rigid stage whose
+    # singular values drift from 1 means the fit is not rigid and the guard
+    # above has been bypassed.
+    def _sv(m):
+        return tuple(round(float(x), 4) for x in np.linalg.svd(m[:3, :3], compute_uv=False))
+
+    diagnostics = {
+        "epi_from_t1w_singular_values": _sv(epi_from_t1w),
+        "t1w_from_template_singular_values": _sv(t1w_from_template),
+        "epi_stage_dof": 6,
+        "template_stage_dof": 12,
+    }
+    sv = np.asarray(diagnostics["epi_from_t1w_singular_values"])
+    if np.abs(sv - 1.0).max() > 1e-3:
+        raise ValueError(
+            f"EPI<-T1w stage is not rigid (singular values {tuple(sv)}). A scaling "
+            "EPI<-T1w transform resizes the subject's anatomy to fit the "
+            "acquisition, which makes field-of-view clipping undetectable: every "
+            "parcel lands inside the slab and coverage reads full."
+        )
 
     warp = None
     engine = "dipy.AffineRegistration(rigid->affine, MI)"
@@ -285,8 +343,10 @@ def register_epi_to_template(
         t1w_from_template=t1w_from_template,
         engine=engine,
         warp=warp,
+        diagnostics=diagnostics,
         lineage=(
-            "EPI<-T1w affine (MI, within-session, shares scanner world frame); "
+            "EPI<-T1w RIGID 6-DOF (MI, within-session, shares scanner world frame; "
+            "rigid because a scaling fit would resize anatomy to fill a partial FOV); "
             f"T1w<-{ATLAS_TEMPLATE} affine (MI)"
             + (" then SyN (Avants 2008) as implemented in dipy -- the Klein 2009 "
                "evaluation covers the ANTs implementation, not this one" if nonlinear else "")
@@ -362,6 +422,8 @@ def parcel_coverage(
     subject: str = "",
     run: str = "",
     brain_mask: np.ndarray | None = None,
+    expected_mm3: np.ndarray | None = None,
+    volume_scale: float = 1.0,
 ) -> ParcelCoverage:
     """Count EPI voxels per parcel; zero is *unobserved*, not zero-signal."""
     if brain_mask is None:
@@ -372,6 +434,12 @@ def parcel_coverage(
         basis = "brain_mask"
     counts = np.bincount(lab[lab >= 0].ravel(), minlength=n_parcels)[:n_parcels]
     vox_mm3 = float(abs(np.linalg.det(np.asarray(epi_affine, float)[:3, :3])))
+    frac = None
+    if expected_mm3 is not None:
+        exp = np.asarray(expected_mm3, dtype=float) * float(volume_scale)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            frac = (counts * vox_mm3) / np.where(exp > 0, exp, np.nan)
+
     return ParcelCoverage(
         subject=subject,
         run=run,
@@ -380,6 +448,7 @@ def parcel_coverage(
         covered=counts > 0,
         epi_voxel_mm3=vox_mm3,
         basis=basis,
+        fraction_observed=frac,
         notes=(
             "Zero voxels means the parcel is outside this acquisition's field of "
             "view, not that its BOLD is zero. Never impute (ARCHITECTURE.md §7 "
