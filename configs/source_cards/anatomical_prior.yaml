@@ -1,0 +1,20 @@
+# Anatomical / receptor / gradient priors (agent C, or the labelled synthetic
+# fallback). A prior shapes population parameters before individual evidence.
+id: anatomical_prior
+role: prior
+losses: [prior]
+gradient_permission: ["coupling.gain_*", "coupling.global_scale", "bold.*"]
+frozen: ["eeg.*", "individualizer.*", "local.*"]
+n_eff: 1.0
+n_rows: 1.0
+hierarchy_depth: 1
+measurement_variance: 0.4
+bias_halfwidth: 0.5
+bias_status: prior_specified_sensitivity
+validity_overlap: 1.0
+notes: >
+  Topology and homeostasis regularisers only. Hard anatomical constraints stay
+  compiled; soft constraints update only within their priors (body.tex 6.4).
+compiler_permission:
+  - "operator:long_range:params"
+  - "port:*.bold_out"

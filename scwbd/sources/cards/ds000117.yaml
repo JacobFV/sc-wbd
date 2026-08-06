@@ -1,0 +1,382 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# I_k  identity and lineage
+# =====================================================================
+identity:
+  id: ds000117
+  name: "Multisubject, multimodal face processing (Wakeman-Henson)"
+  version: "1.1.0"
+  release_date: "2025-01-06"      # OpenNeuro snapshot 1.1.0 creation date
+  doi: "10.18112/openneuro.ds000117.v1.1.0"
+  citation: >-
+    Wakeman DG, Henson RN (2015). A multi-subject, multi-modal human
+    neuroimaging dataset. Scientific Data 2:150001, doi:10.1038/sdata.2015.1.
+    OpenNeuro dataset ds000117 v1.1.0,
+    doi:10.18112/openneuro.ds000117.v1.1.0.
+  source_url: "https://openneuro.org/datasets/ds000117/versions/1.1.0"
+  download_url: "https://openneuro.org/crn/datasets/ds000117/snapshots/1.1.0/files/"
+  download_method: >-
+    Pinned snapshot endpoint, fetched with parallel byte-range requests
+    (scwbd.sources.download.download_ranged). The s3://openneuro.org mirror
+    was tried first and REJECTED as a source of record: its
+    dataset_description.json and README match no published snapshot
+    (sha256 7050637d... / 5900d0c9..., versus 1a93fd26... / dd60e2f4... for
+    1.1.0), i.e. the mirror serves the mutable draft. Appendix B treats an
+    unversioned mutable download as a rejection condition, so only bytes from
+    snapshot 1.1.0 are on disk.
+  retrieved_utc: "2026-08-06T06:27:04+00:00"
+  parent_dataset: "OpenfMRI ds000117 / original Cambridge MRC-CBU acquisition"
+  derived_from: null
+  subset_note: >-
+    Pinned subset of snapshot 1.1.0: every top-level metadata file, plus
+    participants sub-01 and sub-02 complete (raw MEG+EEG fif for runs 01-06,
+    T1w MPRAGE, 2x7-echo FLASH, fieldmaps, dMRI, 9 BOLD runs, behavioural and
+    MEG events, headshape and coordsystem), plus the Maxfilter calibration
+    files ct_sparse.fif and sss_cal.dat. The remaining 14 participants and the
+    87.8 GB of maxfiltered MEG derivatives were NOT fetched (bandwidth), and
+    their absence is recorded rather than papered over.
+  derivatives_included: ["derivatives/meg_derivatives/ct_sparse.fif", "derivatives/meg_derivatives/sss_cal.dat"]
+  software:
+    acquisition: "Elekta Neuromag Vectorview 306 (MEG) + 70-channel EasyCap EEG; Siemens TIM Trio 3T (MRI)"
+    reader: "mne.io.read_raw_fif via scwbd.sources.loaders.bids_meg"
+    fetch: "scwbd.sources.download.OpenNeuroSnapshotFetcher (parallel byte ranges)"
+  container_hash: unknown
+  local_path: "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/data/ds000117/1.1.0"
+  file_manifest:
+    algorithm: sha256
+    n_files: 167
+    total_bytes: 11585373253
+    manifest_sha256: 35d64fa350865b5acc3713e6604515cb810d0607ace6a3050774e309bcec5c51
+    manifest_path: scwbd/sources/manifests/ds000117__1.1.0.json
+    exemplars:
+      .gitattributes: d256e1a4d6a221a86e0f9d367e1d7d407fcb8c3348324f45947b7b196862e54a
+      CHANGES: 3efee0247df25cb0096c71692b0e1a9e323ae9e27880f4b51cf29e9dd2cf482a
+      README: dd60e2f4bd07accf2d5a48e1107e9e6b50815d1e7ab6d0563a300e637a293097
+      sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-03_meg.fif: 5a9e8dd66e688cdfaac637dcbc9169492c7dff04c7df6d7e2863ae42a4aac4b4
+      sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-05_meg.fif: 5205412a01564e439a178b2897120424820e02e481e038bcb053549c92b7fa71
+      sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-04_meg.fif: 789fcc611758a10e3510e4410b7f03614250ee38963d490adb5eeca74bda976e
+
+# =====================================================================
+# G_k  governance and consent
+# =====================================================================
+governance:
+  status: partial
+  status_reason: >-
+    live and usable for the two fetched participants; 'partial' because 14 of
+    16 released participants are not on disk, so no population-level claim may
+    cite this source's n.
+  license: "CC0 1.0 Universal (public domain dedication)"
+  license_url: "https://creativecommons.org/publicdomain/zero/1.0/"
+  license_text_excerpt: >-
+    "The person who associated a work with this deed has dedicated the work to
+    the public domain by waiving all of his or her rights to the work
+    worldwide under copyright law ... You can copy, modify, distribute and
+    perform the work, even for commercial purposes, all without asking
+    permission."
+  dua_required: false
+  credentials_required: false
+  registration_required: false
+  purpose_limits: "none imposed by the licence; the authors request citation of Wakeman & Henson (2015)"
+  consent_scope: >-
+    participants consented to an MRC Cognition and Brain Sciences Unit study
+    and to open release; the per-subject consent text is not distributed.
+  redistribution: "unrestricted (CC0)"
+  withdrawal: "no withdrawal requests are recorded against this release"
+  privacy: >-
+    de-identified; MEG scans.tsv acquisition dates are masked in the release
+    ('##-##-##T12:04:14'). Structural MRI defacing status is not documented,
+    so the T1w and FLASH images are treated as potentially re-identifying and
+    stay on local storage.
+  retention: "retained on the local data root while the SC-WBD-001-beta claim is live"
+  unavailable_reason: null
+  redistribution_class: full
+  withdrawal_status: none_pending
+  privacy_class: deidentified
+  contains_biometric: true
+  may_release_weights: true
+  may_release_examples: false
+  purpose_limits_list: ["cite_wakeman_henson_2015"]
+  safeguards: ["local_storage_only", "structural_mri_not_redistributed"]
+  dua: null
+
+# =====================================================================
+# P_k  population and hierarchy
+# =====================================================================
+population:
+  n_participants: 2
+  participant_ids:
+    - sub-01
+    - sub-02
+  participants_with_signal_binaries:
+    - sub-01
+    - sub-02
+  participants_with_bold:
+    - sub-01
+    - sub-02
+  n_participants_released_upstream: 16
+  families: "none declared; participants treated as unrelated singletons"
+  sites: 1
+  site_ids: ["openneuro:ds000117:mrc_cbu_cambridge"]
+  devices: 2
+  device_ids: ["Elekta_Neuromag_Vectorview_306", "Siemens_TIM_Trio_3T"]
+  sessions_per_participant: 2       # ses-meg and ses-mri
+  runs_per_session: "6 MEG runs; 9 BOLD runs; 1 dMRI; 2x7-echo FLASH; 1 MPRAGE"
+  trials_per_run: "~147 face presentations per MEG run (famous / unfamiliar / scrambled)"
+  demographics: >-
+    ages 23-31 years (mean ~26), 9 male and 7 female across the 16 released
+    participants; per-subject age and sex are in participants.tsv. The age
+    range is narrow by design, so no age-generalisation claim is supported.
+  selection_mechanism: >-
+    healthy adult volunteers recruited at the MRC Cognition and Brain Sciences
+    Unit for a multimodal face-processing study; the release states that three
+    subjects present in the pre-BIDS version were dropped and the ordering
+    changed (see README). That exclusion is not explained, which is itself a
+    selection unknown.
+  grouping_keys: ["participant", "session", "run"]
+  min_subgroup_n: null
+
+# =====================================================================
+# S_k(signal)  native signal and units
+# =====================================================================
+signal:
+  modalities: ["meg", "eeg", "eog", "ecg", "mri", "fmri", "dwi"]
+  n_channels: 376                 # 102 magnetometers + 204 planar gradiometers + 70 EEG
+  channel_types: {mag: 102, grad: 204, eeg: 70}
+  channel_names: "Neuromag MEGnnnn labels + 70 EasyCap EEGnnn labels (channels.tsv per session)"
+  units: >-
+    T for magnetometers, T/m for planar gradiometers, V for EEG - three
+    physical units on one clock in one file. This is exactly why the loader
+    carries a per-channel unit tuple rather than one unit per recording.
+  file_physical_dimension: "FIFF native SI (T, T/m, V); MNE returns them unchanged"
+  reference: >-
+    EEG was recorded against a nose reference at acquisition (Wakeman & Henson
+    2015); MEG is reference-free by construction. The per-run BIDS sidecar
+    does not restate the EEG reference, so the value here comes from the
+    dataset publication and is flagged as such.
+  dynamic_range: "unknown - the FIFF header records a calibrated range per channel but no saturation rail is published"
+  saturation: "unknown; SQUID jumps and flux resets are present in raw MEG and are not flagged in the release"
+  quantization: "unknown - the FIFF cal/range factors give a per-channel LSB that varies by channel; not summarised here"
+  prefilter_header: "acquisition band-pass 0.03-330 Hz, sampled at 1100 Hz (from the FIFF info)"
+  name: ds000117.meg_eeg
+  si_units: T
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: null
+  irreversible_aggregation: false
+  secondary_units: ["T/m", "V"]
+  mri_units: "arbitrary MR signal intensity (dimensionless); BOLD TR and voxel grid in the NIfTI affine"
+
+# =====================================================================
+# S_k  spatial support
+# =====================================================================
+spatial:
+  kind: sensor
+  frame: neuromag_device
+  units: m
+  psf: >-
+    unknown as a shipped kernel: no lead field is distributed. All the
+    ingredients for computing one are present (306 sensor geometries in the
+    FIFF, digitised head shape, 5 HPI coils, anatomical landmarks, subject
+    T1w and multi-echo FLASH for BEM), which is the reason this dataset is in
+    the register at all - but the forward operator must be computed and
+    registered by agent F before the lead-field gradient path opens.
+  extent: null
+  n_elements: 376
+  positions_are_digitised: true
+  positions_source: >-
+    sensor geometry from the FIFF channel loc fields (device frame);
+    dev_head_t from the 5 HPI coils; EEG electrode centres and head shape
+    digitised with a Polhemus and stored in headshape.pos, all in the
+    Elekta/Neuromag frame, millimetres.
+
+# =====================================================================
+# T_k  temporal support and clocks
+# =====================================================================
+temporal:
+  clock: ds000117.neuromag_acq
+  dt: 9.0909090909e-4
+  sfreq_hz: 1100.0
+  integration_window: 0.0
+  group_delay: unknown
+  jitter_sd: unknown
+  event_clock: ds000117.neuromag_acq
+  event_clock_relation: >-
+    MEG events.tsv carries an explicit 'onset_sample' column on the
+    acquisition clock (24.2073 s <-> sample 26628 confirms 1100 Hz exactly),
+    so trigger onsets map to samples without inference. The BOLD session runs
+    on the scanner volume clock and its relation to the MEG clock is
+    session-level only: the two sessions are different days, so no
+    sub-second cross-modal alignment exists and none may be claimed.
+  offset_drift: unknown
+  secondary_clocks:
+    scanner_volume: "BOLD TR = 2.0 s (task-facerecognition_bold.json); 9 runs"
+    stimulus_projector: "visual stimulus onset was corrected for a projector delay in the original study; the correction is not distributed"
+  record_duration_s: "~7.5 min per MEG run"
+
+# =====================================================================
+# C_k  coordinates and calibration
+# =====================================================================
+calibration:
+  id: ds000117.calibration
+  frames: ["neuromag_device", "neuromag_head", "subject_T1w_voxel", "subject_scanner_RAS"]
+  fiducials:
+    LPA: [-71.0, 0.0, 0.0]
+    RPA: [77.56, 0.0, 0.0]
+    Nasion: [0.0, 106.36, 0.0]
+    units: mm
+    frame: "Elekta/Neuromag (sub-01 values; every subject ships its own coordsystem.json)"
+  transforms: >-
+    dev_head_t (device -> head) is stored inside each FIFF file and is
+    therefore available with propagated uncertainty. head -> MRI is NOT
+    distributed as a matrix; it is computable from the digitised head shape
+    plus the T1w, and until agent F computes and registers it that edge of the
+    frame graph is missing.
+  calibration_points: "5 HPI coils + 3 anatomical landmarks + a digitised head-shape arc including the nose"
+  residuals: unknown
+  device_pose: "continuous head position was not recorded; a single dev_head_t per run is all that exists, so within-run head movement is an unmodelled bias"
+  raw_metadata: "BIDS sidecars (*_meg.json, *_channels.tsv, *_coordsystem.json, *_events.tsv, *_scans.tsv) and the FIFF info block"
+  electrode_positions: "70 EEG electrode centres digitised, Elekta/Neuromag frame, mm (headshape.pos)"
+  head_model: unknown
+  amplifier_gain_calibration: "Maxfilter fine-calibration (sss_cal.dat) and cross-talk (ct_sparse.fif) files are on disk"
+
+# =====================================================================
+# O_k  observation model
+# =====================================================================
+observation:
+  name: ds000117.meg_eeg
+  forward_physics: >-
+    quasi-static Maxwell forward problem for MEG (magnetometers and planar
+    gradiometers) and the quasi-static Poisson problem for EEG, over a
+    subject-specific head model that must be built from the shipped T1w and
+    multi-echo FLASH. Not shipped, hence computable but not yet computed.
+  observed_variables: ["magnetic field at 102 magnetometers", "field gradient at 204 planar gradiometers", "scalp potential at 70 electrodes", "BOLD signal", "T1w/FLASH structure", "diffusion-weighted signal", "button-press reaction time"]
+  preprocessing: "raw, unmaxfiltered fif as acquired; the loader applies no SSS, filtering, epoching or resampling"
+  preprocessing_steps: []
+  likelihood_kind: generative
+  calibration_status: uncalibrated
+  leakage_checked: true
+  target_ports: ["meg.sensor_306", "eeg.sensor_70", "bold.voxel"]
+  labels_leak_risk: >-
+    stimulus identity comes from the presentation log (stim_file column), not
+    from the recorded signal, so condition labels are exogenous. The
+    behavioural fame judgement IS a participant response and must be treated
+    as an observed variable, never as a condition label.
+
+# =====================================================================
+# U_k  intervention model
+# =====================================================================
+intervention: null    # visual stimulation is a sensory input to a boundary port, not a manipulation of brain state
+
+# =====================================================================
+# M_k  missingness and censoring
+# =====================================================================
+missingness:
+  planned: >-
+    14 of 16 released participants and all 87.8 GB of maxfiltered MEG
+    derivatives were deliberately not fetched. sub-emptyroom (the empty-room
+    noise recording) was also not fetched, which means the empirical MEG noise
+    covariance cannot be estimated from an empty-room recording for this
+    source.
+  unplanned: "MEG/EEG .fif fetched for 2 of 2 participants (sub-01, sub-02); BOLD present for 2. The absent MEG binaries are a deliberate, recorded subset - not missing data in the statistical sense - and the unfetched participants are excluded from MEG likelihood terms rather than imputed."
+  artifact_rejection: "none by the provider (raw fif) and none here; SQUID jumps, blinks, cardiac artefact and head movement are all present"
+  dropout: "three participants present in the pre-BIDS release were removed upstream without a stated reason"
+  attrition: "not applicable: two sessions, both completed for the released participants"
+  policy: >-
+    Unfetched participants are absent, never imputed. Missing head-position
+    tracking is modelled as bias, not filled in with zeros.
+  mechanism: planned
+  handling: drop_episode
+  post_outcome_selection: false
+  censoring_correlated_with_state: false
+
+# =====================================================================
+# B_k, V_k, Delta_k  uncertainty ledger
+# =====================================================================
+ledger:
+  variance:
+    measurement: 9.0e-27           # T^2; ~3 fT/sqrt(Hz) Vectorview magnetometer noise floor, squared
+    session: unknown
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: [-5.0e-13, 5.0e-13]
+  bias_status: prior_specified_sensitivity
+  bias_bound_justification: >-
+    Dominated by uncompensated environmental interference and head movement
+    within a run (no continuous HPI). Neither is measured in this release, so
+    the interval is a prior specification for sensitivity analysis at roughly
+    the scale of a typical unshielded urban interference residual on a
+    magnetometer - it is not an estimate and must not be reported as one.
+  model_discrepancy: null
+  validity_domain:
+    population: "healthy adults aged 23-31"
+    state: "awake, fixating, performing a fame judgement on briefly presented faces"
+    frequency_band_hz: [0.03, 330.0]
+    spatial_scale: "sensor; source scale only after a registered forward operator"
+    cross_modal: "MEG and BOLD were acquired on different days; only session-level, not trial-level, cross-modal alignment is valid"
+
+# =====================================================================
+# A_k  gradient permission
+# =====================================================================
+gradient_permission:
+  allow:
+    - target: observe.meg.sensor_head.gain
+      scales: ["sensor"]
+      requires: ["signal.si_units", "temporal.sfreq_hz"]
+    - target: observe.eeg.sensor_head.gain
+      scales: ["sensor"]
+      requires: ["signal.si_units", "temporal.sfreq_hz"]
+    - target: dynamics.visual_ventral.evoked_response
+      scales: ["parcel"]
+      requires: ["temporal.event_clock_relation", "signal.si_units"]
+    - target: transforms.frame_graph.device_to_head
+      scales: ["sensor"]
+      requires: ["calibration.transforms", "calibration.calibration_points"]
+    - target: observe.meg.noise_covariance
+      scales: ["sensor"]
+      requires: ["signal.si_units"]
+    - target: observe.meg.lead_field
+      scales: ["sensor", "source"]
+      requires: ["spatial.psf", "calibration.head_model"]
+    - target: transforms.clock_graph.meg_bold_alignment
+      scales: ["clock"]
+      requires: ["temporal.group_delay", "temporal.offset_drift"]
+  frozen:
+    - anatomy.connectome_prior
+  forbid:
+    - infer.population_prior          # n = 2 on disk: a population claim from this source is not admissible
+    - intervene.*
+  evaluation_only: false
+
+# =====================================================================
+# R_k  role and split policy
+# =====================================================================
+role: likelihood
+
+split_policy:
+  grouping_keys: ["participant"]
+  grouping_note: >-
+    A participant's MEG runs, BOLD runs, dMRI, structural scans and any
+    derived tractogram or parcellation form one group. Nine BOLD runs of one
+    person are not nine samples (Appendix D, "Derived-data duplication").
+  temporal_holdout: >-
+    available across runs within a session (run 01-04 -> run 05-06) and across
+    sessions (MEG day -> MRI day). With two participants on disk, the only
+    honest use of this source is per-participant, not cross-participant.
+  temporal_holdout_spec: null
+  stimulus_holdout: >-
+    essential here: individual face images repeat within and across runs
+    (events.tsv carries stim_file), so a model can memorise an image. Hold out
+    whole face identities, not trials. The loader exposes stim_file basenames
+    as stimulus ids precisely so this split is expressible.
+  site_holdout: "not available: one site, one MEG system"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    This is the cross-modal benchmark for G1 (typed fusion vs naive
+    resampling): MEG at 1100 Hz, EEG at 1100 Hz and BOLD at TR = 2 s on the
+    same participants and task. Because MEG and BOLD were acquired on
+    different days, the G1 claim is about consistent latent structure, NOT
+    about trial-level cross-modal prediction.

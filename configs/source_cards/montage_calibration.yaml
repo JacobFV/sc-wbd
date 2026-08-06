@@ -1,0 +1,19 @@
+# Electrode montage / amplifier calibration. A calibration factor estimates
+# coordinates, gains, tissue properties or nuisance parameters -- it is NEVER
+# biological supervision (Appendix B, gradient-permission rejection condition).
+id: montage_calibration
+role: calibration
+losses: [calibration]
+gradient_permission: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"]
+frozen: ["local.*", "coupling.*", "residual.*", "assimilate.*", "readout.*", "bold.*"]
+n_eff: 64.0
+n_rows: 64.0
+hierarchy_depth: 1
+measurement_variance: 0.05
+bias_halfwidth: 0.05
+bias_status: prior_specified_sensitivity
+validity_overlap: 1.0
+notes: Per-channel gain/offset/noise nuisance for the EEG head.
+compiler_permission:
+  - "port:*.eeg_out"
+  - "observation:montage_calibration:nuisance"

@@ -1,0 +1,2388 @@
+{
+ "algorithm": "sha256",
+ "dataset_id": "mne-somato",
+ "files": {
+  "MNE-somato-data/CHANGES": {
+   "bytes": 41,
+   "sha256": "6c47472608615df5a564a4a855e2096cb432c2491e6b23aae443ffdff2c61c8a"
+  },
+  "MNE-somato-data/README": {
+   "bytes": 1462,
+   "sha256": "c9c3ca3cadc7973b6cfc854783d8de0ac77f47ccacba4135daac581babef6883"
+  },
+  "MNE-somato-data/code/README": {
+   "bytes": 460,
+   "sha256": "8da867e7ae066d04768ab8878778fa35d087618449df509f6df124992adbcfd4"
+  },
+  "MNE-somato-data/code/convert_somato_data.py": {
+   "bytes": 9261,
+   "sha256": "453e6d92dfcca9a1d8db98a3a25456cba3184cb0c78d1a980c360b5e7824cee4"
+  },
+  "MNE-somato-data/dataset_description.json": {
+   "bytes": 387,
+   "sha256": "7ae2d3e0334b006f332eb32b33f0e65d448d348f855f72e8664ec7542ed6ec55"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/01-5120-bem-sol.fif": {
+   "bytes": 26378728,
+   "sha256": "85bf828b2c2085d31f65a39894976de17c41dbef32025fcfc72a7bb53d5dc14f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/01-5120-bem.fif": {
+   "bytes": 123304,
+   "sha256": "169326ef2172552bddb31965b90af9d504b18675225c94446da73cd5358d53d8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/01-head-dense.fif": {
+   "bytes": 12683928,
+   "sha256": "f7bd3f81a996a075a145a55fb315276e166093a8bb27331642030d9bf1f6b10a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/01-head-medium.fif": {
+   "bytes": 535428,
+   "sha256": "776e2f0692e355bd5250ad942ecfe002dd9c5b2d3e11a1984a4be8d508cc1f4b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/01-head-sparse.fif": {
+   "bytes": 45168,
+   "sha256": "eeef82430e057948cbc8dfba6b81909d812acf1cda9e0605d5e5cabbd946ce18"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/01-head.fif": {
+   "bytes": 369012,
+   "sha256": "d744cc305965608a23dd29c6bd6593a262fdccbb8d7b112b8cc52c4551f40e1d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/brain.surf": {
+   "bytes": 369273,
+   "sha256": "a61f15d4bcaf7ceafd6f07da5192495bfdeec4492a415e8d46577405caeb7897"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/inner_skull.surf": {
+   "bytes": 369273,
+   "sha256": "0027eb9c7a1a9e05c320e720a2f2c1240116cb25d74f1117badb18dec28b5d80"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/outer_skin.surf": {
+   "bytes": 369273,
+   "sha256": "8325f4583edf9147b86679594cf18e9a62b5b343ecd46a324744c8bd84733f96"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/outer_skull.surf": {
+   "bytes": 369273,
+   "sha256": "cef7463c0e52aabce07f82ba8acd228eee8686de16ebd1d1a5e4e67e2b50a62a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/01_brain_surface": {
+   "bytes": 369273,
+   "sha256": "a61f15d4bcaf7ceafd6f07da5192495bfdeec4492a415e8d46577405caeb7897"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/01_inner_skull_surface": {
+   "bytes": 369273,
+   "sha256": "0027eb9c7a1a9e05c320e720a2f2c1240116cb25d74f1117badb18dec28b5d80"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/01_outer_skin_surface": {
+   "bytes": 369273,
+   "sha256": "8325f4583edf9147b86679594cf18e9a62b5b343ecd46a324744c8bd84733f96"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/01_outer_skull_surface": {
+   "bytes": 369273,
+   "sha256": "cef7463c0e52aabce07f82ba8acd228eee8686de16ebd1d1a5e4e67e2b50a62a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-.info": {
+   "bytes": 480,
+   "sha256": "c30aff2a93b5d4355bb099704852826870c63990f62b7c9068f00577e2d3db10"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-001": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-002": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-003": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-004": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-005": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-006": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-007": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-008": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-009": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-010": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-011": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-012": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-013": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-014": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-015": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-016": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-017": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-018": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-019": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-020": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-021": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-022": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-023": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-024": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-025": {
+   "bytes": 65536,
+   "sha256": "de2ff895fe30c6f96d87de45ec6a1c7c16126b05be055ed118c015a1adf1aa97"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-026": {
+   "bytes": 65536,
+   "sha256": "2358e7c5f8cd475cc55b98395bb59cf38d150523f35ed331eca0ab00985b99a1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-027": {
+   "bytes": 65536,
+   "sha256": "96e29995aae097d695bbabced49180edd9e84993757a7c758184c0dfee2be1e8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-028": {
+   "bytes": 65536,
+   "sha256": "0a6c4bf712cf769bd3a3bf3c0cf655abab78e9b00b992091037e5f7132eaf0c5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-029": {
+   "bytes": 65536,
+   "sha256": "10b4e28fdac3b1a00155e29f402f0dbff461704830ef794003462534badb9f1b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-030": {
+   "bytes": 65536,
+   "sha256": "3a40bbe97807fb3095890c67af56b31b976609fc9cfb7fd40963eba2e618b424"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-031": {
+   "bytes": 65536,
+   "sha256": "879efab8f1972ddb4403688a92adce19ed26bf196072063373317fe74235cf02"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-032": {
+   "bytes": 65536,
+   "sha256": "08c34be9f18c245e2507f4a1cfad374885e463a1d6ba5c32af0472232ef811f7"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-033": {
+   "bytes": 65536,
+   "sha256": "ac42af55d174b7ec414a979597b448a2486681478df6d0ccc3da5a4d30f3eaee"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-034": {
+   "bytes": 65536,
+   "sha256": "ac1fc932c3d0f6f7aeb507ed802fd0a6f8d023b86f94da287d3acbd024f42574"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-035": {
+   "bytes": 65536,
+   "sha256": "db9c6c286ea4225a55b3c6d481b3dcbf261e65250a7ce40bf81b15c88845b7be"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-036": {
+   "bytes": 65536,
+   "sha256": "ab9160faf4661a86db23bef7f62454d8f08aedb171e4c881e12e19a9167c88bd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-037": {
+   "bytes": 65536,
+   "sha256": "2a52e4fd36ea07ea9db26d00c494c8bba04449c6fa69ae7adba340451debab3a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-038": {
+   "bytes": 65536,
+   "sha256": "c1d9c73cfab7ebd9957efa8811633961af1a50d1d22ffd6b6ec7fce0c1f357c9"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-039": {
+   "bytes": 65536,
+   "sha256": "8e786b7d1a6e5309bf0b66432ce456fcaaac5a947e2cc9577f429be8584ca82f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-040": {
+   "bytes": 65536,
+   "sha256": "1fc835db7099236b0213cb581f6c4db41cf3376177c8ec6648ed467536e9d2c6"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-041": {
+   "bytes": 65536,
+   "sha256": "b8334f994fc87701bc6b5851e2819ca78d37db94ccbd2052f0b5a6bde4137180"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-042": {
+   "bytes": 65536,
+   "sha256": "679a1408fb6310aec2120af6590c5d54909e73c29608831b9e716da384ef56ce"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-043": {
+   "bytes": 65536,
+   "sha256": "d86b2c1f1e19dd8c9b6ebe7fafd5033dc541f8fc0c4988ad833d549606d737fb"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-044": {
+   "bytes": 65536,
+   "sha256": "88ccbc60f039b15a05ad00244078dba35b2c2a403252d241088895cbcb78af59"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-045": {
+   "bytes": 65536,
+   "sha256": "c85f5973039d58f95176e7c4c519f0e346ad025c1f06276d609cabed34cebd16"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-046": {
+   "bytes": 65536,
+   "sha256": "08fc062ac16410a03cc7170abcfdb29afbb38f14bc65b7daa1e50c7dc470eb60"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-047": {
+   "bytes": 65536,
+   "sha256": "b260460b6b1665072e67e8ad8555fcb034858358dc5c9e0aaf3b4889f395cdc5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-048": {
+   "bytes": 65536,
+   "sha256": "c85bb4b262db9116802bae457a347b0220f32666d5409c3fc481ba80a2f002fd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-049": {
+   "bytes": 65536,
+   "sha256": "2b97d841fe616ee9b81172ff73ceb7432ae009f3b4bb02f8a874e8cef92acb94"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-050": {
+   "bytes": 65536,
+   "sha256": "50dda280598ef9c54855c1b90a3aa450a036c95b6b972e1916ee37c33dd65a7d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-051": {
+   "bytes": 65536,
+   "sha256": "2a006e63bb3061c6d373f679565321cb61f083f6a37669aca6f4b88ac9f58ae3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-052": {
+   "bytes": 65536,
+   "sha256": "abac52218e4cc4120fc9802fed1aee016d8d779695e9e8c4d2dce6106ce258cc"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-053": {
+   "bytes": 65536,
+   "sha256": "f744177b4b8470885c0f10d554287821608ddf57935688d638c36c6f55ba27b6"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-054": {
+   "bytes": 65536,
+   "sha256": "5248b43d4d12e82191eecda0cfcd478dcb22d4c87b49dc8ff5af3259efd41513"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-055": {
+   "bytes": 65536,
+   "sha256": "c4b06a5af35bde696ca04467f3f49a4960c09a5028016dcb9a8c64572468e683"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-056": {
+   "bytes": 65536,
+   "sha256": "d737ae47c9e0ccee1cafde7df8d7a389ac6e49b55b4871a9e7c6c78ff78a889e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-057": {
+   "bytes": 65536,
+   "sha256": "80be32f452a40035b8c5f8bc34b4e9762a345f6765002bd32e419a1c332e5a4b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-058": {
+   "bytes": 65536,
+   "sha256": "4b3fe6a50244ae441ac4afa31afb055d55297dffa35c45013d18ae4c4dd369ef"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-059": {
+   "bytes": 65536,
+   "sha256": "6ad40fb5081172fee15995a8680357e7a7abdbe1afeaeede82ba67c5ae22b6f4"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-060": {
+   "bytes": 65536,
+   "sha256": "2881c05961fc4d1ac06661927324848181b93028c68badb55ec18ed93e053bb3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-061": {
+   "bytes": 65536,
+   "sha256": "58d1f0fcf8e959329fd91e7cda2a012238341d6e49a998f3b4ca563f0d23cda8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-062": {
+   "bytes": 65536,
+   "sha256": "6fd7b59c3d0e958e33c7e52d7b256eb8aa493cc5f2aa0f344c56c6f5f34d4645"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-063": {
+   "bytes": 65536,
+   "sha256": "a65be8d772f52a5c97822131be5c2ab556417941bc2a958360195651a0e8ffba"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-064": {
+   "bytes": 65536,
+   "sha256": "ed6d61a6f3e92eaddf544f9658fb0a00ae55903d3774a1db962b19c981f65b92"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-065": {
+   "bytes": 65536,
+   "sha256": "ee76aae5b3054e9a04fbed44b367537732900a4329a627d536519d522192b3b2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-066": {
+   "bytes": 65536,
+   "sha256": "697ec00bcb86a2c36d28ff6f7ac63bcee13defff8241966b00159db2e4b94272"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-067": {
+   "bytes": 65536,
+   "sha256": "49a2b04cfb67e882a425e8cb89c256de7b904e232c94ddb8c3c7ecbf20de48b8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-068": {
+   "bytes": 65536,
+   "sha256": "52f24d5b623238daec8120fcd1ddae3012c09fa7458d7a5074df474e776d6837"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-069": {
+   "bytes": 65536,
+   "sha256": "5c88dbac6b89ec7373de70625290c4c73533a7f0ebd2e2d96a957c0b0ea01c5a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-070": {
+   "bytes": 65536,
+   "sha256": "32e62e57b47cc18f326156d8b2075e331f468baa6c79f144a0d5295252dbb2c9"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-071": {
+   "bytes": 65536,
+   "sha256": "174df65962c901196102a34f43d57a03d9b7b5804676d9adba58e3cdc557168a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-072": {
+   "bytes": 65536,
+   "sha256": "61fd0e3b792465bfa766aa8ba6bd94d37fb9eb5ae42304558f37158b98a41d5f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-073": {
+   "bytes": 65536,
+   "sha256": "6d1f9b1159236cdf407053abeded6752c2b05a2eedd95721398e17f0cebd8cf1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-074": {
+   "bytes": 65536,
+   "sha256": "b0eb9b159b5adfcf0fb6775790191d449a49514f13edb3b2212bf9311db832cd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-075": {
+   "bytes": 65536,
+   "sha256": "fd97bc513d4a49235a2cae4b47d297c77495612b18648471b67d534fc89777bc"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-076": {
+   "bytes": 65536,
+   "sha256": "cbcb345cca14027106c3fb4d08441e30be5ebb13f1c2a7a18538666774792568"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-077": {
+   "bytes": 65536,
+   "sha256": "644f72d25e5c34c09b25b6782e4d69dd34190e935c7d2aada9f9dfdd28b322f0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-078": {
+   "bytes": 65536,
+   "sha256": "b8f2ff7a1fb2b76b2e9fa922138bf98e03bf848a7ec5a7002867d165cdc16c16"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-079": {
+   "bytes": 65536,
+   "sha256": "3c32e6ff33dc3e8faa4bb6492530fc3440ae6fd200fc86727f289c1e065c26bd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-080": {
+   "bytes": 65536,
+   "sha256": "33410b0b9bbae500352353a509d3fa9cfbba6971f235bb53c4aedcbb49d79a03"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-081": {
+   "bytes": 65536,
+   "sha256": "fab1a1811ec0b50ddad57bbe6f738c97d2f2740c6c25e2bda022f7f01a9e91b4"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-082": {
+   "bytes": 65536,
+   "sha256": "96f35b7b497dcc3ed028633b6f4703c81d5cab55eb68112135a9befb64c1fef5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-083": {
+   "bytes": 65536,
+   "sha256": "9962c57f792b01acb49f1a1d9c9baa92ce3cdbc41698845b15628ad674ddfe06"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-084": {
+   "bytes": 65536,
+   "sha256": "82bd90e22b7f4ff26a1d1870aa956f36014b80daaa9c6dd88e69c05b61fa5846"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-085": {
+   "bytes": 65536,
+   "sha256": "5a6adb1afaa9ad9473800e152a626907850648ce460ca5be46ce905c8bb6038f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-086": {
+   "bytes": 65536,
+   "sha256": "8b4a25f7d024bb897e06a53127b680912a66d459c4c397f8a76b750f86ce2058"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-087": {
+   "bytes": 65536,
+   "sha256": "8fcb592fee8c2fd64293721e677ecd85a1845334098d8858d97790779ea460b0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-088": {
+   "bytes": 65536,
+   "sha256": "d3a626e1d7ed4e56db8b1f8314966752d0a356d0b17f9da92ed5ac6a94a816f2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-089": {
+   "bytes": 65536,
+   "sha256": "2a69a993a204edc9d09e32fe183c7312a26f11ecf0745c626b4e54603564a9a3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-090": {
+   "bytes": 65536,
+   "sha256": "adf3c44015ac5a47902dc8df97eb8eba7d8530724ba46ae092b338bbec40d64a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-091": {
+   "bytes": 65536,
+   "sha256": "5181f56d5db54168b23d53c98ca57563b03d86c334f9842a8d6cb877ec3fc559"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-092": {
+   "bytes": 65536,
+   "sha256": "b978174ed070d26733b3bd919c6b04a5f0e3b32fd3291842ea1a99f1dd4045bb"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-093": {
+   "bytes": 65536,
+   "sha256": "f8c2d5abe7b928cddc05432c5588d24d9869d77cf1f0d264d6646fccd195ebe7"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-094": {
+   "bytes": 65536,
+   "sha256": "699da78d8fd83c089f40aa95b8b4096b222b4559fe7b36d4819444a707c6fb10"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-095": {
+   "bytes": 65536,
+   "sha256": "ccd532846f890ee8f336e1d8bb19e2c2199e7476806f3681da75399631040162"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-096": {
+   "bytes": 65536,
+   "sha256": "473c2abace863041a34b403a6402eb6011196c6b37a51f30ab2b4ba72c6d730a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-097": {
+   "bytes": 65536,
+   "sha256": "8fc86d661bcdf7a84308350666f58a3effd90cb366bab46d6697af65b2b699c6"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-098": {
+   "bytes": 65536,
+   "sha256": "870c0b70ec83cd25f585766c6e7929733b6c4b17a61b9145e931d71f66df8eef"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-099": {
+   "bytes": 65536,
+   "sha256": "f3d77c06c3b3471d61c643532a34b75d70ce7970bc551ddac6ae94f68bb498eb"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-100": {
+   "bytes": 65536,
+   "sha256": "bcbf6f43b9e2e337f5ae4162f656df29158687367f34baae052557f0e11a2142"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-101": {
+   "bytes": 65536,
+   "sha256": "fe611c5d92c0f82f2bc4f2bc96b4f6b8f075e9d167b1ba1503e444a319b64f86"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-102": {
+   "bytes": 65536,
+   "sha256": "7c2c7be0a0d79d55dbfc7f20d418bbc0705634a2ebdc4e3c7d2200c22c8c9534"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-103": {
+   "bytes": 65536,
+   "sha256": "9cfa3f333d0b10620471f95ddd3462fb56dd4e099be61693dcd59a89a8f0bd32"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-104": {
+   "bytes": 65536,
+   "sha256": "6d2acecc227c54c89abbb4b55c3ecc5fd5d75a084276d687c2a96b6e2723c6bb"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-105": {
+   "bytes": 65536,
+   "sha256": "d7a05859b8926c62c7351f838a3f43c7f61aeec6a68aac4553c437cefc767c82"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-106": {
+   "bytes": 65536,
+   "sha256": "1ebb274d9f55ed12dd51533062cba5aa0cc26bebaa5532496f968deefbfb93a7"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-107": {
+   "bytes": 65536,
+   "sha256": "163975abb67d4b7af3b7973a3d752770bd0de1c4987856cee1b3a6e91419c08f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-108": {
+   "bytes": 65536,
+   "sha256": "e6730862bb989674dad8f1d1bf2a630bcb6860cd94c63c60640820e2ab53794d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-109": {
+   "bytes": 65536,
+   "sha256": "827c162875924ea96d8074e4ccadc429f0f1109a50dc809feabcad2c0546042f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-110": {
+   "bytes": 65536,
+   "sha256": "69d2c843da82c89aead2375fb9fa3553134b33cad066dbd01a733fdb8a06b40d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-111": {
+   "bytes": 65536,
+   "sha256": "a7194aa0d8b2d15727f0e468faeab7e456f4c11ac6616ba0aff3bc7d32390eb2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-112": {
+   "bytes": 65536,
+   "sha256": "f02460ceea0871f2e2d76f3c676b3bb0596ba1efcca17048528561bb0971d1b6"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-113": {
+   "bytes": 65536,
+   "sha256": "ea3b1ec4f784be85f315ca8bee0cd89a0560d7dba0cf8133d5101a7ad4c23553"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-114": {
+   "bytes": 65536,
+   "sha256": "49e802b95cb84ba6160cb31733ad437b5e6ff4580e195b72492ea583dd591867"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-115": {
+   "bytes": 65536,
+   "sha256": "370aa07f7cdb3bf940826ab78beb8961dab984a87669b8d92542162022f6561a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-116": {
+   "bytes": 65536,
+   "sha256": "73bd420b94b5ded611b8cf5912b33cc302a0a3932a050bab54892aa0ce044f4b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-117": {
+   "bytes": 65536,
+   "sha256": "068c2fb07ec29aa87718904ac7f63ea998aabfed2637fdf5f85924c749d6757b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-118": {
+   "bytes": 65536,
+   "sha256": "277d75a4d46ad6859fa1c5f12d37f042cee3b0eba93d752549b312994092ef23"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-119": {
+   "bytes": 65536,
+   "sha256": "62de339c2a1da0dbd7908e5f3a5588a94ee0747549e56e62ca01509fad1e41d3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-120": {
+   "bytes": 65536,
+   "sha256": "b3b9ae3158294840a85c7d2e1cb1bf98dca3d0a4b6be9808b9b9ecdb5b627759"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-121": {
+   "bytes": 65536,
+   "sha256": "4fdce8dd622c6196ff04570bd432309c5bc5a0974a33b6d7decd8b82022cd1a3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-122": {
+   "bytes": 65536,
+   "sha256": "7ae2f641c18e0286e4332b7ed505e366c686574a87920e8a6399c5b913c8bb40"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-123": {
+   "bytes": 65536,
+   "sha256": "8566564446ab7d4bb07698ae6c0830e90bcb61c9d38c84aefdf7931d2636e2be"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-124": {
+   "bytes": 65536,
+   "sha256": "931e34e53a5d6c60bfff10f5d173290b5c53d43f96a49a141e2579b8b87f7382"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-125": {
+   "bytes": 65536,
+   "sha256": "50c0b0cef7a92791d3fbefd7a57098893c672ec018b1b4b18ae70977b45d025b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-126": {
+   "bytes": 65536,
+   "sha256": "6eae5d129d0526484692e7617b29d4a5cad6e60dbe9d0aa818b3c583a1c11e69"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-127": {
+   "bytes": 65536,
+   "sha256": "0e8676db0300aa7f913fd9b4278b60b6cdb9f93f9b784108c79197f561ab2c76"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-128": {
+   "bytes": 65536,
+   "sha256": "cb7e92fa787d54b40514d2a2b097e944b9f5b5cc7a23cedc5d5d0128b8671a46"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-129": {
+   "bytes": 65536,
+   "sha256": "1338ee3892302b7734b000d39045c3ad4a9752e4463667c25c639e34a9352706"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-130": {
+   "bytes": 65536,
+   "sha256": "ccb4c8cc459d432013195262aba37d6feea6b66e4d39a05280cbb4f962942dda"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-131": {
+   "bytes": 65536,
+   "sha256": "37d767b629de17f5f8d0ad560041e4ed97c34621b5515b104197361bf7d4645b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-132": {
+   "bytes": 65536,
+   "sha256": "ee9742d1147e4dadd40b030e512925fea68d3d1ed04d32d1fc615a2d4fb1255a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-133": {
+   "bytes": 65536,
+   "sha256": "55a280cd94aebf60478c945fee25f75accf021615c6ea54d90551b5d90d1b64e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-134": {
+   "bytes": 65536,
+   "sha256": "337ca5fb80baa359a8a897ede64c294aa80ecabff803e21bcba1e191a7438024"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-135": {
+   "bytes": 65536,
+   "sha256": "805d9f896d050daa032167c2a49de1e1fa979d051bb1b0693304196538d6d9a5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-136": {
+   "bytes": 65536,
+   "sha256": "cf793e08ae550dbbe5d2de7074c371dcb339f072f77c756f917a75e5ec9d5217"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-137": {
+   "bytes": 65536,
+   "sha256": "38862889a2308f2b236c1206dadf57a93e3bdba11983d7e97e00f8d711ccda15"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-138": {
+   "bytes": 65536,
+   "sha256": "361749c0c703356ec5f8b8b1ed207e921c524cdc10cf63e3fdfe2cd53afeda5f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-139": {
+   "bytes": 65536,
+   "sha256": "abcb666af74d30f0d2950755cc0476c6acff26aef136475aad074cc87051099d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-140": {
+   "bytes": 65536,
+   "sha256": "036d5e0ef065a5d0fca7c77f3080f724a1da26dd418033f3a7f78b98cf16d5e6"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-141": {
+   "bytes": 65536,
+   "sha256": "ba47c850b37bf5cb489985501ae6d4a468d7066f79a6499a45ca5edaed421e03"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-142": {
+   "bytes": 65536,
+   "sha256": "a41b69b4d892282ce1c7181ebede9d1e50ea01eb6f98c44dd6a79123a3b043ae"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-143": {
+   "bytes": 65536,
+   "sha256": "2a667e62cd1542613ddf3cbb40d1f5e6f1528d29cafdfe0d7323d9d4e79938f3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-144": {
+   "bytes": 65536,
+   "sha256": "5f4fa821770d22c436e672724c73e66ca0b4a709d4319832c0167e2d597e4fb8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-145": {
+   "bytes": 65536,
+   "sha256": "35c6c3adfce65ba5209013bf0a3f3504a6d66e668f751e11540c8ed7c217f1da"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-146": {
+   "bytes": 65536,
+   "sha256": "51526a43154a3db84c375af0bae34f184765d530aa7ead20038b23f45858f464"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-147": {
+   "bytes": 65536,
+   "sha256": "8f707eeda1a6ad1e9b802e63079843ad9cd6ee33ddc88402a4d252c5e48fc527"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-148": {
+   "bytes": 65536,
+   "sha256": "7623f45a7b7367bf321cc75d969de80387f980c76b73b5d1d771fb5d12b3eed4"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-149": {
+   "bytes": 65536,
+   "sha256": "94ef8f6b24b4584f976f3bcbe999f5bef7abc9e098f81fc3437429e7f844aad4"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-150": {
+   "bytes": 65536,
+   "sha256": "7b0f638ef3e0e560613f89be334be8e8f934826d1930a6bd1eef556bf1462c8f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-151": {
+   "bytes": 65536,
+   "sha256": "308eb17b8e0b9ce52a8e410b4e66c5bc5554619977b969f5fca03f36281ea7e5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-152": {
+   "bytes": 65536,
+   "sha256": "096883ec4f36d23d99084ac8261882c8ad678c7e30147f9b7a455e961f91c006"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-153": {
+   "bytes": 65536,
+   "sha256": "b7cba1aa582af18c69636903d35fc0589f0146ccaf8b7ab7b92d229f03f738ea"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-154": {
+   "bytes": 65536,
+   "sha256": "3760cb628c953d90ac7af18271637fd4112789e47c124d9e6e21528ad779bed7"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-155": {
+   "bytes": 65536,
+   "sha256": "b81d0c8372dba41b9d6f156a6c13573cddd1c7fccf08d6e11f9cf4754612d49c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-156": {
+   "bytes": 65536,
+   "sha256": "3a133c45066e57f887044c089012e38a8e830bd353189e8bef5856ab224a8bcf"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-157": {
+   "bytes": 65536,
+   "sha256": "323211d2e7b25a7d94a36d8cb0b38b9473178954da8ffe01129f79581a08eaf2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-158": {
+   "bytes": 65536,
+   "sha256": "1401c1ae100dee69748b509814c0216859e0c8951ce15834aa80cb62fc4de886"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-159": {
+   "bytes": 65536,
+   "sha256": "cb0253810fc8e468463e75cfdbc04d338632c609619f2625dc3475002dbfc1e0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-160": {
+   "bytes": 65536,
+   "sha256": "1ce0c333895b192426134e554102a1a9766e784c4514748447479fd9c69056f5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-161": {
+   "bytes": 65536,
+   "sha256": "f5575040f0521c2558f6d1fb4a4fca1b89c86f4dafd88b7f7ff10e16c13d3110"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-162": {
+   "bytes": 65536,
+   "sha256": "929b5e3715d5e78dadbf8694b14244734fbfc7a23a26e5af060024ee1c03b9fe"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-163": {
+   "bytes": 65536,
+   "sha256": "18b391f589dbbaa629023bab985355ef01af6263a48b7c455c66e17884430312"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-164": {
+   "bytes": 65536,
+   "sha256": "5f82b8c31b13bce0cea4e45654e9eb56c5b5dcd71711049572b32ac7e6d89788"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-165": {
+   "bytes": 65536,
+   "sha256": "1744424775981acfd34f5eb59f7d881ce5d71c8ab4587aa47fd1f991232c4204"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-166": {
+   "bytes": 65536,
+   "sha256": "7bc11c550c5a576d87f503223a126e6f7e533e39eab2bd2921246a54e687cadb"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-167": {
+   "bytes": 65536,
+   "sha256": "c11223d5b3543e5a285c8d8c136c7bf9ee57dac7c2468f5a26625d26186536fa"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-168": {
+   "bytes": 65536,
+   "sha256": "438fae9c349a5d6c009c6677229b442c2063015ab07d64e41fe72938aea3aef8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-169": {
+   "bytes": 65536,
+   "sha256": "be432cc39e6eb0c6fece16698444ac304db83bb17334c12446773fb56a47233a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-170": {
+   "bytes": 65536,
+   "sha256": "59eecc379c5b601f24d957cf9196fd9207d98d7a197be3edddc5d8d25a6f59bf"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-171": {
+   "bytes": 65536,
+   "sha256": "dfe5a0d72ce2edd658cd6b58c333a9480b5326e06b82ef3b31a723caaeff5b47"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-172": {
+   "bytes": 65536,
+   "sha256": "541b581d093112d014824d8bf776de422c00b517225e20b017403304a21c299a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-173": {
+   "bytes": 65536,
+   "sha256": "062b7d04734f360ffe256b1e65d25781aff5aeae41999efbdeb3527b0b2507db"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-174": {
+   "bytes": 65536,
+   "sha256": "f61948507c666af91e2aa6bf171fa7cc17c70d071f03414d01f8aa0c67657600"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-175": {
+   "bytes": 65536,
+   "sha256": "df8295275c1eab135ab2f4bdbafa2384310b9c4d643d8f8336e4c66b01060a07"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-176": {
+   "bytes": 65536,
+   "sha256": "60d599ac0bffb5dfef22aa32b1d5f989bce6a643eff362e16a12032e3162e54d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-177": {
+   "bytes": 65536,
+   "sha256": "4bb6c2a7d19190d7ede88deaef562618415643125868cd43d724c43c6f10c297"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-178": {
+   "bytes": 65536,
+   "sha256": "3b0382134d1fef21878962533122054ffa5c87a10581e7bd241419c46d3ed678"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-179": {
+   "bytes": 65536,
+   "sha256": "8bc487448724e9edc62d27c747051ccb7d8556dab83e40573627e03df0e7a068"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-180": {
+   "bytes": 65536,
+   "sha256": "9443b186c2ec81d1580029ad8aaeeb608647eda6f5c3ddfc3f60bf965be07813"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-181": {
+   "bytes": 65536,
+   "sha256": "04fdd03a06a7d1c179d00791fb35e3e508fc2b5e4255d5f5b1deb3508865858c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-182": {
+   "bytes": 65536,
+   "sha256": "90ed97101c9665e38a1ea03c627964d4bc1b6075b6d84043f02f3891600c1e61"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-183": {
+   "bytes": 65536,
+   "sha256": "881b69fd08b89531ddf73a025f642df282716583ab7820181200dd8f6dd6bae6"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-184": {
+   "bytes": 65536,
+   "sha256": "bc17e948e9e2a45c91c4876a14f4c24579e3d29923474c3adc46c4481f27cd4a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-185": {
+   "bytes": 65536,
+   "sha256": "b4db5c6a34d919092f3d33dfc61dda729189c036ff804f7f2c03c9e61a8b9a24"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-186": {
+   "bytes": 65536,
+   "sha256": "f933212f724e5455854d54d352105dacaaae38e7be17ba7fdb02a9221c601c77"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-187": {
+   "bytes": 65536,
+   "sha256": "5accb6c42982b4a0da43ca9b0d43f23ffb20e3c0e68129bf8f0a081551ff85e0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-188": {
+   "bytes": 65536,
+   "sha256": "6f28246cd44d9f39f6cf5ffdbe77c328be24551415427d77797f1ee7eea92794"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-189": {
+   "bytes": 65536,
+   "sha256": "a76c68d96ae7f4f9ff12c4279125bfcdb89b21b8ea453ad3bc8484e533aa56ed"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-190": {
+   "bytes": 65536,
+   "sha256": "70d25ff76a37df6156e37babeb2c4a30058b0a5b58865279df982ff886c6ec17"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-191": {
+   "bytes": 65536,
+   "sha256": "ba09ff7c641051c916e900398a6dd6d950708a1284f6d9770d7d7cfd462b19fa"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-192": {
+   "bytes": 65536,
+   "sha256": "b9b9f12dba0bdda81d9ca2fe1fce175076882fb88d90b4f3489dcba8a97e7c06"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-193": {
+   "bytes": 65536,
+   "sha256": "0dbb37420aaf25c02002ba34b22293f9fa5fe963ac219c73077f53766b26dd85"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-194": {
+   "bytes": 65536,
+   "sha256": "bd4f7d621804f013418405fcac865178c83c3807ece72b58dc7fd8ee60e07fdc"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-195": {
+   "bytes": 65536,
+   "sha256": "93d3c8345884587070caab0b967e2ab66deac439dafe6f8fdfaafb5cc5632e7a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-196": {
+   "bytes": 65536,
+   "sha256": "59ae5ad5b4cb82acf3f9f27f0a082dc407b696d5deff72dc13db995fdf677707"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-197": {
+   "bytes": 65536,
+   "sha256": "d67378ac6abaedf78eb87aa2e81ea2727526cf22e6b6108c437359efc4643dc0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-198": {
+   "bytes": 65536,
+   "sha256": "d2d5cc03b9ca56afc776a4b073c5bc4df651db6f382fdaa0037f21e6ad5e2ecc"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-199": {
+   "bytes": 65536,
+   "sha256": "e99183ec04b12a03675e87b43db78eeef7688cbc24bf061d9d6a504f2aa5810c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-200": {
+   "bytes": 65536,
+   "sha256": "717714659b4685873ba992ed7f7d74a3a4c0fa325f15b6c91e9af33413992f82"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-201": {
+   "bytes": 65536,
+   "sha256": "e2879d8d61c959947395101e2967a647bc69cf5556f5f6fb90566d78d6442a76"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-202": {
+   "bytes": 65536,
+   "sha256": "b85a72156c08c50a7d2441f1f072d7ffa79ec28975bd258ac34c4563a7e9a38a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-203": {
+   "bytes": 65536,
+   "sha256": "6709af3614e0e7b5d9dc51df609ceda686c4dd954d7ee26aa58676ed9d7607dc"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-204": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-205": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-206": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-207": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-208": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-209": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-210": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-211": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-212": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-213": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-214": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-215": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-216": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-217": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-218": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-219": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-220": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-221": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-222": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-223": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-224": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-225": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-226": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-227": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-228": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-229": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-230": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-231": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-232": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-233": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-234": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-235": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-236": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-237": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-238": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-239": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-240": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-241": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-242": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-243": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-244": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-245": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-246": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-247": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-248": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-249": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-250": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-251": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-252": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-253": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-254": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-255": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/bem/watershed/ws/COR-256": {
+   "bytes": 65536,
+   "sha256": "de2f256064a0af797747c2b97505dc0b9f3df0de4f489eac731c23ae9ca9cc31"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/BA_exvivo.ctab": {
+   "bytes": 810,
+   "sha256": "20f9590d7e6132f13ba0f59ea2009f07c207c04af328e6b1fb291bec15403f95"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/BA_exvivo.thresh.ctab": {
+   "bytes": 810,
+   "sha256": "20f9590d7e6132f13ba0f59ea2009f07c207c04af328e6b1fb291bec15403f95"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/aparc.annot.DKTatlas.ctab": {
+   "bytes": 1944,
+   "sha256": "bf4d3472e4bb41ed689da8ee99448a54f6622a306198893dc21c0f34a6848eae"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/aparc.annot.a2009s.ctab": {
+   "bytes": 4104,
+   "sha256": "2c7604c03b6cfd11968856456314ce2f2a2cfa8696860089d190bcbd18058047"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/aparc.annot.ctab": {
+   "bytes": 1944,
+   "sha256": "bf4d3472e4bb41ed689da8ee99448a54f6622a306198893dc21c0f34a6848eae"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA1_exvivo.label": {
+   "bytes": 195360,
+   "sha256": "93a0beb6c91100bd9ef152501190e9575d8e0e38d16071d1e7a7e40a34f5cbcf"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA1_exvivo.thresh.label": {
+   "bytes": 60082,
+   "sha256": "8bfc2029c1570db86fde7776f12f0b7152e91603339465807ae16489d6d129e1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA2_exvivo.label": {
+   "bytes": 335873,
+   "sha256": "41cb16446bea02fb83159d8f84f44cbc53a92b648c6a5eae2fb6ec25b3f62ad3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA2_exvivo.thresh.label": {
+   "bytes": 96247,
+   "sha256": "3c6a7f062ed3d06a0adcdb6a57c40107e610b3d579da5409110b8e9256150b33"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA3a_exvivo.label": {
+   "bytes": 135897,
+   "sha256": "278f00f76ef7b602701aafd23b2c6326fc2d35af3482719a060fd1da39f766ee"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA3a_exvivo.thresh.label": {
+   "bytes": 51475,
+   "sha256": "9c1e51bad10a8a7b8b7fd333f0420fa5038355a3119da4a09d46a29d7056549b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA3b_exvivo.label": {
+   "bytes": 238838,
+   "sha256": "814cdd8f9f23854afcb053f48e69d34c0ddb29389dbb34aba85bda72c47e2226"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA3b_exvivo.thresh.label": {
+   "bytes": 78307,
+   "sha256": "038fb7173f53fb1148a9c561a5bdf36bbaf42c99442fb3c06a2f7d047cdc1ba7"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA44_exvivo.label": {
+   "bytes": 185247,
+   "sha256": "c6091b3ca1112f9a20c282fe96739efa0d5380fad1f44b02254ce24622fd86e3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA44_exvivo.thresh.label": {
+   "bytes": 81961,
+   "sha256": "a1c38c6269655c3eccf79e49ba4ac6d2b7658610a5b21125b17e5d935b6390f8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA45_exvivo.label": {
+   "bytes": 241885,
+   "sha256": "c7dc3622c434d73093324988a633e09ee3198eee87f17ea36276cb50c9c2d4a5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA45_exvivo.thresh.label": {
+   "bytes": 93967,
+   "sha256": "c6d0cb1dcfb392c568aa953cc9a956ca7b962f200a6b20d2e38306a5d7f6c2e9"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA4a_exvivo.label": {
+   "bytes": 236720,
+   "sha256": "25afee78a9eede34829c477ed5d21e75ffcb813d95f4d9e268712cc73f8b946f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA4a_exvivo.thresh.label": {
+   "bytes": 103959,
+   "sha256": "90abda7e5969e1cc14d9814a6bbddd159db6f377fa28b367ba5c13cdca3c467a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA4p_exvivo.label": {
+   "bytes": 146072,
+   "sha256": "7db3dd166a0a98a102533bfa91e56aebb00509156248b2c182678a640ba51a73"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA4p_exvivo.thresh.label": {
+   "bytes": 56534,
+   "sha256": "7b037a5f46f3623cbda11dc038c80c989e8bd27dc0a2c96782489c077e422c2f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA6_exvivo.label": {
+   "bytes": 614146,
+   "sha256": "9dd031fe376158793a160dbcac63603a265a20492f6d54f972a6daf450c8565c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA6_exvivo.thresh.label": {
+   "bytes": 299930,
+   "sha256": "c9a2e46afccdf17f317c2c97dd95e9ba802d872f07e19080841a8b509fbc0518"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA_exvivo.annot": {
+   "bytes": 1283579,
+   "sha256": "46a20d0492f8fbccdd319ecabd1837b9551986abd72ba870ded2c4c02d98ad3c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.BA_exvivo.thresh.annot": {
+   "bytes": 1283579,
+   "sha256": "07cb112ac2b7f9ee755137a02e0e9d26662c6913a202330a05fc698a8bec342c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.MT_exvivo.label": {
+   "bytes": 125451,
+   "sha256": "822fb67b28e73285bb9a114a16023d00041cc07e42d43075aafa9b8efb963ad2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.MT_exvivo.thresh.label": {
+   "bytes": 35022,
+   "sha256": "96398fb03cd26ae28982c58764e4e7f0a363c6203733c3d754c12b1307719d4b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.V1_exvivo.label": {
+   "bytes": 229376,
+   "sha256": "236a5eabb39d651831f8fa840ea2e5392292d795603969695f83c9978d256e50"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.V1_exvivo.thresh.label": {
+   "bytes": 165879,
+   "sha256": "79ce75e7dab04913fdb1774a5f20e5d1fdd409e5a92add32143bc300234166f8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.V2_exvivo.label": {
+   "bytes": 435719,
+   "sha256": "a6b0222f0a95708a6f7330a1a88617d6e163ace6a2fd4a93f378f0a867c12d10"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.V2_exvivo.thresh.label": {
+   "bytes": 187435,
+   "sha256": "4a81d44b86aba5403fd0f842e44abb92eeef0486bf103d2a3159f21a40cc0761"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.aparc.DKTatlas.annot": {
+   "bytes": 1284481,
+   "sha256": "5ef6481106a0200742bd3ef0234e2c5d997df9b43a281964969a0acaf61bf25d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.aparc.a2009s.annot": {
+   "bytes": 1286172,
+   "sha256": "e45a33657b48526515b8c380b49a46336e5d88f9e0dc78aa0b6d278e76421d50"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.aparc.annot": {
+   "bytes": 1284481,
+   "sha256": "06597eb8b69cc1528f3fc16ffa437f7524f26848be0982f882a8d2bc13851a1e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.cortex.label": {
+   "bytes": 6762850,
+   "sha256": "ce6baf260f8da0e90be51680bed545cc0a11d60870c42f18040639603e4961b9"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.entorhinal_exvivo.label": {
+   "bytes": 46587,
+   "sha256": "b33a4a75de7af2c635023f29470d6d648dc8ebd300e3860524d80745f0fc2c7f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.entorhinal_exvivo.thresh.label": {
+   "bytes": 18194,
+   "sha256": "220b53ad9a28649029097d83fb1facb4a9d25955ed519cf59ec9b4a111b40e60"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.perirhinal_exvivo.label": {
+   "bytes": 42849,
+   "sha256": "b8d77e5c3237e10f61c34e6c99cd3d59ca3a5dccc9ac9ad88b51ed3449acd5c0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/lh.perirhinal_exvivo.thresh.label": {
+   "bytes": 15972,
+   "sha256": "bbc9f4f128640caa11ac5bfeacbf08c386e1238f8821c36417aebd7c40af1ef0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA1_exvivo.label": {
+   "bytes": 157688,
+   "sha256": "356449ad7c716e6b9318456a809dcb268632adef91d170a177b76ac8d45dac5d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA1_exvivo.thresh.label": {
+   "bytes": 44052,
+   "sha256": "ff9805b7378a46625635f681f66570f0be539c7f66a1917ddb2c004a4223301e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA2_exvivo.label": {
+   "bytes": 226717,
+   "sha256": "80ebc9d13473305b7785bb32b5c9b721657487ccb1bde6b616b32bbe6775d4e9"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA2_exvivo.thresh.label": {
+   "bytes": 91368,
+   "sha256": "6bf42ac13f823c11ab1b591136cba098013ad2719f269cab4b2e410405e0b158"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA3a_exvivo.label": {
+   "bytes": 116741,
+   "sha256": "61a1ad17fb899a7952c1e7abbd056113d087601990ee1fdbf7c5aa345cef614f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA3a_exvivo.thresh.label": {
+   "bytes": 46198,
+   "sha256": "859bbfc97df02591109d37a6380ebbba74b42fc216ee26ea44e5af9cf64de972"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA3b_exvivo.label": {
+   "bytes": 154532,
+   "sha256": "b22bb6b3948b6693451631fc5daf39c6fa9446a63751cb6e517021a9f6149b71"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA3b_exvivo.thresh.label": {
+   "bytes": 74549,
+   "sha256": "ffc6f95f50e9931dc207a517397c108d67c752319b26ab038e1040f3164357f3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA44_exvivo.label": {
+   "bytes": 338049,
+   "sha256": "9a00256ca8fe86de1bf8359d7d4010d283e84f25b95183de2288cb4d323d347f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA44_exvivo.thresh.label": {
+   "bytes": 62447,
+   "sha256": "59da0e2123ff079eedf685e806c616b7992ee718df6eb103c1c16d4accb35a01"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA45_exvivo.label": {
+   "bytes": 319682,
+   "sha256": "74cd37bf4583efd2278b5fb4ce339456ddcc197c6723891c063202ac013a9035"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA45_exvivo.thresh.label": {
+   "bytes": 74016,
+   "sha256": "3767020c046292b28f317e2a7c125fa48a031da0470793caa617fb0fcc915f9b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA4a_exvivo.label": {
+   "bytes": 203571,
+   "sha256": "46e9c6467de466a204e99d47e415ab309b4a1d3305cd095fbaf6b21b0eb94573"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA4a_exvivo.thresh.label": {
+   "bytes": 49875,
+   "sha256": "3a48154b30ac12ed95d82bbff6924fcd50a65ac752086f15869185687b86085b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA4p_exvivo.label": {
+   "bytes": 138204,
+   "sha256": "de462a164e3dabc234be42cc95ba47bbefdf091e9018db11bc90bd74d82e8605"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA4p_exvivo.thresh.label": {
+   "bytes": 51540,
+   "sha256": "c90c21e08aed46e3564bbe8e7050667c58920e923f581027a96b37a303c9695a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA6_exvivo.label": {
+   "bytes": 496755,
+   "sha256": "afd3a7162e80de03d28df0af34df1e62afb5d3cdb77fe1eadc05fc0bf991b38e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA6_exvivo.thresh.label": {
+   "bytes": 268910,
+   "sha256": "16d0e62b6ba708128c317573c4baf3f10bf9d5a7a512a53af66580fab962ffa2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA_exvivo.annot": {
+   "bytes": 1309227,
+   "sha256": "a6a9fc810e5f7ce49dd6af979ad58d03b4b4cc255565025fe258822604e76fd1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.BA_exvivo.thresh.annot": {
+   "bytes": 1309227,
+   "sha256": "c8e1d931ae30c819b737e869f4966ec0b232b73842e29cd7db45fdb4ca360393"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.MT_exvivo.label": {
+   "bytes": 147102,
+   "sha256": "4afbf3d1a39e16425cc2b61e7737c8d765565208766e65fb340e7e85787baec7"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.MT_exvivo.thresh.label": {
+   "bytes": 21569,
+   "sha256": "f06b3f2536cf06a34ddc325c5e450f73f028380c80cd3f816e19651fe126affe"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.V1_exvivo.label": {
+   "bytes": 247564,
+   "sha256": "bee10af858ebf884bd6ee36a6844e2dd6e9aa67be3fc86298aadefd0c6c739fe"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.V1_exvivo.thresh.label": {
+   "bytes": 163165,
+   "sha256": "f080b050c1788240d12b36931ea405ea6f7a48571f7da7dbb42c1c9b5f59cb39"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.V2_exvivo.label": {
+   "bytes": 454958,
+   "sha256": "92756174531bb7c54959b230cde9067e848f70a1f404673f5644ad1f81d2df0c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.V2_exvivo.thresh.label": {
+   "bytes": 202605,
+   "sha256": "8a42681b82656006bbee460b5aea4902493c8d1a297ec075c7e655ba08f0098d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.aparc.DKTatlas.annot": {
+   "bytes": 1310129,
+   "sha256": "46a2f28220095b5702760d8fba588988a85a66f358e25c8b87d6b1a77b89ed20"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.aparc.a2009s.annot": {
+   "bytes": 1311820,
+   "sha256": "93e811d4720960111d2cda162e4abb016c594f38007c517de22be1f1af11773e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.aparc.annot": {
+   "bytes": 1310129,
+   "sha256": "27ac692db176b6423b507ec03bc20fe91039a20d50a6779d869343e8ea840f5f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.cortex.label": {
+   "bytes": 6760606,
+   "sha256": "f72906b2a90e1aace7f9605c108f76ba73c414a66f9d14ceb5f10f64788ad504"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.entorhinal_exvivo.label": {
+   "bytes": 37768,
+   "sha256": "051d16ff7d1987d9c31b54131986c4cd2005ee0c6ab3abe11465b0bc49975b15"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.entorhinal_exvivo.thresh.label": {
+   "bytes": 26310,
+   "sha256": "f01ec407370617378e856e850ad0401c60f4245827945e3e301c6f2d961aeb37"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.perirhinal_exvivo.label": {
+   "bytes": 26283,
+   "sha256": "b416f951a401f4a4361d0224738d5ce46da875b8962bbb71a3fa452b473b758a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/label/rh.perirhinal_exvivo.thresh.label": {
+   "bytes": 9403,
+   "sha256": "5a5767249873622357775c3b31acba3a82c1837298790630ad503deebe33c085"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/T1.mgz": {
+   "bytes": 7008047,
+   "sha256": "3f97aa4a4a75373ba8d681d6d23e2412db30e45160a07597036fb4bed9b6f52b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/aparc+aseg.mgz": {
+   "bytes": 464387,
+   "sha256": "73ae933b880d3286ba58c1ebf754c0ea6eb7d63952320d3759992c8e75ec1284"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/aparc.DKTatlas+aseg.mgz": {
+   "bytes": 462668,
+   "sha256": "66b9f0c01751bf420a74dd3497e649915608a6c90c4d03647dcf63d6eceb52fd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/aparc.a2009s+aseg.mgz": {
+   "bytes": 506920,
+   "sha256": "ab827a96ecda9f36f085765195b50a60b6cd56c890da6fa51f0613c956bfbd14"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/aseg.auto.mgz": {
+   "bytes": 276041,
+   "sha256": "987e68fad850632599169922a7d1aded621f61dae801d4e53836134b4301b438"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/aseg.auto_noCCseg.label_intensities.txt": {
+   "bytes": 1545,
+   "sha256": "44cc1e957196c819e6e0f4d70aaafa166c4418b4ba6707875519666fdd1c4abf"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/aseg.auto_noCCseg.mgz": {
+   "bytes": 275499,
+   "sha256": "3376a5b66fa5d4d7bafb8a3f0570bb7065615869ae7432ee2a64901b807fddc4"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/aseg.mgz": {
+   "bytes": 399457,
+   "sha256": "59f417385d99e3321bac822c94a49b355a62ae2501fc858f64bbd5ec76d5a3f5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/aseg.presurf.hypos.mgz": {
+   "bytes": 275983,
+   "sha256": "e15f2533b0fbaaf2c1d4827a9c46cc1f4d44636de115e53b8f09455670b5ae00"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/aseg.presurf.mgz": {
+   "bytes": 276041,
+   "sha256": "987e68fad850632599169922a7d1aded621f61dae801d4e53836134b4301b438"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/brain.finalsurfs.mgz": {
+   "bytes": 1504637,
+   "sha256": "25eea793cf6c4e33a6753d964daca8527d112b1260fdba04b7b8530439649262"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/brain.mgz": {
+   "bytes": 1518605,
+   "sha256": "5b3b464e4dcc4ac5393521491707f4be12dd830ff20ad5996aed5730a4862de8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/brainmask.auto.mgz": {
+   "bytes": 1515465,
+   "sha256": "644cc225c70cd3173d111a20a3ee0943977d0dea17c4f6a05536ed82a34f18d1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/brainmask.mgz": {
+   "bytes": 1515465,
+   "sha256": "644cc225c70cd3173d111a20a3ee0943977d0dea17c4f6a05536ed82a34f18d1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/ctrl_pts.mgz": {
+   "bytes": 693840,
+   "sha256": "0b3ed4060cae875ed0e83ddedd9a422264f2ac686fa75983aaeb774a83d7ac26"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/filled.mgz": {
+   "bytes": 153209,
+   "sha256": "95b50e3231a620732fc7e0f5360bcda4d8596a7709bb77a90e1860235b94c6e3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/lh.ribbon.mgz": {
+   "bytes": 133423,
+   "sha256": "6e7fe359bc9b02575adeb01688f5932b639abe14aceb7469b0e780c45d733e30"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/mri_nu_correct.mni.log.bak": {
+   "bytes": 18619,
+   "sha256": "26bb0217064b46c98aa6b0bb26464f378eb8ece981dab06b1a8e3416110c3dfa"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/norm.mgz": {
+   "bytes": 1538232,
+   "sha256": "71c448be5b29c92b4b4d7215f2cfec68e218de70449fa66b7f4580c60ccda679"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/nu.mgz": {
+   "bytes": 7005991,
+   "sha256": "fc2d7719644064c83f919b1adc6a5ab7a16c6024de55d273a5e1ced282796a58"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/orig.mgz": {
+   "bytes": 6999666,
+   "sha256": "95135c314db634b9e8e17d007b297071a0cf292a3055486061feca08e191928e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/orig/001.mgz": {
+   "bytes": 10514883,
+   "sha256": "1e1e323c8eb89c606e414c82e3a9661616ded50aee2ce18b652110fbeaf3ffe8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/orig_nu.mgz": {
+   "bytes": 7045613,
+   "sha256": "c6c44c25b390209083b151bc686a767979e4be91228826345dd18bd5f96a7451"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/rawavg.mgz": {
+   "bytes": 10514883,
+   "sha256": "1e1e323c8eb89c606e414c82e3a9661616ded50aee2ce18b652110fbeaf3ffe8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/rh.ribbon.mgz": {
+   "bytes": 131344,
+   "sha256": "2e6d29c937776553418b004a8b241db56d9d6528c07cac1fee9bdbc17b28f6f5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/ribbon.mgz": {
+   "bytes": 252463,
+   "sha256": "7c4d3bd0b79006e15972f7e2adb4f60ca0533bf1f0a78a4f16a066809e1fd56b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/seghead.mgz": {
+   "bytes": 167682,
+   "sha256": "c52898d03a91387162c0b32d72aff8f505c60e9f4f07ee72fed79f3d41499fcd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/segment.dat": {
+   "bytes": 120,
+   "sha256": "5c0266cb6785309e9ec72d6720e32781bedab888ae5dbd45b6be88ae031bdd44"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/talairach.label_intensities.txt": {
+   "bytes": 1546,
+   "sha256": "d6a15a12b62fc5ac36440ab7acb60a2702f59ea91d91f3ba8f7c5029aef808ac"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/transforms/cc_up.lta": {
+   "bytes": 1757,
+   "sha256": "917461ba013e1122c5bf094f85e5fbaa84ffdec7a2af2edfce2e7cd7d9a1398b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/transforms/talairach.auto.xfm": {
+   "bytes": 193,
+   "sha256": "a50b5ab5143e8f64f260e31c327ffca03b42bc200f3fe94514d33d4ac96d5306"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/transforms/talairach.auto.xfm.lta": {
+   "bytes": 1562,
+   "sha256": "d78141b7a658daef2362a1487149d26afcba6d555dd7f21c732476dac147a2dd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/transforms/talairach.lta": {
+   "bytes": 1553,
+   "sha256": "d838c5de17bdcc87419cbd63846240ce1ef0c383fb2767db04d3150bc3d038c6"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/transforms/talairach.m3z": {
+   "bytes": 32542468,
+   "sha256": "1fb3ca2001e7191df94efcaa06fce9b9cee948bc006b7e2fb3dba43d4751c3a2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/transforms/talairach.xfm": {
+   "bytes": 193,
+   "sha256": "a50b5ab5143e8f64f260e31c327ffca03b42bc200f3fe94514d33d4ac96d5306"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/transforms/talairach_with_skull.lta": {
+   "bytes": 1575,
+   "sha256": "8c125bd6181245bbda129ba6d16bd72352d4d78bfacfca3a1ab6a47de3b67ee6"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/transforms/talsrcimg_to_711-2C_as_mni_average_305_t4_vox2vox.txt": {
+   "bytes": 359,
+   "sha256": "b8dc7065a3da69cdd2f5085f9b08973462cfa0b6e6aca669e2254f5a9d1d955e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/wm.asegedit.mgz": {
+   "bytes": 461992,
+   "sha256": "3c1a334e571b1ed62fbf7aa64c877793d54914fb2f2dcac86f0b07d9968d138b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/wm.mgz": {
+   "bytes": 463489,
+   "sha256": "f05a953b0015524e42f243b5012de5e07a45da782e66d51ab0f7a0a55e05cfc5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/wm.seg.mgz": {
+   "bytes": 502612,
+   "sha256": "bcd94c973e5d69f3b66eadf6040c757b5c1075b01f85b5f0a7543e128e859626"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/mri/wmparc.mgz": {
+   "bytes": 520933,
+   "sha256": "c457db660819344c358433dd2126be1f5417f0ab85beb0cb835bbb1e7d5a6b24"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/scripts/build-stamp.txt": {
+   "bytes": 58,
+   "sha256": "67f64e45e21f27b0f630b983ac1a71e668946d1c85f9b1eac31442c6eb0d6578"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/scripts/lastcall.build-stamp.txt": {
+   "bytes": 58,
+   "sha256": "67f64e45e21f27b0f630b983ac1a71e668946d1c85f9b1eac31442c6eb0d6578"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/scripts/patchdir.txt": {
+   "bytes": 1,
+   "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/scripts/pctsurfcon.log.old": {
+   "bytes": 501,
+   "sha256": "740069fec3cbdf018f8c15a783f6ba53bc564107d1d6ee5e8944e070a6a75392"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/scripts/recon-all.cmd": {
+   "bytes": 37638,
+   "sha256": "9a67c1ba7b8b5690d88f7ceb6ed475ccd3dafe65fc16bd244a77cfe4bbda3157"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/scripts/recon-all.done": {
+   "bytes": 534,
+   "sha256": "135acd3e181a7979ad2dd06b218f00ffbaf02cfc29d9a9ef4d213a99d66f1699"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/scripts/recon-all.env": {
+   "bytes": 4524,
+   "sha256": "c15976dfb2d7e068053b467fb7fd438535bd4de780c6e6e3b47beb738d9b0952"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/scripts/recon-all.local-copy": {
+   "bytes": 327555,
+   "sha256": "da75893197cdcfe78343a86dcff5885213de0114dff2b7b61603b21626a4b5dd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/aseg.stats": {
+   "bytes": 9811,
+   "sha256": "3c8d13de811cb5cfbbc05bc7fe94d269d71213edde8ec6608f473b2f48bb1719"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/lh.BA_exvivo.stats": {
+   "bytes": 4355,
+   "sha256": "0f4729c7625463988f9af238d786f66a0b860bdf013cf05176de6f06ac236214"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/lh.BA_exvivo.thresh.stats": {
+   "bytes": 4383,
+   "sha256": "c32edddf953dc544a5943d72ed100ec6c8ebd96df7436aac8ac9179c9c2d9c4d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/lh.aparc.DKTatlas.stats": {
+   "bytes": 6366,
+   "sha256": "b408b67e1c4647e7c6864366193319d96371b80600d9705d2ae6cfd48665b5fa"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/lh.aparc.a2009s.stats": {
+   "bytes": 11088,
+   "sha256": "a38079a3d49dab220d77ac58a1aa32f7e5005763357508100c64f1bcfcb247ea"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/lh.aparc.pial.stats": {
+   "bytes": 6662,
+   "sha256": "3973458c2825a930069ef11a8f18ab009929da58141f1e36cbc62fb81b1529f7"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/lh.aparc.stats": {
+   "bytes": 6660,
+   "sha256": "90ec1162a244141740792f67e93d30a121ac81f455c4dbf3800ee3c4de434a58"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/lh.curv.stats": {
+   "bytes": 16410,
+   "sha256": "76a48eaa47b4d331d1151610b4574b549b62240d9f27440fb831b89818c653a4"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/lh.w-g.pct.stats": {
+   "bytes": 6703,
+   "sha256": "188f992bcebbbf56f0293db46a6601ca5c4cb76d2199ae0b85f680b22d5e7a88"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/rh.BA_exvivo.stats": {
+   "bytes": 4355,
+   "sha256": "f502a8d6dd29fb06447e25cc0a991e9c7f4fc5594dafd9c89fbead2444018a2b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/rh.BA_exvivo.thresh.stats": {
+   "bytes": 4383,
+   "sha256": "2c5f81027fe9fbdaa3e0c6af1f8e53a7da5c6ba494bb30dd978355d48519e83c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/rh.aparc.DKTatlas.stats": {
+   "bytes": 6366,
+   "sha256": "424ce724eb4e7106c83fb285257c001952eae2706fa54792e4fd753d6f2eb81d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/rh.aparc.a2009s.stats": {
+   "bytes": 11088,
+   "sha256": "0f461649c076dd483bface825723db351b0db8f622f935ac661edb6a5cf89abd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/rh.aparc.pial.stats": {
+   "bytes": 6661,
+   "sha256": "0578cb6e614e70ceb932e655a57e5c60804b8db99a31f645485bb15dc0383197"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/rh.aparc.stats": {
+   "bytes": 6659,
+   "sha256": "1617c2d53be96d92679fce7e7371fe5afc8dc14f6e57e8a85f46fa0a7009a0b4"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/rh.curv.stats": {
+   "bytes": 16413,
+   "sha256": "6ee637eb719078c54ac87d57e541b17c4216a2c7b952ffd705a96182f0f40529"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/rh.w-g.pct.stats": {
+   "bytes": 6703,
+   "sha256": "2b96f72eeba00679ff876e476abfa33fc91875da1eb7fbb3f8846477100ec716"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/stats/wmparc.stats": {
+   "bytes": 11087,
+   "sha256": "efb54c44b0ca9f3837226b0193ae68589980a58cfa968019e84cd6684d121215"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.area": {
+   "bytes": 641499,
+   "sha256": "a77fea0375407a0eb56739ae8cdd4395a02f74fe0823412839bcbcaf828895e7"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.area.mid": {
+   "bytes": 641499,
+   "sha256": "02de66ebdd91759a817d8e43235d6a93e3daf6381a5d8a7b6ab3eee96ba75e8c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.area.pial": {
+   "bytes": 641499,
+   "sha256": "32232cd44ab27d32de7a238b45b2cad58aa6cdf4d11596204e4757b5d4b5c54e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.area.seghead": {
+   "bytes": 1393875,
+   "sha256": "4819e08e6d92123c9e72d05144027118a9a2a65a3dc7369987e3d143f77d7a61"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.avg_curv": {
+   "bytes": 641499,
+   "sha256": "77b14b89e2f77aa50a4591c7c84bec451743990c7706e0ac41df6ff77a3940f0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.curv": {
+   "bytes": 641499,
+   "sha256": "773ba9571014b9f2c27120c373846b5e0ad951040a378f50714cb422ae618d3a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.curv.pial": {
+   "bytes": 641499,
+   "sha256": "0d067b416b540f31ec792c8d4bfdb0b59f0c0df11e63cf736652e6842f96c5c2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.curv.seghead": {
+   "bytes": 1393875,
+   "sha256": "f1c1770b1fd839b9e747fefac2c51ad66d133a6c0cb3dfe74fc6bc206e6d6eda"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.defect_borders": {
+   "bytes": 659735,
+   "sha256": "cddcb6f7527dc6ae776bd2172f66c8355352562434e77917fd928a8426c6e90a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.defect_chull": {
+   "bytes": 659735,
+   "sha256": "ccc43cfe41a8e4d32d1ec94a894d2dd6810d6ea3da7d8b6f6208d3da4437aa0f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.defect_labels": {
+   "bytes": 659735,
+   "sha256": "87152f751919a9e555a413945e929095b517170199b0b3d73cb15e2a3204c230"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.inflated": {
+   "bytes": 5775593,
+   "sha256": "63c64cf61a5353e3865e370e52ab03b6008f0ce1d933f9aa96bd9c89d007247c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.inflated.H": {
+   "bytes": 641499,
+   "sha256": "48bdee9dbed945d3c536dabd883b524be49837d3e228f758d640c06e217e328a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.inflated.K": {
+   "bytes": 641499,
+   "sha256": "e3247f384a6400d0b34ab3ab6674d0f8a72ab85862d0dd08e25f064f62c96b36"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.inflated.nofix": {
+   "bytes": 5941418,
+   "sha256": "9bb406b4c095a20f84bfc5f301feda98ff55c86650269c60d8165b0dbc1822d0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.jacobian_white": {
+   "bytes": 641499,
+   "sha256": "11826a8ee27915af9dafd45dcd5702b8eb22828e19108ef6a237048e68a1efe7"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.orig": {
+   "bytes": 5774245,
+   "sha256": "05cb5f6f14c8ef507fb56fb946920fe01cbc2b1986a2a94fb7a1442870c21962"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.orig.nofix": {
+   "bytes": 5940618,
+   "sha256": "3e359d6bfd9ba47b9c3d65e56a49c29344c0308cf754d3321270e1243b6aa963"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.pial": {
+   "bytes": 5774705,
+   "sha256": "bc95070be3beb712da9fc8328f8456a543aca2899ed2fd23e31ae155f70d538d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.qsphere.nofix": {
+   "bytes": 5941817,
+   "sha256": "6d120dd7f687a787aa7e3b608a19fbd4c73126874d9ada219c30df57b56e7a3a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.seghead": {
+   "bytes": 8434245,
+   "sha256": "e2d3cedc8b45631533133d47e22c9dcea25b7b8f7656507f1b6087922e551507"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.seghead.inflated": {
+   "bytes": 8434809,
+   "sha256": "c58a790b6d24fe555c3f8edf2d0328db293a2a50e71670c96d52187cf72d391f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm": {
+   "bytes": 5775095,
+   "sha256": "015bc231eb1c39245edec4f8db0634d010248bb591fb4ae7ace162e40a46b106"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm.BE.crv": {
+   "bytes": 641499,
+   "sha256": "57e0b8d100574ba572b473ca4b60b95a0c377366d37da3f5aef51e7a4f3c57cc"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm.C.crv": {
+   "bytes": 641499,
+   "sha256": "7660f2cbe430e772484aeff68bae0c0db61f1ad69201817c0f5af578f4a659a2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm.FI.crv": {
+   "bytes": 641499,
+   "sha256": "a6d8615f7c159ae382243d6d041b7921b61556f3c783412bd3ae31a110702907"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm.H.crv": {
+   "bytes": 641499,
+   "sha256": "511713c00abe24d53c67011bb1ecef851a9a2e07f4df567f68454cab8efc9909"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm.K.crv": {
+   "bytes": 641499,
+   "sha256": "12df54143ff02055663a9080f9a072731c2f5c0ee73508fa6053e0b64fdc94e2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm.K1.crv": {
+   "bytes": 641499,
+   "sha256": "05b84d7311112a73bb0843dcfbbc3ea4dcf97f7674cc4410871311a7d761442a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm.K2.crv": {
+   "bytes": 641499,
+   "sha256": "8b95c18f8b8d8e6507d43aa2d7f659278a88a60ff2532c099b869580ff749f4a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm.S.crv": {
+   "bytes": 641499,
+   "sha256": "81a5a2e5b121235b757b40f199afe5854913ee324283d9038beab7bdc91fdb4a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.smoothwm.nofix": {
+   "bytes": 5941016,
+   "sha256": "3b662de656f3fe7168aa5b397406fb07b86408ed5ff8345d95979f54236b442e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.sphere": {
+   "bytes": 5776097,
+   "sha256": "86cbaff045c6553d01c031d28e713fc6dedc82fd562e456ee23c3fa9264a680f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.sphere.reg": {
+   "bytes": 5776685,
+   "sha256": "54707c75816cb3442be9f94574e171aa73d0ca33135fe044b72250f852d1561c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.sulc": {
+   "bytes": 641499,
+   "sha256": "dd812348ef22ae738b45a991953632dc330070cecfe02232d2ba3f1e68f1848a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.sulc.seghead": {
+   "bytes": 1393875,
+   "sha256": "533ebfd740763adcea1c4063d3c07d7db3d35c7f2de607dfe15684e8e8357047"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.thickness": {
+   "bytes": 641499,
+   "sha256": "d1dfb876f56d723f18608ca94af3412378fca60b01f2de85bb19e6375398c1b2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.volume": {
+   "bytes": 641499,
+   "sha256": "db00297a044c7943b72e61f606a655255d2a1d6dc555e53c20f19414118b417e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.w-g.pct.mgh": {
+   "bytes": 655230,
+   "sha256": "53eb86fb691383df310b712c84b201ac0b46171aedfa03e5b4670dc2457dc618"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.white": {
+   "bytes": 5774705,
+   "sha256": "041d428eb3716ef826b37d6b79a56362fd23e58e2ff666df873d531617f98820"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.white.H": {
+   "bytes": 641499,
+   "sha256": "d9ab7cbf03f50efbcce24b13b20e7250fdb1bf442d449ff05bcc17f3a2b666d0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.white.K": {
+   "bytes": 641499,
+   "sha256": "a09b55e2215cd5b9962f63a6a17d1f468b28af6bea5a70a5d6d8069a28e9897f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.white.preaparc": {
+   "bytes": 5774694,
+   "sha256": "ea97bb2c70685aee9634c94944abff6cd7c120efaf148597e1367ae6b682f05e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.white.preaparc.H": {
+   "bytes": 641499,
+   "sha256": "d9ab7cbf03f50efbcce24b13b20e7250fdb1bf442d449ff05bcc17f3a2b666d0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/lh.white.preaparc.K": {
+   "bytes": 641499,
+   "sha256": "a09b55e2215cd5b9962f63a6a17d1f468b28af6bea5a70a5d6d8069a28e9897f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.area": {
+   "bytes": 654323,
+   "sha256": "c1da5e423c341da8fe825d4e40bd02d70e26625acedf5a23a5b2f5a0b5f5c643"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.area.mid": {
+   "bytes": 654323,
+   "sha256": "8bc6293a26364ad28b8292ccb8c3f2d7bfb15e84a29dd87f1f3e7fd72a5ccadb"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.area.pial": {
+   "bytes": 654323,
+   "sha256": "5203d1ff575a449dc62f84bc7613d4d61409d3b84a0beaece8599929b8d81792"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.avg_curv": {
+   "bytes": 654323,
+   "sha256": "7e2e17af407e98f147728a48f72f6d8c4ebc403e92dd91f26b246dae0970ffe0"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.curv": {
+   "bytes": 654323,
+   "sha256": "5424de0a7124f3cd5f24239163d742ef772040912d8cf45c28d3e36c1987e539"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.curv.pial": {
+   "bytes": 654323,
+   "sha256": "fdac57810803557adce03aca2981fe914fdba2485085c976a63ff7260263494f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.defect_borders": {
+   "bytes": 672727,
+   "sha256": "994a8d3705c16251c4a996327ee144c9f070a33bf72366756e8c7303d802ddf3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.defect_chull": {
+   "bytes": 672727,
+   "sha256": "22197b14ba558bfba92d57a27dc25b79fb7f10d71e1c3d56f0b3b60685e344c1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.defect_labels": {
+   "bytes": 672727,
+   "sha256": "6a5e45cb689e7ec6426da4819c9b132602668725d5a2348d0c4fda43d8f1430f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.inflated": {
+   "bytes": 5891009,
+   "sha256": "dc7a1d0c0de614f7cb2db81ae9fc1ad2a887e24f74e5fd3ad301ccea9347c3e1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.inflated.H": {
+   "bytes": 654323,
+   "sha256": "5cf655d4883e5e33f5828ed009577634e613bf9430d684897a02fda2f4533eff"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.inflated.K": {
+   "bytes": 654323,
+   "sha256": "777434a32a5ae98966635168dc92f07c05a3292a1a5aa50b8ee60aee2d68065b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.inflated.nofix": {
+   "bytes": 6058298,
+   "sha256": "3d9b7203dce5d1dbdfad0e5a303bc78d614fe5402eeddfcca5f4b135360b511c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.jacobian_white": {
+   "bytes": 654323,
+   "sha256": "924e0b550fbfd267cf1c0994afd61670a8678fca9e897484adeb71f3be3459e3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.orig": {
+   "bytes": 5889661,
+   "sha256": "566008f45014b191b28bbb5931512d3168d5a8f39c21739406b50a7ef015490e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.orig.nofix": {
+   "bytes": 6057498,
+   "sha256": "86c11e16475d50705eec03ee074aa54a6782d5dcf031a4c7d81df5dd3940acbe"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.pial": {
+   "bytes": 5890121,
+   "sha256": "d4013ddad8c8a046ac836d26ce2de492a1eff9cb4b8968725a28ef4896f19fe1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.qsphere.nofix": {
+   "bytes": 6058697,
+   "sha256": "2925e1a4b60cb52abdb7d8352c519c918059d74eec35daf247c95aefa95c8e1e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm": {
+   "bytes": 5890511,
+   "sha256": "92e3a2896bba4765f17935ed377fe4725423ae78f8163b235e41dd897e22cf68"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm.BE.crv": {
+   "bytes": 654323,
+   "sha256": "9b1c2fe807c2def5b9fb76e376feafb7656fa0062b2867716e0b8eea03bdbcdd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm.C.crv": {
+   "bytes": 654323,
+   "sha256": "e7ad43283402f53115862d2961bb52c21f358fb8099cdad8e69669a081ef5cd8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm.FI.crv": {
+   "bytes": 654323,
+   "sha256": "20faefd58e8ec600fbbac3095282b46d2a5ad6ae1221f750c50d6a51f5950ed5"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm.H.crv": {
+   "bytes": 654323,
+   "sha256": "e74b8c9e6f81085ab9ded7244f7cd617bff986890d8632cff9387077ba92744f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm.K.crv": {
+   "bytes": 654323,
+   "sha256": "3ce1ab1efa1036c4218c8dcc941bcc2dd98db3359cedd5adb985e0f72a446336"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm.K1.crv": {
+   "bytes": 654323,
+   "sha256": "5f12637751b6a1b98508dc5469803a68fad9bb6551d874f747c19bd3c5aba5bb"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm.K2.crv": {
+   "bytes": 654323,
+   "sha256": "ebaadc8a98ad790a531d849da6eed96714861299fda937669b141392c5378440"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm.S.crv": {
+   "bytes": 654323,
+   "sha256": "3dd96301346c4b4d31ff2f39903bbd860961b3bd04a0419621a521d716ddf700"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.smoothwm.nofix": {
+   "bytes": 6057896,
+   "sha256": "e1ceb65a4805e127a2ed4ec41382d5a490113aebfefd863d4a0843f3a00c7134"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.sphere": {
+   "bytes": 5891513,
+   "sha256": "4df941a0a9b3fc3ab9b890d74178724acf075ccb129ec371dac12e4c1f43ed08"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.sphere.reg": {
+   "bytes": 5892101,
+   "sha256": "a589cc15bd80663616f6c58d341e950b1d75a6902dc733cb7bebb1a0df536e7f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.sulc": {
+   "bytes": 654323,
+   "sha256": "c4fa2964f5b25e1be73c4bbc734409d9f4017df7b3c605df1c6529c0443caf12"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.thickness": {
+   "bytes": 654323,
+   "sha256": "e51f8a0832cdf0766b3d142ff0763539a6ca93165591c31a824d562a2e71cf43"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.volume": {
+   "bytes": 654323,
+   "sha256": "9d5d055654e0760ef2bf1ab76fd52e784e2c0657f3215c27ba8b0844b03d4719"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.w-g.pct.mgh": {
+   "bytes": 668054,
+   "sha256": "7bba465e61be8c23cd8035a549ce528703e7fcd30ef75e8f942244b925376f76"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.white": {
+   "bytes": 5890121,
+   "sha256": "25310e859f6dd0e5c2c2f0b8e1eb2454a5526196a6956c9d887a598bc403066c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.white.H": {
+   "bytes": 654323,
+   "sha256": "8d4f9b9b654a5b7fb7462641d0cd4fba217c992ad42a459dd99f3da2d7bfaaf2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.white.K": {
+   "bytes": 654323,
+   "sha256": "90b04005b2adc117f878e62a5c4ebc5f666ed9f801ef0281164b246523b53fb1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.white.preaparc": {
+   "bytes": 5890110,
+   "sha256": "235649096a16e53f1fba73ab5114f3858d9debed2e3f444d1c58f9548a19ec4c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.white.preaparc.H": {
+   "bytes": 654323,
+   "sha256": "8d4f9b9b654a5b7fb7462641d0cd4fba217c992ad42a459dd99f3da2d7bfaaf2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/surf/rh.white.preaparc.K": {
+   "bytes": 654323,
+   "sha256": "90b04005b2adc117f878e62a5c4ebc5f666ed9f801ef0281164b246523b53fb1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/aparc.DKTatlas2aseg.touch": {
+   "bytes": 267,
+   "sha256": "ff3641083b25d8e21e878be1327797d6c4da9308f0362313cfc7b4e14c53f5bd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/aparc.a2009s2aseg.touch": {
+   "bytes": 221,
+   "sha256": "1141365fa3f3d2580f9d13738b59a1dd3f87f582482d53ffe1ad03231e6691ea"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/apas2aseg.touch": {
+   "bytes": 42,
+   "sha256": "8d13ed9cab23ab8be6734d0fc4c7822ce9cb6f7643a782cef7111611537ea83e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/asegmerge.touch": {
+   "bytes": 34,
+   "sha256": "1fc6e0ec0080984df8dbc0d913ad8fd97ae6e3c4c3f78470c9f1e6bf67c7a35a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/ca_label.touch": {
+   "bytes": 166,
+   "sha256": "c5d0e7badf599a608cd6f4a98422abe3708710ff1b1a61c95fc7c1d569f85d66"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/ca_normalize.touch": {
+   "bytes": 152,
+   "sha256": "7b48be0eb18e3ad9b810a5ffe3e2d99d449a53df6c69519b60587129866cdfa8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/ca_register.touch": {
+   "bytes": 308,
+   "sha256": "14dcca67abec2da56c8b1c517be86fd50a8d9f8b9fdc598a87db65ec4b5aecbc"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/conform.touch": {
+   "bytes": 212,
+   "sha256": "a02152d8cef776d9b639ec169ab329e39083b8b14dff555ad4896c96064e0364"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/cortical_ribbon.touch": {
+   "bytes": 145,
+   "sha256": "b21516dc06f03572ed632b82608fb2ee6fdf235b2e177957ecfff90cccccb9da"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/em_register.touch": {
+   "bytes": 255,
+   "sha256": "67e2c1e6bd610b070c87d59466261aeee7cc4ccbcf91ee27d611872792266fa3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/fill.touch": {
+   "bytes": 124,
+   "sha256": "9e3eb9b1b774d9ea0f3a5d5728db72ba2c55a987bd9ca54a73777b06da1f1e2d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/inorm1.touch": {
+   "bytes": 41,
+   "sha256": "12039a4fcc0e6b418407d76aacb9d94dcc31a21bc4f034859bb59466e0cb0699"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/inorm2.touch": {
+   "bytes": 84,
+   "sha256": "76a20eacc838af33ba3c1338fb402faf64ab7f93f2ee20183c4bdf65a8a84f73"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.aparc.touch": {
+   "bytes": 216,
+   "sha256": "cc1a9ffbeacbd15a73b6fef9d2ea5f5afc9525ba9a4e8af6b5f0d03659c18759"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.aparc2.touch": {
+   "bytes": 226,
+   "sha256": "9459b4c441bd0635b0dc05e29eae8b5d2830b939827e864d8667e3ca35e67661"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.aparcstats.touch": {
+   "bytes": 167,
+   "sha256": "27bf1c8b7854f0c0ac134c031ad7e21a27fe5ef803b612d7e71bde5918582071"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.aparcstats2.touch": {
+   "bytes": 184,
+   "sha256": "6654b5f20d731be04508d2ce0a19718bae1ae048f39dda3ebbdb6a441e4d0381"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.aparcstats3.touch": {
+   "bytes": 190,
+   "sha256": "d759baf158447f0a70c26cc20322e9430dacead28970154fc1c561f4e151ee0a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.avgcurv.touch": {
+   "bytes": 142,
+   "sha256": "38e96d5335eb95ca35d73e8edb282b6b6c09817739863dbbc543a15734958ace"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.curvstats.touch": {
+   "bytes": 103,
+   "sha256": "39a1cbf45f930d55282e072b6991458b4758b10d1dfbd7c82133e16858f24c00"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.final_surfaces.touch": {
+   "bytes": 130,
+   "sha256": "daee8de9e438e7eeb7f13ce2ae84d7ec1fc4f4cefc3851e061fb495113f88e04"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.inflate.H.K.touch": {
+   "bytes": 68,
+   "sha256": "89974c2e91fd3d176c095b56104eb6cd798a3f11799ee087ec1833243631266f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.inflate1.touch": {
+   "bytes": 79,
+   "sha256": "b42d8dc71677b0c4262d52d6fd818605cd9c209613e7ee15b9ce6e1dee119b1b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.inflate2.touch": {
+   "bytes": 175,
+   "sha256": "6c8b44f9534cb7c0932a847d0debcd5b7114662509a695d97d2835ec22d523a4"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.jacobian_white.touch": {
+   "bytes": 88,
+   "sha256": "e2fe20e7447ce42cbc295547a26202f71076f9cf237f9e850735cf4b80fbb885"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.pctsurfcon.touch": {
+   "bytes": 28,
+   "sha256": "0b9dab8469cd15f7eaaa6880a6ed07fdb35b351289867f2dd50ab8915c05e10e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.pial_surface.touch": {
+   "bytes": 130,
+   "sha256": "daee8de9e438e7eeb7f13ce2ae84d7ec1fc4f4cefc3851e061fb495113f88e04"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.qsphere.touch": {
+   "bytes": 77,
+   "sha256": "08d66120c2344a139de615a5249cf85dd5cef83c009bedeb4e920cadd1fcc523"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.smoothwm1.touch": {
+   "bytes": 75,
+   "sha256": "a49d047600c754eae8f2cb30fa24f687f228807d4b8ede855a5d09714675006e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.smoothwm2.touch": {
+   "bytes": 78,
+   "sha256": "0232a7fef52d541e75e307ec83e4100a34930cd80dd1116ec78f2c6ea4e02c05"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.sphmorph.touch": {
+   "bytes": 182,
+   "sha256": "978cfa6b46712e17f63d428907d5fdcf923f25272b95ee4617b7ad5f082b919d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.sphreg.touch": {
+   "bytes": 264,
+   "sha256": "b2a92be751f3d96727a21b9ab8e3705d80f88615a4d5b32007cd1427640847d1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.surfvolume.touch": {
+   "bytes": 28,
+   "sha256": "7a84cae68bfc50d7a9cbf37680cf9a6b6afa331e86d059e5689def4afc074b50"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.tessellate.touch": {
+   "bytes": 72,
+   "sha256": "5c2a70af98be08bf4ced0659cf6c5574faa26b18f3ce24829703751299bda633"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.topofix.touch": {
+   "bytes": 23,
+   "sha256": "a391288531fea81b93ff9f0365f4341230950ac0d8dfc53b171bc50e4fc3292e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.white.H.K.touch": {
+   "bytes": 36,
+   "sha256": "40bee6a1af010b88c054b201be2d0ae116a8d5acc8b414bccfe514bb6b9d5240"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/lh.white_surface.touch": {
+   "bytes": 119,
+   "sha256": "a1b33cc31c050ebd8e4342cb9e40144e3dca812e519a2021214006926829c25f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/nu.touch": {
+   "bytes": 30,
+   "sha256": "7161cbd393099e5ef653d4f3c20f660c5f3c1891917b19c0db50940741305e08"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/relabelhypos.touch": {
+   "bytes": 76,
+   "sha256": "780eb4fce747e554accc4c28feec7d7343308b0081cdb6ad4b024d31207d487d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.aparc.touch": {
+   "bytes": 216,
+   "sha256": "b699fad32b7c37572b2f2e093d06e2633d4d60f34415ceee6bac34f3a7599e3c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.aparc2.touch": {
+   "bytes": 226,
+   "sha256": "80bd76d700b08f9d8d16bed961806b4e11de18397547b5d2fda7f6ac538745a6"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.aparcstats.touch": {
+   "bytes": 167,
+   "sha256": "f60be77ee046fb2c1c702a232148066016d39697ef0f3c8327d02836a0f09622"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.aparcstats2.touch": {
+   "bytes": 184,
+   "sha256": "88475444b3d2ad7787b8560937792f529f2b3dff521eb7cef45eb06a0ed8f33e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.aparcstats3.touch": {
+   "bytes": 190,
+   "sha256": "eb47e03638f7edfdc790f9439f594322943bd8a6b3932094cb624a674623c87c"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.avgcurv.touch": {
+   "bytes": 142,
+   "sha256": "9f4ff451e0584a0f696c2c246f9d398850dbed16188e0d096c87fd4fbce0dc7e"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.curvstats.touch": {
+   "bytes": 103,
+   "sha256": "4c526d2d7a6b1ceac1de7d9cd4bcf50bcea15d477b7128bdf0acdce07a5bc000"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.final_surfaces.touch": {
+   "bytes": 130,
+   "sha256": "029f4c2e115bf245b9d1e866c292faf6ff88e199034a5106b575c76ee78b1ff2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.inflate.H.K.touch": {
+   "bytes": 68,
+   "sha256": "968538a2246fe217247f83bb10042eee43cbf1b41a06f3ab47ad61fc2c346558"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.inflate1.touch": {
+   "bytes": 79,
+   "sha256": "b8d7a085962e4afe20743530a91bff602b8ccfbe09f1af0a1024161f75954cc4"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.inflate2.touch": {
+   "bytes": 175,
+   "sha256": "e853c188f91b3cc6b06742b1ea700630a6a8b2b8751a5bbec8b2d21cc153e933"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.jacobian_white.touch": {
+   "bytes": 88,
+   "sha256": "370f94786534eafa7f74420edf2c60af19cdc8c6fd5efa3a098aeae6f1b64465"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.pctsurfcon.touch": {
+   "bytes": 28,
+   "sha256": "9712751a79907c0be090e726e3efe8f346e72516772b104f7ae07c37883fbc46"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.pial_surface.touch": {
+   "bytes": 130,
+   "sha256": "029f4c2e115bf245b9d1e866c292faf6ff88e199034a5106b575c76ee78b1ff2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.qsphere.touch": {
+   "bytes": 77,
+   "sha256": "9a65043ca5a1eafa24c60a37821b9dc9069689a1a7b699320fa86a538053fca1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.smoothwm1.touch": {
+   "bytes": 75,
+   "sha256": "3ee670ff0d9522f7ea9a6929a5218d91c981fd6753549548744d057eb9fe765f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.smoothwm2.touch": {
+   "bytes": 78,
+   "sha256": "5b3ada9516ccc78f53ba9ea9a3d3498223fdbeecbe19a5be217c7c3ea5c700cd"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.sphmorph.touch": {
+   "bytes": 182,
+   "sha256": "4f9b38562c8586a108639fcd4a10aa4094b8496e215f4af4e12dd79a96a655ad"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.sphreg.touch": {
+   "bytes": 264,
+   "sha256": "41e2401f867b3364c356ad83235ef102e1589c416e67f47c3a550e56ca0c07a3"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.surfvolume.touch": {
+   "bytes": 28,
+   "sha256": "1e8f92f1debf7ce7f38893aeb745a3c4cc04407fa58abf3cff9c9d7877629eef"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.tessellate.touch": {
+   "bytes": 72,
+   "sha256": "bafe93209b85de1ad5b153c420d17a33e214f4973f6f708157b636ef0cdb6264"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.topofix.touch": {
+   "bytes": 23,
+   "sha256": "6c8d435949a1c29162c6dfbebfc777f7bf5e24535b29e51bd80daf2115a61760"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.white.H.K.touch": {
+   "bytes": 36,
+   "sha256": "f9eec62409d45aceeddb21a750a9027834b3913d78744bb0667e7495e67d96d9"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rh.white_surface.touch": {
+   "bytes": 119,
+   "sha256": "3162346e53a16bc83755c1f2dd15d8e530d68aaa0fa1116b2592d9f0d19a6f12"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mri_ca_register.dat": {
+   "bytes": 262,
+   "sha256": "f999d92ce97223bf5c6c4a3603e8892a46367b2d050f312c68d9022a1d1f2cd1"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mri_em_register.dat": {
+   "bytes": 253,
+   "sha256": "83fa4e71679e2d85556469c52aa6dd13e73047f6690e5e3a88f709f36d412418"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mri_em_register.skull.dat": {
+   "bytes": 253,
+   "sha256": "44600337b932cbe38f81fd717c1bf965e9c8fa074f3b341788b8b0803c501020"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mri_watershed.dat": {
+   "bytes": 253,
+   "sha256": "fa16b5e76e42b94876f0c84e2d40ce0c0db07f4c63b18bf66dd0170a91534cca"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mris_fix_topology.lh.dat": {
+   "bytes": 258,
+   "sha256": "81caaefc3a4ddb9e1381c1f94b2ebc71c5b9015e67490082fb017cf450bbbd9b"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mris_fix_topology.rh.dat": {
+   "bytes": 258,
+   "sha256": "2b4b43a1ff982b2519bbda600e7836bcb5489f7006e3b3b5c105524388dc7e22"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mris_inflate.lh.dat": {
+   "bytes": 254,
+   "sha256": "3428390cd9ef8a6946b6efbec23c5bb66464dade4438bbf1a44a6297b601278f"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mris_inflate.rh.dat": {
+   "bytes": 254,
+   "sha256": "43bb8d671505653f309b65ef6e1c23a35cac5d31fac4e661cc86f56f7ee88321"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mris_register.lh.dat": {
+   "bytes": 258,
+   "sha256": "b300861e4d16a3caaaa0d837f31fdedb7fd23c6b6227cb8a651f478c3197d4ea"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mris_register.rh.dat": {
+   "bytes": 258,
+   "sha256": "1d8bd2586ef5ed150f75d27cb0bba25eb2e375f777454144d5bea8f639c62aaf"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mris_sphere.lh.dat": {
+   "bytes": 259,
+   "sha256": "03871899c96e8e7329119e5d3f22e1800d20ba4f08a046db6a9b006ccc50eb7a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/rusage.mris_sphere.rh.dat": {
+   "bytes": 259,
+   "sha256": "b27c7d25e33ba15cb4a341bf74e11a214eed13427afd7678955af22d667bb571"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/segstats.touch": {
+   "bytes": 369,
+   "sha256": "d000e8b464120248a93ce0b9ebd5789b3c67add7895d886af4541ec09f8e7f43"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/skull.lta.touch": {
+   "bytes": 262,
+   "sha256": "4c139991b8c7e556d5b40e2e04307bd67f1e39fdbcc67969109f8951a625cd53"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/skull_strip.touch": {
+   "bytes": 281,
+   "sha256": "b560703cd99309731a6d3fd6a0bbdb3710c3dc1586cd82c5cd4aee2cbd7713e2"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/talairach.touch": {
+   "bytes": 58,
+   "sha256": "a5354f3edff3ffa8c673d8a1cd24f0445589d635e91e3a527c6e00ee71a02d9d"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/wmaparc.stats.touch": {
+   "bytes": 270,
+   "sha256": "bd8a0a159908c355844ee25d011f778eafc85ff5d79c1dbd04e90080337eb71a"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/wmaparc.touch": {
+   "bytes": 112,
+   "sha256": "3ac98bf862cb00bcb2a3e2da6fcf01772188e2075440a12fec11514521ba8ab8"
+  },
+  "MNE-somato-data/derivatives/freesurfer/subjects/01/touch/wmsegment.touch": {
+   "bytes": 47,
+   "sha256": "c87d493c62cae361bff6bc181e58ac5fef130b99d1656453950c4b727d87fb80"
+  },
+  "MNE-somato-data/derivatives/sub-01/sub-01_task-somato-fwd.fif": {
+   "bytes": 46937999,
+   "sha256": "4d73c772f54cecbed992c8072731db7cda7407b5a5819bf333c691bee24b0474"
+  },
+  "MNE-somato-data/participants.json": {
+   "bytes": 363,
+   "sha256": "8ee64553b3387efb6902c7f7fd08160f56907c43198616a9ae6761def2a90c08"
+  },
+  "MNE-somato-data/participants.tsv": {
+   "bytes": 35,
+   "sha256": "6febf3e85bff1a444c1726d6184c88570104c7afd9c7a16724c3a6d691539b73"
+  },
+  "MNE-somato-data/sub-01/anat/sub-01_T1w.json": {
+   "bytes": 413,
+   "sha256": "35c172d5cebcd7057803985c91dc9a6ada6f28bb9ba28dfb8853e2e826720eb0"
+  },
+  "MNE-somato-data/sub-01/anat/sub-01_T1w.nii.gz": {
+   "bytes": 7415889,
+   "sha256": "9f2f6933f0683e0f92be2899e06e7c2e273fc8c1c4bc6ac6fd6280200c6f94ad"
+  },
+  "MNE-somato-data/sub-01/meg/sub-01_coordsystem.json": {
+   "bytes": 1078,
+   "sha256": "1407a1bdd3f86cffa9c7ff4b1072d0f1a9988d5eae565335178424ad0db11fef"
+  },
+  "MNE-somato-data/sub-01/meg/sub-01_task-somato_channels.tsv": {
+   "bytes": 32452,
+   "sha256": "59eede8699db210b628801733e330c4e55ebcdc67741da7c028778426258acb6"
+  },
+  "MNE-somato-data/sub-01/meg/sub-01_task-somato_events.tsv": {
+   "bytes": 5012,
+   "sha256": "9db01d91f766fb1937c6ee6390604e699b81f96a5f29613d667151127aac0f2b"
+  },
+  "MNE-somato-data/sub-01/meg/sub-01_task-somato_meg.fif": {
+   "bytes": 343680860,
+   "sha256": "71bb33cb530fe6bf289c492deac5bc184da7ee0dbbc964203a59175cda32ffc3"
+  },
+  "MNE-somato-data/sub-01/meg/sub-01_task-somato_meg.json": {
+   "bytes": 555,
+   "sha256": "3bc61127512c2dc2acb53dc45a59e72b61a8bd60d33d4930b9fbcfac3b42088d"
+  },
+  "MNE-somato-data/sub-01/sub-01_scans.tsv": {
+   "bytes": 68,
+   "sha256": "11b31a4bec89869574c593d057c28508414761d13ef83892c52ea868baf7f2e0"
+  }
+ },
+ "generated_utc": "2026-08-06T06:22:33+00:00",
+ "manifest_sha256": "bd13ea4fe281c2e3f49078ded6f72496ca4736c712700c94c57d686743397509",
+ "n_files": 594,
+ "root": "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/data/mne-somato/bids-v0.10",
+ "total_bytes": 788261958,
+ "version": "bids-v0.10"
+}

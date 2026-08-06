@@ -1,0 +1,170 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# UNAVAILABLE SOURCE.  Registered so the dataset register is complete and
+# honest, NOT downloaded.  Appendix A lists this family as a candidate; the
+# governance block below is the reason it is not in the training mixture.
+# No bytes of this dataset exist on the local data root.
+# =====================================================================
+identity:
+  id: ukbiobank-brain-imaging
+  name: "UK Biobank brain imaging (category 100"
+  version: "unknown"              # no release is pinned because nothing was fetched
+  release_date: "unknown"
+  doi: "10.1038/s41593-016-0073-1"
+  citation: >-
+    Miller KL et al. (2016). Multimodal population brain imaging in the UK Biobank prospective epidemiological study. Nature Neuroscience 19:1523-1536.
+  source_url: "https://www.ukbiobank.ac.uk/enable-your-research/apply-for-access"
+  download_url: null
+  download_method: "not attempted - see governance.unavailable_reason"
+  retrieved_utc: null
+  parent_dataset: null
+  derived_from: null
+  derivatives_included: []
+  software: {}
+  container_hash: unknown
+  local_path: null
+  file_manifest: null
+
+governance:
+  status: unavailable
+  unavailable_reason: >-
+    access requires an approved research application and a signed Material Transfer Agreement with UK Biobank, plus per-project fees. No application was made, so no bytes were downloaded and no field of this card is measured.
+  license: "UK Biobank Material Transfer Agreement (not an open licence)"
+  license_url: "https://www.ukbiobank.ac.uk/media/p3zffpn5/biobank-mta.pdf"
+  license_text_excerpt: >-
+    Access is granted per approved project under an MTA; redistribution of individual-level data is prohibited and derived data must be returned to UK Biobank.
+  dua_required: true
+  credentials_required: true
+  registration_required: true
+  purpose_limits: >-
+    health-related research in the public interest, as approved per application; no re-identification; no redistribution.
+  consent_scope: >-
+    broad consent for health research with a documented withdrawal mechanism that participants may exercise at any time.
+  redistribution: "not permitted without the data provider's agreement"
+  withdrawal: "governed by the provider's withdrawal policy, which SC-WBD cannot honour without holding the data"
+  privacy: >-
+    pseudonymised individual-level imaging and phenotype data; treated as identifiable in practice.
+  retention: "not applicable: no bytes held"
+  redistribution_class: none
+  withdrawal_status: unknown
+  privacy_class: pseudonymized
+  contains_biometric: true
+  may_release_weights: false
+  may_release_examples: false
+  purpose_limits_list: ["approved_project_only", "no_redistribution", "no_reidentification"]
+  safeguards: ["not_downloaded"]
+  dua: "UK Biobank Material Transfer Agreement"
+
+population:
+  n_participants: "~100000 imaged participants planned (unverified: no access)"
+  participant_ids: "unknown - no access"
+  families: "sibling and related pairs are known to exist in UK Biobank and MUST be grouped before splitting if access is ever obtained"
+  sites: unknown
+  site_ids: []
+  devices: unknown
+  device_ids: []
+  sessions_per_participant: unknown
+  runs_per_session: unknown
+  trials_per_run: unknown
+  demographics: >-
+    UK volunteers aged 40-69 at recruitment; healthier and less deprived than the UK population (volunteer bias is documented in the literature).
+  selection_mechanism: >-
+    volunteer cohort with a ~5.5% response rate; not a population sample.
+  grouping_keys: ["family", "participant", "site", "session"]
+  min_subgroup_n: null
+
+signal:
+  modalities: ["mri", "fmri", "dwi", "swi"]
+  n_channels: unknown
+  channel_types: unknown
+  units: unknown
+  reference: unknown
+  dynamic_range: unknown
+  saturation: unknown
+  quantization: unknown
+  si_units: unknown
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: null
+
+spatial:
+  kind: voxel
+  frame: unknown
+  units: m
+  psf: unknown
+  extent: null
+  n_elements: null
+
+temporal:
+  clock: unknown
+  dt: unknown
+  sfreq_hz: unknown
+  integration_window: unknown
+  group_delay: unknown
+  jitter_sd: unknown
+  event_clock: unknown
+  offset_drift: unknown
+
+calibration:
+  id: ukbiobank-brain-imaging.calibration
+  frames: []
+  fiducials: unknown
+  transforms: []
+  calibration_points: unknown
+  residuals: unknown
+  device_pose: unknown
+  raw_metadata: unknown
+
+observation: null
+intervention: null
+
+missingness:
+  planned: "the entire dataset is absent"
+  unplanned: "not applicable"
+  artifact_rejection: unknown
+  dropout: unknown
+  attrition: unknown
+  policy: >-
+    A source with governance.status 'unavailable' contributes no loss factor
+    and no gradient. It is registered so that the absence is visible in
+    reports/data_inventory.md rather than being silently omitted.
+  mechanism: unknown
+  handling: drop_episode
+
+ledger:
+  variance:
+    measurement: unknown
+    session: unknown
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: unknown
+  bias_status: unknown
+  model_discrepancy: null
+  validity_domain:
+    note: "not applicable: the source is not in the mixture"
+
+gradient_permission:
+  allow: []
+  frozen: []
+  forbid: ["*"]
+  evaluation_only: false
+  note: >-
+    Empty by construction. If access is later obtained, this card must be
+    rewritten from the real files (hashes, counts, units) before any allow
+    entry is added.
+
+role: prior
+
+split_policy:
+  grouping_keys: ["family", "participant", "site", "session"]
+  temporal_holdout: "not applicable"
+  temporal_holdout_spec: null
+  stimulus_holdout: "not applicable"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    Grouping keys are declared in advance so that, if access is ever granted,
+    the leakage barrier is fixed before any result is seen.

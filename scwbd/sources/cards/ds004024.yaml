@@ -1,0 +1,378 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# I_k  identity and lineage
+# =====================================================================
+identity:
+  id: ds004024
+  name: "ccPAS TMS-EEG with MRI/fMRI/dMRI (Shirley Ryan AbilityLab, Chicago IL)"
+  version: "1.0.0"
+  release_date: "2022-02-14"
+  doi: "10.18112/openneuro.ds004024.v1.0.0"
+  citation: >-
+    Hernandez Pavon JC, Schneider Garces N, Begnoche JP, Miller LE, Raij T
+    (2022). OpenNeuro dataset ds004024, doi:10.18112/openneuro.ds004024.v1.0.0.
+    Cortico-cortical paired associative stimulation (ccPAS) with bi-focal
+    MRI-navigated TMS-EEG of left and right M1.
+  source_url: "https://openneuro.org/datasets/ds004024/versions/1.0.0"
+  download_url: "s3://openneuro.org/ds004024/"
+  download_method: >-
+    anonymous S3 mirror of the OpenNeuro dataset. The mirror tracks the dataset
+    head; version 1.0.0 is the only release (CHANGES: '1.0.0 2022-02-14 -
+    Initial upload') and every fetched object is pinned by sha256 in the local
+    manifest, so a later upstream edit is detectable rather than silent.
+  retrieved_utc: FILLED_BY_REFRESH
+  parent_dataset: null
+  derived_from: null
+  subset_note: >-
+    Complete BIDS metadata (dataset_description, participants, channels,
+    electrodes, coordsystem, events, sidecars) for all 13 participants, plus
+    signal binaries for a pinned subject subset only - the full release is
+    1021 GiB. The exact subset is recorded in
+    population.participants_with_signal_binaries.
+  derivatives_included: []
+  software:
+    acquisition: "BrainProducts amplifier in DC mode; MRI-navigated TMS; BIDS conversion via MNE-BIDS (pybv 0.6.0 wrote the BrainVision files)"
+    reader: "mne.io.read_raw_brainvision via scwbd.sources.loaders.bids_eeg"
+    fetch: "boto3 anonymous S3 + scwbd.sources.download.S3PrefixFetcher"
+  container_hash: unknown
+  local_path: FILLED_BY_REFRESH
+  file_manifest: FILLED_BY_REFRESH
+
+# =====================================================================
+# G_k  governance and consent
+# =====================================================================
+governance:
+  status: live
+  license: "CC0 1.0 Universal (public domain dedication)"
+  license_url: "https://creativecommons.org/publicdomain/zero/1.0/"
+  license_text_excerpt: >-
+    "The person who associated a work with this deed has dedicated the work to
+    the public domain by waiving all of his or her rights to the work worldwide
+    under copyright law, including all related and neighboring rights, to the
+    extent allowed by law. You can copy, modify, distribute and perform the
+    work, even for commercial purposes, all without asking permission."
+  dua_required: false
+  credentials_required: false
+  registration_required: false
+  purpose_limits: >-
+    none imposed by the licence. The acquisition was approved under
+    Northwestern IRB STU00204239 and registered as NCT03723434; that approval
+    covers the original acquisition, NOT any new human stimulation. Nothing in
+    this card authorises a prospective stimulation protocol
+    (ARCHITECTURE.md §0: build-order item 6 is out of scope).
+  consent_scope: >-
+    participants consented to an IRB-approved TMS-EEG study (STU00204239) and
+    the investigators released the data under CC0. Per-subject consent text is
+    not distributed.
+  redistribution: "unrestricted (CC0)"
+  withdrawal: "no withdrawal requests are recorded against this release"
+  privacy: >-
+    de-identified; defaced/skull-stripped status of the T1w images is not
+    documented in the release, so the structural images are treated as
+    potentially re-identifying and stay on local storage.
+  retention: "retained on the local data root while the SC-WBD-001-beta claim is live"
+  unavailable_reason: null
+  redistribution_class: full
+  withdrawal_status: none_pending
+  privacy_class: deidentified
+  contains_biometric: true
+  may_release_weights: true
+  may_release_examples: false
+  purpose_limits_list: ["no_prospective_human_stimulation"]
+  safeguards: ["local_storage_only", "structural_mri_not_redistributed"]
+  dua: null
+
+# =====================================================================
+# P_k  population and hierarchy
+# =====================================================================
+population:
+  n_participants: FILLED_BY_REFRESH
+  participant_ids: FILLED_BY_REFRESH
+  participants_with_signal_binaries: FILLED_BY_REFRESH
+  sessions_present: FILLED_BY_REFRESH
+  families: "none declared; participants treated as unrelated singletons"
+  sites: 1
+  site_ids: ["openneuro:ds004024:shirley_ryan_abilitylab"]
+  devices: 1
+  device_ids: ["BrainProducts_64ch_DC + MRI-navigated TMS"]
+  sessions_per_participant: >-
+    up to 4 (ses-async4ms, ses-async9ms, ses-async14ms, ses-mri), at least one
+    week apart. Not every participant attended every session: on disk there are
+    13 async14ms, 11 async4ms, 7 async9ms and 10 mri sessions.
+  runs_per_session: >-
+    up to 12 spTMS runs (01-06 at 100% rMT, 07-12 at 110% rMT), 1 ccPAS run,
+    3-4 resting-state runs
+  trials_per_run: "spTMS runs contain single pulses; the events.tsv lists 'Stimulus/A' and 'Out/A' markers per pulse"
+  demographics: >-
+    unknown - participants.tsv carries age, sex and hand columns but every
+    value is 'n/a'. No subgroup calibration claim is evaluable on this source.
+  selection_mechanism: >-
+    healthy control volunteers ('CON' prefix) recruited for a ccPAS
+    connectivity study; inclusion criteria are not distributed with the data.
+  grouping_keys: ["participant", "session", "run"]
+  min_subgroup_n: null
+
+# =====================================================================
+# S_k(signal)  native signal and units
+# =====================================================================
+signal:
+  modalities: ["eeg", "eog", "emg", "ecg", "mri", "fmri", "dwi"]
+  n_channels: 69
+  channel_types: {eeg: 64, eog: 2, emg: 2, ecg: 1}
+  channel_names: "extended 10/20 labels (Fp1..O2 + EOG/EMG/ECG), listed per run in channels.tsv"
+  units: "V (SI, converted by MNE from the BrainVision physical dimension uV)"
+  file_physical_dimension: "µV with a declared resolution of 0.1 µV; binary format IEEE_FLOAT_32"
+  reference: >-
+    right mastoid, recorded in DC mode (stated in dataset_description.json).
+    Note the per-run sidecar field EEGReference is literally 'n/a', so the two
+    metadata sources disagree in specificity; the dataset-level statement is
+    used and the discrepancy is recorded here rather than hidden.
+  dynamic_range: "not declared as a rail: samples are IEEE float32, so the amplifier range is not recoverable from the file"
+  saturation: "unknown - no saturation or clipping flags are distributed; TMS artefact routinely saturates the front end in the first milliseconds after a pulse"
+  quantization: "0.1 uV declared resolution in the BrainVision header (values stored as float32)"
+  prefilter_header: "low_cutoff 0.0 Hz (DC), high_cutoff 10000 Hz (channels.tsv)"
+  name: ds004024.scalp_potential
+  si_units: V
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: 1.0e-7
+  irreversible_aggregation: false
+  line_frequency_hz: 60.0
+
+# =====================================================================
+# S_k  spatial support
+# =====================================================================
+spatial:
+  kind: sensor
+  frame: CapTrak_m
+  units: m
+  psf: >-
+    unknown as a numeric kernel: no lead field ships with the release. However
+    the ingredients for computing one *do* exist here (digitised electrodes in
+    CapTrak metres with NAS/LPA/RPA landmarks, plus a subject T1w), so the
+    lead-field gradient path is enabled only once a computed forward operator
+    is registered by agent F - it is not enabled by this card alone.
+  extent: null
+  n_elements: 69
+  positions_are_digitised: true
+  positions_source: "per-session electrodes.tsv in CapTrak coordinates, units metres, with anatomical landmarks in coordsystem.json"
+
+# =====================================================================
+# T_k  temporal support and clocks
+# =====================================================================
+temporal:
+  clock: ds004024.brainvision_amp
+  dt: 5.0e-5
+  sfreq_hz: 20000.0
+  integration_window: 0.0
+  group_delay: 0.0
+  group_delay_justification: >-
+    DC-mode recording with a 10 kHz declared high cutoff and no software
+    filters ("SoftwareFilters": "n/a"); the analogue anti-alias delay at
+    20 kHz is below one sample and is declared as 0 with that justification.
+  jitter_sd: unknown
+  event_clock: ds004024.brainvision_amp
+  event_clock_relation: >-
+    events.tsv carries an explicit integer 'sample' column on the amplifier
+    clock, so TMS pulse onsets map to samples exactly. The TMS device's own
+    trigger clock relative to the amplifier is NOT documented; the residual
+    trigger jitter is the 'unknown' above and it bounds any latency claim
+    finer than one sample.
+  offset_drift: unknown
+  record_duration_s: "402.2 s for sub-CON001 spTMS run-01; per-run values in the sidecars"
+
+# =====================================================================
+# C_k  coordinates and calibration
+# =====================================================================
+calibration:
+  id: ds004024.calibration
+  frames: ["CapTrak_m", "subject_T1w_voxel", "subject_scanner_RAS"]
+  fiducials:
+    NAS: [-3.6088749766349792e-09, 0.09829775989055634, -1.862645149230957e-09]
+    LPA: [-0.06977154314517975, 2.3283064365386963e-09, 0.0]
+    RPA: [0.07345140725374222, -1.862645149230957e-09, 0.0]
+    note: "sub-CON001 values, metres, CapTrak; each session ships its own coordsystem.json"
+  transforms: >-
+    CapTrak -> T1w is NOT distributed as a matrix. It is computable from the
+    three landmarks plus the T1w image, and until agent F computes and
+    registers it, the head<->MRI edge of the frame graph is missing for this
+    source.
+  calibration_points: "3 anatomical landmarks (NAS, LPA, RPA) + 69 digitised electrode positions per session"
+  residuals: unknown
+  device_pose: >-
+    the TMS coil pose was MRI-navigated during acquisition but the per-pulse
+    coil position/orientation log is NOT distributed. This is the single most
+    important missing field for the perturbation benchmark and it disables the
+    E-field gradient path outright.
+  raw_metadata: "BIDS sidecars: *_eeg.json, *_channels.tsv, *_electrodes.tsv, *_coordsystem.json, *_events.tsv"
+  electrode_positions: "digitised, per session, CapTrak metres (electrodes.tsv)"
+  head_model: unknown
+  amplifier_gain_calibration: unknown
+
+# =====================================================================
+# O_k  observation model
+# =====================================================================
+observation:
+  name: ds004024.tms_eeg
+  forward_physics: >-
+    quasi-static EEG forward problem; the digitised electrodes and subject T1w
+    make an individual BEM/FEM lead field computable, but no forward operator
+    ships with the release.
+  observed_variables: ["scalp potential at 64 electrodes (20 kHz, DC-coupled)", "EOG", "submental/FDI EMG (MEP amplitude)", "ECG", "T1w structural", "resting BOLD (subset)"]
+  preprocessing: "none by the provider beyond BIDS conversion; the loader applies no filter, no artefact rejection and no downsampling"
+  preprocessing_steps: []
+  likelihood_kind: generative
+  calibration_status: uncalibrated
+  leakage_checked: true
+  target_ports: ["eeg.sensor_64ch", "motor.mep_fdi"]
+  labels_leak_risk: >-
+    none for the perturbation itself: the pulse time is a device trigger, not
+    a quantity derived from the EEG.
+
+# =====================================================================
+# U_k  intervention model
+# =====================================================================
+intervention:
+  name: ds004024.tms
+  modality: tms
+  waveform: "biphasic single pulse (spTMS) and paired-pulse cortico-cortical PAS (ccPAS) with 4, 9 or 14 ms inter-pulse asynchrony"
+  targets: "left and right primary motor cortex (M1), first dorsal interosseous representation, MRI-navigated"
+  dose:
+    sptms_intensity_pct_rmt_low: 100.0
+    sptms_intensity_pct_rmt_high: 110.0
+    ccpas_asynchrony_ms_4: 4.0
+    ccpas_asynchrony_ms_9: 9.0
+    ccpas_asynchrony_ms_14: 14.0
+  dose_units:
+    sptms_intensity_pct_rmt_low: dimensionless
+    sptms_intensity_pct_rmt_high: dimensionless
+    ccpas_asynchrony_ms_4: s
+    ccpas_asynchrony_ms_9: s
+    ccpas_asynchrony_ms_14: s
+  dose_note: >-
+    Intensity is expressed relative to each participant's resting motor
+    threshold, and the per-participant rMT in stimulator output units is NOT
+    distributed. The absolute dose in A/m^2 or V/m at the cortex is therefore
+    unknown, which is why the E-field gradient path is disabled.
+  pose_frame: unknown            # no per-pulse coil pose log is distributed
+  field_solver: null             # no E-field model ships with the release
+  target_ports: ["motor.m1_left", "motor.m1_right"]
+  sham: "none - the design contrasts asynchronies and pre/post timing, not active vs sham"
+  randomized: false
+  is_prospective_human: false    # this is an archival recording, not a new protocol
+  ethics_review: "Northwestern University IRB STU00204239; ClinicalTrials.gov NCT03723434 (original acquisition)"
+  dose_independently_calibrated: false
+  manipulated_variables: ["TMS pulse timing", "hemisphere targeted", "inter-pulse asynchrony", "pre/post ccPAS block"]
+  observed_only_variables: ["EEG", "EMG/MEP", "ECG", "resting BOLD", "T1w"]
+
+# =====================================================================
+# M_k  missingness and censoring
+# =====================================================================
+missingness:
+  planned: >-
+    signal binaries fetched for a pinned subject subset only (see
+    identity.subset_note); the 110% rMT runs (07-12) were not collected in all
+    sessions by the original study; resting-Control is missing in some sessions.
+  unplanned: FILLED_BY_REFRESH
+  artifact_rejection: "none applied by the provider or here; the TMS pulse artefact is present in the raw data and must be handled by the consumer with a declared operator"
+  dropout: "participants attended different numbers of asynchrony sessions (13/11/7 for 14/4/9 ms)"
+  attrition: "session attendance is unbalanced by design and by drop-out; the release does not distinguish the two"
+  policy: >-
+    Runs that were not fetched are absent, not zero. A participant with no
+    ses-async9ms contributes no 9 ms evidence and is never imputed from the
+    4 ms or 14 ms condition.
+  mechanism: mnar
+  handling: drop_episode
+  post_outcome_selection: false
+  censoring_correlated_with_state: false
+
+# =====================================================================
+# B_k, V_k, Delta_k  uncertainty ledger
+# =====================================================================
+ledger:
+  variance:
+    measurement: 1.0e-14          # V^2; (0.1 uV resolution)^2 as a floor, not an instrument spec
+    session: unknown              # multiple sessions exist per subject but session variance is not estimated here
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: [-1.0e-3, 1.0e-3]
+  bias_status: prior_specified_sensitivity
+  bias_bound_justification: >-
+    The dominant systematic error is the TMS-evoked artefact (decay,
+    amplifier recovery, muscle and recharge artefacts) in the first tens of
+    milliseconds after each pulse. Its magnitude is state and coil dependent
+    and no bound is published for this dataset, so the interval is a prior
+    specification for sensitivity analysis, NOT a measured envelope.
+  model_discrepancy: null
+  validity_domain:
+    population: "healthy adult volunteers, demographics undisclosed"
+    state: "awake, seated, eyes open, at rest between pulses"
+    frequency_band_hz: [0.0, 10000.0]
+    spatial_scale: "scalp sensor; source scale only after a registered forward operator"
+    post_pulse_window_s: "evidence within ~0.01 s of a pulse is artefact-dominated and outside the validity domain"
+
+# =====================================================================
+# A_k  gradient permission
+# =====================================================================
+gradient_permission:
+  allow:
+    - target: dynamics.motor_cortex.perturbation_response
+      scales: ["parcel"]
+      requires: ["temporal.sfreq_hz", "signal.si_units", "intervention.dose"]
+    - target: intervene.tms.timing_operator
+      scales: ["event"]
+      requires: ["temporal.event_clock_relation", "intervention.dose"]
+    - target: observe.eeg.noise_covariance
+      scales: ["sensor"]
+      requires: ["signal.si_units"]
+    - target: transforms.frame_graph.captrak_to_head
+      scales: ["sensor"]
+      requires: ["calibration.electrode_positions", "calibration.fiducials"]
+    - target: intervene.tms.efield_operator
+      scales: ["voxel"]
+      requires: ["calibration.device_pose", "intervention.field_solver", "calibration.head_model"]
+    - target: observe.eeg.lead_field
+      scales: ["sensor", "source"]
+      requires: ["spatial.psf", "calibration.head_model", "calibration.transforms"]
+    - target: transforms.clock_graph.tms_trigger_jitter
+      scales: ["clock"]
+      requires: ["temporal.jitter_sd"]
+  frozen:
+    - anatomy.connectome_prior
+  forbid:
+    - intervene.optimize_protocol          # R11: no A_safe validation exists for this source
+    - infer.treatment_efficacy
+  evaluation_only: false
+
+# =====================================================================
+# R_k  role and split policy
+# =====================================================================
+role: likelihood
+
+split_policy:
+  grouping_keys: ["participant"]
+  grouping_note: >-
+    All sessions, tasks and runs of a participant, including the MRI session
+    and any derived tractogram or parcellation, stay in one fold. Four
+    sessions of one person are not four subjects (R10).
+  temporal_holdout: >-
+    available within participant: sessions are at least one week apart and the
+    pre/post-ccPAS blocks are ordered within a session. A ccPAS plasticity
+    claim must predict the *post* block from the *pre* block, never the
+    reverse.
+  temporal_holdout_spec: null
+  stimulus_holdout: >-
+    the manipulated variable is the stimulation protocol (hemisphere,
+    asynchrony, intensity, pre/post), so 'stimulus holdout' here means holding
+    out an asynchrony condition. Holding out 9 ms is the discriminating test
+    for a timing-dependent plasticity operator.
+  site_holdout: "not available: one site, one device"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    This is the perturbation benchmark for G4. With only 13 participants and
+    one site, leave-one-participant-out is the default; the Fisher-rank claim
+    must be reported per participant, never pooled into a single number.

@@ -1,0 +1,259 @@
+"""Build every cached anatomical artifact and write ``assets/MANIFEST.json``.
+
+    python -m scwbd.anatomy.build            # build what is missing
+    python -m scwbd.anatomy.build --rebuild  # rebuild everything
+    python -m scwbd.anatomy.build --verify   # re-hash what the manifest claims
+
+The manifest records, for every upstream directory and every derived array, a
+sha256, the source URL, the license and the version.  A derived artifact also
+records what produced it and which inputs it consumed, so a stale cache is
+detectable rather than silently trusted.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+import traceback
+from pathlib import Path
+from typing import Any
+
+from . import sources as S
+from .atlases import ATLAS_SPECS, load_parcellation
+from .connectome import _ENIGMA_KEYS, load_structural_prior
+from .geometry import parcel_geometry
+from .manifest import Manifest, git_commit
+from .maps import load_maps
+from .paths import assets_root, cache_dir, derived_dir, src_dir
+from .priors import BrainPrior
+
+#: Upstream clones and caches, with the source-registry key that describes them.
+UPSTREAM: list[tuple[str, str, str]] = [
+    ("src/hansen_receptors", "hansen_receptors", "git"),
+    ("src/tian_subcortex", "tian2020", "git"),
+    ("src/cerebellar_atlases", "buckner2011", "git"),
+    ("src/enigma", "enigmatoolbox", "git"),
+    ("cache/nilearn", "schaefer2018", "downloader"),
+    ("cache/neuromaps", "neuromaps", "downloader"),
+    ("cache/netneurotools", "netneuro_lausanne_sc", "downloader"),
+]
+
+#: Parcellations to materialise.  The surface ones are what the connectome and
+#: the maps attach to; the volumetric ones supply subcortex and cerebellum.
+BUILD_SURFACE = [
+    ("Schaefer100x7", "fsLR", "32k"),
+    ("Schaefer200x7", "fsLR", "32k"),
+    ("Schaefer300x7", "fsLR", "32k"),
+    ("Schaefer400x7", "fsLR", "32k"),
+    ("DesikanKilliany", "fsLR", "32k"),
+    ("Glasser360", "fsLR", "32k"),
+    ("EconomoKoskinas", "fsLR", "32k"),
+    ("Destrieux", "fsaverage5", "10k"),
+]
+BUILD_VOLUME = [
+    ("Schaefer400x7", "MNI152", "1mm"),
+    ("Schaefer100x7", "MNI152", "1mm"),
+    ("Schaefer200x7", "MNI152", "1mm"),
+    ("Schaefer300x7", "MNI152", "1mm"),
+    ("DesikanKilliany", None, None),  # surface-only; skipped by the guard below
+    ("TianS1", "MNI152", "1mm"),
+    ("TianS2", "MNI152", "1mm"),
+    ("TianS3", "MNI152", "1mm"),
+    ("TianS4", "MNI152", "1mm"),
+    ("Aseg14", "MNI152", "1mm"),
+    ("Buckner7", "MNI152", "1mm"),
+    ("Buckner17", "MNI152", "1mm"),
+    ("SUITAnatom", "MNI152", "1mm"),
+]
+
+
+def _register_upstream(man: Manifest) -> list[str]:
+    problems = []
+    for rel, key, kind in UPSTREAM:
+        p = assets_root() / rel
+        if not p.exists():
+            problems.append(f"missing upstream {rel}")
+            continue
+        src = S.SRC[key]
+        version = git_commit(p) if kind == "git" else src["version"]
+        man.register(
+            p,
+            kind="upstream",
+            source_url=src["url"],
+            license=src["license"],
+            version=version,
+            citation=src["citation"],
+            notes=src.get("bias", ""),
+        )
+    return problems
+
+
+def _register_derived(man: Manifest, path: Path, produced_by: str, inputs: list[str]) -> None:
+    man.register(
+        path,
+        kind="derived",
+        source_url="built by scwbd.anatomy",
+        license="derived work; inherits the most restrictive upstream license "
+        "of its inputs (see the `inputs` field)",
+        version=f"scwbd.anatomy/{time.strftime('%Y%m%d')}",
+        citation="; ".join(S.SRC[k]["citation"] for k in inputs if k in S.SRC),
+        produced_by=produced_by,
+        inputs=inputs,
+        notes="Cached build product. Delete and re-run scwbd.anatomy.build to regenerate.",
+    )
+
+
+def build(*, rebuild: bool = False, verbose: bool = True) -> dict[str, Any]:
+    man = Manifest()
+    report: dict[str, Any] = {"built": [], "failed": [], "skipped": []}
+
+    def log(*a: object) -> None:
+        if verbose:
+            print(*a, flush=True)
+
+    log("== upstream ==")
+    for msg in _register_upstream(man):
+        report["failed"].append(msg)
+        log("  !", msg)
+    for rel, _k, _t in UPSTREAM:
+        if (assets_root() / rel).exists():
+            log(f"  ok {rel}")
+
+    log("== parcellations ==")
+    for name, space, density in BUILD_SURFACE + BUILD_VOLUME:
+        if space is None or space not in ATLAS_SPECS[name]["spaces"]:
+            report["skipped"].append(f"{name}/{space}")
+            continue
+        try:
+            p = load_parcellation(name, space, density, rebuild=rebuild)
+            f = derived_dir("parcellations") / f"{name}__{space}-{density}.npz"
+            _register_derived(man, f, "scwbd.anatomy.atlases.load_parcellation",
+                              _atlas_inputs(name))
+            report["built"].append(str(f.name))
+            log(f"  ok {name} {space}/{density} n={p.n_parcels}")
+        except Exception as exc:  # noqa: BLE001
+            report["failed"].append(f"parcellation {name}/{space}: {exc!r}")
+            log(f"  ! {name} {space}: {exc!r}")
+            if verbose:
+                traceback.print_exc()
+
+    log("== geometry ==")
+    for name, space, density in BUILD_SURFACE:
+        try:
+            p = load_parcellation(name, space, density)
+            parcel_geometry(p, rebuild=rebuild)
+            f = derived_dir("geometry") / f"{name}__{space}-{density}__geom.npz"
+            _register_derived(man, f, "scwbd.anatomy.geometry.parcel_geometry",
+                              _atlas_inputs(name) + ["conte69"])
+            report["built"].append(str(f.name))
+            log(f"  ok {name}")
+        except Exception as exc:  # noqa: BLE001
+            report["failed"].append(f"geometry {name}: {exc!r}")
+            log(f"  ! {name}: {exc!r}")
+
+    log("== maps ==")
+    for name, space, density in BUILD_SURFACE:
+        if space != "fsLR":
+            continue
+        try:
+            p = load_parcellation(name, space, density)
+            ms = load_maps(p, rebuild=rebuild)
+            f = derived_dir("maps") / f"{name}__{space}-{density}__maps.npz"
+            _register_derived(man, f, "scwbd.anatomy.maps.load_maps",
+                              ["hansen_receptors", "neuromaps", "margulies2016",
+                               "hcps1200_maps", "sydnor2021"])
+            report["built"].append(str(f.name))
+            log(f"  ok {name}: {len(ms.maps)} maps, {len(ms.receptor_names)} receptors")
+        except Exception as exc:  # noqa: BLE001
+            report["failed"].append(f"maps {name}: {exc!r}")
+            log(f"  ! {name}: {exc!r}")
+
+    log("== connectomes ==")
+    for name in _ENIGMA_KEYS:
+        for include_sub in (True, False):
+            try:
+                sp = load_structural_prior(name, include_subcortex=include_sub,
+                                           rebuild=rebuild)
+                tag = f"{name}__enigma_hcp__{'with' if include_sub else 'no'}sctx__euclidean"
+                f = derived_dir("connectome") / f"{tag}.npz"
+                _register_derived(man, f, "scwbd.anatomy.connectome.load_structural_prior",
+                                  ["enigma_hcp_sc", "hansen_schaefer_sc",
+                                   "netneuro_lausanne_sc", "markov2014"])
+                report["built"].append(str(f.name))
+                c = sp.class_counts()
+                log(f"  ok {name} sctx={include_sub}: hard={c['hard']} soft={c['soft']} "
+                    f"proposed={c['proposed']} absent={c['absent']}")
+            except Exception as exc:  # noqa: BLE001
+                report["failed"].append(f"connectome {name}: {exc!r}")
+                log(f"  ! {name}: {exc!r}")
+
+    log("== brain priors ==")
+    for name in ("Schaefer100x7", "Schaefer400x7", "DesikanKilliany"):
+        try:
+            bp = BrainPrior.load(name, include_subcortex=True)
+            log(f"  ok {name}: {json.dumps(bp.summary())[:160]}")
+        except Exception as exc:  # noqa: BLE001
+            report["failed"].append(f"brainprior {name}: {exc!r}")
+            log(f"  ! {name}: {exc!r}")
+
+    man.meta.update(
+        {
+            "produced_by": "scwbd.anatomy.build",
+            "agent": "C (adult human anatomical priors)",
+            "note": (
+                "Binaries live on /data/scwbd/assets and are not tracked. This "
+                "manifest is. Licenses are per-asset and some are non-commercial "
+                "(the Hansen receptor atlas is CC-BY-NC-SA-4.0)."
+            ),
+        }
+    )
+    p = man.save()
+    log(f"\nmanifest: {p} ({len(man.entries)} assets, "
+        f"{sum(e.n_bytes for e in man.entries.values()) / 1e9:.2f} GB)")
+    report["manifest"] = str(p)
+    return report
+
+
+def _atlas_inputs(name: str) -> list[str]:
+    if name.startswith("Schaefer"):
+        return ["schaefer2018", "enigmatoolbox"]
+    return {
+        "DesikanKilliany": ["desikan2006", "enigmatoolbox"],
+        "Glasser360": ["glasser2016", "enigmatoolbox"],
+        "EconomoKoskinas": ["voneconomo", "enigmatoolbox"],
+        "Destrieux": ["destrieux2010"],
+        "Aseg14": ["harvardoxford"],
+        "Buckner7": ["buckner2011"],
+        "Buckner17": ["buckner2011"],
+        "SUITAnatom": ["diedrichsen2009"],
+    }.get(name, [f"tian2020"] if name.startswith("Tian") else [])
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--rebuild", action="store_true", help="ignore cached artifacts")
+    ap.add_argument("--verify", action="store_true", help="re-hash manifest entries and exit")
+    ap.add_argument("--quiet", action="store_true")
+    args = ap.parse_args(argv)
+
+    if args.verify:
+        man = Manifest()
+        status = man.verify()
+        bad = {k: v for k, v in status.items() if v != "ok"}
+        for k, v in sorted(bad.items()):
+            print(f"{v:16s} {k}")
+        print(f"{len(status) - len(bad)}/{len(status)} assets verified")
+        return 1 if bad else 0
+
+    rep = build(rebuild=args.rebuild, verbose=not args.quiet)
+    if rep["failed"]:
+        print("\nFAILURES:")
+        for f in rep["failed"]:
+            print("  ", f)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,284 @@
+"""Field-physics validation: analytic reference, BEM convergence, invariants.
+
+SIMULATION ONLY.  An unvalidated field solver is worse than none, because it
+launders numerical error as biology.  Every claim here is checked against
+either a closed form or an independent physical invariant:
+
+* the far-coil limit against the elementary Faraday solution
+  :math:`E=-\\tfrac12\\dot B\\times r`;
+* the Heller--van Hulsteyn theorem :math:`\\hat r\\cdot E = 0` everywhere;
+* independence of the interior field from the radial conductivity profile and
+  from the outer radius;
+* Faraday circulation: the total field minus the primary field is curl-free,
+  so their circulations around any interior loop agree;
+* mesh convergence of the charge BEM towards the analytic solution, with a
+  measured order;
+* the exact triangle panel integral against brute-force quadrature.
+"""
+
+from __future__ import annotations
+
+import math
+
+import pytest
+import torch
+
+from scwbd.intervene.tms.coil import MU0, CircularCoil, FigureEightCoil, biphasic
+from scwbd.intervene.tms.efield import (
+    ChargeBEM,
+    LayeredSphereBEM,
+    SphericalHeadModel,
+    TriMesh,
+    analytic_sphere_efield,
+    coil_dipoles_in_head_frame,
+    efield_from_coil,
+    icosphere,
+    primary_efield_dipoles,
+    primary_efield_segments,
+    simnibs_available,
+    simnibs_status,
+    triangle_field_integral,
+    uniform_dbdt_efield,
+)
+
+_DT = torch.float64
+_SEED = 20240805
+
+
+def _interior(n: int = 200, r: float = 0.05) -> torch.Tensor:
+    g = torch.Generator().manual_seed(_SEED)
+    p = torch.randn(n, 3, generator=g, dtype=_DT)
+    return p / p.norm(dim=-1, keepdim=True) * r
+
+
+# ---------------------------------------------------------------------------
+# analytic reference
+# ---------------------------------------------------------------------------
+
+
+def test_radial_component_vanishes_everywhere_heller_van_hulsteyn():
+    """`r.E = 0` inside a spherically symmetric conductor -- a theorem."""
+    pts = _interior(300, 0.06)
+    rc = torch.tensor([[0.02, -0.01, 0.11]], dtype=_DT)
+    md = torch.tensor([[0.3, 0.9, 0.1]], dtype=_DT) * 1e6
+    e = analytic_sphere_efield(pts, rc, md)
+    radial = (e * pts).sum(-1).abs() / pts.norm(dim=-1)
+    assert float(radial.max()) < 1e-12 * float(e.norm(dim=-1).max())
+
+
+def test_far_coil_limit_converges_to_the_uniform_dbdt_solution():
+    """As the coil recedes, the field must approach `E = -1/2 dB/dt x r`."""
+    pts = _interior(100, 0.05)
+    md = torch.tensor([[0.3, 0.7, 0.2]], dtype=_DT)
+    md = md / md.norm()
+    errs = []
+    for Rc in (0.5, 2.0, 10.0):
+        rc = torch.tensor([[0.0, 0.0, Rc]], dtype=_DT)
+        e = analytic_sphere_efield(pts, rc, md)
+        chat = rc[0] / Rc
+        B = (MU0 / (4 * math.pi)) * (3 * (md[0] @ chat) * chat - md[0]) / Rc**3
+        eu = uniform_dbdt_efield(pts, B)
+        errs.append(float((e - eu).norm() / eu.norm()))
+    assert errs[0] > errs[1] > errs[2]
+    assert errs[2] < 0.01
+    # first-order convergence in 1/R_c
+    assert 3.0 < errs[0] / errs[1] < 6.0
+
+
+def test_faraday_circulation_total_minus_primary_is_curl_free():
+    """The secondary field is a gradient, so circulations must agree exactly."""
+    rc = torch.tensor([[0.02, 0.0, 0.11]], dtype=_DT)
+    md = torch.tensor([[0.3, 0.9, 0.1]], dtype=_DT) * 1e6
+    th = torch.linspace(0, 2 * math.pi, 4001, dtype=_DT)[:-1]
+    centre = torch.tensor([0.005, -0.004, 0.02], dtype=_DT)
+    e1 = torch.tensor([0.6, 0.4, -0.2], dtype=_DT)
+    e1 = e1 / e1.norm()
+    e2 = torch.cross(e1, torch.tensor([0.1, -0.5, 1.0], dtype=_DT), dim=0)
+    e2 = e2 / e2.norm()
+    e1 = torch.cross(e2, torch.cross(e1, e2, dim=0), dim=0)
+    e1 = e1 / e1.norm()
+    loop = centre + 0.03 * (torch.cos(th)[:, None] * e1 + torch.sin(th)[:, None] * e2)
+    dl = torch.roll(loop, -1, 0) - loop
+    mid = 0.5 * (loop + torch.roll(loop, -1, 0))
+    assert float(loop.norm(dim=-1).max()) < 0.07  # stays inside the head
+
+    circ_total = float((analytic_sphere_efield(mid, rc, md) * dl).sum())
+    circ_primary = float((primary_efield_dipoles(mid, rc, md) * dl).sum())
+    assert circ_total == pytest.approx(circ_primary, rel=1e-10)
+    assert abs(circ_total) > 1e-3  # the check is not trivially about zero
+
+
+def test_field_is_zero_at_the_sphere_centre():
+    e = analytic_sphere_efield(
+        torch.zeros(1, 3, dtype=_DT),
+        torch.tensor([[0.0, 0.0, 0.1]], dtype=_DT),
+        torch.tensor([[1.0, 0.0, 0.0]], dtype=_DT) * 1e6,
+    )
+    assert float(e.norm()) < 1e-20
+
+
+def test_superposition_over_dipoles():
+    pts = _interior(50)
+    rc = torch.tensor([[0.0, 0.0, 0.1], [0.03, 0.0, 0.1]], dtype=_DT)
+    md = torch.tensor([[0.0, 1.0, 0.0], [0.5, 0.2, 0.0]], dtype=_DT) * 1e6
+    both = analytic_sphere_efield(pts, rc, md)
+    sep = analytic_sphere_efield(pts, rc[:1], md[:1]) + analytic_sphere_efield(
+        pts, rc[1:], md[1:]
+    )
+    assert torch.allclose(both, sep, rtol=1e-12, atol=1e-20)
+
+
+# ---------------------------------------------------------------------------
+# panel integral
+# ---------------------------------------------------------------------------
+
+
+def test_analytic_triangle_panel_integral_matches_brute_force_quadrature():
+    g = torch.Generator().manual_seed(3)
+    tri = torch.randn(1, 3, 3, generator=g, dtype=_DT) * 0.1
+    obs = torch.randn(6, 3, generator=g, dtype=_DT) * 0.3
+    b1 = torch.rand(160000, 1, generator=g, dtype=_DT)
+    b2 = torch.rand(160000, 1, generator=g, dtype=_DT)
+    keep = (b1 + b2).squeeze(-1) <= 1
+    b1, b2 = b1[keep], b2[keep]
+    v0, v1, v2 = tri[0]
+    pts = v0 + b1 * (v1 - v0) + b2 * (v2 - v0)
+    area = 0.5 * torch.cross(v1 - v0, v2 - v0, dim=-1).norm()
+    w = area / pts.shape[0]
+    d = obs[:, None, :] - pts[None]
+    ref = (d / d.norm(dim=-1, keepdim=True) ** 3 * w).sum(1)
+    got = triangle_field_integral(obs, tri)[:, 0, :]
+    assert float((got - ref).norm() / ref.norm()) < 5e-3
+
+
+def test_flat_panel_has_zero_normal_field_at_its_own_centroid():
+    tri = torch.tensor([[[0.0, 0, 0], [0.01, 0, 0], [0.0, 0.02, 0]]], dtype=_DT)
+    c = tri.mean(dim=1)
+    g = triangle_field_integral(c, tri)[0, 0]
+    assert abs(float(g[2])) < 1e-14  # normal is +z
+
+
+# ---------------------------------------------------------------------------
+# BEM
+# ---------------------------------------------------------------------------
+
+
+def test_bem_converges_to_the_analytic_solution_with_measured_order():
+    pts = _interior(120, 0.05)
+    rc = torch.tensor([[0.0, 0.0, 0.11]], dtype=_DT)
+    md = torch.tensor([[0.0, 1.0, 0.0], ], dtype=_DT) * 1e6
+    ref = analytic_sphere_efield(pts, rc, md)
+
+    errs = []
+    for k in (1, 2, 3, 4):
+        vv, ff = icosphere(k)
+        bem = ChargeBEM([TriMesh(vv * 0.085, ff)], [0.33], [0.0])
+        e = bem.total_field(pts, rc, md)
+        errs.append(float((e - ref).norm() / ref.norm()))
+
+    assert errs[0] > errs[1] > errs[2] > errs[3], errs
+    assert errs[-1] < 5e-3, errs
+    # measured order between the two finest meshes (h halves each refinement);
+    # the coarse meshes are pre-asymptotic and are only required to decrease
+    order = math.log2(errs[-2] / errs[-1])
+    assert order > 1.5, (errs, order)
+
+
+def test_bem_reproduces_the_zero_radial_field_theorem():
+    pts = _interior(80, 0.05)
+    rc = torch.tensor([[0.0, 0.0, 0.11]], dtype=_DT)
+    md = torch.tensor([[0.0, 1.0, 0.0]], dtype=_DT) * 1e6
+    v, f = icosphere(3)
+    bem = ChargeBEM([TriMesh(v * 0.085, f)], [0.33], [0.0])
+    e = bem.total_field(pts, rc, md)
+    radial = (e * pts).sum(-1).abs() / pts.norm(dim=-1)
+    assert float(radial.max()) / float(e.norm(dim=-1).max()) < 0.02
+
+
+def test_interior_field_is_independent_of_outer_radius():
+    """A second Heller--van Hulsteyn consequence, checked numerically."""
+    pts = _interior(80, 0.045)
+    rc = torch.tensor([[0.0, 0.0, 0.13]], dtype=_DT)
+    md = torch.tensor([[0.0, 1.0, 0.0]], dtype=_DT) * 1e6
+    v, f = icosphere(3)
+    fields = [
+        ChargeBEM([TriMesh(v * R, f)], [0.33], [0.0]).total_field(pts, rc, md)
+        for R in (0.085, 0.100)
+    ]
+    rel = float((fields[0] - fields[1]).norm() / fields[0].norm())
+    assert rel < 0.02, rel
+
+
+def test_interior_field_is_independent_of_the_conductivity_profile():
+    """Three-layer head with a 40:1 skull contrast must give the same field."""
+    pts = _interior(60, 0.045)
+    rc = torch.tensor([[0.0, 0.0, 0.13]], dtype=_DT)
+    md = torch.tensor([[0.0, 1.0, 0.0]], dtype=_DT) * 1e6
+    ref = analytic_sphere_efield(pts, rc, md)
+    bem = LayeredSphereBEM(SphericalHeadModel(), n_subdiv=2)
+    e = bem.total_field(pts, rc, md)
+    rel = float((e - ref).norm() / ref.norm())
+    # coarse mesh + high skull contrast: the tolerance is honest, not tight
+    assert rel < 0.12, rel
+
+
+# ---------------------------------------------------------------------------
+# coil-level checks
+# ---------------------------------------------------------------------------
+
+
+def test_two_winding_discretisations_agree_in_the_far_field():
+    """Dipole sheet and current polyline are the same coil, so they must agree."""
+    coil = CircularCoil()
+    pos, mom = coil.dipole_elements()
+    mid, dl = coil.segments()
+    didt = 1e8
+    obs = torch.tensor([[0.0, 0.0, 0.6], [0.3, 0.2, 0.5]], dtype=_DT)
+    a = primary_efield_dipoles(obs, pos, mom * didt)
+    b = primary_efield_segments(obs, mid, dl, didt)
+    assert float((a - b).norm() / b.norm()) < 0.02
+
+
+def test_field_from_coil_returns_a_physical_dose_of_plausible_magnitude(
+    coil, pulse, pose, head, cortex
+):
+    pts, _ = cortex
+    dose = efield_from_coil(coil, pulse, pose.matrix(), pts, head=head)
+    assert dose.modality == "tms" and dose.quantity == "E_field"
+    assert dose.units == "V/m"
+    assert "SIMULATION ONLY" in dose.notice
+    # a figure-8 at 1e8 A/s, 4 mm off a 85 mm scalp: order 100 V/m
+    assert 30.0 < dose.peak() < 400.0
+    assert dose.ledger.validity_domain["geometry"] == "spherically_symmetric"
+
+
+def test_bem_and_analytic_agree_on_the_full_coil(coil, pulse, pose, head):
+    pts, _ = head.cortical_shell(162)
+    a = efield_from_coil(coil, pulse, pose.matrix(), pts, head=head, solver="analytic")
+    v, f = icosphere(3)
+    bem = ChargeBEM([TriMesh(v * head.radius, f)], [0.33], [0.0])
+    b = efield_from_coil(
+        coil, pulse, pose.matrix(), pts, head=head, solver="bem", bem=bem
+    )
+    rel = float((a.value - b.value).norm() / a.value.norm())
+    assert rel < 0.05, rel
+
+
+def test_improper_pose_matrix_is_refused():
+    coil = FigureEightCoil()
+    T = torch.eye(4, dtype=_DT)
+    T[0, 0] = -1.0  # reflection: handedness error
+    with pytest.raises(ValueError, match="proper rotation"):
+        coil_dipoles_in_head_frame(coil, T, 1e8)
+
+
+# ---------------------------------------------------------------------------
+# external solver honesty
+# ---------------------------------------------------------------------------
+
+
+def test_simnibs_status_is_honest_about_availability():
+    s = simnibs_status()
+    assert s["available"] is simnibs_available()
+    assert s["equivalent_to_fem"] is False
+    assert "aarch64" in str(s["platform_note"])

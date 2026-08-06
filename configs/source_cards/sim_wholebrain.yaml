@@ -1,0 +1,51 @@
+# Simulated whole-brain corpus (scwbd.foundation.simulate).
+# SIMULATOR-CONDITIONED EVIDENCE. body.tex 6.3: simulated data "exercise physics,
+# embodiment, missingness, causal interventions, and rare regimes, but remain
+# simulator-conditioned evidence and cannot establish biological validity".
+# Role is therefore 'prior', never 'likelihood': it may teach the operator and the
+# amortized posterior what the parameter->trajectory map looks like, and it may not
+# contribute a measured-evidence likelihood factor about any brain.
+id: sim_wholebrain
+role: prior
+is_simulated: true
+losses: [prior, forecast, posterior, mechanism, scale]
+gradient_permission:
+  - "local.*"
+  - "residual.*"
+  - "coupling.*"
+  - "msg_proj.*"
+  - "msg_readin.*"
+  - "assimilate.*"
+  - "context.*"
+  - "readout.*"
+  - "log_dt_scale"
+  - "bold.*"
+  - "posterior.*"
+frozen:
+  - "eeg.*"          # a simulator never calibrates a real electrode montage
+  - "individualizer.*"  # and never touches an individual's parameters
+# reliability inputs (Appendix D). n_eff is the number of independent PARAMETER
+# SETS, deliberately not the number of stored samples; a simulator can produce
+# unlimited rows and that must not buy it authority.
+n_eff: 40000.0
+n_rows: 100000000.0
+n_participants: 0
+hierarchy_depth: 1
+measurement_variance: 0.02
+bias_halfwidth: 0.45          # structural model error of the neural-mass family
+bias_status: prior_specified_sensitivity
+model_discrepancy: 0.55       # simulator-vs-brain discrepancy, deliberately large
+validity_overlap: 0.35        # only partially overlaps the target validity domain
+notes: >
+  Delayed connectome-coupled neural-mass SDEs (Wilson-Cowan, Jansen-Rit,
+  reduced Wong-Wang, Stuart-Landau, linear Gaussian) on a synthetic or
+  agent-C connectome. Not participant data. Cannot establish biological validity.
+compiler_permission:
+  - "operator:local_field:*"
+  - "operator:long_range:*"
+  - "operator:assimilation:*"
+  - "region:*:state:*"
+  - "port:*.message_out"
+  - "port:*.message_in"
+  - "port:*.bold_out"
+  - "observation:sim_wholebrain:nuisance"

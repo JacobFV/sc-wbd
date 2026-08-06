@@ -1,0 +1,43 @@
+# PhysioNet EEG Motor Movement/Imagery Database (109 participants, 64ch, 160 Hz).
+# MEASURED human data under the ODC-BY / PhysioNet open licence. This is one of
+# only two sources in the mixture that can support a claim about real brains.
+id: eegmmidb_real
+role: likelihood
+is_simulated: false
+losses: [likelihood, forecast, calibration, posterior]
+gradient_permission:
+  - "local.*"
+  - "residual.*"
+  - "coupling.*"
+  - "msg_proj.*"
+  - "msg_readin.*"
+  - "assimilate.*"
+  - "context.*"
+  - "readout.*"
+  - "eeg.*"
+  - "log_dt_scale"
+  - "individualizer.*"
+frozen:
+  - "bold.*"   # no haemodynamics were measured; an EEG corpus may not train BOLD
+n_eff: 109.0            # participants, the actual unit of independence
+n_rows: 1526.0          # runs; recorded for audit only
+n_participants: 109
+n_sites: 1
+hierarchy_depth: 3      # participant < run < window
+measurement_variance: 0.35
+bias_halfwidth: 0.20    # montage/reference/amplifier systematic offset
+bias_status: prior_specified_sensitivity
+model_discrepancy: 0.0
+validity_overlap: 1.0
+notes: >
+  Scalp EEG during rest, real and imagined movement. Single site, single montage,
+  no individual head models: supports population-level EEG prediction claims only.
+compiler_permission:
+  - "operator:local_field:*"
+  - "operator:long_range:*"
+  - "operator:assimilation:*"
+  - "region:*:state:*"
+  - "port:*.message_out"
+  - "port:*.message_in"
+  - "port:*.eeg_out"
+  - "observation:eegmmidb_real:nuisance"

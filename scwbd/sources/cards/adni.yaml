@@ -1,0 +1,170 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# UNAVAILABLE SOURCE.  Registered so the dataset register is complete and
+# honest, NOT downloaded.  Appendix A lists this family as a candidate; the
+# governance block below is the reason it is not in the training mixture.
+# No bytes of this dataset exist on the local data root.
+# =====================================================================
+identity:
+  id: adni
+  name: "Alzheimer's Disease Neuroimaging Initiative (ADNI)"
+  version: "unknown"              # no release is pinned because nothing was fetched
+  release_date: "unknown"
+  doi: "10.1212/01.wnl.0000271090.28148.24"
+  citation: >-
+    Jack CR Jr et al. (2008). The Alzheimer's Disease Neuroimaging Initiative (ADNI): MRI methods. J Magn Reson Imaging 27:685-691.
+  source_url: "https://adni.loni.usc.edu/data-samples/access-data/"
+  download_url: null
+  download_method: "not attempted - see governance.unavailable_reason"
+  retrieved_utc: null
+  parent_dataset: null
+  derived_from: null
+  derivatives_included: []
+  software: {}
+  container_hash: unknown
+  local_path: null
+  file_manifest: null
+
+governance:
+  status: unavailable
+  unavailable_reason: >-
+    access requires an application reviewed by the ADNI Data Sharing and Publications Committee and a signed Data Use Agreement via LONI/IDA. No application was submitted, so nothing was downloaded.
+  license: "ADNI Data Use Agreement (application + signature required)"
+  license_url: "https://adni.loni.usc.edu/wp-content/uploads/how_to_apply/ADNI_Data_Use_Agreement.pdf"
+  license_text_excerpt: >-
+    Investigators agree not to distribute the data, not to attempt re-identification, to acknowledge ADNI funding and to submit publications for review.
+  dua_required: true
+  credentials_required: true
+  registration_required: true
+  purpose_limits: >-
+    Alzheimer's-related research; publication acknowledgement and review obligations; no redistribution.
+  consent_scope: >-
+    participants consented to research sharing under site IRB approval.
+  redistribution: "not permitted without the data provider's agreement"
+  withdrawal: "governed by the provider's withdrawal policy, which SC-WBD cannot honour without holding the data"
+  privacy: >-
+    de-identified longitudinal imaging, PET, CSF and cognitive data on a clinical cohort.
+  retention: "not applicable: no bytes held"
+  redistribution_class: none
+  withdrawal_status: unknown
+  privacy_class: deidentified
+  contains_biometric: true
+  may_release_weights: false
+  may_release_examples: false
+  purpose_limits_list: ["approved_application_only", "no_redistribution", "acknowledge_adni"]
+  safeguards: ["not_downloaded"]
+  dua: "ADNI Data Use Agreement"
+
+population:
+  n_participants: "~2000 across ADNI-1/GO/2/3 (unverified: no access)"
+  participant_ids: "unknown - no access"
+  families: "unknown"
+  sites: "~60"
+  site_ids: []
+  devices: unknown
+  device_ids: []
+  sessions_per_participant: "longitudinal, up to ~10 visits"
+  runs_per_session: unknown
+  trials_per_run: unknown
+  demographics: >-
+    older adults (55-90) with normal cognition, mild cognitive impairment or Alzheimer's disease; enriched for disease by design.
+  selection_mechanism: >-
+    clinically recruited diagnostic groups; a disease cohort, not a general adult population.
+  grouping_keys: ["participant", "site", "session"]
+  min_subgroup_n: null
+
+signal:
+  modalities: ["mri", "pet", "fmri", "dwi"]
+  n_channels: unknown
+  channel_types: unknown
+  units: unknown
+  reference: unknown
+  dynamic_range: unknown
+  saturation: unknown
+  quantization: unknown
+  si_units: unknown
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: null
+
+spatial:
+  kind: voxel
+  frame: unknown
+  units: m
+  psf: unknown
+  extent: null
+  n_elements: null
+
+temporal:
+  clock: unknown
+  dt: unknown
+  sfreq_hz: unknown
+  integration_window: unknown
+  group_delay: unknown
+  jitter_sd: unknown
+  event_clock: unknown
+  offset_drift: unknown
+
+calibration:
+  id: adni.calibration
+  frames: []
+  fiducials: unknown
+  transforms: []
+  calibration_points: unknown
+  residuals: unknown
+  device_pose: unknown
+  raw_metadata: unknown
+
+observation: null
+intervention: null
+
+missingness:
+  planned: "the entire dataset is absent"
+  unplanned: "not applicable"
+  artifact_rejection: unknown
+  dropout: unknown
+  attrition: unknown
+  policy: >-
+    A source with governance.status 'unavailable' contributes no loss factor
+    and no gradient. It is registered so that the absence is visible in
+    reports/data_inventory.md rather than being silently omitted.
+  mechanism: unknown
+  handling: drop_episode
+
+ledger:
+  variance:
+    measurement: unknown
+    session: unknown
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: unknown
+  bias_status: unknown
+  model_discrepancy: null
+  validity_domain:
+    note: "not applicable: the source is not in the mixture"
+
+gradient_permission:
+  allow: []
+  frozen: []
+  forbid: ["*"]
+  evaluation_only: false
+  note: >-
+    Empty by construction. If access is later obtained, this card must be
+    rewritten from the real files (hashes, counts, units) before any allow
+    entry is added.
+
+role: prior
+
+split_policy:
+  grouping_keys: ["participant", "site", "session"]
+  temporal_holdout: "not applicable"
+  temporal_holdout_spec: null
+  stimulus_holdout: "not applicable"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    Grouping keys are declared in advance so that, if access is ever granted,
+    the leakage barrier is fixed before any result is seen.

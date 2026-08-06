@@ -1,0 +1,14 @@
+# The required ablations (body.tex 11.4, Appendix D). Each is a full config
+# override applied on top of the released configuration. A gate that fails is a
+# result, not a bug: none of these may be deleted because it is inconvenient.
+base: scwbd_001_beta.yaml
+notes: >
+  Apply one ablation at a time with scwbd.foundation.evaluate --ablation <name>.
+  scalar_state       : one scalar per region (the named failure mode of ARCH 5)
+  dense_coupling     : no connectome mask, matched total weight (G2 control)
+  randomized_graph   : degree-shuffled connectome (G2 control)
+  distance_matched   : edge-length-matched rewire (G2 control)
+  local_only         : shortest edges only (G2 control)
+  no_residual        : R_theta removed
+  no_typed_edges     : all edges forced to one evidence class
+  mechanistic_core   : F_local replaced by a mechanistic backend + residual

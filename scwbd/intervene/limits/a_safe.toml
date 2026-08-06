@@ -1,0 +1,162 @@
+# A_safe -- independently specified feasible set for simulated intervention study
+#
+# SIMULATION ONLY. This file is NOT a clinical dosing table and NOT permission
+# to stimulate anybody. It is the declarative feasible set that blocks a
+# simulated optimizer, per thesis Sec. 7.4:
+#
+#   "Independently validated device, exposure, and protocol limits define the
+#    feasible set A_safe OUTSIDE the learned objective."
+#
+# Rules for this file:
+#   1. Every limit carries a `citation` and a `basis`. A limit without a
+#      citable external basis is not admitted.
+#   2. Nothing in this file is ever learned, fitted, tuned, or gradient-updated.
+#      `scwbd.intervene.safety.SafetyLimits` refuses mutation and refuses to
+#      expose parameters to an optimizer.
+#   3. Limits are used only to REFUSE. Satisfying every limit here does not
+#      make an intervention safe, approved, or applicable to a person; it only
+#      means the simulated optimizer was not blocked on this axis.
+#   4. Prospective human use additionally requires ethics/IRB review, consent,
+#      device regulatory status, and clinician oversight, none of which exist
+#      for SC-WBD-001-beta (thesis_contract.tex Sec. 0.6 item 6).
+
+schema_version = "scwbd-a_safe/1.0.0"
+scope = "simulation_only"
+human_use_authorized = false
+authority = "none -- research simulation study; no IRB, no consent, no device"
+
+# --------------------------------------------------------------------------
+# Generic protocol axes (apply to every modality)
+# --------------------------------------------------------------------------
+[protocol.session_duration_s]
+max = 3600.0
+units = "s"
+basis = "study protocol ceiling for a single simulated session"
+citation = "thesis_contract.tex Sec. 0.5 (bounded preregistered pose set)"
+
+[protocol.reversibility]
+required = true
+basis = "controller must be able to choose a reversible probe (thesis Sec. 7.4)"
+citation = "body.tex Sec. 7.4"
+
+# --------------------------------------------------------------------------
+# TMS -- electromagnetic exposure axes
+# --------------------------------------------------------------------------
+[tms.peak_efield_v_per_m]
+max = 200.0
+units = "V/m"
+basis = """Conservative simulated-field ceiling. Modelled peak cortical E for
+single-pulse TMS at typical output is of order 100 V/m; this bound exists to
+block a simulated optimizer from running the field solver into an unmodelled
+regime, not to define a safe exposure for a person."""
+citation = "Deng, Lisanby & Peterchev 2013, Brain Stimul 6:1-13 (coil field models)"
+
+[tms.pulses_per_session]
+max = 6000
+units = "count"
+basis = """Simulated protocol ceiling chosen to sit inside published rTMS
+consensus-safety envelopes rather than to define them."""
+citation = "Rossi et al. 2021, Clin Neurophysiol 132:269-306 (safety consensus)"
+
+[tms.frequency_hz]
+max = 50.0
+units = "Hz"
+basis = "burst-frequency ceiling of the simulated waveform library"
+citation = "Rossi et al. 2021, Clin Neurophysiol 132:269-306"
+
+[tms.intertrain_interval_s]
+min = 1.0
+units = "s"
+basis = "minimum simulated inter-train interval"
+citation = "Rossi et al. 2021, Clin Neurophysiol 132:269-306"
+
+[tms.coil_scalp_distance_mm]
+min = 0.0
+max = 40.0
+units = "mm"
+basis = """Validity domain of the field model, not a safety claim: beyond this
+scalp distance the modelled cortical field is dominated by extrapolation
+error (Caulfield et al. show strong distance sensitivity)."""
+citation = "Caulfield et al. 2022, Brain Stimul 15:1192-1205"
+
+# --------------------------------------------------------------------------
+# tFUS -- acoustic exposure axes
+# --------------------------------------------------------------------------
+[tfus.mechanical_index]
+max = 1.9
+units = "dimensionless"
+basis = """FDA diagnostic-ultrasound track-3 output limit, used here as an
+independent external ceiling on the SIMULATED in-situ field."""
+citation = "FDA 2023, Marketing Clearance of Diagnostic Ultrasound Systems and Transducers (guidance)"
+
+[tfus.isppa_w_per_cm2]
+max = 190.0
+units = "W/cm^2"
+basis = "FDA diagnostic derated I_SPPA ceiling applied to the simulated in-situ field"
+citation = "FDA 2023, Marketing Clearance of Diagnostic Ultrasound Systems and Transducers (guidance)"
+
+[tfus.ispta_mw_per_cm2]
+max = 720.0
+units = "mW/cm^2"
+basis = "FDA diagnostic derated I_SPTA ceiling applied to the simulated in-situ field"
+citation = "FDA 2023, Marketing Clearance of Diagnostic Ultrasound Systems and Transducers (guidance)"
+
+[tfus.cem43_minutes]
+max = 0.25
+units = "min"
+basis = """Thermal-dose ceiling well below any reported thermal-damage
+threshold in brain; CEM43 accumulates across the whole simulated session and
+is never reset between bursts."""
+citation = "Sapareto & Dewey 1984, Int J Radiat Oncol 10:787-800; van Rhoon et al. 2013, Eur Radiol 23:2215-2227"
+
+[tfus.temperature_rise_c]
+max = 1.0
+units = "degC"
+basis = "simulated in-situ temperature-rise ceiling for low-intensity tFUS"
+citation = "Aubry et al. 2023, J Acoust Soc Am 154:1268-1298 (ITRUSST standardised reporting)"
+
+[tfus.duty_cycle]
+max = 0.5
+units = "dimensionless"
+basis = "simulated pulsing ceiling; higher duty cycles move the regime toward heating"
+citation = "Aubry et al. 2023, J Acoust Soc Am 154:1268-1298"
+
+# --------------------------------------------------------------------------
+# Sensory / cognitive input axes
+# --------------------------------------------------------------------------
+[sensory.luminance_flash_hz]
+min = 0.0
+max = 3.0
+units = "Hz"
+basis = """Photosensitive-epilepsy avoidance band for simulated visual input
+generators; the 3-15 Hz band is the region of concern in the WCAG guidance."""
+citation = "WCAG 2.2 Success Criterion 2.3.1/2.3.2 (three flashes or below threshold)"
+
+[sensory.spl_db]
+max = 85.0
+units = "dB SPL"
+basis = "occupational continuous-exposure ceiling applied to simulated auditory input"
+citation = "NIOSH 1998, Criteria for a Recommended Standard: Occupational Noise Exposure"
+
+[sensory.affective_valence_abs]
+max = 0.8
+units = "dimensionless"
+basis = """Content ceiling for generated cognitive/linguistic input: the
+simulated optimizer may not search over maximally distressing content."""
+citation = "thesis_contract.tex Sec. 0.1 refusal R11; body.tex Sec. 7.3"
+
+# --------------------------------------------------------------------------
+# Decision rule (thesis Sec. 0.5 step 6) -- also outside the learned objective
+# --------------------------------------------------------------------------
+[decision.defer]
+disagreement_dominance_ratio = 1.0
+basis = """If model disagreement or transform uncertainty dominates the
+estimated benefit difference between candidate interventions, the output is
+another calibration measurement, a reversible probe, or no recommendation."""
+citation = "thesis_contract.tex Sec. 0.5 step 6; body.tex Sec. 7.4"
+
+[decision.epistemic]
+min_candidate_models = 2
+basis = """A single response model is never sufficient to compare candidate
+interventions while the mechanism is unresolved."""
+citation = "body.tex Sec. 7.2 (multiple tissue operators under model comparison)"

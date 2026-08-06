@@ -1,0 +1,198 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# UNAVAILABLE-BY-BUDGET, not by licence.  THINGS-EEG2 is open and reachable;
+# the raw per-participant archives are simply too large to fetch inside this
+# build's time budget at the throughput actually measured.  Everything needed
+# to fetch it later is pinned below.  Nothing is claimed about its contents
+# beyond what the OSF/figshare listing states, because no byte of it was read.
+# =====================================================================
+identity:
+  id: things-eeg2
+  name: "THINGS-EEG2: a large and rich EEG dataset for modeling human visual object recognition"
+  version: "unknown"
+  release_date: "2021-06-24"       # OSF project creation date, read from the OSF API
+  doi: "10.1016/j.neuroimage.2022.119754"
+  citation: >-
+    Gifford AT, Dwivedi K, Roig G, Cichy RM (2022). A large and rich EEG
+    dataset for modeling human visual object recognition. NeuroImage
+    264:119754. Data: OSF project 3jk45.
+  source_url: "https://osf.io/3jk45/"
+  download_url: "https://files.osf.io/v1/resources/crxs4/providers/figshare/<article_id>?action=download"
+  download_method: >-
+    not completed. The OSF node crxs4 ("Raw EEG data") stores one zip per
+    participant on a figshare add-on. Article ids read from the OSF API on
+    2026-08-05: sub-01=33244238, sub-02=33247340, sub-03=33247355,
+    sub-04=33247361, sub-05=33247376, sub-06=34404491, sub-07=33247622,
+    sub-08=33247652, sub-09=38916017, sub-10=33247694. sub-01.zip is
+    11,135,024,187 bytes (verified by HTTP HEAD).
+  retrieved_utc: null
+  parent_dataset: null
+  derived_from: null
+  derivatives_included: []
+  software: {}
+  container_hash: unknown
+  local_path: null
+  file_manifest: null
+
+governance:
+  status: unavailable
+  unavailable_reason: >-
+    Reachable and openly shared - this is a time/bandwidth decision, not a
+    licence barrier. Measured throughput to the OSF figshare redirect was
+    ~0.4 MB/s, so one 11.1 GB participant archive needs roughly 7.5 hours and
+    the ten-participant raw release is ~111 GB. A partial download (957 MB of
+    sub-01) was fetched, found to be far off pace, and deleted rather than
+    left on disk as a half-truth. The dataset stays in the register with its
+    pinned figshare article ids so it can be fetched by a later run without
+    re-discovery.
+  license: >-
+    unknown - the OSF project 3jk45 declares no licence through the OSF API
+    (the /license endpoint returns 404 and node_license carries an empty
+    copyright holder). The associated paper is open access, but the data
+    licence itself is not machine-readable, so the licence field cannot be
+    populated and the source may not enter the mixture on an assumption.
+  license_url: "https://osf.io/3jk45/"
+  license_text_excerpt: >-
+    unknown - no licence text is published with the OSF project.
+  dua_required: false
+  credentials_required: false
+  registration_required: false
+  purpose_limits: >-
+    unknown, pending the licence question above.
+  consent_scope: >-
+    unknown - per-participant consent documents are not distributed; the
+    paper states the study was approved by the ethics committee of Freie
+    Universitaet Berlin.
+  redistribution: "unknown - see license"
+  withdrawal: "unknown"
+  privacy: >-
+    unknown; the release is described as de-identified EEG from 10 healthy
+    adult volunteers.
+  retention: "not applicable: no bytes held"
+  redistribution_class: unknown
+  withdrawal_status: unknown
+  privacy_class: deidentified
+  contains_biometric: true
+  may_release_weights: false
+  may_release_examples: false
+  purpose_limits_list: []
+  safeguards: ["not_downloaded"]
+  dua: null
+
+population:
+  n_participants: 10                # from the OSF listing: 10 per-participant archives
+  participant_ids: ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06", "sub-07", "sub-08", "sub-09", "sub-10"]
+  families: "unknown"
+  sites: 1
+  site_ids: ["osf:things-eeg2:fu_berlin"]
+  devices: unknown
+  device_ids: []
+  sessions_per_participant: "4 (per the dataset description; not verified against files)"
+  runs_per_session: unknown
+  trials_per_run: unknown
+  demographics: >-
+    unknown - not distributed in machine-readable form and not read here.
+  selection_mechanism: >-
+    unknown - healthy adult volunteers recruited for a rapid serial visual
+    presentation study; inclusion criteria not read.
+  grouping_keys: ["participant", "session", "run"]
+  min_subgroup_n: null
+
+signal:
+  modalities: ["eeg"]
+  n_channels: unknown              # the paper reports a 64-channel EASYCAP; not verified from a file here
+  channel_types: unknown
+  units: unknown
+  reference: unknown
+  dynamic_range: unknown
+  saturation: unknown
+  quantization: unknown
+  si_units: unknown
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: null
+
+spatial:
+  kind: sensor
+  frame: unknown
+  units: m
+  psf: unknown
+  extent: null
+  n_elements: null
+
+temporal:
+  clock: things-eeg2.eeg_amp
+  dt: unknown
+  sfreq_hz: unknown
+  integration_window: unknown
+  group_delay: unknown
+  jitter_sd: unknown
+  event_clock: unknown
+  offset_drift: unknown
+
+calibration:
+  id: things-eeg2.calibration
+  frames: []
+  fiducials: unknown
+  transforms: []
+  calibration_points: unknown
+  residuals: unknown
+  device_pose: unknown
+  raw_metadata: unknown
+
+observation: null
+intervention: null
+
+missingness:
+  planned: "the entire dataset is absent"
+  unplanned: "not applicable"
+  artifact_rejection: unknown
+  dropout: unknown
+  attrition: unknown
+  policy: >-
+    Contributes no loss factor and no gradient while status is 'unavailable'.
+  mechanism: unknown
+  handling: drop_episode
+
+ledger:
+  variance:
+    measurement: unknown
+    session: unknown
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: unknown
+  bias_status: unknown
+  model_discrepancy: null
+  validity_domain:
+    note: "not applicable: the source is not in the mixture"
+
+gradient_permission:
+  allow: []
+  frozen: []
+  forbid: ["*"]
+  evaluation_only: false
+  note: >-
+    Empty by construction. Before any allow entry is added this card must be
+    rewritten from real files, and the licence question in governance.license
+    must be resolved - an unresolved licence is a hard stop, not a warning.
+
+role: likelihood
+
+split_policy:
+  grouping_keys: ["participant", "session"]
+  temporal_holdout: "not applicable while unavailable"
+  temporal_holdout_spec: null
+  stimulus_holdout: >-
+    would be mandatory for this source: it is a rapid serial visual
+    presentation dataset over thousands of object images, so image and
+    semantic-category holdout is the difference between an image-recognition
+    result and a claim about brain dynamics (Appendix D, "Stimulus
+    memorization").
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    Grouping and stimulus-holdout policy are fixed in advance so that, if the
+    data are fetched later, the barrier predates any result.

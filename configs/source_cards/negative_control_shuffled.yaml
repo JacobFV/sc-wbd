@@ -1,0 +1,16 @@
+# Phase-shuffled EEG surrogate. A negative control should NOT predict the target
+# under the claimed mechanism. It contributes an audit, never a gradient.
+id: negative_control_shuffled
+role: negative_control
+losses: []
+gradient_permission: []
+frozen: ["*"]
+n_eff: 109.0
+n_rows: 1526.0
+hierarchy_depth: 3
+measurement_variance: 0.35
+bias_halfwidth: 0.2
+bias_status: prior_specified_sensitivity
+validity_overlap: 0.0
+notes: Amplitude-matched, phase-randomised surrogates of the real EEG windows.
+compiler_permission: []

@@ -1,0 +1,44 @@
+[fast     1] wilson_cowan       v= 6.63 keep=1024/1024   20.5s |     12.3k traj-s |    513 traj-s/s |    1.4 GB
+[fast     2] stuart_landau      v= 3.32 keep=1024/1024   42.7s |     24.6k traj-s |    358 traj-s/s |    2.8 GB
+[fast     3] wong_wang          v= 2.18 keep=1024/1024   28.3s |     36.9k traj-s |    374 traj-s/s |    4.2 GB
+[fast     4] wilson_cowan       v= 4.66 keep=1024/1024   22.1s |     49.2k traj-s |    401 traj-s/s |    5.6 GB
+[fast     5] wilson_cowan       v= 3.44 keep=1024/1024   24.5s |     61.4k traj-s |    413 traj-s/s |    7.0 GB
+[fast     6] stuart_landau      v= 2.50 keep=1024/1024   42.3s |     73.7k traj-s |    383 traj-s/s |    8.4 GB
+[fast     7] wong_wang          v= 3.23 keep=1024/1024   33.3s |     86.0k traj-s |    378 traj-s/s |    9.8 GB
+[fast     8] wong_wang          v= 2.92 keep=1024/1024   30.3s |     98.3k traj-s |    379 traj-s/s |   11.2 GB
+[fast     9] wilson_cowan       v= 5.66 keep=1024/1024   21.3s |    110.6k traj-s |    392 traj-s/s |   12.6 GB
+[fast    10] wong_wang          v= 7.78 keep=1024/1024   24.0s |    122.9k traj-s |    399 traj-s/s |   14.0 GB
+[fast    11] wilson_cowan       v= 5.08 keep=1024/1024   37.1s |    135.2k traj-s |    390 traj-s/s |   15.4 GB
+[fast    12] linear_gaussian    v= 1.78 keep=1024/1024   17.3s |    147.5k traj-s |    404 traj-s/s |   16.7 GB
+[fast    13] wilson_cowan       v= 2.32 keep=1024/1024   24.8s |    159.7k traj-s |    408 traj-s/s |   18.1 GB
+[fast    14] stuart_landau      v= 5.32 keep=1024/1024   37.4s |    172.0k traj-s |    400 traj-s/s |   19.5 GB
+[fast    15] wong_wang          v= 2.62 keep=1024/1024   30.5s |    184.3k traj-s |    399 traj-s/s |   20.9 GB
+[fast    16] stuart_landau      v= 1.53 keep=1024/1024   44.5s |    196.6k traj-s |    387 traj-s/s |   22.3 GB
+[fast    17] wong_wang          v= 3.24 keep=1024/1024   28.2s |    208.9k traj-s |    388 traj-s/s |   23.7 GB
+[fast    18] wong_wang          v= 3.66 keep=1024/1024   27.7s |    221.2k traj-s |    390 traj-s/s |   25.1 GB
+[fast    19] wilson_cowan       v= 4.09 keep=1024/1024   56.1s |    233.5k traj-s |    373 traj-s/s |   26.5 GB
+[fast    20] wilson_cowan       v= 1.68 keep=1024/1024   85.3s |    245.8k traj-s |    345 traj-s/s |   27.9 GB
+[fast    21] wilson_cowan       v= 4.11 keep=1024/1024   60.7s |    258.0k traj-s |    333 traj-s/s |   29.3 GB
+[fast    22] wilson_cowan       v= 8.36 keep=1024/1024   98.1s |    270.3k traj-s |    309 traj-s/s |   30.7 GB
+[fast    23] wong_wang          v= 6.03 keep=1024/1024  142.2s |    282.6k traj-s |    277 traj-s/s |   32.1 GB
+[fast    24] wilson_cowan       v= 3.39 keep=1024/1024  137.7s |    294.9k traj-s |    248 traj-s/s |   33.5 GB
+[fast    25] wilson_cowan       v= 1.74 keep=1024/1024   96.5s |    307.2k traj-s |    236 traj-s/s |   34.9 GB
+[fast    26] wilson_cowan       v= 8.17 keep=1024/1024   91.9s |    319.5k traj-s |    229 traj-s/s |   36.3 GB
+[fast    27] wong_wang          v= 2.94 keep=1024/1024  169.0s |    331.8k traj-s |    212 traj-s/s |   37.7 GB
+[fast    28] stuart_landau      v= 2.38 keep=1024/1024   82.0s |    344.1k traj-s |    208 traj-s/s |   39.1 GB
+[fast    29] linear_gaussian    v= 3.24 keep=1024/1024   32.0s |    356.4k traj-s |    211 traj-s/s |   40.5 GB
+[fast    30] wilson_cowan       v= 7.79 keep=1024/1024  134.3s |    368.6k traj-s |    202 traj-s/s |   41.9 GB
+[fast    31] jansen_rit         v= 3.05 keep=1024/1024  230.4s |    380.9k traj-s |    185 traj-s/s |   43.3 GB
+[fast    32] jansen_rit         v= 2.35 keep=1024/1024  198.2s |    393.2k traj-s |    174 traj-s/s |   44.7 GB
+[fast    33] wong_wang          v= 2.54 keep=1024/1024   78.8s |    405.5k traj-s |    173 traj-s/s |   46.1 GB
+[fast    34] wong_wang          v= 6.59 keep=1024/1024   22.8s |    417.8k traj-s |    177 traj-s/s |   47.5 GB
+[fast    35] wong_wang          v= 3.25 keep=1024/1024   64.0s |    430.1k traj-s |    177 traj-s/s |   48.8 GB
+[fast    36] wilson_cowan       v= 6.07 keep=1024/1024  100.2s |    442.4k traj-s |    175 traj-s/s |   50.2 GB
+[fast    37] jansen_rit         v= 9.03 keep=1024/1024  227.8s |    454.7k traj-s |    165 traj-s/s |   51.6 GB
+{
+  "tier": "fast",
+  "trajectories": 37888,
+  "trajectory_seconds": 454656.0,
+  "wall_seconds": 2762.902255296707,
+  "gigabytes": 51.641264376
+}

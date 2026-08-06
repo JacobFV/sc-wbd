@@ -1,0 +1,335 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# I_k  identity and lineage
+# =====================================================================
+identity:
+  id: mne-sample
+  name: "MNE-Python sample dataset (Neuromag Vectorview, auditory/visual)"
+  version: "processed-v6"
+  release_date: "unknown"          # the archive carries version.txt = 0.12; no release date is published
+  doi: "unknown"                   # the sample data has no DOI of its own
+  citation: >-
+    Gramfort A et al. (2013). MEG and EEG data analysis with MNE-Python.
+    Frontiers in Neuroscience 7:267. The sample dataset is distributed with
+    MNE-Python as MNE-sample-data-processed.tar.gz.
+  source_url: "https://mne.tools/stable/documentation/datasets.html#sample"
+  download_url: "https://osf.io/download/86qa2?version=6"
+  download_method: >-
+    mne.datasets.sample.data_path(), which verifies the archive against the
+    md5 registered in mne.datasets.config: md5:e8f30c4516abdc12a0c08e6bae57409c.
+    The OSF file version (6) is the pin, recorded here as version
+    'processed-v6'; the unpacked tree additionally carries version.txt = 0.12.
+  retrieved_utc: "2026-08-06T06:22:32+00:00"
+  parent_dataset: null
+  derived_from: null
+  subset_note: "complete archive as distributed (raw, evoked, covariance, BEM, source spaces, forward solutions, FreeSurfer subjects sample and fsaverage)"
+  derivatives_included:
+    - "MEG/sample/sample_audvis-meg-eeg-oct-6-fwd.fif (precomputed forward solution, 366 x 22494)"
+    - "MEG/sample/sample_audvis_raw-trans.fif (head <-> MRI transform)"
+    - "subjects/sample/bem/*-bem-sol.fif (BEM solutions)"
+    - "MEG/sample/ernoise-cov.fif (empty-room noise covariance)"
+  derivative_note: >-
+    This dataset is in the register PRECISELY because it ships derivatives:
+    the forward solution and BEM are an independent implementation against
+    which agent F's lead field can be checked. They are therefore
+    calibration artefacts, not biological supervision - see role.
+  software:
+    acquisition: "Elekta Neuromag Vectorview 306 + 60-channel EEG; FreeSurfer reconstruction shipped"
+    reader: "mne.io.read_raw_fif via scwbd.sources.loaders.mne_datasets"
+    fetch: "scwbd.sources.download.MneDatasetFetcher (pooch md5 verification) + our own sha256 manifest"
+  container_hash: unknown
+  archive_md5: "e8f30c4516abdc12a0c08e6bae57409c"
+  local_path: "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/data/mne-sample/processed-v6"
+  file_manifest:
+    algorithm: sha256
+    n_files: 581
+    total_bytes: 2942282921
+    manifest_sha256: cdab39b714b97599dfcb4186f64698fb6222f4d673e8f1be0d1493a0343f391f
+    manifest_path: scwbd/sources/manifests/mne-sample__processed-v6.json
+    exemplars:
+      MNE-sample-data/MEG/sample/all-trans.fif: bd25c17b4f0b6216d8eab247f0b1eeda2543152212e77b15e75581f4539b9ee6
+      MNE-sample-data/MEG/sample/audvis.ave: d6652f198086331230687e2dfe0684d34b4f308cdf93d79794f3c26fae2aa216
+      MNE-sample-data/MEG/sample/audvis.cov: 6ecfc8d611754a6f5cb5bb04d3bce41545b4fd061e0a890d1cf858353e4b83e3
+      MNE-sample-data/MEG/sample/sample_audvis-meg-vol-7-fwd.fif: e0aee09883301fe4941151f72125596f8f1e13e8ad94335245e47c051f8bf99d
+      MNE-sample-data/MEG/sample/sample_audvis-meg-vol-7-meg-inv.fif: adc78d92d91d121e3c4a7068b64990742cc1b605019589b35384b2c3979a62ef
+      MNE-sample-data/subjects/sample/bem/sample-5120-5120-5120-bem-sol.fif: 1e48e818c11722ca29644d5c088e13384701604cd22b9869f7f3c4b4dd6743d2
+
+# =====================================================================
+# G_k  governance and consent
+# =====================================================================
+governance:
+  status: live
+  license: >-
+    unknown - the archive ships no LICENSE file and the MNE-Python
+    documentation page for the sample dataset states no licence. It is
+    distributed publicly as example data by the MNE-Python project. Because
+    the licence is unresolved, this card sets may_release_examples false and
+    redistribution 'unknown'; the data are used locally for calibration only.
+  license_url: "https://mne.tools/stable/documentation/datasets.html#sample"
+  license_text_excerpt: >-
+    unknown - no licence text accompanies the archive (verified: no LICENSE,
+    COPYING or licence field anywhere in the unpacked tree).
+  dua_required: false
+  credentials_required: false
+  registration_required: false
+  purpose_limits: >-
+    unknown in law; treated here as: local research use, no redistribution of
+    the raw data, citation of Gramfort et al. 2013.
+  consent_scope: >-
+    unknown - a single volunteer recorded at the Martinos Center; no consent
+    document is distributed.
+  redistribution: "unknown - see license; treated as not permitted"
+  withdrawal: "unknown"
+  privacy: >-
+    de-identified single subject with a full FreeSurfer reconstruction,
+    i.e. a complete head model. A head surface is identifying, so the tree
+    stays on local storage and no surface renders are published.
+  retention: "retained on the local data root while the SC-WBD-001-beta claim is live"
+  unavailable_reason: null
+  redistribution_class: unknown
+  withdrawal_status: unknown
+  privacy_class: deidentified
+  contains_biometric: true
+  may_release_weights: true
+  may_release_examples: false
+  purpose_limits_list: ["local_use_only", "cite_gramfort_2013"]
+  safeguards: ["local_storage_only", "no_head_surface_renders_published"]
+  dua: null
+
+# =====================================================================
+# P_k  population and hierarchy
+# =====================================================================
+population:
+  n_participants: 1
+  participant_ids: ["sample"]
+  families: "not applicable (n = 1)"
+  sites: 1
+  site_ids: ["mne-sample:martinos_center"]
+  devices: 1
+  device_ids: ["Elekta_Neuromag_Vectorview_306 + 60ch EEG"]
+  sessions_per_participant: 1
+  runs_per_session: "1 raw run (277.7 s) plus an empty-room noise run"
+  trials_per_run: "~320 events: auditory left/right, visual left/right, smiley, button press"
+  demographics: >-
+    unknown - age and sex of the single volunteer are not distributed.
+  selection_mechanism: >-
+    a single demonstration recording chosen by the MNE-Python project. There
+    is no sampling mechanism at all, which is why the role is calibration and
+    not prior.
+  grouping_keys: ["participant", "run"]
+  min_subgroup_n: 1
+  n_is_one_note: >-
+    With n = 1 nothing about population variability is estimable from this
+    source. Any use of it to fit shared population parameters would be a
+    category error; the gradient permission below reflects that.
+
+# =====================================================================
+# S_k(signal)  native signal and units
+# =====================================================================
+signal:
+  modalities: ["meg", "eeg", "eog", "mri", "bem", "forward"]
+  n_channels: 376
+  channel_types: {grad: 204, mag: 102, eeg: 60, eog: 1, stim: 9}
+  channel_names: "Neuromag MEGnnnn + EEGnnn labels (from the FIFF info)"
+  units: "T (magnetometers), T/m (planar gradiometers), V (EEG and EOG), dimensionless (stim)"
+  file_physical_dimension: "FIFF native SI"
+  reference: >-
+    EEG common reference as recorded at the Martinos Center; the specific
+    reference electrode is not documented in the archive.
+  dynamic_range: "unknown"
+  saturation: "unknown"
+  quantization: "unknown - per-channel FIFF cal/range factors, not summarised"
+  prefilter_header: "acquisition band-pass 0.1-172.18 Hz (from the FIFF info)"
+  name: mne-sample.meg_eeg
+  si_units: T
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: null
+  irreversible_aggregation: false
+  secondary_units: ["T/m", "V"]
+
+# =====================================================================
+# S_k  spatial support
+# =====================================================================
+spatial:
+  kind: sensor
+  frame: neuromag_device
+  units: m
+  psf: >-
+    a real lead field ships with this dataset: sample_audvis-meg-eeg-oct-6-fwd.fif,
+    366 sensors x 22494 source-orientation columns over 7498 dipoles on an
+    oct-6 source space, in head coordinates, computed from the shipped BEM.
+    This is the one source in the register whose point-spread is an actual
+    matrix rather than a description.
+  extent: null
+  n_elements: 376
+  positions_are_digitised: true
+  positions_source: "FIFF sensor geometry + 146 digitisation points (fiducials, HPI coils and head shape)"
+
+# =====================================================================
+# T_k  temporal support and clocks
+# =====================================================================
+temporal:
+  clock: mne-sample.acq
+  dt: 1.6649600982666016e-3
+  sfreq_hz: 600.614990234375
+  integration_window: 0.0
+  group_delay: unknown
+  jitter_sd: unknown
+  event_clock: mne-sample.acq
+  event_clock_relation: >-
+    events are decoded from the STI channels in the same file, so the event
+    clock is the sample clock by construction. The projector delay for the
+    visual stimuli is not documented and is the reason group_delay stays
+    unknown.
+  offset_drift: unknown
+  record_duration_s: 277.7153462901591
+
+# =====================================================================
+# C_k  coordinates and calibration
+# =====================================================================
+calibration:
+  id: mne-sample.calibration
+  frames: ["neuromag_device", "neuromag_head", "sample_freesurfer_surface_RAS", "sample_mri_voxel"]
+  fiducials: "nasion and left/right preauricular points, in the FIFF dig block"
+  transforms:
+    dev_head_t: "stored in the raw FIFF (device -> head)"
+    head_mri_t: "MEG/sample/sample_audvis_raw-trans.fif (head -> MRI)"
+    note: >-
+      This is the only source in the register where the complete chain
+      device -> head -> MRI -> FreeSurfer surface is present on disk. It is
+      therefore the frame-graph test case.
+  calibration_points: "146 digitisation points; 4 HPI coils"
+  residuals: unknown
+  device_pose: "single dev_head_t per run; no continuous head position"
+  raw_metadata: "FIFF info blocks; FreeSurfer scripts/build-stamp.txt for the reconstruction provenance"
+  electrode_positions: "60 EEG electrodes digitised, head frame, metres"
+  head_model: "three-layer BEM (5120-5120-5120) and single-layer (5120) solutions, plus watershed surfaces"
+  amplifier_gain_calibration: "FIFF per-channel cal and range factors"
+
+# =====================================================================
+# O_k  observation model
+# =====================================================================
+observation:
+  name: mne-sample.meg_eeg
+  forward_physics: >-
+    quasi-static Maxwell (MEG) and Poisson (EEG) forward problem over a
+    three-layer BEM of this subject's head, solved by MNE-C and shipped as a
+    forward operator.
+  observed_variables: ["magnetic field (102 mag)", "field gradient (204 grad)", "scalp potential (60 EEG)", "EOG", "T1 MRI", "FreeSurfer surfaces"]
+  preprocessing: "the unfiltered sample_audvis_raw.fif is used; the archive also ships a 0-40 Hz filtered copy which this loader does NOT read"
+  preprocessing_steps: []
+  likelihood_kind: none
+  calibration_status: calibrated_empirically
+  leakage_checked: true
+  target_ports: ["meg.sensor_306", "eeg.sensor_60"]
+  labels_leak_risk: "not applicable: this source supplies no biological supervision"
+
+# =====================================================================
+# U_k  intervention model
+# =====================================================================
+intervention: null
+
+# =====================================================================
+# M_k  missingness and censoring
+# =====================================================================
+missingness:
+  planned: "none"
+  unplanned: "two EEG channels are marked bad in the archive's bad-channel files (EEG 053 and MEG 2443 in the standard MNE tutorials)"
+  artifact_rejection: "none applied here; the archive ships ECG/EOG event files that the loader does not apply"
+  dropout: "not applicable"
+  attrition: "not applicable"
+  policy: >-
+    Bad channels are carried as flags, never interpolated at load time. An
+    interpolated channel is a model output, not a measurement.
+  mechanism: planned
+  handling: mask
+  post_outcome_selection: false
+  censoring_correlated_with_state: false
+
+# =====================================================================
+# B_k, V_k, Delta_k  uncertainty ledger
+# =====================================================================
+ledger:
+  variance:
+    measurement: 9.0e-27           # T^2; ~3 fT/sqrt(Hz) magnetometer floor squared. An empirical
+                                   # empty-room covariance also ships (ernoise-cov.fif).
+    session: unknown               # n = 1, one session: not estimable
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: [-1.0e-13, 1.0e-13]
+  bias_status: externally_bounded
+  bias_bound_justification: >-
+    An empirical empty-room noise covariance ships with the dataset
+    (ernoise-cov.fif), which bounds the environmental contribution
+    externally rather than by assumption. The stated interval is the
+    magnetometer-scale envelope implied by that covariance; head-movement
+    bias within the run remains unbounded and is why this is 'externally
+    bounded' rather than 'design estimable'.
+  model_discrepancy: 0.0
+  model_discrepancy_note: >-
+    Zero is the correct entry for the *measured* signal (it is a real
+    recording, not a simulation). The shipped forward operator, however, is
+    an approximation whose discrepancy against a differently discretised BEM
+    is exactly what agent F is meant to measure; that number belongs to the
+    lead-field comparison, not to this card.
+  validity_domain:
+    population: "one adult volunteer - no population validity whatsoever"
+    state: "awake, performing an auditory/visual oddball task with button responses"
+    frequency_band_hz: [0.1, 172.18]
+    spatial_scale: "sensor and (via the shipped forward) oct-6 cortical source space"
+
+# =====================================================================
+# A_k  gradient permission
+# =====================================================================
+gradient_permission:
+  allow:
+    - target: observe.meg.lead_field_validation
+      scales: ["sensor", "source"]
+      requires: ["spatial.psf", "calibration.head_model", "calibration.transforms"]
+    - target: transforms.frame_graph.device_head_mri_chain
+      scales: ["sensor", "voxel"]
+      requires: ["calibration.transforms", "calibration.fiducials"]
+    - target: observe.meg.noise_covariance
+      scales: ["sensor"]
+      requires: ["signal.si_units"]
+    - target: transforms.clock_graph.stimulus_delay
+      scales: ["clock"]
+      requires: ["temporal.group_delay"]
+  frozen:
+    - dynamics.*
+    - anatomy.connectome_prior
+  forbid:
+    - infer.population_prior          # n = 1
+    - dynamics.*.population_prior
+    - intervene.*
+  evaluation_only: false
+  note: >-
+    This source calibrates the observation and transform machinery. It must
+    never supply biological supervision: with one subject, any dynamics
+    gradient from it is memorisation of one person's evoked response.
+
+# =====================================================================
+# R_k  role and split policy
+# =====================================================================
+role: calibration
+
+split_policy:
+  grouping_keys: ["participant"]
+  grouping_note: >-
+    n = 1, so there is no held-out person and no split that could produce a
+    generalisation claim. The correct use is calibration, and the correct
+    report of it is 'calibrated on one subject'.
+  temporal_holdout: "available across the single run only (early vs late trials); weak and not used for any claim"
+  temporal_holdout_spec: null
+  stimulus_holdout: "available across the five stimulus conditions; used only to check that the forward comparison is condition independent"
+  site_holdout: "not available"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    Calibration sources are excluded from all held-out-person metrics by
+    construction; including one would inflate every score with a subject the
+    model has effectively memorised.

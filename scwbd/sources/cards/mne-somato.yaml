@@ -1,0 +1,272 @@
+schema_version: scwbd-source-card/1.0.0
+
+identity:
+  id: mne-somato
+  name: "MNE-Python somato dataset (median nerve stimulation), BIDS"
+  version: "bids-v0.10"
+  release_date: "2019-08-01"        # CHANGES: 1.0.0 2019-08-01 initial release
+  doi: "unknown"
+  citation: >-
+    Parkkonen L (data author); BIDS conversion by Appelhoff S, Gramfort A and
+    Jas M. Distributed with MNE-Python as MNE-somato-data.tar.gz. See
+    https://mne.tools/stable/documentation/datasets.html#somatosensory
+  source_url: "https://mne.tools/stable/documentation/datasets.html#somatosensory"
+  download_url: "https://osf.io/download/tp4sg?version=8"
+  download_method: >-
+    mne.datasets.somato.data_path(), verified against the md5 registered in
+    mne.datasets.config: md5:9a191907b326b9402341ee7a0d1240d8. The OSF file
+    version is 8; the dataset's own CHANGES declares 1.0.0 (2019-08-01) and
+    BIDSVersion 1.2.0. Pinned here as 'bids-v0.10' (the MNE-BIDS conversion
+    generation), with the md5 as the byte-level pin.
+  retrieved_utc: "2026-08-06T06:22:33+00:00"
+  parent_dataset: "MNE-somato-data (pre-BIDS layout)"
+  derived_from: null
+  subset_note: "complete archive as distributed"
+  derivatives_included:
+    - "derivatives/freesurfer/subjects/01 (recon-all with default options)"
+    - "derivatives/sub-01/sub-01_task-somato-fwd.fif (forward solution)"
+    - "derivatives/freesurfer/subjects/01/bem/*-bem-sol.fif"
+  derivative_note: >-
+    The README documents the exact commands that produced the derivatives
+    (recon-all -i ... -all; mne make_scalp_surfaces; mne watershed_bem), which
+    is a rare case of reproducible preprocessing provenance. The trans file is
+    NOT shipped: the README states it must be recovered from the anatomical
+    landmarks in sub-01/anat/T1w.json via MNE-BIDS. Until that recovery is
+    performed and registered, the head<->MRI edge is missing.
+  software:
+    acquisition: "Elekta Neuromag Vectorview 306 (MEG only)"
+    conversion: "MNE-BIDS; the conversion script ships in /code"
+    reader: "mne.io.read_raw_fif via scwbd.sources.loaders.mne_datasets"
+    fetch: "scwbd.sources.download.MneDatasetFetcher + our own sha256 manifest"
+  container_hash: unknown
+  archive_md5: "9a191907b326b9402341ee7a0d1240d8"
+  local_path: "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/data/mne-somato/bids-v0.10"
+  file_manifest:
+    algorithm: sha256
+    n_files: 594
+    total_bytes: 788261958
+    manifest_sha256: bd13ea4fe281c2e3f49078ded6f72496ca4736c712700c94c57d686743397509
+    manifest_path: scwbd/sources/manifests/mne-somato__bids-v0.10.json
+    exemplars:
+      MNE-somato-data/CHANGES: 6c47472608615df5a564a4a855e2096cb432c2491e6b23aae443ffdff2c61c8a
+      MNE-somato-data/README: c9c3ca3cadc7973b6cfc854783d8de0ac77f47ccacba4135daac581babef6883
+      MNE-somato-data/code/README: 8da867e7ae066d04768ab8878778fa35d087618449df509f6df124992adbcfd4
+      MNE-somato-data/derivatives/freesurfer/subjects/01/mri/transforms/talairach.m3z: 1fb3ca2001e7191df94efcaa06fce9b9cee948bc006b7e2fb3dba43d4751c3a2
+      MNE-somato-data/derivatives/sub-01/sub-01_task-somato-fwd.fif: 4d73c772f54cecbed992c8072731db7cda7407b5a5819bf333c691bee24b0474
+      MNE-somato-data/sub-01/meg/sub-01_task-somato_meg.fif: 71bb33cb530fe6bf289c492deac5bc184da7ee0dbbc964203a59175cda32ffc3
+
+governance:
+  status: live
+  license: "Open Data Commons Public Domain Dedication and License (PDDL)"
+  license_url: "https://opendatacommons.org/licenses/pddl/"
+  license_text_excerpt: >-
+    "You are free: To Share ... To Create ... To Adapt ... " - the PDDL
+    dedicates the database to the public domain, waiving all rights. Declared
+    in the dataset's own dataset_description.json ("License": "PDDL").
+  dua_required: false
+  credentials_required: false
+  registration_required: false
+  purpose_limits: "none imposed by the licence"
+  consent_scope: >-
+    unknown - a single volunteer; no consent document is distributed.
+  redistribution: "unrestricted (PDDL)"
+  withdrawal: "no withdrawal mechanism is published"
+  privacy: >-
+    de-identified single subject with a full FreeSurfer reconstruction. A head
+    surface is identifying, so the tree stays on local storage.
+  retention: "retained on the local data root while the SC-WBD-001-beta claim is live"
+  unavailable_reason: null
+  redistribution_class: full
+  withdrawal_status: none_pending
+  privacy_class: deidentified
+  contains_biometric: true
+  may_release_weights: true
+  may_release_examples: false
+  purpose_limits_list: []
+  safeguards: ["local_storage_only", "no_head_surface_renders_published"]
+  dua: null
+
+population:
+  n_participants: 1
+  participant_ids: ["sub-01"]
+  families: "not applicable (n = 1)"
+  sites: 1
+  site_ids: ["mne-somato:aalto_university"]
+  devices: 1
+  device_ids: ["Elekta_Neuromag_Vectorview_306"]
+  sessions_per_participant: 1
+  runs_per_session: 1
+  trials_per_run: "median nerve stimuli delivered throughout a 897 s recording"
+  demographics: >-
+    male; age is 'n/a' in participants.tsv. Sex is the only demographic
+    available, so no subgroup claim is possible.
+  selection_mechanism: >-
+    a single demonstration recording chosen by the MNE-Python project; no
+    sampling mechanism.
+  grouping_keys: ["participant", "run"]
+  min_subgroup_n: 1
+  n_is_one_note: >-
+    n = 1. This source can show that a somatosensory evoked response is
+    predicted at all; it cannot show that it generalises across people.
+
+signal:
+  modalities: ["meg", "eog", "mri", "bem", "forward"]
+  n_channels: 316
+  channel_types: {grad: 204, mag: 102, eog: 1, stim: 9}
+  channel_names: "Neuromag MEGnnnn labels (from the FIFF info)"
+  units: "T (magnetometers), T/m (planar gradiometers), V (EOG), dimensionless (stim)"
+  file_physical_dimension: "FIFF native SI"
+  reference: "not applicable: MEG only, no EEG channels in this recording"
+  dynamic_range: "unknown"
+  saturation: "unknown"
+  quantization: "unknown - per-channel FIFF cal/range factors"
+  prefilter_header: "acquisition band-pass 0.1-100.1 Hz; line frequency 50 Hz (sidecar)"
+  name: mne-somato.meg
+  si_units: T
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: null
+  irreversible_aggregation: false
+  secondary_units: ["T/m", "V"]
+
+spatial:
+  kind: sensor
+  frame: neuromag_device
+  units: m
+  psf: >-
+    a forward solution ships in derivatives/sub-01/sub-01_task-somato-fwd.fif,
+    computed from the shipped BEM and source space. As with mne-sample this
+    makes the source usable as an independent check on a computed lead field.
+  extent: null
+  n_elements: 316
+  positions_are_digitised: false
+  positions_source: >-
+    FIFF sensor geometry is present, but the sidecar declares
+    DigitizedLandmarks false and DigitizedHeadPoints false: the head shape was
+    NOT digitised for this recording. Only 47 dig points exist. Coregistration
+    therefore rests on the T1w.json landmarks rather than on a head-shape fit,
+    which is a materially weaker constraint and is why calibration.residuals
+    stays unknown.
+
+temporal:
+  clock: mne-somato.acq
+  dt: 3.3299201965332e-3
+  sfreq_hz: 300.3074951171875
+  integration_window: 0.0
+  group_delay: unknown
+  jitter_sd: unknown
+  event_clock: mne-somato.acq
+  event_clock_relation: "stimulus triggers are on the STI channels of the same file, so the event clock is the sample clock"
+  offset_drift: unknown
+  record_duration_s: 897.0771771609423
+
+calibration:
+  id: mne-somato.calibration
+  frames: ["neuromag_device", "neuromag_head", "somato_freesurfer_surface_RAS"]
+  fiducials: "anatomical landmarks in sub-01/anat/sub-01_T1w.json (NOT digitised on the head)"
+  transforms: >-
+    dev_head_t is in the raw FIFF. head -> MRI is NOT shipped; the README
+    states it must be recovered from the T1w.json landmarks with
+    mne_bids.get_head_mri_trans. Until that is done and registered, the chain
+    to the MRI frame is incomplete.
+  calibration_points: "47 digitisation points (HPI coils and fiducials only, no head shape)"
+  residuals: unknown
+  device_pose: "single dev_head_t per run; no continuous head position"
+  raw_metadata: "FIFF info, BIDS sidecars, and the conversion script in /code"
+  electrode_positions: "not applicable (no EEG)"
+  head_model: "FreeSurfer recon-all output plus watershed BEM in derivatives/freesurfer/subjects/01/bem"
+  amplifier_gain_calibration: "FIFF per-channel cal and range factors"
+
+observation:
+  name: mne-somato.meg
+  forward_physics: >-
+    quasi-static Maxwell forward problem over a watershed BEM of this
+    subject's head; a solved forward operator ships in derivatives.
+  observed_variables: ["magnetic field (102 mag)", "field gradient (204 grad)", "EOG", "T1 MRI", "FreeSurfer surfaces"]
+  preprocessing: "raw fif as converted; the loader applies no filter, epoching or resampling"
+  preprocessing_steps: []
+  likelihood_kind: generative
+  calibration_status: calibrated_empirically
+  leakage_checked: true
+  target_ports: ["meg.sensor_306", "somatosensory.s1_contralateral"]
+  labels_leak_risk: "none: the stimulus is an exogenous electrical pulse recorded on a trigger channel"
+
+intervention: null
+# Median nerve stimulation is peripheral electrical stimulation. It is a
+# sensory input at a body boundary port, not a manipulation of brain state, so
+# it is modelled as an exogenous input rather than an InterventionModel. The
+# distinction matters: it does not license a causal-intervention loss on any
+# cortical operator.
+
+missingness:
+  planned: "none"
+  unplanned: "none detected in the shipped tree"
+  artifact_rejection: "none applied by the provider or here"
+  dropout: "not applicable"
+  attrition: "not applicable"
+  policy: "bad channels, if any, are flagged and never interpolated at load time"
+  mechanism: planned
+  handling: mask
+  post_outcome_selection: false
+  censoring_correlated_with_state: false
+
+ledger:
+  variance:
+    measurement: 9.0e-27
+    session: unknown
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: [-1.0e-13, 1.0e-13]
+  bias_status: prior_specified_sensitivity
+  bias_bound_justification: >-
+    No empty-room recording ships with this dataset, so unlike mne-sample the
+    environmental contribution is not externally bounded here. The interval is
+    a prior specification at magnetometer scale. The absent head-shape
+    digitisation adds a coregistration bias that is not represented in this
+    number at all and must be carried separately by the transform graph.
+  model_discrepancy: 0.0
+  validity_domain:
+    population: "one adult male volunteer - no population validity"
+    state: "awake, receiving median nerve stimulation"
+    frequency_band_hz: [0.1, 100.1]
+    spatial_scale: "sensor and (via the shipped forward) cortical source space"
+
+gradient_permission:
+  allow:
+    - target: observe.meg.lead_field_validation
+      scales: ["sensor", "source"]
+      requires: ["spatial.psf", "calibration.head_model"]
+    - target: dynamics.somatosensory.evoked_response
+      scales: ["parcel"]
+      requires: ["temporal.sfreq_hz", "signal.si_units", "temporal.event_clock_relation"]
+    - target: observe.meg.noise_covariance
+      scales: ["sensor"]
+      requires: ["signal.si_units"]
+    - target: transforms.frame_graph.head_to_mri
+      scales: ["sensor", "voxel"]
+      requires: ["calibration.transforms", "calibration.residuals"]
+  frozen:
+    - anatomy.connectome_prior
+    - observe.eeg.*
+  forbid:
+    - infer.population_prior
+    - intervene.*
+  evaluation_only: false
+
+role: likelihood
+
+split_policy:
+  grouping_keys: ["participant"]
+  grouping_note: "n = 1: there is no held-out person here and none may be implied"
+  temporal_holdout: "available within the single 897 s run (early vs late trials)"
+  temporal_holdout_spec: null
+  stimulus_holdout: "not applicable: one stimulus type"
+  site_holdout: "not available"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    With one subject the only defensible metric is within-subject held-out
+    time. Any aggregate that mixes this source into a held-out-person score
+    is invalid.

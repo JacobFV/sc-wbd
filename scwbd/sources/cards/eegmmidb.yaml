@@ -1,0 +1,479 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# I_k  identity and lineage
+# =====================================================================
+identity:
+  id: eegmmidb
+  name: EEG Motor Movement/Imagery Dataset (PhysioNet)
+  version: "1.0.0"
+  release_date: "2009-09-09"
+  doi: "10.13026/C28G6P"
+  citation: >-
+    Schalk G, McFarland DJ, Hinterberger T, Birbaumer N, Wolpaw JR (2004).
+    BCI2000: A General-Purpose Brain-Computer Interface (BCI) System.
+    IEEE Trans Biomed Eng 51(6):1034-1043.  Dataset: Schalk G (2009),
+    EEG Motor Movement/Imagery Dataset (version 1.0.0), PhysioNet,
+    RRID:SCR_007345, https://doi.org/10.13026/C28G6P
+  source_url: "https://physionet.org/content/eegmmidb/1.0.0/"
+  download_url: "s3://physionet-open/eegmmidb/1.0.0/"
+  download_method: "anonymous S3 (AWS Open Data mirror of physionet.org, byte-identical release 1.0.0)"
+  retrieved_utc: "2026-08-06T05:32:42+00:00"
+  parent_dataset: null            # this is a primary acquisition
+  derived_from: null
+  derivatives_included: []        # raw EDF+ only; no preprocessing shipped
+  software:
+    acquisition: "BCI2000 (Schalk et al. 2004)"
+    reader: "scwbd.sources.loaders.edf (pure-numpy EDF+ reader, this repo)"
+    fetch: "boto3 anonymous S3 + scwbd.sources.download.S3PrefixFetcher"
+  container_hash: unknown          # no container was used to acquire this dataset
+  local_path: "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/data/eegmmidb/1.0.0"
+  file_manifest:
+    algorithm: sha256
+    n_files: 3059
+    total_bytes: 3614967988
+    manifest_sha256: bc4629f94ba756c28694539421e884d599545677cb9554900f6deed30f1c7ed0
+    manifest_path: scwbd/sources/manifests/eegmmidb__1.0.0.json
+    exemplars:
+      64_channel_sharbrough-old.png: 96d50a707bc8841a946682e47dcfa6ded573ed91dc5f1c01b129c281473f0ce1
+      64_channel_sharbrough.pdf: 258b24e77052a735ab66ac99692fc7b815f1c79b6e3adb9c71111ecbb1636cd7
+      64_channel_sharbrough.png: 9e2ba68c31f3499b1f558fe02cc20aa44f69179416e5de13a025a3012f91d73e
+      S001/S001R03.edf: 3427c8d01bff1380bc9ab9f27a35ece2af5dfadf3e291bbc05eb66e4dadbfe2e
+      S001/S001R04.edf: 3d161f88e1c00632585287d2ce584c2bc0f08862438eb255ea8723e00fac693d
+      S089/S089R03.edf: 0de49011384bfb26129a96a0ad2d4edf64f22eacfb523da12afb9889c324c0af
+
+# =====================================================================
+# G_k  governance and consent
+# =====================================================================
+governance:
+  status: live
+  license: "Open Data Commons Attribution License v1.0 (ODC-By 1.0)"
+  license_url: "https://opendatacommons.org/licenses/by/1-0/"
+  license_text_excerpt: >-
+    "You are free: To Share: To copy, distribute and use the database. To
+    Create: To produce works from the database. To Adapt: To modify,
+    transform and build upon the database. As long as you: Attribute: You
+    must attribute any public use of the database, or works produced from
+    the database, in the manner specified in the license."
+  dua_required: false
+  credentials_required: false
+  registration_required: false
+  purpose_limits: >-
+    None beyond the attribution requirement. PhysioNet distributes this as
+    an open-access resource; no clinical or diagnostic use is claimed or
+    supported by the data provider.
+  consent_scope: >-
+    unknown at the record level - the release carries no per-subject consent
+    document. Subjects were volunteers in BCI2000 development studies; the
+    published corpus is de-identified (headers carry "X X X X").
+  redistribution: "permitted with attribution (ODC-By 1.0)"
+  withdrawal: >-
+    unknown - no withdrawal mechanism is published for this de-identified
+    release. If PhysioNet retracts the release, this card must be set to
+    status 'withdrawn' and the bytes deleted.
+  privacy: >-
+    de-identified: EDF patient fields are literally 'X X X X'; recording
+    dates are present in headers (2009-08/09) but no personal identifiers.
+    Raw EEG is nonetheless potentially biometric; storage stays local.
+  retention: "retained on the local data root while the SC-WBD-001-beta claim is live"
+  unavailable_reason: null
+  # -- machine-readable siblings (consumed by the typed projection) --
+  redistribution_class: full          # ODC-By permits redistribution with attribution
+  withdrawal_status: none_pending
+  privacy_class: deidentified
+  contains_biometric: true            # raw EEG is potentially identifying
+  may_release_weights: true           # attribution-only licence; weights are derived works
+  may_release_examples: false         # do not ship raw subject traces in artifacts
+  purpose_limits_list: ["attribution_required"]
+  safeguards: ["local_storage_only", "no_subject_traces_in_released_artifacts"]
+  dua: null
+
+# =====================================================================
+# P_k  population and hierarchy
+# =====================================================================
+population:
+  n_participants: 109
+  participant_ids: "S001..S109 (see identity.file_manifest for the exact set on disk)"
+  families: >-
+    none declared; participants are treated as unrelated singletons
+    (family = 'singleton:<participant>'), which is the conservative choice
+    for grouping and is what the loader emits.
+  sites: 1                       # single acquisition site (Wadsworth Center / BCI2000)
+  site_ids: ["physionet:eegmmidb_single_site"]
+  devices: 1
+  device_ids: ["BCI2000_64ch"]
+  sessions_per_participant: 1
+  runs_per_session: 14
+  trials_per_run: "~30 annotated intervals per task run (T0/T1/T2); 1 continuous interval in the two baseline runs"
+  demographics: >-
+    unknown - age, sex and handedness are not distributed with this release.
+    Any subgroup calibration claim is therefore not evaluable on this source.
+  selection_mechanism: >-
+    volunteers recruited for BCI2000 development; selection criteria are not
+    documented in the release. Treat as a convenience sample, not a
+    population sample.
+  grouping_keys: ["participant", "session", "run"]
+  known_anomalies:
+    nominal_sfreq_hz: 160.0
+    n_runs_scanned: 1526
+    runs_off_nominal_rate:
+      S088R03.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R04.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R05.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R06.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R07.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R08.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R09.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R10.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R11.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R12.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R13.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S088R14.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R03.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R04.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R05.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R06.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R07.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R08.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R09.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R10.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R11.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R12.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R13.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S092R14.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 124.0
+      S100R03.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R04.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R05.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R06.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R07.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R08.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R09.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R10.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R11.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R12.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R13.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+      S100R14.edf:
+        sfreq_hz: 128.0
+        n_channels: 64
+        duration_s: 123.0
+    subjects_with_off_nominal_runs:
+    - S088
+    - S092
+    - S100
+    subjects_without_14_runs: {}
+    note: measured by reading every EDF header on disk; these runs are excluded from any
+      160 Hz likelihood term rather than resampled
+
+# =====================================================================
+# S_k(signal)  native signal and units
+# =====================================================================
+signal:
+  modalities: ["eeg"]
+  n_channels: 64
+  channel_types: {eeg: 64}
+  channel_names: >-
+    international 10-10 extended (Sharbrough) subset; EDF labels are
+    dot-padded ('Fc5.', 'Cz..') and normalised to 'FC5', 'Cz' by the loader
+  units: "V (SI, converted by the loader from the EDF physical dimension 'uV')"
+  file_physical_dimension: "uV"
+  reference: >-
+    unknown - the release does not document the acquisition reference for
+    the 64-channel montage. The re-referencing gradient path is therefore
+    disabled for this source.
+  dynamic_range: "+/- 8092 uV (EDF physical min/max), i.e. +/- 8.092e-3 V"
+  saturation: "clipping at the +/- 8092 uV rail; no saturation flags are distributed"
+  quantization: "1 uV per least significant bit (digital and physical ranges are equal)"
+  prefilter_header: "HP:0Hz LP:0Hz N:0Hz (as written in the EDF header; no filter is documented)"
+  # -- machine-readable SI siblings --
+  name: eegmmidb.scalp_potential
+  si_units: V
+  si_dynamic_range: [-8.092e-3, 8.092e-3]
+  si_saturation: 8.092e-3
+  si_quantization: 1.0e-6
+  irreversible_aggregation: false
+
+# =====================================================================
+# S_k  spatial support
+# =====================================================================
+spatial:
+  kind: sensor
+  frame: template_10_05_head_RAS
+  units: m
+  psf: >-
+    unknown - no lead field, head model or individual anatomy accompanies
+    this corpus. Sensor measurements cannot be attributed to cortical
+    sources from this source alone.
+  extent: null
+  n_elements: 64
+  positions_are_digitised: false
+  positions_source: >-
+    template positions from the MNE 'standard_1005' montage matched by
+    channel label (64/64 matched). These are NOT this subject's electrodes.
+
+# =====================================================================
+# T_k  temporal support and clocks
+# =====================================================================
+temporal:
+  clock: eegmmidb.bci2000_amp
+  dt: 0.00625
+  sfreq_hz: 160.0
+  integration_window: 0.0
+  group_delay: unknown          # no anti-alias filter specification is published
+  jitter_sd: unknown
+  event_clock: eegmmidb.bci2000_amp
+  event_clock_relation: >-
+    identical to the sample clock: annotations are EDF+ TALs written by the
+    same acquisition program, so event onsets convert to sample indices
+    exactly.
+  offset_drift: unknown
+  record_duration_s: 30.0        # 60 s for the two baseline runs
+  epoch_structure: "task runs are 2 min; baseline runs are 1 min"
+
+# =====================================================================
+# C_k  coordinates and calibration
+# =====================================================================
+calibration:
+  id: eegmmidb.calibration
+  frames: ["template_10_05_head_RAS"]
+  fiducials: unknown
+  transforms: []                 # no head<->device or head<->MRI transform exists
+  calibration_points: unknown
+  residuals: unknown
+  device_pose: unknown
+  raw_metadata: "EDF+ headers (start date/time, per-signal gain and prefilter strings)"
+  electrode_positions: unknown   # template only - see spatial.positions_are_digitised
+  head_model: unknown
+  amplifier_gain_calibration: unknown
+
+# =====================================================================
+# O_k  observation model
+# =====================================================================
+observation:
+  name: eegmmidb.scalp_eeg
+  likelihood_kind: generative
+  calibration_status: uncalibrated
+  leakage_checked: true
+  target_ports: ["eeg.sensor_64ch"]
+  preprocessing_steps: []
+  forward_physics: >-
+    unknown for this source: no individual head model, no BEM, no lead
+    field. Only a sensor-space observation model is admissible.
+  observed_variables: ["scalp potential at 64 sensors"]
+  preprocessing: "none - raw EDF+ as released; the loader applies no filter, reference change or resampling"
+  latent_variables_claimed: []
+  labels_leak_risk: "none (labels are stimulus cues written online, not derived from the EEG)"
+
+# =====================================================================
+# U_k  intervention model
+# =====================================================================
+intervention: null   # nothing is manipulated except the visual cue; no stimulation
+
+# =====================================================================
+# M_k  missingness and censoring
+# =====================================================================
+missingness:
+  planned: "none - all 64 channels are recorded in every run"
+  unplanned: "36 run(s) across 3 subject(s) deviate from the nominal 160 Hz / 64-channel header and are excluded, not repaired"
+  artifact_rejection: "none applied by the provider and none applied here"
+  dropout: "none within a session"
+  attrition: "not applicable (single session)"
+  mechanism: planned
+  handling: drop_episode
+  post_outcome_selection: false
+  censoring_correlated_with_state: false
+  policy: >-
+    Runs whose header deviates from 160 Hz / 64 channels are NOT silently
+    resampled or padded: they are excluded from any 160 Hz likelihood term
+    and reported in population.known_anomalies. Missing channels are never
+    imputed as zero (ARCHITECTURE.md §7 rule 1).
+
+# =====================================================================
+# B_k, V_k, Delta_k  uncertainty ledger
+# =====================================================================
+ledger:
+  variance:
+    measurement: 1.0e-12         # V^2; ~1 uV RMS quantisation+instrument floor
+    session: unknown             # single session per subject: not estimable here
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: [-8.0e-6, 8.0e-6]
+  bias_status: externally_bounded
+  bias_bound_justification: >-
+    Amplifier DC offset is bounded by the +/- 8092 uV rail and the 1 uV
+    quantisation step; without a documented reference the sign and size of
+    any common-mode offset is unresolved, so the bound is the rail-scaled
+    envelope rather than an estimate.
+  model_discrepancy: null        # empirical source; no simulator/teacher involved
+  validity_domain:
+    population: "adult volunteers, demographics unknown"
+    state: "awake, seated, cued motor execution and motor imagery"
+    frequency_band_hz: [0.0, 80.0]
+    spatial_scale: "scalp sensor; no source-level validity claimed"
+
+# =====================================================================
+# A_k  gradient permission
+# =====================================================================
+gradient_permission:
+  allow:
+    - target: observe.eeg.sensor_space_head.gain
+      scales: ["sensor"]
+      requires: ["signal.units", "temporal.sfreq_hz"]
+    - target: dynamics.sensorimotor.population_prior
+      scales: ["parcel"]
+      requires: ["signal.units", "temporal.sfreq_hz", "population.n_participants"]
+    - target: observe.eeg.noise_covariance
+      scales: ["sensor"]
+      requires: ["signal.units"]
+    - target: observe.eeg.lead_field
+      scales: ["sensor", "source"]
+      requires: ["calibration.electrode_positions", "spatial.psf", "calibration.head_model"]
+    - target: transforms.reference_montage_operator
+      scales: ["sensor"]
+      requires: ["signal.reference"]
+    - target: transforms.clock_graph.eeg_group_delay
+      scales: ["clock"]
+      requires: ["temporal.group_delay", "temporal.jitter_sd"]
+  frozen:
+    - anatomy.connectome_prior
+    - observe.bold.*
+  forbid:
+    - infer.individual_posterior.identity   # no demographics: no individualisation claim
+    - intervene.*                           # nothing was manipulated
+  evaluation_only: false
+
+# =====================================================================
+# R_k  role and split policy
+# =====================================================================
+role: likelihood
+
+split_policy:
+  grouping_keys: ["participant"]
+  grouping_note: >-
+    All 14 runs of a subject share one participant key and one session key;
+    a run may never appear on a different side of a fold from its sibling
+    runs (R10).
+  temporal_holdout: >-
+    not applicable - one session per participant, so no future-session
+    holdout is available. An individualisation claim (G5) is NOT evaluable
+    on this source.
+  stimulus_holdout: >-
+    available at the task-condition level (left fist / right fist / both
+    fists / both feet / rest). Because T1/T2 mean different things in fist
+    and feet runs, the loader resolves them to explicit labels before any
+    stimulus-level split.
+  site_holdout: >-
+    not available: one site, one device. This source cannot falsify a
+    site/device shortcut on its own.
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  temporal_holdout_spec: null
+  notes: >-
+    Default protocol: 5-fold participant-level holdout with seed recorded in
+    the run manifest, audited by scwbd.sources.splits.leakage_audit.

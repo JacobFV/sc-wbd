@@ -1,0 +1,341 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# I_k  identity and lineage
+# =====================================================================
+identity:
+  id: sleep-edfx
+  name: Sleep-EDF Database Expanded (sleep-cassette subset)
+  version: "1.0.0"
+  release_date: "2018-10-24"
+  doi: "10.13026/C2X676"
+  citation: >-
+    Kemp B, Zwinderman AH, Tuk B, Kamphuisen HAC, Oberye JJL (2000). Analysis
+    of a sleep-dependent neuronal feedback loop: the slow-wave microcontinuity
+    of the EEG. IEEE Trans Biomed Eng 47(9):1185-1194.  Dataset: Kemp B,
+    Zwinderman AH, Tuk B, Kamphuisen HAC, Oberye JJL. Sleep-EDF Database
+    Expanded (version 1.0.0), PhysioNet, https://doi.org/10.13026/C2X676
+  source_url: "https://physionet.org/content/sleep-edfx/1.0.0/"
+  download_url: "s3://physionet-open/sleep-edfx/1.0.0/sleep-cassette/"
+  download_method: "anonymous S3 (AWS Open Data mirror of physionet.org release 1.0.0)"
+  retrieved_utc: "2026-08-06T06:19:19+00:00"
+  parent_dataset: null
+  derived_from: null
+  subset_note: >-
+    Only the 153 sleep-cassette (SC*) recordings were fetched. The 44
+    sleep-telemetry (ST*) recordings from the 1994 temazepam study are a
+    different population, protocol and device and are NOT part of this card.
+  derivatives_included: []
+  software:
+    acquisition: "modified Walkman-like cassette recorder (Kemp 1987 thesis, ch. VI.4)"
+    reader: "scwbd.sources.loaders.edf (pure-numpy EDF+ reader, this repo)"
+    fetch: "boto3 anonymous S3 + scwbd.sources.download.S3PrefixFetcher"
+  container_hash: unknown
+  local_path: "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/data/sleep-edfx/1.0.0"
+  file_manifest:
+    algorithm: sha256
+    n_files: 306
+    total_bytes: 7596565380
+    manifest_sha256: 36d9a17611814ac37ebcff0a02b8f043e1f6de0b8f12cc65ecbf6d2ed9c125db
+    manifest_path: scwbd/sources/manifests/sleep-edfx__1.0.0.json
+    exemplars:
+      sleep-cassette/SC4001E0-PSG.edf: 2b40a18adf76af69a42d6db1f30f31d26b369f6d27ca0050ef30147ef892b131
+      sleep-cassette/SC4001EC-Hypnogram.edf: a4cf67694ade1b52a0ddd06d5817fd45d2d3e8bac5302f640f3e9cfbbf12a996
+      sleep-cassette/SC4002E0-PSG.edf: bf91934cdbf7c9577bc91b411462ddb51c418e17e10a2f59a15feeeb917b0a5f
+      sleep-cassette/SC4481F0-PSG.edf: 7a56e00c22bebe0ecf61dd8f953ecf3ec083e7e8f424a664f6ddf89f308a480c
+      sleep-cassette/SC4482F0-PSG.edf: 34c6706b34f1e8eda2966952e1a2a2f6712583628af35f42845b6f2508e7e094
+      sleep-cassette/SC4572F0-PSG.edf: dba28022ab2126a7038b684e93af34d2d5e1123e9a97adbe313c37439e3a8700
+
+# =====================================================================
+# G_k  governance and consent
+# =====================================================================
+governance:
+  status: live
+  license: "Open Data Commons Attribution License v1.0 (ODC-By 1.0)"
+  license_url: "https://opendatacommons.org/licenses/by/1-0/"
+  license_text_excerpt: >-
+    "You are free: To Share ... To Create ... To Adapt ... As long as you:
+    Attribute: You must attribute any public use of the database, or works
+    produced from the database, in the manner specified in the license."
+  dua_required: false
+  credentials_required: false
+  registration_required: false
+  purpose_limits: "attribution required; no clinical or diagnostic use is supported by the provider"
+  consent_scope: >-
+    unknown at the record level - the 1987-1991 study's consent documents are
+    not distributed. Participants were healthy volunteers in a study of age
+    effects on sleep.
+  redistribution: "permitted with attribution (ODC-By 1.0)"
+  withdrawal: >-
+    unknown - no withdrawal mechanism is published for this release. On a
+    provider retraction this card becomes status 'withdrawn' and the bytes
+    are deleted.
+  privacy: >-
+    de-identified but not anonymous in the strict sense: EDF headers carry a
+    subject code (SC4ss), a birth-date-derived age and sex field, and true
+    recording start dates. Whole-night EEG is potentially identifying.
+  retention: "retained on the local data root while the SC-WBD-001-beta claim is live"
+  unavailable_reason: null
+  redistribution_class: full
+  withdrawal_status: none_pending
+  privacy_class: pseudonymized
+  contains_biometric: true
+  may_release_weights: true
+  may_release_examples: false
+  purpose_limits_list: ["attribution_required"]
+  safeguards: ["local_storage_only", "no_subject_traces_in_released_artifacts"]
+  dua: null
+
+# =====================================================================
+# P_k  population and hierarchy
+# =====================================================================
+population:
+  n_participants: 78
+  recordings_on_disk: 153
+  participant_ids: "SC400..SC482 (subject code from the file name; see file_manifest)"
+  families: >-
+    none declared; participants treated as unrelated singletons
+    (family = 'singleton:<participant>').
+  sites: 1
+  site_ids: ["sleep-edfx:home_recording"]
+  devices: 1
+  device_ids: ["TelemetryCR_cassette"]
+  sessions_per_participant: 2      # two consecutive day-night periods; three recordings were lost
+  runs_per_session: 1              # one whole-night PSG per session
+  trials_per_run: "no trials: spontaneous sleep. ~2650 scored 30 s epochs per night"
+  demographics: >-
+    age 25-101 years, healthy Caucasian volunteers without sleep medication;
+    per-subject age and sex are distributed in SC-subjects.xls and in the EDF
+    header 'patient' field. Per-record demographics are NOT parsed into this
+    card, so any age-stratified claim must read that spreadsheet explicitly.
+  selection_mechanism: >-
+    1987-1991 study of age effects on sleep in healthy volunteers; recruitment
+    criteria are described in Mourtazaev et al. 1995 but not distributed with
+    the data. Age is by design non-uniform - this is an age-effect study, not
+    a population sample.
+  grouping_keys: ["participant", "session"]
+  known_anomalies:
+    participants_with_one_night_only:
+    - SC413
+    - SC436
+    - SC452
+    psg_without_hypnogram: []
+    note: the released corpus documents that the first nights of subjects 36 and 52 and
+      the second night of subject 13 were lost to media failure; the list above is what
+      is actually on disk
+  min_subgroup_n: null
+
+# =====================================================================
+# S_k(signal)  native signal and units
+# =====================================================================
+signal:
+  modalities: ["eeg", "eog", "emg", "resp", "temperature", "hypnogram"]
+  n_channels: 7
+  channel_types: {eeg: 2, eog: 1, emg: 1, resp: 1, temp: 1, misc: 1}
+  channel_names: ["EEG Fpz-Cz", "EEG Pz-Oz", "EOG horizontal", "Resp oro-nasal", "EMG submental", "Temp rectal", "Event marker"]
+  units: "V for EEG/EOG/EMG (converted from uV), degC for rectal temperature, dimensionless for respiration and the event marker"
+  file_physical_dimension: {EEG: "uV", EOG: "uV", EMG: "uV", "Temp rectal": "DegC", "Resp oro-nasal": "", "Event marker": ""}
+  reference: >-
+    bipolar derivations, not a common reference: 'EEG Fpz-Cz' and 'EEG Pz-Oz'
+    are differences between the named electrode pairs. Any re-referencing
+    operator is therefore inapplicable and the corresponding gradient path is
+    forbidden rather than merely disabled.
+  dynamic_range: "EEG Fpz-Cz +/-192 uV, EEG Pz-Oz -197..196 uV, EOG +/-1009 uV, EMG +/-5 uV, Temp 34-40 degC (per-file EDF physical min/max)"
+  saturation: "clipping at the per-signal physical rails listed above; no saturation flags are distributed"
+  quantization: "EEG Fpz-Cz 384/4095 = 9.377e-2 uV per LSB; other channels differ - the loader computes the per-signal gain from the header"
+  prefilter_header: "as written per signal in the EDF header (see NativeRecording.meta['prefilter'])"
+  name: sleep-edfx.psg
+  si_units: V
+  si_dynamic_range: [-1.009e-3, 1.009e-3]
+  si_saturation: 1.009e-3
+  si_quantization: 9.377e-8
+  irreversible_aggregation: false
+  multirate: true
+  native_rates_hz: [100.0, 1.0]
+  rate_groups:
+    100.0: ["EEG Fpz-Cz", "EEG Pz-Oz", "EOG horizontal"]
+    1.0: ["Resp oro-nasal", "EMG submental", "Temp rectal", "Event marker"]
+
+# =====================================================================
+# S_k  spatial support
+# =====================================================================
+spatial:
+  kind: sensor
+  frame: unknown
+  units: m
+  psf: >-
+    unknown - two bipolar scalp derivations, no head model, no electrode
+    digitisation. Source-space attribution from this corpus is not admissible.
+  extent: null
+  n_elements: 7
+  positions_are_digitised: false
+  positions_source: >-
+    none. Fpz, Cz, Pz and Oz are nominal 10-20 labels; the card deliberately
+    does not substitute template coordinates for them, because a bipolar
+    derivation is not a point measurement.
+
+# =====================================================================
+# T_k  temporal support and clocks
+# =====================================================================
+temporal:
+  clock: sleep-edfx.recorder
+  dt: 0.01                       # fastest group; the 1 Hz group has dt = 1.0
+  sfreq_hz: 100.0
+  secondary_sfreq_hz: 1.0
+  integration_window: 0.0
+  group_delay: unknown
+  jitter_sd: unknown
+  event_clock: sleep-edfx.recorder
+  event_clock_relation: >-
+    hypnogram annotations are stored in a separate EDF+ file whose start time
+    matches the PSG start time; onsets are seconds from recording start on the
+    same recorder clock. The 30 s scoring epoch is an integration window on the
+    *label*, not on the signal.
+  offset_drift: >-
+    unknown - analogue cassette recording over ~20 h; tape speed drift is
+    plausible but unquantified in the release. Any claim that depends on
+    absolute timing across the night must treat this as a bias source.
+  record_duration_s: 30.0
+  epoch_structure: "whole-night continuous, ~20 h per recording"
+
+# =====================================================================
+# C_k  coordinates and calibration
+# =====================================================================
+calibration:
+  id: sleep-edfx.calibration
+  frames: []
+  fiducials: unknown
+  transforms: []
+  calibration_points: unknown
+  residuals: unknown
+  device_pose: unknown
+  raw_metadata: "EDF+ headers: per-signal physical/digital ranges, prefilter strings, start date/time"
+  electrode_positions: unknown
+  head_model: unknown
+  amplifier_gain_calibration: "per-signal physical/digital scaling from the EDF header (exact, by construction)"
+
+# =====================================================================
+# O_k  observation model
+# =====================================================================
+observation:
+  name: sleep-edfx.psg
+  forward_physics: >-
+    unknown - bipolar scalp derivation with no head model. Only a
+    sensor-space observation model over the two derivations is admissible.
+  observed_variables: ["bipolar scalp potential (2 derivations)", "horizontal EOG", "submental EMG", "oro-nasal airflow", "rectal temperature", "expert sleep stage (30 s)"]
+  preprocessing: "none - raw EDF+ as released; the loader applies no filter or resampling and keeps the 1 Hz channels at 1 Hz"
+  preprocessing_steps: []
+  likelihood_kind: generative
+  calibration_status: uncalibrated
+  leakage_checked: true
+  target_ports: ["eeg.bipolar_fpz_cz", "eeg.bipolar_pz_oz", "arousal_state.stage"]
+  labels_leak_risk: >-
+    the hypnogram is scored *from* the PSG by a human expert. Sleep stage is
+    therefore not an independent measurement of the same night: a model that
+    predicts the stage from the same signal the scorer read is doing
+    inter-rater imitation, not state inference. Declared here so no downstream
+    claim treats stage recovery as evidence for latent dynamics.
+
+# =====================================================================
+# U_k  intervention model
+# =====================================================================
+intervention: null
+
+# =====================================================================
+# M_k  missingness and censoring
+# =====================================================================
+missingness:
+  planned: "sleep-telemetry (ST*) recordings deliberately not fetched; they are a different study"
+  unplanned: "3 participant(s) have a single night on disk (SC413, SC436, SC452); 0 PSG(s) lack a hypnogram"
+  artifact_rejection: "none applied by the provider and none applied here; 'Sleep stage ?' marks unscorable epochs and is kept as an explicit label"
+  dropout: "three whole nights were lost to media failure before release (subjects 13, 36, 52)"
+  attrition: "not applicable: recordings are two consecutive nights, not a longitudinal study"
+  policy: >-
+    Unscorable epochs keep the literal '?' label and are never relabelled to
+    the nearest stage. Slow channels are never upsampled to 100 Hz
+    (ARCHITECTURE.md §7 rule 1 and thesis §2.6).
+  mechanism: mar
+  handling: mask
+  post_outcome_selection: false
+  censoring_correlated_with_state: true   # unscorable epochs cluster in movement/artefact periods
+
+# =====================================================================
+# B_k, V_k, Delta_k  uncertainty ledger
+# =====================================================================
+ledger:
+  variance:
+    measurement: 8.8e-15         # V^2; (9.377e-8 V LSB)^2 quantisation floor for EEG Fpz-Cz
+    session: unknown             # night-to-night variance is estimable but not estimated here
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: [-1.92e-4, 1.92e-4]
+  bias_status: externally_bounded
+  bias_bound_justification: >-
+    Bounded by the EEG channel's +/-192 uV physical rail. Analogue cassette
+    recording adds an unquantified low-frequency gain/speed bias; the interval
+    is an envelope, not an estimate, and 1987-1991 hardware documentation is
+    not available to tighten it.
+  model_discrepancy: null
+  validity_domain:
+    population: "healthy volunteers aged 25-101, Caucasian, no sleep medication"
+    state: "spontaneous whole-night sleep at home"
+    frequency_band_hz: [0.0, 50.0]
+    spatial_scale: "two bipolar scalp derivations; no source-level validity"
+
+# =====================================================================
+# A_k  gradient permission
+# =====================================================================
+gradient_permission:
+  allow:
+    - target: dynamics.arousal_state.transition_prior
+      scales: ["whole_brain"]
+      requires: ["temporal.sfreq_hz", "signal.si_units"]
+    - target: observe.eeg.bipolar_derivation_head.gain
+      scales: ["sensor"]
+      requires: ["signal.si_units"]
+    - target: dynamics.slow_oscillation.spectral_prior
+      scales: ["whole_brain"]
+      requires: ["temporal.sfreq_hz"]
+    - target: observe.autonomic.temperature_head
+      scales: ["body"]
+      requires: ["signal.si_units", "temporal.secondary_sfreq_hz"]
+    - target: observe.eeg.lead_field
+      scales: ["sensor", "source"]
+      requires: ["calibration.electrode_positions", "spatial.psf"]
+    - target: transforms.clock_graph.psg_drift
+      scales: ["clock"]
+      requires: ["temporal.offset_drift", "temporal.group_delay"]
+  frozen:
+    - anatomy.connectome_prior
+    - observe.meg.*
+  forbid:
+    - transforms.reference_montage_operator   # bipolar derivations cannot be re-referenced
+    - intervene.*
+    - infer.consciousness_index               # ARCHITECTURE.md §7 rule 4
+  evaluation_only: false
+
+# =====================================================================
+# R_k  role and split policy
+# =====================================================================
+role: likelihood
+
+split_policy:
+  grouping_keys: ["participant"]
+  grouping_note: >-
+    Both nights of a subject share the participant key. Night 2 must never be
+    used to predict night 1 of the same person across a fold boundary (R10).
+  temporal_holdout: >-
+    available *within* participant: night 1 -> night 2 is a genuine
+    future-session holdout and is the one individualisation (G5) test this
+    corpus supports. It is only valid for the participants with two nights.
+  temporal_holdout_spec: null
+  stimulus_holdout: "not applicable: spontaneous sleep, no stimuli"
+  site_holdout: "not available: one site, one device class"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    Default protocol: 5-fold participant-level holdout. For the G5 test,
+    train on night 1 of held-in participants plus night 1 of the held-out
+    participant, evaluate on their night 2.

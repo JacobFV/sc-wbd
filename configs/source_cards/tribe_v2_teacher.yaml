@@ -1,0 +1,26 @@
+# TRIBE v2 population encoder as a quarantined exploratory teacher prior.
+# OFF BY DEFAULT and NEVER a subject likelihood (ARCHITECTURE.md 7 rule 5;
+# body.tex 6.3 "Quarantined exploratory teacher prior"). Enabling it requires a
+# preregistered branch with no-teacher / generic-feature / shuffled /
+# report-mismatched controls, and it is retained only if it beats every one of them.
+id: tribe_v2_teacher
+role: distillation
+enabled: false
+is_teacher: true
+losses: [distill]
+gradient_permission: ["readout.*"]
+frozen: ["local.*", "coupling.*", "residual.*", "eeg.*", "bold.*", "individualizer.*", "assimilate.*"]
+n_eff: 1.0
+n_rows: 1.0
+hierarchy_depth: 1
+measurement_variance: 1.0
+bias_halfwidth: 2.0
+bias_status: prior_specified_sensitivity
+model_discrepancy: 2.0
+validity_overlap: 0.1
+notes: >
+  Discrepancy-inflated interface regulariser only. Supplies no new neural
+  observation, receives no authority over latent mechanisms, subcortical or bodily
+  state, and cannot pull an individualized posterior toward an average brain.
+compiler_permission:
+  - "observation:tribe_v2_teacher:nuisance"

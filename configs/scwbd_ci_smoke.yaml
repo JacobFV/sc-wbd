@@ -1,0 +1,35 @@
+# CI-sized smoke run: same code path, minutes not hours.
+base: scwbd_001_beta.yaml
+model:
+  hidden: 64
+  n_local_layers: 2
+  region_embed: 16
+  context_dim: 32
+  message_dim: 4
+  n_delay_bins: 4
+  encoder_channels: 16
+  encoder_layers: 2
+  compile: false
+posterior:
+  summary_channels: 32
+  summary_layers: 2
+  flow_layers: 3
+  flow_hidden: 48
+  n_pcs: 8
+data:
+  window: 12
+  context: 8
+  batch: 8
+  num_workers: 0
+train:
+  run_name: scwbd-ci-smoke
+  out_dir: checkpoints/ci-smoke
+  report_dir: reports/training/ci
+  max_wall_seconds: 900
+  resume: false
+  stages:
+    - {name: I_regional, steps: 4, lr: 1.0e-3, ckpt_every: 100, log_every: 2}
+    - {name: II_interface, steps: 4, lr: 1.0e-3, ckpt_every: 100, log_every: 2}
+    - {name: III_sliced, steps: 4, lr: 1.0e-3, ckpt_every: 100, log_every: 2}
+    - {name: IV_assembly, steps: 4, lr: 1.0e-3, ckpt_every: 100, log_every: 2}
+    - {name: V_individual, steps: 3, lr: 1.0e-3, ckpt_every: 100, log_every: 2}

@@ -1,0 +1,282 @@
+schema_version: scwbd-source-card/1.0.0
+
+identity:
+  id: mne-spm-face
+  name: "MNE-Python SPM faces dataset (CTF 275, faces vs scrambled)"
+  version: "v1"
+  release_date: "unknown"
+  doi: "unknown"
+  citation: >-
+    Henson RN, Goshen-Gottstein Y, Ganel T, Otten LJ, Quayle A, Rugg MD (2003)
+    and the SPM multimodal face-processing example dataset; redistributed by
+    the MNE-Python project as MNE-spm-face.tar.gz. See
+    https://mne.tools/stable/documentation/datasets.html#spm-faces
+  source_url: "https://mne.tools/stable/documentation/datasets.html#spm-faces"
+  download_url: "https://osf.io/download/je4s8?version=2"
+  download_method: >-
+    mne.datasets.spm_face.data_path(), verified against the md5 registered in
+    mne.datasets.config: md5:9f43f67150e3b694b523a21eb929ea75. The OSF file
+    version is 2, pinned here as version 'v1' with the md5 as the byte-level
+    pin (the archive itself carries no version file).
+  retrieved_utc: "2026-08-06T06:28:40+00:00"
+  parent_dataset: "SPM multimodal face-processing example dataset"
+  derived_from: null
+  subset_note: "complete archive as distributed (two CTF runs, FreeSurfer subject 'spm', trans and digitisation montage)"
+  derivatives_included:
+    - "MEG/spm/SPM_CTF_MEG_example_faces1_3D_raw-trans.fif (head <-> MRI transform)"
+    - "MEG/spm/SPM_dig_montage.fif (digitisation montage)"
+    - "subjects/spm/bem (BEM surfaces)"
+    - "subjects/spm/surf, subjects/spm/mri (FreeSurfer reconstruction)"
+  derivative_note: >-
+    Present for the same reason as mne-sample: an independently produced head
+    model and transform against which a computed lead field can be checked -
+    but here on a *different sensor geometry* (CTF axial magnetometers with
+    29 reference channels), which is the point. A lead-field implementation
+    that only ever sees Neuromag planar gradiometers has not been tested.
+  software:
+    acquisition: "CTF 275-channel axial gradiometer system (274 usable MEG channels + 29 reference channels)"
+    reader: "mne.io.read_raw_ctf via scwbd.sources.loaders.mne_datasets"
+    fetch: "scwbd.sources.download.MneDatasetFetcher + our own sha256 manifest"
+  container_hash: unknown
+  archive_md5: "9f43f67150e3b694b523a21eb929ea75"
+  local_path: "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/data/mne-spm-face/v1"
+  file_manifest:
+    algorithm: sha256
+    n_files: 571
+    total_bytes: 1592753320
+    manifest_sha256: c3f40cb5a056c802cd6ea9facfb2e4120d3400d15923fb6cbeeb2fc86c0cf3d9
+    manifest_path: scwbd/sources/manifests/mne-spm-face__v1.json
+    exemplars:
+      MNE-spm-face/MEG/spm/SPM_CTF_MEG_example_faces1_3D.ds/BadChannels: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      MNE-spm-face/MEG/spm/SPM_CTF_MEG_example_faces1_3D.ds/ClassFile.cls: bc1752df5131dc194d3257df87d7649014494d77596b3bd80b0866bd90cddffa
+      MNE-spm-face/MEG/spm/SPM_CTF_MEG_example_faces1_3D.ds/MarkerFile.mrk: 538a43450bc648ce64f877ffbf5ae815d609665dfb8eed009d1f83baa801b214
+      MNE-spm-face/MEG/spm/SPM_CTF_MEG_example_faces1_3D.ds/SPM_CTF_MEG_example_faces1_3D.meg4: 54546e8e72d058b16a6de4e83def8dbe2bf89b68d92eece868787431bf32eb73
+      MNE-spm-face/MEG/spm/SPM_CTF_MEG_example_faces2_3D.ds/SPM_CTF_MEG_example_faces2_3D.meg4: 9c98a129332b4c902190bbe6c5b2612f9191e9c39d7a56bd8a04d7fdab7aa9c1
+      MNE-spm-face/subjects/spm/bem/spm-5120-5120-5120-bem-sol.fif: 5df9f2e98f7b22434d1dd7bcae3ab8ba8030417c40201a4fd3890adec86456d9
+
+governance:
+  status: live
+  license: >-
+    unknown - the archive ships no LICENSE file and the MNE-Python
+    documentation page states no licence for this dataset. The upstream SPM
+    example data is distributed publicly by the Wellcome Centre for Human
+    Neuroimaging. Because the licence is unresolved, redistribution is treated
+    as not permitted and may_release_examples is false.
+  license_url: "https://mne.tools/stable/documentation/datasets.html#spm-faces"
+  license_text_excerpt: >-
+    unknown - no licence text accompanies the archive.
+  dua_required: false
+  credentials_required: false
+  registration_required: false
+  purpose_limits: >-
+    unknown in law; treated here as local research use with citation of the
+    SPM multimodal dataset and of MNE-Python.
+  consent_scope: >-
+    unknown - a single volunteer; no consent document is distributed.
+  redistribution: "unknown - see license; treated as not permitted"
+  withdrawal: "unknown"
+  privacy: >-
+    de-identified single subject with a full FreeSurfer reconstruction and a
+    head-shape file. A head surface is identifying, so the tree stays on local
+    storage.
+  retention: "retained on the local data root while the SC-WBD-001-beta claim is live"
+  unavailable_reason: null
+  redistribution_class: unknown
+  withdrawal_status: unknown
+  privacy_class: deidentified
+  contains_biometric: true
+  may_release_weights: true
+  may_release_examples: false
+  purpose_limits_list: ["local_use_only"]
+  safeguards: ["local_storage_only", "no_head_surface_renders_published"]
+  dua: null
+
+population:
+  n_participants: 1
+  participant_ids: ["spm"]
+  families: "not applicable (n = 1)"
+  sites: 1
+  site_ids: ["mne-spm-face:wellcome_centre_human_neuroimaging"]
+  devices: 1
+  device_ids: ["CTF_275"]
+  sessions_per_participant: 1
+  runs_per_session: 2
+  trials_per_run: "faces and scrambled faces presented across a 676 s run"
+  demographics: >-
+    unknown - not distributed.
+  selection_mechanism: >-
+    a single demonstration recording chosen as the SPM tutorial dataset; no
+    sampling mechanism.
+  grouping_keys: ["participant", "run"]
+  min_subgroup_n: 1
+  n_is_one_note: >-
+    n = 1. Its value in this register is sensor-geometry diversity, not
+    biological evidence.
+
+signal:
+  modalities: ["meg", "mri", "bem"]
+  n_channels: 340
+  channel_types: {mag: 274, ref_meg: 29, misc: 35, stim: 2}
+  channel_names: "CTF MLxxx/MRxxx/MZxxx axial gradiometer labels plus reference sensors"
+  units: "T (CTF axial gradiometers and reference channels), dimensionless (stim/misc)"
+  file_physical_dimension: "CTF native, converted to SI T by MNE"
+  reference: >-
+    CTF systems are synthetic-gradiometer machines: 29 reference channels are
+    recorded so that higher-order gradient noise cancellation can be applied.
+    The raw file here is at the system's recorded gradient order, and no
+    synthetic-gradient compensation is applied by the loader. Any lead-field
+    comparison MUST account for the compensation order or it compares two
+    different observation models.
+  dynamic_range: "unknown"
+  saturation: "unknown"
+  quantization: "unknown"
+  prefilter_header: "acquisition band 0-240 Hz (from the CTF header)"
+  name: mne-spm-face.meg
+  si_units: T
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: null
+  irreversible_aggregation: false
+
+spatial:
+  kind: sensor
+  frame: ctf_device
+  units: m
+  psf: >-
+    unknown as a shipped matrix: no forward solution ships with this dataset.
+    A BEM and a head<->MRI transform do ship, so a lead field is computable -
+    but nothing here can be used to validate one until it is computed.
+  extent: null
+  n_elements: 340
+  positions_are_digitised: true
+  positions_source: >-
+    CTF sensor geometry from the .ds header; only 3 digitisation points are
+    present in the raw file, but a separate digitisation montage
+    (SPM_dig_montage.fif) and a head-shape file (headshape.mat) ship
+    alongside. The sparse in-file digitisation is why coregistration here
+    depends on the shipped -trans.fif rather than on a fresh head-shape fit.
+
+temporal:
+  clock: mne-spm-face.acq
+  dt: 2.0833333333333333e-3
+  sfreq_hz: 480.0
+  integration_window: 0.0
+  group_delay: unknown
+  jitter_sd: unknown
+  event_clock: mne-spm-face.acq
+  event_clock_relation: "stimulus triggers are on the CTF stim channels of the same file, so the event clock is the sample clock"
+  offset_drift: unknown
+  record_duration_s: 675.9875
+
+calibration:
+  id: mne-spm-face.calibration
+  frames: ["ctf_device", "ctf_head", "spm_freesurfer_surface_RAS"]
+  fiducials: "3 fiducial points in the CTF header; a fuller montage ships in SPM_dig_montage.fif"
+  transforms:
+    head_mri_t: "MEG/spm/SPM_CTF_MEG_example_faces1_3D_raw-trans.fif"
+    dev_head_t: "in the CTF .ds header"
+  calibration_points: "3 in-file digitisation points plus the separate montage and head-shape files"
+  residuals: unknown
+  device_pose: "single dev_head_t per run; CTF head localisation coils were recorded at run start only"
+  raw_metadata: "CTF .ds header (res4, hc), FreeSurfer scripts directory"
+  electrode_positions: "not applicable (no EEG in this archive)"
+  head_model: "FreeSurfer subject 'spm' with BEM surfaces"
+  amplifier_gain_calibration: "CTF per-channel gains from the res4 header"
+
+observation:
+  name: mne-spm-face.meg
+  forward_physics: >-
+    quasi-static Maxwell forward problem for CTF axial gradiometers with
+    reference-channel compensation; the compensation order is part of the
+    observation model and must be carried, not dropped.
+  observed_variables: ["magnetic field at 274 axial gradiometers", "29 reference channels", "T1 MRI", "FreeSurfer surfaces"]
+  preprocessing: "raw CTF .ds as distributed; the loader applies no compensation change, filter, epoching or resampling"
+  preprocessing_steps: []
+  likelihood_kind: generative
+  calibration_status: uncalibrated
+  leakage_checked: true
+  target_ports: ["meg.sensor_ctf275", "visual.ventral_face"]
+  labels_leak_risk: "none: face vs scrambled is an exogenous stimulus label from the presentation log"
+
+intervention: null
+
+missingness:
+  planned: "none"
+  unplanned: "unknown - the archive documents no bad-channel list"
+  artifact_rejection: "none applied by the provider or here"
+  dropout: "not applicable"
+  attrition: "not applicable"
+  policy: "bad channels are flagged if declared and never interpolated at load time"
+  mechanism: unknown
+  handling: mask
+  post_outcome_selection: false
+  censoring_correlated_with_state: false
+
+ledger:
+  variance:
+    measurement: 2.5e-26           # T^2; ~5 fT/sqrt(Hz) CTF axial gradiometer floor squared
+    session: unknown
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: [-2.0e-13, 2.0e-13]
+  bias_status: prior_specified_sensitivity
+  bias_bound_justification: >-
+    No empty-room recording ships with this dataset, and the synthetic
+    gradient compensation order in effect is not documented in the archive, so
+    the residual environmental field is neither measured nor bounded. The
+    interval is a prior specification at axial-gradiometer scale.
+  model_discrepancy: 0.0
+  validity_domain:
+    population: "one adult volunteer - no population validity"
+    state: "awake, viewing faces and scrambled faces"
+    frequency_band_hz: [0.0, 240.0]
+    spatial_scale: "sensor only until a forward operator is computed"
+
+gradient_permission:
+  allow:
+    - target: dynamics.visual_ventral.evoked_response
+      scales: ["parcel"]
+      requires: ["temporal.sfreq_hz", "signal.si_units", "temporal.event_clock_relation"]
+    - target: observe.meg.ctf_sensor_head.gain
+      scales: ["sensor"]
+      requires: ["signal.si_units"]
+    - target: transforms.frame_graph.ctf_head_to_mri
+      scales: ["sensor", "voxel"]
+      requires: ["calibration.transforms", "calibration.head_model"]
+    - target: observe.meg.lead_field_validation
+      scales: ["sensor", "source"]
+      requires: ["spatial.psf"]
+    - target: observe.meg.noise_covariance
+      scales: ["sensor"]
+      requires: ["signal.si_units", "missingness.mechanism"]
+  frozen:
+    - anatomy.connectome_prior
+    - observe.eeg.*
+  forbid:
+    - infer.population_prior
+    - intervene.*
+  evaluation_only: false
+  note: >-
+    The value of this source is that it is NOT a Neuromag system. Its
+    admissible use is checking that the observation head generalises across
+    sensor geometries, not adding statistical power.
+
+role: likelihood
+
+split_policy:
+  grouping_keys: ["participant"]
+  grouping_note: "n = 1, two runs; there is no held-out person"
+  temporal_holdout: "available across the two runs (run 1 -> run 2)"
+  temporal_holdout_spec: null
+  stimulus_holdout: >-
+    faces vs scrambled faces is a condition, not a stimulus identity. The
+    archive does not distribute per-image identifiers, so image-level holdout
+    is not available and no image-generalisation claim may be made from this
+    source.
+  site_holdout: "not available"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    Use for cross-geometry checks and within-subject held-out time only.

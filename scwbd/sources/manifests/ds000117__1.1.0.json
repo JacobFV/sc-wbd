@@ -1,0 +1,680 @@
+{
+ "algorithm": "sha256",
+ "dataset_id": "ds000117",
+ "files": {
+  ".gitattributes": {
+   "bytes": 458,
+   "sha256": "d256e1a4d6a221a86e0f9d367e1d7d407fcb8c3348324f45947b7b196862e54a"
+  },
+  "CHANGES": {
+   "bytes": 1969,
+   "sha256": "3efee0247df25cb0096c71692b0e1a9e323ae9e27880f4b51cf29e9dd2cf482a"
+  },
+  "README": {
+   "bytes": 5946,
+   "sha256": "dd60e2f4bd07accf2d5a48e1107e9e6b50815d1e7ab6d0563a300e637a293097"
+  },
+  "acq-mprage_T1w.json": {
+   "bytes": 1372,
+   "sha256": "ef4c08c49403ebf586ae8ddf238f6fe94be2b6d18c174f8a17756bb1385cd0e2"
+  },
+  "dataset_description.json": {
+   "bytes": 1102,
+   "sha256": "1a93fd2628f81fa12bfa2808d32e1328fe5b03c2a66b0e32a63ae83dd12c1a02"
+  },
+  "derivatives/meg_derivatives/ct_sparse.fif": {
+   "bytes": 47399,
+   "sha256": "5a2d207f7582f4fa1884787a562c60429ba45b4f8f424f6572198e53d3733e5a"
+  },
+  "derivatives/meg_derivatives/sss_cal.dat": {
+   "bytes": 39114,
+   "sha256": "f5c59b6b92c1d9fffadbdfa7adedeaa2d009a1627fcab239838c7db659603ce7"
+  },
+  "participants.json": {
+   "bytes": 316,
+   "sha256": "bfc544ccd4b176774c31046455c67d7c8890433e210eded1f06d66e5d9068880"
+  },
+  "participants.tsv": {
+   "bytes": 333,
+   "sha256": "f4af944a3df9bc0611820bb9a0ee5b739eb29e58fdfbcd4d00ae6dccf5a50ab5"
+  },
+  "run-1_echo-1_FLASH.json": {
+   "bytes": 82,
+   "sha256": "e65bb5ba4806bb2294540d53430e67a700b26c4e4d33d069b4731e2937fc9e84"
+  },
+  "run-1_echo-2_FLASH.json": {
+   "bytes": 82,
+   "sha256": "5bf87bb3f3a5cde7054d78251153259fd84334b45ec560c00ac5a06c7975f39a"
+  },
+  "run-1_echo-3_FLASH.json": {
+   "bytes": 82,
+   "sha256": "2881d5781d72f62f1aa041bba4d08341ea2347e448432cf75da2a9cc1a3ad1c3"
+  },
+  "run-1_echo-4_FLASH.json": {
+   "bytes": 82,
+   "sha256": "4061d64408861481356a07a7ef4700bf003e24782b13e28a44fffe8b77353b0d"
+  },
+  "run-1_echo-5_FLASH.json": {
+   "bytes": 82,
+   "sha256": "0dff78b54ea815393d23c3ff4464ece739f658a9a8667cc6af3a1c37b922a99f"
+  },
+  "run-1_echo-6_FLASH.json": {
+   "bytes": 82,
+   "sha256": "90a879572a33ffb4dfb51bb484bb7d13f5f357a750413869001a991894e44cc3"
+  },
+  "run-1_echo-7_FLASH.json": {
+   "bytes": 82,
+   "sha256": "7929e191b68eb5de94e91702f29cccf1016619df3cea9b36acab649822459757"
+  },
+  "run-2_echo-1_FLASH.json": {
+   "bytes": 83,
+   "sha256": "aa5ec76688076c20d8abb32bfee25a4d037633391b99891a141bc594f5d19467"
+  },
+  "run-2_echo-2_FLASH.json": {
+   "bytes": 83,
+   "sha256": "ce46665baee8c723770f2c857e680335c360f08cd6a6bb7408d5bba5f9fa8878"
+  },
+  "run-2_echo-3_FLASH.json": {
+   "bytes": 83,
+   "sha256": "3a5cfc51b5029bfef2cdd37addf9b2e96334b6686ffb734132413a72810d9d32"
+  },
+  "run-2_echo-4_FLASH.json": {
+   "bytes": 83,
+   "sha256": "0d4301baf9e3d553e85e316dc8b5d3b32fd79356a7b256b8f8c8f8446655e745"
+  },
+  "run-2_echo-5_FLASH.json": {
+   "bytes": 83,
+   "sha256": "6534c2699b2db470356b40c273ebb0783ae6d7f76de09c68b18275b1e3517062"
+  },
+  "run-2_echo-6_FLASH.json": {
+   "bytes": 83,
+   "sha256": "88962166bb9ec161ec8189878c2e5baf6d8fce3c3b2d19fd7dced9067d7c9bb2"
+  },
+  "run-2_echo-7_FLASH.json": {
+   "bytes": 83,
+   "sha256": "6319171e5ede8514c8a33e85e830198ac62fad6f8227f473dba834b4b502fbeb"
+  },
+  "sub-01/ses-meg/beh/sub-01_ses-meg_task-facerecognition_events.tsv": {
+   "bytes": 8961,
+   "sha256": "6035a70fbd187ab2d9837afa280767308f7052eff98a17f5270925a8a932eb08"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_coordsystem.json": {
+   "bytes": 1822,
+   "sha256": "689d8d945487aaa456ad50d5ee92fff191500388205a597062894f9e7b1cef1b"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_headshape.pos": {
+   "bytes": 4655,
+   "sha256": "432b76e3bbd650ddb466de6b361d318b8ca57f6c17ac5b2511e8ec976eb13776"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-01_events.tsv": {
+   "bytes": 6284,
+   "sha256": "2cd7187ef718705ad5572966b5c4093c5f0f28cc0c25025debdfb2c437822a80"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-01_meg.fif": {
+   "bytes": 860240688,
+   "sha256": "e111b2b383bb330922ce78eb9ac1a50d5b9005adf56fec32e8c1f51bd2908334"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-02_events.tsv": {
+   "bytes": 6387,
+   "sha256": "57a5f928a20607d340af5097d609abf6782ad418a275b4216f66ce1d2a5f224e"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-02_meg.fif": {
+   "bytes": 870667946,
+   "sha256": "bb14ab4e019bfe584ad876b82eca6d073716cb558a9d40e8835cd0ff672a7acd"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-03_events.tsv": {
+   "bytes": 6469,
+   "sha256": "fbfc9f3a32ed97e1991e25b62400f6ea414c07d6718c817db9e16803c9a83ff1"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-03_meg.fif": {
+   "bytes": 884572514,
+   "sha256": "5a9e8dd66e688cdfaac637dcbc9169492c7dff04c7df6d7e2863ae42a4aac4b4"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-04_events.tsv": {
+   "bytes": 6349,
+   "sha256": "e802bb7a5dcb6e85b60f95e61428bd643a81d6669566adf9dfaa0caa48f9b0a7"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-04_meg.fif": {
+   "bytes": 863716250,
+   "sha256": "5e973bcf371f431a82146667cd5e3d18e6adc2eed93ae336e8f53717350a1a16"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-05_events.tsv": {
+   "bytes": 6386,
+   "sha256": "54928009e4f56539c95715cd0c89218de72361072ef8e3882bb028f53f829914"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-05_meg.fif": {
+   "bytes": 884572922,
+   "sha256": "5205412a01564e439a178b2897120424820e02e481e038bcb053549c92b7fa71"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-06_events.tsv": {
+   "bytes": 6382,
+   "sha256": "c76bf27b8fa61f951f8cd0bc9dffe34b6718624157b85733d0b8e60d7aa43e36"
+  },
+  "sub-01/ses-meg/meg/sub-01_ses-meg_task-facerecognition_run-06_meg.fif": {
+   "bytes": 875883434,
+   "sha256": "babbf9be26ce6ff2dc7b6d9cbf7a1c5b4a70e998931f098203000472dfbb3050"
+  },
+  "sub-01/ses-meg/sub-01_ses-meg_scans.tsv": {
+   "bytes": 475,
+   "sha256": "735458e575183493071bbacd0fff1c53baadf4a7f7b843b588c43ddfc11ab02d"
+  },
+  "sub-01/ses-meg/sub-01_ses-meg_task-facerecognition_channels.tsv": {
+   "bytes": 23525,
+   "sha256": "10322886450d954c749e7689c98771697d7c2f3aeb649378a2e741bbb522414c"
+  },
+  "sub-01/ses-meg/sub-01_ses-meg_task-facerecognition_meg.json": {
+   "bytes": 1710,
+   "sha256": "ec49bb89a759a84e37a565e081f219046e64e67bfd3a783ff1bd49e4a5746c7a"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_acq-mprage_T1w.json": {
+   "bytes": 45845,
+   "sha256": "8637797b7aaf1778e49041f14eca1d5ee47538470144420ea3b3574c70052d65"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_acq-mprage_T1w.nii.gz": {
+   "bytes": 13090044,
+   "sha256": "94199333181184207dc26a64581813ef48a1b53731f5e9ff23995dc2f72cf5f1"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-1_echo-1_FLASH.nii.gz": {
+   "bytes": 13367316,
+   "sha256": "737acecdbbcfe41434527c90a5032b438a4590f70f8b0452858fe84ff96b9120"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-1_echo-2_FLASH.nii.gz": {
+   "bytes": 13380654,
+   "sha256": "4a982549a41cea682c83ef2819f326beebf8a6e77d0f4d95f5046a5cd83a77e5"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-1_echo-3_FLASH.nii.gz": {
+   "bytes": 13347971,
+   "sha256": "30831696b4f9b0f6150a3b05437f3149b79cfe66da5fe173d05e103997aada52"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-1_echo-4_FLASH.nii.gz": {
+   "bytes": 13309352,
+   "sha256": "e4e62496a7b66b402798b671a8b4cea3732e00ddc7c7c2f7b509c66696a13e00"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-1_echo-5_FLASH.nii.gz": {
+   "bytes": 13249133,
+   "sha256": "d1b5f35be228dcb7bd0db0c60798141615e320a64d87cad734fb342212a3696b"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-1_echo-6_FLASH.nii.gz": {
+   "bytes": 13179303,
+   "sha256": "ee69842089d76e46c2b1900bc92304dbbc7ceead9066735f1e8673dbbd797ef6"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-1_echo-7_FLASH.nii.gz": {
+   "bytes": 13131604,
+   "sha256": "2ed7a68bd4b3c32c364011a92a2cf4175126c57ee43d83dc686c9f6fc770fd5e"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-2_echo-1_FLASH.nii.gz": {
+   "bytes": 13605363,
+   "sha256": "fd69b823e821af334f0c663b6b8d0cd44057def10de86cdeda7fe2ebb0c9c6f0"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-2_echo-2_FLASH.nii.gz": {
+   "bytes": 13356858,
+   "sha256": "0412e0646094fcda60d809e8012687243c0263af47ef14da1ea959b5494d3161"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-2_echo-3_FLASH.nii.gz": {
+   "bytes": 13307839,
+   "sha256": "a47ea8f43ae15202e6fd393378a6d1cecaa6c0165739a7556be1138bfeb81f94"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-2_echo-4_FLASH.nii.gz": {
+   "bytes": 13297395,
+   "sha256": "c412faf5b78375033d99a862a509471b55091078082f7a9bf8b04a8a0de80cdc"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-2_echo-5_FLASH.nii.gz": {
+   "bytes": 13184641,
+   "sha256": "55c07a2b4e4a8fc5e1549215079dac2730b1736d0eeb3697b5d61cfda4e788af"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-2_echo-6_FLASH.nii.gz": {
+   "bytes": 13000617,
+   "sha256": "fe5c275f8b1f816b8ea07539a2bfe807112d73781bd158e9c629a45681175c4f"
+  },
+  "sub-01/ses-mri/anat/sub-01_ses-mri_run-2_echo-7_FLASH.nii.gz": {
+   "bytes": 12960072,
+   "sha256": "5e7c0ba4bb2357d892b9bd25a174079bc986a152caade13ef2fb15dc2952dbc5"
+  },
+  "sub-01/ses-mri/dwi/sub-01_ses-mri_dwi.bval": {
+   "bytes": 324,
+   "sha256": "774e05c1e8af6ae88d4cb213bff230d046c5d1b91fe0472b260a211ebf397c0c"
+  },
+  "sub-01/ses-mri/dwi/sub-01_ses-mri_dwi.bvec": {
+   "bytes": 3362,
+   "sha256": "01e650ca235b32652929de433867f01506b60251006b5cc5c1271a1fd5d2a0ef"
+  },
+  "sub-01/ses-mri/dwi/sub-01_ses-mri_dwi.json": {
+   "bytes": 616,
+   "sha256": "2ffd457dc97d92f10bbf2af8f7e39936dc13ab595de38e388267b3a53fdb209f"
+  },
+  "sub-01/ses-mri/dwi/sub-01_ses-mri_dwi.nii.gz": {
+   "bytes": 45889299,
+   "sha256": "9e666e48c491de6304053a49d96640f71fa52f711d779704450dc4488cb96ddd"
+  },
+  "sub-01/ses-mri/fmap/sub-01_ses-mri_magnitude1.json": {
+   "bytes": 3144,
+   "sha256": "7fbaa644a3159683d1ac91315e4aa61c3441ee99f2ca88b7a50c9f78508fe584"
+  },
+  "sub-01/ses-mri/fmap/sub-01_ses-mri_magnitude1.nii": {
+   "bytes": 270688,
+   "sha256": "fa175006284ff5200300ced803612d651b1ba2a13a0281a2ede62d06649f9916"
+  },
+  "sub-01/ses-mri/fmap/sub-01_ses-mri_magnitude2.json": {
+   "bytes": 3115,
+   "sha256": "868a6f1cc37607fad16b665e4a3496541cc73d0c110d86e613b1bc7fa5b1b6d8"
+  },
+  "sub-01/ses-mri/fmap/sub-01_ses-mri_magnitude2.nii": {
+   "bytes": 270688,
+   "sha256": "d1b2e04fca45881295cc305360b6b6c5454724db3118f1d558617ed64c84ca65"
+  },
+  "sub-01/ses-mri/fmap/sub-01_ses-mri_phasediff.json": {
+   "bytes": 21456,
+   "sha256": "dbec9e57600002a2692031dd47f56662f3bf1b180622fd09828a8cb79afbe827"
+  },
+  "sub-01/ses-mri/fmap/sub-01_ses-mri_phasediff.nii": {
+   "bytes": 270688,
+   "sha256": "d9fd4d7347b6fdd208a7b04a588a511af915877325a22cd226c3259a191737de"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-01_bold.json": {
+   "bytes": 22157,
+   "sha256": "06087a8701b352cfd941987d1f37022d3d3e8f3fb29b154dadaeefdb8be46017"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-01_bold.nii.gz": {
+   "bytes": 36981398,
+   "sha256": "8e7c19d3d3b0153599c7f7a50fa2eca1f2433b8e8c497537e3599870dc1d1019"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-01_events.tsv": {
+   "bytes": 4914,
+   "sha256": "5ea252d04ddc2820b4746bb18bb5e37deed434d655c762d02188c5b6c4e0604d"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-02_bold.json": {
+   "bytes": 22158,
+   "sha256": "a24ce9c152d44013cd2d515f60ef9c1ebb95e687ca937d51003037a8a1b21735"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-02_bold.nii.gz": {
+   "bytes": 37032610,
+   "sha256": "0caef39e4d0e1065e6f77b514eb73a2a519ef0100045e9b70fbc23d4bc244af2"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-02_events.tsv": {
+   "bytes": 4853,
+   "sha256": "1af436b59db1bf543c4da1d232b3fb51b4ab4b20da28f51e56c4f65bd4fea62f"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-03_bold.json": {
+   "bytes": 22158,
+   "sha256": "36e273626c4ba98f1b87ce575bee637af4334a5c7e51d0534cf56792c4b56d0c"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-03_bold.nii.gz": {
+   "bytes": 37116611,
+   "sha256": "706a72e4317785fb1b05e3eeee61e958f32678f5b4ec5fd98c80ec88cf26b9a5"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-03_events.tsv": {
+   "bytes": 4886,
+   "sha256": "4dc1f63f06e005ed19370f2a6ab8e7defa1e0bb12f7ba1f72b2f11f89e7b397a"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-04_bold.json": {
+   "bytes": 22158,
+   "sha256": "6f995d3b5f2c82ddb4fb53bac37fadac85f4446d0f08041ca8a3ca034d50cc24"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-04_bold.nii.gz": {
+   "bytes": 37184175,
+   "sha256": "7fbe1214e13c0cf067346e2e72e70c8ff0ea81adead06b578bb8ca2febab1037"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-04_events.tsv": {
+   "bytes": 4856,
+   "sha256": "5f3783aaaaffec0410d4e1e7391145b2a39cc586be66b83c0e9f767874b7ddea"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-05_bold.json": {
+   "bytes": 22157,
+   "sha256": "fd945f95e5c0e16f0f7244e812d68c5eb67d46d9e78e1b289a14d14cdf6b6703"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-05_bold.nii.gz": {
+   "bytes": 37241852,
+   "sha256": "e5e4ecefdf90896e733707c1856ea50fb9431f869720be9878c8545870413ee3"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-05_events.tsv": {
+   "bytes": 4952,
+   "sha256": "d41f2cd6e48d784d434d5f8a073c4fcdc8448434f272fa17f72368d9bed301da"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-06_bold.json": {
+   "bytes": 22158,
+   "sha256": "bfdafa5c3a98701a684a4233e00c12f9159aa96f2a079e0520f593313bf2537a"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-06_bold.nii.gz": {
+   "bytes": 37056993,
+   "sha256": "563e388dda6422b737aab604fae1c92d57c1662035f4a6255d6d68f0811cb568"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-06_events.tsv": {
+   "bytes": 4855,
+   "sha256": "45432d0d38e71d4cda8492718a9f5376c270ddc09922c662d0938f75eb3dbb83"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-07_bold.json": {
+   "bytes": 22158,
+   "sha256": "9eefdb4eaf99eb6cc2ca8050322350172e81c971d4c7e1aa79fbd77d7b47d81f"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-07_bold.nii.gz": {
+   "bytes": 37085438,
+   "sha256": "55ac43ea61f5bcffaef60f712ef9173b3ef6d86bf2052cba304f15e616e8ba4e"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-07_events.tsv": {
+   "bytes": 4904,
+   "sha256": "d911106cc94a1adbad9d1c84be6b7dd06fa38ba1dbd569a0c458222a9bbdebc3"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-08_bold.json": {
+   "bytes": 22160,
+   "sha256": "8eb8e209be4f13d373274a87d894bd5bf971541d8f576f95004f6d70c86b3c69"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-08_bold.nii.gz": {
+   "bytes": 37076392,
+   "sha256": "6827aeae0f3200abb7c3f8087cc473f75ba37ae2089ab353923917fb959e049f"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-08_events.tsv": {
+   "bytes": 4828,
+   "sha256": "6c2b897da1822ff9b0507545354fa8210da710ef972dc648bba7651bb0110e58"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-09_bold.json": {
+   "bytes": 22163,
+   "sha256": "a3e3bb3afb2e3f92b3847d00cbeac15273b2e0cc60d42335e68bb941b0ea9f1b"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-09_bold.nii.gz": {
+   "bytes": 37012340,
+   "sha256": "7fa8f127e3ab1bc0d4817406301a59390b783614c22726267f72ad77c4706611"
+  },
+  "sub-01/ses-mri/func/sub-01_ses-mri_task-facerecognition_run-09_events.tsv": {
+   "bytes": 4716,
+   "sha256": "7c8a0126d89bbad3f49e1425c279df021105dfd9682fcbbd81a10f871d10b957"
+  },
+  "sub-02/ses-meg/beh/sub-02_ses-meg_task-facerecognition_events.tsv": {
+   "bytes": 8955,
+   "sha256": "850aa87197cbe4e78745eed46f9cd19aea0633eec0674a4cd92d1ef1549c2095"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_coordsystem.json": {
+   "bytes": 1890,
+   "sha256": "cefaa5b9f6af6464aa3924da517e12e5d87ecf2fd7e83bd81742cac7e0b33d14"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_headshape.pos": {
+   "bytes": 4495,
+   "sha256": "c4783438632eeefb763d6462d1480869ffe8223a6eef4105b5ea3e212ccacbfc"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-01_events.tsv": {
+   "bytes": 6339,
+   "sha256": "063632c53a6397ec5d45a52952cd2a793afa91fb687e7717cc02c569be8bc2df"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-01_meg.fif": {
+   "bytes": 865457000,
+   "sha256": "834cf404426981527f621a9cd09d95847ae9cee43017a64db3cbe2d41012a144"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-02_events.tsv": {
+   "bytes": 6350,
+   "sha256": "42fde3942d295c0173933a360ba7a0efeb017ad0006471196ae8a221e51f4f8c"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-02_meg.fif": {
+   "bytes": 863717414,
+   "sha256": "4bce31f396d52a99a4d82a151133e30ce71005a60bf618083fb9e3a7f31a1173"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-03_events.tsv": {
+   "bytes": 6297,
+   "sha256": "1a3f880a49a1ff5b83a719b6bf0a8e40804c43a7b684b14daa72135d1cdaf887"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-03_meg.fif": {
+   "bytes": 861979298,
+   "sha256": "4150f9c3fabd9f320d289ec91bbf0bd2a359914991892240b02689a4d24a2e23"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-04_events.tsv": {
+   "bytes": 6334,
+   "sha256": "739c84a27f60423e9b091421d5b5b72896d0fe4f103bfce38e5f4ec4d3fd59b8"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-04_meg.fif": {
+   "bytes": 881097602,
+   "sha256": "789fcc611758a10e3510e4410b7f03614250ee38963d490adb5eeca74bda976e"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-05_events.tsv": {
+   "bytes": 6390,
+   "sha256": "2a36eb65c521be57bbdf57e0cd7a99a37fdbb1b8fb3440ccd20df4ecc571721e"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-05_meg.fif": {
+   "bytes": 865455174,
+   "sha256": "c18ef1b08eef7ee73342e0d5fceb7daa1a6865ac7b61f78760bc2d9beb3b6b30"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-06_events.tsv": {
+   "bytes": 6329,
+   "sha256": "5388ab6f53db91add2295fed65a24e5d63c3b6a1e3a855cd733c19f256aa247a"
+  },
+  "sub-02/ses-meg/meg/sub-02_ses-meg_task-facerecognition_run-06_meg.fif": {
+   "bytes": 858503294,
+   "sha256": "3fe04efe5d0c502a6b1e4c29b8d78252f2a07a6c461f396719da38d73089556c"
+  },
+  "sub-02/ses-meg/sub-02_ses-meg_scans.tsv": {
+   "bytes": 475,
+   "sha256": "bd70397550ad3a0cfbd94ab37b8dd8272da86094dd34379a4b131a66f0ba25e6"
+  },
+  "sub-02/ses-meg/sub-02_ses-meg_task-facerecognition_channels.tsv": {
+   "bytes": 23525,
+   "sha256": "10322886450d954c749e7689c98771697d7c2f3aeb649378a2e741bbb522414c"
+  },
+  "sub-02/ses-meg/sub-02_ses-meg_task-facerecognition_meg.json": {
+   "bytes": 1710,
+   "sha256": "2eeacd5fee0515c10daf6f0f5e14a3eb25fa7d8faf91b4e01c216b722adb5680"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_acq-mprage_T1w.json": {
+   "bytes": 46130,
+   "sha256": "81c7b5a55e2cf5823a961848fbed8dc999d9527b8a7c918ff95a1312a5ff3cee"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_acq-mprage_T1w.nii.gz": {
+   "bytes": 12814426,
+   "sha256": "6e288399596c46797fda7698762de3ac642c99370c412efdbce9e1dd3792968e"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-1_echo-1_FLASH.nii.gz": {
+   "bytes": 13067024,
+   "sha256": "fd96cd037795a6e2f40fd6f770dd556a22429471e3be5e5e6bafcec265574629"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-1_echo-2_FLASH.nii.gz": {
+   "bytes": 13082603,
+   "sha256": "f1fe7e31e84b63a6421e9a7d89f368ca30ab2ec1704a2f2e3843be0123eae6d4"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-1_echo-3_FLASH.nii.gz": {
+   "bytes": 13043837,
+   "sha256": "6aba6a27de8647057b49e4962247f83db860e4e8203dffeb5ba2318f4a4cf7a7"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-1_echo-4_FLASH.nii.gz": {
+   "bytes": 12995872,
+   "sha256": "739377c8e8312141f826d0d3ca8f14d18f2744973fb4a095c93f328b55e87e44"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-1_echo-5_FLASH.nii.gz": {
+   "bytes": 12932590,
+   "sha256": "958e1de58a69905581eef4c91b07955ed0ec3462090d2736e952c33235e36dae"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-1_echo-6_FLASH.nii.gz": {
+   "bytes": 12875831,
+   "sha256": "39dae0c02568f2fb7554eb316aa49cec842d7a243ae383aaa1d8fe7f07666e01"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-1_echo-7_FLASH.nii.gz": {
+   "bytes": 12834630,
+   "sha256": "8995e423a8ba1de97da8ce68d1cdf5a0085516d9a183e305710ae3a10249d9e9"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-2_echo-1_FLASH.nii.gz": {
+   "bytes": 13273264,
+   "sha256": "61c99e76c69ba189ea8b2d3b3d579c3b151c9f965035f4ebd8c4c589928e702e"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-2_echo-2_FLASH.nii.gz": {
+   "bytes": 13043298,
+   "sha256": "5681a7fc4b29e3607d4e471cefa7bb3058058987f297d7709d33f99bb1487b6e"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-2_echo-3_FLASH.nii.gz": {
+   "bytes": 12987851,
+   "sha256": "acbb5aed5a844b796d7cb95885082bbe063d75aff36e0941725961ea47cf4032"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-2_echo-4_FLASH.nii.gz": {
+   "bytes": 12961771,
+   "sha256": "b55da5b2b30901e4b304719ccddbaa66472d4c22336a4beee047aa505672fdb6"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-2_echo-5_FLASH.nii.gz": {
+   "bytes": 12853046,
+   "sha256": "6d79206915693489286f59b07742559aa4d6829f6066f565910f9c4789b8e077"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-2_echo-6_FLASH.nii.gz": {
+   "bytes": 12684664,
+   "sha256": "98794626cf1e24a2eabacc6443873f65947c1aa22a7f59a47db9da2dd8460a48"
+  },
+  "sub-02/ses-mri/anat/sub-02_ses-mri_run-2_echo-7_FLASH.nii.gz": {
+   "bytes": 12632641,
+   "sha256": "bbb2bd7e336400f0dfdbaa1947347281d3c442e3312c0fd87ec029f768f4b129"
+  },
+  "sub-02/ses-mri/dwi/sub-02_ses-mri_dwi.bval": {
+   "bytes": 324,
+   "sha256": "774e05c1e8af6ae88d4cb213bff230d046c5d1b91fe0472b260a211ebf397c0c"
+  },
+  "sub-02/ses-mri/dwi/sub-02_ses-mri_dwi.bvec": {
+   "bytes": 3362,
+   "sha256": "30d2290a09d48bd4602103e5a981ee36a6eeb6a098824cc4a9f43b148ea665cf"
+  },
+  "sub-02/ses-mri/dwi/sub-02_ses-mri_dwi.json": {
+   "bytes": 627,
+   "sha256": "a394071d2e6d93879854238eb51358c38cdbb4169cd5a251f2945b1da1662795"
+  },
+  "sub-02/ses-mri/dwi/sub-02_ses-mri_dwi.nii.gz": {
+   "bytes": 45197785,
+   "sha256": "1d65daddae2f2ad12f4ca32c42cf9e630bf9da609047c593835779cbf581cb9a"
+  },
+  "sub-02/ses-mri/fmap/sub-02_ses-mri_magnitude1.json": {
+   "bytes": 3146,
+   "sha256": "cc64135f47a33afeea4530ac57fd42976fac8b3b4b56bb1436a24abcbe701c52"
+  },
+  "sub-02/ses-mri/fmap/sub-02_ses-mri_magnitude1.nii": {
+   "bytes": 270688,
+   "sha256": "4a26b4fb335fa3a99759e5e1b18ef237c690bfcb452358e529ccd5d0a0e67e8f"
+  },
+  "sub-02/ses-mri/fmap/sub-02_ses-mri_magnitude2.json": {
+   "bytes": 3147,
+   "sha256": "267c10e9e9989ac85bb9863e4a0c5679322af5cc6d8c08ddfb7d059a55b115e0"
+  },
+  "sub-02/ses-mri/fmap/sub-02_ses-mri_magnitude2.nii": {
+   "bytes": 270688,
+   "sha256": "b4d0154093322b97dd3369d9a52b37de94fffc7f151dd33083162ca2460063a0"
+  },
+  "sub-02/ses-mri/fmap/sub-02_ses-mri_phasediff.json": {
+   "bytes": 22115,
+   "sha256": "895f78da6b31360653188dbcffdd50012f190804814817ca7e57c94b53e2e987"
+  },
+  "sub-02/ses-mri/fmap/sub-02_ses-mri_phasediff.nii": {
+   "bytes": 270688,
+   "sha256": "0cf4cbe01ddbfa0616262b01c5ef592ebd58205e5899065ac32f492c1c7cc20a"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-01_bold.json": {
+   "bytes": 22260,
+   "sha256": "1e4171c755284eef679660f995f26bc6b2add9620325497af9e2dfcd8c3530f4"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-01_bold.nii.gz": {
+   "bytes": 36414909,
+   "sha256": "73bcafed0ed8076653a9a46dce9ca056f28ab487fa1ffed72fec594b0ba12c79"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-01_events.tsv": {
+   "bytes": 4714,
+   "sha256": "683ae95f60f11dc8bca2cf6834fa28f9eb7a9b09e7df6e442c06a5d4e65c5c84"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-02_bold.json": {
+   "bytes": 22261,
+   "sha256": "65f2bdd3d4685e2b15163b2fc77c2148b91057e5fee5e809cb673eaea1e794c0"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-02_bold.nii.gz": {
+   "bytes": 36456442,
+   "sha256": "39fec8b39a2382707a88caed1483a6f382f0fd7b9d5f852949fbae42fcb7e464"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-02_events.tsv": {
+   "bytes": 4680,
+   "sha256": "574f0b7bdd0b212f4f34b78ed08f81eda4fa776fe59676d96a9bba643f834553"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-03_bold.json": {
+   "bytes": 22259,
+   "sha256": "21b8ac321920cd1592add1073fa1eb59d6888f103d55157363a82bfca8c030ff"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-03_bold.nii.gz": {
+   "bytes": 36538936,
+   "sha256": "6689d22e207af89f6a4d20943e04e9a24cc55433ea141c378572f29a413ef218"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-03_events.tsv": {
+   "bytes": 4725,
+   "sha256": "c1d3445399caa1a2847f784560155e19e11c8695a4ca959593cd27e76bc8f3ba"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-04_bold.json": {
+   "bytes": 22260,
+   "sha256": "1bab6a7e03758b8614aff23fe192dc76f5af6ae52de5da35d024bda3568eedb9"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-04_bold.nii.gz": {
+   "bytes": 36561143,
+   "sha256": "754f02ef2ea610cb34b4af92bfc4fe3ca197b8a46fe69beb7f6daff4b7037400"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-04_events.tsv": {
+   "bytes": 4897,
+   "sha256": "c6009e61840c517f76a83400a8b03253155aa793d83dfa002096f3d7e4e64ba2"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-05_bold.json": {
+   "bytes": 22259,
+   "sha256": "b205a0bab2809af9b216e58bd57c09896b7c2ef2253973d555e3e6e33c16ebd4"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-05_bold.nii.gz": {
+   "bytes": 36571994,
+   "sha256": "95befd136b174489231c76662343dc62dabfeb5ce5934de6c57c3eef20e6b812"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-05_events.tsv": {
+   "bytes": 4952,
+   "sha256": "5a15c2bf82eed27fa2a1b40c1b328f2939a5a45a00defdd09fd93cee523e1ce1"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-06_bold.json": {
+   "bytes": 22261,
+   "sha256": "04db2b9e171ee1742435e62f3f249a29f6df95f8fc2321644678126628d3bd57"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-06_bold.nii.gz": {
+   "bytes": 36601815,
+   "sha256": "52390ec80bc713a60b81bd4de3aaf1d1d5fa3ef81886d23b98b12eee823a1e24"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-06_events.tsv": {
+   "bytes": 4852,
+   "sha256": "ee750ee483943b234cb1eb41a8246c3b296e6010d71e7d323a0759b94d71a4e6"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-07_bold.json": {
+   "bytes": 22262,
+   "sha256": "9b819b9d84a1361bda088fa3d6f825b5edc8fafa5e1abef0ec6ea19729055248"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-07_bold.nii.gz": {
+   "bytes": 36649992,
+   "sha256": "ef4e8ed3c73fffa66d95d8fb608db956d2666f7b5853c1230915fd95a52fbbec"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-07_events.tsv": {
+   "bytes": 4685,
+   "sha256": "2ec317590d6e060a2eacb68cfa9fadda5e825adeed9097b4d97b5ab60e58b5eb"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-08_bold.json": {
+   "bytes": 22262,
+   "sha256": "43370efaa24a4cf957e49b49253fe302402f00501cdca9f34dd3948c2ed42bee"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-08_bold.nii.gz": {
+   "bytes": 36715260,
+   "sha256": "46dae62597510e625e6bf484102936e32f6d1698c638e8790a9db440232dca3c"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-08_events.tsv": {
+   "bytes": 4998,
+   "sha256": "a91ffb14e0b45369d93682a2d65c4b4ba5e2e5e0a3baefb329e55efff2ddc7c3"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-09_bold.json": {
+   "bytes": 22262,
+   "sha256": "f1fa5b762515ab03b5b0f7d79b067ae05cdcd5311879162e213b3e77a42c5b52"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-09_bold.nii.gz": {
+   "bytes": 36744743,
+   "sha256": "817a0461a7e53b2afede665c05d73be040755498980c55a04fe88ddabceabaf8"
+  },
+  "sub-02/ses-mri/func/sub-02_ses-mri_task-facerecognition_run-09_events.tsv": {
+   "bytes": 4826,
+   "sha256": "817037feda4c22f3679be22ddd11104c266f655ae0bbdc64fe1e5c78384473e4"
+  },
+  "task-facerecognition_bold.json": {
+   "bytes": 1997,
+   "sha256": "0fe29ea1e6d86acda95eac065ec395d0858eac7003d4339a0da93e0bd68f63bf"
+  },
+  "task-facerecognition_events.json": {
+   "bytes": 718,
+   "sha256": "9d4cb967e1a5c6776e2f2f2b2b0b12bc2dba2ef66f47fb0609d48e3ae8239155"
+  }
+ },
+ "generated_utc": "2026-08-06T06:27:04+00:00",
+ "manifest_sha256": "35d64fa350865b5acc3713e6604515cb810d0607ace6a3050774e309bcec5c51",
+ "n_files": 167,
+ "root": "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/data/ds000117/1.1.0",
+ "total_bytes": 11585373253,
+ "version": "1.1.0"
+}

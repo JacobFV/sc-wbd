@@ -1,0 +1,3087 @@
+{
+  "run_name": "scwbd-ci-smoke",
+  "git_sha": "32ca47e5b46d76b271984bd60ce34dbc9b4be0fc-dirty",
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.13.0+cu130",
+    "cuda_available": true,
+    "git_sha": "32ca47e5b46d76b271984bd60ce34dbc9b4be0fc-dirty",
+    "device": "NVIDIA GB10",
+    "capability": "12.1",
+    "total_memory_gb": 130.6,
+    "multi_processor_count": 48
+  },
+  "stages": [
+    {
+      "stage": "I_regional",
+      "steps": 4,
+      "wall_seconds": 2.5736656188964844,
+      "best_loss": 0.13313843213553803,
+      "steps_per_second": 1.5542034562030975,
+      "mixture": {
+        "mixture_weights": {
+          "weights": {
+            "anatomical_prior": 0.01352091780716504,
+            "eegmmidb_real": 0.38684699339382894,
+            "montage_calibration": 0.5099882830937199,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.08964380570528607
+          },
+          "raw_reliability": {
+            "anatomical_prior": 0.04551724137931035,
+            "eegmmidb_real": 1.3022938402773516,
+            "montage_calibration": 1.7168405365126675,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.30177971648383517
+          },
+          "inputs": {
+            "anatomical_prior": {
+              "role": "prior",
+              "n_eff": 1.0,
+              "n_rows": 1.0,
+              "measurement_variance": 0.4,
+              "bias_halfwidth": 0.5,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "eegmmidb_real": {
+              "role": "likelihood",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": 0.0,
+              "validity_overlap": 1.0
+            },
+            "montage_calibration": {
+              "role": "calibration",
+              "n_eff": 64.0,
+              "n_rows": 64.0,
+              "measurement_variance": 0.05,
+              "bias_halfwidth": 0.05,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "negative_control_shuffled": {
+              "role": "negative_control",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": null,
+              "validity_overlap": 0.0
+            },
+            "sim_wholebrain": {
+              "role": "prior",
+              "n_eff": 40000.0,
+              "n_rows": 100000000.0,
+              "measurement_variance": 0.02,
+              "bias_halfwidth": 0.45,
+              "model_discrepancy": 0.55,
+              "validity_overlap": 0.35
+            }
+          },
+          "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
+        },
+        "per_source_contribution": {
+          "anatomical_prior": 0.25549529575204344,
+          "sim_wholebrain": 0.7445047042479566
+        },
+        "gradient_permission_audit": {
+          "anatomical_prior": {
+            "n_permitted": 0,
+            "n_blocked": 104,
+            "patterns": [],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*",
+              "local.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "eegmmidb_real": {
+            "n_permitted": 37,
+            "n_blocked": 67,
+            "patterns": [
+              "local.*",
+              "residual.*",
+              "assimilate.*",
+              "context.*",
+              "log_dt_scale"
+            ],
+            "frozen": [
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "readout.0.weight",
+              "readout.0.bias",
+              "readout.2.weight",
+              "readout.2.bias",
+              "eeg.log_gain"
+            ]
+          },
+          "montage_calibration": {
+            "n_permitted": 0,
+            "n_blocked": 104,
+            "patterns": [],
+            "frozen": [
+              "local.*",
+              "coupling.*",
+              "residual.*",
+              "assimilate.*",
+              "readout.*",
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "negative_control_shuffled": {
+            "n_permitted": 0,
+            "n_blocked": 104,
+            "patterns": [],
+            "frozen": [
+              "*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "sim_wholebrain": {
+            "n_permitted": 41,
+            "n_blocked": 63,
+            "patterns": [
+              "local.*",
+              "residual.*",
+              "assimilate.*",
+              "context.*",
+              "readout.*",
+              "log_dt_scale"
+            ],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*"
+            ],
+            "blocked_sample": [
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "eeg.log_gain",
+              "eeg.offset",
+              "eeg.log_noise",
+              "eeg.nuisance",
+              "eeg.source_proj.0.weight"
+            ]
+          }
+        },
+        "gradient_conflict": {
+          "steps": 0,
+          "pairs": []
+        },
+        "conflict_decisions": [],
+        "adapters_enabled": [],
+        "skipped_nonfinite_steps": {},
+        "stage": "I_regional"
+      }
+    },
+    {
+      "stage": "II_interface",
+      "steps": 4,
+      "wall_seconds": 1.6060528755187988,
+      "best_loss": 0.29902757426506077,
+      "steps_per_second": 2.49057802577508,
+      "mixture": {
+        "mixture_weights": {
+          "weights": {
+            "anatomical_prior": 0.01352091780716504,
+            "eegmmidb_real": 0.38684699339382894,
+            "montage_calibration": 0.5099882830937199,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.08964380570528607
+          },
+          "raw_reliability": {
+            "anatomical_prior": 0.04551724137931035,
+            "eegmmidb_real": 1.3022938402773516,
+            "montage_calibration": 1.7168405365126675,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.30177971648383517
+          },
+          "inputs": {
+            "anatomical_prior": {
+              "role": "prior",
+              "n_eff": 1.0,
+              "n_rows": 1.0,
+              "measurement_variance": 0.4,
+              "bias_halfwidth": 0.5,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "eegmmidb_real": {
+              "role": "likelihood",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": 0.0,
+              "validity_overlap": 1.0
+            },
+            "montage_calibration": {
+              "role": "calibration",
+              "n_eff": 64.0,
+              "n_rows": 64.0,
+              "measurement_variance": 0.05,
+              "bias_halfwidth": 0.05,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "negative_control_shuffled": {
+              "role": "negative_control",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": null,
+              "validity_overlap": 0.0
+            },
+            "sim_wholebrain": {
+              "role": "prior",
+              "n_eff": 40000.0,
+              "n_rows": 100000000.0,
+              "measurement_variance": 0.02,
+              "bias_halfwidth": 0.45,
+              "model_discrepancy": 0.55,
+              "validity_overlap": 0.35
+            }
+          },
+          "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
+        },
+        "per_source_contribution": {
+          "anatomical_prior": 0.1149791817997979,
+          "sim_wholebrain": 0.8850208182002022
+        },
+        "gradient_permission_audit": {
+          "anatomical_prior": {
+            "n_permitted": 3,
+            "n_blocked": 101,
+            "patterns": [
+              "coupling.gain_*",
+              "coupling.global_scale"
+            ],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*",
+              "local.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias",
+              "local.embed",
+              "local.inp.weight",
+              "local.inp.bias"
+            ]
+          },
+          "eegmmidb_real": {
+            "n_permitted": 7,
+            "n_blocked": 97,
+            "patterns": [
+              "coupling.*",
+              "msg_proj.*",
+              "msg_readin.*"
+            ],
+            "frozen": [
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias",
+              "local.embed",
+              "local.inp.weight",
+              "local.inp.bias",
+              "local.layers.0.weight",
+              "local.layers.0.bias",
+              "local.films.0.region_scale",
+              "local.films.0.region_shift"
+            ]
+          },
+          "montage_calibration": {
+            "n_permitted": 0,
+            "n_blocked": 104,
+            "patterns": [],
+            "frozen": [
+              "local.*",
+              "coupling.*",
+              "residual.*",
+              "assimilate.*",
+              "readout.*",
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "negative_control_shuffled": {
+            "n_permitted": 0,
+            "n_blocked": 104,
+            "patterns": [],
+            "frozen": [
+              "*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "sim_wholebrain": {
+            "n_permitted": 11,
+            "n_blocked": 93,
+            "patterns": [
+              "coupling.*",
+              "msg_proj.*",
+              "msg_readin.*",
+              "readout.*"
+            ],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias",
+              "local.embed",
+              "local.inp.weight",
+              "local.inp.bias",
+              "local.layers.0.weight",
+              "local.layers.0.bias",
+              "local.films.0.region_scale",
+              "local.films.0.region_shift"
+            ]
+          }
+        },
+        "gradient_conflict": {
+          "steps": 0,
+          "pairs": []
+        },
+        "conflict_decisions": [],
+        "adapters_enabled": [],
+        "skipped_nonfinite_steps": {},
+        "stage": "II_interface"
+      }
+    },
+    {
+      "stage": "III_sliced",
+      "steps": 4,
+      "wall_seconds": 2.074100971221924,
+      "best_loss": 0.5851283554381149,
+      "steps_per_second": 1.928546418665174,
+      "mixture": {
+        "mixture_weights": {
+          "weights": {
+            "anatomical_prior": 0.01352091780716504,
+            "eegmmidb_real": 0.38684699339382894,
+            "montage_calibration": 0.5099882830937199,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.08964380570528607
+          },
+          "raw_reliability": {
+            "anatomical_prior": 0.04551724137931035,
+            "eegmmidb_real": 1.3022938402773516,
+            "montage_calibration": 1.7168405365126675,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.30177971648383517
+          },
+          "inputs": {
+            "anatomical_prior": {
+              "role": "prior",
+              "n_eff": 1.0,
+              "n_rows": 1.0,
+              "measurement_variance": 0.4,
+              "bias_halfwidth": 0.5,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "eegmmidb_real": {
+              "role": "likelihood",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": 0.0,
+              "validity_overlap": 1.0
+            },
+            "montage_calibration": {
+              "role": "calibration",
+              "n_eff": 64.0,
+              "n_rows": 64.0,
+              "measurement_variance": 0.05,
+              "bias_halfwidth": 0.05,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "negative_control_shuffled": {
+              "role": "negative_control",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": null,
+              "validity_overlap": 0.0
+            },
+            "sim_wholebrain": {
+              "role": "prior",
+              "n_eff": 40000.0,
+              "n_rows": 100000000.0,
+              "measurement_variance": 0.02,
+              "bias_halfwidth": 0.45,
+              "model_discrepancy": 0.55,
+              "validity_overlap": 0.35
+            }
+          },
+          "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
+        },
+        "per_source_contribution": {
+          "anatomical_prior": 0.032110719639710496,
+          "eegmmidb_real": 0.9114627579339276,
+          "sim_wholebrain": 0.056426522426361835
+        },
+        "gradient_permission_audit": {
+          "anatomical_prior": {
+            "n_permitted": 10,
+            "n_blocked": 94,
+            "patterns": [
+              "coupling.gain_*",
+              "coupling.global_scale",
+              "bold.*"
+            ],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*",
+              "local.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias",
+              "local.embed",
+              "local.inp.weight",
+              "local.inp.bias"
+            ]
+          },
+          "eegmmidb_real": {
+            "n_permitted": 54,
+            "n_blocked": 50,
+            "patterns": [
+              "local.*",
+              "residual.*",
+              "coupling.*",
+              "msg_proj.*",
+              "msg_readin.*",
+              "assimilate.*",
+              "context.*",
+              "eeg.*",
+              "log_dt_scale",
+              "individualizer.*"
+            ],
+            "frozen": [
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "readout.0.weight",
+              "readout.0.bias",
+              "readout.2.weight",
+              "readout.2.bias",
+              "bold.log_kappa",
+              "bold.log_gamma",
+              "bold.log_tau",
+              "bold.alpha",
+              "bold.rho",
+              "bold.neural_gain",
+              "bold.log_noise",
+              "behaviour.pool"
+            ]
+          },
+          "montage_calibration": {
+            "n_permitted": 6,
+            "n_blocked": 98,
+            "patterns": [
+              "eeg.log_gain",
+              "eeg.offset",
+              "eeg.log_noise",
+              "eeg.nuisance*"
+            ],
+            "frozen": [
+              "local.*",
+              "coupling.*",
+              "residual.*",
+              "assimilate.*",
+              "readout.*",
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "negative_control_shuffled": {
+            "n_permitted": 0,
+            "n_blocked": 104,
+            "patterns": [],
+            "frozen": [
+              "*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "sim_wholebrain": {
+            "n_permitted": 89,
+            "n_blocked": 15,
+            "patterns": [
+              "local.*",
+              "residual.*",
+              "coupling.*",
+              "msg_proj.*",
+              "msg_readin.*",
+              "assimilate.*",
+              "context.*",
+              "readout.*",
+              "log_dt_scale",
+              "bold.*",
+              "posterior.*"
+            ],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*"
+            ],
+            "blocked_sample": [
+              "eeg.log_gain",
+              "eeg.offset",
+              "eeg.log_noise",
+              "eeg.nuisance",
+              "eeg.source_proj.0.weight",
+              "eeg.source_proj.0.bias",
+              "eeg.source_proj.2.weight",
+              "eeg.source_proj.2.bias",
+              "eeg.nuisance_drive.weight",
+              "eeg.nuisance_drive.bias",
+              "behaviour.pool",
+              "behaviour.net.0.weight"
+            ]
+          }
+        },
+        "gradient_conflict": {
+          "steps": 0,
+          "pairs": []
+        },
+        "conflict_decisions": [],
+        "adapters_enabled": [],
+        "skipped_nonfinite_steps": {},
+        "stage": "III_sliced"
+      }
+    },
+    {
+      "stage": "IV_assembly",
+      "steps": 4,
+      "wall_seconds": 1.4489483833312988,
+      "best_loss": 0.8428659409305252,
+      "steps_per_second": 2.7606228393060768,
+      "mixture": {
+        "mixture_weights": {
+          "weights": {
+            "anatomical_prior": 0.01352091780716504,
+            "eegmmidb_real": 0.38684699339382894,
+            "montage_calibration": 0.5099882830937199,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.08964380570528607
+          },
+          "raw_reliability": {
+            "anatomical_prior": 0.04551724137931035,
+            "eegmmidb_real": 1.3022938402773516,
+            "montage_calibration": 1.7168405365126675,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.30177971648383517
+          },
+          "inputs": {
+            "anatomical_prior": {
+              "role": "prior",
+              "n_eff": 1.0,
+              "n_rows": 1.0,
+              "measurement_variance": 0.4,
+              "bias_halfwidth": 0.5,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "eegmmidb_real": {
+              "role": "likelihood",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": 0.0,
+              "validity_overlap": 1.0
+            },
+            "montage_calibration": {
+              "role": "calibration",
+              "n_eff": 64.0,
+              "n_rows": 64.0,
+              "measurement_variance": 0.05,
+              "bias_halfwidth": 0.05,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "negative_control_shuffled": {
+              "role": "negative_control",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": null,
+              "validity_overlap": 0.0
+            },
+            "sim_wholebrain": {
+              "role": "prior",
+              "n_eff": 40000.0,
+              "n_rows": 100000000.0,
+              "measurement_variance": 0.02,
+              "bias_halfwidth": 0.45,
+              "model_discrepancy": 0.55,
+              "validity_overlap": 0.35
+            }
+          },
+          "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
+        },
+        "per_source_contribution": {
+          "anatomical_prior": 0.02760564903400195,
+          "eegmmidb_real": 0.8119965330921032,
+          "sim_wholebrain": 0.16039781787389476
+        },
+        "gradient_permission_audit": {
+          "anatomical_prior": {
+            "n_permitted": 10,
+            "n_blocked": 94,
+            "patterns": [
+              "coupling.gain_*",
+              "coupling.global_scale",
+              "bold.*"
+            ],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*",
+              "local.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias",
+              "local.embed",
+              "local.inp.weight",
+              "local.inp.bias"
+            ]
+          },
+          "eegmmidb_real": {
+            "n_permitted": 54,
+            "n_blocked": 50,
+            "patterns": [
+              "local.*",
+              "residual.*",
+              "coupling.*",
+              "msg_proj.*",
+              "msg_readin.*",
+              "assimilate.*",
+              "context.*",
+              "eeg.*",
+              "log_dt_scale",
+              "individualizer.*"
+            ],
+            "frozen": [
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "readout.0.weight",
+              "readout.0.bias",
+              "readout.2.weight",
+              "readout.2.bias",
+              "bold.log_kappa",
+              "bold.log_gamma",
+              "bold.log_tau",
+              "bold.alpha",
+              "bold.rho",
+              "bold.neural_gain",
+              "bold.log_noise",
+              "behaviour.pool"
+            ]
+          },
+          "montage_calibration": {
+            "n_permitted": 6,
+            "n_blocked": 98,
+            "patterns": [
+              "eeg.log_gain",
+              "eeg.offset",
+              "eeg.log_noise",
+              "eeg.nuisance*"
+            ],
+            "frozen": [
+              "local.*",
+              "coupling.*",
+              "residual.*",
+              "assimilate.*",
+              "readout.*",
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "negative_control_shuffled": {
+            "n_permitted": 0,
+            "n_blocked": 104,
+            "patterns": [],
+            "frozen": [
+              "*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "sim_wholebrain": {
+            "n_permitted": 89,
+            "n_blocked": 15,
+            "patterns": [
+              "local.*",
+              "residual.*",
+              "coupling.*",
+              "msg_proj.*",
+              "msg_readin.*",
+              "assimilate.*",
+              "context.*",
+              "readout.*",
+              "log_dt_scale",
+              "bold.*",
+              "posterior.*"
+            ],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*"
+            ],
+            "blocked_sample": [
+              "eeg.log_gain",
+              "eeg.offset",
+              "eeg.log_noise",
+              "eeg.nuisance",
+              "eeg.source_proj.0.weight",
+              "eeg.source_proj.0.bias",
+              "eeg.source_proj.2.weight",
+              "eeg.source_proj.2.bias",
+              "eeg.nuisance_drive.weight",
+              "eeg.nuisance_drive.bias",
+              "behaviour.pool",
+              "behaviour.net.0.weight"
+            ]
+          }
+        },
+        "gradient_conflict": {
+          "steps": 0,
+          "pairs": []
+        },
+        "conflict_decisions": [],
+        "adapters_enabled": [],
+        "skipped_nonfinite_steps": {},
+        "stage": "IV_assembly"
+      }
+    },
+    {
+      "stage": "V_individual",
+      "steps": 3,
+      "wall_seconds": 0.23414945602416992,
+      "best_loss": 0.9999989867210388,
+      "steps_per_second": 12.81232957334023,
+      "mixture": {
+        "mixture_weights": {
+          "weights": {
+            "anatomical_prior": 0.01352091780716504,
+            "eegmmidb_real": 0.38684699339382894,
+            "montage_calibration": 0.5099882830937199,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.08964380570528607
+          },
+          "raw_reliability": {
+            "anatomical_prior": 0.04551724137931035,
+            "eegmmidb_real": 1.3022938402773516,
+            "montage_calibration": 1.7168405365126675,
+            "negative_control_shuffled": 0.0,
+            "sim_wholebrain": 0.30177971648383517
+          },
+          "inputs": {
+            "anatomical_prior": {
+              "role": "prior",
+              "n_eff": 1.0,
+              "n_rows": 1.0,
+              "measurement_variance": 0.4,
+              "bias_halfwidth": 0.5,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "eegmmidb_real": {
+              "role": "likelihood",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": 0.0,
+              "validity_overlap": 1.0
+            },
+            "montage_calibration": {
+              "role": "calibration",
+              "n_eff": 64.0,
+              "n_rows": 64.0,
+              "measurement_variance": 0.05,
+              "bias_halfwidth": 0.05,
+              "model_discrepancy": null,
+              "validity_overlap": 1.0
+            },
+            "negative_control_shuffled": {
+              "role": "negative_control",
+              "n_eff": 109.0,
+              "n_rows": 1526.0,
+              "measurement_variance": 0.35,
+              "bias_halfwidth": 0.2,
+              "model_discrepancy": null,
+              "validity_overlap": 0.0
+            },
+            "sim_wholebrain": {
+              "role": "prior",
+              "n_eff": 40000.0,
+              "n_rows": 100000000.0,
+              "measurement_variance": 0.02,
+              "bias_halfwidth": 0.45,
+              "model_discrepancy": 0.55,
+              "validity_overlap": 0.35
+            }
+          },
+          "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
+        },
+        "per_source_contribution": {
+          "eegmmidb_real": 1.0
+        },
+        "gradient_permission_audit": {
+          "anatomical_prior": {
+            "n_permitted": 0,
+            "n_blocked": 110,
+            "patterns": [],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*",
+              "local.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "eegmmidb_real": {
+            "n_permitted": 16,
+            "n_blocked": 94,
+            "patterns": [
+              "eeg.*",
+              "individualizer.*"
+            ],
+            "frozen": [
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "montage_calibration": {
+            "n_permitted": 6,
+            "n_blocked": 104,
+            "patterns": [
+              "eeg.log_gain",
+              "eeg.offset",
+              "eeg.log_noise",
+              "eeg.nuisance*"
+            ],
+            "frozen": [
+              "local.*",
+              "coupling.*",
+              "residual.*",
+              "assimilate.*",
+              "readout.*",
+              "bold.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "negative_control_shuffled": {
+            "n_permitted": 0,
+            "n_blocked": 110,
+            "patterns": [],
+            "frozen": [
+              "*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          },
+          "sim_wholebrain": {
+            "n_permitted": 0,
+            "n_blocked": 110,
+            "patterns": [],
+            "frozen": [
+              "eeg.*",
+              "individualizer.*"
+            ],
+            "blocked_sample": [
+              "log_dt_scale",
+              "coupling.gain_soft",
+              "coupling.gain_proposed",
+              "coupling.global_scale",
+              "msg_proj.weight",
+              "msg_proj.bias",
+              "msg_readin.0.weight",
+              "msg_readin.0.bias",
+              "context.0.weight",
+              "context.0.bias",
+              "context.2.weight",
+              "context.2.bias"
+            ]
+          }
+        },
+        "gradient_conflict": {
+          "steps": 0,
+          "pairs": []
+        },
+        "conflict_decisions": [],
+        "adapters_enabled": [],
+        "skipped_nonfinite_steps": {},
+        "stage": "V_individual"
+      }
+    }
+  ],
+  "total_wall_seconds": 9.506221055984497,
+  "global_steps": 19,
+  "model_parameters": {
+    "log_dt_scale": 454,
+    "coupling": 3,
+    "msg_proj": 76,
+    "msg_readin": 160,
+    "context": 1376,
+    "local": 142844,
+    "residual": 18173,
+    "assimilate": 13948,
+    "readout": 674,
+    "eeg": 2137,
+    "bold": 3178,
+    "behaviour": 89158,
+    "TOTAL": 272181
+  },
+  "posterior_parameters": 36016,
+  "sources": {
+    "anatomical_prior": {
+      "id": "anatomical_prior",
+      "role": "prior",
+      "gradient_permission": [
+        "coupling.gain_*",
+        "coupling.global_scale",
+        "bold.*"
+      ],
+      "frozen": [
+        "eeg.*",
+        "individualizer.*",
+        "local.*"
+      ],
+      "compiler_permission": [
+        "operator:long_range:params",
+        "port:*.bold_out"
+      ],
+      "n_eff": 1.0,
+      "n_rows": 1.0,
+      "n_participants": null,
+      "n_sites": null,
+      "measurement_variance": 0.4,
+      "bias_halfwidth": 0.5,
+      "bias_status": "prior_specified_sensitivity",
+      "model_discrepancy": null,
+      "validity_overlap": 1.0,
+      "hierarchy_depth": 1,
+      "is_simulated": false,
+      "is_teacher": false,
+      "enabled": true,
+      "losses": [
+        "prior"
+      ],
+      "notes": "Topology and homeostasis regularisers only. Hard anatomical constraints stay compiled; soft constraints update only within their priors (body.tex 6.4).\n"
+    },
+    "eegmmidb_real": {
+      "id": "eegmmidb_real",
+      "role": "likelihood",
+      "gradient_permission": [
+        "local.*",
+        "residual.*",
+        "coupling.*",
+        "msg_proj.*",
+        "msg_readin.*",
+        "assimilate.*",
+        "context.*",
+        "eeg.*",
+        "log_dt_scale",
+        "individualizer.*"
+      ],
+      "frozen": [
+        "bold.*"
+      ],
+      "compiler_permission": [
+        "operator:local_field:*",
+        "operator:long_range:*",
+        "operator:assimilation:*",
+        "region:*:state:*",
+        "port:*.message_out",
+        "port:*.message_in",
+        "port:*.eeg_out",
+        "observation:eegmmidb_real:nuisance"
+      ],
+      "n_eff": 109.0,
+      "n_rows": 1526.0,
+      "n_participants": 109,
+      "n_sites": 1,
+      "measurement_variance": 0.35,
+      "bias_halfwidth": 0.2,
+      "bias_status": "prior_specified_sensitivity",
+      "model_discrepancy": 0.0,
+      "validity_overlap": 1.0,
+      "hierarchy_depth": 3,
+      "is_simulated": false,
+      "is_teacher": false,
+      "enabled": true,
+      "losses": [
+        "likelihood",
+        "forecast",
+        "calibration",
+        "posterior"
+      ],
+      "notes": "Scalp EEG during rest, real and imagined movement. Single site, single montage, no individual head models: supports population-level EEG prediction claims only.\n"
+    },
+    "montage_calibration": {
+      "id": "montage_calibration",
+      "role": "calibration",
+      "gradient_permission": [
+        "eeg.log_gain",
+        "eeg.offset",
+        "eeg.log_noise",
+        "eeg.nuisance*"
+      ],
+      "frozen": [
+        "local.*",
+        "coupling.*",
+        "residual.*",
+        "assimilate.*",
+        "readout.*",
+        "bold.*"
+      ],
+      "compiler_permission": [
+        "port:*.eeg_out",
+        "observation:montage_calibration:nuisance"
+      ],
+      "n_eff": 64.0,
+      "n_rows": 64.0,
+      "n_participants": null,
+      "n_sites": null,
+      "measurement_variance": 0.05,
+      "bias_halfwidth": 0.05,
+      "bias_status": "prior_specified_sensitivity",
+      "model_discrepancy": null,
+      "validity_overlap": 1.0,
+      "hierarchy_depth": 1,
+      "is_simulated": false,
+      "is_teacher": false,
+      "enabled": true,
+      "losses": [
+        "calibration"
+      ],
+      "notes": "Per-channel gain/offset/noise nuisance for the EEG head."
+    },
+    "negative_control_shuffled": {
+      "id": "negative_control_shuffled",
+      "role": "negative_control",
+      "gradient_permission": [],
+      "frozen": [
+        "*"
+      ],
+      "compiler_permission": [],
+      "n_eff": 109.0,
+      "n_rows": 1526.0,
+      "n_participants": null,
+      "n_sites": null,
+      "measurement_variance": 0.35,
+      "bias_halfwidth": 0.2,
+      "bias_status": "prior_specified_sensitivity",
+      "model_discrepancy": null,
+      "validity_overlap": 0.0,
+      "hierarchy_depth": 3,
+      "is_simulated": false,
+      "is_teacher": false,
+      "enabled": true,
+      "losses": [],
+      "notes": "Amplitude-matched, phase-randomised surrogates of the real EEG windows."
+    },
+    "sim_wholebrain": {
+      "id": "sim_wholebrain",
+      "role": "prior",
+      "gradient_permission": [
+        "local.*",
+        "residual.*",
+        "coupling.*",
+        "msg_proj.*",
+        "msg_readin.*",
+        "assimilate.*",
+        "context.*",
+        "readout.*",
+        "log_dt_scale",
+        "bold.*",
+        "posterior.*"
+      ],
+      "frozen": [
+        "eeg.*",
+        "individualizer.*"
+      ],
+      "compiler_permission": [
+        "operator:local_field:*",
+        "operator:long_range:*",
+        "operator:assimilation:*",
+        "region:*:state:*",
+        "port:*.message_out",
+        "port:*.message_in",
+        "port:*.bold_out",
+        "observation:sim_wholebrain:nuisance"
+      ],
+      "n_eff": 40000.0,
+      "n_rows": 100000000.0,
+      "n_participants": 0,
+      "n_sites": null,
+      "measurement_variance": 0.02,
+      "bias_halfwidth": 0.45,
+      "bias_status": "prior_specified_sensitivity",
+      "model_discrepancy": 0.55,
+      "validity_overlap": 0.35,
+      "hierarchy_depth": 1,
+      "is_simulated": true,
+      "is_teacher": false,
+      "enabled": true,
+      "losses": [
+        "prior",
+        "forecast",
+        "posterior",
+        "mechanism",
+        "scale"
+      ],
+      "notes": "Delayed connectome-coupled neural-mass SDEs (Wilson-Cowan, Jansen-Rit, reduced Wong-Wang, Stuart-Landau, linear Gaussian) on a synthetic or agent-C connectome. Not participant data. Cannot establish biological validity.\n"
+    },
+    "sleepedf_real": {
+      "id": "sleepedf_real",
+      "role": "likelihood",
+      "gradient_permission": [
+        "local.*",
+        "residual.*",
+        "assimilate.*",
+        "readout.*"
+      ],
+      "frozen": [
+        "eeg.*",
+        "bold.*",
+        "coupling.*"
+      ],
+      "compiler_permission": [
+        "operator:local_field:params",
+        "operator:assimilation:*",
+        "region:*:state:*"
+      ],
+      "n_eff": 78.0,
+      "n_rows": 197.0,
+      "n_participants": 78,
+      "n_sites": null,
+      "measurement_variance": 0.5,
+      "bias_halfwidth": 0.4,
+      "bias_status": "prior_specified_sensitivity",
+      "model_discrepancy": null,
+      "validity_overlap": 0.5,
+      "hierarchy_depth": 3,
+      "is_simulated": false,
+      "is_teacher": false,
+      "enabled": false,
+      "losses": [
+        "likelihood",
+        "forecast"
+      ],
+      "notes": "Two bipolar derivations (Fpz-Cz, Pz-Oz) at 100 Hz during sleep. Different state, different montage, different reference. Needs a source-specific adapter before it may update any shared operator.\n"
+    },
+    "tribe_v2_teacher": {
+      "id": "tribe_v2_teacher",
+      "role": "distillation",
+      "gradient_permission": [
+        "readout.*"
+      ],
+      "frozen": [
+        "local.*",
+        "coupling.*",
+        "residual.*",
+        "eeg.*",
+        "bold.*",
+        "individualizer.*",
+        "assimilate.*"
+      ],
+      "compiler_permission": [
+        "observation:tribe_v2_teacher:nuisance"
+      ],
+      "n_eff": 1.0,
+      "n_rows": 1.0,
+      "n_participants": null,
+      "n_sites": null,
+      "measurement_variance": 1.0,
+      "bias_halfwidth": 2.0,
+      "bias_status": "prior_specified_sensitivity",
+      "model_discrepancy": 2.0,
+      "validity_overlap": 0.1,
+      "hierarchy_depth": 1,
+      "is_simulated": false,
+      "is_teacher": true,
+      "enabled": false,
+      "losses": [
+        "distill"
+      ],
+      "notes": "Discrepancy-inflated interface regulariser only. Supplies no new neural observation, receives no authority over latent mechanisms, subcortical or bodily state, and cannot pull an individualized posterior toward an average brain.\n"
+    }
+  },
+  "compiler_bridge": {
+    "used": true,
+    "n_groups": 103,
+    "schedule": {
+      "schema_id": "scwbd_001_beta_foundation",
+      "abi_digest": "99867c39b5fb9e1ab1c7823bf343217bf8b3f27ca1c79c36ea8a44553102e347",
+      "base_dt_s": 0.008,
+      "hyperperiod_s": 0.2,
+      "horizon_s": 0.2,
+      "n_sync_points": 1,
+      "sync_points_s": [
+        0.2
+      ],
+      "clocks": {
+        "scwbd_hemo_slow": {
+          "period_s": 0.2,
+          "period_ns": 200000000,
+          "rate_hz": 5.0,
+          "n_fields": 8,
+          "fields": [
+            "Schaefer400_LH_000.hemo",
+            "subcortex_L_00.hemo",
+            "cerebellum_L_00.hemo",
+            "Schaefer400_LH_050.hemo",
+            "subcortex_L_02.hemo",
+            "cerebellum_L_01.hemo",
+            "Schaefer400_LH_100.hemo",
+            "subcortex_L_04.hemo"
+          ],
+          "interpolation": "zero_order_hold",
+          "sync_evidence": "shared_hardware",
+          "is_master": false,
+          "adaptive_stepping": false,
+          "ticks_per_hyperperiod": 1
+        },
+        "scwbd_neural_fast": {
+          "period_s": 0.008,
+          "period_ns": 8000000,
+          "rate_hz": 125.0,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ],
+          "interpolation": "band_limited",
+          "sync_evidence": "shared_hardware",
+          "is_master": true,
+          "adaptive_stepping": false,
+          "ticks_per_hyperperiod": 25
+        }
+      },
+      "substeps_per_base_dt": {
+        "scwbd_hemo_slow": 25,
+        "scwbd_neural_fast": 1
+      },
+      "field_periods_s": {
+        "Schaefer400_LH_000.adaptation": 0.008,
+        "Schaefer400_LH_000.hemo": 0.2,
+        "Schaefer400_LH_000.rate_e": 0.008,
+        "Schaefer400_LH_000.rate_i": 0.008,
+        "Schaefer400_LH_000.spectral": 0.008,
+        "Schaefer400_LH_000.uncertainty": 0.008,
+        "subcortex_L_00.adaptation": 0.008,
+        "subcortex_L_00.hemo": 0.2,
+        "subcortex_L_00.rate_e": 0.008,
+        "subcortex_L_00.rate_i": 0.008,
+        "subcortex_L_00.spectral": 0.008,
+        "subcortex_L_00.uncertainty": 0.008,
+        "cerebellum_L_00.adaptation": 0.008,
+        "cerebellum_L_00.hemo": 0.2,
+        "cerebellum_L_00.rate_e": 0.008,
+        "cerebellum_L_00.rate_i": 0.008,
+        "cerebellum_L_00.spectral": 0.008,
+        "cerebellum_L_00.uncertainty": 0.008,
+        "Schaefer400_LH_050.adaptation": 0.008,
+        "Schaefer400_LH_050.hemo": 0.2,
+        "Schaefer400_LH_050.rate_e": 0.008,
+        "Schaefer400_LH_050.rate_i": 0.008,
+        "Schaefer400_LH_050.spectral": 0.008,
+        "Schaefer400_LH_050.uncertainty": 0.008,
+        "subcortex_L_02.adaptation": 0.008,
+        "subcortex_L_02.hemo": 0.2,
+        "subcortex_L_02.rate_e": 0.008,
+        "subcortex_L_02.rate_i": 0.008,
+        "subcortex_L_02.spectral": 0.008,
+        "subcortex_L_02.uncertainty": 0.008,
+        "cerebellum_L_01.adaptation": 0.008,
+        "cerebellum_L_01.hemo": 0.2,
+        "cerebellum_L_01.rate_e": 0.008,
+        "cerebellum_L_01.rate_i": 0.008,
+        "cerebellum_L_01.spectral": 0.008,
+        "cerebellum_L_01.uncertainty": 0.008,
+        "Schaefer400_LH_100.adaptation": 0.008,
+        "Schaefer400_LH_100.hemo": 0.2,
+        "Schaefer400_LH_100.rate_e": 0.008,
+        "Schaefer400_LH_100.rate_i": 0.008,
+        "Schaefer400_LH_100.spectral": 0.008,
+        "Schaefer400_LH_100.uncertainty": 0.008,
+        "subcortex_L_04.adaptation": 0.008,
+        "subcortex_L_04.hemo": 0.2,
+        "subcortex_L_04.rate_e": 0.008,
+        "subcortex_L_04.rate_i": 0.008,
+        "subcortex_L_04.spectral": 0.008,
+        "subcortex_L_04.uncertainty": 0.008
+      },
+      "event_driven_fields": [],
+      "interpolation_contracts": [
+        {
+          "from_clock": "scwbd_hemo_slow",
+          "to_clock": "scwbd_neural_fast",
+          "method": "band_limited",
+          "period_ratio": 0.04,
+          "is_downsampling": false,
+          "producer_latency_s": 0.0,
+          "sync_evidence": "shared_hardware"
+        },
+        {
+          "from_clock": "scwbd_neural_fast",
+          "to_clock": "scwbd_hemo_slow",
+          "method": "zero_order_hold",
+          "period_ratio": 25.0,
+          "is_downsampling": true,
+          "producer_latency_s": 0.0,
+          "sync_evidence": "shared_hardware"
+        }
+      ],
+      "error_budgets": {
+        "Schaefer400_LH_000.adaptation": 1e-09,
+        "Schaefer400_LH_000.hemo": 1e-09,
+        "Schaefer400_LH_000.rate_e": 1e-09,
+        "Schaefer400_LH_000.rate_i": 1e-09,
+        "Schaefer400_LH_000.spectral": 1e-09,
+        "Schaefer400_LH_000.uncertainty": 1e-09,
+        "subcortex_L_00.adaptation": 1e-09,
+        "subcortex_L_00.hemo": 1e-09,
+        "subcortex_L_00.rate_e": 1e-09,
+        "subcortex_L_00.rate_i": 1e-09,
+        "subcortex_L_00.spectral": 1e-09,
+        "subcortex_L_00.uncertainty": 1e-09,
+        "cerebellum_L_00.adaptation": 1e-09,
+        "cerebellum_L_00.hemo": 1e-09,
+        "cerebellum_L_00.rate_e": 1e-09,
+        "cerebellum_L_00.rate_i": 1e-09,
+        "cerebellum_L_00.spectral": 1e-09,
+        "cerebellum_L_00.uncertainty": 1e-09,
+        "Schaefer400_LH_050.adaptation": 1e-09,
+        "Schaefer400_LH_050.hemo": 1e-09,
+        "Schaefer400_LH_050.rate_e": 1e-09,
+        "Schaefer400_LH_050.rate_i": 1e-09,
+        "Schaefer400_LH_050.spectral": 1e-09,
+        "Schaefer400_LH_050.uncertainty": 1e-09,
+        "subcortex_L_02.adaptation": 1e-09,
+        "subcortex_L_02.hemo": 1e-09,
+        "subcortex_L_02.rate_e": 1e-09,
+        "subcortex_L_02.rate_i": 1e-09,
+        "subcortex_L_02.spectral": 1e-09,
+        "subcortex_L_02.uncertainty": 1e-09,
+        "cerebellum_L_01.adaptation": 1e-09,
+        "cerebellum_L_01.hemo": 1e-09,
+        "cerebellum_L_01.rate_e": 1e-09,
+        "cerebellum_L_01.rate_i": 1e-09,
+        "cerebellum_L_01.spectral": 1e-09,
+        "cerebellum_L_01.uncertainty": 1e-09,
+        "Schaefer400_LH_100.adaptation": 1e-09,
+        "Schaefer400_LH_100.hemo": 1e-09,
+        "Schaefer400_LH_100.rate_e": 1e-09,
+        "Schaefer400_LH_100.rate_i": 1e-09,
+        "Schaefer400_LH_100.spectral": 1e-09,
+        "Schaefer400_LH_100.uncertainty": 1e-09,
+        "subcortex_L_04.adaptation": 1e-09,
+        "subcortex_L_04.hemo": 1e-09,
+        "subcortex_L_04.rate_e": 1e-09,
+        "subcortex_L_04.rate_i": 1e-09,
+        "subcortex_L_04.spectral": 1e-09,
+        "subcortex_L_04.uncertainty": 1e-09
+      },
+      "step_plan": [
+        {
+          "t_ns": 8000000,
+          "t_s": 0.008,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 16000000,
+          "t_s": 0.016,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 24000000,
+          "t_s": 0.024,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 32000000,
+          "t_s": 0.032,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 40000000,
+          "t_s": 0.04,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 48000000,
+          "t_s": 0.048,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 56000000,
+          "t_s": 0.056,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 64000000,
+          "t_s": 0.064,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 72000000,
+          "t_s": 0.072,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 80000000,
+          "t_s": 0.08,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 88000000,
+          "t_s": 0.088,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 96000000,
+          "t_s": 0.096,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 104000000,
+          "t_s": 0.104,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 112000000,
+          "t_s": 0.112,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 120000000,
+          "t_s": 0.12,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 128000000,
+          "t_s": 0.128,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 136000000,
+          "t_s": 0.136,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 144000000,
+          "t_s": 0.144,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 152000000,
+          "t_s": 0.152,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 160000000,
+          "t_s": 0.16,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 168000000,
+          "t_s": 0.168,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 176000000,
+          "t_s": 0.176,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 184000000,
+          "t_s": 0.184,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 192000000,
+          "t_s": 0.192,
+          "clocks": [
+            "scwbd_neural_fast"
+          ],
+          "is_sync": false,
+          "n_fields": 40,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        },
+        {
+          "t_ns": 200000000,
+          "t_s": 0.2,
+          "clocks": [
+            "scwbd_hemo_slow",
+            "scwbd_neural_fast"
+          ],
+          "is_sync": true,
+          "n_fields": 48,
+          "fields": [
+            "Schaefer400_LH_000.adaptation",
+            "Schaefer400_LH_000.hemo",
+            "Schaefer400_LH_000.rate_e",
+            "Schaefer400_LH_000.rate_i",
+            "Schaefer400_LH_000.spectral",
+            "Schaefer400_LH_000.uncertainty",
+            "Schaefer400_LH_050.adaptation",
+            "Schaefer400_LH_050.hemo",
+            "Schaefer400_LH_050.rate_e",
+            "Schaefer400_LH_050.rate_i",
+            "Schaefer400_LH_050.spectral",
+            "Schaefer400_LH_050.uncertainty",
+            "Schaefer400_LH_100.adaptation",
+            "Schaefer400_LH_100.hemo",
+            "Schaefer400_LH_100.rate_e",
+            "Schaefer400_LH_100.rate_i",
+            "Schaefer400_LH_100.spectral",
+            "Schaefer400_LH_100.uncertainty",
+            "cerebellum_L_00.adaptation",
+            "cerebellum_L_00.hemo",
+            "cerebellum_L_00.rate_e",
+            "cerebellum_L_00.rate_i",
+            "cerebellum_L_00.spectral",
+            "cerebellum_L_00.uncertainty",
+            "cerebellum_L_01.adaptation",
+            "cerebellum_L_01.hemo",
+            "cerebellum_L_01.rate_e",
+            "cerebellum_L_01.rate_i",
+            "cerebellum_L_01.spectral",
+            "cerebellum_L_01.uncertainty",
+            "subcortex_L_00.adaptation",
+            "subcortex_L_00.hemo",
+            "subcortex_L_00.rate_e",
+            "subcortex_L_00.rate_i",
+            "subcortex_L_00.spectral",
+            "subcortex_L_00.uncertainty",
+            "subcortex_L_02.adaptation",
+            "subcortex_L_02.hemo",
+            "subcortex_L_02.rate_e",
+            "subcortex_L_02.rate_i",
+            "subcortex_L_02.spectral",
+            "subcortex_L_02.uncertainty",
+            "subcortex_L_04.adaptation",
+            "subcortex_L_04.hemo",
+            "subcortex_L_04.rate_e",
+            "subcortex_L_04.rate_i",
+            "subcortex_L_04.spectral",
+            "subcortex_L_04.uncertainty"
+          ]
+        }
+      ],
+      "n_events": 25,
+      "note": "sync points are exact in integer nanoseconds; a runtime that accumulates t += dt in floating point will drift against this plan"
+    },
+    "binding_audit": {
+      "unclaimed_parameters": [],
+      "unbound_groups": [
+        "frame_edge:scwbd_anat_RAS->scwbd_eeg_cap:calibration"
+      ],
+      "declared_empty_groups": [
+        "operator:assimilation:delay",
+        "operator:local_field:delay"
+      ],
+      "empty_bindings": [
+        {
+          "group": "operator:long_range:delay",
+          "pattern": "coupling.bin_length_mm"
+        }
+      ]
+    },
+    "per_source": {
+      "anatomical_prior": {
+        "compiler_globs": [
+          "readout.*",
+          "coupling.gain_soft",
+          "coupling.gain_proposed",
+          "coupling.global_scale",
+          "bold.*"
+        ],
+        "effective": [
+          "coupling.gain_*",
+          "coupling.global_scale",
+          "bold.*"
+        ]
+      },
+      "eegmmidb_real": {
+        "compiler_globs": [
+          "eeg.*",
+          "assimilate.*",
+          "local.*",
+          "log_dt_scale",
+          "context.*",
+          "residual.*",
+          "coupling.bin_length_mm",
+          "coupling.gain_soft",
+          "coupling.gain_proposed",
+          "coupling.global_scale",
+          "msg_readin.*",
+          "msg_proj.*",
+          "local.embed",
+          "local.films.*.region_scale",
+          "local.films.*.region_shift",
+          "residual.embed",
+          "assimilate.embed"
+        ],
+        "effective": [
+          "local.*",
+          "residual.*",
+          "coupling.*",
+          "msg_proj.*",
+          "msg_readin.*",
+          "assimilate.*",
+          "context.*",
+          "eeg.*",
+          "log_dt_scale",
+          "individualizer.*"
+        ]
+      },
+      "montage_calibration": {
+        "compiler_globs": [
+          "eeg.*"
+        ],
+        "effective": [
+          "eeg.log_gain",
+          "eeg.offset",
+          "eeg.log_noise",
+          "eeg.nuisance*"
+        ]
+      },
+      "negative_control_shuffled": {
+        "compiler_globs": [],
+        "action": "kept card globs (compiler granted nothing)"
+      },
+      "sim_wholebrain": {
+        "compiler_globs": [
+          "readout.*",
+          "assimilate.*",
+          "local.*",
+          "log_dt_scale",
+          "context.*",
+          "residual.*",
+          "coupling.bin_length_mm",
+          "coupling.gain_soft",
+          "coupling.gain_proposed",
+          "coupling.global_scale",
+          "bold.*",
+          "msg_readin.*",
+          "msg_proj.*",
+          "local.embed",
+          "local.films.*.region_scale",
+          "local.films.*.region_shift",
+          "residual.embed",
+          "assimilate.embed"
+        ],
+        "effective": [
+          "local.*",
+          "residual.*",
+          "coupling.*",
+          "msg_proj.*",
+          "msg_readin.*",
+          "assimilate.*",
+          "context.*",
+          "readout.*",
+          "log_dt_scale",
+          "bold.*",
+          "posterior.*"
+        ]
+      },
+      "sleepedf_real": {
+        "compiler_globs": [
+          "readout.*",
+          "assimilate.*",
+          "local.*",
+          "log_dt_scale",
+          "context.*",
+          "local.embed",
+          "local.films.*.region_scale",
+          "local.films.*.region_shift",
+          "residual.embed",
+          "assimilate.embed"
+        ],
+        "effective": [
+          "local.*",
+          "residual.*",
+          "assimilate.*",
+          "readout.*"
+        ]
+      },
+      "tribe_v2_teacher": {
+        "compiler_globs": [
+          "readout.*"
+        ],
+        "effective": [
+          "readout.*"
+        ]
+      }
+    },
+    "outside_compiler_schema": {
+      "eegmmidb_real": [
+        "individualizer.*"
+      ],
+      "sim_wholebrain": [
+        "posterior.*"
+      ]
+    }
+  }
+}

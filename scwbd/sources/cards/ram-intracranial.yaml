@@ -1,0 +1,188 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# UNAVAILABLE SOURCE.  Registered so the dataset register is complete and
+# honest, NOT downloaded.  Appendix A lists this family as a candidate; the
+# governance block below is the reason it is not in the training mixture.
+# No bytes of this dataset exist on the local data root.
+# =====================================================================
+identity:
+  id: ram-intracranial
+  name: "DARPA Restoring Active Memory (RAM) intracranial EEG with stimulation"
+  version: "unknown"              # no release is pinned because nothing was fetched
+  release_date: "unknown"
+  doi: "10.1038/s41467-018-02753-0"
+  citation: >-
+    Ezzyat Y et al. (2018). Closed-loop stimulation of temporal cortex rescues functional networks and improves memory. Nature Communications 9:365.
+  source_url: "http://memory.psych.upenn.edu/RAM"
+  download_url: null
+  download_method: "not attempted - see governance.unavailable_reason"
+  retrieved_utc: null
+  parent_dataset: null
+  derived_from: null
+  derivatives_included: []
+  software: {}
+  container_hash: unknown
+  local_path: null
+  file_manifest: null
+
+governance:
+  status: unavailable
+  unavailable_reason: >-
+    the RAM public release requires registration and acceptance of a data use agreement, and the data are human intracranial recordings with concurrent direct electrical stimulation. No registration was completed and nothing was downloaded. Even with access, the stimulation arm would be evaluation-only here: ARCHITECTURE.md forbids optimising an intervention outside an independently validated A_safe (R11).
+  license: "RAM public data use agreement (registration required)"
+  license_url: "http://memory.psych.upenn.edu/RAM"
+  license_text_excerpt: >-
+    Users register, agree to research-only use, no redistribution and no attempt at re-identification.
+  dua_required: true
+  credentials_required: true
+  registration_required: true
+  purpose_limits: >-
+    research only; no redistribution; no clinical or device use.
+  consent_scope: >-
+    epilepsy patients undergoing clinical intracranial monitoring consented to research recordings and stimulation under site IRB approval.
+  redistribution: "not permitted without the data provider's agreement"
+  withdrawal: "governed by the provider's withdrawal policy, which SC-WBD cannot honour without holding the data"
+  privacy: >-
+    de-identified intracranial recordings from a clinical epilepsy population; electrode locations are individually distinctive.
+  retention: "not applicable: no bytes held"
+  redistribution_class: none
+  withdrawal_status: unknown
+  privacy_class: deidentified
+  contains_biometric: true
+  may_release_weights: false
+  may_release_examples: false
+  purpose_limits_list: ["registration_required", "research_only", "no_redistribution"]
+  safeguards: ["not_downloaded"]
+  dua: "RAM data use agreement"
+
+population:
+  n_participants: "~250 patients (unverified: no access)"
+  participant_ids: "unknown - no access"
+  families: "unknown"
+  sites: "~10 clinical centres"
+  site_ids: []
+  devices: unknown
+  device_ids: []
+  sessions_per_participant: "multiple per patient"
+  runs_per_session: unknown
+  trials_per_run: unknown
+  demographics: >-
+    patients with medically refractory epilepsy undergoing invasive monitoring; electrode placement is dictated by clinical need, not by experimental design.
+  selection_mechanism: >-
+    clinical necessity determines who is recorded and where, so coverage is non-random with respect to anatomy - a structural confound, not a sampling nuisance.
+  grouping_keys: ["participant", "site", "session"]
+  min_subgroup_n: null
+
+signal:
+  modalities: ["ieeg", "stimulation"]
+  n_channels: unknown
+  channel_types: unknown
+  units: unknown
+  reference: unknown
+  dynamic_range: unknown
+  saturation: unknown
+  quantization: unknown
+  si_units: unknown
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: null
+
+spatial:
+  kind: sensor
+  frame: unknown
+  units: m
+  psf: unknown
+  extent: null
+  n_elements: null
+
+temporal:
+  clock: unknown
+  dt: unknown
+  sfreq_hz: unknown
+  integration_window: unknown
+  group_delay: unknown
+  jitter_sd: unknown
+  event_clock: unknown
+  offset_drift: unknown
+
+calibration:
+  id: ram-intracranial.calibration
+  frames: []
+  fiducials: unknown
+  transforms: []
+  calibration_points: unknown
+  residuals: unknown
+  device_pose: unknown
+  raw_metadata: unknown
+
+observation: null
+intervention:
+  name: ram.direct_electrical_stimulation
+  modality: tes
+  waveform: unknown
+  dose: {}
+  dose_units: {}
+  pose_frame: unknown
+  field_solver: null
+  target_ports: []
+  sham: unknown
+  randomized: true
+  is_prospective_human: false
+  ethics_review: "site IRBs of the participating clinical centres (original acquisition)"
+  dose_independently_calibrated: false
+  note: >-
+    Declared for completeness. Because the source is unavailable and no
+    independently validated A_safe exists, every intervention gradient path is
+    forbidden (R11) and the model may not propose stimulation parameters from
+    it. ARCHITECTURE.md is explicit that no agent may implement a human
+    stimulation protocol.
+missingness:
+  planned: "the entire dataset is absent"
+  unplanned: "not applicable"
+  artifact_rejection: unknown
+  dropout: unknown
+  attrition: unknown
+  policy: >-
+    A source with governance.status 'unavailable' contributes no loss factor
+    and no gradient. It is registered so that the absence is visible in
+    reports/data_inventory.md rather than being silently omitted.
+  mechanism: unknown
+  handling: drop_episode
+
+ledger:
+  variance:
+    measurement: unknown
+    session: unknown
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: unknown
+  bias_status: unknown
+  model_discrepancy: null
+  validity_domain:
+    note: "not applicable: the source is not in the mixture"
+
+gradient_permission:
+  allow: []
+  frozen: []
+  forbid: ["*"]
+  evaluation_only: false
+  note: >-
+    Empty by construction. If access is later obtained, this card must be
+    rewritten from the real files (hashes, counts, units) before any allow
+    entry is added.
+
+role: likelihood
+
+split_policy:
+  grouping_keys: ["participant", "site", "session"]
+  temporal_holdout: "not applicable"
+  temporal_holdout_spec: null
+  stimulus_holdout: "not applicable"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: false
+  notes: >-
+    Grouping keys are declared in advance so that, if access is ever granted,
+    the leakage barrier is fixed before any result is seen.

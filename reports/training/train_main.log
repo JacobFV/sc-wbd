@@ -1,0 +1,215 @@
+compiler->torch binding is incomplete:
+  binding 'operator:long_range:delay' -> 'coupling.bin_length_mm' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_000:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_050:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:Schaefer400_LH_100:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_00:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:cerebellum_L_01:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_00:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_02:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:adaptation' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:adaptation' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:adaptation' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:adaptation' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:hemo' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:hemo' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:hemo' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:hemo' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:rate_e' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:rate_e' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:rate_e' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:rate_e' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:rate_i' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:rate_i' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:rate_i' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:rate_i' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:spectral' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:spectral' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:spectral' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:spectral' -> 'residual.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:uncertainty' -> 'local.embed' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:uncertainty' -> 'local.films.*.region_scale' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:uncertainty' -> 'local.films.*.region_shift' matches no trainable parameter of SCWBD
+  binding 'region:subcortex_L_04:state:uncertainty' -> 'residual.embed' matches no trainable parameter of SCWBD
+  parameter group 'frame_edge:scwbd_anat_RAS->scwbd_eeg_cap:calibration' has no entry in FOUNDATION_BINDING; no torch parameter is governed by it
+{
+  "parameters": {
+    "log_dt_scale": 454,
+    "coupling": 3,
+    "msg_proj": 228,
+    "msg_readin": 1872,
+    "context": 17792,
+    "local": 1303036,
+    "residual": 107261,
+    "assimilate": 229468,
+    "readout": 3026,
+    "eeg": 2137,
+    "bold": 3178,
+    "behaviour": 89158,
+    "TOTAL": 1757613
+  },
+  "posterior": 1694976
+}
+
+=== Stage I_regional: 900 steps, lr=0.0006 ===
