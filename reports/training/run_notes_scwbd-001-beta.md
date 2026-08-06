@@ -385,6 +385,26 @@ Stage I completed at step 900 (03:12, wall 2941 s). Stage II is running.
 No qualifier. The commitment is honoured to the letter. **Stage I did not meet its
 own preregistered quality bar**, by 12.0 %.
 
+> #### ⚠ Stated beside layer 1, not in a footnote: the one consideration that could overturn it
+>
+> `log_every = 20`, so 1.1200 is a minimum over **46 samples**, not over 900
+> steps. **A minimum over sampled steps is an *upper bound* on the true running
+> minimum** — the true value can only be **lower**, never higher.
+>
+> **The sampling bias therefore runs in favour of the model and against this
+> verdict.** A step below 1.0 between samples cannot be excluded, and if one
+> occurred the bar was met and layer 1 is wrong.
+>
+> What can be said: over the final 200 steps the logged series spans
+> **1.120–1.292**, so reaching below 1.0 would require an excursion larger than
+> any variation observed. Unlikely — **but not measured**, and "unlikely" is not
+> the same claim as "did not happen". Per-step logging over a bounded window is
+> the instrument change that would settle it.
+>
+> Placed here at 🛡️ Popper's direction. I had filed it as a caveat against my own
+> result; it is in fact the more consequential half, because it is the only thing
+> in the record that could reverse the stated fact.
+
 ### Layer 2 — the interpretation
 
 **This is not the test that was preregistered**, and the reason is documented
@@ -397,31 +417,69 @@ changed the metric's scale by two orders of magnitude.
 | what "< 1.0" demanded | a **99.5 %** descent | roughly **41 %** |
 | running-min achieved | 1.459 (step 660, run stopped at 820) | **1.120** (step 760) |
 
-So the bar was **not met on the easier version of the test.** That is a stronger
-statement than failing the original would have been, and it is the one direction
-in which this outcome is *less* ambiguous than a pass would have been — a pass
-would have been confounded by the scale change, a failure on the easier test is
-not rescued by it.
+> #### ~~So the bar was not met on the *easier* version of the test~~ — RETRACTED
+>
+> I argued that failing the easier test was a *stronger* statement than failing
+> the original: a pass would have been confounded by the scale change, a failure
+> would not be rescued by it. `main` endorsed it. **🛡️ Popper tested it and it
+> does not hold.**
+>
+> An a-fortiori argument requires both tests ordered **on a common scale.** The
+> normaliser fix changed the *targets*, so pre- and post-fix NLL are values of
+> **different objectives**. A 99.5 % descent in metric A and a 41 % descent in
+> metric B are not comparable, and therefore **"easier" is undefined.** The
+> argument has no ground to stand on.
+>
+> **The refutation is a fact I established myself, two messages earlier**, when I
+> flagged that cross-run absolute comparisons are meaningless because the targets
+> changed — and then built an argument that required exactly the comparability I
+> had just ruled out. Finding a constraint and failing to apply it to my own next
+> claim is worse than never having found it, because the record shows I knew.
+>
+> Popper's closing line, kept because it is the general lesson: *it is generous,
+> it cuts against its author's own artifact, and it is still wrong — which is
+> exactly why it shouldn't have been accepted for being generous.*
 
-**A sampling caveat that cuts the other way and must be stated:** `log_every = 20`,
-so the running-min is a minimum over **46 samples**, not over 900 steps. A value
-below 1.0 at an unlogged step cannot be excluded. Over the final 200 steps the
-logged values span **1.120–1.292**, so an 11 % excursion below the observed
-minimum would be larger than any variation actually seen — unlikely, but *not
-measured*. The honest form is: **the bar was not met on the sampled series**, and
-per-step logging would be required to say more. Same grid-resolution limitation
-as the retracted periodicity claim.
+**The correct statement of layer 2** is therefore narrower: the bar was calibrated
+on a defective instrument, the instrument was then replaced, and **the two tests
+cannot be ranked.** Not harder, not easier — **different**, with no defined
+ordering.
 
-### Layer 3 — the adjudication
+**Q2 — the 12 % margin does not license "missed by a little."** It is 12 % on a
+scale whose relation to the original is undefined. The result is neither stronger
+nor weaker than failing the original would have been; it is a **different
+conclusion**, and any phrasing implying near-miss is unsupported.
 
-**Deferred to 🛡️ Popper, with no opinion from me.** The questions that are theirs:
+### Layer 3 — the adjudication (🛡️ Popper, returned)
 
-1. whether a bar calibrated on a defective instrument evidences anything at all;
-2. whether "not met by 12 %" on the easier version of the test supports a
-   stronger or weaker conclusion than failing the original would have;
-3. whether a minimum over 46 samples is admissible as a "running minimum".
+**Layer 1 stands unqualified.** Beyond that:
 
-I have not formed a view on any of them and will not state one.
+- **Q2** — the 12 % margin does not license "missed by a little"; see above.
+- **Q3** — the sampling bound runs *against* the verdict and is now stated beside
+  layer 1 rather than as a caveat.
+- **Q1/Q4 — the bar was inappropriate, and not because it was too high.**
+
+> **A preregistered threshold with no reference class is a guess with a
+> timestamp.**
+
+To judge whether `< 1.0` was a reasonable ask of a **1.76 M-parameter** model, on
+**37 simulated shards**, with **~40 % of its regional-timescale prior missing or
+clamped**, you need a reference class: a capacity-matched baseline, a matched
+control, a prior run at another budget. **None exists in this project.**
+
+So condition 2 was preregistered, honoured to the letter, escalated when it
+fired, and adjudicated by a third party — and was **structurally incapable of
+discriminating** a model that underperformed from a number that was never
+achievable. Every procedural safeguard worked; the instrument still could not
+answer the question. **That is the sharpest entry in the register**, and it is not
+a failure of preregistration hygiene but of preregistration *without a reference
+class*, which the hygiene cannot supply.
+
+**Consequence, and I have no input into it:** Popper is setting the **Stage II bar
+as a matched control** rather than an absolute threshold — the correct move, since
+both sides of a comparison move together under an instrument rescale. It will
+arrive as a fait accompli with its reference class stated. I have not asked for
+input and will not.
 
 ### Consequences, per `main`'s pre-commitments (unchanged, made before this resolved)
 

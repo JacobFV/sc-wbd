@@ -69,12 +69,20 @@ def main() -> int:
     print(f"  rescaled better at {better} matched steps, worse at {worse}")
     tot = better + worse
     if tot:
+        # SIGNED, not absolute. Reporting mean|difference| counts a step where
+        # the treatment was BETTER as though it were worse, inflating the figure
+        # (2.21% vs the correct 1.72% on this data). An absolute value discards
+        # the sign that carries the direction of the effect -- which is the
+        # entire quantity of interest in a treatment/control comparison.
         rel = [
-            abs(float(n[s][METRIC]) - float(o[s][METRIC])) / max(abs(float(o[s][METRIC])), 1e-9)
+            (float(n[s][METRIC]) - float(o[s][METRIC])) / max(abs(float(o[s][METRIC])), 1e-9)
             for s in steps if s > 20
         ]
-        print(f"  max relative difference: {max(rel) * 100:.2f}%")
-        print(f"  mean relative difference: {sum(rel) / len(rel) * 100:.2f}%")
+        print(f"  signed mean relative difference: {sum(rel) / len(rel) * 100:+.2f}%"
+              "   (positive = rescaled worse)")
+        print(f"  largest single |difference|:     {max(abs(x) for x in rel) * 100:.2f}%")
+        print(f"  steps where rescaled was better: "
+              f"{[s for s, x in zip([s for s in steps if s > 20], rel) if x < 0]}")
     print()
     print("NOTE: the superseded run stopped at step 260, so the pre-committed")
     print("      end-of-Stage-I (step 900) comparison CANNOT be evaluated on this")

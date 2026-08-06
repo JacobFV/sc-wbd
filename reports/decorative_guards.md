@@ -163,6 +163,40 @@ This is the missing general case the invested-conclusion variant was gesturing
 at. Invested conclusions survive because nobody is attacking them; **true-but-
 irrelevant reasoning survives because attacking it confirms it.**
 
+#### Sub-case: auditing the direction of the incentive instead of the argument
+
+An argument that **disadvantages its own author** feels checked on arrival. It is
+not.
+
+The retracted a-fortiori claim — *"failing the easier test is a stronger result
+than failing the original"* — cut against its author's own artifact, and was
+accepted by the coordinator for that reason and called sharp. Popper tested it
+and it fails: an a-fortiori argument requires both tests **ordered on a common
+scale**, the normaliser fix made pre- and post-fix NLL *different objectives*, so
+**"easier" is undefined**.
+
+> *It is generous, it cuts against its author's own artifact, and it is still
+> wrong — which is exactly why it shouldn't have been accepted for being
+> generous.*
+
+**Accepting a generous argument from the party it disadvantages is the same error
+as accepting a flattering one from the party it favours.** Both substitute a
+judgement about *incentive* for a judgement about *validity*. The first feels
+like rigour, which makes it the more durable of the two.
+
+#### Sub-case: establishing a constraint and then violating it yourself
+
+The fact that refutes that claim was established **by its own author, two
+messages earlier**: *cross-run comparisons of absolute loss are meaningless
+because the targets changed*. The a-fortiori argument then required exactly the
+comparability that finding had ruled out.
+
+**Finding a constraint and failing to apply it to your own next claim is worse
+than never having found it**, because the record shows you knew. A newly-derived
+constraint does not automatically attach itself to subsequent reasoning; it has
+to be applied deliberately, and the moment of greatest risk is the very next
+argument, while the finding still feels like context rather than a rule.
+
 ### What a preregistration inherits
 
 Instance 8 showed that a threshold must be able to read differently in the world
@@ -214,6 +248,43 @@ result honestly.**
 
 Merging 1 and 2 lets a caveat quietly do the work of a result. Merging 2 and 3
 lets the author grade their own homework.
+
+### The sharpest instance overall: a preregistration with no reference class
+
+Instance 8 was a threshold that could not read differently under the two
+hypotheses. This is the same defect one level deeper, and it survived **every**
+procedural safeguard this project has.
+
+> **A preregistered threshold with no reference class is a guess with a
+> timestamp.** — 🛡️ Popper
+
+Condition 2 required running-min `sim_forecast_nll` < 1.0 by step 900. It was
+written before the data existed, never moved, honoured to the letter, escalated
+the moment a sibling clause fired, and adjudicated by a third party who was not
+its author. **Every safeguard worked.** The result — *not met, 1.1200* — is still
+uninterpretable.
+
+To know whether `< 1.0` was a reasonable ask of a **1.76 M-parameter** model, on
+**37 simulated shards**, with **~40 % of its regional-timescale prior missing or
+clamped**, you need a reference class: a capacity-matched baseline, a matched
+control, the same architecture at another budget. **This project has none.**
+Without one the threshold cannot discriminate *a model that underperformed* from
+*a number that was never achievable* — the two produce an identical reading.
+
+Which is the register's own pattern, applied to the most carefully protected
+object in the run: **the bar was inappropriate, and not because it was too high.**
+Height was never the issue. It had no scale.
+
+**The fix is not better hygiene** — the hygiene was already correct and could not
+have supplied what was missing. It is to **state a threshold's reference class
+when setting it, or set it as a matched control instead of an absolute value.**
+Popper is doing exactly that for Stage II: a control, not a threshold, because
+under an instrument rescale both sides of a comparison move together and the
+comparison survives.
+
+**Corollary for absolute thresholds generally:** an absolute number encodes an
+assumption about what is achievable, and that assumption is invisible once the
+number is written down. A control encodes no such assumption. Prefer controls.
 
 ### The sharpest instance (8): a guard against one's own bias, that could not discriminate
 

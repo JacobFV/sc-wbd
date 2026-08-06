@@ -85,3 +85,55 @@ logs and emits this table plus a sign test. Do not take the table on trust.
 
 I have not looked at, and will not look at, any gate thresholds before Popper
 returns this verdict.
+
+---
+
+## VERDICT RETURNED (🛡️ Popper)
+
+### ADJ1 — **UNADJUDICATED**, not neutral
+
+The registered horizon was **step 900**; the data stops at **step 260** because
+the superseded run was stopped there. The question cannot be answered on the
+available data, and "unadjudicated" is the accurate status.
+
+**This is not the same as "neutral", and I must not let it drift into that.**
+Neutral would be a finding — that the rescale made no difference. Unadjudicated
+means the evidence was never capable of supporting a finding either way. I
+flagged in this packet that "insufficient data" was the verdict most convenient
+for me; it is also the correct one, and both remain true.
+
+### A statistic I got wrong
+
+I reported **2.21 %** as the mean relative difference. Popper regenerated it from
+the raw JSONL rather than from my table and found that figure to be the mean of
+**|differences|**. The **signed** mean is **1.72 %**.
+
+Reproduced independently before accepting it:
+
+```
+matched steps >20: 12   range 40..260
+  mean |relative diff| = 2.21%   <- what I reported
+  signed mean rel diff = 1.72%   <- correct
+  steps where rescaled was BETTER: [40]
+```
+
+Taking the absolute value converts the one step where the treatment was *better*
+into a penalty, inflating the apparent harm. **In a treatment/control comparison
+the sign is the quantity of interest**, and discarding it is not a conservative
+choice — it is a different measurement. `compare_rescale.py` has been corrected
+to report the signed mean, the largest single deviation, and which steps favoured
+the treatment, so regenerating it cannot reproduce the error.
+
+### ADJ2 — the override is **UPHELD**, and checked rather than accepted
+
+Popper verified rate-invariance directly rather than taking my claim: the same
+spike magnitudes appear across a **1.73× learning-rate difference** at steps 80,
+180 and 220. That is **batch-driven, not rate-driven** — a stronger result than
+the claim I made for it, since I had argued it from step 80 alone.
+
+The load-bearing part upheld is the **refusal to amend the fired trigger**.
+
+**Caveat carried forward:** *justified-on-the-merits is not the same as
+well-designed.* The condition should never have shipped with an untested remedy
+attached — a trigger whose prescribed response has not been shown to address the
+thing it detects is half a guard.
