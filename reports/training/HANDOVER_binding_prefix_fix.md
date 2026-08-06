@@ -294,3 +294,94 @@ First checkpoint lands 250 steps into T1.
   capacity and called it structure.
 - `theta_conditioned_pooled` (no config surface exists — the long pole), then
   the 4-fold CV harness.
+
+---
+
+# §7 EXPANDED — outstanding work, scoped
+
+Written out at handover rather than left as one-liners.
+
+## 7.1 `set_mechanistic_theta` — the current blocker
+
+See the addendum above. Two questions for 🌊 Hodgkin, my priors, and the
+control-arm asymmetry that makes a wrong fix look verified. **Do not write it
+before those are answered.**
+
+## 7.2 Smoke rollout — precondition for every relaunch
+
+`--smoke` on `scwbd.foundation.train`: build, one batch **forward and backward**
+through **both** `sim_losses` and `real_losses`, print `noise_floor_report()`,
+exit non-zero on any raise. Both loss paths matter — this crash was in a rollout,
+so a build-only smoke misses it. Both **arms** matter — the control has no
+mechanistic families and passes regardless.
+
+All three launch blockers on 2026-08-06 were constructor- or first-rollout-time
+failures, each found by launching into a log nobody was watching. Under a minute
+each, had this existed.
+
+## 7.3 Single-site limit — belongs in the manifest, not only the log
+
+```
+[leakage] cross-check warning: all records come from one site: this split
+cannot falsify a site/device shortcut
+```
+
+R10 passes and the split is participant-disjoint — but eegmmidb is **one site,
+one device**. A participant-disjoint split rules out memorising *people*; it
+cannot rule out the model keying on site or amplifier characteristics shared by
+every window in the corpus. That is a real bound on external validity and it
+currently exists only in a log.
+
+**Put it in the run manifest** alongside the split fingerprint, and in any
+generalisation sentence run 2 produces. Concretely: run 2 can support *"predicts
+held-out participants at this site"*; it cannot support *"predicts held-out
+participants"*. Nothing in the corpus can close that gap — it needs a second
+site, which is an acquisition question, not an analysis one.
+
+## 7.4 `theta_conditioned_pooled` — the long pole
+
+**No config surface exists.** Not a config change; an implementation.
+
+- **What it is** (PREREG_A1_run2 §3.6.2): one operator, uniform pooled state — a
+  sibling of `pooled_vector_per_region@param_matched` — differing **only** in
+  what θ carries. θ gets the receptor / myelin+thickness / intrinsic-timescale
+  features that 🧠 Cajal's spin test used to separate the families.
+- **Why A1 needs it**: without it, a treatment-arm win is unattributable between
+  *state structure* and *rich conditioning*. Both arms would otherwise differ in
+  two things at once.
+- **What to build**: a `theta_features` path on `ModelConfig` routing the 20
+  Hansen maps + myelin/thickness/timescale from the anatomy prior into θ, and an
+  arm config. `ArmConfig` also has no field distinguishing a B1-matched from a
+  B2-matched control (see `scwbd-001-pooled-param-matched.yaml`) — 📜 Noether's
+  schema, and worth fixing in the same pass since a registry that cannot tell two
+  controls apart cannot enforce that both ran.
+- **Architect's ruling**: if not ready when the pilot ends, **start CV with two
+  arms rather than waiting.** A1 completes when it completes.
+- **Capacity**: must be re-matched *on the tree it launches from*. See §7.6.
+
+## 7.5 4-fold participant CV — the A1 endpoint
+
+The pilot is **not** the endpoint. Pre-commitment is in both pilot config
+headers and must survive: *the pilot's numbers may not be reported as an A1
+result.*
+
+Design, fixed in advance: 4 folds over 109 participants, ~82 trained and ~27
+scored per fold, every participant scored out-of-sample exactly once, n=109
+clustered units, MDE ≈ 0.0699 against the pilot's ≈ 0.0993. Cost ~4× per arm.
+It is the only design that raises participant count without spending training
+data — it spends wall clock instead.
+
+## 7.6 Standing rules earned today
+
+- **RL-10 companion (accepted, needs writing into `ARCHITECTURE.md`):** *merge
+  before staging **or measuring**. A capacity match is a measurement against a
+  specific tree and does not survive a merge.* Evidence: `hidden=314` claimed
+  +0.27%, was **−25.83%** on the merged tree. A1 would have measured capacity and
+  called it structure.
+- **Guard design rule** (now in `decorative_guards.md`): a guard must name
+  something the code does not control. If guard and checked-thing can only
+  disagree when the guard is wrong, it is decorative.
+- **Faraday's flag:** check the `status` field, not the exit code. All three
+  states exit 0 by design and `checkpoint_unreadable` looks like success to `$?`.
+- `git_sha()` is `-dirty` on every checkpoint. Use `corpus_git_sha` (now in the
+  training summary) and the split fingerprint.
