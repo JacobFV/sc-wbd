@@ -212,22 +212,19 @@ class TestTheTfusEnvelopeBinds:
 # ---------------------------------------------------------------------------
 
 
-class TestALivePlanCannotOmitAnAxis:
-    def test_a_computational_plan_may_omit_declared_axes(self):
-        """Unchanged behaviour, stated so the change below is visibly scoped."""
+class TestCompleteCoverageCanBeRequired:
+    def test_an_omitted_declared_axis_is_reported_not_violated_by_default(self):
+        """Default behaviour: most axes have no producer for most proposals."""
         v = FeasibleSet().contains(_proposal("tfus.mechanical_index", 0.5, "tfus"))
         assert v.feasible
         assert "tfus.cem43_minutes" in v.unchecked_declared_axes
 
-    def test_a_live_plan_that_omits_the_thermal_axes_refuses(self):
-        """The exact evasion the coverage rule exists to close.
-
-        Supply the three comfortable acoustic axes, omit thermal dose and
-        temperature rise, and before this rule the plan was 'feasible' with the
-        omission recorded in a field nobody reads.
-        """
-        live = ProposedIntervention(
-            label="live_tfus",
+    def test_require_complete_coverage_turns_that_silence_into_a_refusal(self):
+        """`tfus.cem43_minutes` and `tfus.temperature_rise_c` have no producer
+        anywhere in `scwbd`, so a tFUS proposal that omits them is unchecked on
+        thermal dose. The flag is how a caller asks for the whole envelope."""
+        partial = ProposedIntervention(
+            label="tfus_partial",
             modality="tfus",
             exposure={
                 "tfus.mechanical_index": 0.5,
@@ -236,42 +233,26 @@ class TestALivePlanCannotOmitAnAxis:
             },
             pose_certified=True,
             reversible=True,
-            application="live",
         )
         with pytest.raises(CompilerRefusal) as e:
-            FeasibleSet().guard(live)
+            FeasibleSet(require_complete_coverage=True).guard(partial)
         msg = str(e.value)
         assert "tfus.cem43_minutes" in msg
         assert "tfus.temperature_rise_c" in msg
 
-    def test_the_coverage_rule_cannot_be_switched_off_for_a_live_plan(self):
-        """``require_complete_coverage=False`` does not reach the live path."""
-        fs = FeasibleSet(require_complete_coverage=False)
-        live = ProposedIntervention(
-            label="live_tms",
-            modality="tms",
-            exposure={"tms.peak_efield_v_per_m": 95.0},
-            pose_certified=True,
-            reversible=True,
-            application="live",
-        )
-        assert not fs.contains(live).feasible
-
-    def test_a_live_plan_covering_every_declared_axis_is_feasible(self):
-        """The rule can be satisfied; it is a gate, not a wall."""
+    def test_a_proposal_covering_every_declared_axis_is_feasible(self):
+        """The rule can be satisfied; it is a check, not a wall."""
         declared = {s.key for s in LIMITS.for_modality("tms")} | {
             s.key for s in LIMITS.for_modality("protocol")
         }
-        exposure = {k: _satisfying(LIMITS.get(k)) for k in declared}
-        live = ProposedIntervention(
-            label="live_tms_full",
+        full = ProposedIntervention(
+            label="tms_full",
             modality="tms",
-            exposure=exposure,
+            exposure={k: _satisfying(LIMITS.get(k)) for k in declared},
             pose_certified=True,
             reversible=True,
-            application="live",
         )
-        assert FeasibleSet().contains(live).feasible
+        assert FeasibleSet(require_complete_coverage=True).contains(full).feasible
 
 
 # ---------------------------------------------------------------------------
@@ -314,40 +295,6 @@ class TestADecorativeLimitIsRefusedAtLoad:
         for _, spec in ALL_SPECS:
             assert spec.citation.strip()
             assert spec.basis.strip()
-
-    def test_the_reversibility_rule_moved_rather_than_vanished(self):
-        """Deleting a decorative guard silently is its own defect."""
-        assert LIMITS.require_reversible_for_live() is True
-
-    def test_and_it_now_fires(self):
-        """Moving it would be pointless if it still could not refuse anything."""
-        declared = {s.key for s in LIMITS.for_modality("tms")} | {
-            s.key for s in LIMITS.for_modality("protocol")
-        }
-        irreversible = ProposedIntervention(
-            label="live_irreversible",
-            modality="tms",
-            exposure={k: _satisfying(LIMITS.get(k)) for k in declared},
-            pose_certified=True,
-            reversible=False,
-            application="live",
-        )
-        with pytest.raises(CompilerRefusal) as e:
-            FeasibleSet().guard(irreversible)
-        assert "reversibility" in str(e.value)
-
-    def test_it_does_not_fire_on_the_computational_path(self):
-        """Scoped to live application, as the rule says."""
-        assert FeasibleSet().contains(
-            ProposedIntervention(
-                label="sim",
-                modality="tms",
-                exposure={"tms.peak_efield_v_per_m": 95.0},
-                pose_certified=True,
-                reversible=False,
-            )
-        ).feasible
-
 
 # ---------------------------------------------------------------------------
 # 6. the limits are still unlearnable and unwritable

@@ -558,8 +558,8 @@ BASELINE_COMPARISON_DOES_NOT_LICENSE = (
 _NON_GOALS = [
     "This gate does not claim a validated digital twin of any specific person.",
     "This gate does not claim that any admitted operator is neurally realized.",
-    "No prospective human TMS/tFUS protocol is implemented or implied (build order stops at "
-    "item 5; item 6 is out of scope: no IRB, no consent, no participants).",
+    "No human stimulation protocol is implemented or implied: this is a "
+    "deep-learning study on open data and there is no device command path.",
 ]
 
 
@@ -2210,8 +2210,8 @@ def run_g4(
                 "Prospective recovery of direction, delay, gain, dose and state dependence.",
                 f"recovery results missing for {[k for k in needed if k not in (recovery or {})]} "
                 f"(have {have}); this claim's support column names all five, and a prospective "
-                "perturbation dataset is required (build-order item 6 is out of scope, so this "
-                "is expected to remain COULD_NOT_RUN in SC-WBD-001-beta)",
+                "perturbation dataset is required, and none is held, so this is expected to "
+                "remain COULD_NOT_RUN in SC-WBD-001-beta)",
                 falsified_by="parameters not recovered prospectively",
             )
         )
@@ -2367,8 +2367,8 @@ def run_g4(
             f"{intervention_design} versus {baseline_design}; the fusion claim's falsifiable "
             "comparisons are native-versus-resampled (G1) and the non-additive joint "
             "information that appears only under joint_whitening=True.",
-            "No human stimulation protocol is implemented; prospective recovery inputs must "
-            "come from an approved protocol or from simulation, and are labelled as such.",
+            "No human stimulation protocol is implemented; prospective recovery inputs "
+            "would have to come from a held perturbation dataset, and none is held.",
         ],
     ).finalize()
 

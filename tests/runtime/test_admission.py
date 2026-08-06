@@ -1,50 +1,41 @@
-"""Every admission condition, fired.
+"""Two refusals and four labels, each fired, each paired with its opposite.
 
-``reports/decorative_guards.md`` catalogues ~26 guards in this codebase that
-looked green and could not fire.  The discipline this file follows, for each
-condition:
+``ARCHITECTURE.md`` Sec. 7a: **ship the artifact and label it; never refuse to
+produce it.** A precondition blocks only if it changes what a number *means*.
 
-1. make it **fail**, and assert the refusal names the condition by code;
-2. make it **pass** on an input that differs *only* in that condition, so the
-   check is shown to discriminate rather than to be permanently red or
-   permanently green.
+An earlier version of this module refused on the control arm, on synthetic
+anatomy and on ``COULD_NOT_RUN`` gates. That was a product-safety posture
+imported into a research repository, and it would have withheld the only
+checkpoint we have from the only people who can do anything with it. Those
+three are now **labels**: loud, carried in the provenance, and non-blocking.
 
-(2) is the part that is usually missing.  A gate that can never open is as
-useless as one that never closes, and a test suite that only ever exercises the
-refusal cannot tell the two apart.
+The discipline, per condition and per label:
+
+1. make it fire, and assert the message names it by code;
+2. make it **not** fire on an input differing *only* in that respect.
+
+(2) is the part usually missing. A label that is always set is as useless as a
+gate that never opens; a suite that only exercises one side cannot tell them
+apart.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from scwbd.intervene.deployment import (
-    PRELIMINARY_REVIEW_SCHEDULED,
-    PreliminaryReviewRecord,
-)
 from scwbd.runtime.admission import (
     CONSUMER_STANDING_INVARIANTS,
     EXPORT_PURPOSES,
-    LIVE_PURPOSES,
-    MODE_OF_PURPOSE,
     CheckpointClaims,
     CheckpointRefused,
     ConsumerInvariants,
     ConsumerInvariantViolation,
     admit,
 )
-from scwbd.schema.authorization import epoch_seconds
-
-#: The review date, derived from the one constant and never restated.
-REVIEW_DAY = PRELIMINARY_REVIEW_SCHEDULED.isoformat()
-#: A time after the review could have happened.
-AFTER_S = epoch_seconds(REVIEW_DAY) + 86400.0
-#: Years later. Used to show the date is not an unlock at *this* call site too.
-LONG_AFTER_S = epoch_seconds("2027-12-31")
 
 
 def clean_claims(**overrides) -> CheckpointClaims:
-    """A checkpoint that passes every condition.  Override one to break one."""
+    """An artifact with every label clean. Override one to flag one."""
     base = dict(
         manifest_id="run2-treatment-arm",
         claim_class="mechanistic",
@@ -56,87 +47,71 @@ def clean_claims(**overrides) -> CheckpointClaims:
         gates={"G1": "PASS", "G2": "PASS", "G3": "PASS"},
         weights_trained=True,
         port_contract_digest="deadbeef",
+        manifest_readable=True,
     )
     base.update(overrides)
     return CheckpointClaims(**base)
 
 
-def approving_review(**overrides) -> PreliminaryReviewRecord:
-    """A *fictional* record that the review happened and passed."""
-    base = dict(
-        review_body="Example University preliminary review panel",
-        identifier="PRELIM-2026-0001",
-        occurred_on=REVIEW_DAY,
-        outcome="approved",
-        covered_intervention_classes=("tms",),
-        declared_by="test fixture",
-    )
-    base.update(overrides)
-    return PreliminaryReviewRecord(**base)
+def verdict(claims, purpose="live_hardware", **kw):
+    return admit(claims, purpose=purpose, raise_on_refusal=False, **kw)
 
 
-#: Sentinel so that ``as_of=None`` can be passed *deliberately* and reach the
-#: gate as None. Defaulting it to "now" here would have hidden the undated-
-#: request refusal behind the helper.
-_UNSET = object()
+# ---------------------------------------------------------------------------
+# the posture itself
+# ---------------------------------------------------------------------------
 
+class TestTheArtifactShipsAndIsLabelled:
+    """The rule the module exists to implement, stated as tests."""
 
-def refusal(claims, *, purpose="live_hardware", review=None, authorization=None,
-            as_of=_UNSET, **kw):
-    with pytest.raises(CheckpointRefused) as exc:
-        admit(
-            claims,
-            purpose=purpose,
-            review=review,
-            authorization=authorization,
-            as_of=AFTER_S if as_of is _UNSET else as_of,
-            **kw,
+    @pytest.mark.parametrize("purpose", EXPORT_PURPOSES)
+    def test_the_worst_artifact_we_hold_still_loads_for_every_purpose(self, purpose):
+        """Control arm, synthetic anatomy, COULD_NOT_RUN gates, no weights."""
+        run1 = CheckpointClaims.from_manifest(
+            {
+                "id": "scwbd-001-beta",
+                "arm": "equal_capacity_generic_operator_control",
+                "anatomy": {"is_biological": False, "provenance": "synthetic_fallback"},
+                "gates": {f"G{i}": "COULD_NOT_RUN" for i in range(1, 6)},
+                "weights_trained": False,
+            }
         )
-    return exc.value
+        v = admit(run1, purpose=purpose)
+        assert v.admitted, "the artifact must ship; refusals belong on claims"
+        # ...and every one of its problems is on the record.
+        assert set(v.label_codes) == {"L1", "L2", "L3", "L4"}
+        assert not v.is_clean
 
-
-# ---------------------------------------------------------------------------
-# the baseline: the gate opens
-# ---------------------------------------------------------------------------
-
-class TestTheGateCanOpen:
-    """Without this, every refusal below is unfalsifiable."""
-
-    def test_a_clean_checkpoint_with_an_approving_record_is_admitted(self, authorization):
-        v = admit(
-            clean_claims(),
-            purpose="live_hardware",
-            review=approving_review(),
-            authorization=authorization,
-            as_of=AFTER_S,
+    def test_every_flagged_label_says_what_it_changes_about_the_numbers(self):
+        v = verdict(
+            clean_claims(
+                is_control_arm=True, anatomy_is_biological=False,
+                gates={"G1": "COULD_NOT_RUN"}, weights_trained=False,
+            )
         )
-        assert v.admitted
-        assert v.failed == ()
-        assert {c.code for c in v.conditions} == {"A0", "A1", "A2", "A3", "A4", "A5", "A6"}
-        assert v.live_application.admitted
-        assert v.live_application.mode == "live"
+        for label in v.flagged:
+            assert label.consequence, f"{label.code} flags without a consequence"
+        text = "\n".join(v.warnings())
+        assert "measure the control" in text
+        assert "not anatomy" in text
+        assert "not a pending PASS" in text
+        assert "fitted to data" in text
 
-    def test_simulation_asks_nothing_of_the_checkpoint(self):
-        """A simulation reported as a simulation needs no artifact to be valid."""
-        v = admit(CheckpointClaims.absent(), purpose="simulation", as_of=AFTER_S)
-        assert v.admitted
-        # ...but every non-required condition is still *recorded* as having
-        # failed, so the verdict shows what was not asked rather than hiding it.
-        not_required = {c.code for c in v.conditions if not c.required}
-        assert {"A1", "A2", "A3", "A4", "A5", "A6"} <= not_required
-        assert not all(c.passed for c in v.conditions)
+    def test_a_clean_artifact_produces_no_banner(self):
+        v = verdict(clean_claims())
+        assert v.is_clean
+        assert v.flagged == ()
+        assert v.banner() == ""
+        assert v.warnings() == ()
 
-    def test_the_admission_record_is_content_hashed(self):
-        a = admit(clean_claims(), purpose="research_offline", as_of=AFTER_S)
-        b = admit(clean_claims(), purpose="research_offline", as_of=AFTER_S)
-        c = admit(clean_claims(manifest_id="other"), purpose="research_offline",
-                  as_of=AFTER_S)
-        assert a.content_hash() == b.content_hash()
-        assert a.content_hash() != c.content_hash()
+    def test_the_banner_is_loud_when_there_is_something_to_say(self):
+        v = verdict(clean_claims(is_control_arm=True))
+        assert "change what its numbers mean" in v.banner()
+        assert "[L1]" in v.banner()
 
 
 # ---------------------------------------------------------------------------
-# A0 -- the standing invariants
+# A0, A1 -- the only two refusals
 # ---------------------------------------------------------------------------
 
 class TestA0StandingInvariants:
@@ -149,269 +124,195 @@ class TestA0StandingInvariants:
     def test_the_default_is_all_false(self):
         assert ConsumerInvariants().as_dict() == dict(CONSUMER_STANDING_INVARIANTS)
 
-    def test_an_approving_review_does_not_relax_them(self, authorization):
-        """The review boundary and the promotion boundary are unrelated."""
-        v = admit(
-            clean_claims(),
-            purpose="patient_directed",
-            review=approving_review(),
-            authorization=authorization,
-            as_of=AFTER_S,
-        )
+    def test_they_survive_an_admitted_patient_directed_load(self):
+        v = admit(clean_claims(), purpose="patient_directed")
         assert v.admitted
         assert v.invariants.as_dict() == {
             "sim2real_ready": False,
             "promotion_eligible": False,
             "robot_command_authority": False,
         }
-        with pytest.raises(ConsumerInvariantViolation):
-            admit(
-                clean_claims(),
-                purpose="patient_directed",
-                review=approving_review(),
-                authorization=authorization,
-                invariants=ConsumerInvariants(promotion_eligible=True),
-                as_of=AFTER_S,
-            )
 
 
-# ---------------------------------------------------------------------------
-# A1..A5 -- what the checkpoint is
-# ---------------------------------------------------------------------------
+#: A checkpoint that exists on disk but carries no readable sidecar.
+UNLABELLABLE = CheckpointClaims(checkpoint_present=True, manifest_readable=False)
 
-class TestA1ManifestPresent:
-    def test_a_checkpoint_with_no_manifest_is_refused(self):
-        e = refusal(CheckpointClaims.absent())
-        assert "A1" in e.codes
-        assert "claim_manifest.json" in str(e)
 
-    def test_absence_is_not_permission_even_for_research(self):
-        e = refusal(CheckpointClaims.absent(), purpose="research_offline")
-        assert e.codes == ("A1",)
+class TestA1AnExistingCheckpointMustBeLabellable:
+    def test_a_present_checkpoint_with_no_readable_manifest_refuses(self):
+        with pytest.raises(CheckpointRefused) as exc:
+            admit(UNLABELLABLE, purpose="research_offline")
+        assert exc.value.codes == ("A1",)
+        assert "every label below would be a guess" in str(exc.value)
 
-    def test_a_stated_manifest_passes_A1(self):
-        v = admit(clean_claims(), purpose="research_offline", as_of=AFTER_S)
+    @pytest.mark.parametrize("purpose", EXPORT_PURPOSES)
+    def test_it_refuses_for_every_purpose_including_simulation(self, purpose):
+        """Unlike the labels, this one is correctness and binds everywhere."""
+        with pytest.raises(CheckpointRefused) as exc:
+            admit(UNLABELLABLE, purpose=purpose)
+        assert exc.value.codes == ("A1",)
+
+    def test_no_checkpoint_at_all_is_admitted_not_refused(self):
+        """The analytic backend has no claims to mislabel; L4 says what it is.
+
+        Refusing here would break the load path's deliberate design of not
+        failing when there is no trained artifact -- which would push consumers
+        toward building their own uncontrolled fallback, the exact outcome that
+        design exists to prevent.
+        """
+        v = admit(CheckpointClaims.absent(), purpose="patient_directed")
         assert v.admitted
+        assert v.claims.checkpoint_present is False
+        assert "L4" in v.label_codes
+
+    def test_a_manifest_that_says_terrible_things_still_passes_A1(self):
+        """A1 is about readability, never content. This is the whole point."""
+        awful = CheckpointClaims.from_manifest(
+            {
+                "id": "the-worst",
+                "arm": "control",
+                "anatomy": {"is_biological": False},
+                "gates": {"G1": "FAIL"},
+            }
+        )
+        assert awful.manifest_readable is True
+        v = admit(awful, purpose="live_hardware")
+        assert v.admitted
+        assert set(v.label_codes) == {"L1", "L2", "L3", "L4"}
 
 
-class TestA2ControlArm:
-    def test_the_control_arm_is_refused(self):
-        e = refusal(clean_claims(is_control_arm=True, control_arm_of="body.tex 11.4"))
-        assert "A2" in e.codes
-        assert "control arm" in str(e)
+# ---------------------------------------------------------------------------
+# L1..L4 -- the labels
+# ---------------------------------------------------------------------------
 
-    def test_an_artifact_that_does_not_say_is_treated_as_the_control_arm(self):
-        """Run 1 was the control arm while claiming otherwise. Silence != treatment."""
+def label(v, code):
+    return next(x for x in v.labels if x.code == code)
+
+
+class TestL1AblationArm:
+    def test_the_control_arm_is_flagged_and_still_loads(self):
+        v = verdict(clean_claims(is_control_arm=True, control_arm_of="body.tex 11.4"))
+        assert v.admitted
+        assert "L1" in v.label_codes
+        assert "control arm" in label(v, "L1").detail
+
+    def test_an_artifact_that_does_not_say_is_labelled_the_control_arm(self):
+        """Run 1 was the control arm while claiming otherwise. Silence is not clean."""
         claims = CheckpointClaims.from_manifest({"id": "unsaid"})
         assert claims.is_control_arm is True
-        assert "A2" in refusal(claims).codes
+        assert "L1" in verdict(claims).label_codes
 
-    def test_a_declared_treatment_arm_passes_A2(self):
+    def test_a_declared_treatment_arm_is_clean_on_L1(self):
         claims = CheckpointClaims.from_manifest(
             {"id": "run2", "is_control_arm": False, "arm": "treatment"}
         )
-        assert claims.is_control_arm is False
-        assert "A2" not in refusal(claims).codes
+        assert label(verdict(claims), "L1").clean
+        assert label(verdict(claims), "L1").consequence == ""
 
 
-class TestA3AnatomyIsBiological:
-    def test_synthetic_anatomy_is_refused(self):
-        e = refusal(
-            clean_claims(
-                anatomy_is_biological=False, anatomy_provenance="synthetic_fallback"
-            )
+class TestL2AnatomyProvenance:
+    def test_synthetic_anatomy_is_flagged_and_still_loads(self):
+        v = verdict(
+            clean_claims(anatomy_is_biological=False,
+                         anatomy_provenance="synthetic_fallback")
         )
-        assert "A3" in e.codes
-        assert "synthetic_fallback" in str(e)
-        assert "not anatomy" in str(e)
+        assert v.admitted
+        assert "L2" in v.label_codes
+        assert "synthetic_fallback" in label(v, "L2").detail
+        assert "not anatomy" in label(v, "L2").consequence
 
-    def test_an_unstated_anatomy_record_is_refused_not_assumed(self):
+    def test_an_unstated_anatomy_record_is_flagged_not_assumed(self):
         claims = CheckpointClaims.from_manifest({"id": "x", "is_control_arm": False})
         assert claims.anatomy_is_biological is False
-        assert "A3" in refusal(claims).codes
+        assert "L2" in verdict(claims).label_codes
 
-    def test_biological_anatomy_passes_A3(self):
-        assert "A3" not in refusal(clean_claims()).codes
-
-
-class TestA4Gates:
-    def test_could_not_run_gates_are_refused(self):
-        e = refusal(clean_claims(gates={"G1": "COULD_NOT_RUN", "G2": "PASS"}))
-        assert "A4" in e.codes
-        assert "COULD_NOT_RUN" in str(e) and "G1" in str(e)
-
-    def test_a_failing_gate_is_refused(self):
-        e = refusal(clean_claims(gates={"G1": "PASS", "G2": "FAIL"}))
-        assert "A4" in e.codes
-        assert "FAIL" in str(e) and "G2" in str(e)
-
-    def test_no_gate_results_at_all_is_refused(self):
-        e = refusal(clean_claims(gates={}))
-        assert "A4" in e.codes
-        assert "not an artifact whose gates passed" in str(e)
-
-    def test_all_passing_gates_pass_A4(self):
-        assert "A4" not in refusal(clean_claims()).codes
+    def test_biological_anatomy_is_clean_on_L2(self):
+        assert label(verdict(clean_claims()), "L2").clean
 
 
-class TestA5TrainedWeights:
-    def test_an_analytic_backend_is_refused_for_live_use(self):
-        e = refusal(clean_claims(weights_trained=False))
-        assert "A5" in e.codes
-        assert "surrogate propagators" in str(e)
-
-    def test_trained_weights_pass_A5(self):
-        assert "A5" not in refusal(clean_claims()).codes
-
-
-# ---------------------------------------------------------------------------
-# A6 -- live-use authorization, by record and never by date
-# ---------------------------------------------------------------------------
-
-class TestA6DelegatesToTheOneLiveApplicationGate:
-    """A6 has no logic of its own: it asks Faraday's predicate and records it.
-
-    ``scwbd.intervene.deployment`` owns the rule and
-    ``tests/intervene/test_deployment.py`` proves it.  What these tests prove is
-    the thing that file cannot: that the *runtime* call site asks the same
-    question, with the mode derived from the purpose rather than the caller.
-    """
-
-    @pytest.mark.parametrize("purpose", sorted(LIVE_PURPOSES))
-    def test_no_review_record_refuses_every_live_purpose(self, purpose, authorization):
-        e = refusal(clean_claims(), purpose=purpose, review=None,
-                    authorization=authorization)
-        assert e.codes == ("A6",)
-        assert "REVIEW_ABSENT" in str(e) or "no preliminary review record" in str(e)
-
-    @pytest.mark.parametrize(
-        "purpose", [p for p in EXPORT_PURPOSES if p not in LIVE_PURPOSES]
-    )
-    def test_non_live_purposes_are_not_gated_on_a_review(self, purpose):
-        v = admit(clean_claims(), purpose=purpose, as_of=AFTER_S)
+class TestL3ClaimGates:
+    def test_could_not_run_is_flagged_and_named(self):
+        v = verdict(clean_claims(gates={"G1": "COULD_NOT_RUN", "G2": "PASS"}))
         assert v.admitted
-        assert v.live_application.mode == "computational"
+        assert "COULD_NOT_RUN" in label(v, "L3").detail
+        assert "G1" in label(v, "L3").detail
 
-    def test_the_mode_is_derived_from_the_purpose_not_the_caller(self):
-        """A caller cannot get a live purpose checked as computational."""
-        assert MODE_OF_PURPOSE == {
-            "simulation": "computational",
-            "research_offline": "computational",
-            "live_hardware": "live",
-            "patient_directed": "live",
-        }
-        for purpose in EXPORT_PURPOSES:
-            v = admit(
-                clean_claims(), purpose=purpose, as_of=AFTER_S,
-                raise_on_refusal=False,
-            )
-            assert v.live_application.mode == MODE_OF_PURPOSE[purpose]
+    def test_a_failing_gate_is_flagged_and_named(self):
+        v = verdict(clean_claims(gates={"G1": "PASS", "G2": "FAIL"}))
+        assert "FAIL" in label(v, "L3").detail and "G2" in label(v, "L3").detail
 
-    def test_the_date_is_not_an_unlock_at_this_call_site_either(self, authorization):
-        """Years past the scheduled review, with no record: still refused."""
-        e = refusal(clean_claims(), review=None, authorization=authorization,
-                    as_of=LONG_AFTER_S)
-        assert e.codes == ("A6",)
+    def test_no_gate_results_at_all_is_flagged(self):
+        """Resolves the old A4 gap: nothing needs writing into a sidecar."""
+        v = verdict(clean_claims(gates={}))
+        assert v.admitted
+        assert "no gate statuses recorded" in label(v, "L3").detail
 
-    def test_an_authorization_alone_is_necessary_and_not_sufficient(self, authorization):
-        with_auth = refusal(clean_claims(), review=None, authorization=authorization)
-        assert with_auth.codes == ("A6",)
-        # ...and adding the review is what admits it.
-        assert admit(
-            clean_claims(), purpose="live_hardware", review=approving_review(),
-            authorization=authorization, as_of=AFTER_S,
-        ).admitted
-
-    def test_a_review_without_an_authorization_also_refuses(self):
-        e = refusal(clean_claims(), review=approving_review(), authorization=None)
-        assert e.codes == ("A6",)
-
-    @pytest.mark.parametrize(
-        "outcome", ["pending", "deferred", "disapproved", "undeclared"]
-    )
-    def test_a_non_approving_outcome_is_refused(self, outcome, authorization):
-        e = refusal(
-            clean_claims(),
-            review=approving_review(outcome=outcome),
-            authorization=authorization,
-        )
-        assert e.codes == ("A6",)
-
-    def test_a_tms_review_does_not_clear_a_tfus_export(self, authorization):
-        tms_review = approving_review(covered_intervention_classes=("tms",))
-        # the runtime's default intervention_class is tms, so this admits...
-        assert admit(
-            clean_claims(), purpose="live_hardware", review=tms_review,
-            authorization=authorization, as_of=AFTER_S,
-        ).admitted
-        # ...and the same record asked about tfus does not.
-        e = refusal(
-            clean_claims(), review=tms_review, authorization=authorization,
-            intervention_class="tfus",
-        )
-        assert e.codes == ("A6",)
-
-    def test_an_undated_request_cannot_be_checked_and_is_refused(self, authorization):
-        """``as_of=None`` is not silently replaced with the wall clock."""
-        e = refusal(clean_claims(), review=approving_review(),
-                    authorization=authorization, as_of=None)
-        assert e.codes == ("A6",)
-
-    def test_as_of_accepts_a_date_an_iso_string_or_epoch_seconds(self, authorization):
-        from datetime import date as _date
-
-        results = [
-            admit(clean_claims(), purpose="live_hardware", review=approving_review(),
-                  authorization=authorization, as_of=v).admitted
-            for v in (AFTER_S, REVIEW_DAY, _date.fromisoformat(REVIEW_DAY))
-        ]
-        assert results == [True, True, True]
-
-    def test_the_verdict_carries_the_shared_provenance_object(self, authorization):
-        v = admit(clean_claims(), purpose="live_hardware", review=approving_review(),
-                  authorization=authorization, as_of=AFTER_S)
-        prov = v.canonical()["live_application"]
-        assert prov["application_mode"] == "live"
-        assert prov["review"]["identifier"] == "PRELIM-2026-0001"
-        # the one date, reported from the one place that owns it
-        assert prov["scheduled_review_date"] == REVIEW_DAY
+    def test_all_passing_gates_are_clean_on_L3(self):
+        assert label(verdict(clean_claims()), "L3").clean
 
 
-class TestRefusalsCompose:
-    def test_the_run_one_artifact_fails_five_conditions_at_once(self):
-        """What SC-WBD-001-beta actually is, stated as an admission verdict."""
-        run1 = CheckpointClaims.from_manifest(
-            {
-                "id": "scwbd-001-beta",
-                "claim_class": "surrogate",
-                "arm": "equal_capacity_generic_operator_control",
-                "anatomy": {
-                    "is_biological": False,
-                    "provenance": "synthetic_fallback",
-                },
-                "gates": {f"G{i}": "COULD_NOT_RUN" for i in range(1, 6)},
-                "weights_trained": False,
-            }
-        )
-        e = refusal(run1)
-        assert set(e.codes) == {"A2", "A3", "A4", "A5", "A6"}
-        # A1 passes: it *does* have a manifest. The refusal is about content.
-        assert "A1" not in e.codes
-        text = str(e)
-        for code in ("A2", "A3", "A4", "A5", "A6"):
-            assert f"[{code}]" in text
+class TestL4Weights:
+    def test_an_analytic_backend_is_flagged(self):
+        v = verdict(clean_claims(weights_trained=False))
+        assert v.admitted
+        assert "L4" in v.label_codes
+        assert "fitted to data" in label(v, "L4").consequence
+
+    def test_trained_weights_are_clean_on_L4(self):
+        assert label(verdict(clean_claims()), "L4").clean
+
+
+# ---------------------------------------------------------------------------
+# the record
+# ---------------------------------------------------------------------------
+
+class TestTheVerdictRecord:
+    def test_it_is_content_hashed(self):
+        a = admit(clean_claims(), purpose="research_offline")
+        b = admit(clean_claims(), purpose="research_offline")
+        c = admit(clean_claims(manifest_id="other"), purpose="research_offline")
+        assert a.content_hash() == b.content_hash()
+        assert a.content_hash() != c.content_hash()
+
+    def test_the_hash_changes_when_a_label_changes(self):
+        """A label that did not affect the record would be decoration."""
+        a = admit(clean_claims(), purpose="research_offline")
+        b = admit(clean_claims(is_control_arm=True), purpose="research_offline")
+        assert a.content_hash() != b.content_hash()
+
+    def test_canonical_carries_conditions_and_labels_separately(self):
+        c = admit(clean_claims(is_control_arm=True), purpose="simulation").canonical()
+        assert [x["code"] for x in c["conditions"]] == ["A0", "A1"]
+        assert [x["code"] for x in c["labels"]] == ["L1", "L2", "L3", "L4"]
+        assert c["flagged"] == ["L1"]
 
     def test_an_unknown_purpose_is_refused_rather_than_defaulted(self):
         with pytest.raises(ValueError) as exc:
             admit(clean_claims(), purpose="whatever")
-        assert "no rules for" in str(exc.value)
+        assert "unknown export purpose" in str(exc.value)
 
     def test_the_non_raising_form_reports_without_admitting(self):
-        v = admit(
-            CheckpointClaims.absent(),
-            purpose="live_hardware",
-            as_of=AFTER_S,
-            raise_on_refusal=False,
-        )
+        v = admit(UNLABELLABLE, purpose="live_hardware", raise_on_refusal=False)
         assert v.admitted is False
-        assert {c.code for c in v.failed} >= {"A1", "A2", "A3", "A4", "A5", "A6"}
+        assert {c.code for c in v.failed} == {"A1"}
+
+
+class TestNoLiveApplicationGateRemains:
+    """The delegation target was removed from the repository; nothing replaced it."""
+
+    def test_the_module_exposes_no_live_application_surface(self):
+        import scwbd.runtime.admission as adm
+
+        for gone in (
+            "LIVE_PURPOSES", "MODE_OF_PURPOSE", "LiveUseAuthorization",
+            "authorize_live_application", "EARLIEST_CREDIBLE_REVIEW",
+        ):
+            assert not hasattr(adm, gone), f"{gone} still present"
+
+    def test_admit_takes_no_review_or_authorization_argument(self):
+        import inspect
+
+        params = set(inspect.signature(admit).parameters)
+        assert params == {
+            "claims", "purpose", "invariants", "designation", "raise_on_refusal"
+        }

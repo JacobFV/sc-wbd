@@ -193,8 +193,8 @@ REFUSALS: dict[str, RefusalSpec] = {
             rejected="Intervention optimization outside an independently validated feasible set",
             why="A learned objective cannot guarantee device, exposure, or protocol safety",
             remedy=(
-                "Require u in A_safe, independent safety checks, deferral, and the "
-                "applicable ethics and regulatory review"
+                "Require u in A_safe, with the envelope validated independently of "
+                "the optimizer, and a declared deferral policy"
             ),
         ),
         RefusalSpec(

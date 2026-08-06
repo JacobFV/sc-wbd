@@ -61,6 +61,7 @@ identity:
 # G_k  governance and consent
 # =====================================================================
 governance:
+  license_spdx: "CC0-1.0"
   status: partial
   status_reason: >-
     live and usable for the two fetched participants; 'partial' because 14 of
@@ -140,6 +141,21 @@ population:
 # S_k(signal)  native signal and units
 # =====================================================================
 signal:
+  # Every modality below is backed by files under the dataset root. The globs
+  # are checked by scwbd.sources.audit (A4): a modality with no matching file
+  # is a FINDING, not a silent pass.
+  #
+  # eog/ecg are NOT separable in the FIFF header - it reports 74 undifferentiated
+  # 'eeg' channels. The separation exists only in the BIDS channels.tsv, so that
+  # is the file the claim points at, and the audit reads its `type` column.
+  modality_evidence:
+    meg:  {globs: ["sub-*/ses-meg/meg/*_meg.fif"], channel_type: [MAG, GRAD]}
+    eeg:  {globs: ["sub-*/ses-meg/meg/*_meg.fif"], channel_type: EEG}
+    eog:  {globs: ["sub-*/ses-meg/*_channels.tsv"], channel_type: [HEOG, VEOG, EOG]}
+    ecg:  {globs: ["sub-*/ses-meg/*_channels.tsv"], channel_type: ECG}
+    mri:  ["sub-*/ses-mri/anat/*.nii.gz"]
+    fmri: ["sub-*/ses-mri/func/*_bold.nii.gz"]
+    dwi:  ["sub-*/ses-mri/dwi/*_dwi.nii.gz"]
   modalities: ["meg", "eeg", "eog", "ecg", "mri", "fmri", "dwi"]
   n_channels: 376                 # 102 magnetometers + 204 planar gradiometers + 70 EEG
   channel_types: {mag: 102, grad: 204, eeg: 70}

@@ -132,6 +132,39 @@ class ScaleMapPair(SchemaModel):
             and self.landmark_coverage >= self.required_coverage
         )
 
+    def roundtrip_within_tolerance(self) -> bool:
+        """Did the declared round trips actually come back inside tolerance?
+
+        ``coverage_tested`` only asks whether the tests were *run*.  Without
+        this, a pair could declare ``roundtrip_tested=True`` alongside a
+        residual an order of magnitude past its own tolerance and R02 would
+        still pass it -- the guard would be reporting that somebody ran a test,
+        not that the test succeeded.  Both slots must carry a residual and a
+        tolerance, and both must be inside it.
+        """
+        for m in (self.restriction, self.prolongation):
+            if m is not None and not m.roundtrip_ok:
+                return False
+        return True
+
+    def roundtrip_failures(self) -> tuple[str, ...]:
+        """Human-readable reasons ``roundtrip_within_tolerance`` said no."""
+        out: list[str] = []
+        for slot, m in (("restriction", self.restriction), ("prolongation", self.prolongation)):
+            if m is None or m.roundtrip_ok:
+                continue
+            if m.roundtrip_residual is None:
+                out.append(f"{slot} {m.name!r} declares no round-trip residual")
+            elif m.roundtrip_tolerance is None:
+                out.append(f"{slot} {m.name!r} declares no round-trip tolerance")
+            else:
+                out.append(
+                    f"{slot} {m.name!r} round-trip residual "
+                    f"{m.roundtrip_residual:g} exceeds its tolerance "
+                    f"{m.roundtrip_tolerance:g}"
+                )
+        return tuple(out)
+
 
 class CocycleCheck(SchemaModel):
     """Measured commutation residual along an alternative path.
@@ -292,13 +325,16 @@ class ResolutionPoset(SchemaModel):
         return tuple(p for p in self.maps if p.prolongation is not None)
 
     def orphan_prolongations(self) -> tuple[ScaleMapPair, ...]:
-        """Prolongations lacking a restriction partner or tested coverage (R02)."""
+        """Prolongations lacking a restriction partner, tested coverage, a
+        declared out-of-support policy, or a round trip inside tolerance (R02).
+        """
         return tuple(
             p
             for p in self.prolongations()
             if p.restriction is None
             or not p.coverage_tested()
             or p.out_of_support_policy is None
+            or not p.roundtrip_within_tolerance()
         )
 
     def unordered_maps(self) -> tuple[ScaleMapPair, ...]:

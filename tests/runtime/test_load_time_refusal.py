@@ -21,12 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from scwbd.intervene.deployment import (
-    PRELIMINARY_REVIEW_SCHEDULED,
-    PreliminaryReviewRecord,
-)
 from scwbd.runtime.admission import CheckpointRefused
-from scwbd.schema.authorization import epoch_seconds
 from scwbd.runtime.provenance import ProvenanceExpectation, ProvenanceMismatch
 from scwbd.runtime.serving import ServedModel, discover_checkpoint
 
@@ -34,10 +29,6 @@ from scwbd.runtime.ports import PortContract
 
 from test_ports import RUN1_LAYOUT, RUN2_LAYOUT
 
-REVIEW_DAY = PRELIMINARY_REVIEW_SCHEDULED.isoformat()
-AS_OF = epoch_seconds(REVIEW_DAY) + 86400.0
-#: Years past the scheduled review. Used to show the date is not an unlock.
-LONG_AFTER_S = epoch_seconds("2027-12-31")
 
 #: The real run-1 artifact, written by agent Turing's training run.
 REAL_RUN1 = Path("/home/brandonin/Documents/scwbd-wt/turing/checkpoints")
@@ -80,18 +71,6 @@ def clean_manifest() -> dict:
     }
 
 
-def approving() -> PreliminaryReviewRecord:
-    """A *fictional* record that the review happened and passed."""
-    return PreliminaryReviewRecord(
-        review_body="Example University preliminary review panel",
-        identifier="PRELIM-2026-0001",
-        occurred_on=REVIEW_DAY,
-        outcome="approved",
-        covered_intervention_classes=("tms",),
-        declared_by="test fixture",
-    )
-
-
 # ---------------------------------------------------------------------------
 # the regression that made run 1 possible
 # ---------------------------------------------------------------------------
@@ -121,109 +100,83 @@ class TestCheckpointDiscoveryIsNotBlindToTheTrainersFilenames:
 # refusal at load
 # ---------------------------------------------------------------------------
 
-class TestLoadRefusesBeforeAServiceExists:
-    def test_the_control_arm_is_refused_for_live_hardware(self, tmp_path, authorization):
-        write_checkpoint(tmp_path, "scwbd-001-beta", run1_manifest())
-        with pytest.raises(CheckpointRefused) as exc:
-            ServedModel.load(
-                "scwbd-001-beta",
-                device="cpu",
-                checkpoint_root=tmp_path,
-                purpose="live_hardware",
-                review=approving(),
-            authorization=authorization,
-                as_of=AS_OF,
-            )
-        assert set(exc.value.codes) == {"A2", "A3", "A4"}
-        text = str(exc.value)
-        assert "control arm" in text
-        assert "synthetic_fallback" in text
-        assert "COULD_NOT_RUN" in text
+class TestLoadShipsTheArtifactAndLabelsIt:
+    """Sec. 7a. Only an unreadable manifest blocks; quality is labelled."""
 
-    def test_a_checkpoint_with_no_manifest_is_refused_for_research(self, tmp_path):
+    @pytest.mark.parametrize("purpose", ["simulation", "research_offline",
+                                         "live_hardware", "patient_directed"])
+    def test_the_control_arm_loads_for_every_purpose_and_is_labelled(
+        self, tmp_path, purpose
+    ):
+        write_checkpoint(tmp_path, "scwbd-001-beta", run1_manifest())
+        served = ServedModel.load(
+            "scwbd-001-beta", device="cpu", checkpoint_root=tmp_path, purpose=purpose,
+        )
+        assert served.admission.admitted
+        assert set(served.admission.label_codes) == {"L1", "L2", "L3"}
+        banner = served.provenance.notes["admission_banner"]
+        assert "control arm" in banner
+        assert "synthetic_fallback" in banner
+        assert "COULD_NOT_RUN" in banner
+
+    def test_a_checkpoint_with_no_manifest_refuses_because_it_cannot_be_labelled(
+        self, tmp_path
+    ):
         write_checkpoint(tmp_path, "bare", None)
         with pytest.raises(CheckpointRefused) as exc:
             ServedModel.load(
                 "bare", device="cpu", checkpoint_root=tmp_path,
-                purpose="research_offline", as_of=AS_OF,
+                purpose="research_offline",
             )
         assert exc.value.codes == ("A1",)
+        assert "every label below would be a guess" in str(exc.value)
 
-    def test_live_use_is_refused_with_no_authorization_record(self, tmp_path):
-        write_checkpoint(tmp_path, "clean", clean_manifest())
-        with pytest.raises(CheckpointRefused) as exc:
-            ServedModel.load(
-                "clean", device="cpu", checkpoint_root=tmp_path,
-                purpose="live_hardware", as_of=AS_OF,
-            )
-        assert exc.value.codes == ("A6",)
-
-    def test_waiting_does_not_open_the_gate(self, tmp_path):
-        """Ten years after the review date, with no record: still refused."""
-        write_checkpoint(tmp_path, "clean", clean_manifest())
-        with pytest.raises(CheckpointRefused) as exc:
-            ServedModel.load(
-                "clean", device="cpu", checkpoint_root=tmp_path,
+    def test_that_refusal_happens_before_any_service_object_exists(self, tmp_path):
+        write_checkpoint(tmp_path, "bare", None)
+        served = None
+        try:
+            served = ServedModel.load(
+                "bare", device="cpu", checkpoint_root=tmp_path,
                 purpose="patient_directed",
-                as_of=LONG_AFTER_S,
             )
-        assert exc.value.codes == ("A6",)
+        except CheckpointRefused:
+            pass
+        assert served is None
 
-    def test_simulation_still_loads_the_control_arm(self, tmp_path):
-        """The gate governs purpose, not existence. Simulation is not gated."""
-        write_checkpoint(tmp_path, "scwbd-001-beta", run1_manifest())
-        served = ServedModel.load(
-            "scwbd-001-beta", device="cpu", checkpoint_root=tmp_path,
-            purpose="simulation", as_of=AS_OF,
-        )
-        assert served.admission.admitted
-        assert served.admission.purpose == "simulation"
-
-    def test_a_clean_checkpoint_with_a_record_loads_for_live_hardware(self, tmp_path, authorization):
-        """Paired with every refusal above: the gate is not stuck closed."""
+    def test_a_clean_checkpoint_loads_with_no_banner_at_all(self, tmp_path):
+        """Paired with the above: the labelling discriminates."""
         write_checkpoint(tmp_path, "clean", clean_manifest())
         served = ServedModel.load(
-            "clean", device="cpu", checkpoint_root=tmp_path,
-            purpose="live_hardware",
-            review=approving(),
-            authorization=authorization,
-            as_of=AS_OF,
+            "clean", device="cpu", checkpoint_root=tmp_path, purpose="live_hardware",
         )
         assert served.admission.admitted
-        assert served.provenance.notes["export_purpose"] == "live_hardware"
-        assert served.provenance.notes["admission_hash"]
+        assert served.admission.is_clean
+        assert served.provenance.notes["admission_banner"] == ""
+        assert served.provenance.notes["admission_flagged"] == []
         assert served.provenance.notes["consumer_standing_invariants"] == {
             "sim2real_ready": False,
             "promotion_eligible": False,
             "robot_command_authority": False,
         }
 
-    def test_the_refusal_happens_before_any_service_object_exists(self, tmp_path, authorization):
-        """There is no window in which an inadmissible checkpoint is usable."""
+    def test_the_labels_reach_the_provenance_notes(self, tmp_path):
         write_checkpoint(tmp_path, "scwbd-001-beta", run1_manifest())
-        served = None
-        try:
-            served = ServedModel.load(
-                "scwbd-001-beta", device="cpu", checkpoint_root=tmp_path,
-                purpose="patient_directed", review=approving(),
-                authorization=authorization,
-                as_of=AS_OF,
-            )
-        except CheckpointRefused:
-            pass
-        assert served is None
+        served = ServedModel.load(
+            "scwbd-001-beta", device="cpu", checkpoint_root=tmp_path,
+            purpose="simulation",
+        )
+        labels = served.provenance.notes["admission_labels"]
+        assert labels["L4"] == "clean"          # the fixture writes real bytes
+        assert "control arm" in labels["L1"]
+        assert served.provenance.notes["admission_hash"]
 
-
-# ---------------------------------------------------------------------------
-# the port contract travels with the service
-# ---------------------------------------------------------------------------
 
 class TestThePortContractIsServedAndPinnable:
     def test_the_declared_ports_reach_the_consumer(self, tmp_path):
         write_checkpoint(tmp_path, "clean", clean_manifest())
         served = ServedModel.load(
             "clean", device="cpu", checkpoint_root=tmp_path,
-            purpose="research_offline", as_of=AS_OF,
+            purpose="research_offline",
         )
         contract = served.port_contract()
         assert set(contract.families) == {
@@ -237,9 +190,9 @@ class TestThePortContractIsServedAndPinnable:
         write_checkpoint(tmp_path, "one", run1_manifest())
         write_checkpoint(tmp_path, "two", clean_manifest())
         two = ServedModel.load("two", device="cpu", checkpoint_root=tmp_path,
-                               purpose="research_offline", as_of=AS_OF)
+                               purpose="research_offline")
         one = ServedModel.load("one", device="cpu", checkpoint_root=tmp_path,
-                               purpose="simulation", as_of=AS_OF)
+                               purpose="simulation")
 
         pinned = ProvenanceExpectation(
             port_contract_digest=two.provenance.port_contract_digest,
@@ -258,7 +211,7 @@ class TestThePortContractIsServedAndPinnable:
         m.pop("state_layout")
         write_checkpoint(tmp_path, "nolayout", m)
         served = ServedModel.load("nolayout", device="cpu", checkpoint_root=tmp_path,
-                                  purpose="research_offline", as_of=AS_OF)
+                                  purpose="research_offline")
         assert served.provenance.port_contract_digest == ""
         assert served.provenance.exported_ports == ()
         # ...and a consumer that requires a port gets a hard failure, not silence
@@ -286,122 +239,56 @@ class TestAgainstTheRealRunOneArtifact:
         )
         assert rec.weights_status == "trained"
 
-    def test_it_ships_no_claim_manifest_and_is_therefore_refused(self):
-        """Established by execution, 2026-08-06: the directory has
-        ``provenance.json``, not ``claim_manifest.json``."""
+    def test_it_ships_no_claim_manifest_and_is_therefore_unlabellable(self):
+        """Established by execution: the directory has provenance.json only."""
         rec = discover_checkpoint("scwbd-001-beta", root=REAL_RUN1)
         assert rec.manifest_path is None
         claims = rec.admission_claims()
+        assert claims.manifest_readable is False
         assert claims.manifest_id == "absent"
-        # trained weights, but nothing that states what they are
         assert claims.weights_trained is True
-        assert claims.is_control_arm is True
-        assert claims.anatomy_is_biological is False
 
     @pytest.mark.parametrize(
-        "purpose", ["research_offline", "live_hardware", "patient_directed"]
+        "purpose", ["simulation", "research_offline", "live_hardware"]
     )
-    def test_no_purpose_beyond_simulation_admits_it(self, purpose, authorization):
+    def test_it_refuses_only_because_it_cannot_be_labelled(self, purpose):
+        """Not because it is a control arm -- that would ship, labelled."""
         with pytest.raises(CheckpointRefused) as exc:
             ServedModel.load(
                 "scwbd-001-beta", device="cpu", checkpoint_root=REAL_RUN1,
-                purpose=purpose, review=approving(),
-                authorization=authorization, as_of=AS_OF,
+                purpose=purpose,
             )
-        assert "A1" in exc.value.codes
+        assert exc.value.codes == ("A1",)
 
-    def test_the_g5_control_checkpoint_is_refused_too(self):
-        with pytest.raises(CheckpointRefused):
-            ServedModel.load(
-                "scwbd-001-beta-g5control", device="cpu", checkpoint_root=REAL_RUN1,
-                purpose="research_offline", as_of=AS_OF,
-            )
+    def test_writing_a_truthful_sidecar_is_all_it_takes_to_ship_it(self, tmp_path):
+        """The remedy is one file, and then the artifact loads for anything."""
+        from scwbd.runtime.admission import sidecar_from_checkpoint
 
-
-# ---------------------------------------------------------------------------
-# the unconditional refusal that could not discriminate
-# ---------------------------------------------------------------------------
-
-class TestProspectiveHumanIsGatedNotHardcoded:
-    """``ModelProvenance.prospective_human`` used to raise regardless of any
-    record, with the reason "out of scope for SC-WBD-001-beta (build-order item
-    6)".  Both of its guards carried ``# pragma: no cover`` and neither was
-    fired by any test.  An unconditional refusal cannot discriminate, and it
-    made the authorization mechanism unreachable from the consumer -- the same
-    defect as a stale permission string, pointed the safe way.
-
-    It now routes through the one live-application gate, so it refuses with a
-    reason that a record can satisfy.
-    """
-
-    def _verdict(self, authorization, **over):
-        from scwbd.intervene.deployment import authorize_live_application
-
-        kw = dict(
-            mode="live", intervention_class="tms", at_time_s=AS_OF,
-            review=approving(), authorization=authorization,
+        side = sidecar_from_checkpoint(
+            REAL_RUN1 / "scwbd-001-beta" / "last.pt", trust_checkpoint_pickle=True,
         )
-        kw.update(over)
-        return authorize_live_application(**kw).as_provenance()
+        d = tmp_path / "scwbd-001-beta"
+        d.mkdir(parents=True)
+        (d / "last.pt").symlink_to(REAL_RUN1 / "scwbd-001-beta" / "last.pt")
+        (d / "claim_manifest.json").write_text(json.dumps(side))
 
-    def test_it_refuses_with_no_verdict_at_all(self):
-        from scwbd.runtime.provenance import ModelProvenance
-
-        with pytest.raises(ValueError) as exc:
-            ModelProvenance(prospective_human=True)
-        assert "no live-application verdict was recorded" in str(exc.value)
-        assert "This refusal is satisfiable" in str(exc.value)
-
-    def test_it_refuses_on_a_refusing_verdict_and_names_the_failure(self, authorization):
-        from scwbd.runtime.provenance import ModelProvenance
-
-        with pytest.raises(ValueError) as exc:
-            ModelProvenance(
-                prospective_human=True,
-                live_application=self._verdict(authorization, review=None),
-            )
-        assert "REVIEW_ABSENT" in str(exc.value)
-
-    def test_a_computational_verdict_does_not_admit_a_prospective_human_claim(
-        self, authorization
-    ):
-        from scwbd.runtime.provenance import ModelProvenance
-
-        v = self._verdict(authorization, mode="computational")
-        assert v["admitted"] is True  # it *is* admitted, as computational
-        with pytest.raises(ValueError) as exc:
-            ModelProvenance(prospective_human=True, live_application=v)
-        assert "application_mode='computational'" in str(exc.value)
-
-    def test_an_admitting_live_verdict_permits_it(self, authorization):
-        """The pair that proves the guard discriminates rather than always fires."""
-        from scwbd.runtime.provenance import ModelProvenance
-
-        prov = ModelProvenance(
-            prospective_human=True,
-            live_application=self._verdict(authorization),
+        served = ServedModel.load(
+            "scwbd-001-beta", device="cpu", checkpoint_root=tmp_path,
+            purpose="patient_directed",
         )
-        assert prov.prospective_human is True
-        assert prov.live_application["admitted"] is True
-
-    def test_human_use_authorized_stays_unconditional_and_now_fires(self):
-        """The asymmetry is deliberate: this one no record can satisfy."""
-        from scwbd.runtime.provenance import ModelProvenance
-
-        with pytest.raises(ValueError) as exc:
-            ModelProvenance(human_use_authorized=True)
-        assert "this software does not issue authorization" in str(exc.value)
+        assert served.admission.admitted
+        assert set(served.admission.label_codes) == {"L1", "L2", "L3"}
+        assert served.provenance.notes["admission_banner"]
 
 
-# ---------------------------------------------------------------------------
-# the sidecar helpers
 # ---------------------------------------------------------------------------
 
 class TestTheSidecarHelpers:
-    def test_read_sidecar_returns_the_refusing_defaults_when_absent(self, tmp_path):
+    def test_read_sidecar_returns_the_worst_case_defaults_when_absent(self, tmp_path):
         from scwbd.runtime.admission import read_sidecar
 
         claims = read_sidecar(tmp_path / "nope.json")
+        assert claims.manifest_readable is False
         assert claims.manifest_id == "absent"
         assert claims.is_control_arm is True
         assert claims.anatomy_is_biological is False
@@ -435,7 +322,6 @@ class TestDerivingASidecarFromTheRealArtifact:
         """Regenerated from the checkpoint, not quoted from a report."""
         from scwbd.runtime.admission import (
             CheckpointClaims,
-            CheckpointRefused,
             admit,
             sidecar_from_checkpoint,
         )
@@ -447,7 +333,8 @@ class TestDerivingASidecarFromTheRealArtifact:
         assert side["id"] == "SC-WBD-001-beta"
         assert side["anatomy"]["is_biological"] is False
         assert side["anatomy"]["provenance"] == "synthetic_fallback"
-        # no gate statuses live in a checkpoint, so A4 has nothing to pass on
+        # no gate statuses live in a checkpoint -- under Sec. 7a that is a
+        # flagged L3 label, not a blocked load
         assert side["gates"] == {}
         # the checkpoint's own state_layout becomes a readable port contract
         assert side["port_contract_digest"]
@@ -458,15 +345,10 @@ class TestDerivingASidecarFromTheRealArtifact:
             "rate_e", "rate_i", "spectral"
         }
 
-        # and admitting it for anything live still refuses, naming why
-        with pytest.raises(CheckpointRefused) as exc:
-            admit(
-                CheckpointClaims.from_manifest(side),
-                purpose="live_hardware",
-                review=approving(),
-                as_of=AS_OF,
-            )
-        assert set(exc.value.codes) >= {"A2", "A3", "A4", "A6"}
+        # and it ships for the most consequential purpose, fully labelled
+        v = admit(CheckpointClaims.from_manifest(side), purpose="patient_directed")
+        assert v.admitted
+        assert set(v.label_codes) == {"L1", "L2", "L3"}
 
     def test_a_single_global_local_core_string_is_what_marks_the_control_arm(self):
         """Not truthiness: the config field that decides which arm this is."""

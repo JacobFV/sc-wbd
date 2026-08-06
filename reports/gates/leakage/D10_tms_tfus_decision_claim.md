@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** The mandatory control (Prospective randomized or otherwise causally identified target/protocol comparison with field, pose, state and sham records) shows the result survives only without it.
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c0e5833 · 2026-08-06T09:52:25+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1a35a9a · 2026-08-06T19:02:46+00:00*
 
 ## Could not run
 
@@ -14,11 +14,11 @@
 
 | check | mandatory | status | detail |
 |---|---|---|---|
-| prospective_decision_comparison | yes | COULD_NOT_RUN | OUT OF SCOPE BY CONSTRUCTION: the build order stops at item 5 (empirical subsystem); item 6 (prospective human TMS/tFUS) has no IRB, no consent and no participants, and no agent may implement a human stimulation protocol (ARCHITECTURE.md §0). No inputs can make this audit run in SC-WBD-001-beta. |
+| prospective_decision_comparison | yes | COULD_NOT_RUN | UNSUPPORTABLE BY CONSTRUCTION: this row needs a prospective, causally identified target/protocol comparison in people. No such dataset is held, and decision validity is not recoverable from offline reconstruction of already-collected recordings. No inputs can make this audit run in SC-WBD-001-beta. |
 
 ## Blocking reasons
 
-- prospective_decision_comparison: could not run — OUT OF SCOPE BY CONSTRUCTION: the build order stops at item 5 (empirical subsystem); item 6 (prospective human TMS/tFUS) has no IRB, no consent and no participants, and no agent may implement a human stimulation protocol (ARCHITECTURE.md §0). No inputs can make this audit run in SC-WBD-001-beta.
+- prospective_decision_comparison: could not run — UNSUPPORTABLE BY CONSTRUCTION: this row needs a prospective, causally identified target/protocol comparison in people. No such dataset is held, and decision validity is not recoverable from offline reconstruction of already-collected recordings. No inputs can make this audit run in SC-WBD-001-beta.
 
 ## Baselines run
 
@@ -46,7 +46,7 @@ _none run_ — no baseline, no claim.
 
 - This gate does not claim a validated digital twin of any specific person.
 - This gate does not claim that any admitted operator is neurally realized.
-- No prospective human TMS/tFUS protocol is implemented or implied (build order stops at item 5; item 6 is out of scope: no IRB, no consent, no participants).
+- No human stimulation protocol is implemented or implied: this is a deep-learning study on open data and there is no device command path.
 
 ## Notes
 

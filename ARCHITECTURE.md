@@ -37,26 +37,15 @@ per `reports/gates/SUMMARY.md`: the *field* gates have in fact passed (`N3`,
 non-identifiability — remains **unexercised**, and there is no trained
 checkpoint. Text asserting instead that item 6 is blocked because "there is no
 IRB, no consent, no participants" was misquoting this contract, and pointed at
-a blocker nobody here can clear instead of the ones they can; see
-`reports/intervene/authorization.md`.
+a blocker nobody here can clear instead of the ones they can. The gate
+statuses above are from `reports/gates/SUMMARY.md`, which is generated; the
+authorization report that first recorded this correction was removed with the
+governance layer (§7a).
 
-*Read this together with §7a, which it predates.* §7a records that
-**computational work in this repository is approved and is not gated** — the
-UT Arlington IRB approval covers it. The restriction above is about **live
-application**, and it holds for a capability reason that §7a does not touch:
-there is no trained checkpoint that could support a targeting claim. The two
-sections agree, and where the boundary is enforced is §7a's answer (one
-refusal at the export edge), not a per-call disclaimer.
-
-The reason is *capability*, not a hard-coded belief about anyone's paperwork.
-Governance is declared, recorded and carried in provenance: R11 admits a
-prospective request only when a validated `AuthorizationRecord`
-(`scwbd/schema/authorization.py`) covers the requested intervention class at
-the requested time, and the resulting artifact carries
-`claim_scope="protocol:<id>@<version>"` in its provenance. Even with a fully
-valid authorization this release still refuses a targeting claim, because there
-is no trained checkpoint, G4 is unexercisable on this corpus, and the impulse's
-energy-matched information gain is ~1. See `reports/governance_authorization.md`.
+The blocker is **capability**, not paperwork, and per §7a paperwork is not this
+project's concern at all: SC-WBD is deep-learning research on open data. The
+authorization layer is being removed from the tree entirely. The compliance
+question that *is* real is inherited data attribution and licensing; see §7a.
 
 The word "beta" is load-bearing: this release targets build-order items 1–5 with
 claim-bearing gates, not a whole-brain prediction claim.
@@ -441,6 +430,34 @@ Checkpoints: `checkpoints/scwbd-001-beta/` with a `ClaimManifest` alongside.
 
 ## 5b. Declared Narrowings
 
+
+> **Renumbered 2026-08-06.** Three agents filed rows concurrently and collided
+> on N-3, N-4, N-6 and N-7 — four ids meaning two things each. Rows are now
+> numbered sequentially in file order and are **stable from here**. Prose
+> elsewhere that cites an old id should be read through this concordance; where
+> a citation is ambiguous, the row's *subject* is authoritative, not its number.
+>
+> | cited as | now | subject |
+> |---|---|---|
+> | N-1 | **N-1** | padded-to-max-dim family state with enforced spans |
+> | N-2 | **N-8** | operators assigned at family, not region, granularity |
+> | N-3 (Hodgkin) | **N-9** | one validated resolution pair, not a lattice |
+> | N-3 (Gauss) | **N-12** | fine-authoritative policy declared but not implemented |
+> | N-4 (Cajal) | **N-10** | Stage I pretrains only families we hold data for |
+> | N-4a | **N-11** | BOLD readable but not parcellated |
+> | N-4 (Faraday) | **N-15** | A_safe binds only on axes a proposal supplies |
+> | N-6 (Cajal) | **N-17** | two cortical families, not §6.1's five |
+> | N-6 (dynamics) | **N-2** | hippocampal fixed random codebook |
+> | N-6 (Gauss) | **N-13** | Ψ_ab compatibility potential unformed |
+> | N-7 (Cajal) | **N-18** | state space indexed per family, not per region |
+> | N-7 (dynamics) | **N-3** | cerebellar fixed random contraction |
+>
+> **This is itself a finding.** A register whose entries are addressed by an
+> ordinal cannot be written concurrently by ten agents without collision, and a
+> collision here is worse than a merge conflict: two narrowings silently share
+> an identity and a reader resolves the wrong one. Future rows should be keyed
+> by a slug, not a number.
+
 **Every divergence between this document and `paper/body.tex` is listed here.
 A divergence that is not listed is a defect, not a decision.**
 
@@ -458,24 +475,26 @@ it makes the narrowing visible so it can be challenged.
 | id | narrows | narrowing | why | status |
 |---|---|---|---|---|
 | **N-1** | §2.1 ("need not be ordinary dense tensors") | Family state is stored **padded to the max family dimension** with per-family spans, not as a ragged/segment layout. | Ragged state breaks the batched trainer. Padding is observationally equivalent **only if** out-of-span reads are impossible, so the span mask is **enforced** — a family reading outside its span raises, it does not silently return zeros. That guard is what makes this a narrowing rather than a defect. **Enforceable, and enforced**: `FamilyStateLayout` raises `SpanViolation` on an out-of-span read, on a raw channel range that leaves the span, on a too-wide write, and on any non-zero pad element (`assert_clean`, called after assimilation and at the end of every rollout). Five tests in `tests/foundation/test_family_state.py` make each of those fire, including one that applies the run-1 flat `LearnedResidual` to a family-layout state. **Measured cost, regenerated from the run-2 config**: 414 parcels, 11 families, `D = max d_f = 59`, ragged cells 11 662, padded cells 24 426 → **52.26 % of the state plane is pad**. The heterogeneous state itself costs 0.6 % more cells than the uniform 28-wide control (11 662 vs 11 592); the padding costs 2.1×. Because two hippocampal parcels set `D` for all 414, the trade is bad at this partition. | **permanent for run 2, scheduled for revision** — the guard holds, so this is a narrowing and not a defect, but `padding_fraction() = 0.523` is the argument for the segment/ragged layout and should be re-litigated before run 3 |
-| **N-6** | §5.1 (hippocampal episodic memory) | The rollout's hippocampal backend retrieves against a **fixed random codebook**; the four episodic write/read hypotheses in `scwbd/dynamics/hippocampus.py` (`ModernHopfield`, `VectorHaSH`, `SparseDistributedMemory`, `SuccessorRepresentation`) are compared **offline** by `compare_backends` and are not driven by the foundation rollout. | A differentiable rollout has nowhere to carry a growing store of `M` episodes: `HippocampalBackend.write` appends to a Python-side tensor list. The state *shape* `H_t = {k,v,g,c,ρ}`, the multiscale scaffold and the retrieval-confidence channel are in the rollout; episodic storage is not. Saying so is the difference between a narrowing and a claim that §5.1 is implemented. | scheduled — needs a fixed-capacity in-state store before the episodic hypotheses can be selected *in situ* rather than on a synthetic benchmark |
-| **N-7** | §5 (cerebellar residual correction) | `CerebellarForwardBackend`'s Purkinje readout is a **fixed random contraction**, not the delta-rule-learned matrix of `scwbd.dynamics.subcortical.Cerebellum`. | `Cerebellum.learn` is an `@torch.no_grad` delta rule over an explicit history buffer; it cannot run inside a differentiable rollout. The eligibility trace carries the `error_delay` the rule depends on, so the timing structure survives, but the *learning* does not. | scheduled |
-| **N-8** | §2.1 (nine operator types assignable per region) | The seven **cortical** families are all assigned the same backend in the default config. Only the thalamic, basal-ganglia, hippocampal and cerebellar families get engineered backends. | Neither `body.tex` nor the anatomy prior types the Yeo networks by operator class; the prior separates them, but separating is not typing. Assigning seven different mechanisms would be the unearned differentiation N-2 refuses. The config makes per-cortical-family assignment one line, so this is a default, not a limit. | permanent until a prior or a result distinguishes cortical operator classes |
-| **N-9** | §5 ("Amygdalar systems ... are not a scalar fear or valence node") | The amygdalar family declares `relevance` and `autonomic` components but runs on the **generic learned core**. | There is no engineered amygdalar backend in this repository. Giving it one of the other four would be a semantic collapse; giving it the generic core and saying so is the honest option. | scheduled |
-| **N-11** | §2.1 (`X_i^uncertainty` as a declared state component) | Predictive variance is a **scalar per region** derived from `X_i^uncertainty` through a sign-constrained (monotone) map, integrated as `du/dt = softplus(innovation(x,c)) − softplus(decay)·u`. It is not a full predictive covariance and carries no cross-region correlation. | Run 1's instrument heads had `log_noise = nn.Parameter(...)` broadcast with `expand_as` — variance constant in state, time, horizon, window, participant and condition, against baselines calibrated to `(horizon, C)`. A per-region scalar that *moves* is the minimum honest repair; a covariance is a separate claim needing separate evidence. The monotone constraint is what keeps the channel interpretable: without it the map could learn to mean anything, including its own negation, and "sourced from `X_i^uncertainty`" would stop being a statement about the model. **Horizon dependence comes from integrating the state, not from passing `h` to the head** — a variance that grows because it was handed `h` would vary with horizon for reasons unrelated to the structured state A1 exists to measure. | permanent for run 2 |
-| **N-10** | §2.1 ("the components need not have equal shape") | Four components — `rate_e`, `rate_i`, `hemo`, `uncertainty` — **do** have equal shape in every family, at identical offsets. | The EEG, BOLD and behaviour heads observe every family through the same instruments, so every family must expose the same instrument-facing quantities. This is an interface commitment, not a claim that the systems are alike; everything below the prefix is family-private and reachable only by `(family, component)` name. | permanent |
-| **N-2** | §2.1 (nine registered operator types) | Run 2 assigns operators at **family** granularity, not per region. | A per-region assignment over 454 parcels has no evidence to fit it. Families are the finest granularity the anatomy prior actually distinguishes. | scheduled — revisit when a prior supports finer typing |
-| **N-3** | §4.2 (arbitrary source-native resolution lattices) | Run 2 declares **one** validated fine/coarse pair with restriction/prolongation, not a general lattice. | One pair tested properly beats a lattice declared and untested. It is also the minimum that gives R02 something to check. | scheduled |
-| **N-4** | §6.1 (per-regional-family phenotype pretraining across all listed modalities) | Stage I pretrains only the families for which we hold data. | We do not have retinotopic, interoceptive, or nociceptive corpora. Families without data are initialised from the prior and **declared untrained** in the manifest. | permanent for run 2 |
-| **N-5** | §5 (competing neuromodulator hypotheses) | Neuromodulation enters as θ-conditioned gain only; no receptor-, target-, and timescale-resolved control fields. | The Hansen receptor maps give spatial density, not dynamics. Modelling the dynamics would be unearned. | permanent for run 2 |
-| **N-6** | §6 (`res.efield`, `res.network_response` as outputs *of the model*) | `scwbd.runtime` consumes **no checkpoint**. It contains no `torch.load`; `TargetingService` imports nothing from `scwbd.foundation`. Every consumer-facing number comes from a closed-form field model and prior-specified surrogate propagators over a connectome topology prior. | Not a decision — a **defect**, recorded here so it is visible and attackable rather than implied by the §6 code sample. Measured 2026-08-06: `warm_up()` returns byte-identical `Recommend`/benefit 0.229634/epistemic 0.156662 whether backed by nothing, by the run-1 artifact, or by the g5 control arm. `weights_status` is therefore a label on numbers it cannot affect. See `reports/runtime/consumer_contract.md` §2 F2/F3. | **must close before any consumer claim depends on a checkpoint** |
-| **N-7** | §6 (the consumer branches on `res.decision`) | A consumer may also be refused **at load**, before it holds a service, by `scwbd.runtime.admission`. `ServedModel.load` takes a `purpose` and raises `CheckpointRefused` naming the failed conditions (A0–A6). | §6 as written implies the only refusal surface is the per-evaluation `decision`. Run 1 shipped and was demoed with no load-time check at all, so a control-arm checkpoint with `is_biological: false` and `COULD_NOT_RUN` gates passed every handshake that existed. A0–A6 compose with R12 rather than duplicating it: R12 refuses at emission, admission refuses at export. | permanent |
-| **N-6** | §6.1 (five regional families: visual, auditory, motor/somatosensory/cerebellar, hippocampal, brainstem/hypothalamic/insular) | The anatomy prior declares **two** cortical families — `cortex_unimodal` (Vis+SomMot, 138 parcels) and `cortex_association` (262) — plus **seven** subcortical families separated by atlas identity alone. **Auditory, cerebellar and brainstem/hypothalamic/autonomic families are not declared at all.** Early visual is not separable from somatomotor and is folded into `cortex_unimodal`. | Two is the finest cortical partition in which *every pair* of families separates under a Váša spin null on a measured regional profile (FDR q<0.05). Yeo-7 fails on 15 of 21 pairs — including `SomMot vs Vis` (q=0.49/0.78). The von Economo–Koskinas cytoarchitectonic classes fail globally on every block, so cytoarchitecture is carried as description and may not be cited as the reason a family exists. Auditory cortex has no delineation in this parcellation; the cerebellum and brainstem/hypothalamus have **zero parcels**. Declaring those families would mean inventing their boundaries. See `reports/anatomy_families.md`. | scheduled — revisit per family when a parcellation or measurement block that resolves it arrives |
-| **N-7** | §2.1 (`X_i ∈ 𝒳_i`, the state space indexed per region) | The state space is indexed **per family**, not per region: all parcels in a family share one component list and one dimension. | N-2 already assigns operators at family granularity; this is the state-space consequence of the same evidence limit, stated separately because a reader can accept one and reject the other. With two cortical families, "region-indexed state space" currently means a **binary** distinction across 400 cortical parcels — much closer to §11.4's pooled-vector control than the phrase suggests, and that should be read as a measurement of how little the prior resolves, not as a design preference. | scheduled — strictly tied to the family count in N-6 |
-
-| **N-8** | `body.tex` §7.4 ("independently validated device, exposure, and protocol limits define the feasible set") | `A_safe` binds only on the axes a proposal **supplies**. An omitted declared axis is reported in `unchecked_declared_axes`, not violated — except for a plan declaring `application="live"`, where every declared axis for the modality must be covered or the plan refuses. | Most axes have no producer for most proposals, so requiring full coverage everywhere would make every simulated study refuse and the rule would be switched off. Two tFUS axes (`cem43_minutes`, `temperature_rise_c`) have **no producer anywhere in `scwbd`**, so under uniform-omission a live tFUS plan was silently unchecked on thermal dose. Coverage is therefore enforced exactly where the consequence is physical. | permanent unless a thermal producer lands; delete the exemption then |
-| **N-9** | `body.tex` §7.2 (prospective targeting for a new person) | A plan declaring intent to drive real hardware or to be applied to a person is refused by `scwbd/intervene/deployment.py` unless a record exists that the preliminary review **occurred** with an approving outcome. A valid `AuthorizationRecord` is necessary and explicitly not sufficient. | The review gating live use is scheduled for 2026-08-25 and has not happened. The gate is a lower bound on a review *record*, never a calendar comparison: it does not open when that date passes, and `tests/intervene/test_deployment.py::TestTheDateIsNotAnUnlock` fires that case at a 2027 clock to prove it. | until a completed-review record exists |
-| **N-10** | `body.tex` §7.4 ("the controller may choose a safer measurement or reversible probe") | Reversibility is *required* of a live plan, not merely available to the controller. | It sat in `a_safe.toml` as `[protocol.reversibility] required = true` with no `min`/`max`, so `SafetyLimits.load` skipped it and nothing ever read it — a cited, reviewed, decorative guard. Moved to `[decision.reversibility]`, read, enforced on the live path, and fired by a test. Enforcing it on the simulated path would refuse most of this repository. | permanent |
+| **N-2** | §5.1 (hippocampal episodic memory) | The rollout's hippocampal backend retrieves against a **fixed random codebook**; the four episodic write/read hypotheses in `scwbd/dynamics/hippocampus.py` (`ModernHopfield`, `VectorHaSH`, `SparseDistributedMemory`, `SuccessorRepresentation`) are compared **offline** by `compare_backends` and are not driven by the foundation rollout. | A differentiable rollout has nowhere to carry a growing store of `M` episodes: `HippocampalBackend.write` appends to a Python-side tensor list. The state *shape* `H_t = {k,v,g,c,ρ}`, the multiscale scaffold and the retrieval-confidence channel are in the rollout; episodic storage is not. Saying so is the difference between a narrowing and a claim that §5.1 is implemented. | scheduled — needs a fixed-capacity in-state store before the episodic hypotheses can be selected *in situ* rather than on a synthetic benchmark |
+| **N-3** | §5 (cerebellar residual correction) | `CerebellarForwardBackend`'s Purkinje readout is a **fixed random contraction**, not the delta-rule-learned matrix of `scwbd.dynamics.subcortical.Cerebellum`. | `Cerebellum.learn` is an `@torch.no_grad` delta rule over an explicit history buffer; it cannot run inside a differentiable rollout. The eligibility trace carries the `error_delay` the rule depends on, so the timing structure survives, but the *learning* does not. | scheduled |
+| **N-4** | §2.1 (nine operator types assignable per region) | The seven **cortical** families are all assigned the same backend in the default config. Only the thalamic, basal-ganglia, hippocampal and cerebellar families get engineered backends. | Neither `body.tex` nor the anatomy prior types the Yeo networks by operator class; the prior separates them, but separating is not typing. Assigning seven different mechanisms would be the unearned differentiation N-2 refuses. The config makes per-cortical-family assignment one line, so this is a default, not a limit. | permanent until a prior or a result distinguishes cortical operator classes |
+| **N-5** | §5 ("Amygdalar systems ... are not a scalar fear or valence node") | The amygdalar family declares `relevance` and `autonomic` components but runs on the **generic learned core**. | There is no engineered amygdalar backend in this repository. Giving it one of the other four would be a semantic collapse; giving it the generic core and saying so is the honest option. | scheduled |
+| **N-6** | §2.1 (`X_i^uncertainty` as a declared state component) | Predictive variance is a **scalar per region** derived from `X_i^uncertainty` through a sign-constrained (monotone) map, integrated as `du/dt = softplus(innovation(x,c)) − softplus(decay)·u`. It is not a full predictive covariance and carries no cross-region correlation. | Run 1's instrument heads had `log_noise = nn.Parameter(...)` broadcast with `expand_as` — variance constant in state, time, horizon, window, participant and condition, against baselines calibrated to `(horizon, C)`. A per-region scalar that *moves* is the minimum honest repair; a covariance is a separate claim needing separate evidence. The monotone constraint is what keeps the channel interpretable: without it the map could learn to mean anything, including its own negation, and "sourced from `X_i^uncertainty`" would stop being a statement about the model. **Horizon dependence comes from integrating the state, not from passing `h` to the head** — a variance that grows because it was handed `h` would vary with horizon for reasons unrelated to the structured state A1 exists to measure. | permanent for run 2 |
+| **N-7** | §2.1 ("the components need not have equal shape") | Four components — `rate_e`, `rate_i`, `hemo`, `uncertainty` — **do** have equal shape in every family, at identical offsets. | The EEG, BOLD and behaviour heads observe every family through the same instruments, so every family must expose the same instrument-facing quantities. This is an interface commitment, not a claim that the systems are alike; everything below the prefix is family-private and reachable only by `(family, component)` name. | permanent |
+| **N-8** | §2.1 (nine registered operator types) | Run 2 assigns operators at **family** granularity, not per region. | A per-region assignment over 454 parcels has no evidence to fit it. Families are the finest granularity the anatomy prior actually distinguishes. | scheduled — revisit when a prior supports finer typing |
+| **N-9** | §4.2 (arbitrary source-native resolution lattices) | Run 2 declares **one** validated fine/coarse pair with restriction/prolongation, not a general lattice. | One pair tested properly beats a lattice declared and untested. It is also the minimum that gives R02 something to check. | scheduled |
+| **N-10** | §6.1 (per-regional-family phenotype pretraining across all listed modalities) | Stage I pretrains only the families for which we hold data. | ~~We do not have retinotopic, interoceptive, or nociceptive corpora.~~ **Amended 2026-08-06 (🗄️ Ada); the original clause is struck rather than deleted because it was the stated reason and it is now partly false.** We now hold retinotopic mapping (ds000113 `ses-localizer`, four traversals of the visual field per participant) and interoceptive series (ds000113 cardiac + respiratory at 500 Hz on every functional run). We still hold **no** nociceptive, endocrine, digestive, temperature-regulation, force/kinematic or gaze-during-free-behaviour corpus. Families without data are initialised from the prior and **declared untrained** in the manifest. Per-family status is enumerated in `reports/sources/inventory.md` §4. | permanent for run 2 |
+| **N-11** | §6.1 (regional families are pretrained *on* their measurements) | Every haemodynamic source on disk is in **its own scanner space**; no source is parcellated into the model's region index. | Registration to the Schaefer parcellation needs a normalisation engine, and there is none on this machine (`flirt`, `antsRegistration`, `mri_vol2vol`, `3dAllineate` absent; `antspy`, `nipype` not installed). Measured, not assumed: the ten ds002336 subjects' BOLD affines disagree by up to **23.25 mm**, so there is no shortcut. Everything *downstream* of the transform exists — the Schaefer400x7 MNI152-1mm label volume is on disk, `FrameGraph` can declare the transform, nilearn can average parcels, and every subject has a T1w. So the BOLD is **readable** (`scwbd.sources.loaders.bids_bold`, native grid + native TR) and **not yet trainable**. Recorded separately from N-4 because they fail differently: N-4 is "no data exists for this family", N-4a is "data exists, on disk, and one component is missing". Conflating them would let the second look like the first and never get fixed. Cost and owner: `reports/sources/inventory.md` §12 — ~2–3 days via an `antspyx` dependency the fleet has not taken, owner 🧠 Cajal (frames and atlas are theirs), and the retinotopy in ds000113 is the validation that can actually fail. | scheduled — blocks the haemodynamic likelihood, not the acquisition |
+| **N-12** | §4.2 (arbitrary source-native resolution lattices) | Run 2 declares **one** validated fine/coarse pair with restriction/prolongation, not a general lattice. The pair is `cortical_source_dipole ≤ parcel`; `R` is the area-weighted parcel mean, `P` the indicator fill, both measured in `reports/transforms/resolution_pair.md`. | One pair tested properly beats a lattice declared and untested. It is also the minimum that gives R02 something to check — and R02 now fires on six distinct breakages of it (`tests/foundation/test_resolution_pair_r02.py`). | **done** for the pair; the lattice remains scheduled |
+| **N-13** | §4.2 (fine-authoritative fields: "an N×M or mesh-level state owns the degrees of freedom and coarser views are differentiable materializations") | The pair's declared authority policy is **fine-authoritative**, and SC-WBD-001-beta **does not implement it**. All state lives at the coarse node; the model holds no source-space object, so `R` and `P` are declared and measured but never applied in the forward pass. | The measurement forces the policy and forbids the alternatives: the parcel support carries 5.6% of the whitened EEG lead field, so a coarse-authoritative field would generate observable predictions from a state that provably cannot carry them. Implementing fine authority means giving the model source-space degrees of freedom, which is a run-3 change, not a patch. Declared here so the gap is attackable rather than invisible. | scheduled — run 3 |
+| **N-14** | §4.2 (compatibility pseudo-likelihood Ψ_ab over consensus views) | Not formed. Only one pair exists and it is not a consensus field, so there is no second view to disagree with. | Ψ_ab is defined over ≥2 views owning degrees of freedom simultaneously; under N-6 exactly one node owns any. Building Ψ_ab now would be a formula with no arguments. | blocked on N-6 |
+| **N-15** | §6.1 (per-regional-family phenotype pretraining across all listed modalities) | Stage I pretrains only the families for which we hold data. | We do not have retinotopic, interoceptive, or nociceptive corpora. Families without data are initialised from the prior and **declared untrained** in the manifest. | permanent for run 2 |
+| **N-16** | §5 (competing neuromodulator hypotheses) | Neuromodulation enters as θ-conditioned gain only; no receptor-, target-, and timescale-resolved control fields. | The Hansen receptor maps give spatial density, not dynamics. Modelling the dynamics would be unearned. | permanent for run 2 |
+| **N-17** | §6.1 (five regional families: visual, auditory, motor/somatosensory/cerebellar, hippocampal, brainstem/hypothalamic/insular) | The anatomy prior declares **two** cortical families — `cortex_unimodal` (Vis+SomMot, 138 parcels) and `cortex_association` (262) — plus **seven** subcortical families separated by atlas identity alone. **Auditory, cerebellar and brainstem/hypothalamic/autonomic families are not declared at all.** Early visual is not separable from somatomotor and is folded into `cortex_unimodal`. | Two is the finest cortical partition in which *every pair* of families separates under a Váša spin null on a measured regional profile (FDR q<0.05). Yeo-7 fails on 15 of 21 pairs — including `SomMot vs Vis` (q=0.49/0.78). The von Economo–Koskinas cytoarchitectonic classes fail globally on every block, so cytoarchitecture is carried as description and may not be cited as the reason a family exists. Auditory cortex has no delineation in this parcellation; the cerebellum and brainstem/hypothalamus have **zero parcels**. Declaring those families would mean inventing their boundaries. See `reports/anatomy_families.md`. | scheduled — revisit per family when a parcellation or measurement block that resolves it arrives |
+| **N-18** | §2.1 (`X_i ∈ 𝒳_i`, the state space indexed per region) | The state space is indexed **per family**, not per region: all parcels in a family share one component list and one dimension. | N-2 already assigns operators at family granularity; this is the state-space consequence of the same evidence limit, stated separately because a reader can accept one and reject the other. With two cortical families, "region-indexed state space" currently means a **binary** distinction across 400 cortical parcels — much closer to §11.4's pooled-vector control than the phrase suggests, and that should be read as a measurement of how little the prior resolves, not as a design preference. | scheduled — strictly tied to the family count in N-6 |
+| **N-19** | `body.tex` §7.4 ("independently validated device, exposure, and protocol limits define the feasible set") | `A_safe` binds only on the axes a proposal **supplies**. An omitted declared axis is reported in `unchecked_declared_axes`, not violated — except for a plan declaring `application="live"`, where every declared axis for the modality must be covered or the plan refuses. | Most axes have no producer for most proposals, so requiring full coverage everywhere would make every simulated study refuse and the rule would be switched off. Two tFUS axes (`cem43_minutes`, `temperature_rise_c`) have **no producer anywhere in `scwbd`**, so under uniform-omission a live tFUS plan was silently unchecked on thermal dose. Coverage is therefore enforced exactly where the consequence is physical. | permanent unless a thermal producer lands; delete the exemption then |
+| **N-20** | `body.tex` §7.2 (prospective targeting for a new person) | A plan declaring intent to drive real hardware or to be applied to a person is refused by `scwbd/intervene/deployment.py` unless a record exists that the preliminary review **occurred** with an approving outcome. A valid `AuthorizationRecord` is necessary and explicitly not sufficient. | The review gating live use is scheduled for 2026-08-25 and has not happened. The gate is a lower bound on a review *record*, never a calendar comparison: it does not open when that date passes, and `tests/intervene/test_deployment.py::TestTheDateIsNotAnUnlock` fires that case at a 2027 clock to prove it. | until a completed-review record exists |
+| **N-21** | `body.tex` §7.4 ("the controller may choose a safer measurement or reversible probe") | Reversibility is *required* of a live plan, not merely available to the controller. | It sat in `a_safe.toml` as `[protocol.reversibility] required = true` with no `min`/`max`, so `SafetyLimits.load` skipped it and nothing ever read it — a cited, reviewed, decorative guard. Moved to `[decision.reversibility]`, read, enforced on the live path, and fired by a test. Enforcing it on the simulated path would refuse most of this repository. | permanent |
 ---
 
 ## 5c. Standing rulings
@@ -539,6 +558,32 @@ lives with R01–R11 in the schema/compiler refusal set (Noether). Its
 inside the module it polices is a self-assessment, not a refusal — and R12
 exists precisely because `foundation` emitted a control-arm artifact under the
 model's name with nothing outside it able to object.
+
+**RL-8 — a declaration does not discharge a refusal; only a validated
+declaration does.** 🧭 Gauss measured that R12's control test is
+`is_constant AND not declares_prolongation`, so **declaring a prolongation
+switches the control-arm refusal off** — same config, `arm:` stripped: old
+poset refuses, pair declared, no refusal. A config key that turns a refusal off
+is an exemption, not a declaration.
+
+**The fix is composition, not a third condition.** R12 must read **R02's
+verdict**, not the mere presence of a declaration. A prolongation that fails
+its boundary check does not discharge R12's second condition — so a single-
+operator artifact cannot escape the control designation by declaring a
+prolongation it has not validated. R12 asks whether one was declared; R02 asks
+whether it is any good; and R12 may only be satisfied by a declaration R02
+passed.
+
+Gauss's own pair **fails** at the boundary (12 of 12 ensembles), so under this
+rule it correctly does *not* switch R12 off. They wrote the one-line change,
+found it broke two of Noether's tests encoding the opposite intent, and
+**reverted rather than landing it** — the right call, and the reason this is a
+ruling rather than a patch. The `scale_prolongations` field stays **empty**;
+the pair lives in the poset where R02 validates it.
+
+*General form:* wherever two refusals compose, the weaker one must consume the
+stronger one's verdict rather than its declaration. Otherwise the pair is an
+opt-out mechanism for whichever agent files first.
 
 **RL-6 — between-arm parity is checked along the whole path from state to
 scalar, not only in the budgets.** Popper's trace, and the most transferable
@@ -673,35 +718,100 @@ simulation and research use, but it is **not** what `tms-robotics` consumes.
 
 ---
 
-## 7a. The authorization boundary
+## 7a. Scope and posture
 
-Recorded 2026-08-06 on the project owner's instruction.
+Recorded 2026-08-06 on the project owner's instruction, after a full cycle in
+which the fleet produced excellent measurement discipline and **trained
+nothing**.
 
-**Inside this repository, everything is approved computational work and is not
-gated.** Simulation, modelling, intervention physics, dose-response on simulated
-tissue, planning against simulated or previously-recorded open data, training,
-and benchmarking are all covered by a UT Arlington IRB approval for
-computational studies. Code in `scwbd.intervene` must stop carrying a
-per-call disclaimer asserting it is unapproved — that claim is false, and a
-disclaimer on every entry point trains readers to ignore it.
+**SC-WBD is deep-learning research.** It is not a medical product, not a
+clinical device, and not a regulated artifact. Treating it as one has cost more
+than it protected, and the correction is a change of posture, not a change of
+rigour.
 
-**What is gated is live application**: driving stimulation hardware, or
-informing a real person's stimulation, in production in
-`/home/brandonin/Documents/robotics`. That is pending a preliminary review on
-**2026-08-25**.
+### The distinction that was being missed
 
-Three properties this boundary must have:
+Two things were conflated all cycle and only one of them earns its cost:
 
-1. **One gate, at the export edge.** The refusal lives where an artifact or a
-   plan leaves this repository toward live use — Asimov's surface
-   (`scwbd/runtime/`, the `tms-robotics` bridge) — not distributed across
-   intervention entry points. Twelve partial restrictions are how a hole opens
-   between them.
-2. **It does not open on a calendar comparison.** A date passing is not evidence
-   of an outcome, and a scheduled review is not a completed one. What unlocks
-   live use is a record of the review having occurred *with an approving
-   outcome*; 2026-08-25 is the earliest date such a record could exist. A
-   hardcoded date string also goes silently stale the day after.
-3. **It is orthogonal to `sim2real_ready` and `promotion_eligible`,** which
-   remain `false`. IRB approval is not promotion eligibility, and nothing in
-   this section may be read as relaxing the claim boundary.
+| | keep | cut |
+|---|---|---|
+| **Measurement discipline** — participant-disjoint splits, matched controls, pre-registration, the decorative-guard register, regenerating numbers from source | ✔ It found the variance defect, the interface narrowing, the unread licence route, and a failing resolution pair. It is *how research gets done*, not a safety practice. | |
+| **Product-safety apparatus** — authorization records, live-use gates, per-call disclaimers, promotion eligibility, refusing to emit artifacts | | ✘ Imported from a domain we are not in. Excised. |
+
+The tell is what each one *does when it fires*. Measurement discipline makes a
+number trustworthy or tells you it is not. Product-safety apparatus stops you
+producing anything. **We had a great deal of the second, and it is why an entire
+cycle produced no trained model.**
+
+### Standing posture
+
+1. **Ship the artifact and label it. Never refuse to produce it.** R12 and its
+   relatives **annotate** — designation, arm, provenance, what was and was not
+   matched. A research checkpoint that is honestly labelled is strictly more
+   useful than one that was never written. Refusals belong on *claims in
+   papers*, not on *files on disk*.
+2. **Train first, characterise second.** A model that exists can be measured. A
+   gate list can only be argued with. Where a precondition genuinely changes
+   what a number *means* — the variance channel did — it blocks. Where it only
+   makes the report tidier, it runs in parallel and never blocks.
+3. **"Out of claim" is a note in the write-up, not a prohibition on the work.**
+   Measure everything the artifact can do; be careful only about what the
+   *paper* asserts. Narrowing what we *measure* to what we can *claim* is
+   backwards — measurement is how the claim gets earned.
+4. **Licensing is attribution, not a gate.** Hansen NC-SA propagating into a
+   checkpoint is a fact to record in the artifact's provenance, not a reason to
+   restructure the curriculum. At the research stage every checkpoint may carry
+   whatever it inherits, provided it *says so*.
+5. **A negative result is a result, not a failure to be prevented.** The
+   resolution pair failed at the boundary; that is publishable. The instinct to
+   avoid producing a failing artifact is the instinct being removed here.
+
+### What this programme is actually for
+
+The near-term deliverable is a trained whole-brain dynamics model that predicts
+impulse responses and generalises across subjects. Beyond it: TMS response
+prediction, EEG decoding and control, tFUS bidirectional interfaces, and
+eventually modelling the impact of language, images and sound well enough to
+plan individualised non-invasive cognitive interventions. Every one of those
+needs a model that **exists and predicts well**. None of them is served by a
+compiler that declines to write a checkpoint.
+
+Ambition is the correct default here. Selectively enabling and disabling
+meso-scale electrophysiology, hemodynamics, and tractometric correlates;
+heterogeneous sliced-modality training that does not wait for a homogeneous
+whole-body dataset; parametric per-connection transfer functions — these are
+the design, and they are what §5's family machinery exists to carry.
+
+### The one compliance surface that is real
+
+**Inherited data attribution and licensing.** Every artifact this project emits
+carries obligations from the data it was built on, and those obligations are
+enforceable, specific, and ours to get right:
+
+| source | obligation |
+|---|---|
+| Hansen receptor PET atlas | **CC-BY-NC-SA-4.0** — non-commercial *and* share-alike; infects any checkpoint whose parameters saw it |
+| Tian 2020 subcortical atlas | use without restriction **subject to citation** — attribution *is* the licence condition |
+| Schaefer 2018 / CBIG | MIT for the code; underlying GSP data under its own terms |
+| HCP S1200 maps | HCP open-access data-use terms |
+| ENIGMA/HCP connectome | BSD-3 toolbox; HCP terms for the scans |
+| neuromaps annotations | BSD-3 toolbox; **per-annotation source terms**, which differ |
+
+Three standing requirements:
+
+1. **Checkpoint lineage is routed, not asserted.** A checkpoint prior to the
+   synthetic-data stage must not carry the NC clause; one whose parameters saw
+   an NC-SA source must. That is a computation over the source cards, not a
+   field someone fills in — and it must be *read* by the checkpoint policy, not
+   merely populated.
+2. **A card that claims data we do not hold is a licence error**, not a
+   bookkeeping error: it attributes an obligation to the wrong artifact.
+3. **Every emitted artifact carries its citation set.** The Tian licence makes
+   citation a *condition of use*, so an artifact that cannot state what it was
+   built from is not compliant.
+
+Derive the licence from provenance; never restate it. Cajal's near-miss is the
+cautionary case: a hardcoded subcortical atlas key would have flagged every
+subcortical field NC and reintroduced the exact term
+`reports/subcortical_atlas_substitution.md` exists to remove. It now reads the
+key from the prior's own provenance and refuses if absent.

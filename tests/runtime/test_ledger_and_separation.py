@@ -130,7 +130,6 @@ class TestTheLedgerIsAlwaysPopulated:
     def test_the_validity_domain_records_that_this_is_a_phantom(self, evaluation):
         domain = evaluation.ledger.validity_domain
         assert domain["is_phantom"] is True
-        assert domain["human_use_authorized"] is False
 
 
 class TestTheFourQuantitiesNeverCollapse:

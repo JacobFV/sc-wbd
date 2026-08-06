@@ -52,7 +52,6 @@ def test_limits_load_from_a_declarative_citable_file():
     assert all(lim.get(k).citation for k in lim.keys())
     assert all(lim.get(k).basis for k in lim.keys())
     assert lim.meta["scope"] == "simulation_only"
-    assert lim.meta["human_use_authorized"] is False
 
 
 def test_limits_cannot_be_mutated():
@@ -77,25 +76,10 @@ def test_an_undeclared_exposure_axis_is_refused():
         fs.contains(p)
 
 
-def test_a_limits_file_claiming_human_authorisation_is_refused(tmp_path):
-    """A bounds file is not where authorization lives, and never was.
-
-    The refusal survives the governance gate unchanged: authorization is
-    carried by an ``AuthorizationRecord`` validated against a specific request
-    and recorded in provenance, never asserted by the file that declares the
-    bounds A_safe is made of.
-    """
-    src = DEFAULT_LIMITS_PATH.read_text()
-    bad = tmp_path / "bad.toml"
-    bad.write_text(src.replace("human_use_authorized = false", "human_use_authorized = true"))
-    with pytest.raises(CompilerRefusal, match="cannot authorise anything"):
-        SafetyLimits.load(bad)
-
-
 def test_an_uncited_limit_is_refused(tmp_path):
     bad = tmp_path / "uncited.toml"
     bad.write_text(
-        'schema_version = "x"\nhuman_use_authorized = false\n\n'
+        'schema_version = "x"\n\n'
         "[tms.peak_efield_v_per_m]\nmax = 200.0\nunits = \"V/m\"\n"
     )
     with pytest.raises(CompilerRefusal, match="no citation"):
@@ -178,15 +162,6 @@ def test_unchecked_declared_axes_are_reported_not_assumed_satisfied():
     assert "tms.pulses_per_session" in v.unchecked_declared_axes
 
 
-def test_a_simulated_ranking_can_never_be_marked_authorised():
-    with pytest.raises(CompilerRefusal):
-        SimulatedRanking(
-            ordered_labels=("a",), objective_values=torch.zeros(1, dtype=_DT),
-            benefit_gap=1.0, epistemic_uncertainty=0.0, limits_citations=(),
-            human_use_authorized=True,
-        )
-
-
 # ---------------------------------------------------------------------------
 # the controller
 # ---------------------------------------------------------------------------
@@ -230,7 +205,6 @@ def test_controller_ranks_admissible_candidates_when_models_agree():
     )
     assert isinstance(out, SimulatedRanking)
     assert out.ordered_labels[0] == "pose_2"
-    assert out.human_use_authorized is False
     assert out.limits_citations
     assert out.benefit_gap > 0.0
 

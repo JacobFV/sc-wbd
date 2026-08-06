@@ -71,6 +71,11 @@ class DatasetEntry:
     card_name: str
     fetcher: Fetcher | None = None
     loader_ref: str | None = None  # "module:function" under scwbd.sources.loaders
+    #: Additional readers for a dataset that holds more than one modality in
+    #: more than one container.  A simultaneous EEG+fMRI release needs two, and
+    #: a single ``loader_ref`` silently makes the second modality unreachable —
+    #: which is how ds000117's 18 BOLD runs sat on disk unread.
+    extra_loader_refs: tuple[str, ...] = ()
     subset: str = "full"
     notes: str = ""
 
@@ -124,9 +129,18 @@ class DatasetEntry:
     def loader(self) -> Callable[..., Any] | None:
         if self.loader_ref is None:
             return None
-        mod_name, _, fn = self.loader_ref.partition(":")
+        return self._resolve(self.loader_ref)
+
+    @staticmethod
+    def _resolve(ref: str) -> Callable[..., Any]:
+        mod_name, _, fn = ref.partition(":")
         mod = importlib.import_module(f"scwbd.sources.loaders.{mod_name}")
         return getattr(mod, fn)
+
+    def loaders(self) -> dict[str, Callable[..., Any]]:
+        """Every reader registered for this dataset, keyed by its ref."""
+        refs = ([self.loader_ref] if self.loader_ref else []) + list(self.extra_loader_refs)
+        return {r: self._resolve(r) for r in refs}
 
     def describe(self) -> str:
         status, reason = self.status()
@@ -213,7 +227,12 @@ _ENTRIES: list[DatasetEntry] = [
         version="1.0.0",
         name="ccPAS TMS-EEG with MRI/fMRI/dMRI (Shirley Ryan AbilityLab)",
         role="likelihood",
-        modalities=("eeg", "tms", "mri", "fmri"),
+        # CORRECTED 2026-08-06 (Ada): "fmri" was declared here and on the card
+        # while the fetched subset holds two T1w volumes and no BOLD at all.
+        # The upstream release has fMRI and diffusion; we did not fetch them,
+        # and `signal.modality_evidence` in the card now has to point at a real
+        # file for every entry (scwbd.sources.audit A4).
+        modalities=("eeg", "eog", "emg", "ecg", "tms", "mri"),
         card_name="ds004024.yaml",
         fetcher=S3PrefixFetcher(
             dataset_id="ds004024",
@@ -261,12 +280,82 @@ _ENTRIES: list[DatasetEntry] = [
             tag="1.1.0",
             relpaths=_read_subset("ds000117__1.1.0.tsv"),
         ),
+        # CORRECTED 2026-08-06 (Ada). This string used to read "all 16
+        # subjects' MRI/fMRI/dMRI/events/headshape from the S3 mirror".  Only
+        # sub-01 and sub-02 exist under the dataset root -- re-derived by
+        # walking it, not read off a report -- and the card's own subset_note
+        # said so all along.  The registry and the card disagreed, and the
+        # registry was the one claiming coverage.
         subset=(
-            "all 16 subjects' MRI/fMRI/dMRI/events/headshape from the S3 mirror; "
-            "MEG+EEG raw .fif for sub-01 and sub-02 (runs 01-06) only"
+            "sub-01 and sub-02 only, both complete: MEG+EEG raw .fif runs 01-06, "
+            "9 BOLD runs, T1w MPRAGE, 2x7-echo FLASH, fieldmaps, dMRI, events, "
+            "headshape; plus every top-level metadata file and the Maxfilter "
+            "calibration pair. The remaining 14 released participants were not fetched"
         ),
         loader_ref="bids_meg:load_fif_run",
+        # The 18 BOLD runs and the diffusion volumes were on disk from the
+        # first fetch and had no reader; `bids_bold` is that reader.
+        extra_loader_refs=("bids_bold:load_bold_run",),
         notes="Cross-modal benchmark: simultaneous MEG+EEG on the same subjects and task.",
+    ),
+    # ---- simultaneous EEG + fMRI: the fully paired episode (§6.4) ------
+    DatasetEntry(
+        dataset_id="ds002336",
+        version="2.0.2",
+        name="XP1 simultaneous EEG-fMRI motor-imagery neurofeedback (Lioi et al.)",
+        role="likelihood",
+        modalities=("eeg", "fmri", "mri"),
+        card_name="ds002336.yaml",
+        fetcher=OpenNeuroSnapshotFetcher(
+            dataset_id="ds002336",
+            accession="ds002336",
+            tag="2.0.2",
+            relpaths=_read_subset("ds002336__2.0.2.tsv"),
+        ),
+        subset=(
+            "all 10 participants, complete raw arm: T1w, four raw BrainVision EEG runs "
+            "(motorloc, fmriNF, eegfmriNF, eegNF) and the four matching BOLD runs, plus "
+            "the gradient-artefact-corrected eeg_pp derivatives and the head-motion "
+            "tsv. The NF-score .mat derivatives and the QA .tiff figures were not fetched"
+        ),
+        loader_ref="bids_eeg:load_brainvision_run",
+        extra_loader_refs=("bids_bold:load_bold_run",),
+        notes=(
+            "The only source in the register where electrophysiology and haemodynamics "
+            "are measured on the SAME subject at the SAME time: §6.4's fully paired "
+            "episode, and the two clocks (250 Hz amplifier, 1 Hz scanner) are a real "
+            "instance of §2.6 temporal non-nesting rather than a declared one."
+        ),
+    ),
+    # ---- naturalistic / retinotopic / auditory: §6.1 regional families --
+    DatasetEntry(
+        dataset_id="ds000113",
+        version="1.3.0",
+        name="StudyForrest: audio-movie, retinotopy, object categories, movie 3T",
+        role="likelihood",
+        modalities=("fmri", "mri", "cardiac", "resp", "eyetrack"),
+        card_name="ds000113.yaml",
+        fetcher=OpenNeuroSnapshotFetcher(
+            dataset_id="ds000113",
+            accession="ds000113",
+            tag="1.3.0",
+            relpaths=_read_subset("ds000113__1.3.0.tsv"),
+        ),
+        subset=(
+            "ses-localizer (4 retinotopic mapping runs: ccw/clw/exp/con, 4 object-category "
+            "runs, 1 movie localizer) and ses-movie (8 runs of the audio-visual movie with "
+            "eye-gaze physio) for the 15 participants who have them, plus T1w/T2w for all 20. "
+            "ses-auditoryperception (8 runs) for sub-01..sub-04 only. NOT fetched: the 7T "
+            "ses-forrestgump functional runs (~250 GB), the derivatives tree (192 GB), "
+            "sourcedata, dwi, angio and the veno/SWI volumes"
+        ),
+        loader_ref="bids_bold:load_bold_run",
+        extra_loader_refs=("bids_bold:load_physio",),
+        notes=(
+            "Serves four §6.1 families at once: early visual (retinotopy), auditory "
+            "(speech/scene), naturalistic vision (movie + gaze), and the interoceptive "
+            "interfaces (cardiac + respiratory physio recorded during every run)."
+        ),
     ),
     # ---- optional -----------------------------------------------------
     DatasetEntry(

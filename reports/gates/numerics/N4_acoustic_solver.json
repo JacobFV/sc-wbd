@@ -97,7 +97,8 @@
   "baselines_run": [],
   "notes": [
     "REFINEMENT RULE: the Helmholtz residual here is set by TEMPORAL dispersion, not by h. Measured with the scheme's own Laplacian the spatial error cancels, leaving (omega*dt)^2/12. Refining h at fixed dt leaves the residual flat, which reads like a failure and is not one. Refine dt with h at fixed CFL.",
-    "Amplitude calibration is part of what is under test when the source strength is fixed a priori rather than fitted to the reference; a residual amplitude bias must be reported, not divided out."
+    "Amplitude calibration is part of what is under test when the source strength is fixed a priori rather than fitted to the reference; a residual amplitude bias must be reported, not divided out.",
+    "SERVED FROM CACHE (in part): at least one solver call re-used a stored result rather than re-solving. The stored value was produced by a solver whose module source hashes identically, so the physics is the same physics -- but this run did not recompute it, and that is recorded here rather than left to be inferred from numbers that are identical either way. Clear scwbd.bench.solver_cache.CACHE_DIR to force a full re-solve."
   ],
   "artifacts": {
     "subject": "scwbd.intervene.numerics.run_free_field_monopole",
@@ -105,17 +106,17 @@
       {
         "solver": "scwbd.intervene.numerics.run_free_field_monopole",
         "solver_content_hash": "8d2450f60dc208e6",
-        "hits": 0,
-        "misses": 1,
+        "hits": 1,
+        "misses": 0,
         "uncacheable_calls": 0,
-        "served_from_cache": false,
-        "note": "every call re-solved: no stored result matched this solver's content hash"
+        "served_from_cache": true,
+        "note": "a HIT means the physics was NOT recomputed on this run; the stored value was produced by a solver whose module source hashes identically. A MISS re-solved."
       }
     ]
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T12:47:05+00:00",
-    "git_rev": "f6148d0",
+    "timestamp_utc": "2026-08-06T19:02:51+00:00",
+    "git_rev": "1a35a9a",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -131,27 +132,44 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/bench/instruments.py",
-      "scwbd/bench/numerics.py",
+      "scwbd/bench/gates.py",
+      "scwbd/bench/leakage.py",
+      "scwbd/bench/runner.py",
       "scwbd/compiler/checks.py",
       "scwbd/compiler/compile.py",
       "scwbd/compiler/model.py",
-      "scwbd/individualize/",
-      "scwbd/infer/synthetic_slice.py",
+      "scwbd/foundation/compiler_bridge.py",
+      "scwbd/intervene/__init__.py",
+      "scwbd/intervene/base.py",
+      "scwbd/intervene/deployment.py",
+      "scwbd/intervene/limits/a_safe.toml",
       "scwbd/intervene/safety.py",
-      "scwbd/release/",
       "scwbd/runtime/__init__.py",
       "scwbd/runtime/provenance.py",
       "scwbd/runtime/targeting.py",
+      "scwbd/runtime/types.py",
       "scwbd/schema/__init__.py",
       "scwbd/schema/authorization.py",
       "scwbd/schema/claims.py",
+      "scwbd/schema/examples/three_region.py",
+      "scwbd/schema/refusals.py",
+      "scwbd/schema/sources.py",
+      "scwbd/sources/cards.py",
+      "scwbd/sources/cards/ds004024.yaml",
+      "scwbd/sources/cards/ram-intracranial.yaml",
+      "tests/bench/test_leakage.py",
+      "tests/bench/test_runner.py",
       "tests/conftest.py",
-      "tests/individualize/",
       "tests/intervene/test_authorization_gate.py",
+      "tests/intervene/test_deployment.py",
+      "tests/intervene/test_dose_effect_separation.py",
       "tests/intervene/test_safety.py",
       "tests/runtime/test_authorized_refusals.py",
+      "tests/runtime/test_decision_paths.py",
+      "tests/runtime/test_ledger_and_separation.py",
       "tests/runtime/test_no_command_surface.py",
+      "tests/runtime/test_provenance_handshake.py",
+      "tests/schema/refusals/test_refusals.py",
       "tests/schema/test_authorization.py"
     ],
     "source_clean": false,

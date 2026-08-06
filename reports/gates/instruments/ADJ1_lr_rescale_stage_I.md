@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** the pre-committed metric shows no improvement outside the preregistered equivalence margin, or shows harm
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c0e5833 · 2026-08-06T09:54:47+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1a35a9a · 2026-08-06T19:03:57+00:00*
 
 ## Could not run
 

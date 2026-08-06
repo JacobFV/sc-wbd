@@ -1,56 +1,68 @@
-"""The export edge: what may leave this repository, for what purpose.
+"""The export edge: what a consumer is told about the checkpoint it holds.
 
-This module is the single enforced gate between SC-WBD and any consumer of it,
-including ``~/Documents/robotics`` (``tms-robotics``).  It exists because run 1
-shipped and was demonstrated without one.
+Posture (``ARCHITECTURE.md`` Sec. 7a)
+-------------------------------------
+**Ship the artifact and label it. Never refuse to produce it.** Refusals belong
+on claims in papers, not on files on disk. A precondition blocks only if it
+changes what a number *means*.
 
-Two independent things are checked here and both must pass:
+This module therefore separates two things that an earlier version of it
+conflated:
 
-**1. Does this checkpoint support the purpose it is being loaded for?**
-    The run-1 artifact is the equal-capacity generic-operator *control arm* of
-    ``body.tex`` Sec. 11.4's first required ablation (``reports/scope_gap.md``),
-    its anatomy is ``is_biological: false``, and its claim gates are
-    ``COULD_NOT_RUN``.  Each of those is a reason a consumer may not use it for
-    a purpose that assumes otherwise, and each is checked by name.
+**Refusals (A0, A1).** Correctness, not policy.
 
-**2. Is live application authorized?**
-    Everything computational inside this repository -- simulation, modelling,
-    intervention physics, planning against simulated or recorded open data,
-    training, benchmarks -- is approved work and is **not** gated here.  What is
-    gated is *live application*: driving real hardware, or informing a real
-    person's stimulation, in production in the consumer repository.
+* **A0** -- the consumer's standing invariants are false. Widening one is a
+  contradiction in terms, not a judgement call.
+* **A1** -- there is a readable claim manifest. Not "the manifest says good
+  things": that it *parses*. A consumer that cannot read what it is holding
+  cannot label it, and every label below would be a guess.
 
-    That question is **not answered here.**  It is answered by
-    :func:`scwbd.intervene.deployment.authorize_live_application`, which this
-    module calls.  One implementation, two call sites: ``scwbd.intervene`` gates
-    a proposed intervention, ``scwbd.runtime`` gates a checkpoint leaving for a
-    consumer, and both ask the same predicate the same question.  A second
-    implementation here would be a second place for the rule to drift, and the
-    gap between two partial gates is how a hole opens.
+**Labels (L1, L2, L3).** Facts about the artifact that a consumer must be
+*told*, loudly, and then allowed to proceed on.
 
-    Its properties are inherited, not restated: a live application refuses
-    unless a :class:`~scwbd.intervene.deployment.PreliminaryReviewRecord`
-    records that the review *occurred* with an approving outcome, an
-    :class:`~scwbd.schema.authorization.AuthorizationRecord` is necessary and
-    structurally not sufficient, and the scheduled review date appears only as
-    a lower bound on a record -- never as an unlock.  Nothing opens because a
-    date passed.  This module therefore contains no date at all.
+* **L1** -- this is an ablation control arm (``reports/scope_gap.md``: run 1 is
+  the equal-capacity generic-operator control of ``body.tex`` Sec. 11.4's first
+  required ablation).
+* **L2** -- the anatomy is ``is_biological: false``, a geometry-respecting
+  synthetic connectome rather than anatomy.
+* **L3** -- the claim gates are ``COULD_NOT_RUN`` or ``FAIL``, or no gate
+  results were recorded at all.
+
+None of L1--L3 blocks a load. Each of them changes what a number *means*, which
+is exactly why the consumer has to carry them rather than be protected from
+them: a control-arm number correctly labelled as a control-arm number is
+useful, and the same number silently refused is not.
+
+Every label defaults to its **worst** value. A fact the artifact does not state
+is not thereby true: a checkpoint with no anatomy record is labelled as having
+non-biological anatomy, and one that does not say which arm it is is labelled a
+control arm -- because that is precisely the state run 1 was in while claiming
+otherwise. Silence is not a clean bill of health; it is an unlabelled artifact,
+and the label says so.
+
+What is *not* here
+------------------
+There is no live-application gate in this module. There was one, delegating to
+``scwbd.intervene.deployment``, which has since been removed from the
+repository. Nothing replaced it here, deliberately: driving hardware or
+informing a person's stimulation is governed in the consumer repository, whose
+three standing invariants (below) are false and stay false.
 
 Orthogonality, stated because it will otherwise be misread
 ----------------------------------------------------------
 ``sim2real_ready``, ``promotion_eligible`` and ``robot_command_authority``
-remain ``False`` standing invariants of the consumer, unconditionally.  They are
-**not** what this gate governs and no authorization record here relaxes them.
-An approving review of live application is not a promotion decision; anyone
-reading "authorized" here as "promotion eligible" has crossed two unrelated
-boundaries.  :data:`CONSUMER_STANDING_INVARIANTS` is checked on every admission,
-for every purpose, and cannot be widened -- see :class:`ConsumerInvariants`.
+remain ``False`` standing invariants of the consumer, unconditionally. No label
+here relaxes them, and neither does any record anywhere else. Reading a
+successful admission as "promotion eligible" crosses two unrelated boundaries.
+:data:`CONSUMER_STANDING_INVARIANTS` is checked on every admission, for every
+purpose, and cannot be widened -- see :class:`ConsumerInvariants`.
 
 Claim limits
 ------------
-Admission is a *refusal* mechanism.  Passing it asserts that no checked
-condition failed; it asserts nothing about whether the model is accurate, and
-nothing whatsoever about whether an intervention is safe for a person.
+Passing admission asserts that the invariants hold and the manifest parsed. It
+asserts nothing about whether the model is accurate, and nothing whatsoever
+about whether an intervention is safe for a person. The labels it attaches are
+the artifact's own statements about itself, carried forward -- not verified.
 """
 
 from __future__ import annotations
@@ -58,27 +70,17 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict, dataclass, field
-from datetime import date
 from pathlib import Path
 from typing import Any, Literal, Mapping, Sequence
-
-from scwbd.intervene.deployment import (
-    ApplicationMode,
-    LiveApplicationVerdict,
-    PreliminaryReviewRecord,
-    authorize_live_application,
-)
-from scwbd.schema.authorization import AuthorizationRecord, epoch_seconds
 
 __all__ = [
     "ExportPurpose",
     "EXPORT_PURPOSES",
-    "LIVE_PURPOSES",
-    "MODE_OF_PURPOSE",
     "CONSUMER_STANDING_INVARIANTS",
     "ConsumerInvariants",
     "ConsumerInvariantViolation",
     "AdmissionCondition",
+    "AdmissionLabel",
     "AdmissionVerdict",
     "CheckpointRefused",
     "CheckpointClaims",
@@ -93,9 +95,7 @@ __all__ = [
 ExportPurpose = Literal[
     #: numbers that stay inside a simulation and are reported as simulation.
     "simulation",
-    #: offline ranking of hypotheses against recorded or simulated data; no
-    #: hardware, no person.  ``TargetingService.evaluate_pose`` in its
-    #: research use.
+    #: offline ranking of hypotheses against recorded or simulated data.
     "research_offline",
     #: the prediction reaches a physical robot.
     "live_hardware",
@@ -110,25 +110,7 @@ EXPORT_PURPOSES: tuple[ExportPurpose, ...] = (
     "patient_directed",
 )
 
-#: How each purpose maps onto
-#: :func:`~scwbd.intervene.deployment.authorize_live_application`'s mode.  This
-#: mapping is the *whole* of this module's opinion about live use; everything
-#: downstream of it is Faraday's predicate.
-MODE_OF_PURPOSE: Mapping[str, ApplicationMode] = {
-    "simulation": "computational",
-    "research_offline": "computational",
-    "live_hardware": "live",
-    "patient_directed": "live",
-}
-
-#: Purposes that constitute *live application*.  Derived from
-#: :data:`MODE_OF_PURPOSE` rather than restated, so the two cannot disagree.
-LIVE_PURPOSES: frozenset[str] = frozenset(
-    p for p, m in MODE_OF_PURPOSE.items() if m == "live"
-)
-
-#: The consumer's standing invariants.  Unconditional, and unrelated to any
-#: authorization recorded here.
+#: The consumer's standing invariants.  Unconditional.
 CONSUMER_STANDING_INVARIANTS: Mapping[str, bool] = {
     "sim2real_ready": False,
     "promotion_eligible": False,
@@ -185,9 +167,12 @@ class ConsumerInvariants:
 class CheckpointClaims:
     """The admission-relevant facts, read from the sidecar beside a checkpoint.
 
-    Every field defaults to the **refusing** value.  A fact that is not stated
-    is not thereby true: an artifact with no anatomy record is treated as one
-    whose anatomy is not biological, because that is the state we can defend.
+    Every field defaults to its **worst** value.  A fact that is not stated is
+    not thereby true: an artifact with no anatomy record is labelled as having
+    non-biological anatomy, because that is the state we can defend.  Under the
+    Sec. 7a posture these defaults drive *labels*, not refusals -- so the effect
+    is that an unlabelled artifact gets loudly pessimistic labels and still
+    loads, rather than being withheld.
     """
 
     manifest_id: str = "absent"
@@ -201,13 +186,25 @@ class CheckpointClaims:
     #: From the checkpoint's ``extra.anatomy``.
     anatomy_is_biological: bool = False
     anatomy_provenance: str = "unstated"
-    #: Gate name -> status. ``COULD_NOT_RUN`` blocks every non-simulation use.
+    #: Gate name -> status.  ``COULD_NOT_RUN`` and ``FAIL`` are **labelled**
+    #: (L3), not refused: an unsupported claim is the consumer's to carry.
     gates: Mapping[str, str] = field(default_factory=dict)
     #: Whether real weights were found and hashed.
     weights_trained: bool = False
     #: Digest of the port contract this checkpoint declares (see
     #: :mod:`scwbd.runtime.ports`).
     port_contract_digest: str = ""
+    #: Whether a sidecar was found *and parsed*.  This is the only claims-side
+    #: input to a refusal (A1), and it is deliberately about readability rather
+    #: than content: a manifest that says bad things is fine, a manifest that
+    #: cannot be read means every label would be a guess.
+    manifest_readable: bool = False
+    #: Whether there is a checkpoint here at all.  A1 binds only when there is:
+    #: with no checkpoint the service is the analytic backend, which has no
+    #: claims to mislabel and says so through ``weights_status`` and label L4.
+    #: Refusing that case would break the load path's deliberate design of not
+    #: failing when there is no trained artifact.
+    checkpoint_present: bool = False
     raw: Mapping[str, Any] = field(default_factory=dict)
 
     @property
@@ -248,42 +245,68 @@ class CheckpointClaims:
             gates=gates,
             weights_trained=bool(raw.get("weights_trained", False)),
             port_contract_digest=str(raw.get("port_contract_digest", "")),
+            manifest_readable=True,
             raw=dict(raw),
         )
 
 
 # --------------------------------------------------------------------------
-# the verdict
+# the verdict: two refusals, three labels
 # --------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class AdmissionCondition:
-    """One named check, its outcome, and what it looked at."""
+    """A **refusal** check: correctness, and it blocks."""
 
     code: str
     name: str
     passed: bool
     detail: str
-    #: Purposes for which this condition is required.  A condition not required
-    #: for the requested purpose is reported with ``required=False`` rather than
-    #: omitted, so the record shows what was *not* asked.
-    required: bool = True
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "code": self.code,
             "name": self.name,
             "passed": self.passed,
-            "required": self.required,
             "detail": self.detail,
+        }
+
+
+@dataclass(frozen=True)
+class AdmissionLabel:
+    """A **label**: a fact about the artifact that does not block a load.
+
+    ``clean`` is ``True`` when the artifact is in the unremarkable state for
+    this label.  A label that is not clean is not an error -- it is the thing
+    the consumer has to carry, and :meth:`AdmissionVerdict.warnings` is what
+    makes it loud.
+    """
+
+    code: str
+    name: str
+    clean: bool
+    detail: str
+    #: Why this changes what a number means.  Present on every label, because a
+    #: label a consumer cannot act on is decoration.
+    consequence: str = ""
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "code": self.code,
+            "name": self.name,
+            "clean": self.clean,
+            "detail": self.detail,
+            "consequence": self.consequence,
         }
 
 
 class CheckpointRefused(RuntimeError):
     """Admission refused.  Names every condition that failed.
 
-    Raised at **load**, before a consumer can hold a service object at all, so
-    that there is no window in which an inadmissible checkpoint is usable.
+    Raised at **load**, before a consumer can hold a service object at all.
+    Only A0 and A1 can produce this: an impossible invariant, or a manifest
+    that cannot be read.  Nothing about the *quality* of the artifact refuses
+    -- see :class:`AdmissionLabel`.
     """
 
     def __init__(
@@ -292,7 +315,7 @@ class CheckpointRefused(RuntimeError):
     ) -> None:
         lines = [f"  - [{c.code}] {c.name}: {c.detail}" for c in failed]
         super().__init__(
-            f"SC-WBD refuses to serve {designation or 'this checkpoint'} for "
+            f"SC-WBD cannot serve {designation or 'this checkpoint'} for "
             f"purpose {purpose!r}; {len(failed)} condition(s) failed:\n"
             + "\n".join(lines)
         )
@@ -303,37 +326,59 @@ class CheckpointRefused(RuntimeError):
 
 @dataclass(frozen=True)
 class AdmissionVerdict:
-    """The full record of an admission decision, pass or fail."""
+    """The full record: what blocked, and what the consumer is being told."""
 
     purpose: str
     admitted: bool
     conditions: tuple[AdmissionCondition, ...]
+    labels: tuple[AdmissionLabel, ...]
     claims: CheckpointClaims
     invariants: ConsumerInvariants
-    #: Verbatim verdict from
-    #: :func:`~scwbd.intervene.deployment.authorize_live_application`.  Carried
-    #: rather than summarised, so a consumer records the same object the
-    #: intervention path records.
-    live_application: LiveApplicationVerdict | None
-    at_time_s: float | None
 
     @property
     def failed(self) -> tuple[AdmissionCondition, ...]:
-        return tuple(c for c in self.conditions if c.required and not c.passed)
+        return tuple(c for c in self.conditions if not c.passed)
+
+    @property
+    def flagged(self) -> tuple[AdmissionLabel, ...]:
+        """Labels that are not in their unremarkable state."""
+        return tuple(l for l in self.labels if not l.clean)
+
+    @property
+    def label_codes(self) -> tuple[str, ...]:
+        return tuple(l.code for l in self.flagged)
+
+    @property
+    def is_clean(self) -> bool:
+        """True only when every label is unremarkable.  Rarely true, honestly."""
+        return not self.flagged
+
+    def warnings(self) -> tuple[str, ...]:
+        """One line per flagged label, for a consumer to log verbatim."""
+        return tuple(
+            f"[{l.code}] {l.name}: {l.detail} -- {l.consequence}"
+            for l in self.flagged
+        )
+
+    def banner(self) -> str:
+        """The loud form.  Empty when there is nothing to say."""
+        if not self.flagged:
+            return ""
+        return (
+            f"SC-WBD served {self.claims.manifest_id!r} for purpose "
+            f"{self.purpose!r} with {len(self.flagged)} label(s) that change "
+            "what its numbers mean:\n  - " + "\n  - ".join(self.warnings())
+        )
 
     def canonical(self) -> dict[str, Any]:
         return {
             "purpose": self.purpose,
             "admitted": self.admitted,
-            "at_time_s": self.at_time_s,
             "conditions": [c.as_dict() for c in self.conditions],
+            "labels": [l.as_dict() for l in self.labels],
+            "flagged": list(self.label_codes),
             "manifest_id": self.claims.manifest_id,
             "invariants": self.invariants.as_dict(),
-            "live_application": (
-                self.live_application.as_provenance()
-                if self.live_application
-                else None
-            ),
         }
 
     def content_hash(self) -> str:
@@ -349,216 +394,137 @@ class AdmissionVerdict:
         return self
 
 
-# Which conditions each purpose requires.  ``A0`` is required by every purpose
-# and is not listed.
-_REQUIRED_BY_PURPOSE: Mapping[str, frozenset[str]] = {
-    "simulation": frozenset(),
-    "research_offline": frozenset({"A1"}),
-    "live_hardware": frozenset({"A1", "A2", "A3", "A4", "A5", "A6"}),
-    "patient_directed": frozenset({"A1", "A2", "A3", "A4", "A5", "A6"}),
-}
-
-
-def _as_epoch_seconds(when: Any) -> float | None:
-    """Accept a ``date``, an ISO string, or epoch seconds.  ``None`` stays None.
-
-    ``None`` is *not* replaced with "now".  An undated request cannot be
-    checked against a dated record, and
-    :func:`~scwbd.intervene.deployment.authorize_live_application` refuses it
-    for exactly that reason; substituting the wall clock here would convert a
-    refusal into a pass.
-    """
-    if when is None:
-        return None
-    if isinstance(when, (int, float)):
-        return float(when)
-    if isinstance(when, date):
-        return epoch_seconds(when.isoformat())
-    return epoch_seconds(str(when))
-
-
 def admit(
     claims: CheckpointClaims,
     *,
     purpose: str,
-    review: PreliminaryReviewRecord | None = None,
-    authorization: AuthorizationRecord | None = None,
-    intervention_class: str = "tms",
     invariants: ConsumerInvariants | None = None,
-    as_of: Any = None,
     designation: str = "",
     raise_on_refusal: bool = True,
 ) -> AdmissionVerdict:
-    """Decide whether ``claims`` may be served for ``purpose``.
+    """Admit ``claims`` for ``purpose``, refusing only on A0/A1 and labelling
+    everything else.
 
-    ``review`` and ``authorization`` are handed straight to
-    :func:`~scwbd.intervene.deployment.authorize_live_application`; this module
-    forms no opinion of its own about either.  ``as_of`` may be a ``date``, an
-    ISO string, or epoch seconds, and is **not** defaulted to now.
+    ``ARCHITECTURE.md`` Sec. 7a: ship the artifact and label it. A precondition
+    blocks only if it changes what a number *means*, and neither "which
+    ablation arm is this" nor "did the gates run" changes that -- they change
+    what the number **is about**, which is the consumer's problem to carry, not
+    ours to hide.
 
     Refuses by raising :class:`CheckpointRefused` unless ``raise_on_refusal``
     is ``False``, in which case the verdict is returned with
-    ``admitted=False``.  The non-raising form exists so a caller can *report*
-    admissibility (a dashboard, a report generator) without the report itself
-    becoming a load; every serving path uses the raising form.
+    ``admitted=False``.
     """
     if purpose not in EXPORT_PURPOSES:
         raise ValueError(
-            f"unknown export purpose {purpose!r}; known: {list(EXPORT_PURPOSES)}. "
-            "The runtime will not admit a purpose it has no rules for"
+            f"unknown export purpose {purpose!r}; known: {list(EXPORT_PURPOSES)}"
         )
-    at_time_s = _as_epoch_seconds(as_of)
     inv = invariants if invariants is not None else ConsumerInvariants()
-    required = _REQUIRED_BY_PURPOSE[purpose]
 
-    conditions: list[AdmissionCondition] = []
-
-    # A0 -- standing invariants. Required for every purpose, including
-    # "simulation". Construction of ConsumerInvariants already refuses a widened
-    # flag, so reaching here means they hold; the condition is recorded anyway
-    # so the verdict shows it was checked rather than assumed.
-    conditions.append(
+    # -- refusals ----------------------------------------------------------
+    conditions: list[AdmissionCondition] = [
         AdmissionCondition(
             "A0",
             "consumer standing invariants are false",
             True,
             "sim2real_ready=False, promotion_eligible=False, "
-            "robot_command_authority=False; unconditional and not relaxed by "
-            "any authorization record",
-            required=True,
-        )
-    )
-
-    # A1 -- the checkpoint states its claims at all.
-    conditions.append(
+            "robot_command_authority=False; unconditional",
+        ),
         AdmissionCondition(
             "A1",
-            "claim manifest present",
-            claims.manifest_id != "absent",
+            "a checkpoint that exists can be labelled",
+            claims.manifest_readable or not claims.checkpoint_present,
             (
-                f"manifest {claims.manifest_id!r} (claim_class="
-                f"{claims.claim_class!r}, posterior_class="
-                f"{claims.posterior_class!r})"
-                if claims.manifest_id != "absent"
+                f"manifest {claims.manifest_id!r} parsed"
+                if claims.manifest_readable
+                else "no checkpoint present; the analytic backend has no claims "
+                     "to mislabel (see label L4)"
+                if not claims.checkpoint_present
                 else (
-                    f"no {SIDECAR_NAME} beside the checkpoint. An artifact that "
-                    "does not state its claim class cannot be checked against a "
-                    "purpose, and absence is not permission"
+                    f"a checkpoint is present with no readable {SIDECAR_NAME} "
+                    "beside it. This refuses -- not because an unlabelled "
+                    "artifact is unsafe, but because every label below would be "
+                    "a guess, and a guessed label is worse than none"
                 )
             ),
-            required="A1" in required,
-        )
-    )
+        ),
+    ]
 
-    # A2 -- not an ablation control arm.
-    conditions.append(
-        AdmissionCondition(
-            "A2",
-            "not an ablation control arm",
+    # -- labels ------------------------------------------------------------
+    unrun = claims.unrun_gates
+    failed_gates = claims.failed_gates
+    labels: list[AdmissionLabel] = [
+        AdmissionLabel(
+            "L1",
+            "ablation arm",
             not claims.is_control_arm,
             (
-                f"declared control arm of {claims.control_arm_of!r}; "
-                "reports/scope_gap.md records that SC-WBD-001-beta is the "
-                "equal-capacity generic-operator control of body.tex Sec. 11.4's "
-                "first ablation, and a control arm's measurements are "
-                "measurements of the control, not of the model"
+                f"control arm ({claims.control_arm_of})"
                 if claims.is_control_arm
                 else f"treatment arm ({claims.control_arm_of})"
             ),
-            required="A2" in required,
-        )
-    )
-
-    # A3 -- the anatomy is anatomy.
-    conditions.append(
-        AdmissionCondition(
-            "A3",
-            "anatomy is biological",
+            consequence=(
+                "this artifact is the equal-capacity generic-operator control "
+                "of body.tex Sec. 11.4's first ablation (reports/scope_gap.md); "
+                "its numbers measure the control, and may not be reported as a "
+                "test of the thesis"
+            ) if claims.is_control_arm else "",
+        ),
+        AdmissionLabel(
+            "L2",
+            "anatomy provenance",
             claims.anatomy_is_biological,
+            f"anatomy provenance {claims.anatomy_provenance!r}, "
+            f"is_biological={claims.anatomy_is_biological}",
+            consequence=(
+                "the connectome is a geometry-respecting synthetic graph, not "
+                "anatomy; no prediction it produces is about any particular "
+                "head, and none is subject-specific"
+            ) if not claims.anatomy_is_biological else "",
+        ),
+        AdmissionLabel(
+            "L3",
+            "claim gates",
+            bool(claims.gates) and not unrun and not failed_gates,
             (
-                f"anatomy provenance {claims.anatomy_provenance!r} with "
-                "is_biological=False: the connectome is a geometry-respecting "
-                "synthetic graph, not anatomy, so no prediction it produces is "
-                "about any head"
-                if not claims.anatomy_is_biological
-                else f"anatomy provenance {claims.anatomy_provenance!r}"
-            ),
-            required="A3" in required,
-        )
-    )
-
-    # A4 -- the gates actually ran.
-    unrun = claims.unrun_gates
-    failed_gates = claims.failed_gates
-    conditions.append(
-        AdmissionCondition(
-            "A4",
-            "claim gates ran and did not fail",
-            not unrun and not failed_gates and bool(claims.gates),
-            (
-                "no gate statuses recorded; an artifact with no gate results is "
-                "not an artifact whose gates passed"
+                "no gate statuses recorded"
                 if not claims.gates
                 else "; ".join(
-                    p
-                    for p in (
+                    part for part in (
                         f"COULD_NOT_RUN: {list(unrun)}" if unrun else "",
                         f"FAIL: {list(failed_gates)}" if failed_gates else "",
-                    )
-                    if p
-                )
-                or f"{len(claims.gates)} gate(s) recorded, none COULD_NOT_RUN or FAIL"
+                    ) if part
+                ) or f"{len(claims.gates)} gate(s) recorded, all clear"
             ),
-            required="A4" in required,
-        )
-    )
-
-    # A5 -- there are trained weights behind the prediction.
-    conditions.append(
-        AdmissionCondition(
-            "A5",
-            "trained weights are loaded",
+            consequence=(
+                "the claims this artifact would support are unsupported rather "
+                "than supported: COULD_NOT_RUN is not a pending PASS, and a "
+                "recorded FAIL is a measurement"
+            ) if (not claims.gates or unrun or failed_gates) else "",
+        ),
+        AdmissionLabel(
+            "L4",
+            "weights",
             claims.weights_trained,
             (
-                "predictions come from a closed-form field model and "
-                "prior-specified surrogate propagators; no trained "
-                "SC-WBD-001-beta weights back them"
-                if not claims.weights_trained
-                else "trained checkpoint discovered and hashed"
+                "trained checkpoint discovered and hashed"
+                if claims.weights_trained
+                else "no trained weights; predictions come from a closed-form "
+                     "field model and prior-specified surrogate propagators"
             ),
-            required="A5" in required,
-        )
-    )
-
-    # A6 -- live application, decided entirely by Faraday's predicate.
-    #
-    # Note the mode is derived from the purpose, not from the caller: a caller
-    # cannot ask for "patient_directed" and have it checked as computational.
-    live = authorize_live_application(
-        mode=MODE_OF_PURPOSE[purpose],
-        intervention_class=intervention_class,
-        at_time_s=at_time_s,
-        review=review,
-        authorization=authorization,
-    )
-    conditions.append(
-        AdmissionCondition(
-            "A6",
-            "live application authorized by record",
-            live.admitted,
-            live.reason(),
-            required="A6" in required,
-        )
-    )
+            consequence=(
+                "nothing behind these numbers was fitted to data"
+            ) if not claims.weights_trained else "",
+        ),
+    ]
 
     verdict = AdmissionVerdict(
         purpose=purpose,
-        admitted=all(c.passed for c in conditions if c.required),
+        admitted=all(c.passed for c in conditions),
         conditions=tuple(conditions),
+        labels=tuple(labels),
         claims=claims,
         invariants=inv,
-        live_application=live,
-        at_time_s=at_time_s,
     )
     if raise_on_refusal:
         verdict.raise_if_refused(designation)

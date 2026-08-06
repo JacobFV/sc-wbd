@@ -110,7 +110,7 @@ try:  # pragma: no cover - exercised by the availability test below
     from ..schema.ledger import UncertaintyLedger
     from ..schema.lineage import Identity, LineageUnit
     from ..schema.operators import Identification, OperatorSpec, ResidualPolicy
-    from ..schema.poset import ResolutionPoset, ScaleNode
+    from ..schema.poset import MapSpec, ResolutionPoset, ScaleMapPair, ScaleNode
     from ..schema.priors import LogNormalPrior, NormalPrior
     from ..schema.regions import AtlasRef, Region
     from ..schema.schema import BrainSchema
@@ -173,6 +173,15 @@ REGION_STATE_KEY = "region:<id>:state:<component>"
 #: :data:`FOUNDATION_FROZEN_BINDING`.
 FRAME_EDGE_KEY = "frame_edge:<src>-><dst>:calibration"
 
+#: Group keys for the one declared resolution pair (§4.2, N-3).
+#: ``parameter_groups_of`` emits ``scale_map:<fine>-><coarse>:<slot>``.  These are
+#: written out rather than derived so the binding table stays a literal, and
+#: :func:`_poset` asserts that ``scwbd.transforms.resolution_pair`` still names
+#: the same two scales -- a rename there would otherwise leave these two entries
+#: matching nothing while continuing to look like coverage.
+SCALE_MAP_RESTRICTION_KEY = "scale_map:cortical_source_dipole->parcel:restriction"
+SCALE_MAP_PROLONGATION_KEY = "scale_map:cortical_source_dipole->parcel:prolongation"
+
 #: Canonical exemplar region id used for the port keys.  Port groups are emitted
 #: as ``port:<region_id>.<port_name>``; the foundation model's port machinery is
 #: weight-shared across every region, so the binding is keyed on the port *name*
@@ -233,6 +242,17 @@ FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
     # that on purpose, which is a different claim from "nobody wrote the binding".
     "operator:local_field:delay": (),
     "operator:assimilation:delay": (),
+    # R and P of the one declared resolution pair (§4.2, narrowing N-3).
+    # Declared-empty, and for a reason worth stating rather than eliding: R is
+    # fixed by the parcel membership and the white-surface patch areas of a
+    # subject's own cortex, and P is its indicator partner. Neither is learned,
+    # and neither is a buffer on this module either -- SC-WBD-001-beta holds no
+    # source-space object at all, so there is no tensor here to freeze. That is
+    # narrowing N-6, and it is recorded in ARCHITECTURE.md §5b rather than
+    # disguised as a binding. If the model ever grows fine-scale state, these
+    # two entries must move to FOUNDATION_FROZEN_BINDING and name it.
+    SCALE_MAP_RESTRICTION_KEY: (),
+    SCALE_MAP_PROLONGATION_KEY: (),
     # Per-source observation nuisance terms, resolved by head.
     "observation:parcel_activity:nuisance": ("readout.*",),
     "observation:eeg:nuisance": ("eeg.*",),
@@ -592,20 +612,146 @@ def _clocks(dt_model: float, hemo_ratio: int) -> list["ClockSpec"]:
 
 
 def _poset() -> "ResolutionPoset":
-    """One scale: the parcel.
+    """Two scales and one validated pair -- thesis §4.2, narrowing N-3.
 
-    SC-WBD-001-beta declares no cross-scale prolongation, so R02 has nothing to
-    object to -- which is the honest state of affairs, not an omission.
+    This function used to say "SC-WBD-001-beta declares no cross-scale
+    prolongation, so R02 has nothing to object to -- which is the honest state
+    of affairs, not an omission".  The first clause was true and the second was
+    not: the restriction/prolongation machinery had been built
+    (``scwbd.transforms.sheaf``) and simply never instantiated, so a refusal
+    that exists to police cross-scale maps was passing a model that had none.
+    §4.2's three authority policies had no instance and the compatibility
+    pseudo-likelihood was never formed.  See ``reports/scope_gap.md`` G-2.
+
+    What is declared now, and only this (N-3):
+
+    ``cortical_source_dipole <= parcel``
+        fine  -- the subject's cortical source space, one normal-oriented
+                 dipole per decimated white-surface vertex.  This is the
+                 support the EEG lead field is *defined on*: every column of
+                 ``G`` in :mod:`scwbd.observe.leadfield` is one of these.
+        coarse -- ``PARCEL_SCALE``, where every region's state, the connectome
+                 and every theta prior already live.
+
+    ``R`` is the area-weighted parcel mean and ``P`` the indicator fill; they
+    are a genuine right-inverse pair and ``P`` returns a distribution, never a
+    point.  The numbers below are **read from the measured artefact**
+    ``reports/transforms/resolution_pair.json``
+    (``benchmarks/transforms/resolution_pair.py``), never defaulted.  If that
+    artefact is missing or does not describe these supports, the pair is
+    declared *untested* and R02 refuses the compile.  That is the point: a
+    guard that cannot fire reads as coverage
+    (``reports/decorative_guards.md``), and this one is armed by default.
+
+    The authority policy is **fine-authoritative** and the boundary
+    measurement that forces it -- the coarse support carries 6.3% of the
+    whitened lead field -- is in ``reports/transforms/resolution_pair.md``.
+    That measurement is *not* wired to R02: R02 polices whether a map is
+    admissible (paired, tested, honest about its uncertainty), not whether a
+    coarse state is accurate.  Conflating the two would let a modelling result
+    masquerade as a contract violation.
     """
-    return ResolutionPoset(
-        nodes=(
-            ScaleNode(
-                id=ScaleId(PARCEL_SCALE),
-                label="anatomical parcel",
-                axis="spatial",
-                characteristic_scale=2.0e-2,
-            ),
+    from ..transforms import resolution_pair as rp
+
+    if rp.SCALE_COARSE != PARCEL_SCALE:  # pragma: no cover - guarded constant
+        raise SchemaBuildError(
+            f"the resolution pair's coarse scale {rp.SCALE_COARSE!r} is not the "
+            f"scale the region supports are declared at ({PARCEL_SCALE!r}); the "
+            "pair would be attached to a support nothing in this model uses"
         )
+    expected = {
+        "restriction": SCALE_MAP_RESTRICTION_KEY,
+        "prolongation": SCALE_MAP_PROLONGATION_KEY,
+    }
+    for slot, key in expected.items():
+        if key != f"scale_map:{rp.SCALE_FINE}->{rp.SCALE_COARSE}:{slot}":
+            raise SchemaBuildError(  # pragma: no cover - guarded constant
+                f"binding key {key!r} no longer names the {slot} of "
+                f"{rp.SCALE_FINE}->{rp.SCALE_COARSE}; the entry in "
+                "FOUNDATION_BINDING would match nothing while still looking "
+                "like a declared binding"
+            )
+
+    m = rp.load_measurement()
+    fine_node = ScaleNode(
+        id=ScaleId(rp.SCALE_FINE),
+        label="cortical source dipole (normal-oriented, decimated white surface)",
+        axis="spatial",
+        characteristic_scale=None if m is None else m.fine_characteristic_scale_m,
+        n_elements=None if m is None else m.n_fine,
+        description=(
+            "The support the EEG/MEG forward operator is solved on. Not nested "
+            "inside the parcel grid in any dyadic sense -- it is a mesh."
+        ),
+    )
+    coarse_node = ScaleNode(
+        id=ScaleId(PARCEL_SCALE),
+        label="anatomical parcel",
+        axis="spatial",
+        characteristic_scale=2.0e-2 if m is None else m.coarse_characteristic_scale_m,
+        n_elements=None if m is None else m.n_coarse,
+        description="Where regional state, the connectome and the theta priors live.",
+    )
+
+    asset = rp.MEASUREMENT_RELPATH
+    if m is None:
+        # Declared, unmeasured.  Every field R02 inspects is left empty on
+        # purpose; the refusal will name all of them.
+        pair = ScaleMapPair(
+            fine=ScaleId(rp.SCALE_FINE),
+            coarse=ScaleId(PARCEL_SCALE),
+            restriction=None,
+            prolongation=MapSpec(
+                name="P:indicator_fill (UNMEASURED)",
+                kind="prolongation",
+                returns_distribution=True,
+                units=Unit("A*m"),
+                asset_ref=asset,
+            ),
+            roundtrip_tested=False,
+            landmark_tested=False,
+            out_of_support_policy=None,
+        )
+    else:
+        pair = ScaleMapPair(
+            fine=ScaleId(rp.SCALE_FINE),
+            coarse=ScaleId(PARCEL_SCALE),
+            restriction=MapSpec(
+                name="R:area_weighted_parcel_mean [roundtrip = max|R P - I| on the coarse support]",
+                kind="restriction",
+                returns_distribution=False,
+                roundtrip_residual=m.coarse_roundtrip_residual,
+                roundtrip_tolerance=m.coarse_roundtrip_tolerance,
+                units=Unit("A*m"),
+                asset_ref=asset,
+            ),
+            prolongation=MapSpec(
+                name="P:indicator_fill [roundtrip = RMS(P R x - x) on held-out fine states]",
+                kind="prolongation",
+                # §2.6: a prolongation may produce a distribution rather than a
+                # unique fine state, and this one must -- 7430 of the 7498 fine
+                # directions are in the null space of R.
+                returns_distribution=True,
+                roundtrip_residual=m.heldout_fine_residual,
+                # The tolerance is the sd the prolongation *declares* for its
+                # unresolved directions. Exceeding it means the map claims more
+                # precision than the held-out data supports, which is exactly
+                # R02's subject.
+                roundtrip_tolerance=m.declared_prior_sd_unresolved,
+                units=Unit("A*m"),
+                asset_ref=asset,
+            ),
+            landmark_coverage=m.landmark_coverage,
+            required_coverage=m.required_coverage,
+            roundtrip_tested=True,
+            landmark_tested=True,
+            out_of_support_policy="inflate_uncertainty",
+        )
+
+    return ResolutionPoset(
+        nodes=(fine_node, coarse_node),
+        relations=((ScaleId(rp.SCALE_FINE), ScaleId(PARCEL_SCALE)),),
+        maps=(pair,),
     )
 
 
@@ -1663,7 +1809,6 @@ def build_foundation_claim(
         posterior_class="generalized",
         requires_global_section=False,
         optimizes_intervention=False,
-        prospective_human=False,
         target_gates=("G1", "G2"),
         overrides=(),
         disabling_evidence=(

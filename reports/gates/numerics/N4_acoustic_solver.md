@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** relative error above tolerance, or a Helmholtz residual that does not fall as the TIME step is refined at fixed CFL (see the refinement note: refining h alone leaves the residual flat for reasons unrelated to solver quality, so 'flat under h refinement' is NOT a falsification of this gate)
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git f6148d0 · 2026-08-06T12:47:05+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1a35a9a · 2026-08-06T19:02:51+00:00*
 
 ## Sub-checks
 
@@ -30,3 +30,4 @@ _none run_ — no baseline, no claim.
 
 - REFINEMENT RULE: the Helmholtz residual here is set by TEMPORAL dispersion, not by h. Measured with the scheme's own Laplacian the spatial error cancels, leaving (omega*dt)^2/12. Refining h at fixed dt leaves the residual flat, which reads like a failure and is not one. Refine dt with h at fixed CFL.
 - Amplitude calibration is part of what is under test when the source strength is fixed a priori rather than fitted to the reference; a residual amplitude bias must be reported, not divided out.
+- SERVED FROM CACHE (in part): at least one solver call re-used a stored result rather than re-solving. The stored value was produced by a solver whose module source hashes identically, so the physics is the same physics -- but this run did not recompute it, and that is recorded here rather than left to be inferred from numbers that are identical either way. Clear scwbd.bench.solver_cache.CACHE_DIR to force a full re-solve.

@@ -150,24 +150,6 @@ def test_refusal_message_carries_remedy_and_reason():
     assert REFUSALS["R04"].why in text
 
 
-def test_prospective_human_stimulation_is_refused_even_without_optimization():
-    """ARCHITECTURE.md sec. 0: build-order item 6 is out of scope, full stop."""
-    schema, claim = build_valid()
-    source = schema.source("impulse_sim_v1")
-    intervention = source.intervention.model_copy(
-        update={"modality": "tms", "is_prospective_human": True}
-    )
-    sources = [
-        s.model_copy(update={"intervention": intervention}) if s.id == "impulse_sim_v1" else s
-        for s in schema.sources
-    ]
-    schema = schema.model_copy(update={"sources": sources})
-    assert not claim.optimizes_intervention
-    with pytest.raises(CompilerRefusal) as excinfo:
-        compile(schema, claim=claim)
-    assert excinfo.value.code == "R11"
-
-
 def test_refusal_record_is_serializable():
     schema, claim = BUILDERS["R10"]()
     refusals = run_checks(schema, claim)

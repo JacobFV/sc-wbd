@@ -55,6 +55,9 @@ identity:
       MNE-spm-face/subjects/spm/bem/spm-5120-5120-5120-bem-sol.fif: 5df9f2e98f7b22434d1dd7bcae3ab8ba8030417c40201a4fd3890adec86456d9
 
 governance:
+  license_spdx: "UNKNOWN"
+  license_spdx_note: >-
+    verified absent; see governance.license.
   status: live
   license: >-
     unknown - the archive ships no LICENSE file and the MNE-Python
@@ -114,6 +117,14 @@ population:
     biological evidence.
 
 signal:
+  # CTF data is a .ds DIRECTORY; the bytes live in the .meg4/.res4 pair inside
+  # it, which is what the glob names. MNE cannot read a channel type out of a
+  # .res4 through the header-only path, so no channel_type is claimed here -
+  # an unverifiable claim is left unmade rather than asserted.
+  modality_evidence:
+    meg: ["MNE-spm-face/MEG/spm/*.ds/*.meg4"]
+    mri: ["MNE-spm-face/subjects/spm/mri/T1.mgz"]
+    bem: ["MNE-spm-face/subjects/spm/bem/*bem-sol.fif"]
   modalities: ["meg", "mri", "bem"]
   n_channels: 340
   channel_types: {mag: 274, ref_meg: 29, misc: 35, stim: 2}

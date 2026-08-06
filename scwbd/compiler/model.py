@@ -56,37 +56,11 @@ class Provenance:
     warnings: tuple[str, ...] = ()
     target_gates: tuple[str, ...] = ()
     disabling_evidence: str = ""
-    #: ``"simulation_only"``, or ``"protocol:<id>@<version>"`` when the artifact
-    #: was compiled under a validated authorization.  This is the *scope* half
-    #: of the claim the artifact carries; ``effective_claim_class`` is the
-    #: strength half.  An artifact produced under a named protocol is a
-    #: different artifact from one that was not, and this field is why that can
-    #: never be silent.
-    claim_scope: str = "simulation_only"
-    #: The authorization verdicts this artifact was compiled under, one per
-    #: intervention class, as ``AuthorizationVerdict.as_provenance()``.  Carries
-    #: the record's content hash, so the exact declaration is pinned.
-    authorizations: tuple[dict[str, Any], ...] = ()
     extra: dict[str, Any] = field(default_factory=dict)
 
     @property
     def was_overridden(self) -> bool:
         return any(r.overridden for r in self.refusals)
-
-    @property
-    def is_protocol_bound(self) -> bool:
-        """True when this artifact was produced under a named protocol."""
-        return self.claim_scope != "simulation_only"
-
-    @property
-    def authorization_hashes(self) -> tuple[str, ...]:
-        return tuple(
-            sorted({str(a.get("record_hash", "")) for a in self.authorizations if a})
-        )
-
-    def recorded_claim(self) -> str:
-        """The full claim carried: strength class *and* scope, never one alone."""
-        return f"{self.effective_claim_class}@{self.claim_scope}"
 
     @property
     def overridden_codes(self) -> tuple[str, ...]:
@@ -111,9 +85,6 @@ class Provenance:
             "warnings": list(self.warnings),
             "target_gates": list(self.target_gates),
             "disabling_evidence": self.disabling_evidence,
-            "claim_scope": self.claim_scope,
-            "recorded_claim": self.recorded_claim(),
-            "authorizations": [dict(a) for a in self.authorizations],
             "extra": self.extra,
         }
 
@@ -128,16 +99,6 @@ class Provenance:
         )
         if self.was_overridden:
             line += f", overrides={list(self.overridden_codes)}"
-        line += f", scope={self.claim_scope}"
-        if self.is_protocol_bound:
-            bodies = sorted(
-                {
-                    f"{a.get('approving_body', '')} {a.get('approval_identifier', '')}".strip()
-                    for a in self.authorizations
-                    if a.get("admitted")
-                }
-            )
-            line += f" [authorized by {'; '.join(bodies)}]"
         return line
 
 
@@ -173,16 +134,6 @@ class CompiledModel:
     def claim_class(self) -> str:
         """The claim this artifact carries - never the one that was requested."""
         return self.provenance.effective_claim_class
-
-    @property
-    def claim_scope(self) -> str:
-        """``"simulation_only"`` or ``"protocol:<id>@<version>"``."""
-        return self.provenance.claim_scope
-
-    @property
-    def is_protocol_bound(self) -> bool:
-        """True when this artifact was compiled under a validated authorization."""
-        return self.provenance.is_protocol_bound
 
     def summary(self) -> str:
         return "\n".join(

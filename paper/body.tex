@@ -2086,6 +2086,112 @@ Where this program states an acceptance criterion as an absolute number, that
 number must be accompanied by the reference class it was set from, or replaced
 by a control.
 
+\subsection{11.7 Second-Gate Results: a Trained Whole-Brain Attempt, and
+What It Measured}
+
+A conditional multirate model over 414 parcels was compiled, trained on open
+electrophysiology, and scored on a participant-disjoint held-out split against
+five statistical baselines. It lost to all of them. The result is reported
+here because the diagnosis, not the loss, is the finding: \textbf{the artifact
+was the equal-capacity generic-operator control of Section 11.4's first
+required ablation, and the comparison it lost was not matched on four of the
+eight stages separating latent state from reported scalar.}
+
+\paragraph{The artifact was the control, not the model.}
+Section 11.4 opens with \emph{structured regional state versus one scalar or
+pooled vector per region}. The trained system was the second of these: one
+operator string applied to every region, a dense state tensor of identical
+width at every parcel, and the hippocampal, subcortical and multiresolution
+machinery implemented but never instantiated. Its designation asserted the
+first. The interface specification that produced this narrowed
+\(X_i \in \mathcal X_i\) --- a state \emph{space} indexed by region --- to a
+uniform per-parcel feature vector, and did not record that a narrowing had
+occurred. The controlling defect is therefore the \emph{undeclared} narrowing:
+a stated one is a decision a review process can attack, while an unstated one
+is invisible to a process built out of attacking stated things. The remedy in
+force is a register of declared narrowings in which any divergence from this
+document is enumerated with its reason, and anything absent from the register
+is a defect by definition.
+
+\paragraph{The loss was in the variance channel, and the conditional mean was
+never the problem.}
+Decomposed on a ladder that holds each arm's conditional mean fixed and varies
+only the variance model --- identically across arms, and validated by
+reproducing every baseline's own calibration to four decimals --- the penalty
+resolved as: scale \(0.4467\) nats, channel \(0.1113\), horizon \(0.0096\),
+state \(0.19\)--\(0.26\). The cause was a single scalar. The observation head's
+log-variance parameter was flat to 3\% across channels and asserted a
+predictive variance of \(1.31\) against a realised residual variance of
+\(3.97\): uniformly overconfident by \(3.0\times\). Its optimum has a closed
+form; it was trainable in one late curriculum stage that ran 900 steps in 134
+seconds, and reached 20\% of the way. A second head's noise parameter never
+received a gradient at all. With per-window errors retained and paired
+participant-clustered intervals computed, the same artifact \emph{beats every
+baseline on the conditional mean}, persistence by
+\(-3.20\ [-3.94, -2.51]\) and the nearest competitor by
+\(-0.103\ [-0.214, -0.003]\).
+
+Two conclusions hold simultaneously and neither rescues the other. The
+comparison was not calibration-matched: five baselines received held-out
+per-horizon, per-channel variance calibration and the model received none, and
+the two arms lacking held-out calibration are exactly the two with positive
+excess over the Gaussian-entropy floor. And the model is contracted to carry
+\(X_i^{\mathrm{uncertainty}}\) as regional state and emitted a constant, which
+is a defect no instrument change repairs.
+
+\paragraph{Capacity matching covers two of eight stages.}
+A comparison between two arms passes through inputs, conditioning, state,
+observation interface, head parameterisation, score, split, and optimiser.
+Parameter and compute budgets constrain the third and the eighth. Four defects
+found in this program sit on the intervening four and none is a budget: an
+observation interface that silently narrowed one arm's mean path to two
+exported dimensions against the other's eighteen; a variance parameter with no
+path from state; a score computed under calibration given to one side only;
+and a per-subject baseline reduced to its global fallback by a
+participant-disjoint split, while reporting 71 fitted models in use when the
+true count was zero. Each was filed separately and they are one class. A
+matched budget with an unmatched interface is an unmatched comparison wearing
+a passing check.
+
+\paragraph{A verification apparatus inherits its surrogate's assumptions as
+blind spots.} The identifiability machinery of Section 11.5 detected most
+defects in this program and could not have detected this one. Its exact Fisher
+computations run on a linear--Gaussian surrogate in which state-independent
+innovation covariance is a \emph{theorem} --- it is why a single Riccati
+recursion can be shared across the trajectory --- so a constant log-variance is
+correct there and the failure is not merely undetected but unrepresentable. Its
+remaining arms measure parameter intervals, not predictive intervals, and the
+failure was in the predictive channel. Every check was green and every check
+was correct. The question to ask of a guard is therefore not only whether it
+can fire, but whether the failure it targets is \emph{representable in the
+model it runs against}.
+
+\paragraph{The ablation could not have seen its own effect.}
+Minimum detectable effect, derived from the six paired participant-clustered
+comparisons the run itself produced, is \(0.1404\) nats at 27 held-out
+participants. The matched-calibration gain is \(0.1025\)--\(0.1249\) and sits
+below it; the horizon term at \(0.0096\) is fifteen-fold below it. The corpus
+held 109 participants, so the test fraction was a choice rather than a
+constraint, and at the full split the limit falls to \(0.0699\). An
+inconclusive result under the original fold would have been indistinguishable
+from a true null. Power is a property of the design, not a diagnosis available
+after the fact, and it is now fixed before any arm trains.
+
+\paragraph{What the successor run may claim.}
+Measured separation among cortical parcels supports a binary partition and
+nothing finer: under a spin-based null with FDR control, a seven-network
+candidate separates 6 of 21 pairs and a unimodal/association split separates
+its single pair. Cytoarchitectonic classes fail globally on every measured
+block available and are therefore carried as description and barred from
+justifying a partition. Because that separation is measured on receptor
+profile, intrinsic timescale, and myelin --- properties an operator's
+\emph{parameters} carry --- the licensed claim is narrowed in advance to
+\emph{a two-family cortical state partition beats a uniform one at matched
+capacity}, and the operator-typing ablation is held out as a separate
+comparison the present evidence cannot resolve. Fourteen subcortical parcels
+across seven families are declared out of claim: no family-level effect there
+is measurable at any participant count this corpus supports.
+
 \section{12. Confidence-Calibrated Development Horizons}
 
 \subsection{12.1 Near-Term: Executable Multimodal Subsystems}

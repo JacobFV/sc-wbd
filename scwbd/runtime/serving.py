@@ -166,7 +166,11 @@ class CheckpointRecord:
             claims = CheckpointClaims.from_manifest(raw)
         # weights_trained is a fact about the filesystem, not a claim the
         # manifest gets to make about itself.
-        return replace(claims, weights_trained=self.weights_status == "trained")
+        return replace(
+            claims,
+            weights_trained=self.weights_status == "trained",
+            checkpoint_present=self.root is not None,
+        )
 
 
 def _sha256(path: Path) -> str:
@@ -268,11 +272,7 @@ class ServedModel:
         checkpoint_root: Path | str = DEFAULT_CHECKPOINT_ROOT,
         require_checkpoint: bool = False,
         purpose: ExportPurpose = "simulation",
-        review: Any = None,
-        authorization: Any = None,
-        intervention_class: str = "tms",
         invariants: ConsumerInvariants | None = None,
-        as_of: Any = None,
         head_default: HeadModel | None = None,
         coil: CoilSpec | None = None,
         config: TargetingConfig | None = None,
@@ -304,11 +304,7 @@ class ServedModel:
         verdict = admit(
             record.admission_claims(),
             purpose=purpose,
-            review=review,
-            authorization=authorization,
-            intervention_class=intervention_class,
             invariants=invariants,
-            as_of=as_of,
             designation=f"{MODEL_DESIGNATION} ({model})",
         )
 
@@ -350,9 +346,20 @@ class ServedModel:
                 "export_purpose": purpose,
                 "admission_hash": verdict.content_hash(),
                 "admission_conditions": {
-                    c.code: ("pass" if c.passed else "FAIL") + ("" if c.required else " (not required)")
+                    c.code: "pass" if c.passed else "FAIL"
                     for c in verdict.conditions
                 },
+                # The labels are the point (ARCHITECTURE.md Sec. 7a: ship the
+                # artifact and label it). They are carried in the provenance so
+                # a consumer that logs provenance logs them without having to
+                # know they exist, and `admission_banner` is the form a human
+                # reads.
+                "admission_labels": {
+                    lab.code: ("clean" if lab.clean else lab.detail)
+                    for lab in verdict.labels
+                },
+                "admission_flagged": list(verdict.label_codes),
+                "admission_banner": verdict.banner(),
                 "consumer_standing_invariants": verdict.invariants.as_dict(),
                 "untrained_warning": (
                     ""

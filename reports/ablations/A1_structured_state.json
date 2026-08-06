@@ -16,7 +16,11 @@
     "permitted_source_cards": [],
     "baselines": [
       "scalar_per_region",
-      "pooled_vector_per_region"
+      "pooled_vector_per_region",
+      "pooled_vector_per_region@param_matched",
+      "pooled_vector_per_region@state_matched",
+      "theta_conditioned_pooled",
+      "permuted_family_state"
     ],
     "acceptance_thresholds": {
       "min_delta_log_score": 0.0,
@@ -37,7 +41,7 @@
     "non_goals": [
       "This gate does not claim a validated digital twin of any specific person.",
       "This gate does not claim that any admitted operator is neurally realized.",
-      "No prospective human TMS/tFUS protocol is implemented or implied (build order stops at item 5; item 6 is out of scope: no IRB, no consent, no participants)."
+      "No human stimulation protocol is implemented or implied: this is a deep-learning study on open data and there is no device command path."
     ],
     "seed": 0,
     "preregistered": true
@@ -47,7 +51,11 @@
     "arms[0]: could not run \u2014 missing: structured_state; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
     "arms[1]: could not run \u2014 missing: scalar_per_region; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
     "arms[2]: could not run \u2014 missing: pooled_vector_per_region; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
-    "arms[3]: could not run \u2014 missing: train/test datasets; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it"
+    "arms[3]: could not run \u2014 missing: pooled_vector_per_region@param_matched; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+    "arms[4]: could not run \u2014 missing: pooled_vector_per_region@state_matched; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+    "arms[5]: could not run \u2014 missing: theta_conditioned_pooled; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+    "arms[6]: could not run \u2014 missing: permuted_family_state; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+    "arms[7]: could not run \u2014 missing: train/test datasets; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it"
   ],
   "subchecks": [
     {
@@ -82,17 +90,55 @@
       "description": "Required ablation arm or dataset",
       "status": "COULD_NOT_RUN",
       "mandatory": true,
+      "reason": "missing: pooled_vector_per_region@param_matched; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+      "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+      "metrics": []
+    },
+    {
+      "name": "arms[4]",
+      "description": "Required ablation arm or dataset",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: pooled_vector_per_region@state_matched; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+      "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+      "metrics": []
+    },
+    {
+      "name": "arms[5]",
+      "description": "Required ablation arm or dataset",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: theta_conditioned_pooled; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+      "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+      "metrics": []
+    },
+    {
+      "name": "arms[6]",
+      "description": "Required ablation arm or dataset",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "missing: permuted_family_state; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
+      "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
+      "metrics": []
+    },
+    {
+      "name": "arms[7]",
+      "description": "Required ablation arm or dataset",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
       "reason": "missing: train/test datasets; \u00a711.4 names it explicitly, so the comparison cannot be declared complete without it",
       "falsified_by": "an equal-capacity, equal-compute control matches or exceeds the candidate, or the candidate wins only by smoothing away the effect of interest",
       "metrics": []
     }
   ],
   "baselines_run": [],
-  "notes": [],
+  "notes": [
+    "TWO_CAPACITY_MATCHED_POOLED_CONTROLS_param_matched_AND_state_matched_BOTH_MUST_BE_BEATEN; PERMUTED_FAMILY_ARM_MANDATORY_FOR_ATTRIBUTION; PRIMARY_PAIRED_PARTICIPANT_CLUSTERED_NLL_PLUS_COPRIMARY_MSE_BOTH_INTERVALLED; NLL_WIN_WITHOUT_MSE_WIN_GRANTS_NO_MECHANISTIC_CLAIM; EFFECT_IS_A1_EFFECT_BETWEEN_REGION_DISPERSION_NOT_default_effect; SCORED_AS_EMITTED_AND_CALIBRATION_MATCHED_DISAGREEMENT_CLAIMS_NEITHER; SYSTEMATIC_ENVELOPE_GE_DELTA_OR_SEED_RANGE_GE_DELTA_IS_INCONCLUSIVE; V_ABLATION_AND_V_CLAIM_ARE_SEPARATE_11_2_FLOOR_BOUNDS_ONLY_V_CLAIM; RUN1_IS_A_CONTROL_CLASS_ARTIFACT_NOT_RUN2S_CONTROL_ARM; THETA_CONDITIONED_POOLED_ARM_MANDATORY_STAGE2_CONDITIONING_CONTROL; A1_VARIES_STATE_ONLY_OPERATOR_ASSIGNMENT_HELD_IDENTICAL_A5_IS_THE_OTHER_ONE; LICENCE_IS_TWO_FAMILY_CORTICAL_PARTITION_NOT_OPERATOR_VALUED_HETEROGENEITY; SUBCORTICAL_FAMILIES_N2_ARE_OUT_OF_CLAIM; MDE_AT_27_PARTICIPANTS_IS_0.1404_NATS"
+  ],
   "artifacts": {},
   "provenance": {
-    "timestamp_utc": "2026-08-06T09:52:24+00:00",
-    "git_rev": "c0e5833",
+    "timestamp_utc": "2026-08-06T19:02:46+00:00",
+    "git_rev": "1a35a9a",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -108,19 +154,45 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/bench/adjudication.py",
-      "scwbd/bench/corpus.py",
-      "scwbd/bench/instruments.py",
-      "scwbd/bench/numerics.py",
-      "scwbd/bench/report.py",
+      "scwbd/bench/gates.py",
+      "scwbd/bench/leakage.py",
       "scwbd/bench/runner.py",
-      "scwbd/runtime/_compat.py",
-      "scwbd/runtime/backends.py",
+      "scwbd/compiler/checks.py",
+      "scwbd/compiler/compile.py",
+      "scwbd/compiler/model.py",
+      "scwbd/foundation/compiler_bridge.py",
+      "scwbd/intervene/__init__.py",
+      "scwbd/intervene/base.py",
+      "scwbd/intervene/deployment.py",
+      "scwbd/intervene/limits/a_safe.toml",
+      "scwbd/intervene/safety.py",
+      "scwbd/runtime/__init__.py",
+      "scwbd/runtime/provenance.py",
       "scwbd/runtime/targeting.py",
-      "tests/bench/test_adjudication.py",
-      "tests/bench/test_instruments.py",
+      "scwbd/runtime/types.py",
+      "scwbd/schema/__init__.py",
+      "scwbd/schema/authorization.py",
+      "scwbd/schema/claims.py",
+      "scwbd/schema/examples/three_region.py",
+      "scwbd/schema/refusals.py",
+      "scwbd/schema/sources.py",
+      "scwbd/sources/cards.py",
+      "scwbd/sources/cards/ds004024.yaml",
+      "scwbd/sources/cards/ram-intracranial.yaml",
+      "tests/bench/test_leakage.py",
       "tests/bench/test_runner.py",
-      "tests/runtime/test_field_backends.py"
+      "tests/conftest.py",
+      "tests/intervene/test_authorization_gate.py",
+      "tests/intervene/test_deployment.py",
+      "tests/intervene/test_dose_effect_separation.py",
+      "tests/intervene/test_safety.py",
+      "tests/runtime/test_authorized_refusals.py",
+      "tests/runtime/test_decision_paths.py",
+      "tests/runtime/test_ledger_and_separation.py",
+      "tests/runtime/test_no_command_surface.py",
+      "tests/runtime/test_provenance_handshake.py",
+      "tests/schema/refusals/test_refusals.py",
+      "tests/schema/test_authorization.py"
     ],
     "source_clean": false,
     "known_uninformative_fields": {
