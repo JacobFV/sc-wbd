@@ -1173,6 +1173,8 @@ def publish(
 def _main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI
     import argparse
 
+    from ..sources.attribution import AttributionError
+
     ap = argparse.ArgumentParser(
         prog="python -m scwbd.release.publish",
         description="Build, gate and publish SC-WBD artifacts. Dry run by default.",
@@ -1217,13 +1219,21 @@ def _main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI
         kwargs["n_shards"] = args.n_shards
 
     plan = PLANNERS[args.artifact](**kwargs)
-    res = publish(
-        plan,
-        namespace=namespace,
-        dry_run=not args.push,
-        private=not args.public,
-        stage_dir=args.stage_dir,
-    )
+    try:
+        res = publish(
+            plan,
+            namespace=namespace,
+            dry_run=not args.push,
+            private=not args.public,
+            stage_dir=args.stage_dir,
+        )
+    except (PublishBlocked, AttributionError) as exc:
+        # A blocked artifact is a normal outcome to report, not a crash. The
+        # traceback would bury the one thing the operator needs to read.
+        print(f"NOT PUBLISHABLE  {plan.repo_id(namespace)} ({plan.repo_type})")
+        for line in str(exc).splitlines():
+            print(f"  {line}")
+        return 2
     if args.json:
         print(json.dumps(res, indent=2))
     else:
