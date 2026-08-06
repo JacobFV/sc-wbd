@@ -61,6 +61,19 @@ class AnatomyPrior:
     #: This is agent C's own discipline applied to the gradient: an unknown
     #: value is made VISIBLE rather than hidden as a filled-in number.
     gradient_covered: Tensor | None = None
+    #: The regional **family** declaration -- a partition of the parcels into
+    #: named families, each carrying what the prior actually knows about it and
+    #: a provenance record per field.  This is what ``body.tex`` §2.1's
+    #: ``X_i ∈ 𝒳_i`` and §6.1's per-family pretraining need and what the
+    #: per-parcel scalars above cannot express; ``ARCHITECTURE.md`` N-2 assigns
+    #: operators at exactly this granularity.
+    #:
+    #: A :class:`scwbd.anatomy.families.FamilyPartition`, or ``None`` when
+    #: ``scwbd.anatomy`` is unavailable.  Use :meth:`require_families` rather
+    #: than reading it directly: a ``None`` that silently means "no families"
+    #: is the same shape of defect as the synthetic prior that trained a whole
+    #: run because nothing read its provenance field.
+    families: Any | None = None
     frame: str = "MNI152NLin2009cAsym_RAS"
     units_position: str = "mm"
     provenance: str = "synthetic_fallback"
@@ -70,6 +83,42 @@ class AnatomyPrior:
     def is_biological(self) -> bool:
         """True only when the prior came from a real atlas/connectome."""
         return self.provenance not in ("synthetic_fallback",)
+
+    def require_families(self) -> Any:
+        """Return the family partition, or raise saying why there isn't one.
+
+        Consumers that assign an operator or a state space per family must call
+        this.  It refuses rather than returning ``None`` so that "this build has
+        no family declaration" cannot be mistaken for "this build has one
+        family", which would silently reinstate the single global ``local_core``
+        that `reports/scope_gap.md` G-1 is about.
+        """
+        if self.families is None:
+            why = (
+                "It is the synthetic stand-in, which has no anatomy to partition: "
+                "its 'networks' are a smooth angular function of position, so any "
+                "family taxonomy over it would be a fabrication dressed as a "
+                "measurement."
+                if not self.is_biological()
+                else "scwbd.anatomy was unavailable when it was built."
+            )
+            raise RuntimeError(
+                "this AnatomyPrior carries no family declaration "
+                f"(provenance={self.provenance!r}). {why} Operators and state "
+                "spaces may not be assigned per family from this object."
+            )
+        return self.families
+
+    def family_index(self) -> Tensor:
+        """``(N,)`` long tensor: which family each parcel belongs to.
+
+        Validated and exhaustive -- see
+        :meth:`scwbd.anatomy.families.FamilyPartition.validate`.
+        """
+        import numpy as _np
+
+        idx = self.require_families().family_index()
+        return torch.as_tensor(_np.asarray(idx), device=self.weights.device, dtype=torch.long)
 
     @property
     def device(self) -> torch.device:
@@ -188,6 +237,9 @@ class AnatomyPrior:
             "provenance": self.provenance,
             "is_biological": self.is_biological(),
             "source_note": self.source_note,
+            "families": (
+                None if self.families is None else self.families.summary()
+            ),
         }
 
 
@@ -365,6 +417,21 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
         ec = _classify_edges(W, L)
     else:
         ec = torch.as_tensor(ec, device=device, dtype=torch.long)
+
+    # The family declaration. A failure here is REFUSED, not defaulted: a prior
+    # that silently arrives with `families=None` looks identical to one with no
+    # regional structure, and the model would fall back to a single global
+    # operator without anything in the artifact recording that it had to.
+    from scwbd.anatomy.families import derive_families
+
+    fams = derive_families(obj)
+    if fams.n_regions != n:
+        raise ValueError(
+            f"family partition covers {fams.n_regions} parcels but the connectome "
+            f"has {n}. The partition and the state layout must index the same "
+            "parcels or every per-family operator is applied to the wrong rows."
+        )
+
     return AnatomyPrior(
         n_regions=n,
         labels=labels,
@@ -378,6 +445,7 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
         timescale_prior=ts if ts is not None else torch.full((n,), 0.05, device=device),
         gradient=grad_full,
         gradient_covered=grad_cov,
+        families=fams,
         evidence_class=ec,
         frame=str(getattr(obj, "frame", "MNI152NLin2009cAsym_RAS")),
         provenance=str(getattr(obj, "provenance", "scwbd.anatomy.BrainPrior")),
