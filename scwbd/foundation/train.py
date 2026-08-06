@@ -539,6 +539,15 @@ class FoundationTrainer:
                 amp = torch.rand(B, 1, 1, 1, device=self.device) * 0.4
             u = amp * torch.randn(B, n_pred, N, self.model.layout.dim, device=self.device)
 
+        # Bind theta-conditioned ParamPacks for every mechanistic family BEFORE the
+        # rollout, and OUTSIDE autocast: the packs are fp32 and the backends integrate
+        # in fp32 per the ARCHITECTURE.md §3 numerical contract.  Per batch, never at
+        # construction -- set_mechanistic_theta sizes each pack with batch=theta.shape[0]
+        # and fills it with per-row values, so a construction-time bind would pin every
+        # batch in the run to whichever theta was drawn first (silent; the loss still
+        # falls).  One call: it fans out over family_local.mech internally, slicing each
+        # pack to that family's own parcels.
+        self.model.set_mechanistic_theta(theta, self.anat)
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
             roll = self.model.rollout(
                 y_context=ctx_y,
@@ -599,6 +608,15 @@ class FoundationTrainer:
             pid = self.participant_index(batch.get("subject", []))
             th = self.individualizer(participant=pid, base=th)
             self.individualizer.observe_session(pid)
+        # Bind theta-conditioned ParamPacks for every mechanistic family BEFORE the
+        # rollout, and OUTSIDE autocast: the packs are fp32 and the backends integrate
+        # in fp32 per the ARCHITECTURE.md §3 numerical contract.  Per batch, never at
+        # construction -- set_mechanistic_theta sizes each pack with batch=theta.shape[0]
+        # and fills it with per-row values, so a construction-time bind would pin every
+        # batch in the run to whichever theta was drawn first (silent; the loss still
+        # falls).  One call: it fans out over family_local.mech internally, slicing each
+        # pack to that family's own parcels.
+        self.model.set_mechanistic_theta(th, self.anat)
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
             roll = self.model.rollout(y_context=src_ctx, theta=th, n_steps=n_pred, enforce_r05=False)
             mu, lv = self.model.eeg(roll.state)
@@ -867,6 +885,7 @@ class FoundationTrainer:
             th = self.posterior.sample(ctx_e, 1)[:, 0][:, : len(THETA_NAMES)]
             if self.individualizer is not None:
                 th = self.individualizer(participant=self.participant_index(batch.get("subject", [])), base=th)
+            self.model.set_mechanistic_theta(th, self.anat)
             with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
                 roll = self.model.rollout(y_context=src, theta=th, n_steps=tgt_e.shape[1], enforce_r05=False)
                 mu, _ = self.model.eeg(roll.state)

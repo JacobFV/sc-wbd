@@ -1071,10 +1071,25 @@ class FamilyStateLayout:
     def family(self, name: str) -> RegionFamily:
         return self.partition.by_name(name)
 
-    def index(self, name: str) -> Tensor:
+    def index(self, name: str, device: "torch.device | str | None" = None) -> Tensor:
+        """Parcel indices for ``name``, on ``device`` if given.
+
+        ``FamilyStateLayout`` is a plain object, not an ``nn.Module``, so its
+        index tensors are **not** moved by ``model.cuda()``.  Every consumer
+        that indexes a CUDA tensor must therefore ask for the device, and the
+        result is cached per device so a rollout does not re-upload the same
+        small index on every step.
+        """
         if name not in self._index:
             raise KeyError(f"no family {name!r}; have {sorted(self._index)}")
-        return self._index[name]
+        idx = self._index[name]
+        if device is None or torch.device(device) == idx.device:
+            return idx
+        key = (name, str(torch.device(device)))
+        cache = self.__dict__.setdefault("_index_device_cache", {})
+        if key not in cache:
+            cache[key] = idx.to(device)
+        return cache[key]
 
     def span(self, name: str) -> tuple[int, int]:
         """The family's declared channel span ``[0, d_f)``."""
@@ -1126,14 +1141,14 @@ class FamilyStateLayout:
 
     def gather(self, x: Tensor, name: str) -> Tensor:
         """``(..., N, D) -> (..., n_f, d_f)`` — the family's own state, span-clipped."""
-        idx = self.index(name)
+        idx = self.index(name, x.device)
         d = self.family(name).dim
         return x.index_select(-2, idx)[..., :d]
 
     def get(self, x: Tensor, name: str, component: str) -> Tensor:
         """``(..., N, D) -> (..., n_f, dim(component))`` — the only sanctioned read."""
         s = self.component_slice(name, component)
-        return x.index_select(-2, self.index(name))[..., s]
+        return x.index_select(-2, self.index(name, x.device))[..., s]
 
     def port(self, x: Tensor, name: str, port: str) -> Tensor:
         """Read a family's declared **out**-port.  Private components are unreachable."""
@@ -1146,7 +1161,7 @@ class FamilyStateLayout:
     def scatter(self, x: Tensor, name: str, value: Tensor) -> Tensor:
         """Write ``(..., n_f, d_f)`` back into the family's span.  Out-of-place."""
         f = self.family(name)
-        idx = self.index(name)
+        idx = self.index(name, x.device)
         if value.shape[-1] != f.dim:
             raise SpanViolation(
                 f"family {name!r} declares span [0, {f.dim}) but the value to write is "
@@ -1233,7 +1248,7 @@ class FamilyStateLayout:
         make :meth:`assert_clean` incapable of firing, which is the failure mode
         ``reports/decorative_guards.md`` catalogues.
         """
-        return x * self._in_span.to(x.dtype)
+        return x * self._in_span.to(device=x.device, dtype=x.dtype)
 
     # -- ports across families --------------------------------------------
     def check_ports(self) -> list[dict[str, Any]]:
