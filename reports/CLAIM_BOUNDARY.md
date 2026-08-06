@@ -22,6 +22,16 @@ the identifiability benchmark vindicates *native-clock handling*, not
 *multimodal fusion*. The most transferable output is methodological, and is in
 §6.
 
+> **Revision 2026-08-06 (🛡️ Popper, bench).** The run-1 artifact is an instance
+> of the **control class** of §11.4's first required ablation, not the treatment
+> arm. Its §11.2 FAIL (§3.4) is a valid measurement whose scope is now stated in
+> **§3.5**, and it **may not be reported as a test of the thesis**. §3.5 also
+> declines two framings offered to it, and records two findings that change what
+> the FAIL measures: the deficit is in the **predictive-variance channel**, not
+> the conditional mean, and the comparison was **not calibration-matched**. The
+> run-2 pre-registration is `reports/ablations/PREREG_A1_run2.md`, filed before
+> any heterogeneous model exists.
+
 ---
 
 ## 1. What is established
@@ -544,6 +554,430 @@ Turing offers the Stage III → V `z_sd` movement (1.02–1.40 → 0.95–2.41) 
 **observation, not a finding**, since the sample sizes differ (1,888 vs 514
 proportional). Bench records it the same way. The preregistered SBC is still the
 verdict and bench still runs it.
+
+---
+
+## 3.5 RE-SCOPING §3.4 — what the run-1 FAIL is a measurement *of*
+
+**Added 2026-08-06 by 🛡️ Popper (bench). Every number in this section was
+re-derived from `reports/training/evaluation.json` (`f04d87f`) and from the code
+that wrote it, in this checkout, by the method stated at each figure. Where a
+re-derived number disagrees with a filed one the disagreement is stated, not
+smoothed. Nothing here is quoted from `reports/scope_gap.md`, from §3.4 above, or
+from any brief.**
+
+### 3.5.0 The ruling, in one paragraph
+
+The run-1 artifact is **an instance of the control class** of §11.4's first
+required ablation — *"structured regional state versus one scalar or pooled
+vector per region"* — and it was reported under the name of the treatment arm.
+Its FAIL against the §11.2 baselines therefore **may not be reported as a test of
+the thesis**. G1–G5 remain `COULD_NOT_RUN`; nothing in this section changes that.
+**Three things follow that the re-scoping does not license**, and they are the
+substance of this section: run 1 is *not* run 2's control arm; the FAIL is *not*
+thereby explained; and the FAIL is *not* located where §3.4 implies it is.
+
+### 3.5.1 The class membership is verified, not assumed
+
+`scwbd/foundation/config.py:32` reads
+
+```python
+    local_core: str = "learned"
+```
+
+— one operator name for all `n_regions: int = 454` (`config.py:30`), with state a
+uniform `(B,T,N,D)` tensor. That is a pooled vector per region with no per-region
+structure, which is the second term of §11.4's first bullet
+(`paper/body.tex:1764`, read directly). The class membership is established.
+
+`ARCHITECTURE.md:241-244` now says the same thing prospectively — a single global
+`local_core` string "is **not** conformant; that is the equal-capacity generic
+control of `body.tex` §11.4, not the model." Refusal **R12** is named there as the
+enforcement. **R12 does not exist in this checkout**: `grep -rn "R12" scwbd/
+--include=*.py` returns nothing. 📜 Noether is building it. Until it lands, the
+prohibition is prose, and prose is not a guard.
+
+### 3.5.2 REJECTED: "run 1 gives us the control arm"
+
+**It does not, and recording that it does would license a run-2 comparison that
+is not capacity-, protocol-, or anatomy-matched.** Run 1 is a control-*class*
+artifact produced under a *different protocol*. It cannot serve as run 2's
+control arm, for four reasons each independently sufficient:
+
+| # | why run 1 cannot be run 2's control arm | evidence |
+|---|---|---|
+| 1 | **Different anatomy.** `anatomy.provenance = synthetic_fallback`, `is_biological = false`, `frame = synthetic_ellipsoid_RAS`. Run 2's heterogeneous arm partitions regions into families **by the anatomy prior** (`ARCHITECTURE.md:236-240`), so it requires the real prior. Two arms differing in *both* state structure and anatomy do not isolate state structure. | `evaluation.json:anatomy` |
+| 2 | **Unproven split.** `real_split.verified = false` — the checkpoint predates the fingerprint field. A control arm whose scoring split cannot be proven identical to its training split cannot anchor a between-arm delta. | `evaluation.json:real_eeg_holdout.real_split` |
+| 3 | **No matched search budget.** Run 1 was one configuration, tuned against no counterpart. A treatment arm tuned against a control that received one shot is not a matched comparison, whatever the parameter counts say. | absence; no per-arm search record exists |
+| 4 | **No seed replicates.** `eval_seed: 0`, one training run. With one seed per arm, between-seed spread — the cheapest available lower bound on systematic error — is unmeasurable, and §11.4 requires systematic error to be reported. | `evaluation.json:eval_seed` |
+
+**Consequence, and it is a cost:** run 2 must train its own control arm under the
+run-2 protocol. Run 1 is precedent and diagnosis, not an arm.
+
+### 3.5.3 REJECTED: the FAIL is "the expected behaviour of the null arm"
+
+`reports/scope_gap.md:19-22` frames the FAIL as "not a surprising failure of the
+thesis — it is the expected behaviour of the null arm, measured correctly."
+
+**The first clause is right and the second is wrong.** A pooled-vector-per-region
+model with 1,757,613 parameters losing to persistence is *not* the expected
+behaviour of that class; `ar16`, at 4,160 parameters, is also in a class the
+thesis expects to lose, and it wins by 0.5419 nats. Nothing about being the
+control arm predicts losing to copying the last sample forward.
+
+**The re-scoping removes the result's standing as a test of the thesis. It does
+not convert the result into a design choice.** The FAIL remains an unexplained
+defect, and §3.5.4 shows it is unexplained in a specific place. This distinction
+is the whole load of this section: a reframing that makes a bad number stop
+counting *against* us must not also make it stop counting *at all*. If the cause
+lies in shared infrastructure — data pipeline, normalisation, observation head,
+scoring path — it will damage run 2's **treatment** arm identically, and the
+ablation will measure that defect rather than state structure.
+
+### 3.5.4 NEW FINDING — the FAIL is in the variance channel, not the conditional mean
+
+**Not previously recorded anywhere in this document, in `reports/scope_gap.md`,
+or in `scwbd/bench/gates.py`'s §11.2 block.** Re-derived here.
+
+`evaluation.json` records an `mse` for every arm alongside the NLL. §3.4 quotes
+the NLL column and is silent on the MSE column. Both are in **raw data units**:
+`evaluate.py:130` computes `((y - m_bar) ** 2).mean(dim=(1,2))` on `y = tgt_e`
+(raw), and `baselines.py:334` computes `sq.mean(dim=(1,2))` on the raw target —
+identical reduction, identical units. *(This mattered: `evaluation_audit.md` C2
+found the MSE column defective by `1/s²` before the run. The fix
+`patch_eval_raw_units.diff` is applied — `evaluate.py:97-100` carries the raw-units
+comment and the code below it matches. I checked the code rather than the
+patch note.)*
+
+| arm | NLL | MSE | params |
+|---|---:|---:|---:|
+| `ar16` | 2.0132 | 4.1356 | 4,160 |
+| `subject_specific_ar` | 2.0132 | 4.1356 | 77,248 |
+| `var4` | 2.0185 | 4.0721 | 19,520 |
+| `population_gaussian` | 2.0484 | 4.3597 | 2,208 |
+| `persistence` | 2.2787 | **7.1653** | 3,072 |
+| **`scwbd_001_beta`** | **2.5552** | **3.9697** | 1,757,613 |
+| `dense_neural` | 4.3601 | 4.8335 | 1,758,880 |
+
+**SC-WBD-001-beta has the lowest MSE point estimate of all seven arms and the
+second-worst NLL.** Its squared error against persistence's is 3.9697 / 7.1653 =
+**0.554** — its conditional mean is better by nearly a factor of two on the very
+comparison where its NLL loses.
+
+**This is a point estimate and it is not a claim.** No paired
+participant-clustered interval on MSE exists. `baselines.py:344` returns
+`per_window_mse` for every baseline and `evaluate.py:130` computes
+`mse_per_window` for SC-WBD, but `evaluate.py:398-418` collects only
+`nll_per_window` into `per_window` and takes `np.mean` of the MSE arrays. **The
+statistic the harness already holds in memory for every arm is discarded before
+it can be tested.** This is the same defect `evaluation_audit.md` recorded for
+NLL — *"paired intervals available but unused"* — fixed for NLL and left standing
+for MSE. Under this document's own rule (§3.4: *"a lower point estimate is not a
+claim"*), **SC-WBD's MSE advantage is not established** and must not be quoted as
+one. It is a required run-2 fix, not a result.
+
+**What *is* established is the decomposition, which does not need the interval.**
+For a Gaussian score with predictive mean `m` and variance `v`, the best
+achievable score at a single global `v` is at `v = MSE`, giving
+`NLL* = ½·log(2πe·MSE)`. The gap `NLL − NLL*` is therefore attributable
+**entirely to the predictive variance given the mean** — it is not a second
+opinion about accuracy. Computed from the two columns above:
+
+| arm | achieved NLL | `½·log(2πe·MSE)` | **excess** |
+|---|---:|---:|---:|
+| `persistence` | 2.2787 | 2.4036 | **−0.1249** |
+| `ar16` / `subject_specific_ar` | 2.0132 | 2.1288 | **−0.1155** |
+| `population_gaussian` | 2.0484 | 2.1551 | **−0.1068** |
+| `var4` | 2.0185 | 2.1210 | **−0.1025** |
+| **`scwbd_001_beta`** | **2.5552** | **2.1083** | **+0.4469** |
+| `dense_neural` | 4.3601 | 2.2067 | **+2.1534** |
+
+All five statistical baselines land at −0.10 to −0.12 — slightly better than a
+single global variance, which is what per-channel variance buys. **SC-WBD pays
++0.4469.** The margin by which persistence beats it is **0.2765**. *The variance
+penalty is 1.62× the entire deficit.*
+
+**Robustness, so this does not rest on the un-intervalled MSE.** For the achieved
+NLL of 2.5552 to be explicable with a correctly specified variance, the MSE would
+have to be `exp(2·2.5552)/(2πe) = 9.7031` — **2.44× the measured value, and 1.35×
+persistence's own MSE.** No plausible error in the MSE column reaches that. The
+conclusion survives the missing interval.
+
+**Direction of the mis-specification — inference when written, since resolved by
+measurement.** Solving `½(log 2πv + MSE/v) = 2.5552` at `MSE = 3.9697` gives two
+roots: `v = 1.328` (over-confident by 3.0×) and `v = 22.03` (under-confident by
+5.5×). Summary statistics cannot distinguish them, so I selected the
+over-confident root as *inference from a coherent pattern, not a measurement*.
+
+> **Resolved, and the inference was right for a reason I did not have.** Read
+> directly out of `stage_V_individual.pt` by bench: **`eeg.log_noise` has mean
+> +0.2732 over 64 channels, sd 0.0302** — flat to ~3 %. That asserts a predictive
+> variance of `exp(0.2732) = 1.3142` against a held-out residual variance of
+> 3.9697: **over-confident by 3.02×**, which is the `v = 1.328` root recovered to
+> within 1 %. 🔥 Turing found the cause under P0 and it is neither architectural
+> nor subtle: `train.py:78` makes the parameter trainable in **stage V only**,
+> stage V ran **900 steps in 134 seconds**, and the optimum is closed-form at
+> `log(3.9697) = 1.3787` — SGD reached **19.8 %** of it.
+>
+> **A second dead parameter, verified in the same read: `bold.log_noise` is
+> exactly −4.0000 for all 454 regions, `unique = 1` — bit-identical to its
+> initialiser. It never received a gradient at all.** That is the **third**
+> dead-parameter finding in this project, after `z_session` (2,616 params, §3.2d)
+> and `eeg.source_proj` under the freeze control. Dead parameters are not only a
+> model defect: §3.2d already showed them making a capacity confound **5× worse
+> than reported**, so they corrupt the matched-capacity budget too. Now a binding
+> budget field (`matching.BINDING_FIELDS`: `n_parameters_effective`).
+
+**The ceiling I derived from this was too lenient, and was falsified — see
+§3.5.9.**
+
+### 3.5.5 NEW FINDING — the §11.2 comparison is not variance-calibration-matched
+
+Every one of the six baselines carries a `variance_calibration` field in its
+`describe()` block. **SC-WBD-001-beta's `describe()` has three keys —
+`name`, `structured_state`, `connectome_masked` — and none of them is
+`variance_calibration`** (`evaluate.py:418`).
+
+This is not only bookkeeping. `baselines.py:418-427`: each `_LinearForecaster`
+splits its training windows, fits the mean on one part, and **calibrates a
+per-channel per-horizon residual variance on the held-out remainder**, recording
+`variance_calibration: "held_out_training_windows"`. SC-WBD's variance is its own
+`activity_logvar` head as trained (`evaluate.py:98-100`), with no post-hoc
+calibration step at all.
+
+**So the five arms that beat SC-WBD each received a free held-out variance
+calibration; SC-WBD did not.**
+
+> **Correction, on 🔥 Turing's independent re-derivation under P0. Their version
+> is sharper and is adopted.** I wrote that the two arms receiving "no such
+> calibration" were SC-WBD and `dense_neural`, and were **exactly** the two with
+> positive excess. **`dense_neural` does carry a `variance_calibration` entry** —
+> `baselines.py:1209`, *"heteroscedastic head trained in-sample on free-running
+> rollouts"* — and it has the **largest** positive excess of all, **+2.1534**. My
+> sentence leaned on "such" to carry "held-out", and would have inverted for any
+> reader who did not carry that qualifier forward — in the document that records
+> this project being burned by exactly that, one section after I named two more
+> decorative guards. **The accurate statement:** the two arms with no
+> ***held-out*** calibration are exactly the two with positive excess. Turing's
+> conclusion is stronger than mine and is the one to quote: **in-sample
+> calibration does not protect you; held-out calibration does.**
+
+That is n = 2 and therefore suggestive rather than probative, but it is a
+mechanism-matched pattern rather than a coincidence of ranking — and
+`dense_neural` *strengthens* it, since the arm that calibrated in-sample lands
+furthest from its own ceiling of all seven.
+
+**How far this goes, stated in both directions so neither half can be quoted
+alone:**
+
+- **It does not overturn the FAIL.** SC-WBD is a probabilistic model whose
+  contract is to emit its own calibrated uncertainty. Getting that wrong is a
+  real failure of a real capability, correctly scored under a declared metric.
+  §3.4's verdict stands as filed and its intervals are unaffected.
+- **It does change what the FAIL is a measurement of.** Under this project's own
+  standing remedy — *"matched controls, not absolute thresholds"* (§6) — an
+  instrument that grants one arm a calibration step and withholds it from another
+  is not matched. §3.4's headline, *"beaten by copying the last observed sample
+  forward,"* is true of the NLL as scored, and it is **not** true of the
+  conditional mean, and it is **not** measured under a calibration-matched
+  instrument. Those qualifiers are load-bearing and this document has been burned
+  before by dropping exactly this kind of qualifier (§2.1, §3.2c).
+- **Even a perfect variance would not rescue the artifact.** At its oracle
+  homoscedastic score of 2.1083 it would pass persistence (2.2787) and still lose
+  to `ar16` (2.0132), `var4` (2.0185), and `population_gaussian` (2.0484). *A
+  further extrapolation — that per-channel variance would buy SC-WBD the same
+  ≈0.11 nats it buys the baselines, landing it near 2.00 — is **not** a
+  measurement, is **not** claimed, and would require the run to be redone to
+  establish.*
+
+**Licensed, revised:** *this artifact, trained on this corpus with a synthetic
+connectome and scored without the variance calibration its baselines received,
+does not beat trivial baselines on held-out real-EEG NLL; its deficit is located
+in the predictive-variance channel and not in its conditional mean; and its
+apparent advantage in conditional mean is a point estimate with no interval and
+is not itself a claim.*
+
+### 3.5.6 The two standing open items, restated, with the mechanism now identified
+
+**Both were filed in §3.4 as bounds 2 and 3. Both still stand. One is no longer
+unexplained.**
+
+**(a) `subject_specific_ar` is bit-identical to `ar16` — and the cause is the
+split, not the baseline.** Re-verified: NLL `2.013234008131204` for both to full
+repr, `nll_ci95` `[1.9476989783015515, 2.109445665376606]` for both, `mse`
+`4.135578720852801` for both, paired delta `0.5419273873170217` for both.
+
+The mechanism, read out of `baselines.py:965-990`: `SubjectSpecificBaseline.fit`
+keys `self.models_` by **training** participant, and `predict` routes each window
+with `self.models_.get(subject, self.fallback_)`. The split is
+participant-disjoint — verified directly, `train ∩ test = ∅`, 71 / 11 / 27 —
+so **not one of the 27 test participants has a key in `models_`, and every test
+window routes to `fallback_`**, which is `ARBaseline(order=16)` fitted on the same
+2,130 windows with the same seed. It *is* `ar16`, not merely equal to it.
+
+**Three consequences, none previously recorded:**
+
+1. **The reported parameter count is exactly backwards.** `n_parameters()` sums
+   the 71 unused per-subject models (71 × 1,088 = 77,248 ✓) and adds the fallback
+   *only if* `fallback_subjects_` is non-empty — which it is not. The count
+   therefore reports 77,248 parameters **none of which are used at score time**
+   and omits the 4,160 that are.
+2. **It is a decorative guard, in the class of `reports/decorative_guards.md`.**
+   The class docstring (`baselines.py:900-905`) states the exact hazard —
+   *"silently pooling a thin participant into the population model would let a
+   'subject-specific' baseline quietly become the population baseline"* — and
+   builds `fallback_subjects_` to prevent it. That list is populated **only in
+   `fit`, for training participants with too few windows**. It has no mechanism
+   to record a *score-time* fallback. So `describe()` truthfully reports
+   `n_subject_models: 71` and `fallback_subjects: []` while zero subject models
+   were used. **The guard watches the door the failure does not come through.**
+3. **It is the same root cause as G5 blocker 4** (§3.2e): a participant-disjoint
+   holdout makes every person-conditioned mechanism the identity function on the
+   test set. §3.4 recorded the bit-identity and §3.2e recorded the G5 blocker;
+   that they are one defect appearing in two places was not recorded. **Any run-2
+   arm or baseline conditioned on participant identity is inert under this
+   split**, and the remedy is the nested split already fixed in
+   `scwbd.bench.gates.G5_RESPECIFICATION`.
+
+**The verdict is unchanged: four distinct baselines, not five, and four still beat
+it decisively.**
+
+**(b) `real_split.verified: false` — quoted in full from the artifact:**
+
+> *"NOT VERIFIED: the checkpoint records no real_split fingerprint (written
+> before the field existed). The evaluation split CANNOT be proven identical to
+> the one that trained this checkpoint, and every number below rests on that
+> unproven assumption."*
+
+`sha256 = 5cfa14eb5b0c5efd7bcdec1c10c2e04ad0c98abf172d6e16f682ea2198a36dbb`. The
+split fingerprint exists; the checkpoint to compare it against does not carry
+one. **Every figure in §3.4 and §3.5 inherits this.**
+
+> **A provenance note, and a correction to my own first draft of it.** I wrote
+> that `evaluation.json:git_sha` being
+> `eb2d88df8809442d7ab7185393ebf98012a5e06a-**dirty**` shows the evaluation ran
+> from a tree with uncommitted changes. **That inference is wrong**, and
+> `reports/decorative_guards.md` row 4 already says why: the run writes to
+> *tracked* files, so `git_sha()` is `-dirty` for **every checkpoint this project
+> has ever produced**. The suffix is structurally incapable of reading clean and
+> therefore carries no information about this run. The correct statement is the
+> weaker one: **the code that produced these numbers is not identified by any
+> commit, and the field that would identify it cannot.** I quoted a decorative
+> guard as evidence, in the document that exists to stop that, one section after
+> naming two more of them.
+
+### 3.5.7 What this section does and does not change
+
+| | |
+|---|---|
+| **G1–G5** | `COULD_NOT_RUN`, unchanged. Re-derived from `reports/gates/SUMMARY.md:67-71`: all five read `could-not-run`, each with a named missing input. |
+| **§3.4's FAIL** | Stands as a measurement. Its **scope** narrows to: one instance of the §11.4 control class, under synthetic anatomy, on an unproven split, at one seed, on a calibration-unmatched instrument. |
+| **What may be said of the thesis** | Nothing. The treatment arm has never been built. |
+| **What may be said of the control** | That it lost, that the loss sits in the variance channel, and that the loss is not explained. |
+| **A1_structured_state** | `COULD_NOT_RUN`, unchanged — all three arms missing. The pre-registration for run 2 is `reports/ablations/PREREG_A1_run2.md`, filed **before** any heterogeneous model exists. |
+
+### 3.5.9 MY handicap-removal ceiling was too lenient, and 🔥 Turing falsified it
+
+**Filed against myself. The rule was promoted to `ARCHITECTURE.md` §5c RL-7 on my
+work and then had to be corrected there; the correction is Turing's.**
+
+I ruled: `NLL* = ½·log(2πe·MSE)` is the best achievable by fixing predictive
+variance alone, so **improvement beyond it is new predictive content.** That is
+false. `NLL*` is the ceiling for a variance fix that is flat in horizon, channel
+**and** state. Calibrating variance per (horizon, channel) on held-out data
+involves no new predictive content whatsoever — it is exactly what the baselines
+already do — and passes `NLL*` routinely.
+
+**Re-derived here from `evaluation.json` rather than accepted.** Every one of the
+five statistical baselines sits **below** its own flat ceiling:
+
+| arm | NLL | `NLL*` | `NLL − NLL*` |
+|---|---:|---:|---:|
+| `persistence` | 2.2787 | 2.4036 | **−0.1249** |
+| `ar16` / `subject_specific_ar` | 2.0132 | 2.1288 | **−0.1155** |
+| `population_gaussian` | 2.0484 | 2.1551 | **−0.1068** |
+| `var4` | 2.0185 | 2.1210 | **−0.1025** |
+
+**Under my rule, persistence would be credited with new predictive content for
+calibrating its residual variance per horizon.** It has none. The rule was
+**too permissive**, which is the dangerous direction for a claim gate: it sets
+the bar where a null arm clears it.
+
+**What survives.** The flat ceiling is not wrong, it is the wrong *bar*. It
+remains valid as a **necessary** condition, and the honest structure is a ladder:
+
+| band | reading |
+|---|---|
+| `NLL ≥ 2.1083` | cannot beat a single global variance — definitely no content |
+| `2.0205 ≤ NLL < 2.1083` | explicable by matched calibration alone — **no content demonstrated** |
+| `NLL < 2.0205` | content, subject to the caveat below |
+
+**One disagreement, stated rather than smoothed.** I **could not reproduce
+L4 = 2.0205**: it needs per-(horizon, channel) held-out residuals, and computing
+them requires the model forward pass. What I *can* derive independently is a
+bound — matched calibration is worth **0.1025–0.1249** nats to the baselines, so
+applying that band to SC-WBD's flat ceiling gives **L4 ∈ [1.9834, 2.0058]**.
+**2.0205 lies above that band**, and since content requires `NLL < L4`, a higher
+L4 is the **more permissive** value by 0.015–0.037 nats. So:
+
+> **Ruling: 2.0205 is adopted as an *upper bound* on the bar, not as the bar.
+> L4 is a property of an arm's own residual structure and is not transportable —
+> run 2 recomputes it per arm from that arm's own held-out residuals.**
+
+Turing's own caveat is carried and is the more important one: **L4 is in-sample
+for SC-WBD and genuinely held out for the baselines, so it flatters us** — and
+even flattered, `L4 − ar16 = +0.0073`, so **the bar does not reach the best
+baseline.**
+
+### 3.5.10 The MSE interval I declined to state has been restored
+
+§3.5.4 recorded SC-WBD's lowest-MSE point estimate and **refused to call it a
+claim**, because `evaluate.py:398-418` discarded the `per_window_mse` the harness
+already held. Turing restored it. Participant-clustered and paired, on the
+conditional mean **SC-WBD beats every baseline including persistence** —
+−3.1962 [−3.9428, −2.5099] against persistence, down to −0.1030 [−0.2142,
+−0.0034] against `var4`, every interval excluding zero.
+
+**The run-1 FAIL was entirely in the variance channel.** Recorded with both
+halves intact: declining to claim it without an interval was correct, and so was
+saying the interval was recoverable from data the harness already had.
+
+**This does not rehabilitate the artifact.** §2.1 contracts `X_i^uncertainty` as
+regional state; the artifact emits a constant. A model that predicts well and
+cannot say how well it predicts has failed a contracted capability, and G1–G5
+remain `COULD_NOT_RUN` regardless.
+
+### 3.5.8 Three of the findings above are one class, and it now has a name
+
+§3.5.5 (the candidate scored without the variance calibration its baselines
+received) and §3.5.6a (`subject_specific_ar` reduced to `ar16` by the split) were
+filed above as separate defects. They are not. Together with two found since —
+🌊 Hodgkin's A1 treatment arm, whose EEG **mean path** was narrowed to 2 exported
+dims against the control's 18, and `heads.py:238`'s `log_noise`, one learned
+scalar per channel with no path from state — they are **four instances of one
+failure**:
+
+> **Capacity matching guards the model. Nothing guarded the path from the model
+> to the number.**
+
+Trace what a score depends on — inputs, conditioning, state, observation
+interface, head parameterisation, score, split, optimiser — and the manipulated
+variable is stage 3. Budgets cover stages 3 and 8. **All four defects sit on
+stages 4 through 7**, each with the same shape: a thing that is not the
+hypothesis, differing between arms, at a place nobody was looking because it is
+not "the model".
+
+Worked out in `reports/ablations/PREREG_A1_run2.md` §3.5.2, enforced as a second
+matching axis (`scwbd.bench.matching.check_path_parity`), filed as rows 11 and 12
+of `reports/decorative_guards.md`, and now binding fleet-wide as
+`ARCHITECTURE.md` §5c **RL-6** — with 🧭 Fisher's corollary that the stage-5
+defect was **unrepresentable** in the linear-Gaussian surrogate C1/C2/C3 run on,
+so every check there was green *and correct*. **The bearing on this document is that
+§3.5's re-scoping is now the weaker of two conclusions about run 1:** the artifact
+was not only the wrong arm, it was scored through a path that was never checked
+for parity against the baselines it was compared to.
+
+---
 
 ## 4. The one question that was resolved by being voided
 

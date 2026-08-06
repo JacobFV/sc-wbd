@@ -52,11 +52,127 @@ Every instance below was green, plausible, and load-bearing.
 | 7 | the **composite training loss** as the comparison metric | whether a change improved the model | it is a weighted sum whose terms move for unrelated reasons. It reported a large step-80 difference between two runs (3.717 vs 2.447) where `sim_forecast_nll` said **20.943 vs 20.980** — indistinguishable — and an early advantage that reversed by step 160. | comparing the same two runs on the interpretable metric instead |
 | 8 | **my own pre-committed stop trigger**, "spike > 10× the running floor" | that the learning rate had destabilised training | the spike is **rate-invariant** — 11.6× at lr 6.0e-4, 10.54× at 3.46e-4. It fires identically under both hypotheses it existed to separate, and prescribes a remedy already applied once without effect. | it fired, and checking whether the *other* run would also have fired it |
 | 9 | **window z-std** as the metric for choosing a normaliser | which candidate bounds the tail | for the `rms` candidate `std(z) = std(x)/rms(sd) ≡ 1` **by construction**. It scored a perfect 1.00 at p50/p90/p95/p99/max — a number it could not have failed to produce. | the perfect score itself looking wrong, and re-validating on `max|z|` |
+| 10 | the §11.4 **smoothing check** on ablation A1, reading `default_effect` | that the winning arm did not win by smoothing away the effect of interest | `default_effect` is **global dynamic range**, and A1's failure mode — every region collapsed onto one shared dynamic — **preserves global dynamic range exactly**. The one failure the check exists to catch is the one input it cannot see. | asking, of a check that had never run, *what would its own failure mode do to its reading?* |
+| 11 | `matched_capacity`, on **every** §11.4 ablation | arms compared "at matched capacity **and compute**" (module docstring) | `check_matched` compared `n_parameters` and nothing else, while `Budget` declared `flops`, `train_steps` and `wall_seconds`. A comparison could be compute-unmatched by any factor and still read green. | reading `Budget`'s fields against the loop that consumes them |
+| 13 | `test_fallback_anatomy_is_labelled_as_not_biological` (Hodgkin's path) | that a synthetic connectome cannot masquerade as anatomy | **subject drift, not blindness — see below.** `load_anatomy` now *refuses* to substitute the synthetic prior silently: it raises unless `force_fallback=True`. The fixture does not pass it, so the fallback path the guard polices is **never entered**. Verified by running the fixture: it does not return a mislabelled prior, it raises `RuntimeError` (missing `Tian_Subcortex_S1_3T_1mm.nii.gz`); where the assets are present it would load the **real** prior and the assert would fail. | 🛡️ Popper, on the architect's report, by executing the fixture rather than reading it |
+| 12 | `matched_capacity` again, on ablation A1 | that the two arms differed only in the hypothesis | budgets guard the **model**; nothing guarded the path from the model to the number. a shared state-slice view silently narrowed the A1 treatment arm's EEG **mean path** to `("rate_e","rate_i")` = **2 exported dims** against the control's `("rate_e","rate_i","spectral")` = **18** — every field `Budget` declares could match exactly. A1 would have concluded heterogeneity does not help. | 🌊 Hodgkin, tracing what his own head actually received rather than what the layout declared — self-reported before shipping |
+
+| 10 | `EEGHead`'s **"heteroscedastic noise model"** (`heads.py:219`, and the module docstring's "Every head returns … a heteroscedastic log-variance", `heads.py:11`) | that the model's predictive uncertainty responds to the brain state it is modelling | `lv = self.log_noise.expand_as(y)` where `log_noise = nn.Parameter(torch.zeros(n_ch))`. It is a per-channel constant. It never reads `x`. It has no horizon axis, so a 48-step-ahead prediction claims exactly the confidence of a 1-step-ahead one. `body.tex` §2.1 lists `X^uncertainty` as a state component; the head could not have read it. Cost: **+0.4467 nats** excess NLL, 1.62× the entire deficit to persistence, and the whole of run 1's FAIL. | 🔥 Turing, asking what `lv` was a function of |
+| 11 | `BOLDHead.log_noise` (`heads.py:286`/`:323`) | a fitted haemodynamic noise model | same broadcast defect, *and* the parameter is at **exactly `-4.0` across all 454 regions, sd exactly `0.0`** in the shipped checkpoint. It never received a gradient, because no measured BOLD ever entered the corpus. Nothing was scored on it — which is why nobody noticed, and exactly why it is dangerous: the moment 🗄️ Ada lands haemodynamic data, an unfitted noise model is presented as a fitted one. | 🔥 Turing, reading the checkpoint's parameters rather than its report |
+| 12 | SC-WBD's `describe()` in the holdout table (`evaluate.py`) | that the arm's entry was comparable with the baselines' | three keys — `name`, `structured_state`, `connectome_masked` — and none of them `variance_calibration`, which all six baselines carry. The instrument reported no difference **because it had no field in which a difference could appear.** The two arms with no *held-out* calibration were exactly the two with positive excess NLL. | 🛡️ Popper, diffing the two `describe()` shapes |
 
 Number 4 is the sharpest: it sits *inside the mechanism built to catch stale
 artifacts*, and it was about to be handed to a brand-new provenance enforcement
 gate that would have consumed a field structurally incapable of ever reading
 clean.
+
+Rows **10, 11 and 12** were all found *before* the instrument had ever been run.
+Ten and eleven are in `scwbd/bench` — the module whose entire job is to make run
+2's comparison honest — found by 🛡️ Popper against their own code; twelve was
+self-reported by 🌊 Hodgkin against his own branch before it shipped. That brings
+the count of decorative guards found **inside the machinery built to catch them**
+to seven.
+
+Row 12 is the one that generalises furthest. It is now `ARCHITECTURE.md` §5c
+**RL-6**, binding the whole fleet, and `reports/ablations/PREREG_A1_run2.md`
+§3.5.2 works it out: **capacity matching guards the model, and nothing guarded
+the path from the model to the number.** Trace that path — inputs, conditioning,
+state, observation interface, head parameterisation, score, split, optimiser —
+and **four of this project's between-arm defects sit on it, none of them in the
+budgets**: row 12 (interface), the variance head with no path from state
+(`heads.py:238`), the §11.2 calibration asymmetry where five baselines were
+calibrated and the candidate was not, and `subject_specific_ar` reduced to `ar16`
+by a participant-disjoint split. All four have the same shape: *a thing that is
+not the hypothesis, differing between arms, at a place nobody was looking because
+it is not "the model".*
+
+**Row 13 is deliberately filed as a NEAR MISS of this register's pattern, because
+miscategorising it would be the same sloppiness the register exists to name.** A
+decorative guard is **green and unable to go red**. Row 13 is the adjacent
+failure: the guard is intact and its **subject moved out from under it**. It does
+not pass blindly — it errors where the anatomy assets are absent and would fail
+loudly where they are present. That is *loud*, and loud is recoverable. It earns
+a row because the effect is the same — **the fallback-labelling path has no live
+test** — but the diagnosis and the fix differ: not "replace the instrument" but
+"restore the subject", one argument, `force_fallback=True` in the fixture. It is
+the same shape as N9's *"my row was not stale relative to the runner that
+produced it — the runner moved under it"* (`CLAIM_BOUNDARY.md` §1.7). **Reported
+to 🌊 Hodgkin rather than fixed here: it is their path.**
+
+---
+
+## The positive example: 🧠 Cajal's mutation testing, and a raised bar
+
+Every row above is a guard that failed. This is the standard that would have
+caught most of them, and it is **stronger than the one this register has been
+recommending**.
+
+This document has said: *write a negative control; show the guard can fire.* My
+own tests do that — they construct a failing **input** and assert the guard goes
+red. Cajal did something stricter. They mutated the **implementation**:
+
+- stub `validate()` to a no-op → **all 14 guards fail**;
+- replace `CORTICAL_FAMILY_DEFINITION` with an anatomy-free regrouping → the
+  separation test fails (**F = 7.45, p = 0.29**), against a **size- and
+  smoothness-matched spun control**, so it cannot pass for *any* contiguous
+  split.
+
+> **A firing test proves the guard responds to a bad input you thought of.
+> A mutation test proves the guard is load-bearing on the code it protects.**
+
+The second is strictly stronger, and the size-and-smoothness-matched null is the
+part that makes it decisive: without it, "a regrouping fails" could just mean
+"any regrouping fails", which would prove the test discriminates nothing.
+
+**Adopted as the standard, and it raises the bar on my own work.** The firing
+tests behind `check_matched`, `check_path_parity` and
+`check_variance_convergence` are the weaker form. They should be re-done as
+mutations — delete the field from `BINDING_FIELDS`, stub the comparison loop —
+and are recorded here as **not yet at this standard** rather than described as if
+they were.
+
+**🧭 Fisher's corollary, filed with RL-6 and the sharpest extension of this
+register.** Ask of a guard not only *can it fire* but **is the failure it targets
+representable in the model it runs against**. C1/C2/C3 run on a linear-Gaussian
+surrogate in which state-independent innovation covariance is a **theorem** — so
+the stage-5 defect (`log_noise` with no path from state) was not merely
+undetected, it was **unrepresentable**. Every check was green and every check was
+correct. That is a fourth variant, distinct from absence, wrong-question and
+preserved-quantity: **the guard is sound, the question is right, the quantity is
+right, and the surrogate the guard runs on cannot express the failure at all.**
+Numbers 10–12 are the most expensive. They are one defect seen from three
+angles: a channel that could not vary (10), a parameter that was never fitted
+(11), and a comparison table with no column in which either could show up (12).
+Together they produced a filed FAIL — *"beaten by five of six baselines"* — for a
+model that has the **lowest MSE of all seven arms**. The forecast was the best in
+the table. Only the confidence attached to it was wrong, and nothing in the
+instrument could say so.
+
+The general form is worth having, because it is not about variance:
+
+> **A constant is the most convincing possible measurement.** It is perfectly
+> reproducible, it has zero variance across runs, and it never contradicts
+> itself. Every property that makes a number trustworthy is maximised by a
+> number that cannot move.
+
+The operational check that finds this class in one pass, and the one that found
+10 and 11: **for every quantity the code names as varying, ask what it is a
+function of, and read the answer off the expression rather than the docstring.**
+If the expression's free variables do not include the thing it claims to depend
+on, it is decorative — before any run, before any data. `lv =
+self.log_noise.expand_as(y)` fails that check by inspection.
+
+The repair carries its own trap, and it is worth recording because 🌊 Hodgkin hit
+it independently on the state side the same day. The natural way to add a
+state-dependent term is to zero-initialise its output projection so the module
+"starts as a no-op". That reproduces the defect exactly: the quantity is constant
+at step 0, a firing test passes while measuring nothing, and heteroscedasticity
+appears only if training happens to find it — a shape, not a mechanism. Both
+repairs are therefore initialised **non-zero and from the physics**
+(`EEGHead.logvar_mix` from the row-normalised lead field; Hodgkin's
+`init_state_gain=0.05`), and `tests/foundation/test_head_variance.py` asserts the
+un-repaired arm's spread is **exactly `0.0`** rather than describing it as
+constant. Asserting the dead case is what makes the live case evidence.
 
 ### The absence variant (4 and 5)
 
@@ -122,6 +238,74 @@ not:
 Rule: **for a comparison, choose the narrowest metric that answers the actual
 question**, and choose it *before* seeing which one is favourable. An aggregate is
 for monitoring, not for adjudicating.
+
+### The preserved-quantity variant (10) — the cleanest case in this register
+
+**Worked in full, because it is the most transferable one here and because it was
+caught before the instrument ever ran.**
+
+`body.tex` §11.4 ends with a warning that is easy to agree with and hard to
+execute:
+
+> *a lower variance model is not preferred when it achieves stability by
+> smoothing away the effect of interest.*
+
+`scwbd.bench.statistics.smoothing_check` executes it, and executes it well. It
+applies an `effect` callable identically to the truth and to both predictions, so
+*"the model is smoother"* and *"the model lost the effect"* are separated rather
+than conflated, and it bootstraps the retention ratio. **The mechanism is sound.
+All of its discriminating power lives in that one callable**, and the default is
+`ablations.default_effect` — the mean across features of the across-observation
+standard deviation, i.e. **global dynamic range**.
+
+Now write down A1's failure mode. A1 is *structured regional state versus one
+scalar or pooled vector per region*. The way a heterogeneous model fails is by
+**collapsing every region onto one shared dynamic** — it stops differentiating
+regions. So take any signal and rescale each channel to the pooled temporal
+standard deviation:
+
+> **Between-region differentiation is destroyed. Global dynamic range is
+> unchanged — not approximately, exactly.**
+
+That is the whole finding. The check would have run, returned a retention ratio
+near 1.0, reported "not smoothing", and been **structurally incapable of any
+other reading** on the one input it exists to catch. It would then have sat in the
+report as evidence that the candidate's win was earned.
+
+**Why this variant is worth naming separately.** Rows 4 and 5 are *absence* — a
+quantity that never arrives. Row 7 is a *wrong question* asked of a fine
+instrument. Row 10 is neither: the instrument is right, the question is right,
+and the **conserved quantity** is wrong. The check measures something the failure
+mode happens to preserve. That is invisible to code review, invisible to tests
+that assert the check runs, and invisible to a passing negative control unless the
+negative control is built out of the failure mode itself.
+
+**The test that settles it** (`tests/bench/test_ablations.py`) constructs the
+collapse and asserts *both* halves, because only the pair is informative:
+
+```python
+assert default_effect(collapsed) == pytest.approx(default_effect(truth), rel=0.05)  # BLIND
+assert A1_EFFECT(collapsed) < 0.05 * A1_EFFECT(truth)                               # SEES
+```
+
+The replacement, `A1_EFFECT`, is the across-region dispersion of per-region
+temporal dynamics — preregistered in `reports/ablations/PREREG_A1_run2.md` §5.2
+before any heterogeneous model existed. `run_ablation` now **refuses** an
+explicitly-supplied different callable, and takes the spec's own effect when none
+is passed, so the wrong one is unreachable by omission as well as by choice.
+
+**The generalisable question**, which cost nothing and found both this and row 11:
+
+> **Take the failure this guard exists to catch. Apply it to the guard's input.
+> Does the reading move?**
+>
+> If it does not, the guard is decorative — however sound its mechanism, however
+> green its tests, and *especially* if it has never been run.
+
+This is stronger than "write a negative control", because it says what the
+negative control has to be made of: not a world where the claim is merely false,
+but a world **built out of the specific failure mode**. A negative control
+assembled some other way can pass while the guard stays blind.
 
 ### The invested-conclusion variant — the human one
 
@@ -1217,3 +1401,38 @@ when something mechanically checks it, not when it has been articulated well.** 
 correct response to writing a constraint down is to ask immediately *"what in this
 change set does it forbid?"* — and to run that check against your own next artifact
 before anyone else's.
+
+---
+
+## The inverse category: guards that assert a defect still exists
+
+Architect, 2026-08-06. Named because two instances surfaced within an hour and
+were both filed as "pre-existing unrelated failures" by agents who correctly
+declined to touch another owner's path.
+
+A decorative guard **can never fire**. These are the opposite: guards that
+fired correctly, whose defect was then **repaired**, and which now fail because
+the *expected* value was written as the broken one.
+
+| # | test | asserts | why it now fails |
+|---|---|---|---|
+| **S1** | `tests/curriculum/test_validator.py::test_corrected_config_still_refuses_the_handover_items` | refusal `X09_declared_provenance_contradicted` is raised | X09 fires when `load_anatomy()` returns a non-biological prior. It now returns the real 414-parcel prior with `is_biological() == True`. **The defect X09 detects was fixed**, so X09 correctly stays silent. |
+| **S2** | `tests/release/test_families.py::test_dataset_cards_expose_multimodal_ground_truth` | `'dwi' in ds004024.modalities` | 🗄️ Ada corrected the card: `ds004024` declared `fmri` and `dwi` while holding two T1w volumes and nothing else. **The test encodes the false declaration.** |
+| **S3** | `tests/foundation/test_contracts.py::test_fallback_anatomy_is_labelled_as_not_biological` | `provenance == "synthetic_fallback"` | its fixture now loads the real prior; `load_anatomy` refuses to substitute silently, so it raises rather than returning a mislabelled object. Filed by 🧠 Cajal, verified as drift by 🛡️ Popper. |
+
+**Why this is worth naming separately.** These read as regressions and are the
+opposite: each is *evidence the repair worked*. The failure mode is that a red
+suite trains everyone to discount red, and a genuine regression then hides
+among three known-stale reds — which is how a decorative guard gets tolerated
+in the first place.
+
+**The correct repair is not to delete the assertion.** Invert it: assert the
+**fixed** state, and keep the guard's ability to fire by exercising it against
+a deliberately broken fixture. `force_fallback=True` for S1 and S3; a fixture
+card declaring a modality it does not hold for S2. That preserves what the test
+was for while making it true of the present.
+
+**Standing rule.** A test that asserts a defect exists must say so in its name
+or docstring, so that when the defect is fixed the failure is self-explaining.
+`test_corrected_config_still_refuses_the_handover_items` does not tell a reader
+that it will fail the day the handover items are corrected.

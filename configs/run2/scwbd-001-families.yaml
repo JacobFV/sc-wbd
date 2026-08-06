@@ -1,0 +1,70 @@
+# SC-WBD-001 RUN 2 -- the TREATMENT arm of body.tex §11.4's first ablation.
+#
+# `scwbd-001.yaml` (the base) is the CONTROL: one `local_core` string and one
+# 28-wide state vector for all 414 parcels. That is "one scalar or pooled vector
+# per region", the second half of §11.4's
+#
+#     structured regional state versus one scalar or pooled vector per region
+#
+# and it is what run 1 shipped under the name of the first half
+# (reports/scope_gap.md). This file is the first half.
+#
+# Both files must be run. The control is not a strawman to be skipped -- it is
+# the equal-capacity comparison the claim rests on, and Popper needs it.
+#
+# EVERY PRECONDITION OF THE BASE FILE STILL APPLIES (P1..P4). This file adds no
+# new blocker and removes none. Nothing here has been trained.
+#
+# What changes, and the measurement behind each (reports/dynamics/family_state.md):
+#
+#   family_state: true
+#       Regions partition into families derived from the anatomy prior. On the
+#       real 414-parcel prior that is ELEVEN families: seven Yeo cortical
+#       networks + thalamus(2) + basal_ganglia(8) + hippocampus(2) + amygdala(2).
+#       The cerebellar family is DECLARED AND EMPTY -- the real prior has zero
+#       cerebellar parcels, as the base file's own comment on `n_regions` says.
+#
+#   family_cores: {}
+#       Left empty on purpose. The defaults in
+#       `scwbd.foundation.families.DEFAULT_FAMILY_CORES` assign the engineered
+#       backends body.tex §5 argues for (thalamic_relay, basal_ganglia_gate,
+#       hippocampal_code) and leave the cortical families on `local_core`.
+#       Overriding a family here is one line, e.g.
+#           family_cores: {cortex_vis: wilson_cowan}
+#       and a name that the anatomy prior does not produce RAISES rather than
+#       silently doing nothing.
+#
+#   d_key/d_value/d_grid/d_context = 16/16/12/4
+#       body.tex §5.1's H_t = {k,v,g,c,rho}. These set the padded width D for the
+#       WHOLE state, because the layout is padded to max_f d_f (narrowing N-1):
+#       with these values D = 59, and 52.26% of the (414, 59) state plane is pad.
+#       Halving them would halve the waste and shrink the hippocampal code; that
+#       trade is a live question, not a settled one. See N-1's "measured cost".
+#
+# Capacity is NOT matched to the base file: 2,376,452 parameters here against
+# 1,675,373 there (1.42x), measured by SCWBD.parameter_report(). §11.4 wants an
+# equal-capacity comparison, so whoever runs the pair must raise `hidden` on the
+# control arm until `scwbd.dynamics.assert_equal_capacity` passes. Do not report
+# a comparison made at these two numbers.
+
+base: scwbd-001.yaml
+
+model:
+  family_state: true
+  family_cores: {}
+  d_key: 16
+  d_value: 16
+  d_grid: 12
+  d_context: 4
+  d_prediction: 8
+
+train:
+  run_name: scwbd-001-families
+  out_dir: checkpoints/scwbd-001-families
+
+notes: >-
+  Treatment arm of body.tex §11.4's first required ablation: heterogeneous
+  region-indexed state with per-family operators. Paired with
+  configs/run2/scwbd-001.yaml, which is the equal-capacity generic-operator
+  control. Neither has been trained. Refusal R12 refuses a heterogeneous-state
+  claim on a checkpoint emitted from the control file.

@@ -7,9 +7,19 @@ foundation model can train before they land.  A fallback lead field carries
 individual head model was used and therefore no source-localisation claim is
 supported.
 
-Every head returns a **distribution**, never a point: mean plus a
-heteroscedastic log-variance, so a likelihood can be evaluated and calibration
-can be measured (thesis §2.7 -- bias and variance never collapse into one score).
+Every head returns a **distribution**, never a point: mean plus a log-variance,
+so a likelihood can be evaluated and calibration can be measured (thesis §2.7 --
+bias and variance never collapse into one score).
+
+That log-variance is heteroscedastic **only when the model supplies an
+observation interface** (``SCWBD.observation``, from ``uncertainty.py``).  With
+``state_dependent_variance=False`` the EEG and BOLD heads fall back to a
+broadcast per-channel constant, which is what run 1 shipped and what
+``reports/training/p0_variance_channel.md`` measures: constant predictive
+variance cost SC-WBD-001-beta +0.4467 nats of excess NLL, 1.62x its whole
+deficit to persistence.  The module docstring previously asserted
+heteroscedasticity unconditionally while two of the three heads could not
+deliver it; the assertion is now conditional because the code is.
 """
 
 from __future__ import annotations
@@ -216,7 +226,21 @@ class EEGHead(nn.Module):
     fitted.  What is learned is (i) how regional structured state maps onto a
     source-current amplitude, (ii) per-channel gain/offset nuisance (electrode
     impedance, amplifier calibration -- the ``calibration`` role of Appendix B),
-    and (iii) a heteroscedastic noise model.
+    and (iii) the predictive log-variance.
+
+    (iii) has two **separately parameterised** parts, and they are kept separate
+    on purpose (RL-2).  ``log_noise`` is the per-channel *instrument floor*:
+    electrode impedance and amplifier noise are genuinely not functions of neural
+    state, so they stay a constant.  ``logvar_mix`` maps the model's own
+    per-parcel ``X^uncertainty`` onto channels.  Sharing one parameterisation
+    between them would let the floor silently absorb the state term and
+    reintroduce the run-1 defect with more code to hide it in.
+
+    There is no ``horizon=`` argument, deliberately (RL-1).  Horizon dependence
+    arrives because ``X^uncertainty`` is integrated forward, so it grows
+    differently per family and per parcel and is falsifiable.  A ``horizon=h``
+    embedding would produce h-dependence whether or not the model knew anything,
+    which is the decorative-guard failure rebuilt inside its own repair.
     """
 
     def __init__(self, layout, lead_field: LeadField, *, hidden: int = 64, n_nuisance_basis: int = 8) -> None:
@@ -233,12 +257,115 @@ class EEGHead(nn.Module):
         # per-channel calibration nuisance
         self.log_gain = nn.Parameter(torch.zeros(n_ch))
         self.offset = nn.Parameter(torch.zeros(n_ch))
-        # unit-variance init: a head that starts 6 orders below the data reports a
-        # units error as a likelihood, which is the least honest kind of number.
+        # Per-channel INSTRUMENT FLOOR only -- see the class docstring. Unit-variance
+        # init: a head that starts 6 orders below the data reports a units error as a
+        # likelihood, which is the least honest kind of number.
         self.log_noise = nn.Parameter(torch.zeros(n_ch))
+        # Parcel log-variance -> channel log-variance. Initialised from the lead
+        # field's row-normalised magnitude, so at step 0 a channel's variance is the
+        # |L|-weighted mean of the parcel variances actually feeding it: the physics,
+        # not a guess, and NOT zero.
+        #
+        # Zero-init would be the obvious "start as a no-op" default and it would be a
+        # trap: the state term would start dead, a firing test would pass while
+        # measuring nothing, and heteroscedasticity would appear only if training
+        # happened to find it. Hodgkin hit exactly this on the propagator's innovation
+        # layer. `softplus` keeps the map non-negative so accumulating uncertainty can
+        # only ever RAISE predicted variance, matching `_LogVarHead`'s guarantee.
+        w0 = self.L.abs()
+        w0 = w0 / w0.sum(dim=1, keepdim=True).clamp_min(1e-8)  # (C, N), rows sum to 1
+        self.logvar_mix = nn.Parameter(torch.log(torch.expm1(w0.clamp_min(1e-6))))
         # low-rank spatial nuisance (reference/montage effects), not a source model
         self.nuisance = nn.Parameter(torch.zeros(n_ch, n_nuisance_basis))
         self.nuisance_drive = nn.Linear(in_dim, n_nuisance_basis)
+        # Set by SCWBD via `set_observation`. Stored WITHOUT nn.Module registration:
+        # the interface is already owned by SCWBD, and registering it here would
+        # double-count its parameters in `parameter_report()` and double-apply weight
+        # decay to them.
+        object.__setattr__(self, "_observation", None)
+
+    def set_observation(self, observation) -> None:
+        """Wire the state-side boundary (``SCWBD.observation``), or ``None``.
+
+        ``None`` restores run-1 behaviour -- a broadcast per-channel constant --
+        and is kept so the repair itself can be ablated.
+        """
+        object.__setattr__(self, "_observation", observation)
+
+    @property
+    def state_dependent_variance(self) -> bool:
+        """True iff this head can emit a variance that varies with the state."""
+        return getattr(self, "_observation", None) is not None
+
+    @torch.no_grad()
+    def calibrate_noise_floor(self, residual: Tensor, *, state: Tensor | None = None) -> dict[str, Any]:
+        """Set ``log_noise`` to its closed form given held-out residuals.
+
+        The Gaussian NLL is stationary in ``log_noise`` at exactly
+        ``log(mean residual variance)`` per channel.  Run 1 asked SGD to find
+        that: stage V ran 900 steps at lr 5.77e-5 and left the parameter at
+        0.273 when the optimum was ``log(3.97) = 1.379``.  The model therefore
+        asserted a predictive variance of 1.31 against a realised 3.97 --
+        uniformly overconfident by 3.0x -- which cost **+0.4467 nats** of excess
+        NLL, 1.62x its entire deficit to persistence, and was the single largest
+        term in the run-1 FAIL (`reports/training/p0_variance_channel.md`).
+
+        It is a closed form.  It is now computed rather than searched for.
+
+        ``residual`` is ``(B, T, C)`` observed-minus-predicted on windows the
+        mean was **not** fitted on.  When a state term is active it is measured
+        and subtracted, so the floor stays a floor and does not absorb the
+        state-dependent part (RL-2).
+        """
+        r = residual.detach().float()
+        target = r.pow(2).mean(dim=tuple(range(r.dim() - 1))).clamp_min(1e-8).log()  # (C,)
+        obs = getattr(self, "_observation", None)
+        state_term = torch.zeros_like(target)
+        if obs is not None and state is not None:
+            lv_n = obs.predictive_logvar(state)
+            lv_n = lv_n.squeeze(-1) if lv_n.shape[-1] == 1 else lv_n.mean(-1)
+            mix = torch.nn.functional.softplus(self.logvar_mix).to(lv_n.dtype)
+            state_term = torch.einsum("cn,btn->btc", mix, lv_n).float().mean(dim=(0, 1))
+        before = self.log_noise.detach().clone()
+        self.log_noise.copy_((target - state_term).to(self.log_noise.dtype))
+        return {
+            "parameter": "eeg.log_noise",
+            "closed_form": "log(mean residual variance) per channel, minus the mean state term",
+            "state_term_subtracted": bool(obs is not None and state is not None),
+            "log_noise_before_mean": float(before.mean()),
+            "log_noise_after_mean": float(self.log_noise.mean()),
+            "implied_variance_before": float(before.exp().mean()),
+            "implied_variance_after": float(self.log_noise.detach().exp().mean()),
+            "n_windows": int(r.shape[0]),
+        }
+
+    def noise_floor_report(self) -> dict[str, Any]:
+        """Whether the floor was ever fitted -- detectable, not inferable.
+
+        ``EEGHead.log_noise`` initialises to all-zeros and ``BOLDHead.log_noise``
+        to all ``-4.0``.  Both are constant across channels, so a parameter that
+        never received a gradient has **sd exactly 0.0** and sits exactly on its
+        init value.  Run 1 shipped ``bold.log_noise`` in precisely that state and
+        nothing in the artifact said so.  This makes it visible.
+        """
+        v = self.log_noise.detach()
+        sd = float(v.std()) if v.numel() > 1 else 0.0
+        at_init = bool(sd == 0.0 and torch.allclose(v, torch.zeros_like(v)))
+        return {
+            "parameter": "eeg.log_noise",
+            "role": "per-channel instrument floor (electrode impedance, amplifier noise)",
+            "mean": float(v.mean()),
+            "sd_across_channels": sd,
+            "at_initialisation": at_init,
+            "warning": (
+                "log_noise is exactly its initialisation value with zero spread: it "
+                "never received a gradient and was never calibrated. Any likelihood "
+                "reported from this head describes an unfitted noise model."
+                if at_init
+                else None
+            ),
+            "state_dependent_variance": self.state_dependent_variance,
+        }
 
     def source_amplitude(self, x: Tensor) -> Tensor:
         """``(..., N, D) -> (..., N)`` source-current amplitude (arbitrary units)."""
@@ -255,8 +382,18 @@ class EEGHead(nn.Module):
         if gain is not None:
             g = g * gain.reshape(*gain.shape, *([1] * (y.dim() - gain.dim() - 1)))
         y = y * g + self.offset
-        lv = self.log_noise.expand_as(y)
-        return y, lv
+        obs = getattr(self, "_observation", None)
+        if obs is None:
+            # Run-1 behaviour: constant per channel. Retained only as the ablation
+            # arm; `p0_variance_channel.md` measures what it costs.
+            lv = self.log_noise.expand_as(y)
+        else:
+            # (B,T,N,logvar_dim) -> (B,T,N); the interface emits logvar_dim=1.
+            lv_n = obs.predictive_logvar(x)
+            lv_n = lv_n.squeeze(-1) if lv_n.shape[-1] == 1 else lv_n.mean(-1)
+            mix = torch.nn.functional.softplus(self.logvar_mix).to(lv_n.dtype)
+            lv = self.log_noise.to(lv_n.dtype) + torch.einsum("cn,btn->btc", mix, lv_n)
+        return y, lv.clamp(-14.0, 14.0)
 
     def extra_repr(self) -> str:
         return f"channels={len(self.channel_names)}, provenance={self.lead_field_meta['provenance']}"
@@ -283,8 +420,76 @@ class BOLDHead(nn.Module):
         self.alpha = nn.Parameter(torch.full((n_regions,), 0.32))
         self.rho = nn.Parameter(torch.full((n_regions,), 0.34))
         self.neural_gain = nn.Parameter(torch.ones(n_regions))
+        # Per-region INSTRUMENT FLOOR only (scanner/physiological noise), kept
+        # separately parameterised from the state term for the same reason as
+        # `EEGHead.log_noise` -- see that class's docstring.
         self.log_noise = nn.Parameter(torch.full((n_regions,), -4.0))
+        # Parcel log-variance -> BOLD log-variance. Diagonal by construction: the
+        # Balloon output is already region-indexed, so no spatial mixing is needed
+        # or justified. `softplus(0.5413) == 1.0`, i.e. identity at init -- non-zero,
+        # for the reason given on `EEGHead.logvar_mix`.
+        self.logvar_gain = nn.Parameter(torch.full((n_regions,), 0.5413248546))
         self.register_buffer("_priors", torch.tensor([math.log(0.65), math.log(0.41), math.log(0.98), 0.32, 0.34]))
+        object.__setattr__(self, "_observation", None)
+
+    def set_observation(self, observation) -> None:
+        """Wire the state-side boundary (``SCWBD.observation``), or ``None``."""
+        object.__setattr__(self, "_observation", observation)
+
+    @property
+    def state_dependent_variance(self) -> bool:
+        return getattr(self, "_observation", None) is not None
+
+    def noise_floor_report(self) -> dict[str, Any]:
+        """Whether the BOLD noise floor was ever fitted.
+
+        Run 1 shipped this parameter at exactly ``-4.0`` across all 454 regions,
+        sd exactly ``0.0``: it never received a gradient, because no measured
+        BOLD ever entered the corpus.  Nothing was scored on it, which is why it
+        went unnoticed -- and which is exactly why it is dangerous.  The moment
+        haemodynamic data lands, an unfitted noise model would be presented as a
+        fitted one.  This check is the thing that fires instead.
+        """
+        v = self.log_noise.detach()
+        sd = float(v.std()) if v.numel() > 1 else 0.0
+        at_init = bool(sd == 0.0 and torch.allclose(v, torch.full_like(v, -4.0)))
+        return {
+            "parameter": "bold.log_noise",
+            "role": "per-region instrument floor (scanner and physiological noise)",
+            "mean": float(v.mean()),
+            "sd_across_regions": sd,
+            "at_initialisation": at_init,
+            "warning": (
+                "bold.log_noise is exactly its -4.0 initialisation across every region "
+                "with zero spread: it never received a gradient. No BOLD likelihood "
+                "from this head is fitted, and none may be reported as if it were."
+                if at_init
+                else None
+            ),
+            "state_dependent_variance": self.state_dependent_variance,
+        }
+
+    @torch.no_grad()
+    def calibrate_noise_floor(self, residual: Tensor, *, state: Tensor | None = None) -> dict[str, Any]:
+        """Closed-form BOLD noise floor -- see :meth:`EEGHead.calibrate_noise_floor`."""
+        r = residual.detach().float()
+        target = r.pow(2).mean(dim=tuple(range(r.dim() - 1))).clamp_min(1e-8).log()
+        obs = getattr(self, "_observation", None)
+        state_term = torch.zeros_like(target)
+        if obs is not None and state is not None:
+            lv_n = obs.predictive_logvar(state)
+            lv_n = lv_n.squeeze(-1) if lv_n.shape[-1] == 1 else lv_n.mean(-1)
+            gain = torch.nn.functional.softplus(self.logvar_gain).to(lv_n.dtype)
+            state_term = (gain * lv_n).float().mean(dim=tuple(range(lv_n.dim() - 1)))
+        before = self.log_noise.detach().clone()
+        self.log_noise.copy_((target - state_term).to(self.log_noise.dtype))
+        return {
+            "parameter": "bold.log_noise",
+            "log_noise_before_mean": float(before.mean()),
+            "log_noise_after_mean": float(self.log_noise.mean()),
+            "state_term_subtracted": bool(obs is not None and state is not None),
+            "n_windows": int(r.shape[0]),
+        }
 
     def initial(self, batch: int, n_regions: int, device, dtype=torch.float32) -> Tensor:
         z = torch.zeros(batch, n_regions, 4, device=device, dtype=dtype)
@@ -311,8 +516,15 @@ class BOLDHead(nn.Module):
         )
         return torch.nan_to_num(out, nan=0.0, posinf=3.0, neginf=-3.0).clamp(-8.0, 8.0)
 
-    def signal(self, hemo: Tensor) -> tuple[Tensor, Tensor]:
-        """BOLD percent-signal-change ``(B,...,N)`` and its log-variance."""
+    def signal(self, hemo: Tensor, state: Tensor | None = None) -> tuple[Tensor, Tensor]:
+        """BOLD percent-signal-change ``(B,...,N)`` and its log-variance.
+
+        ``state`` is the regional structured state the log-variance is sourced
+        from.  It is optional because callers outside this package
+        (``scwbd.observe.bold``) drive the Balloon model without one; those
+        callers get the instrument floor and no state term, which is honest
+        rather than silent.
+        """
         v = hemo[..., 2].clamp_min(1e-3)
         q = hemo[..., 3]
         rho = self.rho.clamp(0.05, 0.9)
@@ -320,7 +532,14 @@ class BOLDHead(nn.Module):
         k2 = 2.0
         k3 = 2.0 * rho - 0.2
         y = self.v0 * (k1 * (1 - q) + k2 * (1 - q / v) + k3 * (1 - v))
-        return y, self.log_noise.expand_as(y)
+        obs = getattr(self, "_observation", None)
+        if obs is None or state is None:
+            return y, self.log_noise.expand_as(y)
+        lv_n = obs.predictive_logvar(state)
+        lv_n = lv_n.squeeze(-1) if lv_n.shape[-1] == 1 else lv_n.mean(-1)
+        gain = torch.nn.functional.softplus(self.logvar_gain).to(lv_n.dtype)
+        lv = self.log_noise.to(lv_n.dtype) + gain * lv_n.reshape(y.shape)
+        return y, lv.clamp(-14.0, 14.0)
 
     def prior_penalty(self) -> Tensor:
         """Shrinkage toward literature haemodynamics -- regional freedom is not free."""

@@ -4,8 +4,9 @@
 :math:`\\mathcal A_{\\rm safe}` here is a *feasible set that blocks a simulated
 optimizer*.  Passing every check in this module means only that the optimizer
 was not blocked on those axes; it does not mean an intervention is safe,
-approved, or applicable to a person.  Prospective human TMS/tFUS is out of
-scope for SC-WBD-001-beta (``thesis_contract.tex`` Sec. 0.6 item 6).
+approved, or applicable to a person.  Applying a plan to a person or to real
+hardware is gated by :mod:`scwbd.intervene.deployment`, which is checked here
+whenever a proposal declares ``application="live"``.
 
 Design, following thesis Sec. 7.4:
 
@@ -63,9 +64,21 @@ from ..schema.authorization import (
     validate_authorization,
 )
 from .base import SIMULATION_ONLY_NOTICE, InterventionRefusal, Ledger
+from .deployment import (
+    PRELIMINARY_REVIEW_SCHEDULED,
+    ApplicationMode,
+    LiveApplicationVerdict,
+    PreliminaryReviewRecord,
+    authorize_live_application,
+)
 
 __all__ = [
     "AUTHORIZATION_DECLARATION_NOTICE",
+    "PRELIMINARY_REVIEW_SCHEDULED",
+    "ApplicationMode",
+    "LiveApplicationVerdict",
+    "PreliminaryReviewRecord",
+    "authorize_live_application",
     "AuthorizationGate",
     "AuthorizationRecord",
     "AuthorizationVerdict",
@@ -150,9 +163,21 @@ class LimitSpec:
 class Violation:
     limit: LimitSpec
     value: float
-    kind: Literal["below_minimum", "above_maximum", "missing", "unknown_axis"]
+    kind: Literal[
+        "below_minimum",
+        "above_maximum",
+        "missing",
+        "unknown_axis",
+        "undeclared_by_proposal",
+    ]
 
     def __str__(self) -> str:
+        if self.kind == "undeclared_by_proposal":
+            return (
+                f"{self.limit.key} is a declared limit that this proposal "
+                f"supplies no value for, so it was never checked "
+                f"({self.limit.citation})"
+            )
         bound = self.limit.minimum if self.kind == "below_minimum" else self.limit.maximum
         return (
             f"{self.limit.key} = {self.value:g} {self.limit.units} violates "
@@ -232,11 +257,32 @@ class SafetyLimits:
         for modality, block in raw.items():
             if not isinstance(block, dict):
                 continue
+            if modality == "decision":
+                # The one namespace that is explicitly rules-for-the-controller
+                # rather than bounds-on-an-exposure.  Read into meta below.
+                continue
             for quantity, entry in block.items():
                 if not isinstance(entry, dict):
                     continue
                 if "min" not in entry and "max" not in entry:
-                    continue  # a declarative rule, not a numeric bound
+                    # Previously this was `continue`, and it is how
+                    # `protocol.reversibility` sat in this file for the whole
+                    # project without ever becoming a LimitSpec: declared,
+                    # cited, never loaded, never checkable, never able to fail.
+                    # A bound nothing can check is decoration
+                    # (reports/decorative_guards.md).  Refuse it at load so the
+                    # failure is at startup rather than invisible forever.
+                    raise CompilerRefusal(
+                        "R11",
+                        f"limit {modality}.{quantity} declares neither `min` nor "
+                        "`max`, so nothing can ever check it; a bound that "
+                        "cannot fire is not a bound",
+                        remedy=(
+                            "give it a numeric `min`/`max`, or move it under "
+                            "[decision] where controller rules live"
+                        ),
+                        offending_object=f"{modality}.{quantity}",
+                    )
                 if not entry.get("citation"):
                     raise CompilerRefusal(
                         "R11",
@@ -280,10 +326,32 @@ class SafetyLimits:
                 offending_object=key,
             ) from exc
 
+    def all_specs(self) -> tuple[LimitSpec, ...]:
+        """Every loaded bound.
+
+        Exists so a test can sweep the file rather than a hardcoded list: a
+        bound added tomorrow is covered tomorrow, and one that cannot be made
+        to fire fails the suite instead of passing it quietly.
+        """
+        return tuple(v for _, v in sorted(self._limits.items()))  # type: ignore[attr-defined]
+
     def for_modality(self, modality: str) -> tuple[LimitSpec, ...]:
         return tuple(
             v for k, v in sorted(self._limits.items())  # type: ignore[attr-defined]
             if v.modality == modality
+        )
+
+    def require_reversible_for_live(self) -> bool:
+        """Whether a live plan must be reversible (``[decision.reversibility]``).
+
+        Read here rather than declared and ignored: this rule previously sat in
+        the file as ``[protocol.reversibility] required = true``, where the
+        loader skipped it for having no numeric bound, so nothing ever read it.
+        """
+        return bool(
+            self._meta.get("decision", {})  # type: ignore[attr-defined]
+            .get("reversibility", {})
+            .get("require_for_live_application", False)
         )
 
     def citations(self) -> tuple[str, ...]:
@@ -316,6 +384,13 @@ class ProposedIntervention:
     ``exposure`` maps declared axis names (``"tms.peak_efield_v_per_m"``, ...)
     to simulated values.  ``pose_certified`` records whether the pose passed
     :mod:`scwbd.intervene.tms.pose` (a scalp label alone is not a pose).
+
+    ``application`` declares what the plan is *for*.  The default,
+    ``"computational"``, is the ordinary path for everything in this
+    repository and is not gated.  ``"live"`` declares an intent to drive real
+    hardware or to apply the plan to a person, and pulls in
+    :mod:`scwbd.intervene.deployment` -- which refuses until a record exists
+    that the preliminary review occurred with an approving outcome.
     """
 
     label: str
@@ -325,6 +400,11 @@ class ProposedIntervention:
     reversible: bool = False
     provenance: Mapping[str, Any] = field(default_factory=dict)
     notice: str = SIMULATION_ONLY_NOTICE
+    application: ApplicationMode = "computational"
+
+    @property
+    def is_live_application(self) -> bool:
+        return self.application == "live"
 
 
 @dataclass(frozen=True)
@@ -357,9 +437,15 @@ class FeasibleSet:
         limits: SafetyLimits | None = None,
         *,
         require_pose_certification: bool = True,
+        require_complete_coverage: bool = False,
     ) -> None:
         self.limits = limits or SafetyLimits.load()
         self.require_pose_certification = require_pose_certification
+        #: When set, an axis declared for this modality that the proposal does
+        #: not supply is a violation rather than a note.  Forced on for any
+        #: proposal declaring ``application="live"``, independently of this
+        #: flag, so it cannot be switched off for the case that matters.
+        self.require_complete_coverage = require_complete_coverage
 
     def contains(self, proposal: ProposedIntervention) -> SafetyVerdict:
         violations: list[Violation] = []
@@ -375,6 +461,45 @@ class FeasibleSet:
                 violations.append(v)
 
         unchecked = tuple(sorted(declared - set(checked)))
+
+        # A declared axis the proposal simply omits is reported, not violated
+        # -- for a simulated study that is right, because most axes have no
+        # producer for most proposals.  For a *live* plan it is exactly wrong:
+        # a plan could pass by supplying the three axes it is comfortable with
+        # and omitting the thermal ones.  `tfus.cem43_minutes` and
+        # `tfus.temperature_rise_c` have no producer anywhere in `scwbd`, so
+        # under the old rule a live tFUS plan was silently unchecked on
+        # thermal dose. Requiring complete coverage turns that silence into a
+        # refusal that names the missing axes.
+        if (self.require_complete_coverage or proposal.is_live_application) and unchecked:
+            for axis in unchecked:
+                spec = self.limits.get(axis)
+                violations.append(Violation(spec, float("nan"), "undeclared_by_proposal"))
+
+        if (
+            proposal.is_live_application
+            and self.limits.require_reversible_for_live()
+            and not proposal.reversible
+        ):
+            violations.append(
+                Violation(
+                    LimitSpec(
+                        modality=proposal.modality,
+                        quantity="reversibility",
+                        minimum=1.0,
+                        maximum=None,
+                        units="dimensionless",
+                        basis=(
+                            "a plan applied to a person must be reversible; the "
+                            "controller must retain the option of a reversible "
+                            "probe or a safer measurement"
+                        ),
+                        citation="body.tex Sec. 7.4; thesis_contract.tex Sec. 0.5 step 6",
+                    ),
+                    0.0,
+                    "below_minimum",
+                )
+            )
 
         if self.require_pose_certification and not proposal.pose_certified:
             violations.append(
@@ -450,6 +575,9 @@ class AuthorizedRequest:
     intervention_class: str
     at_time_s: float | None
     purpose: str = "offline hypothesis comparison"
+    #: Present only when the request is for live application.  Absent is the
+    #: normal case and is why a live proposal refuses by default.
+    review: PreliminaryReviewRecord | None = None
 
     def __str__(self) -> str:
         rid = self.record.id if self.record is not None else "<no record>"
@@ -472,6 +600,11 @@ class AuthorizedProposal:
     verdict: SafetyVerdict
     authorization: AuthorizationVerdict
     notice: str = SIMULATION_ONLY_NOTICE
+    #: The live-application verdict.  For the ordinary computational path this
+    #: is an admitted ``mode="computational"`` verdict, which records in
+    #: provenance that the plan was *not* for live use -- rather than leaving a
+    #: reader to infer it from an absence.
+    application: LiveApplicationVerdict | None = None
 
     @property
     def claim_scope(self) -> str:
@@ -482,6 +615,9 @@ class AuthorizedProposal:
         return {
             "claim_scope": self.claim_scope,
             "authorization": self.authorization.as_provenance(),
+            "application": (
+                self.application.as_provenance() if self.application else None
+            ),
             "a_safe_axes_checked": list(self.verdict.checked_axes),
             "a_safe_axes_unchecked": list(self.verdict.unchecked_declared_axes),
             "proposal_label": self.proposal.label,
@@ -492,7 +628,7 @@ class AuthorizedProposal:
 
 
 class AuthorizationGate:
-    """Two gates in series, in this order, neither able to excuse the other.
+    """Three gates in series, in this order, none able to excuse another.
 
     1. **Governance.** A validated :class:`AuthorizationRecord` must cover the
        requested intervention class at the requested time, with consent that
@@ -505,10 +641,24 @@ class AuthorizationGate:
        or not an authorization is present -- :meth:`FeasibleSet.contains` is
        not passed the record and could not use it -- so an authorized request
        outside the set refuses exactly as an unauthorized one does.
+    3. **Live application.** If and only if the proposal declares
+       ``application="live"``, :mod:`scwbd.intervene.deployment` must admit it:
+       there must be a record that the preliminary review *occurred* with an
+       approving outcome covering this class.  Gate 1 is necessary here and
+       explicitly not sufficient -- an authorization covering computational
+       work cannot unlock a live plan, because the two records answer different
+       questions and this gate asks both.
+
+    Ordering is one-way in a second sense worth stating: relaxing gate 1 (which
+    is what happened when ``R11`` stopped being an unconditional constant)
+    cannot relax gates 2 or 3.  Neither of them is passed the authorization
+    record, and neither could use it.
 
     What this gate cannot do, stated so nobody has to infer it: it cannot
-    verify an IRB approval exists, it cannot make a limit safe, and it cannot
-    turn a simulation into evidence about a person.
+    verify that an IRB approval exists, it cannot verify that a preliminary
+    review occurred, it cannot make a limit safe, and it cannot turn a
+    simulation into evidence about a person.  Both records it consumes are
+    *declarations*.
     """
 
     def __init__(
@@ -595,8 +745,26 @@ class AuthorizationGate:
         safety = self.feasible_set.contains(proposal)
         safety.raise_if_infeasible(offending=proposal.label)
 
+        # Live application third.  For the ordinary computational path this
+        # admits without checking anything -- simulation is not gated here, and
+        # a gate that fired on simulation would be a gate everyone learns to
+        # route around.
+        application = authorize_live_application(
+            mode=proposal.application,
+            intervention_class=request.intervention_class,
+            at_time_s=request.at_time_s,
+            review=request.review,
+            authorization=request.record,
+            a_safe_id=self.a_safe_id,
+            required_a_safe_axes=tuple(sorted(proposal.exposure)),
+        )
+        application.raise_if_refused(offending=proposal.label)
+
         return AuthorizedProposal(
-            proposal=proposal, verdict=safety, authorization=verdict
+            proposal=proposal,
+            verdict=safety,
+            authorization=verdict,
+            application=application,
         )
 
 

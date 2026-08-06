@@ -5,8 +5,16 @@ paper/output/
 .venv/
 
 # large, hash-manifest-tracked artifacts (ARCHITECTURE.md sec. 1)
+# Both forms of each name are required. A trailing slash matches a DIRECTORY
+# ONLY -- it does not match a symlink of the same name, so `assets/` alone left
+# the `assets` symlink trackable and one `git add -A` committed it. The blob's
+# target string was a worktree-local path; checking it out in the main repo made
+# assets point at itself and every worktree resolving through it got ELOOP.
+assets
 assets/
+data
 data/
+checkpoints
 checkpoints/
 
 # generated figures; the machine-readable claim reports themselves are tracked

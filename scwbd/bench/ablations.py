@@ -1,7 +1,13 @@
 """Required ablations from ``body.tex`` §11.4 (agent J).
 
 Every bullet of §11.4 is a registry entry here.  Each ablation runs its arms
-at **matched capacity and compute**, and reports, for every arm:
+at **matched capacity and compute** -- every binding budget field either side
+declares is compared, and any field no arm declares is **named in the verdict**
+rather than silently skipped, so a green ``matched_capacity`` row can never be
+read as having checked more than it did (see :mod:`scwbd.bench.matching`).
+An ablation whose preregistration commits to a budget names it in
+``require_budgets``, and an undeclared required budget is ``COULD_NOT_RUN``.
+Each ablation reports, for every arm:
 
 * **variance** — held-out calibrated log score with a bootstrap interval;
 * **plausible systematic error** — worst-stratum bias across session, device,
@@ -33,7 +39,15 @@ from typing import Any, Callable, Mapping, Sequence
 import numpy as np
 
 from .harness import Dataset, EvalResult, evaluate
-from .matching import budget_of, check_matched, matched_subcheck
+from .matching import (
+    BINDING_FIELDS,
+    ArmPath,
+    budget_of,
+    check_matched,
+    check_path_parity,
+    matched_subcheck,
+    parity_subcheck,
+)
 from .report import (
     BaselineResult,
     ClaimManifest,
@@ -60,6 +74,8 @@ __all__ = [
     "run_ablation",
     "run_all_ablations",
     "default_effect",
+    "A1_EFFECT",
+    "A1_RUN2_PREREGISTRATION",
 ]
 
 
@@ -73,6 +89,60 @@ def default_effect(y: np.ndarray) -> float:
     """
     y = np.asarray(y, dtype=float)
     return float(np.std(y.reshape(y.shape[0], -1), axis=0).mean())
+
+
+def A1_EFFECT(y: np.ndarray) -> float:
+    """A1's effect of interest: **between-region differentiation of dynamics**.
+
+    Preregistered in ``reports/ablations/PREREG_A1_run2.md`` §5.2 *before* any
+    heterogeneous model existed.
+
+    :func:`default_effect` measures *global dynamic range*, and a model that
+    collapses every region onto one shared dynamic **preserves global dynamic
+    range exactly** while destroying precisely the effect A1 is about
+    ("structured regional state versus one scalar or pooled vector per region").
+    Running A1 on the default therefore yields a smoothing check that is green
+    and structurally incapable of reading A1's own failure mode -- the
+    decorative-guard pattern, inside the machinery built to catch it.
+
+    For ``y`` of shape ``(windows, T, channels)`` (or any ``(n, T, C)``):
+
+    1. temporal std over ``T``, per window and per channel;
+    2. std of that **across channels** -- how differentiated regions are;
+    3. mean over windows.
+
+    Scale-equivariant, label-free, and computed from arrays the harness already
+    holds, so it cannot be dropped for cost.
+    """
+    y = np.asarray(y, dtype=float)
+    if y.ndim == 2:  # (n, T) -- a single channel cannot express differentiation
+        return 0.0
+    if y.ndim > 3:
+        y = y.reshape(y.shape[0], y.shape[1], -1)
+    per_channel = y.std(axis=1)  # (n, C): temporal std per channel
+    return float(per_channel.std(axis=1).mean())
+
+
+#: Machine-readable summary of ``reports/ablations/PREREG_A1_run2.md``, fixed on
+#: ``wt/popper`` while ``A1_structured_state`` is COULD_NOT_RUN and no
+#: heterogeneous arm exists.  Prose in a report can be edited; this is imported
+#: by the scoring path and asserted by ``tests/bench``.
+A1_RUN2_PREREGISTRATION = (
+    "TWO_CAPACITY_MATCHED_POOLED_CONTROLS_param_matched_AND_state_matched_"
+    "BOTH_MUST_BE_BEATEN; PERMUTED_FAMILY_ARM_MANDATORY_FOR_ATTRIBUTION; "
+    "PRIMARY_PAIRED_PARTICIPANT_CLUSTERED_NLL_PLUS_COPRIMARY_MSE_BOTH_INTERVALLED; "
+    "NLL_WIN_WITHOUT_MSE_WIN_GRANTS_NO_MECHANISTIC_CLAIM; "
+    "EFFECT_IS_A1_EFFECT_BETWEEN_REGION_DISPERSION_NOT_default_effect; "
+    "SCORED_AS_EMITTED_AND_CALIBRATION_MATCHED_DISAGREEMENT_CLAIMS_NEITHER; "
+    "SYSTEMATIC_ENVELOPE_GE_DELTA_OR_SEED_RANGE_GE_DELTA_IS_INCONCLUSIVE; "
+    "V_ABLATION_AND_V_CLAIM_ARE_SEPARATE_11_2_FLOOR_BOUNDS_ONLY_V_CLAIM; "
+    "RUN1_IS_A_CONTROL_CLASS_ARTIFACT_NOT_RUN2S_CONTROL_ARM; "
+    "THETA_CONDITIONED_POOLED_ARM_MANDATORY_STAGE2_CONDITIONING_CONTROL; "
+    "A1_VARIES_STATE_ONLY_OPERATOR_ASSIGNMENT_HELD_IDENTICAL_A5_IS_THE_OTHER_ONE; "
+    "LICENCE_IS_TWO_FAMILY_CORTICAL_PARTITION_NOT_OPERATOR_VALUED_HETEROGENEITY; "
+    "SUBCORTICAL_FAMILIES_N2_ARE_OUT_OF_CLAIM; "
+    "MDE_AT_27_PARTICIPANTS_IS_0.1404_NATS"
+)
 
 
 @dataclass(frozen=True)
@@ -94,6 +164,21 @@ class AblationSpec:
     #: quarantined ablations are off by default (ARCHITECTURE.md rule 5)
     quarantined: bool = False
     note: str = ""
+    #: An ablation whose failure mode is invisible to :func:`default_effect`
+    #: names its own effect here.  :func:`run_ablation` then REFUSES to run with
+    #: any other callable rather than reporting a smoothing check that cannot
+    #: read the failure it exists to catch.
+    required_effect: Callable[[np.ndarray], float] | None = None
+    #: Budget fields every arm must declare, passed to
+    #: :func:`~scwbd.bench.matching.check_matched`.  Where a preregistration
+    #: commits to a budget, naming it here is what makes the commitment bind:
+    #: an undeclared budget cannot have been matched.
+    require_budgets: tuple[str, ...] = ()
+    #: Require every arm to declare an :class:`~scwbd.bench.matching.ArmPath`
+    #: and to present the SAME path from state to score.  Capacity matching
+    #: guards the model; this guards everything between the model and the
+    #: number, where every between-arm defect found so far has lived.
+    require_path_parity: bool = False
 
 
 ABLATIONS: dict[str, AblationSpec] = {
@@ -101,13 +186,42 @@ ABLATIONS: dict[str, AblationSpec] = {
         id="A1_structured_state",
         thesis_clause="structured regional state versus one scalar or pooled vector per region",
         question="Does structured regional state predict anything a pooled scalar cannot?",
-        required_arms=("structured_state", "scalar_per_region", "pooled_vector_per_region"),
+        # The first three are §11.4's own words. The rest are preregistered in
+        # reports/ablations/PREREG_A1_run2.md and are REQUIRED, not optional:
+        # leaving them in `optional_arms` would have made "mandatory" in that
+        # document unenforced prose -- the row-11 failure, in my own registry.
+        required_arms=(
+            "structured_state",
+            "scalar_per_region",
+            "pooled_vector_per_region",
+            "pooled_vector_per_region@param_matched",   # B1 match  (§3.2)
+            "pooled_vector_per_region@state_matched",   # B2 match  (§3.2)
+            "theta_conditioned_pooled",                 # stage-2 control (§3.6.2)
+            "permuted_family_state",                    # attribution (§1.1)
+        ),
         candidate_arm="structured_state",
         consequence=(
             "Collapse regional state to the supported dimensionality and stop describing "
             "regions as structured state spaces (body.tex §2.1) for the affected systems."
         ),
         mechanistic_claim=True,
+        # Run 2 adds two capacity-matched pooled controls (parameter-matched and
+        # state-matched -- they cannot both be satisfied at once, so BOTH are
+        # required and the choice is not made after the fact) plus a
+        # permuted-family arm that holds heterogeneity fixed and destroys the
+        # anatomical assignment.  See reports/ablations/PREREG_A1_run2.md §1, §3.
+        required_effect=A1_EFFECT,
+        # PREREG_A1_run2 §3.1: B2 (total state width), B3 (optimiser steps) and
+        # B4 (configurations trained per arm) are BINDING.  The two arms have
+        # structurally different state, so parameter parity alone does not say
+        # they are matched -- that is the whole difficulty of this ablation.
+        require_budgets=("state_width", "train_steps", "n_configs_trained"),
+        # PREREG_A1_run2 §3.5, added after 🌊 Hodgkin caught the treatment arm's
+        # EEG head exporting 2 dims against the control's 18 with every budget
+        # field identical.  A1 would have concluded heterogeneity does not help,
+        # and it would have been wrong, with a green harness.
+        require_path_parity=True,
+        note=A1_RUN2_PREREGISTRATION,
     ),
     "A2_coupling_family": AblationSpec(
         id="A2_coupling_family",
@@ -256,9 +370,10 @@ def run_ablation(
     train: Dataset | None = None,
     test: Dataset | None = None,
     arms: Mapping[str, Any] | None = None,
-    effect: Callable[[np.ndarray], float] = default_effect,
+    effect: Callable[[np.ndarray], float] | None = None,
     mechanism_holdout: Mapping[str, Dataset] | None = None,
     external_bias_bounds: Mapping[str, tuple[float, float]] | None = None,
+    arm_paths: Mapping[str, ArmPath] | None = None,
     retention_floor: float = 0.5,
     artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
@@ -309,10 +424,27 @@ def run_ablation(
         return ClaimReport(manifest=man, subchecks=subs, kind="ablation",
                            notes=[spec.note]).finalize()
 
+    # -- the effect of interest must be the one this ablation names -----
+    # A smoothing check reading the WRONG effect is worse than none: it is
+    # green by construction.  A1's failure mode -- every region collapsed onto
+    # one shared dynamic -- preserves `default_effect` EXACTLY, so A1 declares
+    # `required_effect` and an explicitly-supplied different callable is
+    # refused.  Supplying nothing takes the spec's own effect, so the wrong one
+    # cannot be reached by omission either.
+    wrong_effect = (
+        spec.required_effect is not None
+        and effect is not None
+        and effect is not spec.required_effect
+    )
+    if effect is None:
+        effect = spec.required_effect or default_effect
+
     missing = [a for a in spec.required_arms if a not in arms]
     if train is None or test is None:
         missing.append("train/test datasets")
-    if missing:
+    if missing or wrong_effect:
+        # BOTH are reported.  Returning on the effect alone would hide which
+        # arms are absent, which is the more actionable fact while A1 has none.
         for i, m in enumerate(missing):
             subs.append(
                 could_not_run(
@@ -320,6 +452,20 @@ def run_ablation(
                     f"missing: {m}; §11.4 names it explicitly, so the comparison cannot be "
                     "declared complete without it",
                     falsified_by=man.falsified_by,
+                )
+            )
+        if wrong_effect:
+            assert spec.required_effect is not None
+            subs.append(
+                could_not_run(
+                    "effect_of_interest",
+                    "The §11.4 smoothing check must read THIS ablation's effect.",
+                    f"{spec.id} requires effect={spec.required_effect.__name__}; got "
+                    f"{getattr(effect, '__name__', repr(effect))}. "
+                    f"{spec.required_effect.__name__} measures the quantity whose loss IS "
+                    "the failure mode; default_effect is preserved exactly by that failure, "
+                    "so the smoothing check would be structurally incapable of firing",
+                    falsified_by="the winning arm won by attenuating the effect of interest",
                 )
             )
         return ClaimReport(manifest=man, subchecks=subs, kind="ablation",
@@ -337,11 +483,63 @@ def run_ablation(
     verdict = check_matched(
         cand.extras.get("_model"), {k: v.extras.get("_model") for k, v in controls.items()},
         tol=thr.capacity_tol, candidate_name=spec.candidate_arm,
+        require=spec.require_budgets,
     )
     subs.append(matched_subcheck(verdict))
+
+    # -- path parity: the second matching axis --------------------------
+    if spec.require_path_parity:
+        if not arm_paths:
+            subs.append(
+                could_not_run(
+                    "path_parity",
+                    "Every arm must present the same path from state to score.",
+                    f"{spec.id} requires an ArmPath per arm and none was supplied; "
+                    "budgets can match exactly while one arm is handicapped at the "
+                    "observation boundary, and the comparison would attribute that to "
+                    "the hypothesis",
+                    falsified_by=(
+                        "an arm is handicapped or advantaged somewhere other than the "
+                        "manipulated variable"
+                    ),
+                )
+            )
+        else:
+            pv = check_path_parity(
+                {k: arm_paths[k] for k in results if k in arm_paths},
+                candidate=spec.candidate_arm,
+            ) if spec.candidate_arm in arm_paths else None
+            if pv is None:
+                subs.append(
+                    could_not_run(
+                        "path_parity",
+                        "Every arm must present the same path from state to score.",
+                        f"no ArmPath supplied for the candidate arm "
+                        f"{spec.candidate_arm!r}",
+                        falsified_by="an arm is handicapped off the manipulated variable",
+                    )
+                )
+            else:
+                subs.append(parity_subcheck(pv))
+                artifacts["path_parity"] = {
+                    "matched": pv.matched,
+                    "mismatches": pv.mismatches,
+                    "undeclared": pv.undeclared,
+                    "paths": {k: v.__dict__ for k, v in pv.paths.items()},
+                }
     artifacts["capacity"] = {
         "n_parameters": {k: r.n_parameters for k, r in results.items()},
         "ratios": verdict.ratios,
+        # What was compared, and -- the part that used to be missing -- what was
+        # not.  A capacity record that omits the fields nobody declared lets a
+        # compute-unmatched comparison read as matched.
+        "field_ratios": verdict.field_ratios,
+        "advisory_ratios": verdict.advisory_ratios,
+        "binding_fields": list(BINDING_FIELDS),
+        "unchecked_fields": verdict.unchecked_fields,
+        "asymmetric": verdict.asymmetric,
+        "required_budgets": list(verdict.required),
+        "undeclared_required": verdict.undeclared_required,
     }
 
     # -- variance: held-out score per arm ------------------------------
