@@ -1110,3 +1110,56 @@ Two generalisations:
 looking normal?" rather than by auditing the file.** That question has now produced
 three defects in one session (this, the `strict=False` loader, the backend-biased
 sample) where reading the code did not.
+
+---
+
+## Entry: a correctly measured mechanism does not license an unmeasured consequence
+
+Found by ⚖️ Neyman, in my own filing.
+
+I measured the units offset exactly right — `NLL_scaled = NLL_raw − log s`, mean
+log s = 0.598, independently confirmed at 0.5926/0.5932/0.5694/0.5834. Then I wrote:
+*"SC-WBD would have beaten every baseline on units alone."*
+
+**I never computed that.** The counterfactual was one subtraction away: SC-WBD raw
+**2.7847**, best baseline **2.0119**, so a win required raw < 2.595. The defect
+moves SC-WBD from 7th of 7 to **5th of 7** — past persistence and nothing else.
+
+The mechanism was real, the arithmetic was right, and the consequence I asserted was
+false. **Having verified the hard part carefully, I asserted the easy part for
+free.** Rigour spent on a derivation does not transfer to the claim built on top of
+it, and the claim is usually the part that gets quoted.
+
+Note the direction: the overreach made my *own artifact* look worse. It was not
+motivated reasoning, which is precisely why it slipped through — I was not watching
+for bias in the direction of self-criticism. **A claim against yourself still needs
+evidence.**
+
+---
+
+## Entry: verifying a component is not verifying its inputs
+
+Same audit, and this one is worse because I had just written the lesson.
+
+I audited `bootstrap_ci`, confirmed it is genuinely a participant cluster bootstrap,
+traced the resampling, checked that the group vectors were aligned, and filed:
+**"CLEAN — this was the item I most expected to find broken."**
+
+It was receiving **one cluster**. `real_eeg_holdout` collects 640 windows from
+participant-ordered folds of ~2,650 windows each, so every baseline was fit on
+**S001** alone and every model scored on **S008** alone. `bootstrap_ci` takes its
+`n_clusters < 2` branch and returns `nan, nan`. **Every interval in the report was
+`[nan, nan]`** while the prose discussed them overlapping.
+
+I verified the function was correct and never asked what it was called with.
+
+**One message earlier I had written, about the units defect:** *"Each side was
+computed correctly; the error lived in the space between two individually-correct
+computations, where no unit test looks."* I then committed exactly that error, in
+the same audit, having just articulated it.
+
+**Writing down a lesson does not install it.** The register is not a defence; it is
+a record. The operational form of this one: for every component you certify, name
+its inputs and check a real sample of them — `n_clusters`, `n_participants`,
+`n_backends`. **A correctness proof about a function is worthless without a claim
+about its domain.**
