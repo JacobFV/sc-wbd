@@ -1348,7 +1348,18 @@ def _source_card(
         calibration_status=(
             "uncalibrated" if spec.is_simulated else "calibrated_empirically"
         ),
-        leakage_checked=True,
+        # NOT hard-coded.  This field asserts to every downstream gate that a
+        # participant-level leakage audit ran and passed; it must therefore be
+        # backed by one.  ``False`` is the schema default and means "not
+        # established", which is the honest reading when nothing has run.
+        #
+        # It was previously ``True`` unconditionally.  That was not carelessness
+        # but **staleness**: it was written when the only observation sources
+        # were ones whose splits had been audited by hand, and nothing forced
+        # re-examination when the trainer later began building splits that were
+        # never audited at all.  A default that was true when written, in a
+        # pipeline that stopped guaranteeing it.
+        leakage_checked=bool(getattr(spec, "leakage_audited", False)),
         target_ports=tuple(f"{rid}.{port}" for rid in region_ids),
         ledger=_sensitivity(units, bias=(-halfwidth, halfwidth), measurement=variance),
     )

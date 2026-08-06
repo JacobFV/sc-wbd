@@ -64,8 +64,8 @@
     "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
   },
   "per_source_contribution": {
-    "anatomical_prior": 0.1149791817997979,
-    "sim_wholebrain": 0.8850208182002022
+    "anatomical_prior": 0.13138595787763466,
+    "sim_wholebrain": 0.8686140421223654
   },
   "gradient_permission_audit": {
     "anatomical_prior": {

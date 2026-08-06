@@ -149,6 +149,17 @@ class SourceSpec:
     validity_overlap: float = 1.0  # overlap with the target validity domain
     hierarchy_depth: int = 1  # participants nested in sites nested in studies
     # --- bookkeeping ---
+    #: Has a **participant-level leakage audit actually run and passed** for this
+    #: source?  Default ``False`` meaning *not established* -- which is the only
+    #: safe default, because an audit that never ran and one that passed are
+    #: otherwise indistinguishable downstream.
+    #:
+    #: This exists because ``compiler_bridge`` previously hard-coded
+    #: ``leakage_checked=True`` on every observation card, asserting to every
+    #: gate that consumes source cards a property nothing had established.  Only
+    #: set this from the result of a real audit -- see
+    #: ``FoundationTrainer._audit_real_split``.
+    leakage_audited: bool = False
     is_simulated: bool = False
     is_teacher: bool = False
     enabled: bool = True

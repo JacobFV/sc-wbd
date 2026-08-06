@@ -289,6 +289,70 @@ class FoundationTrainer:
         return out
 
     # ------------------------------------------------------------------
+    # leakage barrier
+    # ------------------------------------------------------------------
+    def _audit_real_split(self, split: Mapping[str, Any], dataset: Any) -> dict[str, Any]:
+        """Refuse to train on measured data whose split has not been audited.
+
+        Measured human recordings are the only source in this run that can
+        support a claim about brains, and a participant appearing on both sides
+        of the split turns memorisation of that person into a reported
+        generalisation (refusal **R10**).  Unlike the corpus limitations, this
+        one cannot be caveated afterwards -- it invalidates every held-out number
+        the model could produce.
+
+        So this is a **gate, not a report**: it runs before the first measured
+        window reaches a loss, and raises rather than warning.  It also records
+        the verdict on the source specs, which is what makes
+        ``leakage_checked`` in the compiled schema mean something.
+        """
+        from .realdata import leakage_check
+
+        audit = leakage_check(split, dataset)
+        self.leakage_audit = audit
+        backend = audit.get("split_backend", "unknown")
+
+        if not audit["ok"]:
+            raise RuntimeError(
+                "participant-level leakage audit FAILED (R10); refusing to train on "
+                "measured data. Violations: "
+                + json.dumps(audit["violations"][:5], default=str)
+            )
+        if backend != "grouped_splitter":
+            raise RuntimeError(
+                f"leakage audit passed but the split backend is {backend!r}, not "
+                "'grouped_splitter'. R10 requires grouping by immutable lineage before "
+                "splitting; a split that is merely disjoint was not constructed to be. "
+                f"reason={audit.get('split_fallback_reason', '')!r}"
+            )
+
+        # The audit ran and passed -> the schema may now say so.  Only measured
+        # sources are covered: a simulated source has no participants, and
+        # asserting a leakage check over one would be the same empty claim in a
+        # different place.
+        for sid, spec in list(self.sources.items()):
+            if not spec.is_simulated:
+                self.sources[sid] = SourceSpec(**{**spec.as_dict(), "leakage_audited": True})
+
+        print(
+            f"[leakage] R10 audit PASSED  backend={backend}  "
+            f"participants train/val/test="
+            f"{audit['n_subjects_per_fold'].get('train')}/"
+            f"{audit['n_subjects_per_fold'].get('val')}/"
+            f"{audit['n_subjects_per_fold'].get('test')}"
+            f" of {audit['n_subjects_total']}",
+            flush=True,
+        )
+        for w in audit.get("warnings", []):
+            print(f"[leakage] warning: {w}", flush=True)
+        gs = audit.get("grouped_splitter_audit") or {}
+        if gs:
+            print(f"[leakage] GroupedSplitter cross-check ok={gs.get('ok')}", flush=True)
+            for w in gs.get("warnings", []):
+                print(f"[leakage] cross-check warning: {w}", flush=True)
+        return audit
+
+    # ------------------------------------------------------------------
     # data
     # ------------------------------------------------------------------
     def build_data(self) -> None:
@@ -333,6 +397,10 @@ class FoundationTrainer:
             ds = EEGMMIDBDataset(rc)
             if len(ds) > 0:
                 split = participant_split(ds, test_fraction=d.real_test_fraction, val_fraction=0.1, seed=d.seed)
+                # HARD GATE, before a single measured window can reach a loss.
+                # The routine existed and simply was not called; Stage III was
+                # gated by a coordinator remembering to ask, which worked once.
+                self._audit_real_split(split, ds)
                 self.real_dataset = ds
                 self.real_split = split
                 self.real_train = torch.utils.data.Subset(ds, split["train"])

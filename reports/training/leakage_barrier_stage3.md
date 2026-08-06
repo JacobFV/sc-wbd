@@ -137,3 +137,38 @@ information**, and it came attached to a pass rather than a failure.
 
 Worth copying into any future audit: report what the result **cannot** support,
 not only whether it holds.
+
+## An incomplete part of my own fix, stated rather than left to be found
+
+`leakage_checked` is now `bool(spec.leakage_audited)` instead of hard-coded
+`True`. **That removes a false assertion but does not yet make the field
+informative**, and the distinction matters.
+
+The trainer compiles the schema in `__init__` (`_bind_compiler_masks`, line 171),
+while the audit runs later in `build_data` (line 358) — because the audit needs
+the real dataset, which is loaded there. So at compile time the honest answer is
+*"not yet audited"*, and the field reads `False`.
+
+**Consequence: in this trainer the field is now constant-`False`, where it was
+previously constant-`True`.** Both are constants, and a field that always reads
+the same value cannot discriminate — the register's own pattern, in the middle of
+a fix for the register's own pattern.
+
+What is different, and why this ships anyway:
+
+- **`False` is the safe direction.** It under-claims. The failure mode it removes
+  — a downstream gate being told an audit passed when none ran — is gone.
+- **The audit result is recorded where it is true**: `FoundationTrainer.leakage_audit`,
+  the `[leakage]` lines in the training log, and
+  `reports/training/leakage_audit_stage3.json`. The information exists; it is the
+  schema field that does not yet carry it.
+- **Nothing keys on it.** `leakage_checked` is a declared field; no compiler
+  refusal or gradient mask reads it, so no behaviour depends on the constant.
+
+**Queued follow-up:** compile the schema *after* the leakage audit — or re-bind
+once it passes — so the field tracks the audit rather than the compile order.
+Until then, treat the compiled schema's `leakage_checked` as **uninformative**
+and the audit JSON as authoritative.
+
+Recorded because "I fixed the hard-coded `True`" would be a true statement that
+implies more than was achieved.
