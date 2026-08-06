@@ -463,3 +463,83 @@ Two honest possibilities, and the second is a real outcome:
 
 Filed as a precondition on A1, not as a defect to be fixed by whoever gets
 there first.
+
+### Resolved: the prior supports a *binary* cortical split, and nothing finer
+
+🧠 Cajal, 2026-08-06, merged to `master`. This answers the question the previous
+section left open, and the answer is possibility 2, softened.
+
+Decided by a **pre-fixed** rule — ship the finest candidate where *every* pair
+separates — under a Váša spin null, 1000 spins, BH-FDR:
+
+| candidate | pairs separating | verdict |
+|---|---|---|
+| Yeo-7 | 6 of 21 | rejected |
+| C4 | 4 of 6 | rejected |
+| C3 | 2 of 3 | rejected |
+| **unimodal / association** | **1 of 1** | **shipped** |
+
+Landed partition, verified in the main checkout: **9 families.**
+
+```
+cortex_unimodal      n=138  measured_separation   has_regional_data
+cortex_association   n=262  measured_separation   has_regional_data
+subcortex_{accumb,amyg,caud,hippo,pal,put,thal}   n=2 each
+                            atlas_separation      prior_only_untrained
+```
+
+**This supersedes the 402/414 figure above.** That count came from
+`derive_families`' Yeo-7 fallback, which Cajal's spin test rejects — 6 of 21
+pairs separating is not a partition. The honest split is 138 / 262 over cortex
+plus 14 subcortical parcels, and 138/400 = 34.5% is a large enough contrast for
+A1 to have power. The earlier concern was right in form and wrong in magnitude.
+
+**Two negative results drove the design, and both are load-bearing:**
+
+- **Von Economo–Koskinas cytoarchitecture fails globally** on every block we
+  hold — receptor p=0.19, timescale p=0.20, myelin+thickness p=0.34,
+  metabolic p=0.79 — despite crosswalking cleanly. Cytoarchitecture is carried
+  as description and **barred from justifying a family**.
+- **`SomMot` vs `Vis` do not separate** (q=0.49/0.78). §6.1's separate visual
+  and auditory families are **not resolvable on the evidence we hold**.
+
+Cajal shipped **fewer families than the paper's list** and put auditory,
+cerebellar and brainstem/hypothalamic into `declared_absent` with reasons,
+because `validate()` refuses empty families — so "we have no cerebellum" cannot
+be encoded as "we have a cerebellum family". That is N-4 working as designed.
+
+**Refused:** the Mesulam laminar join. `mesulam_scale033.csv` is a bare integer
+column whose positional join onto Desikan-Killiany puts precentral and
+postcentral in the *paralimbic* class (0.00 agreement both ways). Accepting it
+would have produced a laminar field plausible in shape and wrong in content.
+`laminar_differentiation` is `None` everywhere, and the check ships as a test
+that fails if the join ever becomes defensible.
+
+**Guards verified by mutation, not assertion.** With `validate()` stubbed to a
+no-op, all 14 guard tests fail. With `CORTICAL_FAMILY_DEFINITION` replaced by an
+anatomy-free regrouping, the separation test fails (F=7.45, p=0.29) — and that
+test carries its own control, a size- and smoothness-matched spun partition
+that must separate *less*, without which it would pass for any contiguous split
+of cortex.
+
+**The open question, now sharp.** Both cortical families currently resolve to
+the same backend, so operator-wise the cortex is still homogeneous. The
+measured separation is on receptor profile, intrinsic timescale and
+myelin/thickness — which supports different **parameters** of one operator.
+Whether it supports different **operator families** is exactly the §2.1-versus-θ
+distinction, and it is A1's hypothesis, not a premise A1 may assume. Cajal's
+**N-7** states it plainly and asks to be attacked: with two cortical families,
+"region-indexed state space" is a *binary* distinction over 400 parcels, much
+closer to §11.4's pooled-vector control than the phrase suggests.
+
+**Also found, in a path Cajal does not own:**
+`tests/foundation/test_contracts.py::test_fallback_anatomy_is_labelled_as_not_biological`
+asserts `provenance == "synthetic_fallback"` while its fixture now loads the
+real 414 prior. It predates Cajal's commits and tests nothing it claims to — a
+decorative guard about the synthetic-prior incident specifically.
+
+**And the subcortex carries §1's named failure mode.** All 33 maps stop at 400.
+The 14 subcortical parcels share **one** E/I value and **one** timescale — 401
+distinct values across 414 regions. Cajal marked those fields `not_established`
+rather than emit an average-brain label (§7 rule 1), so subcortical families
+carry membership and provenance and nothing else.
