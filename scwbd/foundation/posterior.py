@@ -308,7 +308,7 @@ class AmortizedPosterior(nn.Module):
         with torch.no_grad():
             m = float(per[finite].abs().max()) if bool(finite.any()) else float("inf")
             type(self).npe_seen_max = max(type(self).npe_seen_max, m)
-        if type(self).npe_rejected < 3:  # dump the first few, whichever branch
+        if (not bool(keep.all())) and type(self).npe_rejected < 3:  # only real rejections
             with torch.no_grad():
                 print(
                     f"[npe] REJ#{type(self).npe_rejected} all={not bool(keep.any())} "

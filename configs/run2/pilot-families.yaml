@@ -75,3 +75,13 @@ notes: >-
   configs/run2/pilot-pooled-param-matched.yaml, which is capacity-matched to
   this file at +0.27% (1,863,600 vs 1,858,597, measured against the real
   414-parcel prior).
+
+posterior:
+  # 2 -> 0.  train.py passes `nuis = torch.zeros(B, nuisance_dim)`, i.e. the
+  # nuisance targets are a CONSTANT at the origin, so the flow was being asked
+  # to model a point mass in two of its eight dimensions.  That is degenerate:
+  # measured over 120 steps on identical data, nuisance_dim=0 reaches
+  # -log q = 5.30 with 0 rejections, while nuisance_dim=2 does not converge and
+  # rejects continuously.  Restore this to 2 only when real EEG gain and
+  # sensor-noise nuisance values are actually estimated and passed.
+  nuisance_dim: 0
