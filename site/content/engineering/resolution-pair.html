@@ -1,0 +1,226 @@
+title: A measured FAIL, kept as the deliverable — SC-WBD
+description: We built the resolution pair the paper asks for, measured whether it validates, and it does not. The failing measurement is the result.
+nav: engineering
+kicker: Engineering · 04
+heading: A measured FAIL, kept as the deliverable
+standfirst: Parcel-level cortical state carries 5.6% of the whitened EEG lead field. Eight times more parcels barely moves it. Three numbers per parcel moves it nine-fold. The failure is the finding.
+---
+<div class="prose">
+
+<p class="lede">This essay is about a measurement that came out badly and was
+kept. It is the cleanest example on this site of a result whose value is entirely
+in its being negative — it tells you something specific and quantitative about
+what regional brain state <em>is</em>, which a passing measurement would not
+have.</p>
+
+<h2>Eleven refusals on the tin, ten of them able to fail</h2>
+
+<p>The compiler declares eleven refusals. One of them, R02, rejects a
+cross-scale prolongation without a declared restriction partner and tested
+coverage. A comment in the model's compiler bridge read:</p>
+
+<blockquote>
+<p>SC-WBD-001-beta declares no cross-scale prolongation, so R02 has nothing to
+object to — which is the honest state of affairs, not an omission.</p>
+</blockquote>
+
+<p>The first clause was true. The second was not. The restriction/prolongation
+machinery, coverage tests, obstruction certificates and the R02 refusal are all
+implemented in full — the production model simply declared none of it. An empty
+poset does not make a refusal honest. <strong>It makes it inert.</strong></p>
+
+<p>That is exactly the shape catalogued around twenty-six times in our
+<a href="decorative-guards.html">decorative guards register</a>, and coverage
+that cannot fail is worse than no coverage, because it gets counted.</p>
+
+<h2>The pair we declared</h2>
+
+<pre><code>cortical_source_dipole   ≤   parcel
+      (fine)                 (coarse)
+      7498 elements          68 elements
+      4.9 mm nominal         50.3 mm nominal</code></pre>
+
+<p>The fine support is the subject's own cortical source space: one
+normal-oriented current dipole per decimated white-surface vertex. This is the
+support the EEG forward operator is <em>defined on</em> — every column of the lead
+field is one of these dipoles. It is a mesh, not a raster, and it is not nested
+inside the parcel grid in any dyadic sense, which is the whole point of using a
+partial order rather than a resolution index.[[note: Two candidate pairs were
+rejected first, and for reasons worth stating. Vertex-level maps restricted to
+parcels: rejected because the only derived asset on disk holds parcel-level
+values, so the fine support would carry no data. EEG sensors restricted to
+parcels: rejected because sensors are not a finer view of the same physical
+quantity — they are a different quantity related by an operator.]]</p>
+
+<p>The coarse support is where every region's state actually lives, where the
+connectome is defined, and where every prior is tabulated. Restriction is the
+area-weighted parcel mean; prolongation is the indicator fill.</p>
+
+<h2>The measurement</h2>
+
+<p>The question is not <em>“is the coarse view an approximation?”</em> — of
+course it is. The question the paper's boundary check asks is whether the coarse
+view can carry the <em>observable</em>. So: take real evoked responses, restrict
+to parcels, prolong back, push through the lead field, and compare against
+pushing the fine state through directly.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Condition</th><th class="num">Rel. error (whitened)</th><th class="num">Residual sd/ch</th><th class="num">Signal sd/ch</th><th>Verdict</th></tr></thead>
+<tbody>
+<tr><td>Left auditory</td><td class="num">0.969</td><td class="num">1.85</td><td class="num">1.90</td><td><span class="chip fail">fail</span></td></tr>
+<tr><td>Right auditory</td><td class="num">0.968</td><td class="num">1.86</td><td class="num">1.92</td><td><span class="chip fail">fail</span></td></tr>
+<tr><td>Left visual</td><td class="num">0.965</td><td class="num">1.90</td><td class="num">1.97</td><td><span class="chip fail">fail</span></td></tr>
+<tr><td>Right visual</td><td class="num">0.966</td><td class="num">1.86</td><td class="num">1.92</td><td><span class="chip fail">fail</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Read the last two columns together. <strong>The error introduced by coarsening
+is 1.86 noise standard deviations per channel, against a signal of 1.92.</strong>
+The coarse view does not merely lose precision at the boundary — it loses the
+observable.</p>
+
+<h3>Ruling out the estimator</h3>
+
+<p>Those source estimates came from an inverse solver, so the obvious objection
+is that the solver caused it. The same measurement was run on eight synthetic
+ensembles whose fine structure is <em>chosen, not estimated</em>, each scaled to
+match the peak held-out evoked field.[[note: The patches are same-signed and
+geodesic — never Euclidean, because a Euclidean ball crosses sulcal banks and
+would introduce sign oscillation the inverse could be blamed for. A same-signed
+geodesic patch is the physiological unit of EEG generation.]]</p>
+
+<p><strong>Twelve of twelve ensembles fail the pre-registered criterion.</strong>
+Even a field smoother than any parcel — a 40&nbsp;mm correlation length against a
+50&nbsp;mm nominal parcel — still loses 64% of the observable.</p>
+
+<h2>The finding: it is orientation, not resolution</h2>
+
+<p>The prior-free summary is the share of the observable the coarse support can
+carry. Under a prior with no free parameters the decomposition is exactly
+Pythagorean, so the number means something unambiguous.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Restriction</th><th class="num">dof</th><th class="num">Observable retained</th></tr></thead>
+<tbody>
+<tr><td><strong>Declared: scalar parcel mean</strong></td><td class="num">68</td><td class="num">5.6%</td></tr>
+<tr><td>Same, membership scrambled (spatial null)</td><td class="num">68</td><td class="num">0.9%</td></tr>
+<tr><td>Parcels subdivided ×2</td><td class="num">136</td><td class="num">8.0%</td></tr>
+<tr><td>Parcels subdivided ×4</td><td class="num">272</td><td class="num">11.5%</td></tr>
+<tr><td>Parcels subdivided ×8</td><td class="num">542</td><td class="num">16.2%</td></tr>
+<tr><td><strong>Parcel net dipole moment (3 per parcel)</strong></td><td class="num">204</td><td class="num">51.7%</td></tr>
+<tr><td>Best possible restriction of size 68</td><td class="num">68</td><td class="num">100.0%</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Three things fall out, and the third is the result.</p>
+
+<p><strong>The metric responds.</strong> Scrambling the parcellation's spatial
+structure while keeping its parcel sizes drops the retained share by 6.4×. A
+measurement that could not tell those two apart would be reporting nothing —
+which is the first thing to check about any measurement, and the check this
+project now runs by reflex.</p>
+
+<p><strong>68 is not a small number, it is a badly aligned one.</strong> The
+whitened lead field has rank 58, which is <em>less</em> than 68 — so <em>some</em>
+68-dimensional restriction retains 100% of the observable. The parcel restriction
+retains 5.6%. This is a subspace-alignment failure, not a dimension shortage, and
+those have completely different remedies.</p>
+
+<p><strong>It is orientation, not resolution.</strong> Subdividing to 542 coarse
+elements — more than the production model's entire region count — raises the
+retained share only to 16.2%. Keeping <em>three</em> numbers per parcel instead of
+one, the parcel's net dipole-moment vector, raises it to 51.7% on 204 degrees of
+freedom: <strong>nine times what the declared pair retains, and 3.2× better than
+eight times as many scalar parcels.</strong></p>
+
+<blockquote>
+<p>A scalar per parcel throws away the orientation structure that determines the
+sensor field, and no amount of spatial refinement buys it back.</p>
+</blockquote>
+
+<p>The medial wall is not the story either: excluding the unassigned sources —
+6.0% of cortical area — changes the answer by 0.0005.</p>
+
+<h3>The perturbational half, which needs no prior at all</h3>
+
+<p>For a unit focal perturbation at a fine dipole, the fine model predicts one
+sensor topography and the coarse view predicts another. This requires no state
+prior, so it cannot be flattered by a convenient one. Over all 7,498
+dipoles the median relative topography error is <strong>0.977</strong>, and only
+1.9% of locations come in below 0.5.</p>
+
+<p><strong>For 98.1% of cortical locations, a coarse-authoritative model's
+prediction of the sensor response to a focal stimulation is wrong by more than
+half its own magnitude.</strong> That is precisely the TMS query the paper names,
+and the answer is that parcel state cannot answer it.</p>
+
+<h2>Why the failure is the deliverable</h2>
+
+<p>The measurement forces the design and forbids the alternatives. Because the
+parcel support provably cannot carry the observable, a
+<em>coarse-authoritative</em> field would generate observable predictions from a
+state that demonstrably cannot carry them. The authority policy is therefore
+<strong>fine-authoritative</strong> — not as a preference, but as the only
+policy the measurement permits.</p>
+
+<p>And the model does not implement it. All state lives at the coarse node; the
+model holds no source-space object, so the restriction and prolongation operators
+are declared and measured but never applied in the forward pass. Giving the model
+source-space degrees of freedom is a next-generation change, not a patch.</p>
+
+<p>So the honest disposition is: <strong>declared, measured, failing, and written
+down as failing</strong> — in the narrowings register, where it is attackable
+rather than invisible.</p>
+
+<div class="callout">
+<span class="callout-label">Why not just quietly not declare the pair?</span>
+<p>Because that was the status quo, and the status quo was a refusal that could
+not fire. Declaring a pair that fails its boundary check gives R02 something real
+to check and gives the next person a number to beat. Not declaring it gives
+everyone a green board.</p>
+</div>
+
+<h2>A refusal that could be switched off by declaring something</h2>
+
+<p>One more finding came out of this work, and it is the most structurally
+interesting thing on the page.</p>
+
+<p>R12 is a local refusal that designates a checkpoint as an equal-capacity
+<em>control arm</em> if it has constant operator assignment <em>and</em> declares
+no prolongation. Which means: <strong>declaring a prolongation switches the
+control-arm designation off.</strong> Same config, same model, one declaration
+added — and an artifact that was correctly labelled a control is no longer
+labelled at all.</p>
+
+<p>A config key that turns a refusal off is an <em>exemption</em>, not a
+declaration.</p>
+
+<p>The fix is composition rather than a third condition: R12 must read
+<strong>R02's verdict</strong>, not the mere presence of a declaration. R02 asks
+whether the prolongation is any good; R12 may only be discharged by a declaration
+that R02 passed. The pair measured here fails 12 of 12, so under that rule it
+correctly does <em>not</em> switch R12 off.</p>
+
+<blockquote>
+<p>Wherever two refusals compose, the weaker one must consume the stronger one's
+<strong>verdict</strong> rather than its <strong>declaration</strong>. Otherwise
+the pair is an opt-out mechanism for whoever files first.</p>
+</blockquote>
+
+<p>The person who found this wrote the one-line change, discovered it broke two
+tests encoding the opposite intent, and <strong>reverted rather than landing
+it</strong> — escalating it as a ruling for someone else to make instead. That is
+the right call, and it is why this is a governance rule rather than a
+patch.[[note: The same person also flagged, against their own work, that the
+failure R02 targets is not yet representable in this artifact's forward pass —
+the surrogate-blindness corollary from essay 02, applied by its discoverer to
+their own new instrument on the day they built it.]]</p>
+
+<p class="lede"><a href="declared-narrowings.html">Next: declaring where the
+implementation is narrower than the paper →</a></p>
+
+</div>

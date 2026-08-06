@@ -1,0 +1,187 @@
+title: SC-WBD — Integrated whole-brain modelling across modalities, scales and dynamics
+description: A research programme building the measurement machinery for individualised, non-invasive neurotechnology. No trained model here beats its baselines yet, and this site says so.
+nav: index
+kicker: SC-WBD-001 series
+heading: A whole-brain model you are allowed to disbelieve
+standfirst: SC-WBD is a research programme building individualised models of a single brain across modalities, spatial scales and timescales — and, more unusually, the apparatus for finding out when those models are wrong.
+---
+<div class="prose">
+
+<p class="lede">Most of what exists here today is not a model. It is the
+machinery that decides whether a model has earned anything: a compiler that
+refuses malformed scientific claims, an anatomy prior built from measured
+evidence and pruned by null tests, and a register of every place our
+implementation is narrower than our paper.</p>
+
+<p>That emphasis is not modesty. It is the result of running the experiment and
+losing. Our first trained artifact was beaten by five of six statistical
+baselines, and the diagnosis took longer than the training
+run.[[note: The training run cost 134 seconds in the stage that mattered. The
+diagnosis ran for days. See <a href="engineering/variance-channel.html">The most
+expensive 134 seconds</a>.]] Working out <em>why</em> produced better material
+than a win would have.</p>
+
+<div class="keyfig">
+  <div><span class="n">414</span><span class="l">parcels in the anatomy prior<br>400 cortical + 14 subcortical</span></div>
+  <div><span class="n">11</span><span class="l">compiler refusals<br>each with a test that makes it fire</span></div>
+  <div><span class="n fail">0</span><span class="l">validated claims about brains<br>all five claim gates <span class="chip unknown">could_not_run</span></span></div>
+</div>
+
+<h2>What exists today</h2>
+
+<p>Stated at the granularity someone could check. Every row below is a thing you
+could run.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Component</th><th>State</th><th>What it is</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>Schema and compiler</strong></td>
+  <td><span class="chip pass">built</span></td>
+  <td>Typed contracts for units, clocks, frames and transform lineage, with <strong>eleven refusals</strong> (R01–R11) that fail closed rather than warn.[[src: scwbd/schema/refusals.py]] A twelfth, R12, is local to this repository and fires at checkpoint emission.</td>
+</tr>
+<tr>
+  <td><strong>Anatomy prior</strong></td>
+  <td><span class="chip pass">built</span></td>
+  <td>414 parcels — 400 Schaefer cortical, 14 Tian subcortical — carrying receptor density, intrinsic timescale, myelin and thickness. Partitioned into <strong>nine families</strong> by a pre-fixed rule under a spin null.[[note: The rule was fixed before the test ran: ship the finest candidate partition in which <em>every</em> pair of families separates. Yeo-7 separated 6 of 21 pairs and was rejected. The surviving split is binary over cortex — <code>cortex_unimodal</code> (138 parcels) and <code>cortex_association</code> (262) — plus seven subcortical families of two parcels each.]]</td>
+</tr>
+<tr>
+  <td><strong>Dynamics backends</strong></td>
+  <td><span class="chip pass">built</span></td>
+  <td>Six generative backends — Wilson–Cowan, Jansen–Rit, reduced Wong–Wang, Stuart–Landau, Kuramoto, Linear–Gaussian — plus an equal-capacity learned control, interchangeable by one config key.[[note: Twelve backends are registered in total once the four engineered per-family backends are counted. Only three of the six generative ones are typed <code>mechanistic</code> in the code; Stuart–Landau and Linear–Gaussian are <code>effective</code> and Kuramoto is <code>functional</code>. The distinction is in the source and we keep it.]]</td>
+</tr>
+<tr>
+  <td><strong>Simulated corpus</strong></td>
+  <td><span class="chip pass">built</span></td>
+  <td>37,888 trajectories over 414 parcels at 125&nbsp;Hz, generated from five of the backends.[[src: reports/run2_corpus.md]]</td>
+</tr>
+<tr>
+  <td><strong>Real EEG corpus</strong></td>
+  <td><span class="chip pass">built</span></td>
+  <td>109 PhysioNet participants, 64 channels, split <strong>71/11/27</strong> and verified participant-disjoint. This is real human recording and is kept strictly separate from the simulated corpus.[[note: The repository is emphatic about this and so are we: a simulated corpus can never be evidence that the model has learned anything about biology. Conflating the two corpora would be the most basic error available to this project.]]</td>
+</tr>
+<tr>
+  <td><strong>TMS impulse-response path</strong></td>
+  <td><span class="chip unknown">partial</span></td>
+  <td>A validated E-field solver joined to the latent dynamics as an additive drive. The <em>field</em> computations pass their gates; the mapping from drive to neural response is explicitly flagged unvalidated in code, because no checkpoint has been trained on perturbational data.[[src: scwbd/intervene/impulse_response.py]]</td>
+</tr>
+<tr>
+  <td><strong>Trained model that beats baselines</strong></td>
+  <td><span class="chip fail">does not exist</span></td>
+  <td>Run 1's artifact lost. Run 2's pilot is training now. Nothing on this site should be read as a claim that we have one.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2>Who this is for</h2>
+
+<p>Three audiences, and the site is honest that only the first is served today.</p>
+
+<ul>
+<li><strong>Researchers building multimodal brain models.</strong> The compiler,
+the refusal set and the identifiability machinery are usable now and are the
+part we would most like attacked.</li>
+<li><strong>People designing non-invasive interventions</strong> — TMS, tFUS —
+who need a feasible-set discipline rather than an optimiser that will happily
+recommend something unsafe. The safety gating exists and refuses by
+default.[[note: A plan declaring intent to drive real hardware or to be applied
+to a person is refused unless a record exists that a preliminary review
+<em>occurred</em> with an approving outcome. A valid authorisation record is
+necessary and explicitly not sufficient, and the gate does not open when a
+calendar date passes — there is a test that runs the clock forward to 2027 to
+prove it.]]</li>
+<li><strong>Clinicians and patients.</strong> Not served. Nothing here is a
+medical device or a clinical claim, and the speculative section is clearly
+marked as speculation.</li>
+</ul>
+
+<h2>The paper</h2>
+
+<p>The technical thesis, falsification programme and implementation contract are
+one document, built from LaTeX source in this repository rather than shipped as
+a stale PDF.[[note: Built with <code>make paper</code>, which runs
+<a href="https://tectonic-typesetting.github.io/">tectonic</a> over
+<code>paper/sc_wbd_frontiers.tex</code>. 29 pages. The source is the artifact;
+the PDF is a build product.]] It is marked <em>Draft — pending development</em>
+and asserts no completed empirical result.</p>
+
+<div class="dl-row">
+  <a class="btn primary" href="paper/sc-wbd.pdf">Download the paper (PDF, 29pp)</a>
+</div>
+
+<div class="todo">
+<span class="todo-label">Jacob — repository link</span>
+<p><strong>This checkout has no git remote configured</strong>
+(<code>git remote -v</code> is empty), so I could not link the repository or
+verify a canonical URL. Every “view source” link on this site is currently
+rendered as a plain path rather than a dead hyperlink.</p>
+<p>Set <code>SITE_REPO_URL</code> in <code>site/build.py</code> (or export it
+before <code>make site</code>) once the public repository exists, and the
+provenance chips throughout the engineering essays become links.</p>
+</div>
+
+<h2>Video</h2>
+
+<p>Two short pieces, rendered from code so that every figure in them comes from
+the same source as the figures on this site.[[note: Built with
+<a href="https://www.remotion.dev/">Remotion</a> under <code>video/</code>,
+rendered locally with <code>make video</code>, and uploaded to object storage
+with <code>make video-upload</code>. Media is never committed to the repository —
+the compositions are the source, and the MP4s are build products.]]</p>
+
+{{video_section}}
+
+<h2>How to read the engineering section</h2>
+
+<p>It is written as engineering essays, not as marketing. The failures are the
+content. Each one is a defect we found in our own work, usually with an
+instrument we had built to find defects, and several of them were found
+<em>inside the machinery built to catch exactly that class of defect</em>.</p>
+
+<blockquote>
+<p>A constant is the most convincing possible measurement. It is perfectly
+reproducible, it has zero variance across runs, and it never contradicts itself.
+Every property that makes a number trustworthy is maximised by a number that
+cannot move.</p>
+</blockquote>
+
+<p>That sentence cost us a training run. <a href="engineering/index.html">The
+engineering essays</a> explain how.</p>
+
+<h2>What we will not claim</h2>
+
+<p>Every number on this site is traceable to a file in the repository. Where a
+figure could not be traced, there is a prompt for a human rather than a
+plausible number.[[note: This is not a stylistic preference. The project has been
+burned repeatedly by relayed figures — in one case a single dropped qualifier
+inverted a claim's meaning, and in another a reported percentage came from a
+script with a bug in the statistic itself. The standing rule is
+<em>regenerate from source; do not audit the table.</em>]] Specifically, we do
+not claim:</p>
+
+<ul>
+<li>that any model here has learned anything about biology;</li>
+<li>that the TMS response mapping predicts a real response;</li>
+<li>that heterogeneous regional state beats a pooled vector — that is run 2's
+pre-registered hypothesis, not a result;</li>
+<li>that the artifact is commercially unencumbered. The strongest supportable
+statement is <em>“no established restriction remains on the default path”</em>,
+and that is not the same sentence.</li>
+</ul>
+
+<div class="todo">
+<span class="todo-label">Jacob — content only you can write</span>
+<p>Deliberately left blank rather than invented: <strong>who is behind this
+project</strong> (team, roles, affiliations), <strong>institutional and funding
+context</strong>, <strong>a contact route</strong>, and <strong>any roadmap
+dates</strong>. I have no verifiable source for any of it and will not guess at
+biography or timelines.</p>
+<p>The paper's PDF metadata names <code>Jacob Valdez</code> as author and
+<code>SuperCognition Labs</code> appears in <code>pyproject.toml</code> — that is
+the extent of what I could verify, and it is not enough to write an about
+section from.</p>
+</div>
+
+</div>
