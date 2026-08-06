@@ -621,10 +621,19 @@ def sidecar_from_checkpoint(
         "id": str(ck.get("model_id", "unnamed")),
         "claim_class": "surrogate",
         "posterior_class": "pseudo",
+        # A single global `local_core` string *is* the control arm: one operator
+        # for all regions is exactly `body.tex` Sec. 11.4's equal-capacity
+        # generic-operator control (reports/scope_gap.md G-1), and refusal R12
+        # enforces the same thing at checkpoint emission. So the derivation is
+        # not a heuristic about truthiness -- it reads the one config field that
+        # decides which arm the artifact is. An explicit `is_control_arm=`
+        # overrides it; an artifact that declares neither stays the control arm.
         "is_control_arm": (
             is_control_arm
             if is_control_arm is not None
-            else bool(ck.get("config", {}).get("model", {}).get("local_core"))
+            else isinstance(
+                ck.get("config", {}).get("model", {}).get("local_core"), str
+            )
         ),
         "arm": control_arm_of,
         "anatomy": {

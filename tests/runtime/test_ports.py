@@ -307,3 +307,77 @@ class TestSpanEnforcementUnderNarrowingN1:
         with pytest.raises(SpanViolation) as exc:
             ported.read("brainstem", "rate_e")
         assert "no storage was supplied" in str(exc.value)
+
+
+class TestTheRemainingRefusalsAlsoFire:
+    """Guards I added must not join the class this work exists to close."""
+
+    @pytest.mark.parametrize(
+        "kwargs, fragment",
+        [
+            ({"dim": 0}, "declares dim=0"),
+            ({"dim": -1}, "declares dim=-1"),
+            ({"clock": ""}, "declares no clock"),
+        ],
+    )
+    def test_a_malformed_port_declaration_is_refused(self, kwargs, fragment):
+        base = dict(family="f", name="p", dim=1, units="Hz", clock="fast")
+        base.update(kwargs)
+        with pytest.raises(ValueError) as exc:
+            DeclaredPort(**base)
+        assert fragment in str(exc.value)
+
+    def test_ports_of_an_undeclared_family_is_refused(self, run2):
+        with pytest.raises(UndeclaredPort) as exc:
+            run2.ports_of("cerebellar")
+        assert "cerebellar" in str(exc.value)
+        assert "declared families" in str(exc.value)
+        # the declared ones still answer
+        assert len(run2.ports_of("hippocampal")) == 2
+
+    def test_width_of_an_undeclared_family_is_refused(self, run2):
+        with pytest.raises(UndeclaredPort):
+            run2.width_of("cerebellar")
+
+    def test_ports_can_be_selected_by_clock(self, run1, run2):
+        assert {p.name for p in run1.ports_on_clock("slow")} == {"hemo"}
+        assert {p.name for p in run1.ports_on_clock("meta")} == {"uncertainty"}
+        assert run1.ports_on_clock("nonexistent") == ()
+        assert {(p.family, p.name) for p in run2.ports_on_clock("slow")} == {
+            ("hippocampal", "rho")
+        }
+
+    def test_a_port_with_no_offset_cannot_be_located(self):
+        """A layout that names ports but does not place them is refused."""
+        contract = PortContract(
+            ports=(
+                DeclaredPort(family="f", name="p", dim=1, units="Hz",
+                             clock="fast", exported=True, offset=None),
+            )
+        )
+        ported = PortedState(contract, torch.zeros(4, dtype=torch.float64))
+        with pytest.raises(SpanViolation) as exc:
+            ported.read("f", "p")
+        assert "declares no offset" in str(exc.value)
+
+    def test_a_region_indexed_entry_may_declare_its_width_as_a_shape(self):
+        """`scwbd.compiler.layout` emits `shape`; `numel` is not always present."""
+        contract = PortContract.from_state_layout(
+            {"entries": [
+                {"region": "r", "component": "c", "shape": [4, 3], "units": "Hz",
+                 "clock": "fast", "boundary": True, "elem_offset": 0},
+            ]}
+        )
+        assert contract.port("r", "c").dim == 12
+
+    def test_the_summary_names_the_shape_of_the_contract(self, run1, run2):
+        assert "6 ports, 3 exported, 1 family" in run1.summary()
+        assert "3 families" in run2.summary()
+        assert run1.digest()[:12] in run1.summary()
+
+    def test_a_port_value_reports_its_own_identity(self, run1):
+        v = PortedState(run1, torch.zeros(454, 28, dtype=torch.float64)).read(
+            UNIFORM_FAMILY, "rate_e"
+        )
+        assert v.qualified == "all_regions.rate_e"
+        assert "units='Hz'" in repr(v)

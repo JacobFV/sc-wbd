@@ -30,6 +30,8 @@ from scwbd.schema.authorization import epoch_seconds
 from scwbd.runtime.provenance import ProvenanceExpectation, ProvenanceMismatch
 from scwbd.runtime.serving import ServedModel, discover_checkpoint
 
+from scwbd.runtime.ports import PortContract
+
 from test_ports import RUN1_LAYOUT, RUN2_LAYOUT
 
 REVIEW_DAY = PRELIMINARY_REVIEW_SCHEDULED.isoformat()
@@ -389,3 +391,101 @@ class TestProspectiveHumanIsGatedNotHardcoded:
         with pytest.raises(ValueError) as exc:
             ModelProvenance(human_use_authorized=True)
         assert "this software does not issue authorization" in str(exc.value)
+
+
+# ---------------------------------------------------------------------------
+# the sidecar helpers
+# ---------------------------------------------------------------------------
+
+class TestTheSidecarHelpers:
+    def test_read_sidecar_returns_the_refusing_defaults_when_absent(self, tmp_path):
+        from scwbd.runtime.admission import read_sidecar
+
+        claims = read_sidecar(tmp_path / "nope.json")
+        assert claims.manifest_id == "absent"
+        assert claims.is_control_arm is True
+        assert claims.anatomy_is_biological is False
+
+    def test_read_sidecar_reads_a_present_one(self, tmp_path):
+        from scwbd.runtime.admission import read_sidecar
+
+        p = tmp_path / "claim_manifest.json"
+        p.write_text(json.dumps(clean_manifest()))
+        claims = read_sidecar(p)
+        assert claims.manifest_id == "scwbd-002-treatment"
+        assert claims.is_control_arm is False
+        assert claims.anatomy_is_biological is True
+
+    def test_deriving_a_sidecar_requires_explicitly_trusting_the_pickle(self, tmp_path):
+        """The serving path never does this; a person does it once, at emission."""
+        from scwbd.runtime.admission import sidecar_from_checkpoint
+
+        with pytest.raises(PermissionError) as exc:
+            sidecar_from_checkpoint(tmp_path / "whatever.pt")
+        assert "weights_only=False" in str(exc.value)
+        assert "executes the pickle" in str(exc.value)
+
+
+@pytest.mark.skipif(
+    not (REAL_RUN1 / "scwbd-001-beta" / "last.pt").is_file(),
+    reason="the real run-1 checkpoint is not on this machine",
+)
+class TestDerivingASidecarFromTheRealArtifact:
+    def test_the_derived_sidecar_records_what_the_checkpoint_actually_says(self):
+        """Regenerated from the checkpoint, not quoted from a report."""
+        from scwbd.runtime.admission import (
+            CheckpointClaims,
+            CheckpointRefused,
+            admit,
+            sidecar_from_checkpoint,
+        )
+
+        side = sidecar_from_checkpoint(
+            REAL_RUN1 / "scwbd-001-beta" / "last.pt",
+            trust_checkpoint_pickle=True,
+        )
+        assert side["id"] == "SC-WBD-001-beta"
+        assert side["anatomy"]["is_biological"] is False
+        assert side["anatomy"]["provenance"] == "synthetic_fallback"
+        # no gate statuses live in a checkpoint, so A4 has nothing to pass on
+        assert side["gates"] == {}
+        # the checkpoint's own state_layout becomes a readable port contract
+        assert side["port_contract_digest"]
+        contract = PortContract.from_state_layout(side["state_layout"])
+        assert contract.is_uniform
+        assert contract.width_of("all_regions") == 28
+        assert {p.name for p in contract.exported_ports()} == {
+            "rate_e", "rate_i", "spectral"
+        }
+
+        # and admitting it for anything live still refuses, naming why
+        with pytest.raises(CheckpointRefused) as exc:
+            admit(
+                CheckpointClaims.from_manifest(side),
+                purpose="live_hardware",
+                review=approving(),
+                as_of=AS_OF,
+            )
+        assert set(exc.value.codes) >= {"A2", "A3", "A4", "A6"}
+
+    def test_a_single_global_local_core_string_is_what_marks_the_control_arm(self):
+        """Not truthiness: the config field that decides which arm this is."""
+        import torch
+
+        from scwbd.runtime.admission import sidecar_from_checkpoint
+
+        ck = torch.load(
+            str(REAL_RUN1 / "scwbd-001-beta" / "last.pt"),
+            map_location="cpu", weights_only=False,
+        )
+        assert isinstance(ck["config"]["model"]["local_core"], str)
+        assert ck["config"]["model"]["local_core"] == "learned"
+        side = sidecar_from_checkpoint(
+            REAL_RUN1 / "scwbd-001-beta" / "last.pt", trust_checkpoint_pickle=True
+        )
+        assert side["is_control_arm"] is True
+        # an explicit declaration overrides the derivation in both directions
+        assert sidecar_from_checkpoint(
+            REAL_RUN1 / "scwbd-001-beta" / "last.pt",
+            trust_checkpoint_pickle=True, is_control_arm=False,
+        )["is_control_arm"] is False
