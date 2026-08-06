@@ -405,3 +405,61 @@ and left them flat. Only state (0.19–0.26) needs Hodgkin's interface, and it i
 any genuine NLL claim must be won — **but none of the run-1 FAIL is
 attributable to its absence.** The residual `horizon=h` embedding is dropped
 outright: 1.7% of the gap is not worth the A1 confound.
+
+### The treatment arm is 97% identical to the control arm
+
+Architect, 2026-08-06, re-derived in the main checkout from
+`derive_families(load_anatomy())` on the real 414-parcel prior. Surfaced by
+📜 Noether while designing R12's populated-families rule.
+
+```
+amygdala              n=  2  core=learned
+basal_ganglia         n=  8  core=basal_ganglia_gate
+cortex_cont           n= 52  core=learned
+cortex_default        n= 91  core=learned
+cortex_dorsattn       n= 46  core=learned
+cortex_limbic         n= 26  core=learned
+cortex_salventattn    n= 47  core=learned
+cortex_sommot         n= 77  core=learned
+cortex_vis            n= 61  core=learned
+hippocampus           n=  2  core=hippocampal_code
+thalamus              n=  2  core=thalamic_relay
+
+learned 402 | basal_ganglia_gate 8 | hippocampal_code 2 | thalamic_relay 2
+```
+
+**11 families, but only 4 distinct operators, and 402 of 414 regions (97.1%)
+run the same one.** The seven cortical families — 400 regions, every cortical
+parcel — are operator-identical. Heterogeneity is 12 regions, 2.9% of the
+brain, all subcortical, with `hippocampus` and `thalamus` at n=2 each.
+`cerebellum` is declared and holds **zero** parcels.
+
+**Why this matters more than it looks.** A1 asks whether heterogeneous
+operator-valued regional state beats a pooled vector. As configured, the
+treatment arm differs from the control in 2.9% of regions. Even if the
+hypothesis is true, the measurable effect is bounded by that fraction, and the
+paired contrast has to find it against the between-participant variance of the
+other 97.1%. **A1 may be underpowered by construction, and would then return a
+null that says nothing about the thesis.**
+
+This is not Hodgkin's defect — the machinery correctly assigns whatever the
+partition declares, and `FamilyPartition.source` distinguishes
+`anatomy_declared` from `derived_by_foundation`. It is a question for the
+anatomy prior: **does the evidence support giving cortical networks distinct
+operators**, or does it not? Receptor density, intrinsic timescale, and
+laminar profile all vary across the Schaefer networks; whether they vary enough
+to justify different *operator families* rather than different *parameters of
+one operator* is exactly the §2.1-versus-θ distinction this whole report is
+about, now asked of the cortex specifically.
+
+Two honest possibilities, and the second is a real outcome:
+
+1. The prior supports cortical operator typing, it was simply never applied,
+   and applying it makes A1 answerable.
+2. The prior does not support it. Then the thesis's differentiator (i) is,
+   on present evidence, a claim about **12 subcortical regions**, and A1 must
+   be redesigned to test that claim rather than a whole-brain one — or declared
+   `COULD_NOT_RUN` for want of an effect large enough to detect.
+
+Filed as a precondition on A1, not as a defect to be fixed by whoever gets
+there first.
