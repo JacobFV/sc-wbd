@@ -51,6 +51,9 @@ from .tags import CheckpointTag
 
 __all__ = [
     "OWNER_LICENCE_DECISION",
+    "OWNER_LICENCE_DECISION_V1",
+    "OWNER_LICENCE_DECISION_2",
+    "LICENCE_DECISION_HISTORY",
     "DOWNSTREAM_REACH_QUESTION",
     "ProvenanceMismatch",
     "SourceFamilyManifest",
@@ -79,7 +82,25 @@ CLAIM_BOUNDARY_PATH = "reports/CLAIM_BOUNDARY.md"
 #: by changing their mind. They cannot: it is forced by ``hansen_receptors`` via
 #: ``BrainPrior``, and removing it means dropping that dataset. The policy
 #: mapping therefore stays empty and the constraint is reported as inheritance.
-OWNER_LICENCE_DECISION: Mapping[str, Any] = {
+#: **SUPERSEDED 2026-08-06 by** :data:`OWNER_LICENCE_DECISION_2`. Kept verbatim.
+#:
+#: The decision below was correct on the facts available when it was made, and
+#: one of those facts has since changed: the receptor-derived E/I prior is no
+#: longer on the default path, so the share-alike term it forced is no longer
+#: inherited. See ``reports/ei_ordering_substitution.md``.
+#:
+#: It is **superseded, not edited**, and the register says why
+#: (``reports/decorative_guards.md``): *you may not amend a fired trigger; you
+#: may supersede it going forward, with both versions visible.* Editing this
+#: dict in place would leave a record that reads as though the owner had always
+#: decided the current thing, erasing that a decision was taken on facts that
+#: later moved — which is the whole content of the event.
+#:
+#: Note in particular the sentence that has been falsified, and by what:
+#: *"removing it means dropping that dataset"* — true, and the dataset was
+#: dropped from the default path. The decision was never wrong; it was
+#: **conditional on an arrangement that no longer holds.**
+OWNER_LICENCE_DECISION_V1: Mapping[str, Any] = {
     "date": "2026-08-06",
     "decision": "accept CC-BY-NC-SA-4.0 inherited from hansen_receptors",
     "terms_accepted": ["noncommercial", "share_alike", "attribution"],
@@ -94,7 +115,89 @@ OWNER_LICENCE_DECISION: Mapping[str, Any] = {
         "artifacts built with the synthetic fallback anatomy, which carry no "
         "Hansen input and are genuinely not NC-SA -- see reports/checkpoint_family.md §4.3"
     ),
+    "superseded_by": "OWNER_LICENCE_DECISION_2",
+    "superseded_on": "2026-08-06",
+    "superseded_because": (
+        "The default anatomical prior no longer reads hansen_receptors, so the "
+        "share-alike term this decision accepted is no longer inherited. The "
+        "decision is not withdrawn and was not wrong: the arrangement it was "
+        "about was changed. Both versions stay visible."
+    ),
 }
+
+#: The current decision. **It does not restate v1's terms; it records what
+#: changed and what is still open**, because a replacement that merely reads
+#: cleaner than its predecessor is how a record loses the fact that anything
+#: happened.
+#:
+#: What changed: 🍃 Mendel substituted the receptor-derived E/I ordering
+#: (2026-08-06, cf37755) and the Harvard-Oxford subcortical geometry, both for
+#: permissively-licensed inputs, keeping each original available as an explicit
+#: opt-in that records itself.
+#:
+#: **What this does NOT establish**, and the reason it is written as a decision
+#: about *removal* rather than a claim of clearance: with
+#: ``is_vacuous_licence_text`` now in force, 18 of 27 anatomy sources state no
+#: terms at all and read ``unknown``. Removing the two established restrictions
+#: does not make the family commercially clear — it makes it **unresolved**, and
+#: that is a different and weaker claim. See ``reports/licence_audit.md`` §8.
+OWNER_LICENCE_DECISION_2: Mapping[str, Any] = {
+    "date": "2026-08-06",
+    "supersedes": "OWNER_LICENCE_DECISION_V1",
+    "decision": (
+        "substitute the two established restricted inputs out of the default "
+        "path and retain each as a self-recording opt-in; make no claim that "
+        "the result is commercially clear"
+    ),
+    "terms_accepted": ["attribution"],
+    "terms_no_longer_inherited_on_the_default_path": {
+        "share_alike": (
+            "forced by hansen_receptors via BrainPrior.ei_ratio_prior(); the "
+            "default ordering is now 'hcp_hierarchy' (hcps1200_maps). Opt back "
+            "in with ei_ratio_prior('hansen_receptors')."
+        ),
+        "noncommercial": (
+            "forced by hansen_receptors, and separately by harvardoxford via the "
+            "Aseg14 subcortical geometry. The default subcortical atlas is now "
+            "Aseg14T (tian2020, attribution-only). Opt back in with "
+            "BrainPrior.load(subcortical_atlas='Aseg14')."
+        ),
+    },
+    "policy_overlay": {},  # still deliberately empty -- nothing here is owner policy
+    "rationale": (
+        "Both substitutions were made on a criterion committed before the "
+        "candidates were measured (97086e7, 36d5ba6), with the measured cost "
+        "reported rather than the licence outcome alone. Neither original was "
+        "deleted: receptor identity has no substitute for the neuromodulator "
+        "control fields of thesis S5, and no measurement in this repository "
+        "establishes that the Melbourne subcortex atlas segments better than "
+        "Harvard-Oxford."
+    ),
+    "still_unresolved": (
+        "18 of 27 anatomy sources have licence fields that state no terms and "
+        "now correctly read unknown -- including hcps1200_maps, which the new "
+        "default E/I ordering depends on. 'No established restriction remains' "
+        "is the strongest supportable claim; 'commercially clear' is not."
+    ),
+    "applies_to": "every arm built with the real (biological) anatomical prior",
+    "does_not_apply_to": (
+        "artifacts already built. Every checkpoint produced before this date "
+        "used the synthetic fallback anatomy (load_anatomy() returns "
+        "provenance='synthetic_fallback'), so none of them inherited either "
+        "term in the first place -- see reports/licence_audit.md headline 5."
+    ),
+}
+
+#: The decision in force. Aliased so existing readers keep working; the history
+#: is in :data:`LICENCE_DECISION_HISTORY` and neither entry is ever rewritten.
+OWNER_LICENCE_DECISION: Mapping[str, Any] = OWNER_LICENCE_DECISION_2
+
+#: Oldest first. A record with one entry and no history cannot show that a
+#: decision was ever revisited.
+LICENCE_DECISION_HISTORY: tuple[Mapping[str, Any], ...] = (
+    OWNER_LICENCE_DECISION_V1,
+    OWNER_LICENCE_DECISION_2,
+)
 
 #: An unsettled legal question, recorded so it is visible and *not* answered.
 #:
@@ -638,6 +741,9 @@ class ProvenanceBlock:
             "licence_summary": lic.summary(),
             "claim_boundary": self.claim_boundary,
             "owner_licence_decision": dict(OWNER_LICENCE_DECISION),
+            # both versions travel; a superseded decision that vanishes from the
+            # artifact is indistinguishable from one that was never made
+            "owner_licence_decision_history": [dict(d) for d in LICENCE_DECISION_HISTORY],
             "downstream_reach_question": dict(DOWNSTREAM_REACH_QUESTION),
             "alias_of": self.alias_of,
             "alias_reason": self.alias_reason,

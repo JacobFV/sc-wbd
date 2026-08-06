@@ -60,7 +60,39 @@ __all__ = [
     "EDR_LAMBDA_PRIOR",
     "load_structural_prior",
     "ControlKind",
+    "SUBCORTICAL_ATLASES",
+    "DEFAULT_SUBCORTICAL_ATLAS",
 ]
+
+#: Which subcortical parcellations may supply the 14 structures the ENIGMA/HCP
+#: connectome resolves.  Both carry the *same* 14 labels in the same order --
+#: that order is fixed by ``strucLabels_sctx.csv`` and is not a choice -- and
+#: differ only in the geometry behind them.  ``licence_key`` is here so the
+#: choice carries its own licence consequence.
+SUBCORTICAL_ATLASES: dict[str, dict[str, str]] = {
+    "Aseg14T": {
+        "licence_key": "tian2020",
+        "description": (
+            "Melbourne Subcortex Atlas S1, merged by structure identity to the "
+            "connectome's 14 aseg structures (anterior + posterior thalamus "
+            "recombined). Licence grants use without restriction subject to "
+            "citation; no non-commercial and no share-alike term."
+        ),
+    },
+    "Aseg14": {
+        "licence_key": "harvardoxford",
+        "description": (
+            "Harvard-Oxford maximum-probability subcortical atlas at 25%. "
+            "NON-COMMERCIAL: 'FSL license (free for non-commercial research)'. "
+            "Retained as an explicit, self-recording choice, not deleted."
+        ),
+    },
+}
+
+#: Permissive by construction.  Harvard-Oxford was the only established
+#: non-commercial term left on the default path once the receptor E/I prior was
+#: substituted out; see ``reports/subcortical_atlas_substitution.md``.
+DEFAULT_SUBCORTICAL_ATLAS: str = "Aseg14T"
 
 ControlKind = Literal[
     "empirical", "randomized", "distance_matched", "dense", "local_only", "graph_only"
@@ -974,6 +1006,7 @@ def load_structural_prior(
     space: str = "fsLR",
     density: str = "32k",
     length: str = "euclidean",
+    subcortical_atlas: str | None = None,
     rebuild: bool = False,
 ) -> StructuralPrior:
     """Build the empirical structural prior for a parcellation.
@@ -1005,7 +1038,18 @@ def load_structural_prior(
             f"Covered parcellations: {sorted(_ENIGMA_KEYS)}. "
             "Refusing to synthesise connectivity for an uncovered parcellation."
         )
-    tag = f"{atlas}__enigma_hcp__{'with' if include_subcortex else 'no'}sctx__{length}"
+    sub_atlas = subcortical_atlas or DEFAULT_SUBCORTICAL_ATLAS
+    if include_subcortex and sub_atlas not in SUBCORTICAL_ATLASES:
+        raise KeyError(
+            f"load_structural_prior: unknown subcortical atlas {sub_atlas!r}; "
+            f"have {sorted(SUBCORTICAL_ATLASES)}"
+        )
+    # The subcortical atlas decides the subcortical centroids and therefore every
+    # subcortical delay, so it belongs in the cache key. Leaving it out would let
+    # a cache built under one atlas be served for another -- silently, and with
+    # the delays of the wrong one.
+    sctx_tag = ("with" + ("" if sub_atlas == "Aseg14" else "-" + sub_atlas)) if include_subcortex else "no"
+    tag = f"{atlas}__enigma_hcp__{sctx_tag}sctx__{length}"
     cache = derived_dir("connectome") / f"{tag}.npz"
     if cache.exists() and not rebuild:
         return StructuralPrior.load(cache)
@@ -1017,7 +1061,7 @@ def load_structural_prior(
     n_ctx = parc_ctx.n_parcels
 
     if include_subcortex:
-        parc_sub = load_parcellation("Aseg14", "MNI152", "1mm")
+        parc_sub = load_parcellation(sub_atlas, "MNI152", "1mm")
         n = n_ctx + parc_sub.n_parcels
         if sc.shape[0] != n:
             raise ValueError(f"{atlas}: connectome is {sc.shape[0]}x{sc.shape[0]}, expected {n}")

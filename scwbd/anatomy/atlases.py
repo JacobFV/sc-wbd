@@ -312,6 +312,12 @@ for _s in (1, 2, 3, 4):
               spaces={"MNI152": ["1mm", "2mm"]})
 _register("Aseg14", builder="aseg14", structure="subcortex",
           spaces={"MNI152": ["1mm", "2mm"]})
+#: The same 14 connectome-resolved structures, delineated by the Melbourne
+#: Subcortex Atlas instead of Harvard-Oxford.  Exists because Harvard-Oxford is
+#: the only established non-commercial term left on the default path; see
+#: ``reports/subcortical_atlas_substitution.md``.
+_register("Aseg14T", builder="aseg14_tian", structure="subcortex",
+          spaces={"MNI152": ["1mm", "2mm"]})
 _register("Buckner7", builder="buckner", k=7, structure="cerebellum",
           spaces={"MNI152": ["1mm", "2mm"]})
 _register("Buckner17", builder="buckner", k=17, structure="cerebellum",
@@ -910,6 +916,107 @@ def _build_aseg14(spec: dict[str, Any], space: str, density: str) -> Parcellatio
     )
 
 
+#: Which Melbourne Subcortex S1 parcels make up each connectome-resolved aseg
+#: structure.  The thalamus is the only merge: Tian S1 splits it into anterior
+#: and posterior divisions and the ENIGMA/HCP connectome resolves one thalamus,
+#: so the two are recombined rather than one being picked.
+#:
+#: This is a join **by structure identity**, never by index — joining these two
+#: atlases positionally is how the pallidum and the putamen get swapped.
+_ASEG14_FROM_TIAN: dict[str, tuple[str, ...]] = {
+    "accumb": ("NAc",),
+    "amyg": ("AMY",),
+    "caud": ("CAU",),
+    "hippo": ("HIP",),
+    "pal": ("GP",),
+    "put": ("PUT",),
+    "thal": ("aTHA", "pTHA"),
+}
+
+
+def _build_aseg14_tian(spec: dict[str, Any], space: str, density: str) -> Parcellation:
+    """The connectome's 14 subcortical structures, delineated by Tian S1.
+
+    Same names, same order, same 14 rows as :func:`_build_aseg14`; different
+    geometry.  Harvard-Oxford is ``"FSL license (free for non-commercial
+    research)"`` and is the only established non-commercial term left on the
+    default path once the receptor E/I prior is substituted out; the Melbourne
+    Subcortex Atlas ships a licence granting use "without restriction … subject
+    to" citing the paper (``assets/src/tian_subcortex/license.txt``).
+
+    **This is a change of delineation, not a re-derivation of the same one.**
+    Measured against Harvard-Oxford over the 14 structures: centroid
+    displacement median 1.58 mm, max 4.23 mm (right accumbens); volume ratio
+    0.74–1.13 for twelve structures and **2.18–2.47 for the accumbens**, which
+    is a genuine disagreement about what counts as accumbens and not a
+    resolution artifact.  The consequence for the model is small because these
+    centroids exist only to produce conduction delays: the subcortical block of
+    the median delay matrix moves by **+0.13 % on signed mean** (p95 |change|
+    0.42 ms, largest single edge 0.95 ms) against a velocity prior whose 95 %
+    interval already spans a factor of nine.  Full comparison, including the
+    candidate this beat, is in ``reports/subcortical_atlas_substitution.md``.
+
+    Neither atlas is ground truth here and nothing measured in this repository
+    establishes which segments subcortex better.  ``Aseg14`` remains available
+    and is selected by ``BrainPrior.load(subcortical_atlas="Aseg14")``.
+    """
+    import nibabel as nib
+
+    tian = load_parcellation("TianS1", "MNI152", density)
+    tlabels = [str(x) for x in tian.labels]
+    lab = np.asarray(tian.voxel_labels)
+    assert tian.affine is not None
+
+    # Build a 14-label volume by merging Tian parcels into the aseg structures,
+    # keeping _ASEG14's order so the connectome's row order still matches.
+    merged = np.full(lab.shape, -1, dtype=np.int64)
+    labels, hemi, sources = [], [], {}
+    for idx, (short, _ho_name) in enumerate(_ASEG14):
+        side, stem = short[0], short[1:]
+        suffix = "-lh" if side == "L" else "-rh"
+        parts = [p + suffix for p in _ASEG14_FROM_TIAN[stem]]
+        missing = [p for p in parts if p not in tlabels]
+        if missing:
+            raise ValueError(
+                f"Aseg14T: Tian S1 has no parcel(s) {missing} for {short!r}; "
+                f"available: {tlabels}"
+            )
+        for p in parts:
+            merged[lab == tlabels.index(p)] = idx
+        labels.append(short)
+        hemi.append(side)
+        sources[short] = parts
+
+    prov = Provenance(
+        atlas_id="Aseg14T",
+        version=S.SRC["tian2020"]["version"],
+        space="MNI152",
+        density=density,
+        template_id="MNI152NLin6Asym",
+        software="scwbd.anatomy (Tian S1 parcels merged by structure identity)",
+        source_url=S.SRC["tian2020"]["url"],
+        license=S.SRC["tian2020"]["license"],
+        citation=S.SRC["tian2020"]["citation"],
+        notes=(
+            "Label *names* and their order follow the FreeSurfer aseg structures "
+            "used by the ENIGMA/HCP connectome (strucLabels_sctx.csv); the "
+            "*geometry* is the Melbourne Subcortex Atlas S1, with anterior and "
+            "posterior thalamus recombined into one thalamus. The two "
+            "delineations differ -- as they do for the Harvard-Oxford build this "
+            "replaces -- so centroids remain approximate stand-ins used only for "
+            "distance and delay computation. Merge map: "
+            + "; ".join(f"{k}<-{'+'.join(v)}" for k, v in sorted(sources.items()))
+        ),
+    )
+    img = nib.Nifti1Image((merged + 1).astype(np.int16), tian.affine)
+    return _from_volume(
+        name="Aseg14T", space="MNI152", density=density, img=img,
+        label_values=np.arange(1, len(labels) + 1), labels=np.array(labels),
+        hemi=np.array(hemi), network=np.full(len(labels), ""),
+        structure=np.full(len(labels), "subcortex"), provenance=prov,
+    )
+
+
 def _build_buckner(spec: dict[str, Any], space: str, density: str) -> Parcellation:
     import nibabel as nib
     import pandas as pd
@@ -989,6 +1096,7 @@ _BUILDERS = {
     "destrieux": _build_destrieux,
     "tian": _build_tian,
     "aseg14": _build_aseg14,
+    "aseg14_tian": _build_aseg14_tian,
     "buckner": _build_buckner,
     "suit": _build_suit,
 }

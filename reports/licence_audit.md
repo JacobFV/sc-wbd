@@ -2,6 +2,39 @@
 
 🍃 Mendel, 2026-08-06. Companion to `reports/ei_ordering_substitution.md`.
 
+> ## ⚠️ UPDATED 2026-08-06, LATER THE SAME DAY
+>
+> **Headlines 1 and 3 below have been acted on and are no longer current. The
+> original text is kept unedited underneath**, because a finding that quietly
+> becomes a fixed finding leaves no record that anything was wrong.
+>
+> | headline | then | now |
+> |---|---|---|
+> | 1. `harvardoxford` is NC and on the default path | true | **fixed** — the default subcortical atlas is `Aseg14T` (Melbourne Subcortex, attribution-only). Harvard-Oxford is opt-in and records itself. `reports/subcortical_atlas_substitution.md` |
+> | 2. six default-path sources state no terms | true | **still true, and now counted honestly: 18 of 27 anatomy sources read `unknown`** |
+> | 3. the classifier reads vacuous fields as `False` | true | **fixed** — `is_vacuous_licence_text` in `scwbd/release/licence.py`, plus a negation guard; `tests/release/test_vacuous_licence.py` |
+> | 4. post-substitution status | NC yes, SA no, clear unknown | **NC no (no *established* term), SA no, commercially clear STILL UNKNOWN** |
+> | 5. no anatomical source reaches the checkpoint | true | **unchanged** — `load_anatomy()` still returns `synthetic_fallback` |
+>
+> **Two registry fields were also found wrong against licence files vendored in
+> this tree**, which is the sharpest single result of the audit:
+>
+> - `tian2020` said *"See repository LICENSE (open, academic use)"*. The licence
+>   grants use **without restriction** subject to citation. The field understated
+>   the grant and invented an "academic use" limit.
+> - `diedrichsen2009` (SUIT) said *"See repository (open, academic use, citation
+>   required)"*. The licence is **CC BY-NC 3.0**. **A genuinely non-commercial
+>   source was recorded as permissive, and the classifier agreed with it.**
+>
+> Both files were on disk the whole time. Nobody read them because the registry
+> field looked like an answer. Every entry that has a vendored licence now
+> carries a `license_text` path to it.
+>
+> **The bottom line has not moved, and is worth stating plainly: removing both
+> established restrictions did not make the family commercially clear. It made
+> it *unresolved*.** That is a weaker claim than "clear" and a stronger one than
+> where we started, and it is the honest one.
+
 > ## 📌 HEADLINE — read this before the tables
 >
 > **Dropping Hansen removes share-alike. It does not make the family

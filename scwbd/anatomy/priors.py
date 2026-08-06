@@ -48,6 +48,8 @@ from ._compat import (
 from .atlases import Parcellation, load_parcellation
 from .connectome import (
     CONDUCTION_VELOCITY_PRIOR,
+    DEFAULT_SUBCORTICAL_ATLAS,
+    SUBCORTICAL_ATLASES,
     TORTUOSITY_PRIOR,
     ConductionDelayModel,
     StructuralPrior,
@@ -215,6 +217,7 @@ class BrainPrior:
         space: str = "fsLR",
         density: str = "32k",
         length: str = "euclidean",
+        subcortical_atlas: str | None = None,
         rebuild: bool = False,
     ) -> "BrainPrior":
         """Assemble the prior for one parcellation.
@@ -230,6 +233,12 @@ class BrainPrior:
             reason is recorded in :attr:`unresolved`.  This is deliberate: an
             invented cerebellar connectome would be worse than none.
         """
+        sub_atlas = subcortical_atlas or DEFAULT_SUBCORTICAL_ATLAS
+        if include_subcortex and sub_atlas not in SUBCORTICAL_ATLASES:
+            raise KeyError(
+                f"BrainPrior.load: unknown subcortical atlas {sub_atlas!r}; "
+                f"have {sorted(SUBCORTICAL_ATLASES)}"
+            )
         parc = load_parcellation(atlas, space, density)
         sp = load_structural_prior(
             atlas,
@@ -237,6 +246,7 @@ class BrainPrior:
             space=space,
             density=density,
             length=length,
+            subcortical_atlas=subcortical_atlas,
             rebuild=rebuild,
         )
         geom = parcel_geometry(parc)
@@ -245,7 +255,7 @@ class BrainPrior:
         labels = sp.labels
         n_ctx = parc.n_parcels
         if include_subcortex:
-            sub = load_parcellation("Aseg14", "MNI152", "1mm")
+            sub = load_parcellation(sub_atlas, "MNI152", "1mm")
             hemi = np.concatenate([parc.hemi, sub.hemi])
             network = np.concatenate([parc.network, sub.network])
             structure = np.concatenate([parc.structure, sub.structure])
@@ -345,10 +355,27 @@ class BrainPrior:
                         ]
                         # the parcellation used for subcortex is a real input and
                         # was previously unlisted -- see reports/licence_audit.md
-                        + (["harvardoxford"] if include_subcortex else [])
+                        + ([SUBCORTICAL_ATLASES[sub_atlas]["licence_key"]]
+                           if include_subcortex else [])
                         + (["buckner2011"] if include_cerebellum else [])
                         + [k for k in map_source_keys if k in S.SRC]
                     )
+                },
+                "subcortical_atlas": {
+                    "name": sub_atlas if include_subcortex else None,
+                    "licence_key": (
+                        SUBCORTICAL_ATLASES[sub_atlas]["licence_key"]
+                        if include_subcortex else None
+                    ),
+                    "licence": (
+                        S.SRC[SUBCORTICAL_ATLASES[sub_atlas]["licence_key"]]["license"]
+                        if include_subcortex else None
+                    ),
+                    "is_default": sub_atlas == DEFAULT_SUBCORTICAL_ATLAS,
+                    "description": (
+                        SUBCORTICAL_ATLASES[sub_atlas]["description"]
+                        if include_subcortex else "subcortex excluded by request"
+                    ),
                 },
                 "sources_note": (
                     "This is what the assembled object CARRIES, which is a superset "

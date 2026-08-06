@@ -53,6 +53,7 @@ __all__ = [
     "UNKNOWN_TERM",
     "is_noncommercial_text",
     "is_share_alike_text",
+    "is_vacuous_licence_text",
     "term_from_licence_text",
     "term_from_dataset_card",
     "anatomy_nc_inputs",
@@ -85,17 +86,118 @@ _ATTRIB_PATTERNS = (
 )
 _UNKNOWN_PATTERNS = (re.compile(r"^\s*unknown", re.I),)
 
+#: Strings that are *present* but state no terms. Added 2026-08-06 (🍃 Mendel).
+#:
+#: The guard below already refused to launder an **absent** licence into
+#: ``False``. It laundered a **vacuous** one, which is epistemically identical:
+#: ``"As distributed via neuromaps"`` names no terms, and neuromaps' own entry
+#: says ``"per-annotation source terms"``, so the pair resolves in a circle
+#: while every individual field is non-empty and the classifier reports "no
+#: restriction". Six of the twelve sources on the anatomy default path were
+#: being read this way (``reports/licence_audit.md`` §1).
+#:
+#: This is the register's own pattern — an unknown recorded as a zero — sitting
+#: inside the machinery built to prevent it. The docstrings stated the right
+#: principle and the code implemented it for one of the two cases.
+#:
+#: **Reading these as ``None`` is expected to move several arms from "clear" to
+#: "unknown". That is the correct direction: unknown is what we have.**
+_VACUOUS_PATTERNS = (
+    # "As distributed via neuromaps", "As released with the cited papers"
+    re.compile(r"^\s*as (distributed|released|provided|published)\b", re.I),
+    # "See repository LICENSE (open, academic use)", "See LICENSE file"
+    re.compile(r"^\s*see\s+(the\s+)?(repository|license|licence|LICENSE)\b", re.I),
+    # a bare regime name with no terms: "FreeSurfer license", "EBRAINS terms",
+    # "HCP open-access data-use terms", "ADNI Data Use Agreement"
+    re.compile(
+        r"^[\w\-/ ]{0,60}?\b(licen[cs]e|terms|agreement|dua)\b[\s\.]*$", re.I
+    ),
+)
+
+#: Phrases that *deny* a constraint. ``\bnon[-\s]?commercial\b`` matches "no
+#: non-commercial term" exactly as it matches "non-commercial use only", and a
+#: licence field written to be helpful ("Attribution required; no
+#: non-commercial or share-alike term") was classified NC by this module on
+#: 2026-08-06. Found by writing exactly that field and watching a test fail.
+#:
+#: This is a *narrow* fix and it is not a sentence parser: it suppresses a match
+#: only when the constraint word is immediately preceded by an explicit denial.
+#: The durable remedy is upstream — a ``license`` field states the licence's own
+#: terms and nothing else — which is why ``sources.SRC["tian2020"]`` now carries
+#: its commentary in ``bias``.
+_NEGATION = re.compile(
+    r"\b(no|not|without|free\s+of|neither)\s+(\w+\s+){0,2}$", re.I
+)
+
+
+def _matches(text: str, patterns: tuple[re.Pattern[str], ...]) -> bool:
+    """Any pattern matches, ignoring occurrences that are explicitly negated."""
+    for p in patterns:
+        for m in p.finditer(text):
+            if not _NEGATION.search(text[: m.start()]):
+                return True
+    return False
+
+
+#: Clauses that **defer** to terms this repository has not read, appearing
+#: anywhere in a field rather than at its start.
+#:
+#: This catches the *compound* case, which the anchored patterns above miss and
+#: which is where the remaining laundering lived:
+#: ``"BSD-3-Clause code; HCP open-access data-use terms for the underlying
+#: scans"`` reads ``False`` under an anchored test because its first clause is a
+#: real licence — while the clause that governs the **data** states nothing.
+#: ``"MIT (CBIG); underlying GSP data under its own terms"`` is the same shape.
+#:
+#: Deliberately conservative: a field with any deferring clause is undetermined
+#: for *every* constraint, because the deferred clause could carry any of them.
+#: This is expected to move sources from "no restriction" to "unknown", which is
+#: the direction the evidence supports.
+_DEFERRAL_MARKERS = (
+    re.compile(r"under (its|their) own terms", re.I),
+    re.compile(r"per[-\s]annotation source terms", re.I),
+    re.compile(r"\b(data[-\s]use|open[-\s]access|EBRAINS)\s+terms\b", re.I),
+    re.compile(r"\b(research|academic)\s+use\b", re.I),
+    re.compile(r"\b(data use agreement|material transfer agreement|\bDUA\b)", re.I),
+    re.compile(r"as (released|distributed) with", re.I),
+)
+
+
+def is_vacuous_licence_text(text: str | None) -> bool:
+    """Is this a licence field that *points at* terms instead of stating them?
+
+    ``True`` means the field establishes nothing about at least one of the works
+    it covers, so every constraint must be reported as unknown. It is not a
+    judgement about the upstream licence — only about whether this repository
+    has read it.
+    """
+    if not text:
+        return False  # absent, not vacuous; the callers handle absent first
+    s = str(text).strip()
+    return any(p.match(s) for p in _VACUOUS_PATTERNS) or any(
+        p.search(s) for p in _DEFERRAL_MARKERS
+    )
+
+
+def _undetermined(text: str | None) -> bool:
+    return (
+        not text
+        or bool(_UNKNOWN_PATTERNS[0].match(str(text)))
+        or is_vacuous_licence_text(text)
+    )
+
 
 def is_noncommercial_text(text: str | None) -> TriState:
     """Does this licence string impose a non-commercial restriction?
 
-    Returns ``None`` for an unknown/absent licence: an unlicensed dataset is
-    not thereby commercially usable, and saying ``False`` here would be the
-    laundering step.
+    Returns ``None`` for an absent, unknown **or vacuous** licence: an
+    unlicensed dataset is not thereby commercially usable, and saying ``False``
+    here would be the laundering step. A field that points at a licence without
+    stating it is in exactly the same position as one that is missing.
     """
-    if not text or _UNKNOWN_PATTERNS[0].match(str(text)):
+    if _undetermined(text):
         return None
-    return any(p.search(str(text)) for p in _NC_PATTERNS)
+    return _matches(str(text), _NC_PATTERNS)
 
 
 def is_share_alike_text(text: str | None) -> TriState:
@@ -103,20 +205,20 @@ def is_share_alike_text(text: str | None) -> TriState:
 
     Share-alike matters independently of NC and is routinely dropped in
     summaries. CC-BY-NC-SA-4.0 — which is what the Hansen receptor atlas
-    carries, and therefore what every receptor-derived prior inherits — is
-    *both*, and reporting only the NC half understates the obligation.
+    carries — is *both*, and reporting only the NC half understates the
+    obligation.
     """
-    if not text or _UNKNOWN_PATTERNS[0].match(str(text)):
+    if _undetermined(text):
         return None
-    return any(p.search(str(text)) for p in _SA_PATTERNS)
+    return _matches(str(text), _SA_PATTERNS)
 
 
 def _attribution_of(text: str | None) -> TriState:
-    if not text or _UNKNOWN_PATTERNS[0].match(str(text)):
+    if _undetermined(text):
         return None
     if re.search(r"\bCC0\b|public domain|PDDL", str(text), re.I):
         return False
-    return any(p.search(str(text)) for p in _ATTRIB_PATTERNS) or None
+    return _matches(str(text), _ATTRIB_PATTERNS) or None
 
 
 @dataclass(frozen=True)

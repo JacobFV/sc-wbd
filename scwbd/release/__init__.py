@@ -42,7 +42,10 @@ from .families import (
 from .licence import LicenceTerm, LicenceUnion, union_of
 from .manifest import (
     DOWNSTREAM_REACH_QUESTION,
+    LICENCE_DECISION_HISTORY,
     OWNER_LICENCE_DECISION,
+    OWNER_LICENCE_DECISION_2,
+    OWNER_LICENCE_DECISION_V1,
     ProvenanceBlock,
     ProvenanceMismatch,
     SourceFamilyManifest,
@@ -73,6 +76,9 @@ __all__ = [
     "CollapseResult",
     "DOWNSTREAM_REACH_QUESTION",
     "OWNER_LICENCE_DECISION",
+    "OWNER_LICENCE_DECISION_V1",
+    "OWNER_LICENCE_DECISION_2",
+    "LICENCE_DECISION_HISTORY",
     "FAMILY_TIER",
     "LicenceTerm",
     "LicenceUnion",
