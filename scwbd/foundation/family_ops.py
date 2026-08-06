@@ -327,6 +327,18 @@ class FamilyResidual(nn.Module):
         import math
 
         self.log_scale = nn.Parameter(torch.tensor(math.log(max(cfg.residual_init_scale, 1e-6))))
+        # X_i^uncertainty has exactly one law (UncertaintyPropagator). Letting
+        # R_theta also write there would let the residual buy likelihood by
+        # moving the variance channel directly, without the innovation/decay
+        # dynamics that make the channel mean anything -- and R05 prices the
+        # residual against the mechanistic terms, not against the variance.
+        self._unc: dict[str, slice] = {}
+        if cfg.state_dependent_variance:
+            self._unc = {
+                f.name: f.layout.slice(UNCERTAINTY_COMPONENT)
+                for f in flayout
+                if UNCERTAINTY_COMPONENT in f.layout
+            }
 
     def forward(self, x: Tensor, extra: Tensor) -> Tensor:
         chunks = []
@@ -337,6 +349,11 @@ class FamilyResidual(nn.Module):
             ef = self.region_embed.index_select(0, idx).to(x.dtype).unsqueeze(0).expand(x.shape[0], -1, -1)
             exf = extra.index_select(-2, idx)
             r = self.nets[f"d{f.dim}"](torch.cat([xf, ef, exf], dim=-1)) * s
+            sl = self._unc.get(f.name)
+            if sl is not None:
+                r = torch.cat(
+                    [r[..., : sl.start], torch.zeros_like(r[..., sl]), r[..., sl.stop :]], dim=-1
+                )
             chunks.append(_pad_to(r, self.dim))
         return self.flayout.assemble(chunks)
 

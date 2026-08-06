@@ -8,8 +8,20 @@ only.  Meanwhile ``EEGHead.log_noise`` and ``BOLDHead.log_noise`` are
 ``nn.Parameter`` vectors broadcast with ``expand_as``: the predictive variance of
 both instrument heads is **constant in state, time, horizon, window, participant
 and condition**, while the five held-out-calibrated baselines get a variance of
-shape ``(horizon, C)``.  That asymmetry is where run 1 was lost — SC-WBD has the
-lowest MSE of the seven arms and the second-worst NLL.
+shape ``(horizon, C)``.
+
+**What this does and does not repair.**  Turing's decomposition of the +0.4469
+excess over the Gaussian-entropy floor, conditional mean held fixed:
+``scale 0.4467`` (100% of the gap to the flat ceiling), ``channel 0.1113``,
+``horizon 0.0096``, ``state 0.1896`` per-window scalar / ``0.2587`` per-window
+per-channel.  Run 1's FAIL is attributable to **scale** — one scalar asserting
+variance 1.31 against a held-out residual variance of 3.97, uniformly
+overconfident by 3.0x — which is a training-schedule defect, not an
+architectural one.  **This module does not repair run 1.**  It is the only one
+of the three structural terms that needs an architectural change at all, it is
+~20x the horizon term, and after the schedule fix it is the only place left to
+win an NLL claim; the bar is the matched-calibration ceiling L4 = 2.0205 and only
+sub-2.0205 counts as new content.  It must earn that on its own.
 
 This module supplies the **state side** of the fix and nothing else.  It does not
 touch ``heads.py``:

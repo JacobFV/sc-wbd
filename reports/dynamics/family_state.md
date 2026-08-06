@@ -13,6 +13,15 @@ disagreement is stated rather than smoothed. Nothing here has been trained.
 
 ---
 
+> **Read §9b first.** 🧠 Cajal's `scwbd.anatomy.FamilyPartition` has since landed
+> and **supersedes** the eleven families derived below: **nine**, with the cortex
+> split unimodal/association rather than by Yeo-7 network, which a Váša spin null
+> rejects (6 of 21 pairs separate). Verifying that handoff — rather than assuming
+> it — turned up two live defects: my adapter was **not reading Cajal's object at
+> all**, and six of Cajal's seven subcortical families would have been assigned
+> the **generic core instead of their engineered backends**, silently. Both fixed.
+> §1–§8 describe what the (now refused-by-default) fallback derives.
+
 ## 0. Headline
 
 > The anatomy prior distinguishes **eleven** families, not the number the brief
@@ -270,9 +279,13 @@ config that produced the weights.
 `SCWBD.parameter_report()` on `configs/run2/scwbd-001.yaml`:
 
 ```
-control   (family_state=false)   1 675 373
-treatment (family_state=true)    2 376 452     = 1.418x
+control   (family_state=false)   1 688 130
+treatment (family_state=true)    2 520 811     = 1.493x
 ```
+
+Re-measured after the `X_i^uncertainty` work of §9 added propagators and an
+observation interface to **both** arms; the earlier figures in this report
+(1 675 373 / 2 376 452, 1.418×) predate it and are superseded.
 
 §11.4 asks for an **equal-capacity** comparison. These are not equal. Most of
 the gap is `family_residual` (364 772 vs 103 421 — four distinct family
@@ -377,7 +390,7 @@ layout's opaque `private` block can never be compiled by mistake.
 
 ---
 
-## 10. `X_i^uncertainty` — the variance channel (P0, added mid-task)
+## 9. `X_i^uncertainty` — the variance channel (P0, added mid-task)
 
 The architect filed a P0 during this work: `EEGHead.log_noise` is an
 `nn.Parameter` broadcast with `expand_as`, so SC-WBD's EEG predictive variance is
@@ -385,6 +398,26 @@ constant in state, time, horizon, window, participant and condition, while the
 five held-out-calibrated baselines get `(horizon, C)`. Run 1 has the **lowest
 MSE of the seven arms** and the second-worst NLL; the failure is in the variance
 channel, not the conditional mean.
+
+> **CORRECTION — this section does not describe a repair of run 1.** An earlier
+> draft of this report, and of `uncertainty.py`'s docstring, said the
+> constant-variance asymmetry "is where run 1 was lost". That was my sentence and
+> it is **wrong**. Turing's decomposition of the +0.4469 excess over the
+> Gaussian-entropy floor, conditional mean held fixed:
+>
+> | term | nats | what it is |
+> |---|---|---|
+> | scale | **0.4467** | 100 % of the gap to the flat ceiling — one scalar asserting variance 1.31 against a held-out residual variance of 3.97, uniformly overconfident by 3.0×. A **training-schedule** defect (`eeg.log_noise` trainable in stage V only; 900 steps in 134 s against an optimum with a closed form). |
+> | channel | 0.1113 | a **fitting** failure — the model already has 64 per-channel parameters and left them flat to 3 %. |
+> | state | 0.1896 / 0.2587 | per-window scalar beyond flat / per-window per-channel beyond per-channel. **This is the only one of the three that needs an architectural change**, and it is ~20× the horizon term. |
+> | horizon | 0.0096 | 1.7 % of the gap. Dropped outright. |
+>
+> So: none of run 1's FAIL is attributable to the absence of a state-dependent
+> variance. What is built below is a **new capability that must earn its own
+> result**. The bar is the matched-calibration ceiling **L4 = 2.0205**; only
+> sub-2.0205 counts as new content. If this lands in the same change as the
+> schedule fix the two are confounded, and the confound would be indistinguishable
+> from a success.
 
 **Verified from source, not taken on report.** `git diff --stat master --
 heads.py evaluate.py train.py baselines.py` is empty on this branch;
@@ -432,7 +465,9 @@ Three things the P0 did not name, found by checking:
 index after assimilation *is* the horizon step, so integrating `u` forward makes
 the variance grow with `h` without the head being told what `h` is. No `horizon=`
 argument was added anywhere. The permitted-but-unrequired residual (b) was **not
-shipped** — it could not have been distinguished from (a) without an ablation.
+shipped** — I could not distinguish it from (a) without an ablation, and Turing
+subsequently measured the whole horizon term at **0.0096 nats, 1.7 % of the gap**.
+The measurement is the reason it stays out; my instinct was not.
 
 ### Measured, on untrained models, 3×40-step rollouts on the real prior
 
@@ -460,6 +495,19 @@ state path was a shape, not a mechanism, and the counterfactual test would have
 been measuring nothing. A small non-zero gain (`init_state_gain=0.05`) raises it
 to 0.0575, a 10× change, and is why
 `test_perturbing_a_non_uncertainty_component_changes_the_innovation` can fire.
+
+### A second gap I found while writing the tests
+
+`FamilyResidual` (and, in the control arm, `LearnedResidual`) emitted into **all**
+`d_f` channels, including `uncertainty`. So `dx = f_mech + f_res` gave the
+variance channel *two* laws: the propagator and an unconstrained learned
+residual. That would let `R_theta` buy likelihood by moving the predicted
+variance directly, bypassing the innovation/decay dynamics that make the channel
+mean anything — and R05 prices the residual against the *mechanistic* terms, not
+against the variance, so it would not have caught it. The residual's write to the
+uncertainty slice is now zeroed in both arms, with
+`test_the_residual_may_not_write_to_the_uncertainty_channel` initialising the
+residual to large random weights and asserting the slice is **exactly** zero.
 
 ### What is NOT established
 
@@ -500,7 +548,118 @@ resulting A1 should not be reported as a test of structured state.
 
 ---
 
-## 9. Files
+## 9b. Cajal's partition supersedes the eleven — verified, not assumed
+
+The architect asked me to **check** that the handoff takes Cajal's declaration
+rather than assume it. It did not. Three findings, all from running the code.
+
+### 9b.1 The handoff was silently not taking it
+
+I specified the interface as per-parcel labels on `AnatomyPrior`
+(`family` / `family_id`+`family_names`). Cajal shipped a richer and better
+object: `scwbd.anatomy.FamilyPartition`, built by
+`scwbd.anatomy.derive_families(prior)`, with `RegionFamily(family_id, parcels,
+evidence_tier, training_status, …)` and `declared_absent`.
+
+**Neither attribute my adapter looked for exists**, on `AnatomyPrior` or on
+`BrainPrior` — checked by enumerating them. So `derive_families` fell straight
+through to its own derivation and produced the Yeo-7 split, **with nothing
+raised**. The interfaces disagreed and the disagreement was invisible.
+
+Fixed: `AnatomyPrior` gains `family_partition`, populated in `_from_agent_c` —
+the only place that holds the raw `BrainPrior` — by calling
+`scwbd.anatomy.derive_families(obj)`. If that function exists and raises, the
+adapter **refuses**, matching the rule already in force for every other prior in
+that file.
+
+### 9b.2 The fallback now refuses, because the evidence rejects its output
+
+Cajal tested Yeo-7 under a Váša spin null: it separates **6 of 21 pairs**. It is
+not a partition, and it is exactly what my fallback produced.
+
+The architect asked whether the fallback should be *removed*. My answer:
+**it should refuse, not be deleted.** `derive_families(anat)` now raises unless
+the caller passes `allow_derived=True`, and `ModelConfig.family_allow_derived_partition`
+(default `False`) is the only way a training run can reach it. Deleting the code
+would lose the ability to test the fallback and to run on a prior that declares
+nothing; refusing by default closes the hole that matters — **a partition the
+evidence rejects can no longer be produced silently**. This is the same shape as
+`load_anatomy(force_fallback=…)`: a degraded path is honest only if reaching it
+requires a decision. The opted-in path also stamps a note saying the split is
+evidence-rejected, so it cannot be laundered downstream.
+
+### 9b.3 Six of Cajal's seven subcortical families would have got the wrong backend
+
+Found by writing the test against the ids Cajal actually shipped. My
+`_KIND_TOKENS` carried only long forms — `hippocamp`, `thalam`, `putamen`,
+`caudate`, `pallid`, `amygdal`. Cajal's ids are `subcortex_hippo`,
+`subcortex_thal`, `subcortex_put`, `subcortex_caud`, `subcortex_pal`,
+`subcortex_amyg`, `subcortex_accumb`.
+
+**Only `subcortex_accumb` matched.** The other six fell through to
+`kind="cortex"` and the generic learned core — so every engineered backend §5
+argues for would have been silently unassigned while the config still said
+`family_state: true` and the manifest still said "per-family operators". A
+config that declares a thing and a model that does not do it, with no error:
+the exact failure `reports/scope_gap.md` is about, reproduced inside its own fix.
+
+Fixed two ways, because the token table will drift again:
+
+1. Short tokens added, ordered so `hypothal` is matched **before** `thal` — the
+   hypothalamus is not a thalamic nucleus and must not inherit its backend
+   (`test_hypothalamus_does_not_inherit_the_thalamic_backend`).
+2. An unrecognised **non-cortical** family is now reported loudly
+   (`*** NON-CORTICAL FAMILIES WITH NO RECOGNISED BACKEND: … ***`) rather than
+   only as a quiet note, because that is the case where §5's argument goes
+   unexpressed. `test_an_unrecognised_non_cortical_family_is_reported_loudly`
+   fires it.
+
+`test_agent_c_family_ids_map_onto_the_engineered_backends` pins all nine ids.
+
+### 9b.5 A decorative guard in this path, repaired
+
+`tests/foundation/test_contracts.py::test_fallback_anatomy_is_labelled_as_not_biological`
+asserted `provenance == "synthetic_fallback"` while its fixture called
+`load_anatomy(n_cortex=40, …)` — which, since the real `scwbd.anatomy` landed,
+returns the **414-parcel real prior** and ignores those arguments entirely. So
+the guard about the synthetic-prior incident could not pass, and every *other*
+test in that module had been silently running against a different object than
+the one it names.
+
+Repaired: the fixture passes `force_fallback=True`, so it builds the 60-parcel
+synthetic prior it asks for, and the guard asserts `n_regions == 60` first so it
+fails loudly if that ever stops being true. Two tests added, because a guard that
+only ever sees the synthetic prior cannot discriminate:
+`test_real_anatomy_is_labelled_as_biological` (the other direction) and
+`test_a_real_prior_cannot_be_silently_replaced_by_the_fallback`, which
+monkeypatches the adapter into failing and asserts `load_anatomy` **refuses**
+rather than substituting — the incident itself, executable.
+
+### 9b.4 What changes about the eleven
+
+Cajal's partition is **nine**, and the difference is not cosmetic: the cortex is
+**two** families (unimodal 138 / association 262), not seven, and there is no
+cerebellum family at all — it is in `declared_absent` with a reason, because
+Cajal's `validate()` refuses empty families. That is a better answer than mine:
+my §1 reported `cerebellum` as a declared-but-unpopulated *taxonomy entry*, which
+is the same fact with weaker typing.
+
+**Both of Cajal's cortical families resolve to the same backend**, so
+operator-wise the cortex is still homogeneous. I have **not** assigned them
+different backends. Cajal's separation is on receptor profile, timescale and
+myelin, which supports different *parameters* of one operator; whether it
+supports different *operator families* is A1's hypothesis, not a premise. Doing
+it unilaterally would assume the thing the ablation exists to test. Narrowing
+**N-8** already covers this and its wording still holds with two families instead
+of seven.
+
+The eleven in §1 remain the correct description of what the **fallback** derives,
+and are now reachable only under `allow_derived=True`. They are no longer what a
+run uses.
+
+---
+
+## 10. Files
 
 | path | what |
 |---|---|
@@ -512,6 +671,80 @@ resulting A1 should not be reported as a test of structured state.
 | `scwbd/foundation/config.py` | `family_state`, `family_cores`, `d_key/d_value/d_grid/d_context/d_prediction`, `ablation_arm()` |
 | `configs/run2/scwbd-001-families.yaml` | the §11.4 **treatment** arm, paired with `scwbd-001.yaml` (the control) |
 | `scwbd/foundation/uncertainty.py` | `UncertaintyPropagator`, `FamilyObservationInterface`, `FlatObservationInterface` — the state side of the P0 (§10) |
-| `tests/foundation/test_family_state.py` | 38 tests; every guard above has one that makes it fire |
-| `tests/foundation/test_uncertainty_state.py` | 16 tests; measures dependence, not shape, and measures the un-repaired path at exactly zero |
-| `ARCHITECTURE.md` §5b | N-1 updated with the measured cost; **N-6 … N-10** added |
+| `tests/foundation/test_family_state.py` | 45 tests; every guard above has one that makes it fire |
+| `tests/foundation/test_uncertainty_state.py` | 21 tests; measures dependence, not shape, and measures the un-repaired path at exactly zero |
+| `scwbd/foundation/anatomy.py` | `AnatomyPrior.family_partition`, populated from `scwbd.anatomy.derive_families` — the handoff of §9b |
+| `tests/foundation/test_contracts.py` | the decorative anatomy guard repaired (§9b.5) |
+| `ARCHITECTURE.md` §5b | N-1 updated with the measured cost; **N-6 … N-11** added |
+
+---
+
+## 11. Post-merge status (2026-08-06, after merging `master`)
+
+`wt/hodgkin` now carries `master` (`7be19f7`). Resolutions and what is red, stated
+rather than left to be discovered.
+
+**The architect's P0 — seven ungoverned tensors — is fixed and merged.**
+`observation.head.*` and `uncertainty_propagator.*` were trainable with no entry
+in `FOUNDATION_BINDING`, i.e. outside the gradient-permission system while it
+continued to look enforced. That was mine, introduced by `c9b2ff9`, and the
+guard that caught it (`test_no_trainable_parameter_is_ungoverned`) is one that
+can fire and did. Verified after the merge: **0 unclaimed and 0 dead patterns**
+across seven model variants (control, control+mechanistic, treatment, scalar
+ablation, no-variance, treatment no-variance, dense-coupling ablation).
+
+**The Yeo-7 fallback is removed**, per ruling. `_cortical_key` emits one cortical
+family; the `_YEO` regex is deleted, not orphaned. It does **not** error — §7a
+says ship and label — it emits the coarsest thing certainly true and stamps a
+note that any cortical-heterogeneity claim from it is unsupported.
+
+**Cajal's partition is what a run now uses**, verified from source:
+
+| | source | families |
+|---|---|---|
+| real prior | `anatomy_declared` | 9 — `cortex_unimodal`(138), `cortex_association`(262), `subcortex_{accumb,amyg,caud,hippo,pal,put,thal}`(2 each) |
+| synthetic | `derived_by_foundation` | 3 — `cortex`, `subcortex_unassigned`, `cerebellum` |
+
+All seven subcortical families resolve to their engineered backends. That only
+works because of the short-token fix: the table had only long forms
+(`hippocamp`, `thalam`, `putamen`), which matched **1 of Cajal's 7** — the other
+six would have taken the generic core silently while the config said
+`family_state: true`.
+
+**A1's licensed question is now two-way, not eleven-way.** Association vs
+unimodal against one pooled cortical operator. §1's eleven families describe the
+removed fallback and are no longer what a run uses.
+
+### Red, and why — 14 of 45 in `test_family_state.py`
+
+Not stale guards; each needs a decision, so they are recorded rather than
+renamed green. `test_uncertainty_state.py` is 21/21; `test_compiler_binding.py`
+is green.
+
+1. **Fallback-refusal tests (2)** — obsolete by my own change. I built the
+   fallback to refuse; the ruling removed the split and §7a forbids withholding.
+   Rewrite against the new contract.
+2. **Declared-partition fixtures (6)** — they build fakes on
+   `AnatomyPrior.family_partition`, the field I added and the merge correctly
+   dropped for Cajal's `families`. `copy.copy(anat)` now carries the real
+   partition, so the fake is ignored and the test exercises nothing. **The code
+   is right; the fixtures address a field that no longer exists.**
+3. **R12 tests (6)** — my `_r12_predicate` seam now finds Noether's canonical
+   predicate and delegates, which is what it was for. Theirs labels rather than
+   refuses. The local fallback predicate should be **deleted**, not repaired:
+   one definition, one enforcement point.
+
+### Not done
+
+**Orientation-bearing state.** Cajal shipped `normal` (414,3), `normal_coherence`
+and `normal_covered`; Gauss measured a scalar-per-parcel support at 5.6 % of the
+whitened lead field against **51.7 %** for a net dipole moment — ~9×, where more
+parcels buy ≤1.29×. Nothing in my family layout carries orientation yet. What it
+needs: a 3-vector `dipole` component on cortical families, its out-port declared
+in `Hz·m` (a moment, not a rate), and the EEG head projecting through
+`normal × coherence` rather than a scalar amplitude. **Coherence is the part that
+matters** — a unit normal always looks equally informative, while coherence says
+how much of the parcel survives cancellation between opposing sulcal banks, and a
+parcel at 0.28 contributes about a quarter of what its area suggests. This is the
+largest available improvement to what the model is actually for and it is the
+next thing I would do.
