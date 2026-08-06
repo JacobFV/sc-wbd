@@ -804,6 +804,56 @@ Anywhere a check and the thing it guards live in different spaces:
 
 Assume decorative until it has failed for you on demand.
 
+## A defect chain is not a defect list
+
+The anatomy adapter had **five** defects. Only the first was visible, and each
+fix is what exposed the next:
+
+| # | defect | revealed by |
+|---|---|---|
+| 1 | looks for `obj.weights`; real object exposes `obj.structural.weights` | the original symptom |
+| 2 | looks for `ei_prior`; real object exposes `ei_ratio_prior` — and it returns **`None` rather than raising** | fixing #1 |
+| 3 | `ei_ratio_prior`/`timescale_prior`/`coupling_mask` are **methods returning `list[PriorBase]`**, not attributes — a rename hands `torch.as_tensor` a list of pydantic models | fixing #2 |
+| 4 | three `x or default` idioms on numpy arrays → *"truth value of an array is ambiguous"* | fixing #3 |
+| 5 | `network` holds strings; `torch.as_tensor(..., dtype=long)` rejects them | fixing #4 |
+
+A brief saying *"align these two names"* was a reasonable description of the
+**visible** defect and an underestimate of the work by a factor of five.
+
+**Two consequences worth carrying:**
+
+1. **Estimating a fix from its first visible failure systematically
+   underestimates it**, because downstream defects are *masked* by the upstream
+   one — nothing exercised the code past the first raise. The estimate is not
+   merely uncertain, it is **biased low by construction**.
+2. **Do not read repeated failures as evidence the approach is wrong.** After the
+   third failure the natural conclusion is "this adapter is not salvageable". The
+   discriminating question is: **is each new failure *downstream* of the fix I
+   just made, or is it the same failure recurring?** Downstream means progress;
+   recurring means the approach is wrong. Here all five were strictly
+   downstream — each occurred later in the same function than the last.
+
+The general form: **an unexercised code path has no bug count, only a bug count
+lower bound of one.** Everything after the first failure is unmeasured, and
+"unmeasured" reads as "absent" until something runs.
+
+### And the tests written to verify this fix contained the register's own pattern
+
+Eight tests were written to fail against the pre-fix code. **Three passed it.**
+They asserted the E/I prior was non-constant — which the **synthetic** prior also
+satisfies, since it builds a smooth gradient by construction. They could not
+discriminate between the two worlds they existed to separate: exactly
+recommendation 3, inside tests written to verify a fix for this document's own
+pattern.
+
+Repaired by guarding each on `is_biological()` and re-verifying **both**
+directions — all eight fail pre-fix, all eight pass post-fix.
+
+The lesson is not "write better tests". It is that **"watch it fail" must be run
+on every test, not on the ones whose failure you expect.** The five that failed
+correctly were never in doubt; the check earned its cost on the three that did
+not.
+
 ## Documented-by-implementation behaviour: the rule nobody wrote down
 
 Three defects this project hit share a form distinct from the numbered rows.
