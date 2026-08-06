@@ -391,6 +391,7 @@ def recover(
     n_replicates: int = 128,
     seed: int = 0,
     n_newton: int = 6,
+    newton_tol: float = 0.05,
     checkpoint_every: int = 250,
     level: float = 0.95,
     heldout_data: dict[str, Tensor] | None = None,
@@ -426,8 +427,19 @@ def recover(
     Hpre = Hpre + 1e-9 * torch.eye(N_PARAM, dtype=u.dtype, device=u.device)
 
     t0 = time.time()
+    def _decrement(gr: Tensor) -> Tensor:
+        """sqrt(g^T H^-1 g): distance to the optimum in posterior sds."""
+        s = torch.linalg.solve(Hpre, gr.unsqueeze(-1)).squeeze(-1)
+        return torch.sqrt(torch.clamp((gr * s).sum(-1), min=0.0))
+
     val, g = _grad(f, u, checkpoint_every)
     history = [float(val.mean())]
+    decrements = [float(_decrement(g).max())]
+    n_used = 0
+    # The preconditioner is the expected information at the *prior mean* and is
+    # never refreshed, so this iteration converges linearly, not quadratically.
+    # A fixed step count therefore cannot certify convergence -- stop on the
+    # Newton decrement instead, and record how many steps it actually took.
     for _it in range(n_newton):
         step = torch.linalg.solve(Hpre, g.unsqueeze(-1)).squeeze(-1)
         alpha = torch.ones(n_replicates, 1, dtype=u.dtype, device=u.device)
@@ -442,13 +454,15 @@ def recover(
         u = (u - alpha * step).detach()
         val, g = _grad(f, u, checkpoint_every)
         history.append(float(val.mean()))
+        n_used = _it + 1
+        dec = _decrement(g)
+        decrements.append(float(dec.max()))
         if verbose:
-            print(f"  newton {_it}: obj {history[-1]:.3f} |g| {float(g.abs().max()):.3e}")
-    # Newton decrement sqrt(g^T H^-1 g): the remaining distance to the optimum
-    # measured in posterior standard deviations, which is the only scale on
-    # which "converged" means anything here.
-    step_rem = torch.linalg.solve(Hpre, g.unsqueeze(-1)).squeeze(-1)
-    grad_norm = torch.sqrt(torch.clamp((g * step_rem).sum(-1), min=0.0))
+            print(f"  newton {_it}: obj {history[-1]:.3f} "
+                  f"max decrement {decrements[-1]:.4g}")
+        if decrements[-1] < newton_tol:
+            break
+    grad_norm = _decrement(g)
 
     # observed information by forward differences of the analytic gradient
     H = torch.zeros(n_replicates, N_PARAM, N_PARAM, dtype=u.dtype, device=u.device)
@@ -527,10 +541,14 @@ def recover(
         delay_error_seconds=delay,
         posterior_correlation=corr,
         heldout_log_loss=hl,
-        converged_fraction=float((grad_norm < 0.1).double().mean()),
+        converged_fraction=float((grad_norm < newton_tol).double().mean()),
         optimiser={
-            "n_newton": n_newton,
+            "n_newton_max": n_newton,
+            "n_newton_used": n_used,
+            "newton_tol": newton_tol,
+            "stopped_early": bool(n_used < n_newton),
             "objective_history_mean": history,
+            "max_decrement_history": decrements,
             "convergence_metric": "newton_decrement_in_posterior_sd",
             "max_newton_decrement": float(grad_norm.max()),
             "median_newton_decrement": float(grad_norm.median()),
@@ -644,6 +662,7 @@ def run_benchmark(
     seed: int = 20260805,
     n_replicates: int = 128,
     n_newton: int = 6,
+    newton_tol: float = 0.05,
     with_recovery: bool = True,
     with_profiles: bool = True,
     with_monte_carlo_fisher: bool = True,
@@ -670,7 +689,7 @@ def run_benchmark(
     sig = run_signature(
         base_cfg, seed=seed, n_replicates=n_replicates, n_newton=n_newton,
         mc_replicates=mc_replicates, with_recovery=with_recovery,
-        with_profiles=with_profiles,
+        newton_tol=newton_tol, with_profiles=with_profiles,
         with_monte_carlo_fisher=with_monte_carlo_fisher,
     )
     results: dict[str, Any] = {"regimes": {}, "run_signature": sig}
@@ -751,7 +770,8 @@ def run_benchmark(
                 )
                 rec = recover(
                     bd, regime, n_replicates=n_replicates, seed=seed + 1,
-                    n_newton=n_newton, heldout_data=heldout, verbose=False,
+                    n_newton=n_newton, newton_tol=newton_tol,
+                    heldout_data=heldout, verbose=False,
                 )
                 entry["recovery"] = rec.to_dict()
             if with_profiles and do_heavy:
@@ -778,7 +798,7 @@ def run_benchmark(
 def run_signature(
     cfg: SystemConfig, *, seed: int, n_replicates: int, n_newton: int,
     mc_replicates: int, with_recovery: bool, with_profiles: bool,
-    with_monte_carlo_fisher: bool,
+    with_monte_carlo_fisher: bool, newton_tol: float = 0.05,
 ) -> str:
     """Hash of everything that changes what a design entry *means*.
 
@@ -795,6 +815,7 @@ def run_signature(
         "n_delay_taps": cfg.n_delay_taps, "hrf_stages": cfg.hrf_stages,
         "seed": seed, "n_replicates": n_replicates, "n_newton": n_newton,
         "mc_replicates": mc_replicates, "with_recovery": with_recovery,
+        "newton_tol": newton_tol,
         "with_profiles": with_profiles,
         "with_monte_carlo_fisher": with_monte_carlo_fisher,
     }

@@ -70,6 +70,7 @@ def cmd_benchmark(args) -> int:
     res = run_benchmark(
         cfg, regimes=regimes, designs=designs, seed=args.seed,
         n_replicates=args.replicates, n_newton=args.newton,
+        newton_tol=args.newton_tol,
         with_recovery=not args.no_recovery,
         with_profiles=not args.no_profiles,
         with_monte_carlo_fisher=not args.no_monte_carlo,
@@ -116,7 +117,11 @@ def main(argv=None) -> int:
     b = sub.add_parser("benchmark")
     b.add_argument("--replicates", type=int, default=96)
     b.add_argument("--mc-replicates", type=int, default=256)
-    b.add_argument("--newton", type=int, default=4)
+    b.add_argument("--newton", type=int, default=4,
+                   help="maximum Newton steps; the loop stops earlier once every "
+                        "replicate is within --newton-tol of the optimum")
+    b.add_argument("--newton-tol", type=float, default=0.05,
+                   help="convergence tolerance, in posterior standard deviations")
     b.add_argument("--regimes", nargs="*", default=None)
     b.add_argument("--primary-only", action="store_true")
     b.add_argument("--no-recovery", action="store_true")
