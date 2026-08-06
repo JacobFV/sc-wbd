@@ -1,0 +1,741 @@
+schema_version: scwbd-source-card/1.0.0
+
+# =====================================================================
+# QUARANTINED TEACHER.  This card is DELIBERATELY not in
+# scwbd/sources/cards/: it is not a dataset, it is a model, and it must
+# not be swept into the training mixture by a directory glob.  Load it
+# explicitly with scwbd.sources.cards.load_card().
+#
+# The artefact IS obtainable and has been obtained, hashed and executed
+# CPU-only (see identity.file_manifest and ledger.measured_probes).
+# The VALIDATION is not: no measurement of this teacher against real
+# measured BOLD on matched stimuli exists on this machine.  Appendix B
+# therefore applies its own rule -- "the field remains unknown, and the
+# corresponding loss or gradient path is disabled".  ledger.model_discrepancy
+# is unknown and gradient_permission.allow is empty.  Nothing in this card
+# authorises a training gradient.
+#
+# See reports/teacher_assessment.md for the measurements and the reasoning.
+# =====================================================================
+
+# =====================================================================
+# I_k  identity and lineage
+# =====================================================================
+identity:
+  id: tribe-v2
+  name: "TRIBE v2 (TRImodal Brain Encoder) -- population video/audio/text -> fsaverage5 BOLD encoder"
+  version: "hf:f894e783020944dcd96e5568550afe2aa9743f9f"
+  release_date: "2026-03-27"        # HuggingFace repo lastModified, measured via the HF API
+  doi: "unknown - the release cites arXiv:2605.04326; no DOI is minted for the weights"
+  citation: >-
+    d'Ascoli S et al. (2026). A foundation model of vision, audition and
+    language for in-silico neuroscience (TRIBE v2). arXiv:2605.04326.
+    Weights: https://huggingface.co/facebook/tribev2 revision
+    f894e783020944dcd96e5568550afe2aa9743f9f.
+  source_url: "https://huggingface.co/facebook/tribev2"
+  download_url: "https://huggingface.co/facebook/tribev2/resolve/f894e783020944dcd96e5568550afe2aa9743f9f/best.ckpt"
+  download_method: >-
+    Direct HTTPS GET against the commit-pinned `resolve/<sha>` endpoint, no
+    credentials, no token, no click-through. `gated` is false on the HF API for
+    this repo, verified before download. The mutable `main` ref was NOT used:
+    Appendix B lists an unversioned mutable download as a rejection condition,
+    so every byte on record here came from revision f894e783.
+  retrieved_utc: "2026-08-06T12:44:00+00:00"
+  parent_dataset: >-
+    Trained on four fMRI studies named in the released config.yaml:
+    Algonauts2025Bold, Lahner2024Bold, Lebel2023Bold and Wen2017, over 25
+    subjects enumerated in data.subject_id.predefined_mapping. SC-WBD holds
+    none of these datasets, so the teacher's own training data cannot be
+    audited here and cannot be held out from an SC-WBD evaluation split.
+  derived_from: null
+  code_repository:
+    url: "https://github.com/facebookresearch/tribev2"
+    commit: "af58661791a351a448a489042a28f6c37e1c14b7"
+    commit_date: "2026-06-23T13:23:32Z"
+    tags: []
+    tag_note: >-
+      The repository publishes NO tags and NO releases (verified against the
+      GitHub tags API, which returns an empty list). The weights are
+      commit-pinnable; the inference code is only pinnable by raw commit sha,
+      which is what is recorded here. "Version-pinned" is therefore true of
+      the weights and true of the code only in this weaker sense.
+  subset_note: >-
+    Only the fusion checkpoint and its config were fetched. The three feature
+    extractors it requires were NOT fetched -- see
+    observation.required_feature_extractors, which records their sizes,
+    licences and gating measured from the HF API.
+  derivatives_included: []
+  software:
+    inference: "tribev2 @ af58661 (facebookresearch/tribev2), CC BY-NC 4.0"
+    declared_dependencies: >-
+      pyproject pins torch>=2.5.1,<2.7, numpy==2.2.6, x_transformers==1.27.20,
+      neuralset==0.0.2, neuraltrain==0.0.2, exca==0.5.20, torchvision,
+      transformers, moviepy, gtts, spacy, soundfile. All are on PyPI.
+    environment_conflict: >-
+      The project venv carries torch 2.13.0+cu130 and numpy 2.5.1, both OUTSIDE
+      the declared pins. The CPU probe below therefore ran in a SEPARATE venv
+      built in scratch; the project venv was not modified, because a training
+      run owns it. Any future use must repeat that isolation.
+  container_hash: unknown
+  local_path: null
+  local_path_note: >-
+    The bytes were fetched to a session scratch directory and are NOT retained
+    on the data root. Nothing in the repository depends on them. Re-fetch from
+    the pinned revision and re-check the hashes below before any use.
+  file_manifest:
+    algorithm: sha256
+    n_files: 3
+    total_bytes: 708893521
+    manifest_sha256: ed8e92ae3ca04cb9582e2e0543ef902860401cbb769d447d7a670d299a773912
+    manifest_path: scwbd/sources/teachers/tribe-v2__f894e783.json
+    exemplars:
+      best.ckpt: 9c79ffff6b642b7b0c71d558c935fb3fa33f2788bfb509feead94fafbba2f321
+      config.yaml: a17212a257dfd91424e20a5fa8640d107fbbf79e842b6b2d72d17d24399dc9ef
+      LICENSE: 0afca3145596cd005f6f6ed977313ea31928094fc5b4aaabc21bb765ea369d09
+    sizes_bytes:
+      best.ckpt: 708856138
+      config.yaml: 18041
+      LICENSE: 19342
+
+# =====================================================================
+# G_k  governance and consent
+# =====================================================================
+governance:
+  status: partial
+  status_reason: >-
+    The fusion weights are obtained, hashed and verified to run. 'partial'
+    because (a) the text feature extractor is behind a manual-approval gate and
+    was not obtained, so the trimodal model cannot be run as trained; (b) no
+    measurement of this teacher against real measured BOLD exists, so
+    ledger.model_discrepancy is unknown; (c) the bytes are not retained on the
+    data root.
+  license: "Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)"
+  license_url: "https://creativecommons.org/licenses/by-nc/4.0/"
+  license_text_excerpt: >-
+    "NonCommercial means not primarily intended for or directed towards
+    commercial advantage or monetary compensation." (CC BY-NC 4.0 sec. 1(i), as
+    shipped verbatim in the LICENSE file of the weights repository, sha256
+    0afca314...). The same licence covers the inference code repository.
+  license_is_noncommercial: true
+  noncommercial_constraint: >-
+    BINDING AND INHERITED. Any fsaverage5 rendering produced by this model is
+    an adaptation of a CC BY-NC 4.0 work. A training corpus containing such
+    renderings, and any SC-WBD weight trained on them, inherits the
+    non-commercial restriction. SC-WBD-001-beta is presently a research
+    artefact, so there is no conflict TODAY -- but this is the field that
+    conflicts first if the project is ever commercialised, licensed to a
+    clinical vendor, or used in a paid service. Flagged rather than glossed.
+  license_stack:
+    note: >-
+      The effective licence of a TRIBE prediction is the INTERSECTION of the
+      fusion weights and every feature extractor in the path actually used.
+    tribev2_weights: "CC BY-NC 4.0 (non-commercial)"
+    tribev2_code: "CC BY-NC 4.0 (non-commercial)"
+    facebook/vjepa2-vitg-fpc64-256: "Apache-2.0"
+    facebook/w2v-bert-2.0: "MIT"
+    meta-llama/Llama-3.2-3B: >-
+      Llama 3.2 Community License -- a separate bespoke licence with an
+      acceptable-use policy and a monthly-active-user threshold. Adds terms
+      that CC BY-NC 4.0 does not contain. Not evaluated in detail because the
+      weights were not obtained.
+  dua_required: false
+  credentials_required: true
+  credentials_detail: >-
+    FALSE for the TRIBE fusion weights (HF `gated` is false; downloaded with no
+    account). TRUE for the full model as trained: the text pathway requires
+    meta-llama/Llama-3.2-3B, whose HF `gated` field reads "manual" -- a Meta
+    licence acceptance reviewed by a human. No request was made and no
+    credential exists, so the trimodal model cannot be reproduced here.
+  registration_required: false
+  purpose_limits: "non-commercial use only; attribution required (CC BY-NC 4.0 sec. 3(a))"
+  consent_scope: >-
+    NOT APPLICABLE AS A CONSENT RECORD, and this is the point. TRIBE v2 was
+    fitted to fMRI from 25 named human participants across four studies. SC-WBD
+    holds no consent document, no participant identifier and no withdrawal
+    channel for any of them. Their neural responses reach SC-WBD only as model
+    weights. A withdrawal request from one of those participants could not be
+    honoured, because it cannot be located in the weights.
+  redistribution: >-
+    permitted under CC BY-NC 4.0 with attribution and non-commercial terms;
+    ShareAlike is NOT imposed, so derivatives need not be BY-NC-licensed, but
+    the non-commercial restriction on the original still binds their use.
+  withdrawal: >-
+    no withdrawal mechanism exists and none could be honoured -- see
+    consent_scope.
+  privacy: >-
+    the artefact is a set of weights, not participant records; but it is a
+    lossy encoding of 1,100+ hours of fMRI from 25 identified-to-the-provider
+    subjects, and memorisation of individual response patterns has not been
+    ruled out by anyone here.
+  retention: "not retained; scratch only, deleted with the session"
+  unavailable_reason: null
+  redistribution_class: derived_only
+  redistribution_class_note: >-
+    The schema's vocabulary is none/derived_only/full/unknown and none of them
+    names "verbatim and adapted redistribution permitted, but only for
+    non-commercial purposes". 'full' is wrong because it would read as
+    unrestricted; 'derived_only' is the nearest available term and is the
+    conservative direction. The binding statement is
+    governance.noncommercial_constraint, not this enum.
+  withdrawal_status: unknown
+  privacy_class: deidentified
+  privacy_class_note: >-
+    Chosen from the schema's four-value vocabulary as the nearest term. The
+    artefact contains no participant records; it contains weights fitted to 25
+    people's fMRI. Whether those weights memorise individual response patterns
+    has not been tested by anyone here, so 'public' would overclaim.
+  contains_biometric: false
+  may_release_weights: false
+  may_release_weights_reason: >-
+    An SC-WBD weight trained against TRIBE renderings inherits CC BY-NC 4.0
+    non-commercial terms. Until that is resolved by counsel rather than by an
+    agent, the safe default is false.
+  may_release_examples: false
+  purpose_limits_list: ["noncommercial_only", "attribution_required"]
+  safeguards: ["quarantined", "disabled_by_default", "no_gradient_permission", "not_retained"]
+  dua: null
+
+# =====================================================================
+# P_k  population and hierarchy
+# =====================================================================
+population:
+  n_participants: 0
+  n_participants_note: >-
+    ZERO, and the field must stay zero. A teacher adds no participants
+    (Appendix A: "Distillation models and physics engines shape priors or test
+    recovery; they neither add empirical participants nor validate biology").
+    The 25 subjects behind TRIBE's training belong to Meta's corpora, not to
+    SC-WBD's n. Enlarging the SC-WBD corpus with TRIBE renderings increases
+    episode count and increases n by nothing.
+  participant_ids: []
+  teacher_training_subjects: 25
+  teacher_training_subject_ids: >-
+    Algonauts2025Bold/sub-01,02,03,05; Lahner2024Bold/1-10;
+    Lebel2023Bold/UTS01-08; Wen2017/subject1-3 -- read from
+    data.subject_id.predefined_mapping in the released config.yaml.
+  families: "not applicable"
+  sites: 0
+  site_ids: []
+  devices: 0
+  device_ids: []
+  sessions_per_participant: 0
+  runs_per_session: "not applicable"
+  trials_per_run: "not applicable"
+  demographics: >-
+    unknown - the release documents neither age, sex nor ancestry of the 25
+    training subjects. The population whose average this model predicts is
+    therefore undescribed, which is a direct limit on any claim that its
+    'population organisation' is a prior for a given SC-WBD subject.
+  selection_mechanism: >-
+    convenience samples from four naturalistic-stimulus fMRI studies; three of
+    the four (Algonauts2025, Lebel2023, Wen2017) have single-digit or low-teens
+    subject counts, so the "population" is a small pooled convenience sample.
+  grouping_keys: ["teacher_model", "teacher_training_study"]
+  min_subgroup_n: null
+
+# =====================================================================
+# S_k(signal)  native signal and units
+# =====================================================================
+signal:
+  modalities: ["predicted_bold"]
+  n_channels: 20484
+  n_channels_note: >-
+    measured from the checkpoint's model_build_args.n_outputs, not from the
+    README: 20484 = 2 x 10242 fsaverage5 vertices (both hemispheres).
+  channel_types: {fsaverage5_vertex: 20484}
+  channel_names: "fsaverage5 vertex indices, lh 0-10241 then rh 10242-20483 (ordering asserted by the projector, not independently verified here)"
+  units: >-
+    DIMENSIONLESS. The training target was z-scored per sample and linearly
+    detrended (config data.neuro.cleaning: standardize=zscore_sample,
+    detrend=true), so the output is a standardised BOLD-like score with no
+    physical unit, no baseline and no scale. It is NOT percent signal change
+    and NOT a haemodynamic quantity in any SI sense. The measured output of a
+    CPU forward pass on random features had sd 0.0917 -- far below unit
+    variance, i.e. the model regresses hard toward the mean, which is what an
+    MSE-trained encoder does and is itself a discrepancy the corpus would
+    inherit.
+  file_physical_dimension: "float32 tensor, shape (batch, 20484, 100)"
+  reference: "not applicable - no electrical reference; the implicit reference is the per-sample z-score"
+  dynamic_range: "unknown - unbounded linear head, no saturation rail"
+  saturation: "none by construction"
+  quantization: "float32"
+  prefilter_header: "not applicable"
+  name: tribe-v2.predicted_bold
+  si_units: dimensionless
+  si_dynamic_range: null
+  si_saturation: null
+  si_quantization: null
+  irreversible_aggregation: true
+  irreversible_aggregation_note: >-
+    z-scoring per sample destroys the mean and the scale; they cannot be
+    recovered, so this output can never be compared to a measured BOLD
+    amplitude without refitting a gain and an offset.
+  secondary_units: []
+
+# =====================================================================
+# S_k  spatial support
+# =====================================================================
+spatial:
+  kind: surface_vertex
+  frame: fsaverage5
+  units: m
+  psf: >-
+    unknown as a shipped kernel. The training projector was a 3.0 mm ball with
+    linear interpolation applied to MNI volumes
+    (data.neuro.projection: kind=ball, radius=3.0, interpolation=linear,
+    extract_fsaverage_from_mni=true). The effective point spread of a
+    PREDICTION is not that kernel -- it is the kernel convolved with whatever
+    spatial smoothing the encoder learned, which is not published and was not
+    measured here.
+  extent: "cortical surface only"
+  n_elements: 20484
+  positions_are_digitised: false
+  positions_source: "fsaverage5 template surface (FreeSurfer average subject)"
+  subcortex: >-
+    ABSENT. The cortical model emits no subcortical, cerebellar or brainstem
+    prediction. Any SC-WBD subcortical state is unconstrained by this teacher,
+    which is one reason the subcortical gradient path is explicitly forbidden.
+  individual_anatomy: >-
+    NONE. fsaverage5 is a template. Mapping a template prediction onto an
+    SC-WBD subject requires a registration this card does not supply and whose
+    error is not modelled. Population organisation is not individual
+    organisation (body.tex sec. 6.3).
+
+# =====================================================================
+# T_k  temporal support and clocks
+# =====================================================================
+temporal:
+  clock: tribe-v2.stimulus_clock
+  dt: 1.0
+  sfreq_hz: 1.0
+  sfreq_note: >-
+    output is 1 Hz (config data.neuro.frequency=1.0) over a 100-step window
+    (model_build_args.n_output_timesteps=100), driven by 2 Hz features
+    (data.frequency=2.0). Measured, not read off the README.
+  integration_window: "unknown - set by the learned temporal receptive field of an 8-layer transformer over a 100 s window, not by an instrument"
+  group_delay: >-
+    a fixed 5.0 s offset was applied to the training target
+    (data.neuro.offset=5.0), i.e. the model was fitted to BOLD 5 s AFTER the
+    stimulus. That constant stands in for the entire haemodynamic response.
+    It is not a subject-specific, region-specific or state-specific HRF, and
+    SC-WBD models haemodynamics explicitly -- so importing this output means
+    importing a competing, cruder haemodynamic assumption.
+  jitter_sd: unknown
+  event_clock: tribe-v2.stimulus_clock
+  event_clock_relation: >-
+    the prediction lives on the stimulus clock by construction. There is no
+    subject, no scanner and no acquisition clock, so no cross-device timing
+    uncertainty exists -- and equally, no timing EVIDENCE exists.
+  offset_drift: "not applicable"
+  secondary_clocks:
+    feature_rate: "2.0 Hz for text, audio and video features"
+  record_duration_s: "100 s per forward window (max_seq_len 1024 at the feature rate)"
+  training_chunk_duration_s: "30.0 to 60.0 (ChunkEvents min_duration/max_duration for both Audio and Video)"
+
+# =====================================================================
+# C_k  coordinates and calibration
+# =====================================================================
+calibration:
+  id: tribe-v2.calibration
+  frames: ["fsaverage5"]
+  fiducials: "not applicable - no head, no digitisation"
+  transforms: >-
+    NONE SHIPPED and this is the load-bearing gap. To compare a TRIBE
+    prediction with an SC-WBD subject, or with any measured BOLD, one needs
+    subject-volume -> MNI -> fsaverage5. TRIBE supplies only the last edge
+    (and only implicitly, inside its own preprocessing). The first edge is a
+    registration SC-WBD would have to compute and whose covariance would have
+    to be propagated. It is not in this card because it was not computed.
+  calibration_points: "not applicable"
+  residuals: unknown
+  device_pose: "not applicable"
+  raw_metadata: "config.yaml (sha256 a17212a2...) and the checkpoint's model_build_args block"
+  head_model: "not applicable"
+
+# =====================================================================
+# O_k  observation model
+# =====================================================================
+observation:
+  name: tribe-v2.predicted_bold
+  forward_physics: >-
+    NONE. This is the single most important line on the card. There is no
+    neurovascular model, no balloon model, no lead field, no conductivity, no
+    physics of any kind between the stimulus and the output. It is an
+    8-layer transformer regression fitted by MSE. It therefore cannot be an
+    observation operator in the SC-WBD sense and cannot carry a likelihood.
+  observed_variables: []
+  observed_variables_note: >-
+    Empty, deliberately. This source OBSERVES NOTHING. It predicts. Appendix A:
+    "Not new data".
+  predicted_variables: ["z-scored BOLD-like score at 20484 fsaverage5 vertices, 1 Hz"]
+  input_variables: ["naturalistic video", "naturalistic audio", "language/text"]
+  preprocessing: >-
+    stimulus -> per-modality frozen feature extractor -> 2 Hz features ->
+    linear projector -> concat -> 8-layer transformer (hidden 1152, rotary
+    position, scalenorm) -> 2048-d low-rank head -> 20484-vertex linear
+    predictor -> adaptive average pool to 100 steps.
+  preprocessing_steps: ["extract_features_2hz", "project", "transformer_encode", "low_rank_head", "vertex_predictor", "adaptive_avg_pool"]
+  likelihood_kind: none
+  calibration_status: uncalibrated
+  calibration_note: >-
+    The model emits a point prediction and NO uncertainty. It was trained with
+    an MSE loss (config loss.name=MSELoss). There is no predictive variance to
+    inflate, no calibration to check, and therefore nothing that could tell
+    SC-WBD when the teacher is out of its depth. Appendix B lists "zero teacher
+    variance" as a REJECTION CONDITION for the bias/variance/discrepancy field.
+    That condition is met by the artefact as shipped: any variance attached to
+    this teacher must be supplied from OUTSIDE the model, by measurement, and
+    that measurement does not exist. This is the formal reason the card cannot
+    graduate to an enabled state on present evidence.
+  leakage_checked: false
+  leakage_risk: >-
+    UNRESOLVABLE HERE. TRIBE's training corpora (Algonauts2025, Lahner2024,
+    Lebel2023, Wen2017) are not held by SC-WBD, so SC-WBD cannot verify that a
+    future evaluation stimulus was not in the teacher's training set. Any
+    naturalistic-stimulus evaluation risks scoring the teacher on its own
+    training data.
+  target_ports: ["bold.fsaverage5_vertex"]
+  required_feature_extractors:
+    - model: "facebook/vjepa2-vitg-fpc64-256"
+      modality: video
+      projector_input_dim: 2816      # 2 layer-groups x 1408
+      hf_gated: false
+      license: "apache-2.0"
+      weight_bytes: 4138311608
+      obtained: false
+    - model: "facebook/w2v-bert-2.0"
+      modality: audio
+      projector_input_dim: 2048      # 2 layer-groups x 1024
+      hf_gated: false
+      license: "mit"
+      weight_bytes: 2322063736
+      obtained: false
+    - model: "meta-llama/Llama-3.2-3B"
+      modality: text
+      projector_input_dim: 6144      # 2 layer-groups x 3072
+      hf_gated: manual
+      license: "llama3.2"
+      weight_bytes: 6425529048       # safetensors shards only
+      obtained: false
+      blocker: >-
+        manual-approval gate. Without it the trimodal model as trained cannot
+        be reproduced, and the text pathway is silently zero-filled.
+  silent_modality_substitution:
+    measured: true
+    behaviour: >-
+      tribev2.model.FmriEncoderModel.aggregate_features substitutes a ZERO
+      tensor for any modality absent from the batch, with no warning and no
+      flag on the output. The model returns a full, confident-looking
+      20484 x 100 prediction whether it was given three modalities or one.
+    measured_effect: >-
+      On identical video features, the video-only prediction correlates
+      r = 0.277 with the trimodal prediction and its standard deviation is
+      0.0496 against 0.0917 -- roughly HALF the output variance and about 8%
+      of shared variance. A silent, unflagged degradation of that size in a
+      distillation target is exactly the decorative-instrument failure mode
+      (reports/decorative_guards.md): the reading looks the same whether the
+      inputs were adequate or not.
+    consequence: >-
+      Any use of this teacher MUST assert on the presence of every modality it
+      was trained with, and refuse rather than zero-fill. A wrapper that merely
+      logs a warning is not sufficient.
+
+# =====================================================================
+# U_k  intervention model
+# =====================================================================
+intervention: null    # a teacher manipulates nothing
+
+# =====================================================================
+# M_k  missingness and censoring
+# =====================================================================
+missingness:
+  planned: >-
+    Three feature extractors (13.0 GB of weights) were not fetched. One of the
+    three, meta-llama/Llama-3.2-3B, is not fetchable without a manual-approval
+    credential.
+  unplanned: >-
+    No validation measurement exists. See ledger.model_discrepancy and
+    reports/teacher_assessment.md for why the intended ds000117 measurement
+    could not be executed.
+  artifact_rejection: "not applicable"
+  dropout: "not applicable"
+  attrition: "not applicable"
+  policy: >-
+    Missing modality features are NOT imputed and NOT zero-filled at the SC-WBD
+    boundary. The model's own zero-fill behaviour is treated as a defect to be
+    guarded against, not a feature to be relied on.
+  mechanism: planned
+  handling: drop_episode
+  handling_note: >-
+    The schema vocabulary has no 'refuse'. drop_episode is the correct
+    behaviour and the strictest available: an episode whose stimulus lacks a
+    modality TRIBE was trained with is DROPPED, never rendered with the
+    missing modality zero-filled. See observation.silent_modality_substitution
+    for the measured cost of the alternative.
+  post_outcome_selection: false
+  censoring_correlated_with_state: false
+
+# =====================================================================
+# B_k, V_k, Delta_k  uncertainty ledger
+# =====================================================================
+ledger:
+  variance:
+    measurement: 0.0
+    measurement_note: >-
+      Zero because there IS no measurement -- a prediction has no instrument
+      noise. Do not read this as precision. It is the absence of an instrument.
+    session: unknown
+    parameter: unknown
+    model: unknown
+    numerical: 0.0
+  bias_interval: unknown
+  bias_status: unknown
+  bias_bound_justification: >-
+    Unbounded, because nothing bounded it. The known bias directions are all
+    signed but none is quantified: MSE regression to the mean (measured output
+    sd 0.0917 against a unit-variance target); a population average standing in
+    for an individual; a fixed 5 s offset standing in for a haemodynamic
+    response; perception-trained weights applied to imagery. Writing a number
+    here would be inventing one.
+  model_discrepancy: unknown
+  model_discrepancy_status: NOT_MEASURED
+  model_discrepancy_reason: >-
+    The measurement that would populate this field -- TRIBE predictions against
+    real measured BOLD from real subjects viewing the same stimuli -- was
+    attempted and could not be executed. Four independent blockers, each
+    verified, are recorded in reports/teacher_assessment.md sec. 3. In summary:
+    (1) ds000117 presents 0.900 +/- 0.058 s static silent greyscale faces at a
+    3.17 s median SOA, whereas TRIBE consumes 30-60 s naturalistic trimodal
+    streams -- two of its three input modalities are structurally absent, and
+    that absence measurably costs r = 0.277 / half the output variance;
+    (2) ds000117 BOLD on disk is raw and native-space, and no volumetric
+    normalisation toolchain (FreeSurfer, FSL, ANTs, fMRIPrep) exists on this
+    machine, so no fsaverage5 target can be produced to compare against;
+    (3) the cross-validated ceiling for a PERFECT stimulus-locked encoder on
+    this data is whole-brain mean r = 0.031 (sub-01) and 0.068 (sub-02) at
+    6 mm smoothing, so a teacher-vs-BOLD correlation here would be read against
+    a near-floor reference on n = 2 subjects;
+    (4) the only stimulus domain where TRIBE is in-domain is naturalistic
+    audiovisual film and narrative, and the four corpora that supply it are
+    exactly the four TRIBE was trained on -- scoring it there measures teacher
+    self-agreement, which Appendix D forbids as validation.
+  model_discrepancy_must_not_be_zero: >-
+    Recorded explicitly because it is the failure this project has already
+    named: an unmeasured discrepancy is 'unknown', never 0.0. Any code that
+    reads this field and finds 'unknown' must DISABLE the associated loss, not
+    default it.
+  measured_probes:
+    note: >-
+      What WAS measured, so the card is not purely negative. All CPU-only,
+      CUDA_VISIBLE_DEVICES="", under systemd-run MemoryMax=12G, 2026-08-06.
+    checkpoint_parameters: 177205397
+    checkpoint_tensor_elements: 177205433   # includes the 36-element rotary inv_freq buffer
+    strict_state_dict_load: true
+    runs_on_cpu: true
+    cpu_seconds_per_100s_window: 1.84
+    cpu_peak_rss_gib: 1.73
+    video_extractor_measured:
+      model: "facebook/vjepa2-vitg-fpc64-256"
+      params: 1034555264
+      cpu_seconds_per_4s_clip: 119.37
+      cpu_seconds_per_video_second: 29.84
+      cpu_peak_rss_gib: 5.24
+      output_shape: [1, 8192, 1408]
+      note: >-
+        Output width 1408 matches the fusion model's declared video feature
+        dimension, confirming the correct extractor rather than a same-family
+        substitute. At ~30x real time on CPU, rendering 100 hours of video
+        through this teacher costs of order 3,000 CPU-hours on this machine.
+        Feasible under the 12 GiB cap; not cheap.
+    output_shape: [1, 20484, 100]
+    output_sd_trimodal: 0.0917
+    output_sd_video_only: 0.0496
+    modality_ablation_pearson_r: 0.2774
+    released_predictor_shape: [1, 2048, 20484]
+    released_predictor_note: >-
+      Leading dimension 1, and no subject_layers tensor exists in the released
+      state dict. The 25 per-subject readouts were NOT released: what ships is
+      only the shared "dropout subject" row that training used when subject
+      identity was masked (subject_dropout=0.10). demo_utils.from_pretrained
+      sets average_subjects=True to select it. So the released artefact really
+      is an average-subject encoder -- which confirms body.tex sec. 6.3's
+      description empirically, and also means no individual alignment is
+      available even in principle.
+  validity_domain:
+    stimulus: >-
+      naturalistic audiovisual film and spoken narrative in 30-60 s chunks,
+      with all three of video, audio and language present. Verified from the
+      released config, not assumed.
+    population: "unknown - the 25 training subjects are undescribed"
+    state: "awake, attending to a naturalistic stimulus; passive viewing/listening"
+    spatial_scale: "cortical surface, fsaverage5 template; NO subcortex"
+    temporal_scale: "1 Hz, with a fixed 5 s haemodynamic offset"
+    out_of_domain_examples: >-
+      brief static images; silent stimuli; language-free stimuli; imagery
+      rather than perception; task-driven event-related designs; any individual
+      subject's anatomy; any subcortical structure; any electrophysiological
+      quantity.
+
+# =====================================================================
+# A_k  gradient permission
+# =====================================================================
+gradient_permission:
+  allow: []
+  allow_empty_reason: >-
+    Appendix B: "A source that cannot populate a required field is not coerced
+    into a common raster. The field remains unknown, and the corresponding loss
+    or gradient path is disabled." ledger.model_discrepancy is unknown, so
+    every gradient path is disabled. This is not a placeholder to be filled in
+    later by convenience; it is filled in by MEASUREMENT or not at all.
+  frozen:
+    - "*"
+  forbid:
+    - "*"
+  forbid_note: >-
+    Total. Listed individually below is what would STILL be forbidden even if
+    the discrepancy were measured and the teacher enabled -- so that the
+    boundary is preregistered before any result is seen, not negotiated after.
+  evaluation_only: false
+  enabled: false
+  enabled_note: >-
+    OFF by default, consistent with ARCHITECTURE.md rule 5 and body.tex
+    sec. 6.3. Enabling requires an explicit claim-manifest override AND a
+    measured ledger.model_discrepancy.
+
+  # -------------------------------------------------------------------
+  # PREREGISTERED and INERT.  Not a permission.  Nothing reads this to
+  # build a gradient mask; the compiler reads `allow`, which is empty.
+  # This records what the permission WOULD be, fixed in advance of any
+  # measurement, so that a future agent cannot widen it after seeing a
+  # favourable number.
+  # -------------------------------------------------------------------
+  preregistered_allow_if_validated:
+    - target: observe.bold.hemodynamic_head.readout
+      scales: ["surface_vertex", "parcel"]
+      requires: ["ledger.model_discrepancy", "calibration.transforms"]
+      rationale: "the interface the teacher actually predicts"
+    - target: encode.perception.visual_port
+      scales: ["parcel"]
+      requires: ["ledger.model_discrepancy"]
+    - target: encode.perception.auditory_port
+      scales: ["parcel"]
+      requires: ["ledger.model_discrepancy"]
+    - target: encode.language.context_encoder
+      scales: ["parcel"]
+      requires: ["ledger.model_discrepancy"]
+  preregistered_forbid_permanently:
+    - target: dynamics.coupling
+      reason: >-
+        A predicted fMRI signal carries no more information about coupling than
+        real fMRI does, and real fMRI carries essentially none -- see
+        reports/teacher_assessment.md sec. 5 for the regenerated Fisher
+        numbers. Permitting this path would let a teacher with no measured
+        discrepancy move the parameters the thesis is about.
+    - target: dynamics.conduction_delay
+      reason: >-
+        The teacher's output rate is 1 Hz with a fixed 5 s offset. Conduction
+        delays are milliseconds. There is no support at that scale, and a
+        gradient here would be pure model artefact.
+    - target: dynamics.excitation_inhibition
+      reason: "not observed, not predicted, not identifiable from a z-scored BOLD-like surface score"
+    - target: anatomy.subcortical.*
+      reason: "the model emits no subcortical prediction at all"
+    - target: physiology.bodily_state.*
+      reason: "no autonomic, interoceptive or peripheral variable is predicted"
+    - target: anatomy.connectome_prior
+      reason: "structural topology is compiled, not taught by a functional encoder"
+    - target: intervene.*
+      reason: "the teacher observed no intervention; Appendix A grants causal status only to what was actually manipulated"
+    - target: infer.population_prior
+      reason: >-
+        The teacher IS a population average of 25 undescribed subjects.
+        Letting it set SC-WBD's population prior would pull an individualised
+        posterior toward an average brain -- the exact failure body.tex
+        sec. 6.3 forbids.
+
+# =====================================================================
+# R_k  role and split policy
+# =====================================================================
+role: distillation
+
+role_note: >-
+  distillation, LOCKED, and never 'likelihood'. A distillation factor transfers
+  representational organisation and carries teacher discrepancy (Appendix B).
+  A likelihood factor contributes measured evidence about a latent variable
+  through an observation model. TRIBE has no observation model
+  (observation.forward_physics is None) and measures nothing
+  (observation.observed_variables is empty), so the likelihood role is not
+  merely disallowed by policy -- it is unavailable in fact.
+
+split_policy:
+  grouping_keys: ["teacher_model", "stimulus_identity"]
+  grouping_note: >-
+    Every episode rendered through this teacher belongs to ONE group keyed by
+    the teacher. A thousand TRIBE renderings are one source, not a thousand
+    samples. Appendix D, "Derived-data duplication".
+  temporal_holdout: "not applicable to a model; holdout is defined over the stimuli fed to it"
+  temporal_holdout_spec: null
+  stimulus_holdout: >-
+    MANDATORY and currently UNVERIFIABLE. SC-WBD does not hold Algonauts2025,
+    Lahner2024, Lebel2023 or Wen2017, so it cannot prove that an evaluation
+    stimulus was absent from the teacher's training set. Until it can, no
+    naturalistic-stimulus evaluation may be scored against this teacher.
+  site_holdout: "not applicable"
+  leakage_barrier: parent_lineage
+  role_locked: true
+  stimuli_shared_across_folds: unknown
+  notes: >-
+    Role fixed before any measurement, per Appendix B: "Role changed after
+    viewing test results" is a rejection condition.
+
+# =====================================================================
+# Preregistered ablation branch (body.tex sec. 6.3; Appendix D
+# "Teacher/simulator domination").  Written now, before any teacher run,
+# so the comparison set cannot be trimmed later to whatever survives.
+# =====================================================================
+preregistered_ablation_branch:
+  status: NOT_RUN
+  gate: A9_teacher_quarantined
+  companion_gate: D06_teacher_simulator_domination
+  primary_metric: >-
+    held-out MEASURED subject-specific neural or behavioural forecast score
+    (log score and calibration). Teacher agreement, fluency and smoother
+    cortical maps are explicitly NOT metrics.
+  retention_rule: >-
+    retained ONLY if it beats EVERY control below at matched parameter count
+    and matched compute. Beating some and not others is a failure, not a
+    partial success.
+  arms:
+    - id: no_teacher
+      description: "identical model and budget, teacher term removed"
+    - id: output_distillation
+      description: "distil the 20484-vertex output prediction"
+    - id: intermediate_feature_distillation
+      description: "distil the 2048-d low-rank bottleneck instead of the output"
+    - id: matched_generic_features
+      description: >-
+        the same video/audio features (V-JEPA2, w2v-bert) regressed onto the
+        same target WITHOUT the TRIBE fusion transformer. If TRIBE does not
+        beat this, its brain-specific fitting contributed nothing and the
+        result is a generic-multimodal-feature result.
+    - id: generic_smoothness
+      description: >-
+        a spatial-smoothness regulariser with no stimulus information, matched
+        in strength. Guards against the teacher helping only by smoothing.
+    - id: time_shuffled_teacher
+      description: "TRIBE predictions with their time axis permuted within episode -- the null"
+    - id: stimulus_mismatched_teacher
+      description: "TRIBE predictions computed from a DIFFERENT stimulus than the episode's"
+    - id: perception_vs_imagery
+      description: >-
+        calibration arm: the same teacher applied to perception episodes and to
+        imagery/report episodes, compared. body.tex sec. 6.3 states imagery and
+        perception differ in amplitude, extent and hierarchical profile; if the
+        teacher cannot distinguish them, it must not be attached to imagery.
+    - id: empirical_only
+      description: "measured data only, no rendered proxies, matched compute"
+  required_before_any_arm_runs:
+    - "ledger.model_discrepancy populated by measurement against real BOLD on matched stimuli"
+    - "a held-out naturalistic-stimulus fMRI dataset that is NOT one of the four TRIBE training corpora"
+    - "a subject-volume -> MNI -> fsaverage5 transform chain with propagated covariance"
+    - "an assertion that refuses, rather than zero-fills, a missing input modality"

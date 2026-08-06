@@ -1,0 +1,335 @@
+{
+ "artifact": "SC-WBD quarantined-teacher assessment: TRIBE v2",
+ "availability": {
+  "blocking_extractor": {
+   "hf_gated": "manual",
+   "model": "meta-llama/Llama-3.2-3B"
+  },
+  "code_commit": "af58661791a351a448a489042a28f6c37e1c14b7",
+  "code_releases": 0,
+  "code_repo": "facebookresearch/tribev2",
+  "code_tags": [],
+  "credentials_required_for_full_model": true,
+  "credentials_required_for_weights": false,
+  "hf_gated": false,
+  "license": "CC BY-NC 4.0",
+  "license_is_noncommercial": true,
+  "requires_gpu": false,
+  "revision": "f894e783020944dcd96e5568550afe2aa9743f9f",
+  "weights_repo": "facebook/tribev2"
+ },
+ "blockers": [
+  "ds000117 stimuli/ not on disk (0 of 432 referenced .bmp)",
+  "two of three TRIBE input modalities structurally absent from ds000117 (no audio, no language)",
+  "no volumetric normalisation toolchain (FreeSurfer/FSL/ANTs/fMRIPrep all absent) -> no fsaverage5 target",
+  "the only in-domain corpora are TRIBE's own four training studies -> self-agreement, forbidden by Appendix D"
+ ],
+ "bold_ceiling_ds000117": {
+  "fwhm_6mm": {
+   "sub-01": {
+    "cv_r_max": 0.5073964148759842,
+    "cv_r_mean": 0.03131637903581046,
+    "cv_r_median": 0.025868688244372606,
+    "cv_r_p90": 0.09815960098057985,
+    "cv_r_p99": 0.26829531881958246,
+    "frac_voxels_r_gt_0.1": 0.0958052822371828,
+    "frac_voxels_r_gt_0.2": 0.018939113708663163,
+    "n_runs": 9,
+    "n_voxels_in_mask": 40551,
+    "n_voxels_total": 135168,
+    "test_runs": [
+     "02",
+     "04",
+     "06",
+     "08"
+    ],
+    "train_runs": [
+     "01",
+     "03",
+     "05",
+     "07",
+     "09"
+    ],
+    "trial_types": [
+     "DelFF",
+     "DelSF",
+     "DelUF",
+     "ImmFF",
+     "ImmSF",
+     "ImmUF",
+     "IniFF",
+     "IniSF",
+     "IniUF"
+    ]
+   },
+   "sub-02": {
+    "cv_r_max": 0.7378352582454681,
+    "cv_r_mean": 0.06761335362378855,
+    "cv_r_median": 0.04251268273219466,
+    "cv_r_p90": 0.19433848559856415,
+    "cv_r_p99": 0.47242074832320213,
+    "frac_voxels_r_gt_0.1": 0.2526694779413578,
+    "frac_voxels_r_gt_0.2": 0.09417770215284457,
+    "n_runs": 9,
+    "n_voxels_in_mask": 40551,
+    "n_voxels_total": 135168,
+    "test_runs": [
+     "02",
+     "04",
+     "06",
+     "08"
+    ],
+    "train_runs": [
+     "01",
+     "03",
+     "05",
+     "07",
+     "09"
+    ],
+    "trial_types": [
+     "DelFF",
+     "DelSF",
+     "DelUF",
+     "ImmFF",
+     "ImmSF",
+     "ImmUF",
+     "IniFF",
+     "IniSF",
+     "IniUF"
+    ]
+   }
+  },
+  "method": "canonical Glover-HRF GLM over 9 trial types, fit on odd runs, predicted on held-out even runs from stimulus regressors only; native space, in-brain mask at the 70th percentile of mean intensity; no motion correction (conservative)",
+  "unsmoothed": {
+   "sub-01": {
+    "cv_r_max": 0.4178781621158123,
+    "cv_r_mean": 0.006963253585714845,
+    "cv_r_median": 0.004817878361791372,
+    "cv_r_p90": 0.06209794222377241,
+    "cv_r_p99": 0.13422279059886932,
+    "frac_voxels_r_gt_0.1": 0.027003033217429903,
+    "frac_voxels_r_gt_0.2": 0.003033217429903085,
+    "n_runs": 9,
+    "n_voxels_in_mask": 40551,
+    "n_voxels_total": 135168,
+    "test_runs": [
+     "02",
+     "04",
+     "06",
+     "08"
+    ],
+    "train_runs": [
+     "01",
+     "03",
+     "05",
+     "07",
+     "09"
+    ],
+    "trial_types": [
+     "DelFF",
+     "DelSF",
+     "DelUF",
+     "ImmFF",
+     "ImmSF",
+     "ImmUF",
+     "IniFF",
+     "IniSF",
+     "IniUF"
+    ]
+   },
+   "sub-02": {
+    "cv_r_max": 0.5919462591409683,
+    "cv_r_mean": 0.026885764052308143,
+    "cv_r_median": 0.018790051224641502,
+    "cv_r_p90": 0.0925434622913599,
+    "cv_r_p99": 0.24095162679441273,
+    "frac_voxels_r_gt_0.1": 0.08628640477423491,
+    "frac_voxels_r_gt_0.2": 0.01748415575448201,
+    "n_runs": 9,
+    "n_voxels_in_mask": 40551,
+    "n_voxels_total": 135168,
+    "test_runs": [
+     "02",
+     "04",
+     "06",
+     "08"
+    ],
+    "train_runs": [
+     "01",
+     "03",
+     "05",
+     "07",
+     "09"
+    ],
+    "trial_types": [
+     "DelFF",
+     "DelSF",
+     "DelUF",
+     "ImmFF",
+     "ImmSF",
+     "ImmUF",
+     "IniFF",
+     "IniSF",
+     "IniUF"
+    ]
+   }
+  }
+ },
+ "cpu_only": true,
+ "cpu_probes": {
+  "fusion": {
+   "all_three": {
+    "max": 0.7571737170219421,
+    "mean": -0.011183041147887707,
+    "min": -0.7900727391242981,
+    "out_shape": [
+     1,
+     20484,
+     100
+    ],
+    "sd": 0.09167278558015823,
+    "seconds": 1.845
+   },
+   "feature_dims": {
+    "audio": [
+     2,
+     1024
+    ],
+    "text": [
+     2,
+     3072
+    ],
+    "video": [
+     2,
+     1408
+    ]
+   },
+   "modality_ablation_r": 0.2773830750485108,
+   "n_output_timesteps": 100,
+   "n_outputs": 20484,
+   "params": 177205397,
+   "peak_rss_gib": 1.7338981628417969,
+   "video_only": {
+    "max": 0.37990477681159973,
+    "mean": -0.008423530496656895,
+    "min": -0.6153843402862549,
+    "out_shape": [
+     1,
+     20484,
+     100
+    ],
+    "sd": 0.049530353397130966,
+    "seconds": 1.511
+   }
+  },
+  "video_extractor": {
+   "cpu_seconds_per_video_second": 29.843566298484802,
+   "forward_seconds_per_4s_clip": 119.37426519393921,
+   "load_seconds": 356.7926251888275,
+   "model": "facebook/vjepa2-vitg-fpc64-256",
+   "out_shape": [
+    1,
+    8192,
+    1408
+   ],
+   "params": 1034555264,
+   "peak_rss_gib": 5.243537902832031
+  }
+ },
+ "ds000117_design": {
+  "bold_shape": [
+   64,
+   64,
+   33,
+   208
+  ],
+  "bold_tr_s": 2.0,
+  "has_audio_track": false,
+  "has_language_track": false,
+  "n_bold_runs": 18,
+  "n_events": 1677,
+  "n_participants_on_disk": 2,
+  "n_unique_stimuli": 432,
+  "soa_s": {
+   "mean": 4.257377938517179,
+   "median": 3.1740000000000066,
+   "p5": 3.0399999999999636,
+   "p95": 23.0841
+  },
+  "stimuli_present_on_disk": 0,
+  "stimulus_duration_s": {
+   "mean": 0.900010137149672,
+   "sd": 0.0581179815362263
+  }
+ },
+ "fisher_regeneration": {
+  "designs": {
+   "eeg_only": {
+    "committed": 16.008455843316167,
+    "min_eigenvalue_nonprior": 0.0,
+    "rank_likelihood": 6,
+    "regenerated": 16.008455843320203,
+    "relative_difference": 2.5210943382789954e-13,
+    "seconds": 47.9,
+    "theta_profile_log10_det_likelihood": 7.040235672114843,
+    "theta_subset": [
+     "a21",
+     "a32",
+     "a13",
+     "tau"
+    ]
+   },
+   "fmri_only": {
+    "committed": 2.9294012802422767e-06,
+    "min_eigenvalue_nonprior": 0.0,
+    "rank_likelihood": 7,
+    "regenerated": 2.9294013073562117e-06,
+    "relative_difference": 9.25579408049915e-09,
+    "seconds": 19.4,
+    "theta_profile_log10_det_likelihood": -11.134340602362863,
+    "theta_subset": [
+     "a21",
+     "a32",
+     "a13",
+     "tau"
+    ]
+   }
+  },
+  "dtype": "float64",
+  "eeg_over_fmri_ratio": 5464753.430375114,
+  "env": {
+   "cuda_available": false,
+   "device": "cpu",
+   "numpy": "2.5.1",
+   "python": "3.12.13",
+   "torch": "2.13.0+cu130"
+  },
+  "epoch_seconds": 3.0,
+  "n_epochs": 30,
+  "regime": "reference",
+  "seed": 20260805,
+  "settings_source": "reports/identifiability/manifest.json"
+ },
+ "tribe_domain": {
+  "chunk_duration_s": [
+   30.0,
+   60.0
+  ],
+  "feature_rate_hz": 2.0,
+  "hemodynamic_offset_s": 5.0,
+  "mesh": "fsaverage5",
+  "output_rate_hz": 1.0,
+  "output_vertices": 20484,
+  "training_studies": [
+   "Algonauts2025Bold",
+   "Lahner2024Bold",
+   "Lebel2023Bold",
+   "Wen2017"
+  ],
+  "training_subjects": 25,
+  "video_clip_duration_s": 4.0
+ },
+ "verdict": "NOT_USABLE_DISCREPANCY_UNMEASURED",
+ "verdict_note": "The artefact is obtainable and runs; the validation is not achievable on this machine. Delta_k is unknown, not zero, and every gradient path is disabled.",
+ "written_at": "2026-08-06T13:35:00+00:00"
+}
