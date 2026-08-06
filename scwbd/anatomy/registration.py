@@ -82,6 +82,17 @@ class ParcelCoverage:
     n_voxels: np.ndarray  # (P,) EPI voxels assigned to each parcel
     covered: np.ndarray  # (P,) bool
     epi_voxel_mm3: float
+    #: ``"brain_mask"`` when counted inside a brain mask, ``"field_of_view"``
+    #: when counted over the whole EPI array.
+    #:
+    #: These are NOT interchangeable and the difference is not small. The EPI
+    #: array is a rectangular box; without a mask, every parcel that falls
+    #: anywhere inside that box counts as "covered" whether or not there is
+    #: brain signal there. On sub-xp107 the unmasked count is 400/400 covered
+    #: -- which says only that the atlas fits inside the box, and would be
+    #: read as "every parcel is observed". The field is mandatory so an
+    #: FOV count can never be quoted as a signal count.
+    basis: str
     notes: str = ""
 
     @property
@@ -99,6 +110,7 @@ class ParcelCoverage:
                 float(np.median(self.n_voxels[self.covered])) if self.covered.any() else 0.0
             ),
             "epi_voxel_mm3": round(self.epi_voxel_mm3, 3),
+            "basis": self.basis,
         }
 
 
@@ -352,7 +364,12 @@ def parcel_coverage(
     brain_mask: np.ndarray | None = None,
 ) -> ParcelCoverage:
     """Count EPI voxels per parcel; zero is *unobserved*, not zero-signal."""
-    lab = labels_in_epi if brain_mask is None else np.where(brain_mask, labels_in_epi, -1)
+    if brain_mask is None:
+        lab = labels_in_epi
+        basis = "field_of_view"
+    else:
+        lab = np.where(brain_mask, labels_in_epi, -1)
+        basis = "brain_mask"
     counts = np.bincount(lab[lab >= 0].ravel(), minlength=n_parcels)[:n_parcels]
     vox_mm3 = float(abs(np.linalg.det(np.asarray(epi_affine, float)[:3, :3])))
     return ParcelCoverage(
@@ -362,9 +379,17 @@ def parcel_coverage(
         n_voxels=counts,
         covered=counts > 0,
         epi_voxel_mm3=vox_mm3,
+        basis=basis,
         notes=(
             "Zero voxels means the parcel is outside this acquisition's field of "
             "view, not that its BOLD is zero. Never impute (ARCHITECTURE.md §7 "
             "rule 1)."
+            + (
+                " COUNTED OVER THE WHOLE EPI BOX, NOT A BRAIN MASK: 'covered' here "
+                "means the parcel falls inside the acquisition's rectangular array, "
+                "which is a far weaker statement than 'this parcel has signal'."
+                if basis == "field_of_view"
+                else ""
+            )
         ),
     )
