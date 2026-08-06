@@ -372,6 +372,62 @@ most flattering is also the most likely to be misreported.
 Establishing the link properly would require holding everything else fixed and
 varying only the normaliser, which is not what happened here.
 
+## ⚠ CURRICULUM DEVIATION — Stage II ran 1320 effective steps, not 700
+
+Caused by my own decision to stop mid-stage for the leakage gate. Recorded
+because the final report must not describe this artifact as the designed
+curriculum without qualification.
+
+**Resume granularity is stage-level, not step-level.** `completed_stages`
+records whole stages only (`train.py:722`), so an incomplete Stage II **replays
+from step 1 with a fresh `OneCycleLR`**, carrying the model weights but
+restarting the schedule.
+
+```
+step 600  lr 1.517e-05      <- annealed, pre-stop
+step 620  lr 9.742e-06
+--- resume ---
+step   1  lr 9.296e-06
+step 100  lr 2.310e-04      <- back to the Stage II maximum
+```
+
+| | designed | actual |
+|---|---|---|
+| Stage II steps | 700 | **1320** (620 + 700 replay) |
+| Stage II LR schedule | one cycle | **two** — annealed to 9.7e-6, then ramped to 2.31e-4 |
+| total curriculum | 8700 | **~9320** (+7.1 %) |
+
+Also: `global_step` went **backwards** (1520 → 1501) and re-counts, so steps
+1501–1520 appear twice in the log and `global_step` is no longer a clean index.
+And the wall deadline is **recomputed on resume** (`train.py:719`), so the 12 h
+budget restarted at 04:03. **Not treated as licence** — remaining work finishes
+well inside the original 02:22 + 12 h = 14:22 deadline, which is the one held to.
+
+### Why this was not restarted a fourth time
+
+- Stage II still ends **properly annealed**: the replay runs a complete cycle, so
+  the end state is a well-annealed interface stage, not a truncated one.
+- The deviation is 600 extra interface steps plus one warm restart — a known
+  technique, not a pathology.
+- The alternative (reload `stage_I_regional.pt`, run Stage II exactly once) costs
+  ~30 min and discards 620 completed steps **to buy conformity to a step count
+  rather than a property of the model.**
+
+Stated with the conflict declared: I have already caused three restarts, so "do
+not restart" is the convenient conclusion for me and should be discounted
+accordingly.
+
+### The structural finding, which outlives this run
+
+**Stage-level resume granularity means any mid-stage stop silently rewrites that
+stage's LR schedule.** Not a bug — a documented-by-implementation behaviour
+nobody had reason to examine — but it makes *"resume is cheap"* **false for
+anything stopped mid-stage**, and I had been reasoning as though it were true
+every time I weighed stopping.
+
+The honest options for future runs are **step-level resume**, or a rule that
+**stops only happen at stage boundaries**. Queued, not done here.
+
 ## STAGE I RESULT — condition 2, reported in three layers
 
 Stage I completed at step 900 (03:12, wall 2941 s). Stage II is running.
