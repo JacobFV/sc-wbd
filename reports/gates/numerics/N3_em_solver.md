@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** relative error above tolerance against the analytic dipole solution
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1996fba · 2026-08-06T08:36:43+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c0e5833 · 2026-08-06T09:52:41+00:00*
 
 ## Sub-checks
 
@@ -30,5 +30,3 @@ _none run_ — no baseline, no claim.
 - SCOPE: conduction, not induction. A PASS licenses the quasi-static conduction discretisation used for EEG lead fields. It does NOT license the magnetically induced TMS field: different source term, different boundary condition, separate gate (N6_induced_efield).
 - A verification gate is destroyed if the reference leaks into the solver. Check that the boundary data is homogeneous, not the analytic value, before reading this PASS as evidence.
 - Field accuracy, target engagement, network effect and clinical utility remain separate quantities (thesis §0.5).
-- Observed order falls from ~1.94 to ~1.16 at the finest grid. That is the zero-Dirichlet truncation floor, not a solver defect: agent Faraday's constant-h box study separates the two (~0.0023 of the 0.00696 is finite-domain error, ~0.0046 discretisation). Reported, not smoothed.
-- Solver provenance: agent Faraday, branch wt/faraday @ 915fcad, NOT yet merged to master. This verdict was produced by re-running master's gate code against those solvers, not by adopting their report.

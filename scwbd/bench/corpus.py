@@ -80,10 +80,14 @@ CORPUS_LIMITATIONS: tuple[CorpusLimitation, ...] = (
         id="timescales_clamped_to_support_boundary",
         artifact="scwbd-001-beta",
         measured=(
-            "~18% of the corpus has regional timescales pinned to a support boundary rather "
-            "than drawn from the prior (backend mix wilson_cowan 40.5%, wong_wang 32.4%, "
-            "stuart_landau 13.5%, jansen_rit 8.1%, linear_gaussian 5.4%; measured clamp "
-            "rates 47.5% RWW, 6.1% WC)"
+            "AS GENERATED (the bytes 001-beta actually trained on): mechanism A, timescale "
+            "clamped to the support boundary, 19.07%; mechanism B, timescale prior never "
+            "arrives at all, 21.62% (Stuart-Landau + Jansen-Rit). Agent Hodgkin's "
+            "silent-skip fix landed AFTER these bytes were written, so the post-fix figures "
+            "(A 22.32%, B 13.51%) describe a corpus that does not exist yet. Note the "
+            "direction: the fix moves trajectories from 'no prior' into 'prior, clamped', "
+            "so mechanism A RISES. A reader skimming for the smaller number takes 13.51% "
+            "and misses that the other figure went up."
         ),
         consequence=(
             "Where this model appears to have learned that regions are homogeneous in "
@@ -97,6 +101,51 @@ CORPUS_LIMITATIONS: tuple[CorpusLimitation, ...] = (
             "RWW does not dominate the mixture at 32.4% and the corpus is genuinely "
             "backend-diverse; agent Turing recorded this without using it to wave the "
             "limitation away, and neither does this register"
+        ),
+    ),
+    CorpusLimitation(
+        id="no_ei_prior_at_all",
+        artifact="scwbd-001-beta",
+        measured=(
+            "mechanism C: 27.03% of the corpus carries no E/I prior at all (verified "
+            "independently from the shard index, not inferred from the backend mix)"
+        ),
+        consequence=(
+            "Better than a quarter of the training signal contains no excitation/inhibition "
+            "prior whatsoever. Any claim that this model has learned E/I structure must "
+            "state that the corpus could not have taught it over that fraction, and no "
+            "gate may read an E/I-shaped result as evidence without excluding those shards."
+        ),
+        discloses_on=("A1_structured_state", "G2", "A5_typed_operators"),
+    ),
+    CorpusLimitation(
+        id="elevated_loss_rate_not_periodicity",
+        artifact="scwbd-001-beta",
+        measured=(
+            "roughly a third of logged steps show sim_forecast_nll above 3x the running "
+            "floor (bench independently measured 23% and 25% on the two committed Stage I "
+            "series). RETRACTED, and recorded as retracted: this was first relayed as a "
+            "PERIODICITY (steps 80/180/220/320/380/440/500, 'last four exactly 60 apart'). "
+            "It was tested forward -- period 60 from step 320 predicts a spike at 560 -- and "
+            "failed at the first opportunity: a spike at 540, none at 560. Every gap is a "
+            "multiple of 20 by construction because that is the logging grid, and Stage I's "
+            "sim set is ~560 batches/epoch, nowhere near 60. A period was fitted to a run of "
+            "three."
+        ),
+        consequence=(
+            "The elevated-loss rate is real and carries genuine training cost, but it is a "
+            "RATE, not a schedule. Bench independently confirms the driver is batch "
+            "composition rather than optimisation: the spikes occur at the SAME steps with "
+            "the SAME magnitudes across a 1.73x learning-rate difference (step 80: 11.62x at "
+            "lr 6.0e-4 versus 10.54x at 3.46e-4; step 180: 4.74x versus 4.68x; step 220: "
+            "4.54x versus 4.47x). Whether this becomes a corpus mechanism turns on batch "
+            "composition, and no timing claim may be made from a grid-limited series."
+        ),
+        discloses_on=("G1", "A1_structured_state"),
+        found_by="agent Turing (claimed, then falsified and withdrawn by its author)",
+        mitigating_fact=(
+            "the withdrawal came four minutes after the claim, from a forward test the "
+            "author designed to be able to fail"
         ),
     ),
     CorpusLimitation(

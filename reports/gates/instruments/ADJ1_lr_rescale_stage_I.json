@@ -1,0 +1,108 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "adjudication",
+  "claim_id": "ADJ1_lr_rescale_stage_I",
+  "status": "COULD_NOT_RUN",
+  "manifest": {
+    "claim_id": "ADJ1_lr_rescale_stage_I",
+    "claim_text": "The directed change improved the run on its pre-committed metric. Decision: A mid-run learning-rate rescale: rates were written for batch 192, batch was then cut to 64 for device memory, and the rates were rescaled to match. The scaling mismatch was real; what is under review is whether acting on it mid-run helped.",
+    "falsified_by": "the pre-committed metric shows no improvement outside the preregistered equivalence margin, or shows harm",
+    "consequence_if_failed": "Recorded as a SHARED reasoning error with a single common cause: BOTH parties judged from composite training loss where sim_forecast_nll was the appropriate instrument. This is not a coordinator overriding a correct analysis \u2014 the objection it overrode was itself partly wrongly grounded. Naming the common cause is more useful than assigning blame, because the common cause is fixable and the blame is not. Secondary failures: evidence accepted without asking how long the series was (reviewer side), and a truncated series offered as support (author side). It is NOT recorded as a property of SC-WBD-001-beta; the artifact did nothing wrong here.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "procedural: the measuring party and the adjudicating party are separated, as everywhere else in this project",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "preregistered_metric": "sim_forecast_nll (end of Stage I)",
+      "equivalence_margin_relative": 0.01,
+      "secondary_metrics_may_change_the_verdict": false,
+      "sub_grid_timing_claims_permitted": false
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "This adjudication does not evaluate SC-WBD-001-beta. It evaluates a decision.",
+      "A neutral or negative verdict is a process finding, not an artifact defect."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [
+    "stage_I_series: could not run \u2014 the run has not reached end of Stage I; agent Turing supplies the baseline and rescaled series on sim_forecast_nll and bench returns the verdict. Preregistered here BEFORE the data exists \u2014 this file's commit precedes the run that produces it."
+  ],
+  "subchecks": [
+    {
+      "name": "stage_I_series",
+      "description": "The two series on the pre-committed metric, at end of Stage I.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": true,
+      "reason": "the run has not reached end of Stage I; agent Turing supplies the baseline and rescaled series on sim_forecast_nll and bench returns the verdict. Preregistered here BEFORE the data exists \u2014 this file's commit precedes the run that produces it.",
+      "falsified_by": "the pre-committed metric shows no improvement outside the preregistered equivalence margin, or shows harm",
+      "metrics": []
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "The decision now rests ONLY on the a-priori scaling argument: both pieces of outcome evidence originally offered for it were withdrawn by the party that offered them, unprompted. That withdrawal is to their credit and is recorded as such.",
+    "Pre-committed metric: sim_forecast_nll at end of Stage I, NOT composite loss during warmup. Committed by agent Turing while it did not favour them."
+  ],
+  "artifacts": {
+    "subject": "decision ADJ1_lr_rescale_stage_I, owner: SHARED: the coordinator (directed the rescale) and agent Turing (whose original refusal to restart also rested on a wrong diagnosis). Both parties reasoned from composite loss.",
+    "decision": {
+      "description": "A mid-run learning-rate rescale: rates were written for batch 192, batch was then cut to 64 for device memory, and the rates were rescaled to match. The scaling mismatch was real; what is under review is whether acting on it mid-run helped.",
+      "owner": "SHARED: the coordinator (directed the rescale) and agent Turing (whose original refusal to restart also rested on a wrong diagnosis). Both parties reasoned from composite loss.",
+      "argued_against_by": "agent Turing (on grounds that were themselves partly wrong)",
+      "a_priori_argument": "batch 192 -> 64 is a genuine 3x change in gradient-noise scale, so the written rates no longer corresponded to the batch actually being used",
+      "withdrawn_evidence": [
+        "'loss floors improved at every matched step' \u2014 true only of a series truncated at step 140; extended, the composite-loss advantage REVERSED (better at 7 matched steps, worse at the 4 most recent). Withdrawn by agent Turing, unprompted.",
+        "'lr sets how badly the model is thrown by the hard batch' \u2014 read off composite loss; on forecast NLL the throw is the same size at both rates (20.943 vs 20.980). Withdrawn by agent Turing, unprompted."
+      ]
+    }
+  },
+  "provenance": {
+    "timestamp_utc": "2026-08-06T09:54:47+00:00",
+    "git_rev": "c0e5833",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/bench/adjudication.py",
+      "scwbd/bench/corpus.py",
+      "scwbd/bench/instruments.py",
+      "scwbd/bench/numerics.py",
+      "scwbd/bench/report.py",
+      "scwbd/bench/runner.py",
+      "scwbd/runtime/_compat.py",
+      "scwbd/runtime/backends.py",
+      "scwbd/runtime/targeting.py",
+      "tests/bench/test_adjudication.py",
+      "tests/bench/test_instruments.py",
+      "tests/bench/test_runner.py",
+      "tests/runtime/test_field_backends.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
+  }
+}

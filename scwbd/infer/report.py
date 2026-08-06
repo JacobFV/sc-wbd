@@ -298,6 +298,13 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
             "C3_intervention_information": c3,
             "C4_calibrated_recovery": c4,
             "C5_recovery_improvement": c5,
+            # A design that learns *nothing* about tau leaves it at the prior
+            # mean.  Where tau_true happens to equal the prior mean, that scores
+            # a perfect delay error, so the delay comparison cannot discriminate
+            # in that regime.  Flagged rather than silently averaged in.
+            "delay_comparison_degenerate": bool(
+                abs(float(rres["eta_true_natural"].get("tau", 0.0)) - 0.012) < 1e-9
+            ),
             # --- secondary, POST HOC: not part of the preregistered verdict ---
             # lambda_min over the theta block is dominated by the delay
             # direction, which a 1 s instrument cannot inform at all; the
@@ -349,6 +356,9 @@ def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
         "criteria_all_regimes": C,
         "unevaluated_criteria": unevaluated,
         "regimes_evaluated": list(per_regime),
+        "delay_degenerate_regimes": [
+            k for k, v in per_regime.items() if v.get("delay_comparison_degenerate")
+        ],
         "per_regime": per_regime,
         "consequence": (
             "One or more preregistered criteria were NOT EVALUATED (missing "

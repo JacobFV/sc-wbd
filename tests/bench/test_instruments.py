@@ -84,6 +84,7 @@ def test_known_uninformative_fields_are_registered_with_remedies():
     assert "torch.compile" in names
     assert "MemoryMax" in names
     assert "OOM" in names
+    assert "composite training loss" in names   # the measurement-choice variant
     # the bench's own bug is registered too, not quietly fixed
     mine = [u for u in KNOWN_UNINFORMATIVE if u.owner.startswith("bench")]
     assert mine and "not the actual reason" in mine[0].why_it_cannot_discriminate
@@ -93,3 +94,47 @@ def test_default_instruments_all_declare_a_consequence():
     for inst in default_instruments():
         assert inst.consequence, f"{inst.name} does not say what a constant reading means"
         assert len(inst.inputs) >= 2
+
+
+def test_the_measurement_choice_variant_is_registered():
+    """Not an instrument that cannot vary: the wrong one selected among several."""
+    row = next(u for u in KNOWN_UNINFORMATIVE if "composite training loss" in u.name)
+    assert "MEASUREMENT-CHOICE variant" in row.why_it_cannot_discriminate
+    assert "Selecting the metric AFTER seeing the curves is the failure" in \
+        row.why_it_cannot_discriminate
+    assert "pre-commit the judging metric" in row.remedy
+    assert "adjudication" in row.remedy
+
+
+def test_seed_stability_catches_a_test_that_passes_on_rng_luck():
+    """Hodgkin's diagnostic: if the verdict moves with the seed, a pass means nothing."""
+    from scwbd.bench.instruments import seed_stability
+    import numpy as np
+
+    # effect 0.5, noise 0.4: the verdict is dominated by the draw
+    def noisy(seed):
+        v = 0.5 + np.random.default_rng(seed).normal(0, 0.4)
+        return v < 0.5, v
+
+    st = seed_stability(noisy, range(8), name="cerebellum_forward_model")
+    assert not st.stable
+    assert "indistinguishable from a coin flip" in st.summary
+    assert 0 < st.n_pass < 8
+
+    # a real effect with margin is stable across every seed
+    def solid(seed):
+        v = 0.20 + np.random.default_rng(seed).normal(0, 0.02)
+        return v < 0.5, v
+
+    st2 = seed_stability(solid, range(8), name="matched_controls")
+    assert st2.stable and st2.n_pass == 8
+    assert "stable across 8 seeds" in st2.summary
+
+
+def test_the_variance_variant_is_registered_with_the_retraction():
+    row = next(u for u in KNOWN_UNINFORMATIVE if "noise exceeds the effect" in u.name)
+    assert "THE VARIANCE VARIANT" in row.why_it_cannot_discriminate
+    assert "must NOT be counted as historical evidence" in row.why_it_cannot_discriminate
+    # the criterion between repairing an instrument and accommodating a failure
+    assert "leave it red" in row.remedy
+    assert "seed_stability" in row.remedy

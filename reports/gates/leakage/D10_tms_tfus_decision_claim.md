@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** The mandatory control (Prospective randomized or otherwise causally identified target/protocol comparison with field, pose, state and sham records) shows the result survives only without it.
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1996fba · 2026-08-06T08:36:42+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c0e5833 · 2026-08-06T09:52:25+00:00*
 
 ## Could not run
 

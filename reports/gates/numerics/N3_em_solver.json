@@ -75,74 +75,16 @@
   "notes": [
     "SCOPE: conduction, not induction. A PASS licenses the quasi-static conduction discretisation used for EEG lead fields. It does NOT license the magnetically induced TMS field: different source term, different boundary condition, separate gate (N6_induced_efield).",
     "A verification gate is destroyed if the reference leaks into the solver. Check that the boundary data is homogeneous, not the analytic value, before reading this PASS as evidence.",
-    "Field accuracy, target engagement, network effect and clinical utility remain separate quantities (thesis \u00a70.5).",
-    "Observed order falls from ~1.94 to ~1.16 at the finest grid. That is the zero-Dirichlet truncation floor, not a solver defect: agent Faraday's constant-h box study separates the two (~0.0023 of the 0.00696 is finite-domain error, ~0.0046 discretisation). Reported, not smoothed.",
-    "Solver provenance: agent Faraday, branch wt/faraday @ 915fcad, NOT yet merged to master. This verdict was produced by re-running master's gate code against those solvers, not by adopting their report."
+    "Field accuracy, target engagement, network effect and clinical utility remain separate quantities (thesis \u00a70.5)."
   ],
   "artifacts": {
     "subject": "scwbd.intervene.numerics.quasistatic_dipole_potential_fd",
     "reference": "current dipole in an unbounded homogeneous conductor (conduction / volume-current problem)",
-    "does_not_cover": "magnetically induced E-field of a TMS coil (induction); see gate N6",
-    "solver_provenance": {
-      "solver_module": "scwbd.intervene.numerics (agent Faraday)",
-      "solver_source_file": "/home/brandonin/Documents/scwbd-wt/faraday/scwbd/intervene/numerics.py",
-      "solver_branch": "wt/faraday",
-      "solver_commit": "915fcad",
-      "merged_into_master": false,
-      "verdict_owner": "agent J (bench); gate code from master, unmodified",
-      "reproduce": "python -m scwbd.intervene.run_field_gates --out reports/intervene",
-      "independent_rerun": "agent J re-ran both gates from master's scwbd.bench.numerics against these solvers rather than adopting agent Faraday's JSON; point estimates and bootstrap intervals reproduced (N3 0.0069564 [0.00589, 0.00828]; N4 0.0125564 [0.01175, 0.01334]; Helmholtz 9.13e-4 vs their 9.18e-4 on an independent march)"
-    },
-    "grid_convergence_recomputed_by_bench": [
-      {
-        "n_per_axis": 128.0,
-        "spacing_m": 0.00934556203396373,
-        "mean_relative_error": 0.021341080916621815,
-        "max_relative_error": 1.7228262269646448,
-        "observed_order": NaN
-      },
-      {
-        "n_per_axis": 192.0,
-        "spacing_m": 0.006230374689309153,
-        "mean_relative_error": 0.009707455784066229,
-        "max_relative_error": 0.2597877813943264,
-        "observed_order": 1.9428050729513069
-      },
-      {
-        "n_per_axis": 256.0,
-        "spacing_m": 0.004672781016981865,
-        "mean_relative_error": 0.0069564029367643505,
-        "max_relative_error": 0.1452111916163755,
-        "observed_order": 1.158333237913263
-      }
-    ],
-    "truncation_study_reported_by_faraday": [
-      {
-        "margin": 1.9,
-        "n_per_axis": 256.0,
-        "spacing_m": 0.004672781016981865,
-        "half_width_m": 0.5981159701736787,
-        "mean_relative_error": 0.0069564029367643505
-      },
-      {
-        "margin": 2.375,
-        "n_per_axis": 320.0,
-        "spacing_m": 0.004672781016981865,
-        "half_width_m": 0.7476449627170983,
-        "mean_relative_error": 0.0053164264333806135
-      },
-      {
-        "margin": 2.85,
-        "n_per_axis": 384.0,
-        "spacing_m": 0.004672781016981865,
-        "half_width_m": 0.897173955260518,
-        "mean_relative_error": 0.0046392111180694725
-      }
-    ]
+    "does_not_cover": "magnetically induced E-field of a TMS coil (induction); see gate N6"
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T08:36:43+00:00",
-    "git_rev": "1996fba",
+    "timestamp_utc": "2026-08-06T09:52:41+00:00",
+    "git_rev": "c0e5833",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -158,36 +100,19 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/bench/ablations.py",
-      "scwbd/bench/adapters.py",
+      "scwbd/bench/adjudication.py",
       "scwbd/bench/corpus.py",
-      "scwbd/bench/gates.py",
       "scwbd/bench/instruments.py",
       "scwbd/bench/numerics.py",
+      "scwbd/bench/report.py",
       "scwbd/bench/runner.py",
-      "scwbd/infer/cli.py",
-      "scwbd/infer/filters.py",
-      "scwbd/infer/fisher.py",
-      "scwbd/infer/identifiability.py",
-      "scwbd/infer/linear_gaussian.py",
-      "scwbd/infer/report.py",
-      "scwbd/infer/sbi.py",
-      "scwbd/infer/synthetic_slice.py",
-      "scwbd/infer/types.py",
-      "tests/bench/test_could_not_run.py",
-      "tests/bench/test_gates_can_fail.py",
+      "scwbd/runtime/_compat.py",
+      "scwbd/runtime/backends.py",
+      "scwbd/runtime/targeting.py",
+      "tests/bench/test_adjudication.py",
       "tests/bench/test_instruments.py",
-      "tests/bench/test_numerics.py",
       "tests/bench/test_runner.py",
-      "tests/infer/conftest.py",
-      "tests/infer/test_device_parity.py",
-      "tests/infer/test_filters.py",
-      "tests/infer/test_fisher.py",
-      "tests/infer/test_model_comparison.py",
-      "tests/infer/test_multirate.py",
-      "tests/infer/test_recovery.py",
-      "tests/infer/test_sbi.py",
-      "tests/infer/test_synthetic_slice.py"
+      "tests/runtime/test_field_backends.py"
     ],
     "source_clean": false,
     "known_uninformative_fields": {

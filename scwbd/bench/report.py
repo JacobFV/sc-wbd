@@ -69,7 +69,8 @@ SCHEMA_VERSION = "scwbd-schema/1.0.0"
 MODEL_DESIGNATION = "SC-WBD-001-beta"
 
 Status = Literal["PASS", "FAIL", "COULD_NOT_RUN"]
-ReportKind = Literal["gate", "ablation", "leakage", "numerics", "instrument"]
+ReportKind = Literal["gate", "ablation", "leakage", "numerics", "instrument",
+                     "adjudication"]
 
 _STATUS_ORDER = {"PASS": 0, "FAIL": 1, "COULD_NOT_RUN": 2}
 
@@ -496,7 +497,7 @@ class ClaimReport:
                     f"{self.manifest.claim_id}: a gate may not PASS without baselines run "
                     "(ARCHITECTURE.md §4: baseline comparisons are part of 'done')"
                 )
-            if self.kind in ("numerics", "instrument") and not (
+            if self.kind in ("numerics", "instrument", "adjudication") and not (
                 self.artifacts.get("subject") or self.artifacts.get("solver_provenance")
             ):
                 raise ReportDisciplineError(

@@ -32,7 +32,14 @@ def test_any_numerics_pass_declares_its_subject(bare):
         if r.status == "PASS":
             assert r.artifacts.get("subject"), \
                 f"{r.manifest.claim_id} passed without recording what it checked"
-            assert any("not evidence" in n for n in r.notes)
+            # a passing numerical check must also declare its SCOPE, not just its
+            # subject. Matched against the same vocabulary the summary surfaces,
+            # rather than one magic phrase.
+            scope_markers = ("not evidence", "not a statement", "SCOPE:", "STANDOFF ONLY",
+                             "does NOT license", "does not cover", "REFINEMENT RULE:",
+                             "licenses no claim", "NEGATIVE RESULT")
+            assert any(any(k in n for k in scope_markers) for n in r.notes), \
+                f"{r.manifest.claim_id} passed without declaring its scope"
 
 
 def test_summary_lists_every_gate_ablation_audit_and_numerical_check(bare):
@@ -122,7 +129,7 @@ def test_summary_names_the_instruments_that_cannot_discriminate(bare):
     md = build_summary(bare["gates"], bare["ablations"], bare["leakage"],
                        bare["numerics"], bare.get("instruments", []))
     assert "## 4b. Instruments that cannot discriminate" in md
-    assert "five** times in this project" in md
+    assert "six** times in this project" in md
     assert "in this bench's own G4" in md
     assert "inside the mechanism built to catch stale artifacts" in md
     # the standing rule, stated as a rule
@@ -149,3 +156,13 @@ def test_summary_states_that_g4_cannot_pass_in_this_release(bare):
     assert "absent rather than fabricated" in md
     assert "simulation" in md and "not a held-out perturbation" in md
     assert "It is not one." in md   # the end-to-end inference a reader might make
+
+
+def test_pending_adjudication_is_visible_on_the_scoreboard(bare):
+    ids = {r.manifest.claim_id for r in bare["instruments"]}
+    assert "ADJ1_lr_rescale_stage_I" in ids
+    md = build_summary(bare["gates"], bare["ablations"], bare["leakage"],
+                       bare["numerics"], bare["instruments"])
+    assert "ADJ1_lr_rescale_stage_I" in md
+    assert "a decision under review, not a property of the model" in md
+    assert "never against SC-WBD-001-beta" in md

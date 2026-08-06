@@ -141,39 +141,13 @@
           "passed": true
         }
       ]
-    },
-    {
-      "name": "mesh_convergence",
-      "description": "Observed order of the induced-field discretisation.",
-      "status": "PASS",
-      "mandatory": true,
-      "reason": "",
-      "falsified_by": "refinement does not converge at the advertised order",
-      "metrics": [
-        {
-          "name": "induced_efield.observed_order",
-          "value": 1.6944341765404731,
-          "units": "dimensionless",
-          "kind": "numerical",
-          "interval": null,
-          "threshold": 1.5,
-          "direction": "greater_is_better",
-          "require_interval_beats_threshold": false,
-          "exact": true,
-          "note": "errors ['0.139', '0.0394', '0.0147', '0.00385']",
-          "passed": true
-        }
-      ]
     }
   ],
   "baselines_run": [],
   "notes": [
     "Induction, not conduction: this gate is what N3 does NOT cover.",
     "STANDOFF ONLY. The reference series converges like (a/R_c)**degree. At a contact geometry (a/R_c ~ 0.955 for a coil element 4 mm off an 85 mm scalp) no feasible degree brings its bound below the solver error, so this gate validates the discretisation against a STANDOFF equivalent dipole, not against a contact coil. tms-robotics positions a coil in contact; that regime is gate N8_induced_efield_contact and it has not run.",
-    "The validity domain is a metric in this report, not a footnote: a reader who checks only the headline error still sees reference.convergence_ratio.",
-    "Mesh order is the FOUR-POINT fit (1.694), not the asymptotic pair (1.91): agent Faraday reported the fit including the pre-asymptotic meshes because selecting the asymptotic range would have given a prettier number for a worse reason. This gate records the conservative choice.",
-    "The reference is independent in DERIVATION, not merely in file location: surface-charge BEM (5120 panels, linear solve) versus a spectral interior Neumann solution (2400 multipole coefficients, degree 48, autograd gradient). No shared function, no shared formula.",
-    "Solver provenance: agent Faraday, branch wt/faraday @ 915fcad."
+    "The validity domain is a metric in this report, not a footnote: a reader who checks only the headline error still sees reference.convergence_ratio."
   ],
   "artifacts": {
     "subject": "scwbd.intervene.tms.efield.charge_bem_induced_efield",
@@ -188,30 +162,12 @@
     },
     "geometry": {
       "sphere_radius_m": 0.085,
-      "dipole_pos_m": [
-        [
-          0.0,
-          0.0,
-          0.11
-        ]
-      ],
-      "cortex_radius_m": 0.07,
       "a_over_Rc": 0.7727272727272728
-    },
-    "solver_provenance": {
-      "solver_module": "scwbd.intervene.numerics (agent Faraday)",
-      "solver_source_file": "/home/brandonin/Documents/scwbd-wt/faraday/scwbd/intervene/numerics.py",
-      "solver_branch": "wt/faraday",
-      "solver_commit": "915fcad",
-      "merged_into_master": false,
-      "verdict_owner": "agent J (bench); gate code from master, unmodified",
-      "reproduce": "python -m scwbd.intervene.run_field_gates --out reports/intervene",
-      "independent_rerun": "agent J re-ran both gates from master's scwbd.bench.numerics against these solvers rather than adopting agent Faraday's JSON; point estimates and bootstrap intervals reproduced (N3 0.0069564 [0.00589, 0.00828]; N4 0.0125564 [0.01175, 0.01334]; Helmholtz 9.13e-4 vs their 9.18e-4 on an independent march)"
     }
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T08:38:24+00:00",
-    "git_rev": "1996fba",
+    "timestamp_utc": "2026-08-06T09:54:47+00:00",
+    "git_rev": "c0e5833",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -227,37 +183,19 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/bench/ablations.py",
-      "scwbd/bench/adapters.py",
+      "scwbd/bench/adjudication.py",
       "scwbd/bench/corpus.py",
-      "scwbd/bench/gates.py",
       "scwbd/bench/instruments.py",
       "scwbd/bench/numerics.py",
+      "scwbd/bench/report.py",
       "scwbd/bench/runner.py",
-      "scwbd/dynamics/base.py",
-      "scwbd/infer/cli.py",
-      "scwbd/infer/filters.py",
-      "scwbd/infer/fisher.py",
-      "scwbd/infer/identifiability.py",
-      "scwbd/infer/linear_gaussian.py",
-      "scwbd/infer/report.py",
-      "scwbd/infer/sbi.py",
-      "scwbd/infer/synthetic_slice.py",
-      "scwbd/infer/types.py",
-      "tests/bench/test_could_not_run.py",
-      "tests/bench/test_gates_can_fail.py",
+      "scwbd/runtime/_compat.py",
+      "scwbd/runtime/backends.py",
+      "scwbd/runtime/targeting.py",
+      "tests/bench/test_adjudication.py",
       "tests/bench/test_instruments.py",
-      "tests/bench/test_numerics.py",
       "tests/bench/test_runner.py",
-      "tests/infer/conftest.py",
-      "tests/infer/test_device_parity.py",
-      "tests/infer/test_filters.py",
-      "tests/infer/test_fisher.py",
-      "tests/infer/test_model_comparison.py",
-      "tests/infer/test_multirate.py",
-      "tests/infer/test_recovery.py",
-      "tests/infer/test_sbi.py",
-      "tests/infer/test_synthetic_slice.py"
+      "tests/runtime/test_field_backends.py"
     ],
     "source_clean": false,
     "known_uninformative_fields": {

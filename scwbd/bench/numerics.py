@@ -1289,9 +1289,13 @@ def validate_induced_efield_contact(
         "the geometry the downstream targeting consumer actually uses.",
         "no reference or self-convergence study achieves a defensible tolerance at contact "
         "geometry, or the solver's error there exceeds the preregistered tolerance",
-        "Targeting in the contact regime is UNVALIDATED. scwbd.runtime must surface that as "
-        "Unresolved/Defer rather than returning a confident E-field or engagement number, "
-        "and no pose ranking may be reported as validated at contact geometry.",
+        "IF THIS GATE FAILS: targeting in the contact regime is UNVALIDATED, and "
+        "scwbd.runtime must surface that as Unresolved/Defer rather than returning a "
+        "confident E-field, with no pose ranking reported as validated at contact "
+        "geometry. IF IT PASSES: the runtime may proceed INSIDE the declared resolution "
+        "envelope carrying the calibrated error bound, and must Defer outside it -- which "
+        "is enforced at the solver rather than left to the caller. A passing gate licenses "
+        "the envelope, never the whole regime.",
         seed=seed,
         thresholds={"min_contact_ratio": min_contact_ratio, "relative_tol": tol,
                     "expected_order": expected_order},
@@ -1333,11 +1337,16 @@ def validate_induced_efield_contact(
 
     ratio = float(convergence_ratio)
     subs: list[SubCheck] = [SubCheck(
-        name="is_contact_geometry",
+        name="is_contact_geometry",  # harder-than-consumer geometry is acceptable
         description="Confirm the gate was handed contact geometry, not standoff relabelled.",
         metrics=[Metric(name="contact.a_over_Rc", value=ratio, kind="numerical", exact=True,
                         threshold=min_contact_ratio, direction="greater_is_better",
-                        note="a standoff geometry belongs in N6, not here")],
+                        note=("a standoff geometry belongs in N6, not here. Validating at a "
+                              "HARDER ratio than the downstream consumer uses is acceptable "
+                              "and is recorded: a clinical figure-eight at 4 mm scalp "
+                              "standoff sits at a/R_c ~ 0.902 because the coil is flat and "
+                              "the head curved, so its nearest winding is ~9.2 mm off. The "
+                              "harder case bounds the easier one; the reverse would not."))],
         mandatory=True,
         falsified_by="the geometry is not in the contact regime this gate exists for",
     )]
@@ -1458,8 +1467,39 @@ def run_numerics_suite(
     reports.append(validate_em_solver(em_solver, seed=seed))
     reports.append(validate_acoustic_solver(acoustic_solver, grid=acoustic_grid,
                                             dx=acoustic_dx, seed=seed))
+    # agent Faraday's induced-field solver and its INDEPENDENT reference, plus the
+    # geometry those gates were validated at. Auto-wired so `python -m scwbd.bench`
+    # reproduces N6/N8 rather than silently reverting them to COULD_NOT_RUN.
+    n6_kw: dict[str, Any] = {}
+    n8_rep: ClaimReport | None = None
+    if induced_efield_solver is None or induced_efield_analytic is None:
+        dep = adapters.induced_field_solver()
+        rfg = adapters.probe("scwbd.intervene.run_field_gates")
+        if dep.available and rfg.available:
+            s, r = dep.obj
+            induced_efield_solver = induced_efield_solver or s
+            induced_efield_analytic = induced_efield_analytic or r
+            g = rfg.obj
+            try:
+                a = float(g.N6_SPHERE_RADIUS)
+                rc = float(np.linalg.norm(np.asarray(g.N6_DIPOLE_POS, dtype=float)))
+                n6_kw = dict(
+                    points=g.n6_points(),
+                    solver_kwargs=dict(dipole_pos=g.N6_DIPOLE_POS,
+                                       dipole_mdot=g.N6_DIPOLE_MDOT,
+                                       sphere_radius=g.N6_SPHERE_RADIUS),
+                    convergence_ratio=a / rc, reference_degree=48,
+                    geometry={"sphere_radius_m": a, "a_over_Rc": a / rc},
+                )
+            except Exception:
+                n6_kw = {}
+            try:
+                n8_rep = g.run_n8()
+            except Exception:
+                n8_rep = None
     reports.append(validate_induced_efield_solver(induced_efield_solver,
                                                   analytic=induced_efield_analytic,
-                                                  seed=seed))
-    reports.append(validate_induced_efield_contact(seed=seed))
+                                                  seed=seed, **n6_kw))
+    reports.append(n8_rep if isinstance(n8_rep, ClaimReport)
+                   else validate_induced_efield_contact(seed=seed))
     return reports

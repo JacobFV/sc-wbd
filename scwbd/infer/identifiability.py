@@ -206,6 +206,11 @@ def build_design(
             device=torch.device(cfg.device or "cpu"),
         )
         notes.append("EEG decimated to one sample per repetition (naive resampling)")
+        # The *estimator* must read EEG on the same schedule the data were
+        # decimated onto.  For the coarse-model design this is handled by the
+        # 1 s fit config below; for the exact-model control it must be set here,
+        # otherwise the fine model expects 1 ms samples that no longer exist.
+        fit_eeg_steps = eeg_steps
     if spec.coarse_model:
         fit_cfg = calibrate_observation_noise(
             coarse_config(cfg), u_true, coarsen_protocol(proto, cfg, coarse_config(cfg)),
@@ -214,6 +219,7 @@ def build_design(
         )
         fit_cfg = replace(fit_cfg, sigma_eeg=cfg.sigma_eeg, sigma_bold=cfg.sigma_bold)
         fit_proto = coarsen_protocol(proto, cfg, fit_cfg)
+        fit_eeg_steps = None      # the 1 s config already reads every step
         notes.append(
             "estimator uses the 1 s discretisation: with dt = Delta_B there is no "
             "delay line, so d mu / d tau == 0 and tau is structurally "
@@ -723,7 +729,16 @@ def run_benchmark(
             print(f"[regime {regime.name}]")
         for spec in designs:
             t0 = time.time()
-            bd = build_design(spec, base_cfg, regime, seed=seed)
+            try:
+                bd = build_design(spec, base_cfg, regime, seed=seed)
+            except Exception as exc:                      # noqa: BLE001
+                rres["designs"][spec.name] = {
+                    "label": spec.label, "primary": spec.primary,
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+                if verbose:
+                    print(f"  {spec.name:32s} ERROR {type(exc).__name__}: {exc}")
+                continue
             do_rec = with_recovery and (
                 recovery_designs is None or spec.name in set(recovery_designs)
             )
@@ -789,10 +804,20 @@ def run_benchmark(
                     f"({entry['seconds']:.0f}s)"
                 )
             rres["designs"][spec.name] = entry
+            if checkpoint_path:   # per design, so nothing is lost to a late crash
+                _checkpoint(results, regime.name, rres, checkpoint_path)
         results["regimes"][regime.name] = rres
-        if checkpoint_path:      # a multi-hour run must survive an interruption
-            import json
-            from pathlib import Path as _P
-            _P(checkpoint_path).parent.mkdir(parents=True, exist_ok=True)
-            _P(checkpoint_path).write_text(json.dumps(as_builtin(results), indent=1))
+        if checkpoint_path:
+            _checkpoint(results, regime.name, rres, checkpoint_path)
     return results
+
+
+def _checkpoint(results, regime_name, rres, path) -> None:
+    import json
+    from pathlib import Path as _P
+
+    snapshot = dict(results)
+    snapshot["regimes"] = dict(results["regimes"])
+    snapshot["regimes"][regime_name] = rres
+    _P(path).parent.mkdir(parents=True, exist_ok=True)
+    _P(path).write_text(json.dumps(as_builtin(snapshot), indent=1))

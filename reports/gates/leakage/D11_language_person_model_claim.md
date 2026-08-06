@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** The mandatory control (Hold out unfamiliar situations, future time windows and private facts; compare generic LLM, language-history-only and multimodal person models) shows the result survives only without it.
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 1996fba · 2026-08-06T08:36:42+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c0e5833 · 2026-08-06T09:52:25+00:00*
 
 ## Could not run
 

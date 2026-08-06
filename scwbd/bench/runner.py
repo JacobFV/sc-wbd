@@ -26,6 +26,7 @@ from typing import Any, Iterable, Mapping, Sequence
 from . import adapters
 from .ablations import ABLATIONS, run_all_ablations
 from .gates import CLAIMS, run_all_gates
+from .adjudication import adjudicate
 from .corpus import CORPUS_LIMITATIONS
 from .instruments import KNOWN_UNINFORMATIVE, audit_instruments
 from .leakage import APPENDIX_D_ROWS, run_all_audits
@@ -266,10 +267,13 @@ def build_summary(
     L.append("")
     L.append(
         "A green reading from an instrument that is structurally incapable of reading any "
-        "other way is not evidence. This has now happened **five** times in this project. "
+        "other way is not evidence. This has now happened **six** times in this project. "
         "The fourth was inside the mechanism built to catch stale artifacts; the fifth was "
         "in this bench's own G4, which reported a reason that was not the actual reason — a "
-        "discrimination failure about causes rather than values:"
+        "discrimination failure about causes rather than values. The sixth is different "
+        "again: composite training loss is a perfectly good instrument that was *selected "
+        "after the curves were seen*, twice, in the direction that flattered a just-taken "
+        "decision. The bias was in the choosing:"
     )
     L.append("")
     L.append("| field | what it reads | why it cannot discriminate | remedy | found by |")
@@ -290,8 +294,16 @@ def build_summary(
     )
     L.append("")
     if instruments:
-        L += _table(list(instruments), title="4c. Instrument discrimination audit",
+        L += _table(list(instruments), title="4c. Instrument discrimination audit, and "
+                                            "pending procedural adjudications",
                     describe={})
+        L.append(
+            "An adjudication row is a decision under review, not a property of the model. "
+            "The party that produces the numbers does not return the verdict: a neutral or "
+            "negative outcome there is recorded against the decision and its owner, and "
+            "never against SC-WBD-001-beta."
+        )
+        L.append("")
     L.append(
         "The whole-tree `-dirty` flag is **not** recorded in this bench's provenance and "
         "nothing gates on it. What is recorded is `source_dirty_paths`: the porcelain "
@@ -419,6 +431,7 @@ def run_everything(config: Mapping[str, Any] | None = None, *, seed: int = 0,
     audits = run_all_audits(cfg.get("leakage"), seed=seed)
     numerics = run_numerics_suite(seed=seed, **dict(cfg.get("numerics", {})))
     instruments = [audit_instruments(seed=seed, **dict(cfg.get("instruments", {})))]
+    instruments.append(adjudicate(seed=seed, **dict(cfg.get("adjudication", {}))))
 
     if write:
         GATES_DIR.mkdir(parents=True, exist_ok=True)
