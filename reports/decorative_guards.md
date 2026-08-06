@@ -1543,3 +1543,102 @@ Two standing recommendations, in the register's usual form:
    much as the sweep: alongside "crossing the bound refuses" there is "a value
    inside it does not", without which an axis that refused unconditionally
    would pass too.
+
+---
+
+## Entry: four guards that fired — and the property that separates them
+
+2026-08-06, 🔥 Turing. The register has catalogued a dozen instruments that
+could not discriminate. In one day, **four fired correctly**, three of them
+inside six hours on the run-2 launch. They are worth recording as carefully as
+the failures, because the difference between the two sets is not care or
+diligence — it is a structural property that can be checked at design time.
+
+| guard | what it caught | what would have shipped |
+|---|---|---|
+| `BindingDriftError` (`compiler_bridge`) | 394 declared gradient bindings naming tensors that no longer exist after the per-family rename | a six-hour run whose gradient masks governed nothing, with the permission system reporting enforcement it was not performing |
+| weight-movement check (⚡ Faraday) | a component that did not move under training | an untrained module presented as trained |
+| `SpanViolation` (`family_ops.py:275`, 🌊 Hodgkin) | `set_mechanistic_theta` never called, so seven engineered subcortical backends would run on defaults | **a completed run, with plausible numbers, and the anatomical conditioning silently dropped** |
+| condition-2 stop trigger | — (see the headline finding; it was honoured correctly and was still uninterpretable) | — |
+
+**The property they share: each asserts a claim about the world that the world
+can falsify.**
+
+- *"every declared pattern matches at least one real tensor"*
+- *"these weights are different after training than before"*
+- *"θ was bound before this backend rolled out"*
+
+Each is a statement whose truth is determined by something outside the guard.
+Contrast every decorative entry in this register: `fallback_subjects_` reporting
+a count **it computes itself**; `variance_calibration` absent from a `describe()`
+that **defines its own keys**; the `-dirty` suffix on a repo the run **itself
+dirties**; window z-std for a normaliser that **sets it to 1 by construction**.
+Those are self-reports. A self-report cannot fail.
+
+> **Design rule, and it is checkable before any run: a guard must name something
+> the code does not control. If the guard and the thing it checks can only
+> disagree when the guard is wrong, it is decorative.**
+
+The `SpanViolation` is the most valuable of the four and deserves its own
+sentence, because it separates two failure classes we have been treating as one.
+Binding drift and capacity drift produce **wrong numbers** — bad, and detectable
+downstream by anyone who looks. `SpanViolation` prevented **right-looking
+numbers**: a run that completes, converges, reports metrics, and has quietly
+discarded the mechanism the whole experiment exists to test. Nothing downstream
+would have caught it. The only place that defect was ever visible was at the
+moment of the first rollout, and only because someone wrote a guard that
+demanded the binding exist before proceeding.
+
+---
+
+## Entry: a decorative *diagnosis* is the same object as a decorative guard
+
+2026-08-06, 🔥 Turing (the error) and the architect (the confirmation). Recorded
+at the architect's request, both halves.
+
+Investigating the `BindingDriftError` above, I reported **two** defects: the
+module rename, and a second — a hardcoded Yeo-7 taxonomy in the binding table,
+evidenced by failures keyed `region:7Networks_LH_Default_Temp_3:*`. I had spent
+the preceding day establishing that the real anatomy prior produces a two-family
+association/unimodal cortical split and **rejects** Yeo-7 as a partition. The
+string matched. I filed it as a third site of a known defect and recommended
+deriving region ids from the prior.
+
+**It was wrong.** Those are group *keys*, not patterns. `7Networks_…` is simply
+how Schaefer-400 names every parcel — correctly, permanently, and with no bearing
+on whether Yeo-7 works as a *family* partition. Parcel labels and family
+partitions are different objects. The real defect was one rename, not two.
+
+The tell was in the log I filed as evidence: `assimilate.embed` matched inside
+the very group where three sibling patterns failed. **A taxonomy problem fails
+all five patterns in the group; a rename fails exactly the renamed three.** The
+asymmetry was on the page.
+
+The shape is what belongs in this register:
+
+> **Having spent the day cataloguing guards that could not fire, I produced a
+> diagnosis that could not fail.** I never tested it against the null that the
+> names were simply correct. One `load_anatomy()` call would have settled it and
+> was cheaper than the message I sent instead.
+
+A decorative diagnosis has every property of a decorative guard: it produces
+output, the output looks like evidence, and it could not have come out any other
+way — because no observation was sought that could have contradicted it.
+Confident reasoning follows from it, and here it did: I recommended a code change
+to a permission table on the strength of it.
+
+**The second half, and the more instructive one.** The architect confirmed the
+reading and directed the fix — *"do not enumerate region names at all, derive
+them from the loaded prior"* — with no context-window pressure and the same
+`load_anatomy()` call available. A confirmation from a second party is what
+converts one agent's guess into a fleet-wide belief, so the reviewer's failure
+is the more expensive of the two even though the error was mine.
+
+> **Reviewing a finding means asking what would have to be true for it to be
+> wrong. Confirming without asking that does not add a check — it removes one,
+> by retiring the question.**
+
+Both parties then re-derived from source and the claim was withdrawn inside one
+exchange, which is the part that worked. Cost: one round trip. The same defect
+undetected would have produced a code change to the only component in the stack
+that was demonstrably functioning correctly.
