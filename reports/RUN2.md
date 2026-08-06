@@ -81,6 +81,30 @@ does establish is that the bound **costs nothing measurable**. It stays as free
 insurance against a mechanism that is real in principle and unproven here. The
 training run remains the only test that has ever reproduced the failure.
 
+### What could not be reproduced outside the training loop
+
+Four isolation probes, none of which reproduces the divergence:
+
+| probe | result |
+|---|---|
+| random data, 400 steps, full LR | bounded throughout |
+| real corpus data at init | −log q 7.5–12.4 |
+| masking 100% → 0% observed | constant at 12.366 |
+| **masked batches, 1200 steps, LR 0.10, no decay** | **[8.03, 7.29, 8.55, 7.46], 0 rejections** |
+
+The last one matters most: it was built specifically to mimic sliced-trajectory
+training, where the observed subgraph is re-drawn every step, and it is *stable*
+at exactly the setting that diverged to 3582 in the real loop by step 1180. So
+masking is **not** the differentiator, and the trigger is still unidentified.
+
+What the real loop has that no probe does: corpus-structured `y` and `θ` rather
+than draws, and a gradient clip computed over the **combined** model+posterior
+parameter set rather than the posterior alone. Either could be it. Neither has
+been shown to be.
+
+**The posterior LR/decay change is the best available hypothesis, not a
+demonstrated fix**, and it is recorded as such.
+
 **What actually found all of this was the rejection *counter*, not the bound.**
 A guard that returns a boolean would have zeroed the posterior loss for an
 entire run and shipped a model whose amortized posterior never trained, with a
