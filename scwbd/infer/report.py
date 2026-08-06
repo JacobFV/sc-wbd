@@ -221,6 +221,73 @@ def _theta_lmin(entry: Mapping[str, Any], key: str = "fisher_T4") -> float:
     return float(entry[key]["metrics"]["theta_profile_min_eigenvalue_nonprior"])
 
 
+#: Below this prior-standardised likelihood information a parameter's posterior
+#: is >90% prior, and the ``sd_post/sd_emp`` diagnostic stops being a
+#: calibration signal (see :func:`nuisance_identifiability`).
+PRIOR_DOMINATED_THRESHOLD = 0.1
+
+
+def nuisance_identifiability(results: Mapping[str, Any]) -> dict[str, Any]:
+    """Diagnose which parameters are informed by data and which are prior echoes.
+
+    For a parameter with prior-standardised likelihood information ``I`` the MAP
+    estimator shrinks toward the prior mean, and in the Gaussian/Laplace limit
+
+        sd_post / sd_emp = sqrt(1 + 1/I)
+
+    exactly.  A ratio near 1 means the data dominate; a large ratio means the
+    posterior width is essentially the prior width while the point estimates
+    barely move off the prior mean.  That is **not** miscalibration -- the
+    interval is honest and over-covers -- but it does mean the parameter is a
+    prior echo, so the ratio is reported next to the information that implies
+    it, and next to the analytic T4 information as an independent check.
+    """
+    out: dict[str, Any] = {}
+    for rname, rr in results["regimes"].items():
+        per_design: dict[str, Any] = {}
+        for dname, entry in rr["designs"].items():
+            rec = entry.get("recovery")
+            if not rec:
+                continue
+            names = rec["parameter_names"]
+            sd_post = np.asarray(rec["posterior_sd_mean"], float)
+            sd_emp = np.asarray(rec["estimate_sd"], float)
+            I_diag = np.diag(np.asarray(
+                entry["fisher_T4"]["I_likelihood"], float
+            ))
+            rows = {}
+            for i, nm in enumerate(names):
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    ratio = float(sd_post[i] / sd_emp[i]) if sd_emp[i] > 0 else np.inf
+                    implied = float(1.0 / (ratio**2 - 1.0)) if ratio > 1.0 else np.inf
+                fisher_i = float(I_diag[i]) if i < len(I_diag) else float("nan")
+                # A parameter no channel in this design can see (e.g. the BOLD
+                # nuisances under eeg_only) is *structurally* absent, not
+                # weakly informed; conflating the two buries the real finding.
+                absent = bool(np.isfinite(fisher_i) and fisher_i <= 0.0)
+                rows[nm] = {
+                    "sd_post_over_sd_emp": ratio,
+                    "implied_standardised_information": implied,
+                    "t4_standardised_information_diagonal": fisher_i,
+                    "prior_fraction_of_posterior_precision": (
+                        float(1.0 / (1.0 + implied)) if np.isfinite(implied) else 0.0
+                    ),
+                    "structurally_absent_from_design": absent,
+                    "prior_dominated": bool(
+                        not absent
+                        and np.isfinite(fisher_i)
+                        and fisher_i < PRIOR_DOMINATED_THRESHOLD
+                    ),
+                    # ratio < 1 means the estimates scatter *wider* than the
+                    # stated posterior: the opposite failure, and a coverage risk.
+                    "estimates_overdispersed": bool(ratio < 0.9),
+                }
+            per_design[dname] = rows
+        if per_design:
+            out[rname] = per_design
+    return out
+
+
 def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
     """Apply the *preregistered* rule to the results.  No tuning permitted."""
     regimes = results["regimes"]
@@ -486,6 +553,7 @@ def write_report(
     outdir.mkdir(parents=True, exist_ok=True)
     decision = decision or evaluate_decision_rule(results)
     payload = as_builtin({"results": results, "decision": decision,
+                          "nuisance_identifiability": nuisance_identifiability(results),
                           "environment": _env()})
     jpath = outdir / "results.json"
     jpath.write_text(json.dumps(payload, indent=1, sort_keys=True))
@@ -571,6 +639,45 @@ def write_report(
                 tc = float(np.trace(np.array(mc["I_likelihood"], float)))
                 t4 = float(np.trace(np.array(v["fisher_T4"]["I_likelihood"], float)))
                 A(f"| `{d}` | {_fmt(tc)} | {_fmt(t4)} | {_fmt(tc / t4 if t4 else np.nan)} |")
+    diag = nuisance_identifiability(results)
+    if diag:
+        A("\n## Which parameters the data actually inform\n")
+        A("`sd_post/sd_emp` is the mean Laplace posterior sd over the empirical "
+          "spread of the MAP estimates. In the Gaussian limit it equals "
+          "`sqrt(1 + 1/I)` for prior-standardised likelihood information `I`, so "
+          "a value near 1 means data-dominated and a large value means the "
+          "posterior is essentially the prior while the estimates sit on the "
+          "prior mean. A large ratio is **not** miscalibration — such intervals "
+          "over-cover — but the parameter is a prior echo and no claim may rest "
+          "on it.\n")
+        for rname, per_design in diag.items():
+            for dname, rows in per_design.items():
+                flagged = {k: v for k, v in rows.items() if v["prior_dominated"]}
+                absent = [k for k, v in rows.items()
+                          if v["structurally_absent_from_design"]]
+                over = [k for k, v in rows.items()
+                        if v["estimates_overdispersed"]
+                        and not v["structurally_absent_from_design"]]
+                if not (flagged or absent or over):
+                    continue
+                A(f"\n**`{rname}` / `{dname}`**\n")
+                if flagged:
+                    A("| parameter | sd_post/sd_emp | implied `I` | T4 `I` diagonal "
+                      "| prior share of posterior precision |")
+                    A("|---|---|---|---|---|")
+                    for nm, v in flagged.items():
+                        A(f"| `{nm}` | {_fmt(v['sd_post_over_sd_emp'])} | "
+                          f"{_fmt(v['implied_standardised_information'])} | "
+                          f"{_fmt(v['t4_standardised_information_diagonal'])} | "
+                          f"{v['prior_fraction_of_posterior_precision']:.1%} |")
+                if absent:
+                    A("\nStructurally absent from this design (no channel "
+                      "observes them; posterior = prior exactly): `"
+                      + "`, `".join(absent) + "`.\n")
+                if over:
+                    A("\nEstimates scatter wider than the stated posterior "
+                      "(`sd_post/sd_emp` < 0.9 — a coverage risk, read with the "
+                      "coverage table): `" + "`, `".join(over) + "`.\n")
     if figures:
         A("\n## Figures\n")
         for f in figures:

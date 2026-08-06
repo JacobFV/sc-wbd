@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 
@@ -21,6 +22,25 @@ from .report import evaluate_decision_rule, make_figures, write_manifest, write_
 DEFAULT_OUT = Path("reports/identifiability")
 
 
+def _cap_cuda_memory() -> str:
+    """Bound the CUDA allocator, because the cgroup does not.
+
+    This box has **one** unified memory pool: ``total_memory`` (~130.6 GB) and
+    ``free -h`` (~121 GiB) describe the same physical RAM in different units.
+    A ``systemd-run -p MemoryMax=`` scope charges host allocations but *not*
+    CUDA allocations -- measured here at 6.8 GB of CUDA against 2.4 GB of
+    cgroup-visible RSS -- so a cgroup cap alone will not stop a runaway kernel
+    from taking the machine down.  ``SCWBD_CUDA_MAX_GB`` closes that gap.
+    """
+    gb = os.environ.get("SCWBD_CUDA_MAX_GB")
+    if not gb or not torch.cuda.is_available():
+        return "cuda cap: not set"
+    total = torch.cuda.get_device_properties(0).total_memory
+    frac = min(1.0, float(gb) * 1e9 / total)
+    torch.cuda.set_per_process_memory_fraction(frac)
+    return f"cuda cap: {float(gb):.1f} GB of {total/1e9:.1f} GB (fraction {frac:.3f})"
+
+
 def _cfg(args) -> SystemConfig:
     return SystemConfig(
         device=args.device or ("cuda" if torch.cuda.is_available() else "cpu"),
@@ -31,6 +51,7 @@ def _cfg(args) -> SystemConfig:
 
 
 def cmd_benchmark(args) -> int:
+    print(f"[memory] {_cap_cuda_memory()}", flush=True)
     cfg = _cfg(args)
     out = Path(args.out)
     regimes = REGIMES if not args.regimes else [

@@ -41,7 +41,7 @@ from __future__ import annotations
 import math
 import time
 from dataclasses import dataclass, field, replace
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 import numpy as np
 import torch
@@ -49,7 +49,7 @@ from torch import Tensor
 
 from .calibration import interval_coverage
 from .fisher import FisherReport, expected_fisher, monte_carlo_fisher, schur_information
-from .filters import multiepoch_kalman_filter, simulate_lgssm
+from .filters import multiepoch_kalman_filter
 from .linear_gaussian import (
     N_PARAM,
     PARAM_INDEX,
@@ -284,16 +284,21 @@ def _simulate(
     mdl = make_model(u_true, bd.cfg, bd.proto, include_impulse=bd.include_impulse)
     ssm = mdl.ssm(("eeg", "bold"), epoch=0)
     E = bd.cfg.n_epochs
-    inp = mdl.inputs[0].unsqueeze(0).expand(n_replicates, E, bd.cfg.n_steps, mdl.n)
-    from .filters import LinearGaussianSSM
+    from .filters import LinearGaussianSSM, replicate_chunks, simulate_epoched
 
-    sim = LinearGaussianSSM(
-        mdl.F, mdl.Q, mdl.m0, mdl.P0, ssm.channels, bd.cfg.n_steps,
-        inp.reshape(n_replicates * E, bd.cfg.n_steps, mdl.n),
-        structured_left_mul(mdl.F, bd.cfg),
+    lm = structured_left_mul(mdl.F, bd.cfg)
+
+    def make_ssm(c: int) -> LinearGaussianSSM:
+        inp = mdl.inputs[0].unsqueeze(0).expand(c, E, bd.cfg.n_steps, mdl.n)
+        return LinearGaussianSSM(
+            mdl.F, mdl.Q, mdl.m0, mdl.P0, ssm.channels, bd.cfg.n_steps,
+            inp.reshape(c * E, bd.cfg.n_steps, mdl.n), lm,
+        )
+
+    return simulate_epoched(
+        make_ssm, n_replicates=n_replicates, n_epochs=E, seed=seed,
+        chunks=replicate_chunks(n_replicates, E, bd.cfg.n_steps, mdl.n),
     )
-    data, _ = simulate_lgssm(sim, seed=seed, batch=n_replicates * E)
-    return {k: v.reshape(n_replicates, E, *v.shape[1:]) for k, v in data.items()}
 
 
 def _prepare_fit_data(bd: BuiltDesign, data: dict[str, Tensor]) -> dict[str, Tensor]:
@@ -738,10 +743,23 @@ def run_benchmark(
                     f"({entry['seconds']:.0f}s)"
                 )
             rres["designs"][spec.name] = entry
+            # checkpoint after EVERY design, not every regime: an interruption
+            # must cost one design (minutes), never a whole regime (an hour).
+            results["regimes"][regime.name] = rres
+            _checkpoint(checkpoint_path, results)
         results["regimes"][regime.name] = rres
-        if checkpoint_path:      # a multi-hour run must survive an interruption
-            import json
-            from pathlib import Path as _P
-            _P(checkpoint_path).parent.mkdir(parents=True, exist_ok=True)
-            _P(checkpoint_path).write_text(json.dumps(as_builtin(results), indent=1))
+        _checkpoint(checkpoint_path, results)
     return results
+
+
+def _checkpoint(path: str | None, results: Mapping[str, Any]) -> None:
+    if not path:
+        return
+    import json
+    from pathlib import Path as _P
+
+    p = _P(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(p.suffix + ".tmp")
+    tmp.write_text(json.dumps(as_builtin(results), indent=1))
+    tmp.replace(p)          # atomic: a kill mid-write cannot corrupt the file

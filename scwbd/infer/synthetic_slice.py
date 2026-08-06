@@ -269,7 +269,9 @@ def _build_population(
         inp.reshape(R * E, cfg.n_steps, mdl.n),
         structured_left_mul(F, cfg),
     )
-    data, _ = simulate_lgssm(sim, seed=seed + 4242, batch=R * E)
+    data, _ = simulate_lgssm(
+        sim, seed=seed + 4242, batch=R * E, return_states=False
+    )
     data = {k: v.reshape(R, E, *v.shape[1:]) for k, v in data.items()}
 
     # deliberately misspecified residual: AR(1) colour on region 3's BOLD only

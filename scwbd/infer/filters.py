@@ -22,6 +22,7 @@ Kalman result on a linear--Gaussian problem, which is a test.
 from __future__ import annotations
 
 import math
+import os
 from dataclasses import dataclass, field
 from typing import Callable, Iterable, Sequence
 
@@ -511,8 +512,15 @@ def simulate_lgssm(
     seed: int,
     batch: int | None = None,
     masks: dict[str, Tensor] | None = None,
+    return_states: bool = True,
 ) -> tuple[dict[str, Tensor], Tensor]:
-    """Draw states and native-clock observations.  Deterministic given ``seed``."""
+    """Draw states and native-clock observations.  Deterministic given ``seed``.
+
+    ``return_states=False`` skips accumulating the latent path, which costs
+    ``batch * n_steps * n`` doubles (tens of GB at benchmark scale) and is
+    discarded by every caller that only wants observations.  The random draws
+    are unchanged, so observations are bit-identical either way.
+    """
     b = batch or ssm.batch
     _, n, F, Q, m0, P0 = _prepare(ssm)
     F, Q, m0, P0 = (_expand_batch(t, b) for t in (F, Q, m0, P0))
@@ -534,7 +542,8 @@ def simulate_lgssm(
     out: dict[str, list[Tensor]] = {ch.name: [] for ch in ssm.channels}
     states = []
     for k in range(ssm.n_steps):
-        states.append(z)
+        if return_states:
+            states.append(z)
         for ch, _j in sched.get(k, ()):
             H = _expand_batch(ch.H, b)
             R = _expand_batch(ch.R, b)
@@ -546,7 +555,66 @@ def simulate_lgssm(
             if inputs is not None:
                 z = z + inputs[:, k, :]
     data = {k: torch.stack(v, dim=1) for k, v in out.items() if v}
+    if not return_states:
+        return data, torch.empty(b, 0, n, dtype=dtype, device=device)
     return data, torch.stack(states, dim=1)
+
+
+#: Memory budget for one replicate chunk's tiled input tensor, in bytes.
+#: Override with ``SCWBD_SIM_CHUNK_BYTES`` to trade memory against wall time:
+#: the chunk tile is the dominant transient allocation, but each extra chunk
+#: costs a full extra pass of the 1 ms Riccati recursion, so bigger is faster.
+SIM_CHUNK_BYTES = float(os.environ.get("SCWBD_SIM_CHUNK_BYTES", 2.0e9))
+
+
+def replicate_chunks(n_replicates: int, n_epochs: int, n_steps: int, n: int,
+                     *, max_bytes: float | None = None,
+                     itemsize: int = 8) -> list[range]:
+    """Split ``n_replicates`` so one chunk's tiled input tensor fits ``max_bytes``.
+
+    The deterministic per-epoch drive ``[E, T, n]`` has to be materialised once
+    per replicate (it is tiled along a folded batch axis, which no stride trick
+    can express as a view).  At benchmark scale that tile is tens of GB for the
+    full replicate set, so every simulation and per-replicate likelihood is run
+    in chunks sized by this helper instead.
+    """
+    max_bytes = SIM_CHUNK_BYTES if max_bytes is None else max_bytes
+    per = max(1, n_epochs) * max(1, n_steps) * max(1, n) * itemsize
+    size = max(1, min(n_replicates, int(max_bytes // max(per, 1))))
+    return [range(lo, min(lo + size, n_replicates))
+            for lo in range(0, n_replicates, size)]
+
+
+def simulate_epoched(
+    make_ssm: Callable[[int], "LinearGaussianSSM"],
+    *,
+    n_replicates: int,
+    n_epochs: int,
+    seed: int,
+    chunks: Sequence[range] | None = None,
+) -> dict[str, Tensor]:
+    """Simulate ``n_replicates`` independent ``n_epochs``-epoch records, chunked.
+
+    ``make_ssm(chunk_size)`` returns an SSM whose folded batch axis is
+    ``chunk_size * n_epochs``.  Observations are returned as
+    ``{channel: [n_replicates, n_epochs, n_obs, p]}``; latent states are never
+    materialised.  Each chunk draws from its own generator seed, so the result
+    is deterministic given ``seed`` but not identical to an unchunked draw.
+    """
+    if chunks is None:
+        chunks = [range(n_replicates)]
+    parts: dict[str, list[Tensor]] = {}
+    for ci, ch in enumerate(chunks):
+        c = len(ch)
+        ssm = make_ssm(c)
+        data, _ = simulate_lgssm(
+            ssm, seed=int(seed) + 1000003 * ci, batch=c * n_epochs,
+            return_states=False,
+        )
+        for k, v in data.items():
+            parts.setdefault(k, []).append(v.reshape(c, n_epochs, *v.shape[1:]))
+        del data, ssm
+    return {k: (v[0] if len(v) == 1 else torch.cat(v, dim=0)) for k, v in parts.items()}
 
 
 def deterministic_response(ssm: LinearGaussianSSM) -> dict[str, Tensor]:

@@ -567,14 +567,26 @@ def _loglik_per_replicate(
     mdl = make_model(u_row, cfg, proto, include_impulse=include_impulse, device=device)
     ssm = mdl.ssm(channels, epoch=0, eeg_steps=eeg_steps)
     E = cfg.n_epochs
-    inp = mdl.inputs[0].unsqueeze(0).expand(n_replicates, E, cfg.n_steps, mdl.n)
-    ssm.inputs = inp.reshape(1, n_replicates * E, cfg.n_steps, mdl.n)
-    res = multiepoch_kalman_filter(
-        ssm,
-        {k: v.reshape(1, n_replicates * E, *v.shape[2:]) for k, v in data.items()},
-        n_epochs=n_replicates * E,
-    )
-    return res["log_likelihood"].reshape(n_replicates, E).sum(1)
+    # Replicates are folded into the epoch axis so the Riccati recursion is
+    # shared, but the per-epoch drive must then be tiled once per replicate.
+    # Chunk that tile, otherwise it alone is tens of GB at benchmark scale.
+    from .filters import replicate_chunks
+
+    out = []
+    for ch in replicate_chunks(n_replicates, E, cfg.n_steps, mdl.n):
+        c = len(ch)
+        inp = mdl.inputs[0].unsqueeze(0).expand(c, E, cfg.n_steps, mdl.n)
+        ssm.inputs = inp.reshape(1, c * E, cfg.n_steps, mdl.n)
+        res = multiepoch_kalman_filter(
+            ssm,
+            {k: v[ch.start:ch.stop].reshape(1, c * E, *v.shape[2:])
+             for k, v in data.items()},
+            n_epochs=c * E,
+        )
+        out.append(res["log_likelihood"].reshape(c, E).sum(1))
+        del res, inp
+        ssm.inputs = None
+    return out[0] if len(out) == 1 else torch.cat(out, dim=0)
 
 
 def monte_carlo_fisher(
@@ -599,19 +611,24 @@ def monte_carlo_fisher(
     log-likelihood over ``n_replicates`` simulated records; the Monte-Carlo
     standard error of each entry is returned alongside.
     """
-    from .filters import simulate_lgssm
+    from .filters import replicate_chunks, simulate_epoched
 
     mdl = make_model(u, cfg, proto, include_impulse=include_impulse, device=device)
     E = cfg.n_epochs
     ssm = mdl.ssm(channels, epoch=0, eeg_steps=eeg_steps)
-    inp = mdl.inputs[0].unsqueeze(0).expand(n_replicates, E, cfg.n_steps, mdl.n)
-    sim = LinearGaussianSSM(
-        mdl.F, mdl.Q, mdl.m0, mdl.P0, ssm.channels, cfg.n_steps,
-        inp.reshape(n_replicates * E, cfg.n_steps, mdl.n),
-        structured_left_mul(mdl.F, cfg),
+    lm = structured_left_mul(mdl.F, cfg)
+
+    def make_ssm(c: int) -> LinearGaussianSSM:
+        inp = mdl.inputs[0].unsqueeze(0).expand(c, E, cfg.n_steps, mdl.n)
+        return LinearGaussianSSM(
+            mdl.F, mdl.Q, mdl.m0, mdl.P0, ssm.channels, cfg.n_steps,
+            inp.reshape(c * E, cfg.n_steps, mdl.n), lm,
+        )
+
+    chunks = replicate_chunks(n_replicates, E, cfg.n_steps, mdl.n)
+    data = simulate_epoched(
+        make_ssm, n_replicates=n_replicates, n_epochs=E, seed=seed, chunks=chunks,
     )
-    data, _ = simulate_lgssm(sim, seed=seed, batch=n_replicates * E)
-    data = {k: v.reshape(n_replicates, E, *v.shape[1:]) for k, v in data.items()}
 
     sd = prior_sd_u()
     g = np.zeros((n_replicates, N_PARAM))

@@ -1,0 +1,303 @@
+{
+  "artifact": "SC-WBD linear identifiability laboratory",
+  "decision_rule": {
+    "criteria": {
+      "C1_fusion_information": "theta_profile_min_eigenvalue_nonprior(joint_native) >= 1.05 x max(eeg_only, fmri_only) in EVERY regime",
+      "C2_native_beats_resampled": "theta_profile_min_eigenvalue_nonprior(joint_native) > that of the naive-resampling estimator (joint_resampled coarse model) in EVERY regime, AND delay RMSE is lower with a non-overlapping bootstrap interval",
+      "C3_intervention_information": "theta_profile_min_eigenvalue_nonprior(joint_native_impulse_matched) >= 1.05 x joint_native in EVERY regime -- energy-matched, so a bare energy increase does not count",
+      "C4_calibrated_recovery": "for joint_native, the nominal 95% level lies inside the Wilson interval of empirical coverage for EVERY preregistered parameter in EVERY regime",
+      "C5_recovery_improvement": "delay RMSE and theta RMSE for joint_native are <= the better single modality in EVERY regime"
+    },
+    "information_statistic": "minimum eigenvalue of the Schur complement (nuisances ell, rho profiled out) of the LIKELIHOOD-only expected Fisher information, in the prior-standardised basis; the prior contribution is excluded",
+    "known_algebraic_caveat": "Under the modality-block-diagonal form of T4, I_{EEG+BOLD} = I_EEG + I_BOLD, so C1 cannot fail unless the fMRI contribution to the theta profile information is numerically negligible. C1 is therefore a NECESSARY but WEAK criterion and is reported with the effect size. The discriminating criteria are C2, C3, C4 and C5.",
+    "preregistered_subset": [
+      "a21",
+      "a32",
+      "a13",
+      "tau"
+    ],
+    "primary_question": "Does native-clock fusion or a calibrated intervention increase likelihood information for the preregistered parameter subset, and improve calibrated recovery across held-out simulation regimes?",
+    "verdict_rule": "SUPPORTED requires C1 and C4 and (C2 or C3). PARTIALLY_SUPPORTED if C4 holds and at least one of C1/C2/C3 holds. NOT_SUPPORTED otherwise -- in which case the cross-method integration claim must be narrowed to a provenance claim (thesis sec. 0.3).",
+    "what_would_disable_this_module": "If native-clock fusion does not raise theta profile information above the best single modality by a margin that survives the held-out regime sweep, or if the resulting intervals are not calibrated, the shared latent fusion claim is narrowed and only the provenance/type system is retained (thesis_contract.tex Table tab:claim-gates, row 1)."
+  },
+  "designs": [
+    {
+      "channels": [
+        "eeg"
+      ],
+      "coarse_model": false,
+      "energy_matched": false,
+      "include_impulse": false,
+      "label": "(i) EEG alone",
+      "name": "eeg_only",
+      "primary": true,
+      "resample": false
+    },
+    {
+      "channels": [
+        "bold"
+      ],
+      "coarse_model": false,
+      "energy_matched": false,
+      "include_impulse": false,
+      "label": "(ii) fMRI alone",
+      "name": "fmri_only",
+      "primary": true,
+      "resample": false
+    },
+    {
+      "channels": [
+        "eeg",
+        "bold"
+      ],
+      "coarse_model": false,
+      "energy_matched": false,
+      "include_impulse": false,
+      "label": "(iii) joint native-clock",
+      "name": "joint_native",
+      "primary": true,
+      "resample": false
+    },
+    {
+      "channels": [
+        "eeg",
+        "bold"
+      ],
+      "coarse_model": true,
+      "energy_matched": false,
+      "include_impulse": false,
+      "label": "(iv) joint after naive resampling",
+      "name": "joint_resampled",
+      "primary": true,
+      "resample": true
+    },
+    {
+      "channels": [
+        "eeg",
+        "bold"
+      ],
+      "coarse_model": false,
+      "energy_matched": false,
+      "include_impulse": true,
+      "label": "(v) joint native-clock + one calibrated impulse",
+      "name": "joint_native_impulse",
+      "primary": true,
+      "resample": false
+    },
+    {
+      "channels": [
+        "eeg",
+        "bold"
+      ],
+      "coarse_model": false,
+      "energy_matched": false,
+      "include_impulse": false,
+      "label": "(iv-b) tuned resampling, exact forward model",
+      "name": "joint_resampled_exactmodel",
+      "primary": false,
+      "resample": true
+    },
+    {
+      "channels": [
+        "eeg",
+        "bold"
+      ],
+      "coarse_model": false,
+      "energy_matched": true,
+      "include_impulse": true,
+      "label": "(v-b) impulse at matched input energy",
+      "name": "joint_native_impulse_matched",
+      "primary": false,
+      "resample": false
+    }
+  ],
+  "environment": {
+    "cuda_available": true,
+    "device_name": "NVIDIA GB10",
+    "git_revision": "32ca47e5b46d76b271984bd60ce34dbc9b4be0fc",
+    "numpy": "2.5.1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "python": "3.12.13",
+    "torch": "2.13.0+cu130"
+  },
+  "extra": {
+    "command": {
+      "cmd": "benchmark",
+      "device": null,
+      "dtype": "float64",
+      "epoch_seconds": 6.0,
+      "mc_replicates": 192,
+      "n_epochs": 32,
+      "newton": 4,
+      "no_monte_carlo": false,
+      "no_profiles": false,
+      "no_recovery": false,
+      "out": "reports/identifiability",
+      "primary_only": false,
+      "regimes": null,
+      "replicates": 48,
+      "seed": 20260805
+    },
+    "profile_and_monte_carlo_regime": "reference",
+    "recovery_designs": [
+      "eeg_only",
+      "fmri_only",
+      "joint_native",
+      "joint_resampled",
+      "joint_native_impulse"
+    ]
+  },
+  "instrument": {
+    "dt_base_s": 0.001,
+    "dt_bold_s": 1.0,
+    "dt_eeg_s": 0.001,
+    "dtype": "float64",
+    "epoch_seconds": 6.0,
+    "hrf_stages": 8,
+    "n_delay_taps": 26,
+    "n_epochs": 32,
+    "state_dimension": 105
+  },
+  "model_designation": "SC-WBD-001-beta",
+  "n_monte_carlo_fisher_replicates": 192,
+  "n_recovery_replicates": 48,
+  "non_goals": [
+    "no whole-brain training",
+    "no real datasets",
+    "no field solvers",
+    "no human stimulation protocol"
+  ],
+  "parameters": [
+    {
+      "description": "directed coupling gain region 1 -> region 2",
+      "group": "theta",
+      "name": "a21",
+      "prior_mean_unconstrained": 30.0,
+      "prior_sd_unconstrained": 10.0,
+      "transform": "identity",
+      "units": "1/s"
+    },
+    {
+      "description": "directed coupling gain region 2 -> region 3",
+      "group": "theta",
+      "name": "a32",
+      "prior_mean_unconstrained": 25.0,
+      "prior_sd_unconstrained": 10.0,
+      "transform": "identity",
+      "units": "1/s"
+    },
+    {
+      "description": "directed coupling gain region 3 -> region 1",
+      "group": "theta",
+      "name": "a13",
+      "prior_mean_unconstrained": -18.0,
+      "prior_sd_unconstrained": 10.0,
+      "transform": "identity",
+      "units": "1/s"
+    },
+    {
+      "description": "network conduction delay",
+      "group": "theta",
+      "name": "tau",
+      "prior_mean_unconstrained": -4.422848629194137,
+      "prior_sd_unconstrained": 0.25,
+      "transform": "log",
+      "units": "s"
+    },
+    {
+      "description": "EEG lead-field global gain",
+      "group": "ell",
+      "name": "gain_eeg",
+      "prior_mean_unconstrained": 0.0,
+      "prior_sd_unconstrained": 0.3,
+      "transform": "log",
+      "units": "dimensionless"
+    },
+    {
+      "description": "EEG lead-field geometric (electrode-placement) tilt",
+      "group": "ell",
+      "name": "tilt_eeg",
+      "prior_mean_unconstrained": 0.0,
+      "prior_sd_unconstrained": 0.2,
+      "transform": "identity",
+      "units": "dimensionless"
+    },
+    {
+      "description": "hemodynamic cascade time constant",
+      "group": "rho",
+      "name": "beta_hrf",
+      "prior_mean_unconstrained": 0.47000362924573563,
+      "prior_sd_unconstrained": 0.2,
+      "transform": "log",
+      "units": "s"
+    },
+    {
+      "description": "HRF undershoot weight",
+      "group": "rho",
+      "name": "c_under",
+      "prior_mean_unconstrained": 0.0,
+      "prior_sd_unconstrained": 0.6,
+      "transform": "scaled_logit",
+      "units": "dimensionless"
+    },
+    {
+      "description": "BOLD global gain",
+      "group": "rho",
+      "name": "gain_bold",
+      "prior_mean_unconstrained": 0.0,
+      "prior_sd_unconstrained": 0.3,
+      "transform": "log",
+      "units": "dimensionless"
+    }
+  ],
+  "preregistered_subset": [
+    "a21",
+    "a32",
+    "a13",
+    "tau"
+  ],
+  "regimes": [
+    {
+      "bold_noise_ratio": 0.5,
+      "description": "prior-mean coupling, 12 ms delay, evoked == ongoing variance",
+      "eeg_noise_ratio": 0.5,
+      "evoked_ratio": 1.0,
+      "name": "reference",
+      "tau_seconds": 0.012,
+      "theta_scale": 1.0
+    },
+    {
+      "bold_noise_ratio": 0.5,
+      "description": "coupling gains x0.55, 17 ms delay",
+      "eeg_noise_ratio": 0.5,
+      "evoked_ratio": 1.0,
+      "name": "weak_coupling_long_delay",
+      "tau_seconds": 0.017,
+      "theta_scale": 0.55
+    },
+    {
+      "bold_noise_ratio": 1.2,
+      "description": "coupling gains x1.25, 8.5 ms delay, 2.4x noise sd, weaker evoked drive",
+      "eeg_noise_ratio": 1.2,
+      "evoked_ratio": 0.6,
+      "name": "low_snr_short_delay",
+      "tau_seconds": 0.0085,
+      "theta_scale": 1.25
+    }
+  ],
+  "reported_metrics": [
+    "rank",
+    "condition_number",
+    "minimum_non_prior_eigenvalue",
+    "parameter_profile_likelihoods",
+    "posterior_correlations",
+    "interval_coverage_with_wilson_error_bars",
+    "delay_error",
+    "prior_contribution_reported_separately"
+  ],
+  "schema_version": "scwbd-schema/1.0.0",
+  "seed": 20260805,
+  "status": "preregistered_before_run",
+  "thesis_reference": "thesis_contract.tex sec. 0.3 (T1-T4), sec. 0.6 item 2, sec. 11",
+  "written_at": "2026-08-05T23:27:25-0700"
+}
