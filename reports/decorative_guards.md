@@ -1075,3 +1075,38 @@ answers.**
 so a posterior key mismatch would have raised rather than passed. That was not
 foresight — it was the default — which is the argument for defaults that fail
 closed.
+
+---
+
+## Entry: normalising one side of a comparison
+
+`scwbd/foundation/evaluate.py:_scwbd_scores`, found while reviewing the harness for
+this run's actual deliverable — held-out real EEG against baselines.
+
+SC-WBD's NLL was computed on the target divided by the target's own per-window
+standard deviation, with the matching Jacobian on the log-variance. The baselines'
+NLL was computed on the raw target. Identical formulae, different random variables:
+`NLL_scwbd = NLL_raw − log s`. On the real test split **mean log s = 0.598**, so
+SC-WBD carried a ~0.6-nat unearned advantage in a metric where real differences
+between models run well under 0.1. MSE was worse — off by `1/s²`, about 4×.
+
+**The rescale is not a careless line. It reads as hygiene**, and it is the same
+operation applied correctly three lines above to the *input* (`src`), where nothing
+downstream compares it to anything. The defect is not normalisation; it is
+**normalising one side of a comparison**.
+
+Two generalisations:
+
+1. **A transformation that is correct for one purpose is not thereby correct for
+   the adjacent one.** Both call sites normalise per window; one is right and one
+   silently rigs a ranking. Proximity to a correct use is a reason to look harder,
+   not a reason to trust.
+2. **Ask of every comparison: are both sides the same random variable?** Not "is
+   each side computed correctly" — each side *was* computed correctly. The error
+   lived in the space between two individually-correct computations, which is
+   where no unit test looks.
+
+**Found by asking of the deliverable "what would make this number wrong while
+looking normal?" rather than by auditing the file.** That question has now produced
+three defects in one session (this, the `strict=False` loader, the backend-biased
+sample) where reading the code did not.
