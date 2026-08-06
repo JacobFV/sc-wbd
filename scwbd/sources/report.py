@@ -56,6 +56,19 @@ def build() -> str:
         "declared one."
     )
     A("")
+    A("> **Open defect affecting how these rows are consumed — see "
+      "[`reports/known_issues.md`](known_issues.md), ISSUE-001.** "
+      "`scwbd.schema.UncertaintyLedger.bias_interval` is a required `tuple[float, float]` "
+      "with no representation for *unknown*, so a card that honestly says "
+      "`bias_interval: unknown` is projected onto the typed schema as `[0, 0]` — read "
+      "literally, a claim that the source has exactly zero systematic error. Nothing is "
+      "wrong in the rows below (every affected card is `unavailable` and is therefore "
+      "never projected), and `has_estimator()` currently rejects the degenerate interval "
+      "so refusal `R08` still fires. But that is an accident of encoding, not a "
+      "guarantee. Any consumer reading `bias_interval` without also consulting "
+      "`has_estimator()` will read an unknown as a confident zero. The fix is a schema "
+      "change (an explicit unknown), sequenced by the coordinator.")
+    A("")
 
     rows: list[tuple[DatasetEntry, dict]] = []
     for entry in REGISTRY.values():

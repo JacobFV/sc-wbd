@@ -233,7 +233,13 @@ _ENTRIES: list[DatasetEntry] = [
             ),
             excludes=(".datalad/*",),
         ),
-        subset="all BIDS metadata (13 subjects) + EEG/anat binaries for sub-CON001, sub-CON006",
+        subset=(
+            "all BIDS metadata (13 subjects); binaries for sub-CON001 and sub-CON006 only, "
+            "and within those only ses-async14ms spTMS runs 01-06 (the complete 100% rMT "
+            "pre/post-ccPAS probe design) + resting run-01 + the T1w. The ccPAS induction "
+            "run, spTMS 07-12, resting 02-04 and the 4/9 ms sessions exist upstream but "
+            "were not fetched (1021 GiB full release)"
+        ),
         loader_ref="bids_eeg:load_brainvision_run",
         notes="Perturbation benchmark: single-pulse TMS with EEG and digitised electrodes.",
     ),

@@ -18,26 +18,65 @@ identity:
   download_url: "s3://openneuro.org/ds004024/"
   download_method: >-
     anonymous S3 mirror of the OpenNeuro dataset. The mirror tracks the dataset
-    head; version 1.0.0 is the only release (CHANGES: '1.0.0 2022-02-14 -
-    Initial upload') and every fetched object is pinned by sha256 in the local
-    manifest, so a later upstream edit is detectable rather than silent.
-  retrieved_utc: FILLED_BY_REFRESH
+    head, which for ds000117 turned out to serve a mutable draft rather than
+    any published snapshot - an Appendix B rejection condition. That hazard was
+    therefore tested here rather than assumed away.
+
+    VERIFIED 2026-08-06: the S3 head is byte-identical to pinned snapshot 1.0.0.
+    sha256 of dataset_description.json, README, CHANGES and participants.tsv
+    fetched from
+    https://openneuro.org/crn/datasets/ds004024/snapshots/1.0.0/files/ match the
+    bytes on disk exactly (b552448c44dc85e1..., 69c01ab715c3bc3e...,
+    7740cf8d7538229c..., 58276a426b075c0d... respectively). Version 1.0.0 is
+    also the only release (CHANGES: '1.0.0 2022-02-14 - Initial upload'), so
+    head and snapshot coincide. Every fetched object is additionally pinned by
+    sha256 in the local manifest, so a later upstream edit is detectable rather
+    than silent. If that check ever fails, re-fetch from the snapshot endpoint
+    (scwbd.sources.download.OpenNeuroSnapshotFetcher) as ds000117 does.
+  retrieved_utc: "2026-08-06T07:22:35+00:00"
   parent_dataset: null
   derived_from: null
   subset_note: >-
     Complete BIDS metadata (dataset_description, participants, channels,
     electrodes, coordsystem, events, sidecars) for all 13 participants, plus
     signal binaries for a pinned subject subset only - the full release is
-    1021 GiB. The exact subset is recorded in
+    1021 GiB (verified 2026-08-06: 3144 objects, 1096522006089 bytes under
+    s3://openneuro.org/ds004024/). The exact subject subset is recorded in
     population.participants_with_signal_binaries.
+
+    The subsetting is by TASK as well as by subject, and that matters for what
+    can be claimed. For each pinned subject we fetched, from ses-async14ms
+    only: the six spTMS runs 01-06 and the single resting run 01. We did NOT
+    fetch (a) the ccPAS induction run itself (task-ccPAS_run-01, ~5 GB per
+    subject), (b) spTMS runs 07-12, (c) resting runs 02-04, or (d) any
+    ses-async4ms / ses-async9ms binaries. The absent objects exist upstream;
+    they are a bandwidth decision, not an upstream gap. See
+    missingness.planned for the consequences.
+
+    The other 11 participants hold BIDS metadata only. That is OUR pinned
+    subset, not an upstream property: openneuro carries full signal binaries
+    for all 13 participants. Nothing here should be read as "the upstream
+    release is metadata-only for those subjects".
   derivatives_included: []
   software:
     acquisition: "BrainProducts amplifier in DC mode; MRI-navigated TMS; BIDS conversion via MNE-BIDS (pybv 0.6.0 wrote the BrainVision files)"
     reader: "mne.io.read_raw_brainvision via scwbd.sources.loaders.bids_eeg"
     fetch: "boto3 anonymous S3 + scwbd.sources.download.S3PrefixFetcher"
   container_hash: unknown
-  local_path: FILLED_BY_REFRESH
-  file_manifest: FILLED_BY_REFRESH
+  local_path: "/home/brandonin/Documents/scwbd-wt/ada/data/ds004024/1.0.0"
+  file_manifest:
+    algorithm: sha256
+    n_files: 1651
+    total_bytes: 29097534965
+    manifest_sha256: ac6b99b779a2db02125958212d936f7af4a7e5cdd584e3e0b80a15092ae0612c
+    manifest_path: scwbd/sources/manifests/ds004024__1.0.0.json
+    exemplars:
+      .gitattributes: 7a0e64620757711029f9ab56a4802813dfe760252f5e1648ca2c65c8c10ddf01
+      CHANGES: 7740cf8d7538229c2c94b61f952c42403199293351e2ae90fb5f9c465d1277f1
+      README: 69c01ab715c3bc3e613d77d65691474eea1fea74365db7fe6040cc553bbc3cd4
+      sub-CON001/ses-async14ms/eeg/sub-CON001_ses-async14ms_task-spTMS_run-02_eeg.eeg: 2bed2f96a33d1f1cfd5dc7384c789610d0933c5f44f11b16ffc0bf60341d3d1a
+      sub-CON001/ses-async14ms/eeg/sub-CON001_ses-async14ms_task-spTMS_run-03_eeg.eeg: 7bd429e5ed8af755b73acdbe309a7d82591391dfe8aa64e578b1d4f972a03994
+      sub-CON006/ses-async14ms/eeg/sub-CON006_ses-async14ms_task-spTMS_run-05_eeg.eeg: f98dbe177b3c74359db1bb03ff940f2b215f23ca4829ff58c3850f28874b60df
 
 # =====================================================================
 # G_k  governance and consent
@@ -87,10 +126,29 @@ governance:
 # P_k  population and hierarchy
 # =====================================================================
 population:
-  n_participants: FILLED_BY_REFRESH
-  participant_ids: FILLED_BY_REFRESH
-  participants_with_signal_binaries: FILLED_BY_REFRESH
-  sessions_present: FILLED_BY_REFRESH
+  n_participants: 13
+  participant_ids:
+    - sub-CON001
+    - sub-CON006
+    - sub-CON008
+    - sub-CON009
+    - sub-CON015
+    - sub-CON019
+    - sub-CON020
+    - sub-CON021
+    - sub-CON022
+    - sub-CON025
+    - sub-CON026
+    - sub-CON029
+    - sub-CON031
+  participants_with_signal_binaries:
+    - sub-CON001
+    - sub-CON006
+  sessions_present:
+    - ses-async14ms
+    - ses-async4ms
+    - ses-async9ms
+    - ses-mri
   families: "none declared; participants treated as unrelated singletons"
   sites: 1
   site_ids: ["openneuro:ds004024:shirley_ryan_abilitylab"]
@@ -271,10 +329,33 @@ intervention:
 # =====================================================================
 missingness:
   planned: >-
-    signal binaries fetched for a pinned subject subset only (see
-    identity.subset_note); the 110% rMT runs (07-12) were not collected in all
-    sessions by the original study; resting-Control is missing in some sessions.
-  unplanned: FILLED_BY_REFRESH
+    Signal binaries fetched for a pinned subject AND task subset only (see
+    identity.subset_note). Two different things are folded together in this
+    release and must not be confused:
+
+    Upstream gaps (properties of the study): the 110% rMT runs (07-12) were not
+    collected in all sessions by the original investigators; resting-Control is
+    missing in some sessions; not every participant attended every asynchrony
+    session (13 ses-async14ms, 11 ses-async4ms, 7 ses-async9ms, 10 ses-mri on
+    disk, counted 2026-08-06).
+
+    Our fetch gaps (properties of this snapshot, not of the study): the ccPAS
+    induction run, spTMS runs 07-12, resting runs 02-04 and the 4 ms / 9 ms
+    sessions were not downloaded for any subject.
+
+    What the fetched bytes DO support: per dataset_description.json, spTMS runs
+    01-06 are the complete 100% rMT probe design - spTMS-Before, spTMS-After10
+    and spTMS-After60, crossed with left/right M1 - and are collected in all
+    sessions. So the pre/post ccPAS *effect* contrast in split_policy is fully
+    supported by what is on disk at the 14 ms asynchrony.
+
+    What they do NOT support: (a) the ccPAS induction stimulus itself is absent,
+    so nothing here constrains a model of the paired-pulse induction; (b) with
+    only 14 ms fetched there is no asynchrony contrast, so the timing-dependent
+    plasticity test named in split_policy.stimulus_holdout CANNOT be run on this
+    snapshot; (c) intervention.dose declares 110% rMT but no 110% rMT bytes were
+    fetched, so any intensity contrast is unevaluable here.
+  unplanned: "EEG binaries fetched for 2 of 13 participants (sub-CON001, sub-CON006); BIDS metadata (channels, electrodes, events, sidecars) is present for all participants. Unfetched runs are excluded, never interpolated."
   artifact_rejection: "none applied by the provider or here; the TMS pulse artefact is present in the raw data and must be handled by the consumer with a declared operator"
   dropout: "participants attended different numbers of asynchrony sessions (13/11/7 for 14/4/9 ms)"
   attrition: "session attendance is unbalanced by design and by drop-out; the release does not distinguish the two"
@@ -282,10 +363,53 @@ missingness:
     Runs that were not fetched are absent, not zero. A participant with no
     ses-async9ms contributes no 9 ms evidence and is never imputed from the
     4 ms or 14 ms condition.
-  mechanism: mnar
+  mechanism: planned
   handling: drop_episode
   post_outcome_selection: false
   censoring_correlated_with_state: false
+
+  # -- why 'planned' and not 'mnar' -------------------------------------
+  # This card previously declared mechanism: mnar with handling: drop_episode.
+  # scwbd.schema.Missingness rejects that pair, and it is RIGHT to: if data are
+  # genuinely missing-not-at-random, dropping the missing episodes does not fix
+  # the bias, it embeds it. The constraint was not weakened to make this card
+  # validate; the card was wrong to use one field for two different processes.
+  #
+  # Two distinct mechanisms are in play, and only one of them governs the
+  # analysis this card licenses:
+  #
+  #   1. OUR SUBSET (dominant, and what 'mechanism' now refers to): the choice
+  #      of 2 subjects x ses-async14ms x spTMS runs 01-06 + rest run-01 is
+  #      deterministic, made by us, fully enumerated in identity.subset_note,
+  #      and independent of anything measured. That is 'planned' in the exact
+  #      sense of the schema literal, and drop_episode is the correct handling:
+  #      what we did not fetch is absent, never imputed.
+  #
+  #   2. UPSTREAM ATTENDANCE (residual, NOT captured by the field above):
+  #      participants attended different numbers of asynchrony sessions
+  #      (13/11/7 for 14/4/9 ms) and the release does not distinguish design
+  #      from drop-out. If attendance depended on how a participant responded
+  #      to stimulation, that component IS MNAR and dropping it WOULD bias any
+  #      estimate pooled across participants.
+  #
+  # The residual MNAR risk in (2) is not neutralised, it is confined. It can
+  # only bias a quantity that pools across participants, and split_policy.notes
+  # already forbids exactly that: the Fisher-rank claim must be reported per
+  # participant and never pooled. Per-participant reporting is therefore not a
+  # stylistic preference on this source - it is the reason the residual MNAR
+  # component cannot reach a published number. Any future consumer that pools
+  # across participants here must first re-derive mechanism as 'mnar' and
+  # supply an admissible handling (missingness model, IPW, or design factor);
+  # it may not reuse this 'planned' declaration.
+  #
+  # See reports/known_issues.md ISSUE-005: one Missingness object per card
+  # cannot express two co-occurring mechanisms, which is what forced the choice.
+  upstream_attendance_mechanism: unknown
+  upstream_attendance_mnar_risk: >-
+    unquantified. Session attendance is unbalanced by design and by drop-out and
+    the release does not distinguish the two, so the MNAR component cannot be
+    bounded from the distributed data. It is confined by the per-participant
+    reporting rule in split_policy.notes rather than corrected.
 
 # =====================================================================
 # B_k, V_k, Delta_k  uncertainty ledger
@@ -366,8 +490,15 @@ split_policy:
   stimulus_holdout: >-
     the manipulated variable is the stimulation protocol (hemisphere,
     asynchrony, intensity, pre/post), so 'stimulus holdout' here means holding
-    out an asynchrony condition. Holding out 9 ms is the discriminating test
-    for a timing-dependent plasticity operator.
+    out an asynchrony condition. Holding out 9 ms would be the discriminating
+    test for a timing-dependent plasticity operator.
+
+    NOT RUNNABLE ON THIS SNAPSHOT. Only ses-async14ms binaries were fetched, so
+    there is exactly one asynchrony level on disk and no asynchrony can be held
+    out. The 4 ms and 9 ms bytes exist upstream; fetching them is what would
+    unlock this test. Until then any timing-dependent plasticity claim from this
+    source must be reported as COULD_NOT_RUN, never as a passing holdout. The
+    runnable contrast here is pre/post ccPAS at 14 ms only.
   site_holdout: "not available: one site, one device"
   leakage_barrier: parent_lineage
   role_locked: true
