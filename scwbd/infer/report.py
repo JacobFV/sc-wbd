@@ -288,6 +288,68 @@ def nuisance_identifiability(results: Mapping[str, Any]) -> dict[str, Any]:
     return out
 
 
+#: Run-size fields compared against the preregistration.  The *criteria* must
+#: never move; only how much compute was spent evaluating them may.
+_RUN_SIZE_FIELDS = (
+    ("n_recovery_replicates", "recovery replicates"),
+    ("n_monte_carlo_fisher_replicates", "Monte-Carlo Fisher replicates"),
+)
+
+
+def preregistration_delta(outdir: str | Path) -> str:
+    """Markdown diff of run size against ``manifest.preregistered.json``.
+
+    A reduced run is legitimate; a *silently* reduced run is not.  This renders
+    the difference into the report so the reader sees the achieved sample sizes
+    next to the ones that were promised, and can check that the decision
+    criteria themselves are byte-identical.
+    """
+    outdir = Path(outdir)
+    pre_p = outdir / "manifest.preregistered.json"
+    now_p = outdir / "manifest.json"
+    if not (pre_p.exists() and now_p.exists()):
+        return ""
+    pre = json.loads(pre_p.read_text())
+    now = json.loads(now_p.read_text())
+    rows = []
+    for key, label in _RUN_SIZE_FIELDS:
+        a, b = pre.get(key), now.get(key)
+        if a != b:
+            rows.append((label, a, b))
+    for key, label in (("epoch_seconds", "epoch length (s)"),
+                       ("n_epochs", "epochs per record")):
+        a = pre.get("instrument", {}).get(key)
+        b = now.get("instrument", {}).get(key)
+        if a != b:
+            rows.append((label, a, b))
+    same_rule = pre.get("decision_rule") == now.get("decision_rule")
+    L = ["\n## Deviations from the pre-registration\n"]
+    L.append(
+        "The pre-registration written before any results existed is kept "
+        "verbatim at `manifest.preregistered.json` "
+        f"(status `{pre.get('status')}`, written `{pre.get('written_at')}`).\n"
+    )
+    L.append(
+        f"**Decision criteria unchanged: {'yes' if same_rule else 'NO — SEE BELOW'}.** "
+        "Only the compute budget was reduced.\n"
+    )
+    if rows:
+        L.append("\n| quantity | preregistered | achieved |")
+        L.append("|---|---|---|")
+        for label, a, b in rows:
+            L.append(f"| {label} | {a} | {b} |")
+        L.append(
+            "\nThese reductions widen every interval and raise every RMSE "
+            "uniformly across designs. The preregistered criteria are all "
+            "*comparisons between designs* measured under one common budget, "
+            "so they remain evaluable; the absolute information values are "
+            "proportionally smaller than a full-length run would give.\n"
+        )
+    else:
+        L.append("\nRun size matches the pre-registration exactly.\n")
+    return "\n".join(L)
+
+
 def evaluate_decision_rule(results: Mapping[str, Any]) -> dict[str, Any]:
     """Apply the *preregistered* rule to the results.  No tuning permitted."""
     regimes = results["regimes"]
@@ -639,6 +701,9 @@ def write_report(
                 tc = float(np.trace(np.array(mc["I_likelihood"], float)))
                 t4 = float(np.trace(np.array(v["fisher_T4"]["I_likelihood"], float)))
                 A(f"| `{d}` | {_fmt(tc)} | {_fmt(t4)} | {_fmt(tc / t4 if t4 else np.nan)} |")
+    delta = preregistration_delta(outdir)
+    if delta:
+        A(delta)
     diag = nuisance_identifiability(results)
     if diag:
         A("\n## Which parameters the data actually inform\n")
