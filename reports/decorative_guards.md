@@ -136,6 +136,58 @@ Countermeasures, in order of how much they are worth:
 
 *A conclusion nobody is trying to break is not a finding. It is a consensus.*
 
+### What a preregistration inherits
+
+Instance 8 showed that a threshold must be able to read differently in the world
+where the hypothesis is false. This is the sequel, and it is a limitation of
+preregistration *as a technique* rather than of any particular bar.
+
+**A preregistration inherits the defects of the instrument it was calibrated
+against — and freezing it in advance makes that inheritance harder to see, not
+easier.**
+
+Condition 2 of the training trigger was *"running-min `sim_forecast_nll` < 1.0 by
+step 900"*. It was written in good faith, before the data existed, and never
+moved. Then the normaliser defect (mechanism C) was found and fixed, and the
+metric's scale changed by two orders of magnitude:
+
+| | pre-fix | post-fix |
+|---|---|---|
+| `sim_forecast_nll` at step 1 | 184.338 | **1.692** |
+| what "< 1.0" demands | a 99.5 % descent | roughly 41 % |
+| best the pre-fix run reached | 1.459 | — |
+
+The restart fixed the signal the bar was *evaluated on*. It did not fix the bar,
+because **the bar had been chosen by looking at the same corrupted numbers.**
+Half the contamination was repaired and the other half was invisible *precisely
+because it had already been written down* — a committed number stops attracting
+scrutiny, which is most of its value and, here, exactly the problem.
+
+**The rule that follows.** When the instrument a preregistration was written
+against is found defective, the preregistration does not become *wrong*. It
+becomes **uninterpretable**, and the honest response is to report it as
+uninterpretable rather than to re-set it.
+
+Re-setting substitutes the experimenter's later judgement for their earlier
+commitment, which is the one thing preregistration exists to prevent — and it
+does so **regardless of which direction the new bar moves. A harder bar is not a
+cleaner one.** A threshold chosen once the trajectory is visible is a bar wearing
+a preregistration's clothes, and it will read in a report as more rigorous than
+it is. **Manufacturing false rigour is worse than reporting an uninterpretable
+result honestly.**
+
+**Report it in three separate layers**, never merged:
+
+1. **the literal fact** — did the number cross the threshold? Yes or no, plainly,
+   no qualifier. The commitment is honoured to the letter.
+2. **the interpretation** — that this is not the test that was preregistered,
+   with the numbers showing how far the instrument moved.
+3. **the adjudication** — whether layer 1 evidences anything at all, given
+   layer 2. **Decided by someone who is not the author.**
+
+Merging 1 and 2 lets a caveat quietly do the work of a result. Merging 2 and 3
+lets the author grade their own homework.
+
 ### The sharpest instance (8): a guard against one's own bias, that could not discriminate
 
 Row 8 is the one to remember, because of who wrote it and why.

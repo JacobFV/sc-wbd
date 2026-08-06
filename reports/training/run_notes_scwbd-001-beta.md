@@ -3,13 +3,23 @@
 Live notes, written during the run so the loss curve does not have to be
 reconstructed from memory afterwards.
 
-**The artifact is the run launched 2026-08-06 01:35 with sqrt-scaled learning
-rates.** An earlier attempt (commit `7f18528`, 01:08:59) was stopped at step 260
-and is superseded — see "The restart" below. Everything in the tables further
-down describes that superseded attempt and is retained as the evidence that
-motivated the rescale.
+**The artifact is the run launched 2026-08-06 02:22:10 at commit `94b6ddc`** —
+sqrt-scaled learning rates **and** the fixed window normaliser.
 
-## The restart
+Three runs were started and two superseded. Read the tables below with the
+pipeline they belong to in mind, because **magnitudes are not comparable across
+the normaliser fix**:
+
+| # | launched | commit | LR | normaliser | ended |
+|---|---|---|---|---|---|
+| 1 | 01:08:59 | `7f18528` | 6.0e-4 | old | stopped, step 260 |
+| 2 | 01:30 | `4be98fc` | 3.46e-4 | old | stopped, step 820 |
+| **3** | **02:22:10** | **`94b6ddc`** | **3.46e-4** | **fixed** | **running** |
+
+Runs 1 and 2 differ only in learning rate, so comparisons between *them* are
+valid. Neither is comparable in magnitude to run 3, whose targets changed.
+
+## Restart 2 — the learning-rate rescale
 
 The stage learning rates (I 6e-4 → V 1e-4) were written when the config had
 `batch: 192`. Batch was cut to **64** for device-memory reasons and the rates
@@ -54,6 +64,10 @@ The near-miss stays on the record even though it no longer affects the artifact.
 ### What the rescaled run showed, including a correction to my diagnosis
 
 Early comparison at matched steps (same seed, so the same data order):
+
+> ⚠ **Same-pipeline comparison** — both columns are the *pre-normaliser-fix*
+> pipeline, differing only in learning rate, so these magnitudes ARE comparable.
+> Do not compare them against post-fix numbers elsewhere in this file.
 
 | step | old lr | old loss | new lr | new loss |
 |---|---|---|---|---|
@@ -253,6 +267,13 @@ The restart fixed the *signal* condition 2 is evaluated on. It did **not** fix
 the *threshold*, which I chose by looking at pre-fix numbers. Both were
 contaminated by the same defect; only one was repaired.
 
+> ⚠ **These two columns are values of different objectives.** The normaliser
+> change altered the targets, so the magnitudes are **not comparable** across the
+> restart and their difference says nothing about model quality. They are shown
+> only to size the change in the *instrument*. Scale-free quantities (the spike
+> *rate*) remain comparable; matched-step comparisons *within* one pipeline
+> remain valid.
+
 | | pre-fix | post-fix |
 |---|---|---|
 | `sim_forecast_nll` at step 1 | **184.338** | **1.692** |
@@ -278,11 +299,37 @@ This is the same shape as the fired trigger: a preregistered number that no
 longer measures what it was written to measure. The difference is that this one
 was caught *before* it resolved, which is the only reason it is not a dispute.
 
-Disposition is `main`'s and 🛡️ Popper's, not mine — Popper already owns whether
-the bar was appropriate, which now extends to whether it survives a change in the
-metric's scale. I have no clean preference and note that keeping the bar favours
-the artifact while voiding it favours me, since it would retire a bar I may be
-about to fail.
+### RULING — threshold stays at 1.0, report in three separate layers
+
+`main`'s call. **No new bar is set.** Any threshold chosen now would be chosen
+with the post-fix trajectory in view (nll 1.692 at step 1, 1.550 by step 40) —
+a bar wearing a preregistration's clothes, which would read in the report as more
+rigorous than it is. **Manufacturing false rigour is worse than reporting an
+uninterpretable result honestly.** Voiding it was also rejected: the commitment
+was real and made in good faith, and the reason it stopped meaning what it meant
+is itself worth preserving.
+
+When step 900 resolves, report **all three layers, never merged**:
+
+1. **The literal fact.** Did running-min `sim_forecast_nll` go below 1.0 by step
+   900? **Yes or no, plainly, no qualifier.** The commitment is honoured to the
+   letter.
+2. **The interpretation.** That this is **not the test that was preregistered**,
+   because the metric's scale changed by two orders of magnitude between the run
+   the bar was written for and the run it judges — pre-fix "< 1.0" demanded a
+   99.5 % descent from 184.3; post-fix it demands roughly 41 % from 1.692. Give
+   the numbers so a reader can size the change themselves.
+3. **The adjudication.** Whether layer 1 evidences anything **at all**, given
+   layer 2. **🛡️ Popper decides. Not me, not `main`.** This falls under the
+   existing pre-commitment that Popper rules on whether the bar was appropriate,
+   now extended to whether it survives a change in the metric's scale.
+
+Merging 1 and 2 would let a caveat quietly do the work of a result. Merging 2 and
+3 would be grading my own homework.
+
+I have no clean preference on the outcome and note that keeping the bar favours
+the artifact while voiding it would have favoured me, since it retires a bar I
+may be about to fail.
 
 ### Cross-run comparisons of absolute loss are no longer meaningful
 
