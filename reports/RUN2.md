@@ -124,11 +124,23 @@ Recorded now, not after the numbers.
   against the sampling before it is read as a property of the backends.
 - **Control graphs are a smoke test, not an ablation** — 7 of 147 shards split
   3/1/2/1 across four types.
-- **The lead field is still scalar per parcel.** `build_lead_field` returns
-  `(64, 414)`, so the 3-vector dipole state is collapsed before observation.
-  Gauss measured 0.056 of the whitened lead field for a scalar support against
-  0.517 for a 3-vector; that 9× is **not** reachable until the lead field is
-  `(n_ch, n_parcels, 3)`. O-5 is half-built.
+- **The free-orientation lead field now exists, and it is worth 2.64×, not 9×.**
+  `build_lead_field` emits `matrix_vec` `(64, 414, 3)` alongside the scalar
+  `(64, 414)`, both normalised by the same gain. Measured on **this** forward
+  model:
+
+  | support | dof | η |
+  |---|---:|---:|
+  | scalar per parcel | 414 | 0.3795 |
+  | 3-vector per parcel | 1242 | 1.0000 |
+
+  ratio **2.64×**. 🧭 Gauss's 0.056 → 0.517 (~9×) was measured on a real BEM
+  lead field over 7498 source-space dipoles into 68 parcels; ours is the
+  analytic single-sphere fallback with near-radial orientations, where the
+  scalar contraction already captures 38% rather than 5.6%. 🌊 Hodgkin doubted
+  the 9× would carry to our forward model and **was right**. O-5's
+  justification stands at roughly a quarter of the escalated size, and the
+  full figure needs a real BEM solution with real cortical normals.
 - **Seven subcortical families are 14 of 414 parcels** and out of claim on
   power at any participant count this corpus supports.
 - **The posterior guard freezes what it protects.** A rejected batch returns
