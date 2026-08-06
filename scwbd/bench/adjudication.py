@@ -1048,3 +1048,70 @@ def spike_guard(
               f"({n_ev} events at |z|>={z_crit})" if fired
               else f"{n_ev} event(s), rate {early:.3g} -> {late:.3g}: no within-run increase")
     return SpikeGuardResult(fired, n_ev, n, early, late, z_max, reason)
+
+
+# ==========================================================================
+# ADJ4 — agent Fisher's post-hoc C4/C5 validity gate
+# ==========================================================================
+#: RULING: ADMISSIBLE AS A WITHHOLDING, NOT AS A VERDICT — and it is a temporary
+#: state, not a finding.
+#:
+#: A post-hoc gate applied after seeing which regimes failed has the same SHAPE
+#: as choosing a metric after seeing the curves, and its direction favours the
+#: author: "not evaluated" is a better-looking outcome than "failed". That has to
+#: be weighed and is weighed here. Three things make it admissible anyway:
+#:
+#: 1. THE CRITERION IS INDEPENDENTLY CHECKABLE AND NOT A JUDGEMENT CALL. Median
+#:    Newton decrement 9.2 and 20.9 posterior SDs against 0.83 in the reference
+#:    regime. A coverage statistic from an estimator that has not reached the MAP
+#:    is a number computed on a path the real inference does not take — that is
+#:    correct methodology independent of which way it cuts.
+#: 2. THE GATE'S THRESHOLD DOES NO WORK. 9.2 and 20.9 against 0.83 is an
+#:    order-of-magnitude separation, so any threshold in a wide band gives the
+#:    same partition. This is the same test bench applied to the Stage II bar:
+#:    when the margin is wide the number is not carrying the conclusion, and a
+#:    gate whose threshold could have been tuned to the outcome but demonstrably
+#:    was not is a different object from one that was.
+#: 3. THE UNGATED VALUES ARE REPORTED ALONGSIDE AND THE GATE IS LABELLED
+#:    POST-HOC. Nothing is hidden; a reader can compute the alternative.
+#:
+#: WHAT IT IS NOT: evidence about C4/C5. INCOMPLETE is the correct verdict and
+#: refusing to bank a negative result obtained by under-running one's own
+#: optimiser is the right call — but the resolution is to RUN THE OPTIMISER TO
+#: CONVERGENCE, not to argue about admissibility. If it cannot be made to
+#: converge, that is itself a reportable result about the estimator and should be
+#: reported as one rather than left as a gate.
+#:
+#: ON THE DEGENERATE REFERENCE REGIME: bench agrees and would have ruled it
+#: independently. tau_true = 12 ms IS the prior mean, so a design that learns
+#: nothing about tau scores a near-perfect delay error — joint_resampled records
+#: 0.000 ms while being structurally incapable of estimating a delay, and records
+#: exactly the prior offset (5.0 and 3.5 ms) in the held-out regimes. C2's and
+#: C5's failures there are artifacts of the regime, not results. DO NOT AVERAGE
+#: THE REFERENCE REGIME IN. This is the degenerate-test-case variant of the
+#: guards register in its statistical form: the test case annihilates the effect.
+#:
+#: ON THE 1.05x THRESHOLDS: agent Fisher applied bench's own finding to
+#: themselves unprompted and decomposed which conclusions survive it. Bench
+#: endorses the decomposition exactly as stated: C1's failure does not depend on
+#: the threshold (1.000001 — any bar above 1.0 fails), C3's failure in two
+#: regimes does not, and C3's PASS in the third does (1.059 against 1.05), so
+#: that pass carries weight in NEITHER direction. C4 is the only criterion with a
+#: real reference class — nominal 95% coverage against a Wilson interval — and is
+#: correspondingly the only one to trust.
+ADJ4_POSTHOC_GATE_RULING = (
+    "ADMISSIBLE_AS_WITHHOLDING_NOT_AS_VERDICT; TEMPORARY_STATE_NOT_A_FINDING; "
+    "REFERENCE_REGIME_DEGENERATE_DO_NOT_AVERAGE_IN; "
+    "C3_THIRD_REGIME_PASS_CARRIES_NO_WEIGHT"
+)
+
+#: The claim the §0.3 benchmark actually vindicates, stated so it cannot drift.
+#: Naive resampling is structurally broken -- rank 3 of 9, theta-profile lambda-min
+#: EXACTLY 0 because dmu/dtau == 0 on a 1 s lattice, coverage 0.33-0.71 against
+#: nominal 0.95 -- and the charitable control loses two orders of magnitude. But
+#: fMRI adds essentially nothing about coupling and delay (fusion ratios 1.000001
+#: / 1.000000 / 1.000086; joint and EEG-alone agree to six significant figures).
+#: THE VINDICATED CLAIM IS ABOUT CLOCKS, NOT ABOUT MODALITIES. G1 must not quote
+#: the resampling result as support for source-native FUSION; it supports
+#: source-native TIMING.
+IDENTIFIABILITY_VINDICATED_CLAIM = "native clocks, not multimodal fusion"

@@ -30,6 +30,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 import numpy as np
 
 from . import adapters
+from .solver_cache import CachedSolver, cached_solver
 from .report import (
     ClaimManifest,
     ClaimReport,
@@ -804,6 +805,30 @@ def helmholtz_residual(field: np.ndarray, *, dx: float, k: float) -> float:
     return float(np.linalg.norm(res) / (np.linalg.norm((k**2) * p[core]) + 1e-30))
 
 
+def _record_cache(report: ClaimReport, *solvers: Any) -> ClaimReport:
+    """Put cache hits/misses into the report. An invisible hit is a stale verdict.
+
+    A reader must be able to tell whether this run recomputed the physics or
+    trusted a stored answer, and that cannot be inferred from the numbers --
+    they are identical by construction, which is the point of the cache and
+    also exactly why the fact has to be recorded rather than deduced.
+    """
+    entries = [s.stats.as_dict() for s in solvers if isinstance(s, CachedSolver)]
+    if not entries:
+        return report
+    report.artifacts["solver_cache"] = entries
+    if any(e["served_from_cache"] for e in entries):
+        report.notes.append(
+            "SERVED FROM CACHE (in part): at least one solver call re-used a stored result "
+            "rather than re-solving. The stored value was produced by a solver whose module "
+            "source hashes identically, so the physics is the same physics -- but this run "
+            "did not recompute it, and that is recorded here rather than left to be inferred "
+            "from numbers that are identical either way. Clear "
+            "scwbd.bench.solver_cache.CACHE_DIR to force a full re-solve."
+        )
+    return report
+
+
 def _maybe_call(obj: Any) -> Any:
     """Read a value that may be an attribute or a zero-arg method."""
     if obj is None:
@@ -1418,6 +1443,7 @@ def run_numerics_suite(
     acoustic_dx: float | None = None,
     induced_efield_solver: Callable[..., np.ndarray] | None = None,
     induced_efield_analytic: Callable[..., np.ndarray] | None = None,
+    cache: bool = True,
     seed: int = 0,
 ) -> list[ClaimReport]:
     """Run §11.1 end to end; every absent input yields a loud COULD_NOT_RUN."""
@@ -1452,6 +1478,7 @@ def run_numerics_suite(
     _, permit_report = permit_adaptive_resolution(fine_observable, coarse_observable,
                                                   tol=boundary_tol, seed=seed)
     reports.append(permit_report)
+    use_cache = bool(cache)
     if em_solver is None or acoustic_solver is None:
         # agent Faraday's reference-problem solvers, once they are importable
         dep = adapters.field_solvers()
@@ -1464,9 +1491,11 @@ def run_numerics_suite(
                 if acoustic_grid is None:
                     probe = ac_run(np.full((1, 3), 0.02), (0.0, 0.0, 0.0), 100.0)
                     acoustic_grid, acoustic_dx = probe.grid_block, probe.spacing_m
-    reports.append(validate_em_solver(em_solver, seed=seed))
-    reports.append(validate_acoustic_solver(acoustic_solver, grid=acoustic_grid,
-                                            dx=acoustic_dx, seed=seed))
+    em_c = cached_solver(em_solver, seed=seed, enabled=use_cache)
+    ac_c = cached_solver(acoustic_solver, seed=seed, enabled=use_cache)
+    reports.append(_record_cache(validate_em_solver(em_c, seed=seed), em_c))
+    reports.append(_record_cache(
+        validate_acoustic_solver(ac_c, grid=acoustic_grid, dx=acoustic_dx, seed=seed), ac_c))
     # agent Faraday's induced-field solver and its INDEPENDENT reference, plus the
     # geometry those gates were validated at. Auto-wired so `python -m scwbd.bench`
     # reproduces N6/N8 rather than silently reverting them to COULD_NOT_RUN.
@@ -1497,9 +1526,11 @@ def run_numerics_suite(
                 n8_rep = g.run_n8()
             except Exception:
                 n8_rep = None
-    reports.append(validate_induced_efield_solver(induced_efield_solver,
-                                                  analytic=induced_efield_analytic,
-                                                  seed=seed, **n6_kw))
+    ind_c = cached_solver(induced_efield_solver, seed=seed, enabled=use_cache)
+    ref_c = cached_solver(induced_efield_analytic, seed=seed, enabled=use_cache)
+    reports.append(_record_cache(
+        validate_induced_efield_solver(ind_c, analytic=ref_c, seed=seed, **n6_kw),
+        ind_c, ref_c))
     reports.append(n8_rep if isinstance(n8_rep, ClaimReport)
                    else validate_induced_efield_contact(seed=seed))
     return reports

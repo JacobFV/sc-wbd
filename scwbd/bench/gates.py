@@ -1416,6 +1416,7 @@ def run_g4(
     model_evidence: Mapping[str, Mapping[str, float]] | None = None,
     fisher_whitened: Callable[[str], Any] | None = None,
     single_modality_designs: Sequence[str] = ("eeg", "fmri"),
+    energy_matched_design: str | None = "joint_native_impulse_matched",
     artifact: str | None = None,
     basis: str = "prior_standardised",
     thresholds: Thresholds = Thresholds(),
@@ -1757,6 +1758,74 @@ def run_g4(
                     ),
                 )
             )
+
+    # ------------------------------------------------------------------
+    # INPUT-ENERGY MATCHING. Mandatory, and it is the same discipline as
+    # matched parameter count applied to an input budget: an intervention that
+    # wins only because it injected more energy has demonstrated the energy,
+    # not the perturbation. Agent Fisher measured the gap -- unmatched
+    # theta-profile lambda-min ratios 9.3x / 28x / 6.9x, energy-matched 0.839 /
+    # 0.839 / 1.059 -- so the unmatched number may never stand alone here.
+    # ------------------------------------------------------------------
+    if fisher is not None and theta_index is not None and nuisance_index is not None:
+        if energy_matched_design is None:
+            subs.append(could_not_run(
+                "input_energy_matched",
+                "Intervention versus baseline AT MATCHED INPUT ENERGY.",
+                "no energy-matched design was named. An unmatched impulse comparison "
+                "measures input energy, not perturbation, and this gate will not report one "
+                "alone -- the same rule as 'an unmatched win is not a win' for parameters.",
+                falsified_by="the intervention's advantage disappears at matched input energy",
+            ))
+        else:
+            try:
+                ti3 = np.asarray(list(theta_index), dtype=int)
+                ni3 = np.asarray(list(nuisance_index), dtype=int)
+                m_mat, m_prior = _fisher_pair(fisher(energy_matched_design))
+                b_mat = _fisher_pair(fisher(baseline_design))[0]
+                if m_prior is None:
+                    pr = (_fisher_pair(fisher(prior_design))[0]
+                          if prior_design is not None else 0.0)
+                    m_mat, b_mat = m_mat - pr, b_mat - pr
+                ev_m = float(max(np.min(np.linalg.eigvalsh(
+                    _schur_theta(m_mat, ti3, ni3))), 0.0))
+                ev_b = float(max(np.min(np.linalg.eigvalsh(
+                    _schur_theta(b_mat, ti3, ni3))), 0.0))
+                ratio = (ev_m / ev_b) if ev_b > 1e-12 else (
+                    float("inf") if ev_m > 1e-12 else 1.0)
+                artifacts["energy_matched"] = {
+                    "design": energy_matched_design,
+                    "theta_min_eig_matched": ev_m,
+                    "theta_min_eig_baseline": ev_b,
+                    "matched_gain_ratio": ratio,
+                }
+                subs.append(SubCheck(
+                    name="input_energy_matched",
+                    description=(
+                        f"{energy_matched_design} versus {baseline_design} on the theta "
+                        "Schur complement, at MATCHED INPUT ENERGY. This is the comparison "
+                        "that can fail; the unmatched one measures the energy."
+                    ),
+                    metrics=[Metric(
+                        name="fisher.theta_min_eigenvalue_gain_energy_matched",
+                        value=float(ratio), kind="identifiability", exact=True,
+                        threshold=thr.min_fisher_eig_gain, direction="greater_is_better",
+                        note=(f"basis={basis}; matched {ev_b:.4g} -> {ev_m:.4g}. A ratio at "
+                              "or below 1 means the same input energy spent on the "
+                              "background drive buys MORE theta information than "
+                              "concentrating it in one impulse."))],
+                    mandatory=True,
+                    falsified_by=("the intervention's advantage disappears once input "
+                                  "energy is held equal"),
+                ))
+            except Exception as exc:
+                subs.append(could_not_run(
+                    "input_energy_matched",
+                    "Intervention versus baseline AT MATCHED INPUT ENERGY.",
+                    f"the energy-matched design {energy_matched_design!r} could not be "
+                    f"evaluated ({type(exc).__name__}: {exc}); the unmatched ratio may not "
+                    "be reported alone",
+                    falsified_by="the advantage disappears at matched input energy"))
 
     # prospective recovery of direction / delay / gain / dose / state dependence
     needed = ("direction", "delay", "gain", "dose", "state_dependence")

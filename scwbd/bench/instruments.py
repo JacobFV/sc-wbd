@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Eighteen times in this project an
+The generalisation was forced by evidence.  Twenty times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -281,6 +281,57 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
             "dated justification. Splitting removed the conflation; it did not yet make the "
             "threshold immutable"
         ),
+    ),
+    UninformativeField(
+        name="a check that is sound, and too expensive to be invoked",
+        reads="green, on the rare occasions anybody runs it",
+        why_it_cannot_discriminate=(
+            "THE COST VARIANT, reached by a different route from every row above. The check "
+            "CAN fire, measures the right quantity and has a reference class; it simply "
+            "costs enough that people stop running it, and a check that is not invoked "
+            "reaches the same end state as one that cannot fire. Agent J introduced this "
+            "one: auto-wiring the field gates into run_numerics_suite bought a real "
+            "correctness property -- a default run can no longer silently revert a verified "
+            "verdict to COULD_NOT_RUN -- and paid for it by running FDTD marches and BEM "
+            "solves on every test invocation, taking one subset from seconds to 469.85 s "
+            "MEASURED. I traded a correctness property for a runtime cost without checking "
+            "the size of the cost"
+        ),
+        remedy=(
+            "the remedy differs from every other row here, which is why it needs its own: a "
+            "guard that CANNOT fire is fixed by redesigning the check, one that WILL NOT BE "
+            "INVOKED by making it cheap enough to run. Keep the guarantee and drop the cost "
+            "-- never weaken the guarantee to fit the clock. scwbd.bench.solver_cache keys "
+            "on a sha256 of the solver MODULE'S SOURCE TEXT (not its path, import name, "
+            "mtime or id -- each of those can hold constant across a change to the solver, "
+            "which is the failure the auto-wiring existed to prevent, one layer down), and "
+            "records hits in the report because an invisible cache hit is indistinguishable "
+            "from a fresh solve"
+        ),
+        found_by="agent J (bench), self-reported after measuring its own suite",
+        owner="bench (agent J)",
+        still_reported=False,
+    ),
+    UninformativeField(
+        name="an intervention compared at unmatched INPUT ENERGY",
+        reads="decisive -- 9.3x, 28x and 6.9x on theta-profile lambda-min",
+        why_it_cannot_discriminate=(
+            "the matched-capacity discipline recurring in a new dimension: not parameters, "
+            "not compute, but INPUT ENERGY. Agent Fisher measured the impulse's apparent "
+            "gain and then measured it again at matched input energy: 0.839, 0.839, 1.059 -- "
+            "WORSE in two regimes and marginal in the third. Spending the same energy on the "
+            "background drive buys MORE theta information than concentrating it in one "
+            "impulse. The unmatched ratio is measuring the energy, not the perturbation, and "
+            "it is the number that would have been quoted"
+        ),
+        remedy=(
+            "G4 now carries a MANDATORY input_energy_matched sub-check and refuses to report "
+            "the unmatched ratio alone, exactly as it refuses an unmatched parameter count. "
+            "Negative control: test_g4_fails_when_the_impulse_gain_is_entirely_input_energy"
+        ),
+        found_by="agent Fisher (measured and reported against their own design)",
+        owner="infer (agent Fisher); bench enforces",
+        still_reported=True,
     ),
     UninformativeField(
         name="a bound justified by the intended use rather than by what the code admits",
