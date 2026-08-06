@@ -1188,3 +1188,32 @@ Operational forms:
 **The general rule this is the third instance of: before believing a green signal,
 ask what red would have looked like.** If you cannot describe the failure mode
 concretely, you are not reading a result — you are reading the absence of one.
+
+---
+
+## Entry: second instance — a constraint violated within one section, by two parties
+
+The row *"writing down a lesson does not install it"* now has a second instance and
+a second author, and the pair is stronger than either alone.
+
+⚖️ Neyman established the like-for-like constraint while ruling on the units defect:
+both sides of a comparison must be the same random variable. **One section later
+they endorsed my separation of patch 4** — marginalising SC-WBD over θ while every
+baseline stays plug-in — **without applying their own rule to it.** I wrote patch 4
+with that constraint already on the page and did not apply it either. Cost: 0.0377
+nats, 7× the gap that decides a rank.
+
+My own first instance was the same distance: I wrote *"the error lived in the space
+between two individually-correct computations"* and then certified `bootstrap_ci`
+correct in isolation without checking it was receiving a single cluster.
+
+**Two independent authors violated a freshly written constraint within one section
+of writing it.** That is a much stronger claim about rules than one author doing it
+twice — it rules out the comfortable reading that this is a personal failing rather
+than a property of how written rules work.
+
+The operational form is unchanged but now better evidenced: **a rule is installed
+when something mechanically checks it, not when it has been articulated well.** The
+correct response to writing a constraint down is to ask immediately *"what in this
+change set does it forbid?"* — and to run that check against your own next artifact
+before anyone else's.

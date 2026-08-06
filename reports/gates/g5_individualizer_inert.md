@@ -65,3 +65,68 @@ This is the **third** independent reason G5 is unmeasurable on this artifact:
 **Not fixed here.** Both faults are training-path changes that would invalidate the
 current checkpoints, and the fix belongs with a rerun, not with the landing of
 evaluation patches. Filed for whoever owns run 2.
+
+---
+
+# Fourth reason, and it is a specification problem rather than a patch
+
+I flagged this as something to check rather than assert. **It holds, and it is
+provable rather than statistical.**
+
+## Held-out participants were never individualised, by construction
+
+`_participant_ids()` covers all 109 subjects, so every test participant *has* a row
+in `z_person`. Stage V trained on `real_train` — 71 subjects. Comparing the Stage V
+checkpoint's `z_person` against a fresh initialisation:
+
+```
+rows that MOVED off init: 71 of 109
+  TRAIN participants moved: 71 of 71   (median max|d| 2.285e-03)
+  TEST  participants moved:  0 of 27   (median max|d| 0.000e+00)
+```
+
+**Exactly the 71 training participants moved. Not one of the 27 test participants.**
+
+## And the untrained state is exactly the identity
+
+Fresh `z_person` is **all zeros**, and for untrained rows:
+
+```
+untrained rows -> output equals base?  True   max|out - base| = 0.000e+00
+```
+
+So `individualizer(participant=test_subject, base=th)` **returns `th` unchanged,
+exactly**, for every participant in the holdout.
+
+## What this means for B5
+
+B5 asks for `evaluate.py` to load and apply the individualizer, which
+`train.real_losses` does and `evaluate.py` does not. **That fix is correct and
+should still be made** — the current silence is worse than a no-op, because it
+hides the situation. But implementing it **cannot change any held-out number**: it
+would be correct code applying an exact identity.
+
+**This is the same shape as the defects we have been finding all day** — a
+mechanism that looks present, reports success, and cannot affect the outcome. It is
+just located in the *split design* rather than in code.
+
+## The underlying mismatch
+
+G5 reads: *"individualization improves future prediction — incremental calibrated
+log score vs anatomy-only/population/session-adapted baselines."* **"Future
+prediction"** and **"session-adapted"** both imply a *within-participant temporal*
+holdout: calibrate on a participant's earlier data, score their later data.
+
+This run has a **participant-disjoint** split. That is the correct instrument for
+R10 and for a generalisation claim, and it is the **wrong instrument for G5** — a
+participant held out entirely offers no opportunity to individualise them.
+
+**The two requirements are not in conflict; they need two different splits.** G5
+needs a within-participant temporal split *nested inside* the participant-disjoint
+one: hold out 27 participants, then within each, calibrate on early windows and
+score later ones. That is a specification change, and it belongs to 🛡️ Popper (who
+adjudicates G5) and ⚖️ Neyman (who owns the split specification), not to me.
+
+**Not proposing the change, and not implementing a split of my own.** Producing a
+new split after the confound is known, by the party being graded, is exactly what
+Popper's control discipline exists to prevent.
