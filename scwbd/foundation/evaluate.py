@@ -400,10 +400,31 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
     tr = FoundationTrainer(cfg, resume=False, quick=a.quick)
     ckpt = a.checkpoint or str(Path(cfg.train.out_dir) / "last.pt")
     if Path(ckpt).exists():
-        from .checkpoint import load_checkpoint
+        from .checkpoint import CheckpointError, load_checkpoint
 
-        load_checkpoint(ckpt, model=tr.model, posterior=tr.posterior, map_location=str(tr.device), strict=False)
-        print(f"loaded {ckpt}", flush=True)
+        payload = load_checkpoint(
+            ckpt, model=tr.model, posterior=tr.posterior, map_location=str(tr.device), strict=False
+        )
+        # `strict=False` is needed because the posterior/individualizer may be
+        # absent, but load_checkpoint RECORDS what it dropped and the caller used
+        # to discard it. torch.compile prefixes `local._orig_mod.*`, and the model
+        # is compiled only when `cfg.model.compile and device.type == "cuda"` -- so
+        # evaluating on CPU silently dropped 80.2% of the parameter mass (all of
+        # `local` + `residual`) and scored RANDOM WEIGHTS while printing "loaded".
+        report = payload.get("load_report", {})
+        missing, unexpected = report.get("missing", []), report.get("unexpected", [])
+        if missing or unexpected:
+            raise CheckpointError(
+                f"{ckpt} did not load cleanly: {len(missing)} missing, "
+                f"{len(unexpected)} unexpected keys.\n"
+                f"  first missing:    {list(missing)[:3]}\n"
+                f"  first unexpected: {list(unexpected)[:3]}\n"
+                "This is usually a torch.compile '_orig_mod.' prefix mismatch: the "
+                "checkpoint was written by a compiled model and this process did not "
+                "compile. Evaluating anyway would score randomly-initialised weights "
+                "for those modules and report the result as the model's."
+            )
+        print(f"loaded {ckpt} ({len(payload.get('model', {}))} model tensors, no key mismatch)", flush=True)
     else:
         print(f"[warn] no checkpoint at {ckpt}: evaluating an untrained model", flush=True)
     rep = evaluate_model(tr, quick=a.quick, out=a.out)
