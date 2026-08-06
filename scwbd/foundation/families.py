@@ -271,11 +271,42 @@ def _cortical(*, n_spectral_modes: int, n_adaptation: int, n_uncertainty: int) -
         ComponentSpec(
             "spectral", 2 * n_spectral_modes, "dimensionless", "fast", True, True, "quadrature spectral modes"
         ),
+        # O-5: the parcel's net current-dipole MOMENT, three numbers in the
+        # anatomical frame. Units are Hz*m, not Hz: this is a moment, not a
+        # rate, and declaring it as such is what stops it being wired to a port
+        # that carries activity (PortMismatch refuses cross-unit wiring).
+        #
+        # Why it is worth three channels. 🧭 Gauss measured the fraction of the
+        # whitened lead field a regional state can express: a per-parcel SCALAR
+        # reaches eta = 0.056; subdividing to 542 parcels reaches 0.162; a net
+        # dipole moment at 3/parcel reaches 0.517. 🧠 Cajal showed by geometry
+        # that subdividing past 400 parcels buys at most a further 1.29x,
+        # because opposing sulcal banks cancel. Orientation buys ~9x what
+        # resolution buys, and every design decision before this one spent on
+        # resolution.
+        #
+        # CORTICAL FAMILIES ONLY. Subcortical parcels have no cortical normal
+        # (14 of 414 carry NaN in `AnatomyPrior.normal`), so they do not declare
+        # this component at all -- which is exactly the region-indexed state
+        # space of body.tex §2.1, and is affordable only because the segment
+        # layout charges 400*3 cells for it rather than 414*3.
+        ComponentSpec("dipole", 3, "Hz*m", "fast", True, True, "net current-dipole moment, anatomical frame"),
     )
     ports = _SHARED_PORTS + (
         Port("oscillatory", ("spectral",), "dimensionless", "out", "quadrature modes carried by long-range edges"),
+        Port(
+            "dipole_out", ("dipole",), "Hz*m", "out",
+            "net current-dipole moment -- what an EEG/MEG lead field integrates against. A MOMENT: "
+            "a port carrying Hz may not be wired to it.",
+        ),
         Port("afferent", ("rate_e",), "Hz", "in", "excitatory drive arriving from other families"),
         Port("modulatory", ("adaptation",), "dimensionless", "in", "gain/adaptation control from subcortical families"),
+        Port(
+            "induced_field", ("dipole",), "Hz*m", "in",
+            "exogenous drive resolved along the cortical normal (TMS/tES E-field). Faraday's "
+            "impulse_response computes E.n scaled by coherence; it lands here as a VECTOR rather "
+            "than being collapsed to a signed scalar.",
+        ),
     )
     return comps, ports
 
