@@ -383,7 +383,9 @@ def real_eeg_holdout(
         "ar16": ARBaseline(order=16),
         "var4": VARBaseline(order=4),
         "population_gaussian": PopulationGaussianBaseline(),
-        "subject_specific_ar": SubjectSpecificBaseline(order=16),
+        "subject_specific_ar": SubjectSpecificBaseline(
+            ARBaseline, base_kwargs={"order": 16}, name="subject_specific_ar"
+        ),
         "dense_neural": DenseNeuralBaseline(target_parameters=n_model_params, steps=400, seed=seed),
     }
     rows: dict[str, Any] = {}
