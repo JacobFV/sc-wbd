@@ -353,3 +353,32 @@ def test_conductivity_jacobian_is_nonzero_and_skull_dominates(
             "analyses"
         )
         assert int(contrib.argmax()) != 1
+
+
+def test_conductivity_uncertainty_reaches_the_eeg_read(
+    sensor_positions, source_positions, latent_temporal
+):
+    """A lead field built with a conductivity sweep must populate the read's
+    ``parameter_posterior`` component instead of leaving it unknown."""
+    from scwbd.observe.leadfield import ITIS_CONDUCTIVITY, SphericalHeadModel
+
+    head = SphericalHeadModel.adult_four_layer(0.09, ITIS_CONDUCTIVITY)
+    normals = source_positions / source_positions.norm(dim=-1, keepdim=True)
+    swept = head.lead_field(
+        source_positions, sensor_positions, n_conductivity_draws=6, seed=11
+    ).project(normals)
+    plain = head.lead_field(source_positions, sensor_positions).project(normals)
+
+    x = 1e-8 * torch.randn((source_positions.shape[0], 400), dtype=torch.float64)
+    r_swept = EEGObservationOperator(swept, dt=1e-3, dtype=torch.float64).observe(
+        x, latent_temporal, seed=0
+    )
+    r_plain = EEGObservationOperator(plain, dt=1e-3, dtype=torch.float64).observe(
+        x, latent_temporal, seed=0
+    )
+    v = r_swept.ledger.variance.parameter_posterior
+    assert v != "unknown" and float(v) > 0.0
+    assert r_plain.ledger.variance.parameter_posterior == "unknown", (
+        "a lead field that never swept its conductivity prior must report the "
+        "component as unknown, not as zero"
+    )

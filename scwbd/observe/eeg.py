@@ -419,6 +419,7 @@ class EEGObservationOperator(ObservationOperator):
             var_within=var_within,
             signal=signal,
             n_t=n_t,
+            source_power=float((x**2).sum(0).mean()),
         )
         return ObservationRead(
             prediction=y.to(self.dtype),
@@ -510,6 +511,7 @@ class EEGObservationOperator(ObservationOperator):
         var_within: float,
         signal: torch.Tensor,
         n_t: int,
+        source_power: float = 0.0,
     ) -> UncertaintyLedger:
         scale = float(signal.abs().max()) if signal.numel() else 0.0
 
@@ -556,7 +558,14 @@ class EEGObservationOperator(ObservationOperator):
                 )
             )
 
+        # Head-model parameter uncertainty reaches the sensors through the lead
+        # field: to first order Var(y) += Var(L) * E[|x|^2], which is why a lead
+        # field built with n_conductivity_draws>0 hands a *populated*
+        # parameter_posterior component to every read that uses it.
         var_param: float | str = UNKNOWN
+        lf_ledger = self.lead_field.ledger
+        if lf_ledger is not None and lf_ledger.variance.parameter_posterior != UNKNOWN:
+            var_param = float(lf_ledger.variance.parameter_posterior) * source_power
         if self.position_uncertainty is not None and self.head_model is not None:
             bias.append(self.position_uncertainty.bias_term())
 
