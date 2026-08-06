@@ -26,14 +26,18 @@ normalised (§1). The tag is checked against the run's own source cards, so a
 `-raw` checkpoint containing simulated data fails validation (§3). Licence is
 **computed**, not declared, and splits into inheritance and policy (§4).
 
-**The NC-SA question is answered definitively, and the answer is "no tier"
-(§4.2).** No Hansen receptor data reached the corpus, the training run, or any
+**The NC-SA question is answered definitively: it enters at no tier *today*
+(§4.2), and at every tier once the adapter is fixed (§4.3).** The owner has
+accepted CC-BY-NC-SA-4.0; it is encoded as **inheritance, not policy**, so no
+reader can mistake it for something the owner could revoke. No Hansen receptor data reached the corpus, the training run, or any
 variant — because `scwbd.anatomy` **never loads at all**. The adapter between
 🧠 Cajal's `BrainPrior` and the foundation model raises on an interface
 mismatch, the exception is swallowed by a bare `except Exception`, and every run
 falls back silently to the labelled synthetic connectome. This is read from the
 run record and reproduced by executing the production path, not inferred from
-code. `-combined` is retired: four names for four things (§2).
+code. `-combined` is retired: four names for four things (§2). Whether a downstream
+consumer inherits share-alike is recorded as unsettled and deliberately not
+answered (§4.5).
 
 ---
 
@@ -177,9 +181,17 @@ Two independent fields, never merged:
 - **`by_inheritance`** — forced by a source. Nobody in this project can remove it.
 - **`by_policy`** — chosen by the owner. Whoever set it can revoke it.
 
-`noncommercial_is_removable` is true only when policy imposes NC and no source
-does. A reader who cannot tell the two apart cannot tell which constraints
-survive a change of mind.
+A constraint is `removable` only when policy imposes it and **no source forces
+it**. A reader who cannot tell the two apart cannot tell which constraints
+survive a change of mind — so alongside the boolean, `removal_requires(term)`
+states in words what lifting it would actually take: dropping named datasets, or
+revoking a named policy.
+
+**Three constraints are tracked, with identical machinery**: `noncommercial`,
+`share_alike`, `attribution`. Each reports `effective`, `by_inheritance`,
+`forced_by`, `by_policy`, `removable` and `removal_requires`. There is no
+generic "restricted" flag, because a generic flag is how share-alike — the more
+viral term — becomes a footnote to non-commercial (§4.3.1).
 
 Every term is **tri-state** (`True`/`False`/`None`). `None` means unknown and
 **never collapses to `False`**. Two datasets on disk (`mne-sample`,
@@ -292,50 +304,101 @@ superset computation — over-listing is the right default for a licence audit �
 but the object-level record is what the manifest prefers, and the distinction is
 now stated wherever the figure appears.
 
-### 4.3 What the release may assert today
+### 4.3 THE DECISION: CC-BY-NC-SA-4.0 is accepted (2026-08-06)
 
-| variant | Hansen / NC-SA today | why |
-|---|---|---|
-| `-raw` | **no** | anatomy is the synthetic fallback |
-| `-with-simulation` | **no** | corpus run record: `is_biological: false` |
-| `-with-simulation-and-synthetic` | **no** (and untrained) | same, plus TRIBE disabled |
+The owner has decided to **keep the Hansen receptor maps and accept the
+licence they carry**. Recorded in `manifest.OWNER_LICENCE_DECISION` and
+embedded in every provenance block.
 
-**`-raw` is therefore genuinely clean of copyleft** — attribution-only, via
-ODC-By on eegmmidb — and commercially usable on that axis. Established
-deliberately rather than discovered by accident, which is what was asked.
+**Accepting an inherited constraint is not the same act as imposing one**, and
+the encoding reflects that: the decision adds **no policy overlay**
+(`policy_overlay: {}`, deliberately empty). Had NC-SA been recorded as policy,
+`noncommercial_is_removable` would read `True` and a future reader would
+conclude the owner could lift it by changing their mind. They cannot. It is
+forced by `hansen_receptors` through `BrainPrior`, and
+`removal_requires("noncommercial")` says so in words:
 
-Two caveats that must travel with that sentence:
+> `dropping the source(s) that carry it: anatomical_prior -- an owner decision cannot lift this`
 
-1. It is **contingent on a defect**. `-raw` is clean because agent C's anatomy
-   is unreachable, not because anyone decided it should be. Fix the adapter and
-   `-raw` inherits NC-SA. This is a fact about today's artifacts with a known
-   expiry condition, not a property of the design.
-2. `montage_calibration` still has **no recorded licence**, so the union is
-   `UNKNOWN`, not "permissive" (§4.4).
+`test_accepting_an_inherited_licence_adds_no_policy_overlay` and
+`test_removal_requires_names_the_source_not_the_owner` hold that line, and the
+distinction is mutation-tested: recording NC as policy fails five tests.
 
-The manifest's `anatomy_is_biological` flag is exactly the control for this: it
-is the single input that flips the whole licence computation, and it is now
-known to be `False` for every artifact built so far.
+#### Computed union, per arm, with real anatomy (post-fix)
 
-### 4.3.1 A clean escape for the simulation tier — recorded, not recommended
+Regenerated by building each arm's real mixture with its tag-axis families
+toggled and `anatomy_is_biological=True`. Every arm's tag validates against its
+own manifest.
 
-Presented as a finding for the owner; not acted on.
+| arm | non-commercial | share-alike | attribution | forced by |
+|---|---|---|---|---|
+| `-raw` | **yes** · inherited · not removable | **yes** · inherited · not removable | yes | `anatomical_prior` (NC, SA); `eegmmidb` (attr) |
+| `-with-simulation` | **yes** · inherited · not removable | **yes** · inherited · not removable | yes | `anatomical_prior` (NC, SA); `eegmmidb` (attr) |
+| `-with-simulation-and-synthetic` | **yes** · inherited · not removable | **yes** · inherited · not removable | yes | `anatomical_prior`, `tribe_v2_teacher` (NC); `anatomical_prior` (SA) |
 
-Once the adapter is fixed, NC-SA reaches `-raw` and `-with-simulation` **solely**
-through the receptor-derived E/I prior. Regenerating the corpus with E/I from a
-non-Hansen source — or a uniform prior — removes copyleft from every variant
-except `-with-simulation-and-synthetic`, and leaves the ENIGMA connectome and
-MIT parcellation untouched.
+`by_policy` is `False` for every term in every arm. Nothing here is the owner's
+to revoke.
 
-The scientific cost is smaller than it looks. 🌊 Hodgkin measured the two maps
-that dominate the E/I contrast as the **least route-stable in the panel**
-(`reports/anatomy_prior.md` §route agreement): **NMDA 0.590** and **GABA-A
-0.685**, both classified *route-fragile*, and fragile again on Schaefer100x7
-(NMDA 0.578). A prior built on the two least reproducible maps in the panel is
-carrying a copyleft obligation for a quantity that is itself unstable.
+**`-raw` is included, and that is the substantive change.** `load_anatomy()` is
+called for every arm regardless of data mixture — the model needs a coupling
+mask and regional priors whether or not simulated data is in the batch — so the
+receptor-derived E/I prior reaches the real-data-only artifact too. The
+permissive `-raw` tier I established was real, but **only for the currently
+defective artifact**; I recorded it with an expiry condition, and that condition
+has now been met by decision rather than by code.
 
-This is the owner's call. It is recorded here so the trade is visible: a
-licensing constraint and a measurement-stability concern point the same way.
+Note the third row: `-with-simulation-and-synthetic` gains NC from **two**
+independent sources. TRIBE is CC BY-NC 4.0 — non-commercial but **not**
+copyleft — so it adds NC and not SA. Share-alike still traces to
+`anatomical_prior` alone. The terms are tracked separately precisely so this is
+visible rather than averaged into "restricted".
+
+#### The artifact trained tonight is NOT relabelled
+
+| arm, as built today (synthetic fallback anatomy) | NC | SA | attribution |
+|---|---|---|---|
+| `-raw` | UNKNOWN | UNKNOWN | required (`eegmmidb`) |
+| `-with-simulation` | UNKNOWN | UNKNOWN | required (`eegmmidb`) |
+
+The checkpoint 🔥 Turing is training carries **no Hansen data** — verified from
+the corpus run record (§4.2), not assumed — and it is not retroactively
+relabelled NC-SA. A licence field that overstates its constraints is as wrong as
+one that understates them.
+
+**But "no Hansen input" and "permissive" are different claims, and only the
+first is established.** The union computes `UNKNOWN`, not `False`, because
+`montage_calibration` still has no recorded licence. The honest sentence is
+*"carries no copyleft input"* — not *"is unrestricted"*. This is the tri-state
+discipline doing real work rather than being pedantic:
+`test_todays_clean_artifact_is_still_not_provably_permissive`.
+
+### 4.3.1 Share-alike is first-class
+
+SA is the **more viral** term — a derivative work must be released under the
+same licence — and it reaches further than non-commercial does. It is not a
+footnote here. Every tracked constraint (`noncommercial`, `share_alike`,
+`attribution`) is computed by the same code and reported with the same
+structure: `effective`, `by_inheritance`, `forced_by`, `by_policy`,
+`removable`, `removal_requires`. There is no generic "restricted" flag that
+could swallow it.
+
+The summary spells the obligation out rather than relying on the reader to
+decode two letters:
+
+> `non-commercial: yes; share-alike: yes; attribution: required; redistribution: unknown; SHARE-ALIKE IN FORCE: derivative works must be released under the same licence; 1 source(s) with UNKNOWN licence (montage_calibration) — unknown is not permissive`
+
+### 4.3.2 A note on what the decision does *not* settle
+
+§4.3.1 of the previous revision offered a way to drop copyleft by sourcing E/I
+from a non-Hansen map, noting that NMDA (0.590) and GABA-A (0.685) are the two
+least route-stable maps in Hodgkin's panel. **That option is now closed by
+decision**, and the section is withdrawn as a recommendation.
+
+The measurement stands and is worth keeping visible for a different reason: the
+E/I prior now carries a permanent licensing obligation, and it rests on the two
+least reproducible maps in the panel. That is an argument about *scientific*
+cost, not licensing, and it survives the decision unchanged. `-raw`'s value as
+a licence-clean baseline is gone; its value as an ablation arm is not.
 
 ### 4.4 "Not NC" is not "unrestricted"
 
@@ -344,7 +407,35 @@ attribution required. The summary renders obligations explicitly and the word
 "permissive" never appears; `test_not_nc_is_not_rendered_as_unrestricted` holds
 that line.
 
-### 4.5 TRIBE's licence is [UNVERIFIED]
+### 4.5 Downstream reach — recorded, NOT answered
+
+`~/Documents/robotics` loads SC-WBD checkpoints (`ServedModel.load`, verified:
+`packages/tms-lab`, `packages/tms-core`). Two questions follow from the NC-SA
+decision:
+
+1. Is a model trained on CC-BY-NC-SA-4.0 data itself a **derivative work** of
+   that data?
+2. Does a downstream **consumer** of that model inherit share-alike?
+
+**Both are legally unsettled, and this report does not answer them.** Nobody on
+this project is competent to, and asserting a verdict here would be the same
+defect as asserting an unverified restriction — the thing §4.6 exists to flag.
+The question is recorded in `manifest.DOWNSTREAM_REACH_QUESTION` and travels in
+every provenance block, with `status: "unsettled -- no answer asserted"`.
+
+**Conservative reading carried alongside it** (a default that fails safe, not a
+conclusion): assume yes to both — treat the checkpoint as a derivative work
+carrying NC-SA, and assume a consumer that redistributes it or its outputs
+inherits the same obligation.
+
+**Measured state of the consumer, 2026-08-06:** the question is **not yet
+triggered**. `reports/robotics_integration.md` line 374 records that no trained
+`SC-WBD-001-beta` checkpoint exists in that tree; `ServedModel.load` finds none
+and sets `weights_status="analytic_backend"`. It becomes live the moment a
+trained checkpoint is served there. `resolve_with: qualified legal advice, not
+this repository`.
+
+### 4.6 TRIBE's licence is [UNVERIFIED]
 
 My brief states TRIBE v2 is CC BY-NC 4.0. **No file in this repository states
 this.** `configs/source_cards/tribe_v2_teacher.yaml` has no governance section
@@ -430,8 +521,12 @@ I could not reach Popper or Ramón to coordinate (`SendMessage`: "No agent named
    mid-training); reported for Turing and 🧠 Cajal. It is also the reason the
    licence answer is currently "clean".
 4. **TRIBE's licence is unverified** (§4.5). Needs 🎓 Ramón.
-5. **Whether to keep receptor-derived E/I at all** (§4.3.1). Owner's call;
-   licensing and route-stability point the same way.
+5. **Whether a checkpoint is a derivative work of its training data, and
+   whether a consumer inherits share-alike** (§4.5). Unsettled; recorded with a
+   fail-safe default and no asserted answer. Needs qualified legal advice.
+6. **`montage_calibration` has no recorded licence.** It is the reason today's
+   otherwise-clean artifact computes `UNKNOWN` rather than permissive. A card
+   with a governance section would close it.
 
 ## 8. Claims in my brief that did not survive checking
 
@@ -443,7 +538,7 @@ Recorded because the house rule is to regenerate, not to audit the table.
 | "`assets/MANIFEST.json` records licence per asset" | Not at that path in the checkout; it is at the data root behind the `assets/` symlinks. Resolved by following them, so it works with or without data attached. |
 | "checkpoints under `checkpoints/scwbd-001-beta/`" | Empty on `master`, which is **correct**: 🔥 Turing's live checkpoints are in the worktree and not merged. Withdrawn as a discrepancy. |
 | "D12 is in Appendix D / `scwbd/bench/ablations.py`" | The requirement text is real (`paper/appendix.tex` l.1523), but D12 is implemented in `scwbd/bench/leakage.py`, not `ablations.py`. |
-| "NC across the family, by owner policy" | Superseded mid-task by the owner. |
+| "NC across the family, by owner policy" | Superseded twice. Final decision 2026-08-06: **accept** CC-BY-NC-SA-4.0 as **inherited**, with no policy overlay — so it is correctly reported as not removable by the owner (§4.3). |
 | "NC-SA is not used until the synthetic phase" (owner) | **Falsified, but not as expected.** It enters at *no* phase, because anatomy never loads (§4.2). Had it loaded, it would have entered at the **simulation** phase via the E/I prior — one tier earlier than the hypothesis. |
 | "NC enters at the simulation tier via the E/I prior" (coordinator) | **Correct in mechanism, not in fact.** The code path is exactly as described; it never executes (§4.2). |
 | "20 of 54 derived assets inherit NC, incl. the Schaefer-400 connectome" (my own earlier report) | **Correct measurement, wrong conclusion.** Asset-level `inputs` over-lists consulted sources. `BrainPrior` uses the **ENIGMA** connectome; only `hansen_receptors` carries NC-SA. Corrected in §4.2.1. |
@@ -466,7 +561,7 @@ Recorded because the house rule is to regenerate, not to audit the table.
 ## 10. Reproducing
 
 ```bash
-CUDA_VISIBLE_DEVICES="" .venv/bin/python -m pytest tests/release -q     # 104 tests
+CUDA_VISIBLE_DEVICES="" .venv/bin/python -m pytest tests/release -q     # 120 tests
 
 # what the release actually inherits, given the measured anatomy provenance
 CUDA_VISIBLE_DEVICES="" .venv/bin/python -c "

@@ -11,6 +11,10 @@ Two kinds of test live here:
 
 from __future__ import annotations
 
+import pathlib
+
+import pytest
+
 from scwbd.release.datasets import (
     MEASURED_MODALITIES,
     link_sources_to_datasets,
@@ -194,3 +198,94 @@ def test_link_returns_none_rather_than_a_wrong_card():
     assert links["sim_wholebrain"] is None
     assert links["eegmmidb_real"] is not None
     assert links["eegmmidb_real"].dataset_id == "eegmmidb"
+
+
+# ======================================================================
+# per-arm licence union under the owner's 2026-08-06 decision
+# ======================================================================
+def _arm_manifest(tmp_path, *, sim: bool, teacher: bool, bio):
+    """Build the real mixture with the tag-axis families of one arm toggled."""
+    import yaml
+    from scwbd.release.manifest import OWNER_LICENCE_DECISION
+
+    src = pathlib.Path("configs/source_cards")
+    d = tmp_path / "cards"
+    d.mkdir(exist_ok=True)
+    toggles = {"sim_wholebrain": sim, "tribe_v2_teacher": teacher}
+    for p in src.glob("*.yaml"):
+        c = yaml.safe_load(p.read_text())
+        if c["id"] in toggles:
+            c["enabled"] = toggles[c["id"]]
+        (d / p.name).write_text(yaml.safe_dump(c))
+    return build_manifest(
+        card_dir=d,
+        config="configs/scwbd_001_beta.yaml",
+        policy=OWNER_LICENCE_DECISION["policy_overlay"],
+        anatomy_is_biological=bio,
+    )
+
+
+@pytest.mark.parametrize(
+    "arm,sim,teacher",
+    [
+        ("raw", False, False),
+        ("with-simulation", True, False),
+        ("with-simulation-and-synthetic", True, True),
+    ],
+)
+def test_every_arm_inherits_nc_sa_with_real_anatomy(tmp_path, arm, sim, teacher):
+    """The owner's decision, computed per arm: NC-SA reaches all of them.
+
+    ``-raw`` included, because ``load_anatomy()`` is called for every arm
+    regardless of data mixture. The permissive ``-raw`` tier was real only for
+    the currently defective artifact.
+    """
+    m = _arm_manifest(tmp_path, sim=sim, teacher=teacher, bio=True)
+    m.validate_tag(f"scwbd-001-beta-{arm}-20260806T114623Z")
+    u = m.licence()
+    for constraint in ("noncommercial", "share_alike"):
+        st = u.term_status(constraint)
+        assert st["effective"] is True, f"{arm}: {constraint} not in force"
+        assert st["by_inheritance"] is True, f"{arm}: {constraint} must be inherited"
+        assert st["by_policy"] is False, f"{arm}: {constraint} must not be policy"
+        assert st["removable"] is False, f"{arm}: {constraint} must not be removable"
+        assert "anatomical_prior" in st["forced_by"]
+
+
+@pytest.mark.parametrize(
+    "arm,sim,teacher",
+    [("raw", False, False), ("with-simulation", True, False)],
+)
+def test_todays_artifacts_carry_no_hansen_and_are_not_relabelled(tmp_path, arm, sim, teacher):
+    """The artifact trained tonight is genuinely free of Hansen input.
+
+    It must not be retroactively relabelled NC-SA: a licence field that
+    overstates its constraints is as wrong as one that understates them.
+    """
+    m = _arm_manifest(tmp_path, sim=sim, teacher=teacher, bio=False)
+    u = m.licence()
+    assert u.sources_forcing("noncommercial") == ()
+    assert u.sources_forcing("share_alike") == ()
+
+
+def test_todays_clean_artifact_is_still_not_provably_permissive(tmp_path):
+    """No Hansen input is not the same claim as 'permissive'.
+
+    ``montage_calibration`` has no recorded licence, so the union is UNKNOWN
+    rather than False. This is the tri-state discipline doing real work: the
+    honest statement is 'carries no copyleft input', not 'is unrestricted'.
+    """
+    m = _arm_manifest(tmp_path, sim=True, teacher=False, bio=False)
+    u = m.licence()
+    assert u.noncommercial_effective is None
+    assert u.share_alike_effective is None
+    assert "montage_calibration" in u.unknown_sources
+    assert "not permissive" in u.summary()
+
+
+def test_teacher_arm_gains_nc_from_tribe_but_not_share_alike(tmp_path):
+    """TRIBE is CC BY-NC 4.0: non-commercial, not copyleft. Terms differ."""
+    m = _arm_manifest(tmp_path, sim=True, teacher=True, bio=False)
+    u = m.licence()
+    assert u.sources_forcing("noncommercial") == ("tribe_v2_teacher",)
+    assert u.sources_forcing("share_alike") == ()

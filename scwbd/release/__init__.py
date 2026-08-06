@@ -41,6 +41,8 @@ from .families import (
 )
 from .licence import LicenceTerm, LicenceUnion, union_of
 from .manifest import (
+    DOWNSTREAM_REACH_QUESTION,
+    OWNER_LICENCE_DECISION,
     ProvenanceBlock,
     ProvenanceMismatch,
     SourceFamilyManifest,
@@ -69,6 +71,8 @@ __all__ = [
     "CheckpointTag",
     "CollapseError",
     "CollapseResult",
+    "DOWNSTREAM_REACH_QUESTION",
+    "OWNER_LICENCE_DECISION",
     "FAMILY_TIER",
     "LicenceTerm",
     "LicenceUnion",

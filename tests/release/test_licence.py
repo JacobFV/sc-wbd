@@ -207,3 +207,101 @@ def test_hansen_receptor_atlas_is_noncommercial_in_the_asset_registry():
 
     assert is_noncommercial_text(SRC["hansen_receptors"]["license"]) is True
     assert is_share_alike_text(SRC["hansen_receptors"]["license"]) is True
+
+
+# ======================================================================
+# the owner's 2026-08-06 decision: accept CC-BY-NC-SA-4.0
+# ======================================================================
+def test_accepting_an_inherited_licence_adds_no_policy_overlay():
+    """Accepting a constraint is not the same act as imposing one.
+
+    The owner accepted NC-SA rather than mandating it. If that were recorded as
+    policy, ``removable`` would read True and a reader would conclude the owner
+    could lift it by changing their mind. They cannot.
+    """
+    from scwbd.release.manifest import OWNER_LICENCE_DECISION
+
+    assert OWNER_LICENCE_DECISION["policy_overlay"] == {}
+
+    u = union_of([ODC_BY, HANSEN], policy=OWNER_LICENCE_DECISION["policy_overlay"])
+    assert u.noncommercial_effective is True
+    assert u.by_policy("noncommercial") is False
+    assert u.by_inheritance("noncommercial") is True
+    assert u.is_removable("noncommercial") is False
+
+
+def test_removal_requires_names_the_source_not_the_owner():
+    """A reader must see that lifting NC-SA means dropping Hansen."""
+    u = union_of([ODC_BY, HANSEN])
+    for constraint in ("noncommercial", "share_alike"):
+        why = u.removal_requires(constraint)
+        assert "anatomical_prior" in why
+        assert "owner decision cannot lift" in why
+
+
+def test_policy_imposed_constraint_names_the_owner_instead():
+    """The contrast case: a chosen constraint is removable by whoever chose it."""
+    u = union_of([ODC_BY, CC0], policy={"noncommercial": "owner directive 2026-08-06"})
+    why = u.removal_requires("noncommercial")
+    assert "revoking the owner policy" in why
+    assert u.is_removable("noncommercial") is True
+
+
+# ======================================================================
+# share-alike is first-class, not a footnote to non-commercial
+# ======================================================================
+def test_share_alike_has_the_same_machinery_as_noncommercial():
+    """SA is the more viral term and gets equal treatment, not a mention."""
+    u = union_of([ODC_BY, HANSEN])
+    for constraint in ("noncommercial", "share_alike"):
+        st = u.term_status(constraint)
+        assert st["effective"] is True
+        assert st["by_inheritance"] is True
+        assert st["forced_by"] == ["anatomical_prior"]
+        assert st["removable"] is False
+        assert st["removal_requires"]
+
+
+def test_share_alike_is_reported_separately_in_the_serialised_form():
+    u = union_of([ODC_BY, HANSEN])
+    d = u.as_dict()
+    assert set(d["constraints"]) == {"noncommercial", "share_alike", "attribution"}
+    assert d["by_inheritance"]["share_alike_forced_by"] == ["anatomical_prior"]
+    assert d["share_alike_is_removable"] is False
+    assert "share_alike" in d["removal_requires"]
+
+
+def test_share_alike_obligation_is_spelled_out_in_the_summary():
+    """'SA' is jargon; the obligation must be legible without decoding it."""
+    s = union_of([ODC_BY, HANSEN]).summary()
+    assert "share-alike: yes" in s
+    assert "derivative works must be released under the same licence" in s
+
+
+def test_nc_without_sa_does_not_claim_share_alike():
+    """TRIBE is CC BY-NC 4.0 -- non-commercial but NOT copyleft."""
+    u = union_of([ODC_BY, TRIBE])
+    assert u.noncommercial_effective is True
+    assert u.share_alike_effective is False
+    assert u.share_alike_sources == ()
+    assert "derivative works must be released" not in u.summary()
+
+
+def test_unknown_constraint_is_refused():
+    with pytest.raises(KeyError, match="unknown constraint"):
+        union_of([ODC_BY]).term_status("copyleft")
+
+
+# ======================================================================
+# the downstream question is recorded and NOT answered
+# ======================================================================
+def test_downstream_reach_question_asserts_no_answer():
+    """Whether a consumer inherits SA is unsettled; the record must not decide it."""
+    from scwbd.release.manifest import DOWNSTREAM_REACH_QUESTION as Q
+
+    assert "unsettled" in Q["status"]
+    assert "no answer asserted" in Q["status"]
+    assert "not a legal conclusion" in Q["conservative_reading"]
+    assert "legal advice" in Q["resolve_with"]
+    # the conservative reading fails safe rather than permissively
+    assert "Assume yes" in Q["conservative_reading"]

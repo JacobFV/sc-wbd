@@ -310,17 +310,108 @@ class LicenceUnion:
             return None
         return False
 
+    # -- generic per-constraint accessors ---------------------------------
+    #: Every constraint the union tracks. Each is computed the same way and
+    #: reported with the same structure, so share-alike cannot quietly become a
+    #: footnote to non-commercial. SA is the **more viral** term — a derivative
+    #: work must be released under the same licence — and it reaches further
+    #: than NC does, so it gets equal machinery, not a mention.
+    CONSTRAINTS: tuple[str, ...] = ("noncommercial", "share_alike", "attribution")
+
+    def by_inheritance(self, constraint: str) -> TriState:
+        """Is ``constraint`` forced by some source? Tri-state."""
+        self._check(constraint)
+        return self._reduce(getattr(t, constraint) for t in self.terms)
+
+    def sources_forcing(self, constraint: str) -> tuple[str, ...]:
+        """Which sources force ``constraint``. This is the removability evidence.
+
+        A reader must be able to see that removing non-commercial means
+        dropping *these datasets*, not asking the owner to change their mind.
+        """
+        self._check(constraint)
+        return tuple(t.source_id for t in self.terms if getattr(t, constraint) is True)
+
+    def by_policy(self, constraint: str) -> bool:
+        """Is ``constraint`` imposed by owner choice rather than by a source?"""
+        self._check(constraint)
+        return constraint in self.policy
+
+    def effective(self, constraint: str) -> TriState:
+        self._check(constraint)
+        if self.by_policy(constraint):
+            return True
+        return self.by_inheritance(constraint)
+
+    def is_removable(self, constraint: str) -> bool:
+        """True when ``constraint`` is in force *only* because someone chose it.
+
+        False when a source forces it — including when policy also asks for it,
+        because a policy cannot lift an inherited obligation.
+        """
+        self._check(constraint)
+        return self.by_policy(constraint) and self.by_inheritance(constraint) is not True
+
+    def removal_requires(self, constraint: str) -> str:
+        """Plain statement of what it would take to lift ``constraint``."""
+        self._check(constraint)
+        if self.effective(constraint) is not True:
+            return "not in force"
+        forced = self.sources_forcing(constraint)
+        if forced:
+            return (
+                "dropping the source(s) that carry it: " + ", ".join(forced)
+                + " -- an owner decision cannot lift this"
+            )
+        if self.by_policy(constraint):
+            return f"revoking the owner policy: {self.policy.get(constraint, '')}"
+        return "unknown"  # pragma: no cover - defensive
+
+    def term_status(self, constraint: str) -> dict[str, Any]:
+        """The full, symmetric record for one constraint."""
+        self._check(constraint)
+        return {
+            "effective": self.effective(constraint),
+            "by_inheritance": self.by_inheritance(constraint),
+            "forced_by": list(self.sources_forcing(constraint)),
+            "by_policy": self.by_policy(constraint),
+            "policy_reason": self.policy.get(constraint),
+            "removable": self.is_removable(constraint),
+            "removal_requires": self.removal_requires(constraint),
+        }
+
+    @staticmethod
+    def _check(constraint: str) -> None:
+        if constraint not in LicenceUnion.CONSTRAINTS:
+            raise KeyError(
+                f"unknown constraint {constraint!r}; tracked constraints are "
+                f"{list(LicenceUnion.CONSTRAINTS)}"
+            )
+
+    # -- named aliases (readability at call sites) ------------------------
     @property
     def noncommercial_by_inheritance(self) -> TriState:
-        return self._reduce(t.noncommercial for t in self.terms)
+        return self.by_inheritance("noncommercial")
 
     @property
     def share_alike_by_inheritance(self) -> TriState:
-        return self._reduce(t.share_alike for t in self.terms)
+        return self.by_inheritance("share_alike")
 
     @property
     def attribution_by_inheritance(self) -> TriState:
-        return self._reduce(t.attribution for t in self.terms)
+        return self.by_inheritance("attribution")
+
+    @property
+    def share_alike_effective(self) -> TriState:
+        return self.effective("share_alike")
+
+    @property
+    def share_alike_sources(self) -> tuple[str, ...]:
+        return self.sources_forcing("share_alike")
+
+    @property
+    def share_alike_is_removable(self) -> bool:
+        return self.is_removable("share_alike")
 
     @property
     def redistribution(self) -> str:
@@ -335,13 +426,11 @@ class LicenceUnion:
 
     @property
     def noncommercial_by_policy(self) -> bool:
-        return "noncommercial" in self.policy
+        return self.by_policy("noncommercial")
 
     @property
     def noncommercial_effective(self) -> TriState:
-        if self.noncommercial_by_policy:
-            return True
-        return self.noncommercial_by_inheritance
+        return self.effective("noncommercial")
 
     @property
     def noncommercial_is_removable(self) -> bool:
@@ -352,7 +441,7 @@ class LicenceUnion:
         project. A reader who cannot tell the two apart cannot tell which
         constraints survive a change of mind.
         """
-        return self.noncommercial_by_policy and self.noncommercial_by_inheritance is not True
+        return self.is_removable("noncommercial")
 
     # -- reporting --------------------------------------------------------
     @property
@@ -388,10 +477,15 @@ class LicenceUnion:
 
         bits = [
             f"non-commercial: {tri(self.noncommercial_effective, 'yes', 'no')}",
-            f"share-alike: {tri(self.share_alike_by_inheritance, 'yes', 'no')}",
+            f"share-alike: {tri(self.share_alike_effective, 'yes', 'no')}",
             f"attribution: {tri(self.attribution_by_inheritance, 'required', 'not required')}",
             f"redistribution: {self.redistribution}",
         ]
+        if self.share_alike_effective is True:
+            bits.append(
+                "SHARE-ALIKE IN FORCE: derivative works must be released under "
+                "the same licence"
+            )
         if self.unknown_sources:
             bits.append(
                 f"{len(self.unknown_sources)} source(s) with UNKNOWN licence "
@@ -401,9 +495,12 @@ class LicenceUnion:
 
     def as_dict(self) -> dict[str, Any]:
         return {
+            # Every tracked constraint, reported with identical structure.
+            # Share-alike is not a footnote to non-commercial here.
+            "constraints": {c: self.term_status(c) for c in self.CONSTRAINTS},
             "effective": {
                 "noncommercial": self.noncommercial_effective,
-                "share_alike": self.share_alike_by_inheritance,
+                "share_alike": self.share_alike_effective,
                 "attribution": self.attribution_by_inheritance,
                 "redistribution": self.redistribution,
                 "obligations": list(self.obligations),
@@ -413,12 +510,18 @@ class LicenceUnion:
                 "noncommercial": self.noncommercial_by_inheritance,
                 "share_alike": self.share_alike_by_inheritance,
                 "forced_by": list(self.inheritance_sources),
+                "share_alike_forced_by": list(self.share_alike_sources),
             },
             "by_policy": {
                 "noncommercial": self.noncommercial_by_policy,
+                "share_alike": self.by_policy("share_alike"),
                 "terms": dict(self.policy),
             },
             "noncommercial_is_removable": self.noncommercial_is_removable,
+            "share_alike_is_removable": self.share_alike_is_removable,
+            "removal_requires": {
+                c: self.removal_requires(c) for c in self.CONSTRAINTS
+            },
             "unknown_licence_sources": list(self.unknown_sources),
             "unverified_licence_sources": list(self.unverified_sources),
             "terms": [t.as_dict() for t in self.terms],

@@ -50,6 +50,8 @@ from .licence import (
 from .tags import CheckpointTag
 
 __all__ = [
+    "OWNER_LICENCE_DECISION",
+    "DOWNSTREAM_REACH_QUESTION",
     "ProvenanceMismatch",
     "SourceFamilyManifest",
     "ProvenanceBlock",
@@ -62,6 +64,68 @@ __all__ = [
 
 #: Where the claim boundary for this release line is written (agent J / Popper).
 CLAIM_BOUNDARY_PATH = "reports/CLAIM_BOUNDARY.md"
+
+#: The owner's licence decision, recorded as a decision rather than applied as
+#: a silent default.
+#:
+#: 2026-08-06: **accept CC-BY-NC-SA-4.0.** The Hansen receptor maps stay in the
+#: pipeline, and the release accepts the non-commercial *and* share-alike terms
+#: they carry.
+#:
+#: The important consequence for this module is what it does **not** do: it adds
+#: **no policy overlay**. Accepting an inherited constraint is not the same act
+#: as imposing one. If NC were recorded as policy, ``noncommercial_is_removable``
+#: would read ``True`` and a future reader would conclude the owner could lift it
+#: by changing their mind. They cannot: it is forced by ``hansen_receptors`` via
+#: ``BrainPrior``, and removing it means dropping that dataset. The policy
+#: mapping therefore stays empty and the constraint is reported as inheritance.
+OWNER_LICENCE_DECISION: Mapping[str, Any] = {
+    "date": "2026-08-06",
+    "decision": "accept CC-BY-NC-SA-4.0 inherited from hansen_receptors",
+    "terms_accepted": ["noncommercial", "share_alike", "attribution"],
+    "policy_overlay": {},  # deliberately empty -- see above
+    "rationale": (
+        "The receptor-derived E/I prior is retained for its scientific value. "
+        "Accepting an inherited licence is not the same act as imposing a policy: "
+        "recording it as policy would misrepresent it as removable by the owner."
+    ),
+    "applies_to": "every arm built with the real (biological) anatomical prior",
+    "does_not_apply_to": (
+        "artifacts built with the synthetic fallback anatomy, which carry no "
+        "Hansen input and are genuinely not NC-SA -- see reports/checkpoint_family.md §4.3"
+    ),
+}
+
+#: An unsettled legal question, recorded so it is visible and *not* answered.
+#:
+#: ``~/Documents/robotics`` loads SC-WBD checkpoints (``ServedModel.load``).
+#: Whether a model trained on CC-BY-NC-SA data is itself a derivative work of
+#: that data, and whether a downstream *consumer* of the model inherits
+#: share-alike, is legally unsettled. Nobody on this project is competent to
+#: settle it, so the manifest carries the question and the conservative reading
+#: rather than a verdict. A licence field that asserted an answer here would be
+#: the same defect as one that asserted an unverified restriction.
+DOWNSTREAM_REACH_QUESTION: Mapping[str, Any] = {
+    "status": "unsettled -- no answer asserted",
+    "question": (
+        "Is a model trained on CC-BY-NC-SA-4.0 data a derivative work of that "
+        "data, and does a downstream consumer of the model inherit share-alike?"
+    ),
+    "conservative_reading": (
+        "Assume yes: treat the checkpoint as a derivative work carrying NC-SA, "
+        "and assume a consumer that redistributes it or its outputs inherits the "
+        "same obligation. This is the reading that fails safe; it is not a legal "
+        "conclusion."
+    ),
+    "known_consumer": "~/Documents/robotics (packages/tms-lab, tms-core)",
+    "consumer_state_measured_2026_08_06": (
+        "not yet triggered: reports/robotics_integration.md records that no "
+        "trained SC-WBD-001-beta checkpoint exists in that tree; ServedModel.load "
+        "finds none and sets weights_status='analytic_backend'. The question "
+        "becomes live the moment a trained checkpoint is served there."
+    ),
+    "resolve_with": "qualified legal advice, not this repository",
+}
 
 
 class ProvenanceMismatch(ValueError):
@@ -573,6 +637,8 @@ class ProvenanceBlock:
             "effective_licence": lic.as_dict(),
             "licence_summary": lic.summary(),
             "claim_boundary": self.claim_boundary,
+            "owner_licence_decision": dict(OWNER_LICENCE_DECISION),
+            "downstream_reach_question": dict(DOWNSTREAM_REACH_QUESTION),
             "alias_of": self.alias_of,
             "alias_reason": self.alias_reason,
             "notes": self.notes,
