@@ -372,7 +372,22 @@ most flattering is also the most likely to be misreported.
 Establishing the link properly would require holding everything else fixed and
 varying only the normaliser, which is not what happened here.
 
-## ⚠ Provenance stamp misattribution — I walked into the trap I documented
+## ⚠ Provenance stamp is INCORRECT — read this before citing the checkpoint
+
+**Summary, stated first so it cannot be missed:**
+
+| | |
+|---|---|
+| **status** | **stamp incorrect** |
+| **damage** | **cosmetic** |
+| **proof** | `git diff --stat 94b6ddc da05ad5 -- scwbd configs tests` → empty (branch `wt/turing`) |
+| **corrected?** | **no** — correction would have cost ~10 min of training to replace a checkable diff with a weaker form of evidence |
+
+The two-SHA diff is a **stronger** claim than the stamp: it states what code
+produced the weights, which is what anyone actually needs. The stamp states which
+commit was HEAD at an arbitrary moment. Later checkpoints repeat `da05ad5`
+because `_SHA` is frozen — **consistently wrong is auditable**, and that is the
+second-best outcome after correct.
 
 **The checkpoint stamp says `da05ad5`. The run was launched at `94b6ddc`.**
 

@@ -136,6 +136,33 @@ Countermeasures, in order of how much they are worth:
 
 *A conclusion nobody is trying to break is not a finding. It is a consensus.*
 
+### The general case: a reasoning step that reads the same under both hypotheses
+
+Every numbered row above is an *instrument* that cannot discriminate. This is the
+same defect one level up, in a **reasoning step** — and it is more dangerous,
+because it survives scrutiny rather than merely escaping it.
+
+> **A rationalisation that is false gets caught; one that is true but irrelevant
+> does not.**
+
+The rule was *"commit nothing until the artifact freezes its identity."* Three
+commits went in anyway, each justified by: *"docs-only commits cannot change the
+model."*
+
+That justification is **correct**. It is simply not the proposition the rule was
+protecting. There was nothing false to notice, no contradiction to trip over, no
+inconsistency an audit would surface — and the substituted rule was strictly
+easier to satisfy. A false excuse gets caught by anyone checking. A true one that
+answers a different question gets *agreed with*.
+
+The check is not "is this reasoning sound?" — it will be. The check is:
+
+> **Which proposition does this argument establish, and is it the one at issue?**
+
+This is the missing general case the invested-conclusion variant was gesturing
+at. Invested conclusions survive because nobody is attacking them; **true-but-
+irrelevant reasoning survives because attacking it confirms it.**
+
 ### What a preregistration inherits
 
 Instance 8 showed that a threshold must be able to read differently in the world
@@ -268,6 +295,28 @@ The division is worth naming. **Method came from whoever made the mistake;
 restraint came from whoever was not invested in the outcome.** Neither role
 substitutes for the other, and the second is the one a lone author cannot fill.
 
+**The roles are not fixed to the people.** They attach to whoever is invested in
+a given outcome, and that changes from decision to decision. Over one night:
+
+| decision | invested party | who supplied restraint |
+|---|---|---|
+| whether to restart for the LR rescale | coordinator (had overruled) | the agent, by retracting its own supporting evidence |
+| relaying evidence to a third party | coordinator (it arrived well-argued) | the agent, by falsifying its own claim |
+| whether to keep training on a defective normaliser | the agent (had argued against thrashing) | the coordinator |
+| whether to re-set a preregistered bar | the agent (may fail it) | the coordinator |
+
+So this is not "authors are biased and reviewers are not". **Whoever has a stake
+in an outcome should not be the one who rules on it**, and on any sufficiently
+long task both parties take turns being that person. The separation is worth
+maintaining structurally rather than by trusting whichever party currently feels
+disinterested — feeling disinterested is not evidence of being so.
+
+One more failure mode, from the coordinator's side and recorded in their words:
+**preferring an instruction to a mechanism.** "Verify before committing" was
+issued as a reminder when "freeze the SHA at launch" was already queued and would
+have made the reminder unnecessary. That is recommendation 7 violated at the
+point of *issuing* a rule rather than following one.
+
 *(An earlier version of this note credited all four to the coordinator. That was
 wrong in the coordinator's favour, which is still wrong — see the
 invested-conclusion variant, reviewer's version.)*
@@ -350,6 +399,30 @@ equal gaps at a 31 % per-sample event rate, where such runs are unremarkable.
 Corollary: **check the mechanism before claiming the pattern.** Stage I draws
 only from the sim loader, whose epoch is ~560 batches — nowhere near 60. That
 check cost nothing, was available before the claim, and would have killed it.
+
+**7. Prefer rules that cannot be complied with approximately.**
+
+> A rule requiring sustained attention will eventually be approximated by a
+> weaker true statement. A rule enforced by construction will not.
+
+*"Commit nothing until the artifact freezes its identity"* requires remembering,
+every time, indefinitely. It was approximated within ten minutes by *"commit
+nothing that changes source"* — weaker, easier, and true, so nothing objected.
+Capturing the SHA at **process start** instead of lazily removes the need for
+anyone to remember at all, and no amount of inattention can defeat it.
+
+When you find yourself relying on an instruction where a mechanism was available,
+that is the error — not the moment the instruction is eventually forgotten.
+
+Two corollaries, both learned the same way:
+
+- **Authorship is not evidence of compliance.** *A rule you wrote is the one you
+  are least likely to check yourself against*, because having written it produces
+  confidence it is being followed, and that confidence **replaces re-reading it**.
+  The author is the worst auditor of their own rule.
+- **So separate rule-writing from rule-checking**, exactly as this project
+  separates generating results from grading them — the same argument, one level
+  up, applied to the rules themselves.
 
 ## A corollary about fixing things
 
