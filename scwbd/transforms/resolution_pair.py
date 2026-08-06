@@ -102,18 +102,16 @@ import json
 import math
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 import torch
 
 from .errors import SiteError
 from .se3 import DTYPE, as_tensor
 from .sheaf import (
-    CoverageReport,
     Prolongation,
     Restriction,
     ScalePair,
-    SupportObject,
     measure_coverage,
 )
 
@@ -446,28 +444,6 @@ def build_scale_pair(
         max_heldout_error=sd,
     )
     return ScalePair(restriction=rho, prolongation=prolong)
-
-
-def fine_support(n_fine: int, tolerance: float = 1e-9) -> SupportObject:
-    return SupportObject(
-        id=SCALE_FINE,
-        elements=tuple(range(int(n_fine))),
-        resolution="source_space_dipole",
-        kind="mesh",
-        units="A*m",
-        tolerance=tolerance,
-    )
-
-
-def coarse_support(n_coarse: int, tolerance: float = 1e-9) -> SupportObject:
-    return SupportObject(
-        id=SCALE_COARSE,
-        elements=tuple(range(int(n_coarse))),
-        resolution="parcel",
-        kind="parcel",
-        units="A*m",
-        tolerance=tolerance,
-    )
 
 
 @dataclass(frozen=True)
