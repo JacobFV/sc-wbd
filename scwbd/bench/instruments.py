@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Twenty-four times in this project an
+The generalisation was forced by evidence.  Twenty-five times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -388,6 +388,32 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         owner="bench (agent J); the mechanism is everyone's",
         still_reported=False,
         recurrence="twice in one session; caught on the second, not the third",
+    ),
+    UninformativeField(
+        name="a quantity whose LABEL misdescribes what it counts or what its sign means",
+        reads="241 decisions; -0.185 of harm",
+        why_it_cannot_discriminate=(
+            "TWO INSTANCES IN ONE DELIVERABLE, both caught by their author before filing. "
+            "(1) '241 conflict decisions' overstates by ~241x: every entry is the same "
+            "module=coupling, yielding=sim_wholebrain pair, re-logged on each measurement "
+            "step and re-appended even when the prescribed freeze is ALREADY IN FORCE. One "
+            "sustained conflict, not 241 events -- and a count that is not a count is a "
+            "severity claim with no severity behind it. Agent Turing nearly led with it. "
+            "(2) sim_wholebrain's per_source_contribution of -0.185 reads as negative "
+            "transfer and is not: the share is of the NORMALISED loss and the simulated "
+            "source's loss includes a genuinely negative NPE term (-12.19). A negative loss "
+            "share is arithmetic. Both are the same shape -- the label promises a semantics "
+            "the number does not carry -- and a reader has no way to tell from the number"
+        ),
+        remedy=(
+            "state what the quantity is a count OF and what its sign MEANS, next to the "
+            "number, in the artifact. For (1) report distinct (module, source) pairs, not "
+            "log lines; for (2) the only thing that establishes negative transfer is "
+            "source_ablation, which has not been run"
+        ),
+        found_by="agent Turing (both, self-corrected before filing)",
+        owner="training (agent I); bench encodes the consequences",
+        still_reported=False,
     ),
     UninformativeField(
         name="a per-observation average compared across different observation POPULATIONS",

@@ -197,6 +197,74 @@ CORPUS_LIMITATIONS: tuple[CorpusLimitation, ...] = (
         found_by="agent Ada (auditor warning), relayed with the split verified clean",
     ),
     CorpusLimitation(
+        id="anatomical_prior_and_simulator_not_independent_on_bold",
+        artifact="scwbd-001-beta",
+        measured=(
+            "gradient cosine between anatomical_prior and sim_wholebrain on the `bold` "
+            "module: mean 0.99999998, minimum 0.99999988, on 50 of 50 observations "
+            "(gradient_conflict_stage3.md, verified by bench at line 44). `bold` holds 3,183 "
+            "parameters across 8 tensors, so this is NOT a one-parameter degeneracy where "
+            "cosine is trivially +/-1: two vectors parallel to float32 precision in 3,183 "
+            "dimensions are the same vector up to scale."
+        ),
+        consequence=(
+            "THE ANATOMICAL PRIOR AND THE SIMULATOR ARE ONE PIECE OF EVIDENCE ENTERING "
+            "TWICE on `bold`, not two. This is Appendix D's derived-data-duplication row "
+            "appearing BETWEEN SOURCE FAMILIES rather than between two scans of one "
+            "participant -- the same defect at a level the table did not anticipate. No "
+            "ablation may count their agreement as corroboration, and no gate may read them "
+            "as two independent votes. Encoded here so the constraint binds before anything "
+            "is measured rather than being remembered at write-up."
+        ),
+        discloses_on=("G2", "G3", "A5_typed_operators", "D12_dataset_family_breadth"),
+        source="reports/training/gradient_conflict_stage3.md",
+        found_by="agent Turing",
+    ),
+    CorpusLimitation(
+        id="coupling_operator_trained_by_real_eeg_alone",
+        artifact="scwbd-001-beta",
+        measured=(
+            "real EEG and the simulator are orthogonal on 7 of 8 shared modules "
+            "(|mean cosine| <= 0.054, fraction-negative 0.42-0.46, indistinguishable from "
+            "chance). The exception is `coupling`: mean cosine -0.259, minimum -0.999, 64% "
+            "of observations negative, n=22. On escalation the policy adds `coupling.*` to "
+            "the yielding source's frozen patterns and REBUILDS the GradientGate -- verified "
+            "enforced, not decorative."
+        ),
+        consequence=(
+            "'Trained on a mixture' is a materially inaccurate description of this artifact's "
+            "largest module. For most of Stage III the SIMULATED CORPUS WAS FROZEN OUT OF "
+            "THE COUPLING OPERATOR and real EEG trained it alone -- 4,946,799 parameters, "
+            "the module carrying the connectome, from 189,765 real windows. This cuts BOTH "
+            "WAYS and both belong in the record: FOR the artifact, the coupling operator was "
+            "not shaped by the simulator's idiosyncrasies where the two disagreed; AGAINST "
+            "it, a 4.9M-parameter module was then trained by real data alone at that scale."
+        ),
+        discloses_on=("G1", "G2", "A2_coupling_family", "A5_typed_operators"),
+        source="reports/training/gradient_conflict_stage3.md",
+        found_by="agent Turing",
+    ),
+    CorpusLimitation(
+        id="no_source_ablation_so_D12_is_unsupported",
+        artifact="scwbd-001-beta",
+        measured=(
+            "per_source_contribution is each source's share of the NORMALISED loss, and the "
+            "simulated source's loss includes the NPE term, which is genuinely negative "
+            "(npe_loss = -12.19 in the live log). sim_wholebrain's -0.185 is therefore "
+            "ARITHMETIC, NOT HARM -- a negative loss share is not negative transfer. Agent "
+            "Turing corrected their own first reading before filing."
+        ),
+        consequence=(
+            "No claim in EITHER DIRECTION about whether a source family earns its place is "
+            "currently supported. Real negative transfer requires source_ablation, which has "
+            "NOT been run. D12 (dataset-family breadth) stays COULD_NOT_RUN, and a negative "
+            "contribution number must not be quoted as evidence that a family hurts."
+        ),
+        blocks=("D12_dataset_family_breadth",),
+        source="reports/training/gradient_conflict_stage3.md",
+        found_by="agent Turing (self-corrected)",
+    ),
+    CorpusLimitation(
         id="slow_tier_never_built",
         artifact="scwbd-001-beta",
         measured="the slow tier was never built; the model sees only fast-tier dynamics",

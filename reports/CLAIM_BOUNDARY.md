@@ -347,6 +347,58 @@ Turing's own preregistered prediction **failed** — they predicted the too-wide
 parameter would dominate and the offenders were over-confident, the opposite
 signature — recorded as failed in their §6.
 
+### 3.2c What "trained on" means for this artifact — two corrections to the description
+
+**The largest module was not trained on the mixture.** Real EEG and the
+simulator are orthogonal on seven of eight shared modules (|mean cosine| ≤
+0.054, fraction-negative 0.42–0.46 — indistinguishable from chance; they occupy
+different subspaces, neither helping nor fighting). The exception is
+**`coupling`: mean cosine −0.259, minimum −0.999, 64 % of observations
+negative** — and `coupling` is the **largest module in the model, 4,946,799
+parameters, the one carrying the connectome.**
+
+The conflict policy is **enforced, not decorative**: on escalation it adds
+`coupling.*` to the yielding source's frozen patterns and rebuilds the
+`GradientGate`. **So for most of Stage III the simulated corpus was frozen out
+of the coupling operator, and real EEG trained it alone.**
+
+That is a materially different description from *"trained on a mixture,"* and it
+**cuts both ways**, so both are recorded: *for* the artifact, the coupling
+operator was not shaped by the simulator's idiosyncrasies where the two
+disagreed; *against* it, a 4.9 M-parameter module was then trained by 189,765
+real windows alone.
+
+**The anatomical prior and the simulator are not independent evidence on
+`bold`.** Gradient cosine **0.99999998** mean, **0.99999988** minimum, on 50 of
+50 observations. `bold` holds 3,183 parameters across 8 tensors, so this is not
+a one-parameter degeneracy where cosine is trivially ±1: **two vectors parallel
+to float32 precision in 3,183 dimensions are the same vector up to scale.**
+
+This is **Appendix D's derived-data-duplication row appearing between two source
+families** rather than between two scans of one participant — the same defect at
+a level the table did not anticipate. Their agreement **may not be presented as
+corroboration**; it is one piece of evidence entering twice. Encoded in
+`scwbd.bench.corpus` so the constraint binds before anything is measured.
+
+*(Verified by bench from `gradient_conflict_stage3.md` at lines 11, 25, 32–35,
+44.)*
+
+**Two numbers that must not be quoted as they first read**, both corrected by
+their author before filing:
+
+- **`sim_wholebrain`'s −0.185 is not negative transfer.**
+  `per_source_contribution` is a share of the *normalised* loss, and the
+  simulated source's loss includes a genuinely negative NPE term
+  (`npe_loss = −12.19`). A negative loss share is arithmetic. **Real negative
+  transfer requires `source_ablation`, which has not been run**, so no claim in
+  either direction about whether a source family earns its place is supported —
+  and D12 stays `COULD_NOT_RUN` for that reason and not only for want of data.
+- **"241 conflict decisions" overstates by ≈241×.** Every entry is the same
+  `coupling` / `sim_wholebrain` pair, re-logged each measurement step and
+  re-appended even when the prescribed freeze is already in force. **One
+  sustained conflict, not 241 events.** If the number reaches any report it must
+  be reported that way.
+
 ### 3.3 Simply not yet run
 G1, G2, G3 (no candidate model or datasets supplied), N2, N5 (no solver or
 boundary observables), and all ten §11.4 ablations.
