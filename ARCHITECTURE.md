@@ -397,12 +397,31 @@ unrepresentable. Every check was green and every check was correct.
 
 **RL-7 — a fixed handicap and the hypothesis may not be confounded in the
 primary endpoint.** When a defect shared by both arms is repaired between runs,
-the repair's ceiling is preregistered before the fix: `NLL* = ½·log(2πe·MSE)`
-from the arm's own held-out MSE is the best achievable by fixing predictive
-variance alone. Improvement up to `NLL*` is **handicap removal**; only beyond
-it is new predictive content. Run 1's ceiling is **2.1083** (from
-`MSE = 3.9697`), filed before the fix — at which the artifact passes
-persistence and still loses to `ar16`, `var4` and `population_gaussian`.
+the repair's ceiling is preregistered before the fix.
+
+> **RL-7 corrected 2026-08-06 — Turing falsified the first version with a
+> measurement, and the correction is theirs.** The original read: `NLL* =
+> ½·log(2πe·MSE)` is "the best achievable by fixing predictive variance alone",
+> so improvement beyond it is new predictive content. **That is false.** `NLL*`
+> is the ceiling for a variance fix that is flat in horizon, channel *and*
+> state. Calibrating variance per (horizon, channel) on held-out data involves
+> no new predictive content whatsoever — it is exactly what all six baselines
+> already do — and passes `NLL*` routinely. Empirically: every statistical
+> baseline sits **below** its own `NLL*` (L0−L1 of −0.1025 to −0.1249). Under
+> the original rule, persistence would be credited with new predictive content
+> for calibrating its residual variance per horizon. It has none.
+
+**Two ceilings, and only the second is the bar.**
+
+| | value | meaning |
+|---|---|---|
+| `NLL*` flat-calibration | **2.1083** | one global scalar variance; below it is arithmetic |
+| **L4** matched-calibration | **2.0205** | per-(horizon,channel) fitted on **held-out** windows — the same instrument every baseline gets |
+
+**Only sub-2.0205 counts as new predictive content**, and reaching it requires
+state-dependence — which is exactly the `X_i^uncertainty` claim. Caveat carried
+from the pre-registration: L4 is in-sample for SC-WBD and genuinely held out
+for the baselines, so it *flatters* SC-WBD, and it still only ties `ar16`.
 
 ---
 
