@@ -137,3 +137,26 @@ def test_modality_decomposition_flags_a_broken_identity():
     I = np.eye(n) * 3.0
     out = modality_decomposition(_modal_results(I, I, I))   # joint != sum
     assert not out["reference"]["additivity_holds_to_roundoff"]
+
+
+def test_regime_at_the_prior_mean_is_flagged_degenerate():
+    from scwbd.infer.linear_gaussian import prior_mean_u
+    from scwbd.infer.report import regime_prior_offset
+
+    at_prior = {"regimes": {"r": {"eta_true_unconstrained": prior_mean_u().tolist(),
+                                  "designs": {}}}}
+    out = regime_prior_offset(at_prior)["r"]
+    assert out["recovery_metrics_degenerate"]
+    assert out["max_abs_offset_prior_sd"] == 0.0
+
+
+def test_regime_away_from_the_prior_mean_is_not_flagged():
+    from scwbd.infer.linear_gaussian import prior_mean_u, prior_sd_u
+    from scwbd.infer.report import regime_prior_offset
+
+    u = prior_mean_u() + 1.5 * prior_sd_u()
+    out = regime_prior_offset(
+        {"regimes": {"r": {"eta_true_unconstrained": u.tolist(), "designs": {}}}}
+    )["r"]
+    assert not out["recovery_metrics_degenerate"]
+    assert np.isclose(out["max_abs_offset_prior_sd"], 1.5)

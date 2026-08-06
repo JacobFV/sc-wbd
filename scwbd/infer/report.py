@@ -227,6 +227,39 @@ def _theta_lmin(entry: Mapping[str, Any], key: str = "fisher_T4") -> float:
 PRIOR_DOMINATED_THRESHOLD = 0.1
 
 
+#: A regime whose truth is closer than this to the prior mean (in prior sds)
+#: cannot discriminate estimators by bias/RMSE/coverage: shrinking to the prior
+#: is already the right answer there.
+DEGENERATE_OFFSET_PRIOR_SD = 0.25
+
+
+def regime_prior_offset(results: Mapping[str, Any]) -> dict[str, Any]:
+    """How far each regime's truth sits from the prior mean, in prior sds.
+
+    Recovery metrics are only informative when the truth is *away* from the
+    prior mean.  If it coincides, an estimator that ignores the data entirely
+    and returns the prior mean scores zero bias, zero RMSE and 100% coverage,
+    so bias/RMSE/coverage stop measuring information and start measuring
+    shrinkage.  Any regime that degenerate is flagged here and its recovery
+    numbers must not be read as evidence that a design works.
+    """
+    from .linear_gaussian import PARAM_INDEX, prior_mean_u, prior_sd_u
+
+    pm, ps = prior_mean_u(), prior_sd_u()
+    out: dict[str, Any] = {}
+    for rname, rr in results["regimes"].items():
+        u = np.asarray(rr["eta_true_unconstrained"], float)
+        z = {n: float((u[PARAM_INDEX[n]] - pm[PARAM_INDEX[n]]) / ps[PARAM_INDEX[n]])
+             for n in PREREGISTERED_SUBSET}
+        worst = max(abs(v) for v in z.values())
+        out[rname] = {
+            "offset_in_prior_sd": z,
+            "max_abs_offset_prior_sd": worst,
+            "recovery_metrics_degenerate": bool(worst < DEGENERATE_OFFSET_PRIOR_SD),
+        }
+    return out
+
+
 def modality_decomposition(results: Mapping[str, Any]) -> dict[str, Any]:
     """Where each modality's theta information actually goes.
 
@@ -670,6 +703,7 @@ def write_report(
     payload = as_builtin({"results": results, "decision": decision,
                           "nuisance_identifiability": nuisance_identifiability(results),
                           "modality_decomposition": modality_decomposition(results),
+                          "regime_prior_offset": regime_prior_offset(results),
                           "environment": _env()})
     jpath = outdir / "results.json"
     jpath.write_text(json.dumps(payload, indent=1, sort_keys=True))
@@ -755,6 +789,26 @@ def write_report(
                 tc = float(np.trace(np.array(mc["I_likelihood"], float)))
                 t4 = float(np.trace(np.array(v["fisher_T4"]["I_likelihood"], float)))
                 A(f"| `{d}` | {_fmt(tc)} | {_fmt(t4)} | {_fmt(tc / t4 if t4 else np.nan)} |")
+    offs = regime_prior_offset(results)
+    if offs:
+        A("\n## Can each regime's recovery numbers discriminate at all?\n")
+        A("Bias, RMSE and coverage only measure *information* when the truth "
+          "sits away from the prior mean. Where it coincides, an estimator that "
+          "ignores the data and returns the prior mean scores zero bias, zero "
+          "RMSE and 100% coverage.\n")
+        A("| regime | " + " | ".join(f"`{p}`" for p in PREREGISTERED_SUBSET)
+          + " | max \\|offset\\| | recovery metrics |")
+        A("|---|" + "---|" * (len(PREREGISTERED_SUBSET) + 2))
+        for rname, v in offs.items():
+            cells = " | ".join(f"{v['offset_in_prior_sd'][p]:+.3f}"
+                               for p in PREREGISTERED_SUBSET)
+            verdict = ("**DEGENERATE — do not read as evidence**"
+                       if v["recovery_metrics_degenerate"] else "discriminating")
+            A(f"| `{rname}` | {cells} | {v['max_abs_offset_prior_sd']:.3f} | {verdict} |")
+        A("\nOffsets are in prior standard deviations. A degenerate regime is "
+          "still valid for the *information* criteria (C1, C2-information, C3), "
+          "which are evaluated from the Fisher information at that operating "
+          "point and do not depend on where the prior sits.\n")
     modal = modality_decomposition(results)
     if modal:
         A("\n## Where each modality's θ information goes\n")
