@@ -154,6 +154,22 @@ class _Coupling(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(dim + cond, hidden), nn.GELU(), nn.Linear(hidden, hidden), nn.GELU(), nn.Linear(hidden, 2 * dim)
         )
+        #: Bound on the coupling translation.
+        #:
+        #: The scale was already tanh-bounded to +-2.5; the translation was not,
+        #: and that asymmetry is what let the density diverge three separate
+        #: ways in run 2 -- immediately on unnormalised conditioning, then at
+        #: step 100 on the LR ramp, then progressively from step 800 even at
+        #: 0.1x LR (npe 8.0 -> 32 -> 77 -> 1229).  Each fix moved the onset
+        #: without removing the cause: t = net([z*m, c]) is linear in its input
+        #: far from the origin, so nothing prevented it growing without bound.
+        #:
+        #: ``to_unconstrained`` clamps before ``atanh``, so |u| <= atanh(1-1e-5)
+        #: ~= 6.1.  A translation bound of 12 is ~2x the entire reachable input
+        #: range and cannot bind on any legitimate target, while making
+        #: divergence structurally impossible rather than merely delayed.
+        T_BOUND: float = 12.0
+
         nn.init.zeros_(self.net[-1].weight)
         nn.init.zeros_(self.net[-1].bias)
 
@@ -161,7 +177,7 @@ class _Coupling(nn.Module):
         m = self.mask.to(z.dtype)
         s, t = self.net(torch.cat([z * m, c], dim=-1)).chunk(2, dim=-1)
         s = torch.tanh(s) * 2.5 * (1 - m)
-        t = t * (1 - m)
+        t = torch.tanh(t / self.T_BOUND) * self.T_BOUND * (1 - m)
         return z * torch.exp(s) + t, s.sum(-1)
 
     def inverse(self, x: Tensor, c: Tensor) -> tuple[Tensor, Tensor]:
@@ -170,7 +186,7 @@ class _Coupling(nn.Module):
         m = self.mask.to(x.dtype)
         s, t = self.net(torch.cat([x * m, c], dim=-1)).chunk(2, dim=-1)
         s = torch.tanh(s) * 2.5 * (1 - m)
-        t = t * (1 - m)
+        t = torch.tanh(t / self.T_BOUND) * self.T_BOUND * (1 - m)
         return (x - t) * torch.exp(-s), -s.sum(-1)
 
 
