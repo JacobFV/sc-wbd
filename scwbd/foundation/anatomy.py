@@ -55,6 +55,12 @@ class AnatomyPrior:
     timescale_prior: Tensor  # (N,) seconds
     gradient: Tensor  # (N,) principal functional gradient, z-scored
     evidence_class: Tensor  # (N,N) int index into EVIDENCE_CLASSES, -1 = absent
+    #: (N,) bool -- True where `gradient` came from a measured map. The real
+    #: `fc_gradient1` covers Schaefer-400 cortex only, so the 14 subcortical
+    #: parcels carry 0 (the z-scored cortical mean) and are marked False here.
+    #: This is agent C's own discipline applied to the gradient: an unknown
+    #: value is made VISIBLE rather than hidden as a filled-in number.
+    gradient_covered: Tensor | None = None
     frame: str = "MNI152NLin2009cAsym_RAS"
     units_position: str = "mm"
     provenance: str = "synthetic_fallback"
@@ -169,6 +175,16 @@ class AnatomyPrior:
                 c: int((self.evidence_class == i).sum().item()) for i, c in enumerate(EVIDENCE_CLASSES)
             },
             "frame": self.frame,
+            "n_gradient_covered": (
+                int(self.gradient_covered.sum().item())
+                if self.gradient_covered is not None
+                else int(self.n_regions)
+            ),
+            "gradient_uncovered_are_zero": (
+                None
+                if self.gradient_covered is None
+                else bool((~self.gradient_covered).any().item())
+            ),
             "provenance": self.provenance,
             "is_biological": self.is_biological(),
             "source_note": self.source_note,
@@ -272,6 +288,45 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
             "timescales/tau_prior"
         )
     grad = T("gradient", "gradient_prior", "principal_gradient")
+    if grad is None:
+        # The real BrainPrior carries the principal gradient in a MapSet, not as
+        # an attribute: scwbd/anatomy/maps.py registers it as "fc_gradient1".
+        # The attribute lookup above therefore always missed.
+        maps = getattr(obj, "maps", None)
+        if maps is not None:
+            for key in ("fc_gradient1", "gradient1", "principal_gradient"):
+                try:
+                    mp = maps[key]
+                except (KeyError, TypeError, IndexError):
+                    continue
+                vals = getattr(mp, "values", mp)
+                grad = torch.as_tensor(vals, device=device, dtype=torch.float32)
+                break
+    if grad is None:
+        # Third silent-constant substitution in this adapter, one line below the
+        # two already fixed. A zeros gradient makes theta[:,3] (ei_gradient)
+        # unidentifiable BY CONSTRUCTION: simulate.py computes
+        # ei = theta2 * ei_prior * (1 + theta3 * grad), so grad == 0 cancels
+        # theta3 algebraically on every backend. Refuse rather than substitute.
+        raise AttributeError(
+            "BrainPrior exposes no principal gradient: tried attributes "
+            "gradient/gradient_prior/principal_gradient and "
+            "maps['fc_gradient1'|'gradient1'|'principal_gradient']. A gradient of "
+            "zeros would make ei_gradient unidentifiable by construction."
+        )
+    # `fc_gradient1` covers Schaefer-400 cortex; the prior has N = 400 cortex +
+    # 14 subcortex. Pad the uncovered parcels with 0 -- the z-scored cortical
+    # mean -- and record WHICH parcels that is. This is not the defect fixed
+    # above: there every parcel was 0 and theta3 cancelled algebraically, whereas
+    # here 400 of 414 vary, so ei_gradient stays identifiable and only the
+    # parcels we have no gradient value for fail to respond to it.
+    grad = grad.reshape(-1).to(device=device, dtype=torch.float32)
+    k = int(min(grad.numel(), n))
+    grad_full = torch.zeros(n, device=device, dtype=torch.float32)
+    grad_full[:k] = grad[:k]
+    grad_cov = torch.zeros(n, dtype=torch.bool, device=device)
+    grad_cov[:k] = True
+
     # NB: `x or default` is unusable here -- these are numpy arrays, and
     # `array or list` raises "truth value of an array ... is ambiguous".
     # The same idiom appears three times in this adapter and was unreachable
@@ -321,7 +376,8 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
         tract_length=L,
         ei_prior=ei if ei is not None else torch.ones(n, device=device),
         timescale_prior=ts if ts is not None else torch.full((n,), 0.05, device=device),
-        gradient=grad if grad is not None else torch.zeros(n, device=device),
+        gradient=grad_full,
+        gradient_covered=grad_cov,
         evidence_class=ec,
         frame=str(getattr(obj, "frame", "MNI152NLin2009cAsym_RAS")),
         provenance=str(getattr(obj, "provenance", "scwbd.anatomy.BrainPrior")),
