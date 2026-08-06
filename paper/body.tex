@@ -1738,11 +1738,14 @@ transfer, and the pooled figure will move in whichever direction the extra rows
 happen to push it. Designs consuming different observation sets must therefore
 be compared on their common set, with the design-specific rows reported
 separately and never averaged into the shared comparison. This is a measured
-near-miss in our own first-gate artifact rather than a hypothetical: the
-correction changed a difference of \(+9.22\) nats per observation between two
-designs into a comparison whose pooling-free residual has the opposite sign,
-while the correctly restricted comparison on the shared rows remained a
-degradation (Section 11.5).
+near-miss in our own first-gate artifact rather than a hypothetical
+(Section 11.5), and it carries a second lesson that became visible only once the
+first was repaired: restricting the comparison to the common population removed
+the pooling defect and revealed that none of the fits being compared had
+converged. A held-out comparison is evidence about the designs only when it is
+taken over a common population \emph{and} between fits that reached their
+optima. Either condition alone is insufficient, and a comparison that fails the
+second one is reporting the optimizer.
 
 \subsection{11.3 Perturbational and Decision Tests}
 
@@ -1943,18 +1946,32 @@ ungrouped positive control, which is what distinguishes a leakage audit from a
 leakage assertion; passed subgroup calibration; and detected the misspecified
 module, an AR(1) colored residual on one hemodynamic parcel. Detection was
 sensitive rather than specific: seven of fourteen module tests were flagged at
-\(\alpha=0.05\), of which six were false positives. Two criteria failed.
-Recovery interval coverage was \(0.16\), \(0.19\), \(0.53\) and \(0.50\) against
-a nominal \(0.95\) over 32 simulated subjects. Held-out log loss did not beat the
-baselines; and the first version of that comparison is the near-miss described
-in Section 11.2, in which the joint and single-modality designs were compared
-over different observation populations---845{,}280 rows against 844{,}800---so
-that the extra 480 hemodynamic rows, whose own per-observation loss is
-\(2.02\times10^{4}\) nats, produced an apparent degradation of \(9.22\) nats per
-observation that pure pooling more than accounts for. Restricted to the common
-844{,}800 rows the joint design remains worse than EEG alone, so the criterion
-fails on the corrected comparison as well; but it fails for a measurable reason
-rather than an arithmetic one, and the two must not be confused.
+\(\alpha=0.05\), of which six were false positives. One criterion failed and one
+could not be evaluated. Recovery interval coverage was \(0.16\), \(0.19\),
+\(0.53\) and \(0.50\) against a nominal \(0.95\) over 32 simulated subjects;
+coverage is a property of the estimator as run, so that is a measurement. The
+held-out log-loss criterion is not. Its first form is the near-miss described in
+Section 11.2: the joint and single-modality designs were compared over different
+observation populations---845{,}280 rows against 844{,}800, the difference being
+480 hemodynamic rows---so the pooled per-observation means were never comparable
+to begin with. Recomputing on the common 844{,}800 rows removes that defect and
+exposes a second, independent one. A comparison between two fits measures the
+\emph{designs} only if both fits reached their optima, and none of the four did:
+the median Newton decrements are \(12{,}238\) (joint native-clock), \(409\) (EEG
+alone), \(100{,}478\) (fMRI alone) and \(53{,}675\) (naive resampling) posterior
+standard deviations, against the same gate of \(2.0\) used above, and the
+fMRI-alone fit never left the prior mean at all---zero drift in every parameter.
+The criterion is therefore reported as \emph{not evaluated}: not passed, not
+failed, and no direction of effect asserted in either sense. No per-observation
+loss from these fits is quoted here, because each of them is a property of an
+optimizer that had not arrived.
+
+That is two criteria now withheld for non-convergence, across both artifacts and
+in the same run. Together they state something sharper than either alone:
+\textbf{the current limit on what this benchmark can conclude is the estimator,
+not the design.} Until the optimizer reaches its optima the recovery and
+held-out prediction questions are simply unavailable, and no amount of further
+modeling reaches them.
 
 \textbf{What this licenses.} It licenses the narrowing above, and nothing about
 brains. The synthetic system is linear, Gaussian, three-region, and its truth is

@@ -330,9 +330,11 @@ subjects; recovery intervals with nominal coverage; lower held-out log loss
 than single-method and naive-resampling baselines; detection of the
 misspecified module; and refusal of at least one invalid schema. This synthetic
 case is the minimum integration test for all later human experiments. It has
-been built and run: three of the five criteria listed here were met, the two
-recovery criteria were not, and a sixth subgroup-calibration criterion added by
-the implementation was met (Section 11.5).
+been built and run: three of the five criteria listed here were met, interval
+coverage was not, the held-out log-loss comparison could not be evaluated
+because none of the fits it compares had converged, and a sixth
+subgroup-calibration criterion added by the implementation was met
+(Section 11.5).
 
 \subsection{0.4 Executable Evidence, Transform, and Gradient Contracts}
 
