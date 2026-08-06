@@ -27,12 +27,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterable, Mapping
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from .ports import PortContract
+    from .predict import LoadedModel
 
 import torch
 
@@ -261,6 +262,11 @@ class ServedModel:
     #: The admission decision this service was loaded under.  Always present:
     #: there is no path to a ``ServedModel`` that did not pass one.
     admission: AdmissionVerdict | None = None
+    #: Lazily-built :class:`~scwbd.runtime.predict.LoadedModel`.  Not part of
+    #: the value identity of this record -- it is a cache of an expensive
+    #: reconstruction, and two ``ServedModel``s that loaded the same checkpoint
+    #: are the same thing whether or not either has been asked to run it.
+    _predictor: Any = field(default=None, compare=False, repr=False)
 
     # -- loading -----------------------------------------------------------
     @classmethod
@@ -381,6 +387,43 @@ class ServedModel:
             checkpoint=record,
             admission=verdict,
         )
+
+    # -- the model itself --------------------------------------------------
+    def predictor(self) -> "LoadedModel":
+        """The checkpoint, loaded and runnable.
+
+        This is the path that did not exist: ``ServedModel`` used to hash a
+        checkpoint file and never open it, so every number it served came from
+        the analytic backend regardless of what was on disk. ``predictor()``
+        reconstructs the model and returns something that produces *different
+        numbers for different checkpoints* -- see
+        :mod:`scwbd.runtime.predict` and
+        ``tests/runtime/test_prediction_path.py``.
+
+        Raises :class:`~scwbd.runtime.predict.CheckpointLoadError` when there
+        is no checkpoint to load. It does **not** fall back to the analytic
+        backend: a caller that asked for the model wants the model, and
+        silently handing back something else is the defect this whole module
+        exists to close.
+        """
+        from .predict import CheckpointLoadError, LoadedModel
+
+        if self.checkpoint.weights_path is None:
+            raise CheckpointLoadError(
+                f"no checkpoint weights under {self.checkpoint.root or '<none>'}; "
+                "there is no model to run. The analytic backend remains "
+                "available through evaluate_pose, and is labelled L4"
+            )
+        if self._predictor is None:
+            object.__setattr__(
+                self,
+                "_predictor",
+                LoadedModel.from_checkpoint(
+                    self.checkpoint.weights_path,
+                    device=self.provenance.notes.get("resolved_device", "cpu"),
+                ),
+            )
+        return self._predictor  # type: ignore[return-value]
 
     # -- the declared port contract ----------------------------------------
     def port_contract(self) -> "PortContract":

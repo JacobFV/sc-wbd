@@ -160,6 +160,11 @@ class TestThePublicSurfaceHasNoCommandEntryPoint:
             "warm_up",
             "evaluate_batch",
             "port_contract",
+            # ``predictor`` returns the loaded model. It is a read of an
+            # artifact on disk and produces predictions; it reaches no device,
+            # no transport and no controller, and it sits strictly upstream of
+            # the registered external scalp target like everything else here.
+            "predictor",
             # a dataclass field with a default, hence also a class attribute
             "admission",
         }
@@ -168,6 +173,8 @@ class TestThePublicSurfaceHasNoCommandEntryPoint:
             "provenance",
             "checkpoint",
             "admission",
+            # private cache of the reconstructed model; excluded from equality
+            "_predictor",
         }
 
     def test_no_constructor_accepts_a_command_transport(self):

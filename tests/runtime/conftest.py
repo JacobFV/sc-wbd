@@ -33,6 +33,37 @@ def head() -> HeadModel:
 
 
 @pytest.fixture(scope="session")
+def as_if_trained():
+    """Factory marking a service as backed by a trained artifact.
+
+    A fixture rather than an importable helper: ``from conftest import ...``
+    resolves to whichever ``conftest`` is first on ``sys.path``, which is a
+    different file when the suite is run across several test directories at
+    once. That failure only appears in the wide run, which is exactly when
+    nobody is looking at collection errors.
+
+    ``_decide`` defers whenever ``weights_status != "trained"``: a benefit
+    computed from prior-specified surrogates is a statement about the
+    surrogates, not about a brain. That branch is correct and is fired by
+    ``test_prediction_path.py``, but it would otherwise make ``Recommend``
+    unreachable in every test -- and an unreachable ``Recommend`` cannot show
+    that the *other* refusals discriminate.
+
+    So tests that are about the uncertainty arithmetic say so explicitly here,
+    rather than the production rule being weakened to keep them green.
+    """
+    from dataclasses import replace as _replace
+
+    def _mark(service: TargetingService) -> TargetingService:
+        service.provenance = _replace(
+            service.provenance, weights_status="trained"
+        )
+        return service
+
+    return _mark
+
+
+@pytest.fixture(scope="session")
 def service() -> TargetingService:
     return TargetingService()
 
