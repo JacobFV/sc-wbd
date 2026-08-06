@@ -431,32 +431,21 @@ Checkpoints: `checkpoints/scwbd-001-beta/` with a `ClaimManifest` alongside.
 ## 5b. Declared Narrowings
 
 
-> **Renumbered 2026-08-06.** Three agents filed rows concurrently and collided
-> on N-3, N-4, N-6 and N-7 — four ids meaning two things each. Rows are now
-> numbered sequentially in file order and are **stable from here**. Prose
-> elsewhere that cites an old id should be read through this concordance; where
-> a citation is ambiguous, the row's *subject* is authoritative, not its number.
+> **Keyed by slug, 2026-08-06 — the ordinal scheme failed twice.** Ten agents
+> filing rows concurrently collided on N-3/N-4/N-6/N-7, were renumbered, and
+> then collided again on N-9 when three more branches merged. An ordinal is
+> assigned by position, and position is exactly what a concurrent merge
+> changes. **Slugs are authoritative and stable. There are no numbers.**
 >
-> | cited as | now | subject |
-> |---|---|---|
-> | N-1 | **N-1** | padded-to-max-dim family state with enforced spans |
-> | N-2 | **N-8** | operators assigned at family, not region, granularity |
-> | N-3 (Hodgkin) | **N-9** | one validated resolution pair, not a lattice |
-> | N-3 (Gauss) | **N-12** | fine-authoritative policy declared but not implemented |
-> | N-4 (Cajal) | **N-10** | Stage I pretrains only families we hold data for |
-> | N-4a | **N-11** | BOLD readable but not parcellated |
-> | N-4 (Faraday) | **N-15** | A_safe binds only on axes a proposal supplies |
-> | N-6 (Cajal) | **N-17** | two cortical families, not §6.1's five |
-> | N-6 (dynamics) | **N-2** | hippocampal fixed random codebook |
-> | N-6 (Gauss) | **N-13** | Ψ_ab compatibility potential unformed |
-> | N-7 (Cajal) | **N-18** | state space indexed per family, not per region |
-> | N-7 (dynamics) | **N-3** | cerebellar fixed random contraction |
+> A row's *subject* resolves any older citation: prose elsewhere citing "N-4"
+> or "N-7" was written against one of two or three different rows, and the only
+> reliable way to read it is by what it is about. Where a report and this
+> document disagree, this document is authoritative.
 >
-> **This is itself a finding.** A register whose entries are addressed by an
-> ordinal cannot be written concurrently by ten agents without collision, and a
-> collision here is worse than a merge conflict: two narrowings silently share
-> an identity and a reader resolves the wrong one. Future rows should be keyed
-> by a slug, not a number.
+> **This is itself the finding.** A register that exists to stop undeclared
+> narrowings must survive concurrent writes, or it silently develops entries
+> that mean two things — worse than the problem it solves. The failure was in
+> the addressing scheme, not in any agent's work.
 
 **Every divergence between this document and `paper/body.tex` is listed here.
 A divergence that is not listed is a defect, not a decision.**
