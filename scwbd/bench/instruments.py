@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Twenty times in this project an
+The generalisation was forced by evidence.  Twenty-one times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -311,6 +311,35 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         found_by="agent J (bench), self-reported after measuring its own suite",
         owner="bench (agent J)",
         still_reported=False,
+    ),
+    UninformativeField(
+        name="a per-observation average compared across different observation POPULATIONS",
+        reads="negative transfer -- 26.04 against 16.82, a thesis falsifier firing",
+        why_it_cannot_discriminate=(
+            "THE POOLING VARIANT, and it is the first case in this register where the "
+            "unreliable reading pointed at a FAILURE rather than a success -- which is why "
+            "it nearly went in unchallenged. Normalising a total log loss per observation "
+            "correctly fixes designs that consume different NUMBERS of samples; it does not "
+            "fix designs that consume different POPULATIONS. joint_native averages over "
+            "845,280 observations and eeg_only over 844,800; the extra 480 are the fMRI "
+            "observations, whose own per-observation loss is 20,221.67. Averaging those in "
+            "raises the mean by +11.474 with fusion completely inert, against an apparent "
+            "degradation of +9.224 -- so the residual is -2.250 and the joint fit is "
+            "actually BETTER than pooling the separate fits. Comparability of counts is not "
+            "comparability of populations"
+        ),
+        remedy=(
+            "compare on a COMMON population: joint_native's loss restricted to the EEG "
+            "observations against eeg_only's, on the same rows. Bench requested that test "
+            "rather than asserting its outcome. And the general rule this makes explicit: a "
+            "reading that points at a FAILURE gets the same audit as one that points at a "
+            "success -- a wrongly-recorded falsification is worse for this project than a "
+            "wrongly-recorded pass, because it is the one error a falsification apparatus "
+            "cannot claim it was built to prevent"
+        ),
+        found_by="agent J (bench), by re-deriving from the committed artifact",
+        owner="infer (agent Fisher); bench adjudicates",
+        still_reported=True,
     ),
     UninformativeField(
         name="an intervention compared at unmatched INPUT ENERGY",

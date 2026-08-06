@@ -182,6 +182,61 @@ CLAIMS: dict[str, dict[str, str]] = {
     },
 }
 
+#: BENCH'S RULING on the second §0.3 artifact's headline result. Recorded in
+#: code so it cannot be written around.
+#:
+#: RELAYED AS: "fusing a misspecified channel degrades held-out log loss, 26.04
+#: against 16.82 for EEG alone -- negative transfer, the tab:claim-gates
+#: falsifier for typed fusion, measured."
+#:
+#: BENCH RE-DERIVED IT FROM reports/identifiability/synthetic_slice.json AND
+#: RULES: **NOT ESTABLISHED.** The two figures are per-observation averages over
+#: DIFFERENT OBSERVATION POPULATIONS. joint_native averages over 845,280
+#: observations; eeg_only over 844,800. The extra 480 are the fMRI observations,
+#: whose own per-observation loss is 20,221.67. Averaging 480 such terms into
+#: 844,800 good ones raises the mean ARITHMETICALLY, with no negative transfer
+#: required:
+#:
+#:     apparent degradation vs eeg_only        +9.224
+#:     predicted by pure pooling, fusion inert +11.474
+#:     residual once pooling is removed        -2.250
+#:
+#: The residual is NEGATIVE: the joint fit is 2.25 nats/observation BETTER than
+#: naively pooling the two separate fits. Every bit of the apparent degradation
+#: is explained by which observations entered the average, and the fusion then
+#: partly offset it. Fisher's per-observation normalisation was correct and its
+#: note is right that designs consuming different NUMBERS of samples stay
+#: comparable -- but that holds for designs over the SAME population, and these
+#: are over different ones. Comparability of counts is not comparability of
+#: populations.
+#:
+#: THE DECISIVE TEST, which bench requests rather than asserts: joint_native's
+#: log loss RESTRICTED TO THE EEG OBSERVATIONS versus eeg_only's, on the same
+#: 844,800 rows. If the EEG-restricted loss is worse, negative transfer is real
+#: and the falsifier has fired. If it is unchanged or better, what was measured
+#: is the misspecified channel's own bad fit being averaged in, which is a
+#: finding about the fMRI observation model and not about fusion.
+#:
+#: G1 MAY NOT RECORD A FIRED FALSIFIER ON THIS EVIDENCE. A falsifier that fires
+#: on an artifact of pooling would be as damaging to this project as a claim that
+#: passes on one -- more so, because a wrongly-recorded falsification is the one
+#: error this bench cannot argue it was built to prevent.
+G1_NEGATIVE_TRANSFER_RULING = (
+    "NOT_ESTABLISHED; APPARENT_DEGRADATION_FULLY_EXPLAINED_BY_POOLING_OVER_A_MIXED_"
+    "OBSERVATION_POPULATION; DECISIVE_TEST_IS_EEG_RESTRICTED_LOSS"
+)
+
+#: What the two §0.3 artifacts DO support for G1, stated narrowly so the
+#: resampling result cannot carry the fusion claim:
+#:   * native-clock handling beats naive resampling -- structurally, not
+#:     marginally (rank 3/9, theta lambda-min exactly 0 since dmu/dtau == 0 on a
+#:     1 s lattice, coverage 0.33-0.71, per-observation loss 369.03 vs 16.82);
+#:   * adding a modality is NOT automatically beneficial: fMRI contributes
+#:     essentially nothing about coupling and delay (gain 1.000001);
+#:   * whether a misspecified channel actively HARMS the shared inference is
+#:     UNRESOLVED pending the EEG-restricted comparison.
+G1_SUPPORTED_CLAIM = "native clocks beat resampling; a modality's value is not automatic"
+
 _NON_GOALS = [
     "This gate does not claim a validated digital twin of any specific person.",
     "This gate does not claim that any admitted operator is neurally realized.",
