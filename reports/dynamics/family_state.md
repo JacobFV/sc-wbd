@@ -377,7 +377,7 @@ layout's opaque `private` block can never be compiled by mistake.
 
 ---
 
-## 10. `X_i^uncertainty` — the variance channel (P0, added mid-task)
+## 9. `X_i^uncertainty` — the variance channel (P0, added mid-task)
 
 The architect filed a P0 during this work: `EEGHead.log_noise` is an
 `nn.Parameter` broadcast with `expand_as`, so SC-WBD's EEG predictive variance is
@@ -461,6 +461,19 @@ been measuring nothing. A small non-zero gain (`init_state_gain=0.05`) raises it
 to 0.0575, a 10× change, and is why
 `test_perturbing_a_non_uncertainty_component_changes_the_innovation` can fire.
 
+### A second gap I found while writing the tests
+
+`FamilyResidual` (and, in the control arm, `LearnedResidual`) emitted into **all**
+`d_f` channels, including `uncertainty`. So `dx = f_mech + f_res` gave the
+variance channel *two* laws: the propagator and an unconstrained learned
+residual. That would let `R_theta` buy likelihood by moving the predicted
+variance directly, bypassing the innovation/decay dynamics that make the channel
+mean anything — and R05 prices the residual against the *mechanistic* terms, not
+against the variance, so it would not have caught it. The residual's write to the
+uncertainty slice is now zeroed in both arms, with
+`test_the_residual_may_not_write_to_the_uncertainty_channel` initialising the
+residual to large random weights and asserting the slice is **exactly** zero.
+
 ### What is NOT established
 
 * **The rank correlation between predicted log-variance and realised squared
@@ -500,7 +513,7 @@ resulting A1 should not be reported as a test of structured state.
 
 ---
 
-## 9. Files
+## 10. Files
 
 | path | what |
 |---|---|

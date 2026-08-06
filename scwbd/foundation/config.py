@@ -71,7 +71,7 @@ class ModelConfig:
     #: state-dependent variance and leaving the control arm on a broadcast
     #: constant would make A1 measure the variance path instead of the structured
     #: state -- the same class of error as an interface that silently narrows one
-    #: arm.  See reports/dynamics/family_state.md §10.
+    #: arm.  See reports/dynamics/family_state.md §9.
     state_dependent_variance: bool = True
     hidden: int = 320
     n_local_layers: int = 3

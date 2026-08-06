@@ -69,7 +69,7 @@
   "gradient_permission_audit": {
     "anatomical_prior": {
       "n_permitted": 0,
-      "n_blocked": 110,
+      "n_blocked": 117,
       "patterns": [],
       "frozen": [
         "eeg.*",
@@ -92,10 +92,13 @@
       ]
     },
     "eegmmidb_real": {
-      "n_permitted": 16,
-      "n_blocked": 94,
+      "n_permitted": 12,
+      "n_blocked": 105,
       "patterns": [
-        "eeg.*",
+        "eeg.log_gain",
+        "eeg.offset",
+        "eeg.log_noise",
+        "eeg.nuisance*",
         "individualizer.*"
       ],
       "frozen": [
@@ -118,7 +121,7 @@
     },
     "montage_calibration": {
       "n_permitted": 6,
-      "n_blocked": 104,
+      "n_blocked": 111,
       "patterns": [
         "eeg.log_gain",
         "eeg.offset",
@@ -150,7 +153,7 @@
     },
     "negative_control_shuffled": {
       "n_permitted": 0,
-      "n_blocked": 110,
+      "n_blocked": 117,
       "patterns": [],
       "frozen": [
         "*"
@@ -172,7 +175,7 @@
     },
     "sim_wholebrain": {
       "n_permitted": 0,
-      "n_blocked": 110,
+      "n_blocked": 117,
       "patterns": [],
       "frozen": [
         "eeg.*",

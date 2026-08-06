@@ -1,11 +1,15 @@
 """``X_i^uncertainty`` must actually carry predictive variance.
 
-Run 1 has the lowest MSE of the seven arms and the second-worst NLL.  The cause
-is that ``EEGHead.log_noise`` and ``BOLDHead.log_noise`` are ``nn.Parameter``
-vectors broadcast with ``expand_as``: the predictive variance of both instrument
-heads is constant in state, time, horizon, window, participant and condition,
-while the five held-out-calibrated baselines get a variance of shape
-``(horizon, C)``.
+``EEGHead.log_noise`` and ``BOLDHead.log_noise`` are ``nn.Parameter`` vectors
+broadcast with ``expand_as``: the predictive variance of both instrument heads is
+constant in state, time, horizon, window, participant and condition, while the
+five held-out-calibrated baselines get a variance of shape ``(horizon, C)``.
+
+These tests do **not** claim to repair run 1.  Turing's decomposition attributes
+run 1's FAIL to the *scale* term (0.4467 of the 0.4469 excess) — a training
+schedule defect — with *state* worth 0.1896-0.2587 beyond that and *horizon*
+only 0.0096.  What is tested here is that the state-dependence path exists and
+is real; whether it buys anything is a training result nobody has yet.
 
 These tests are written so they **fail against that implementation**.  A shape
 assertion would not — the broadcast variance already has the right shape.  So
@@ -141,15 +145,15 @@ def test_the_broadcast_parameter_fails_these_tests(anat):
     assert len(m.family_local.uncertainty) == 0, "no uncertainty propagator should be built"
     with torch.no_grad():
         _, lv = m.eeg(res.state)  # (B,T,C)
-    assert float(lv.std(dim=1).max()) == 0.0, "EEG log-variance varies over time; it should not, un-repaired"
-    assert float(lv.std(dim=0).max()) == 0.0, "EEG log-variance varies over samples; it should not, un-repaired"
+    assert float(lv.detach().std(dim=1).max()) == 0.0, "EEG log-variance varies over time; it should not, un-repaired"
+    assert float(lv.detach().std(dim=0).max()) == 0.0, "EEG log-variance varies over samples; it should not, un-repaired"
     # ...and the same for BOLD, which the ruling added to scope. `BOLDHead.signal`
     # returns `self.log_noise.expand_as(y)` -- the identical defect, on the other
     # head that faces measured data and enters the NLL.
     with torch.no_grad():
         hemo = m.bold.initial(res.state.shape[0], m.n_regions, res.state.device)
         _, blv = m.bold.signal(hemo)
-    assert float(blv.std(dim=0).max()) == 0.0, "BOLD log-variance varies over samples; it should not, un-repaired"
+    assert float(blv.detach().std(dim=0).max()) == 0.0, "BOLD log-variance varies over samples; it should not, un-repaired"
 
 
 # ======================================================================
@@ -259,3 +263,37 @@ def test_the_uncertainty_channel_stays_in_span(anat):
     """The propagator writes only into its own component."""
     m, res = _rollout(anat, _cfg(family_state=True))
     m.family_layout.assert_clean(res.state, where="uncertainty propagation")
+
+
+@pytest.mark.parametrize("arm,kw", ARMS)
+def test_the_residual_may_not_write_to_the_uncertainty_channel(anat, arm, kw):
+    """``X_i^uncertainty`` has exactly one law.
+
+    If ``R_theta`` could also write there it would buy likelihood by moving the
+    variance directly, bypassing the innovation/decay dynamics that make the
+    channel mean anything — and R05 prices the residual against the mechanistic
+    terms, not against the variance.
+    """
+    torch.manual_seed(0)
+    m = SCWBD(_cfg(**kw), anat)
+    x = torch.randn(2, anat.n_regions, m.layout.dim) * 0.3
+    extra = torch.zeros(2, anat.n_regions, m.cfg.hidden // 2)
+    if m.family_layout is not None:
+        with torch.no_grad():
+            for p in m.family_residual.parameters():
+                torch.nn.init.normal_(p, std=0.5)
+            r = m.family_residual(m.family_layout.zero_pad(x), extra)
+        for f in m.family_layout:
+            u = m.family_layout.get(r, f.name, UNCERTAINTY_COMPONENT)
+            assert float(u.abs().max()) == 0.0, f"{f.name}: residual wrote into X^uncertainty"
+    else:
+        # control arm: SCWBD.step zeroes the slice before adding
+        sl = m.layout.slice(UNCERTAINTY_COMPONENT)
+        with torch.no_grad():
+            for p in m.residual.parameters():
+                torch.nn.init.normal_(p, std=0.5)
+            f_res = m.residual(x, extra)
+            f_res = torch.cat(
+                [f_res[..., : sl.start], torch.zeros_like(f_res[..., sl]), f_res[..., sl.stop :]], dim=-1
+            )
+        assert float(f_res[..., sl].abs().max()) == 0.0
