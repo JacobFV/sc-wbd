@@ -680,6 +680,43 @@ who had retracted the other two that same night.
 *"2.95 s/step over steps 200–380"* cannot borrow authority it has not earned;
 *"settled"* can.
 
+**4c. Report the near-miss, or a reporting threshold reports only what it was
+always going to.**
+
+> **A commitment to report above X manufactures a silent zone immediately beneath
+> X** — and the silence is invisible *precisely because the rule was honoured.*
+
+Committed to report if the step rate degraded past **4.04 s/step**. It came in at
+**3.94**. The commitment did not fire, and a scrupulous agent following its own
+rule would have said nothing — while the number sat 2.5 % under a bound it was
+plainly tracking toward.
+
+Nothing about that is a violation. That is what makes it dangerous: **the rule
+worked, and the information still did not arrive.** A threshold does not merely
+fail to report the near-miss; it supplies a *justification* for not reporting it.
+
+Report the near-miss and say it is one. If a value is close enough that its
+proximity is itself informative, proximity is the finding.
+
+**4d. Beware overcorrection: having been wrong once in a direction makes the next
+*true* claim in that direction harder to state.**
+
+A KL trend was claimed from five points inside an activation transient, and
+retracted. When the same quantity later showed a **real** trend — three block
+medians of ~20 samples each, across 1180 steps, well past activation — the
+retraction made it *harder* to report, because reporting it looked like repeating
+a mistake.
+
+**Overcorrection is less visible than the original error, because it looks like
+caution.** An unmade claim leaves no artifact to audit; a wrong claim does.
+
+The remedy is to state *why the new evidence differs from the old*, explicitly,
+at the moment of claiming — "five consecutive samples inside a transient cannot
+separate trend from transient; three block medians past activation can." That
+converts a claim that would look like backsliding into one carrying its own
+justification, and it forces the author to check that the difference is real
+rather than merely asserted.
+
 **5. Treat a perfect score as a reason to check the metric, not to adopt the
 candidate.**
 
