@@ -6,7 +6,16 @@ modelling assumption (ARCHITECTURE.md §5).  ``LearnedNeuralOperator`` is the
 equal-capacity control for every mechanistic claim made by the others.
 """
 
-from ..base import BackendInfo, DynamicsBackend, get_backend, list_backends, register_backend
+from ..base import (
+    BackendInfo,
+    DynamicsBackend,
+    get_backend,
+    list_backends,
+    map_fragility,
+    register_backend,
+    resolve_prior_field,
+    sample_prior_list,
+)
 from .jansen_rit import JansenRit
 from .linear_gaussian import LinearGaussian, ou_propagate_moments, ou_stationary_covariance
 from .neural_operator import LearnedNeuralOperator, assert_equal_capacity, match_capacity
@@ -20,6 +29,9 @@ __all__ = [
     "register_backend",
     "get_backend",
     "list_backends",
+    "resolve_prior_field",
+    "sample_prior_list",
+    "map_fragility",
     "WilsonCowan",
     "JansenRit",
     "ReducedWongWang",

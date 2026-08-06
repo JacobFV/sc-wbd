@@ -242,6 +242,25 @@ class DynamicsBackend(nn.Module, abc.ABC):
     #: in order of preference.  Only the first one present is modulated.
     timescale_params: ClassVar[tuple[str, ...]] = ("tau_E", "tau_e", "tau_s", "tau")
 
+    #: Parameters that are *inverse* timescales -- rate constants in 1/s, where
+    #: the timescale is ``1/rate``.  The prior's modulation is applied
+    #: reciprocally.  Only usable for a rate that is strictly positive and whose
+    #: reciprocal really is the relaxation time; a parameter that can change sign
+    #: (a bifurcation parameter) does not qualify, because scaling it moves the
+    #: system across a qualitative boundary rather than changing its speed.
+    inverse_timescale_params: ClassVar[tuple[str, ...]] = ()
+
+    #: Set when the intrinsic-timescale prior deliberately does **not** apply to
+    #: this backend.  A recorded refusal is the point: without it, "no timescale
+    #: parameter matched" and "this backend was considered and excluded" are
+    #: indistinguishable in the output, and a 0% clamp rate reads as "the prior
+    #: fitted" when it actually means "the prior never arrived".
+    timescale_not_mapped_reason: ClassVar[str] = ""
+
+    #: Likewise for the E/I prior: backends with no separate inhibitory
+    #: population have no parameter that means "inhibitory gain".
+    ei_not_mapped_reason: ClassVar[str] = ""
+
     #: ``name -> (low, high)`` in the parameter's own units: the range over which
     #: the backend is calibrated and numerically well-behaved.  Distinct from
     #: ``param_priors`` on purpose — everything in ``param_priors`` is *sampled*
@@ -326,15 +345,34 @@ class DynamicsBackend(nn.Module, abc.ABC):
         theta = self.sample_theta(batch, n_regions, seed=seed, device=device)
         dev = theta.device
 
-        if "ei_ratio" in apply and "ei_ratio" in self.defaults:
+        if "ei_ratio" in apply:
             name, priors = resolve_prior_field(brain_prior, "ei_ratio_prior", "ei_prior")
-            if priors is not None:
+            if "ei_ratio" not in self.defaults or priors is None:
+                # Same disclosure rule as the timescale branch: a backend with no
+                # inhibitory-gain parameter must say so, not silently omit it.
+                if priors is None:
+                    reason = "prior exposes no ei_ratio_prior"
+                else:
+                    reason = self.ei_not_mapped_reason or (
+                        "backend has no 'ei_ratio' parameter, so the E/I prior was not applied"
+                    )
+                theta.provenance["ei_ratio"] = {
+                    "applied": False,
+                    "reason": reason,
+                    "backend_params": sorted(self.defaults),
+                    "consequence": (
+                        "this backend carries no regional excitation/inhibition heterogeneity "
+                        "from the anatomy prior"
+                    ),
+                }
+            if priors is not None and "ei_ratio" in self.defaults:
                 draw = sample_prior_list(priors, batch, seed=seed + 101, n_regions=n_regions)
                 centre = _geometric_centre(priors)
                 # inverted on purpose; see the docstring
                 gain = centre / torch.as_tensor(draw, device=dev, dtype=theta.dtype).clamp_min(1e-6)
                 theta.set("ei_ratio", gain)
                 theta.provenance["ei_ratio"] = {
+                    "applied": True,
                     "source": f"{type(brain_prior).__name__}.{name}",
                     "transform": (
                         "backend ei_ratio (an inhibitory gain) = geometric_centre(prior) / draw; "
@@ -353,33 +391,73 @@ class DynamicsBackend(nn.Module, abc.ABC):
 
         if "timescale" in apply:
             key = next((k for k in self.timescale_params if k in self.defaults), None)
+            inverse = False
+            if key is None:
+                key = next((k for k in self.inverse_timescale_params if k in self.defaults), None)
+                inverse = key is not None
             name, priors = resolve_prior_field(brain_prior, "timescale_prior")
             if key is not None and priors is not None:
                 draw = sample_prior_list(priors, batch, seed=seed + 202, n_regions=n_regions)
                 centre = _geometric_centre(priors)
-                scale = torch.as_tensor(draw, device=dev, dtype=theta.dtype) / centre
-                tau = scale * float(self.defaults[key])
+                d = torch.as_tensor(draw, device=dev, dtype=theta.dtype)
+                # A rate constant is an inverse timescale: a slower region has a
+                # SMALLER rate, so the modulation is reciprocal.  Applying the
+                # direct factor to a 1/s parameter would inflict the hierarchy
+                # backwards -- association cortex would end up the fastest.
+                factor = (centre / d.clamp_min(1e-12)) if inverse else (d / centre)
+                val = factor * float(self.defaults[key])
                 # The hierarchy prior is much wider than the backend's calibrated
                 # range, and its lower tail can drive tau below the step size,
                 # where an explicit solver simply rings.  Clamp to the backend's
                 # own declared support and *report* how much was clamped rather
                 # than emitting quietly unstable trajectories.
-                lo, hi, n_clamped = _clamp_to_support(tau, *self.support_of(key))
-                theta.set(key, tau)
+                lo, hi, n_clamped = _clamp_to_support(val, *self.support_of(key))
+                theta.set(key, val)
+                unit = "1/s (rate)" if inverse else "s"
                 theta.provenance[key] = {
+                    "applied": True,
                     "source": f"{type(brain_prior).__name__}.{name}",
                     "transform": (
-                        f"{key} = {float(self.defaults[key]):g} s * draw / geometric_centre(prior); "
-                        "applied as a dimensionless modulation because the prior is an intrinsic "
+                        f"{key} = {float(self.defaults[key]):g} {unit} * "
+                        + ("geometric_centre(prior) / draw" if inverse else "draw / geometric_centre(prior)")
+                        + "; applied as a dimensionless modulation because the prior is an intrinsic "
                         "autocorrelation timescale and this parameter is a synaptic constant"
+                        + (
+                            ". Reciprocal because this parameter is a rate, not a time"
+                            if inverse
+                            else ""
+                        )
                     ),
+                    "inverse_timescale": inverse,
                     "centre_s": centre,
-                    "backend_default_s": float(self.defaults[key]),
+                    "backend_default": float(self.defaults[key]),
                     "clamped_to_support": [lo, hi],
                     "n_clamped": n_clamped,
                     "fraction_clamped": n_clamped / max(1, batch * n_regions),
                     "sampled_per_batch_element": True,
                     **_provenance_index(priors),
+                }
+            else:
+                # Record the omission.  Without this, a backend that never
+                # received the prior is indistinguishable from one where it fit
+                # perfectly -- both simply show no clamping.  This mirrors the
+                # ei_ratio branch above: silence must never read as safe.
+                if priors is None:
+                    reason = "prior exposes no timescale_prior"
+                else:
+                    reason = self.timescale_not_mapped_reason or (
+                        "backend exposes no parameter in timescale_params or "
+                        "inverse_timescale_params, so the intrinsic-timescale prior was not applied"
+                    )
+                theta.provenance["timescale"] = {
+                    "applied": False,
+                    "reason": reason,
+                    "candidate_params": list(self.timescale_params) + list(self.inverse_timescale_params),
+                    "backend_params": sorted(self.defaults),
+                    "consequence": (
+                        "this backend's regional timescales are the backend defaults, not the "
+                        "anatomical hierarchy; a 0% clamp rate here means the prior never arrived"
+                    ),
                 }
 
         if "velocity" in apply:

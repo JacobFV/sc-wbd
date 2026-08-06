@@ -66,6 +66,27 @@ class StuartLandau(DynamicsBackend):
         "sigma": Prior("sigma", 0.02, 0.02, "uniform", "dimensionless", low=0.0, high=0.08),
     }
     regional_params: ClassVar[tuple[str, ...]] = ("a", "f")
+    #: The intrinsic-timescale prior is deliberately NOT applied to this backend.
+    #: ``a`` has units of 1/s and looks like a rate, but it is the *bifurcation
+    #: parameter* and it changes sign: <0 is a noisy focus, >0 a limit cycle.  A
+    #: multiplicative modulation is meaningless across zero (it cannot cross, and
+    #: near zero it explodes), and scaling it would move parcels between
+    #: dynamical regimes while claiming to set their speed.  ``f`` is an
+    #: oscillation frequency, not an autocorrelation decay rate; the intrinsic
+    #: timescale literature (Murray 2014, Gao 2020) measures decay, and equating
+    #: "decorrelates slowly" with "oscillates slowly" is a substantive empirical
+    #: claim rather than a unit conversion.
+    timescale_not_mapped_reason: ClassVar[str] = (
+        "Stuart-Landau exposes no relaxation-time parameter the prior can modulate. 'a' is the "
+        "Hopf bifurcation parameter and changes sign, so a multiplicative timescale modulation "
+        "would move parcels across the bifurcation rather than rescale their dynamics; 'f' is an "
+        "oscillation frequency, not an autocorrelation decay rate. Mapping either would be a "
+        "different scientific claim, not a unit conversion."
+    )
+    ei_not_mapped_reason: ClassVar[str] = (
+        "Hopf normal form has no separate inhibitory population, so no parameter means "
+        "'inhibitory gain'."
+    )
 
     @property
     def state_dim(self) -> int:
@@ -161,6 +182,19 @@ class Kuramoto(DynamicsBackend):
         "sigma": Prior("sigma", 0.1, 0.1, "uniform", "rad/s^0.5", low=0.0, high=0.5),
     }
     regional_params: ClassVar[tuple[str, ...]] = ("f",)
+    #: Phase-only: the state is an angle, so there is no amplitude to relax and
+    #: the model has no decay timescale at all -- ``f`` is a frequency.  Mapping
+    #: the autocorrelation-timescale prior onto it would assert that slowly
+    #: decorrelating regions oscillate slowly, which is a claim about the data,
+    #: not a rescaling.
+    timescale_not_mapped_reason: ClassVar[str] = (
+        "Kuramoto is phase-only: it has no amplitude and therefore no relaxation timescale to "
+        "modulate. Its single time parameter 'f' is an oscillation frequency, not an "
+        "autocorrelation decay rate."
+    )
+    ei_not_mapped_reason: ClassVar[str] = (
+        "Phase-only model with no separate inhibitory population."
+    )
 
     @property
     def state_dim(self) -> int:

@@ -73,6 +73,32 @@ class JansenRit(DynamicsBackend):
     }
     regional_params: ClassVar[tuple[str, ...]] = ("p_mean",)
 
+    #: ``a`` is the excitatory PSP rate constant: the kernel ``A a t exp(-a t)``
+    #: peaks at ``1/a`` = 10 ms, the same synaptic time constant Wilson-Cowan
+    #: spells ``tau_e`` = 0.010 s.  It is strictly positive and its reciprocal is
+    #: genuinely the relaxation time, so the intrinsic-timescale prior applies
+    #: here on exactly the grounds it applies to ``tau_e`` -- reciprocally,
+    #: because a slower region has a *smaller* rate.
+    inverse_timescale_params: ClassVar[tuple[str, ...]] = ("a",)
+    #: 1/a in 5-25 ms; below ~5 ms the PSP is faster than the 1 ms solver step,
+    #: above ~25 ms Jansen-Rit leaves the regime where it produces alpha.
+    param_support: ClassVar[Mapping[str, tuple[float | None, float | None]]] = {
+        "a": (40.0, 200.0),
+        "b": (20.0, 100.0),
+    }
+    #: Jansen-Rit has no scalar "inhibitory gain"; the closest candidate is ``B``,
+    #: the inhibitory PSP amplitude.  Deliberately NOT mapped: the alpha rhythm
+    #: depends jointly on A, B and the C-ratios, so rescaling B alone changes the
+    #: spectral peak as much as the E/I balance, and the anatomical E/I contrast
+    #: is route-fragile in sign (see map_fragility on ei_proxy).  Recording the
+    #: candidate and the refusal is more useful than a mapping we cannot defend.
+    ei_not_mapped_reason: ClassVar[str] = (
+        "Jansen-Rit has no scalar inhibitory-gain parameter. The candidate is B (inhibitory PSP "
+        "amplitude, mV), deliberately not mapped: B co-determines the alpha peak with A and the "
+        "C-ratios, so scaling it alone would confound an E/I change with a spectral one, and the "
+        "receptor-derived E/I contrast is route-fragile in per-parcel sign."
+    )
+
     @property
     def state_dim(self) -> int:
         return 6

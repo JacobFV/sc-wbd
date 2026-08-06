@@ -17,7 +17,14 @@ import numpy as np
 import pytest
 import torch
 
-from scwbd.dynamics import LinearGaussian, ReducedWongWang, WilsonCowan
+from scwbd.dynamics import (
+    JansenRit,
+    Kuramoto,
+    LinearGaussian,
+    ReducedWongWang,
+    StuartLandau,
+    WilsonCowan,
+)
 from scwbd.dynamics.base import map_fragility
 from scwbd.schema.priors import LogNormalPrior
 
@@ -307,8 +314,14 @@ def test_missing_fields_are_skipped_not_faked(prior):
 
     be = WilsonCowan.from_prior(Sparse())
     theta = be.theta_from_prior(Sparse(), batch=4, seed=0, device="cpu")
-    # nothing was taken from the prior, so nothing claims to have been
-    assert theta.provenance == {}
+    # Nothing was taken from the prior, so nothing claims to have been -- but the
+    # absence is *stated*, not left as an empty dict.  An empty provenance is
+    # exactly the failure this module had: indistinguishable from "applied and
+    # fitted perfectly".
+    assert all(v["applied"] is False for v in theta.provenance.values())
+    assert theta.provenance["ei_ratio"]["reason"] == "prior exposes no ei_ratio_prior"
+    assert theta.provenance["timescale"]["reason"] == "prior exposes no timescale_prior"
+    assert "velocity" not in theta.provenance
     # and the parameter falls back to the backend's *own* prior (sample_theta
     # draws tau_e from Prior(0.010, 0.002)), not to an invented regional pattern
     # non-regional parameters stay (B, 1, 1) for broadcast efficiency
@@ -341,3 +354,81 @@ def test_velocity_feeds_the_delay_model(prior):
     steps = con.delay_steps(theta, 1e-3)
     assert torch.isfinite(steps).all()
     assert float(steps.max()) > 0.0
+
+
+# -- the prior must never be skipped silently -----------------------------
+#
+# Regression tests for a real defect: `timescale_params` listed only
+# ("tau_E", "tau_e", "tau_s", "tau"), so Jansen-Rit (rate constant `a`) and
+# Stuart-Landau / Kuramoto (frequency `f`) matched nothing and the whole block
+# was skipped **writing no provenance at all**.  Their 0% clamp rate read as
+# "the prior fitted" when it actually meant "the prior never arrived", and
+# ~21.6% of the training corpus was anatomically flat without disclosing it.
+
+EVERY_BACKEND = (WilsonCowan, ReducedWongWang, JansenRit, StuartLandau, Kuramoto, LinearGaussian)
+#: backends that genuinely have no parameter the timescale prior maps onto
+NO_TIMESCALE = (StuartLandau, Kuramoto)
+
+
+@pytest.mark.parametrize("cls", EVERY_BACKEND)
+def test_every_backend_records_a_timescale_verdict(cls, prior):
+    """Applied or not, there must be a record. Absence of evidence is the bug."""
+    be = cls.from_prior(prior)
+    theta = be.theta_from_prior(prior, batch=8, seed=0, device="cpu")
+    ts = [v for k, v in theta.provenance.items()
+          if isinstance(v, dict) and k not in ("ei_ratio", "velocity")]
+    assert ts, f"{cls.__name__} wrote no timescale provenance at all"
+    rec = ts[0]
+    assert "applied" in rec
+    if not rec["applied"]:
+        assert rec["reason"], "a refusal must carry a reason"
+        assert "consequence" in rec
+
+
+@pytest.mark.parametrize("cls", EVERY_BACKEND)
+def test_every_backend_records_an_ei_verdict(cls, prior):
+    be = cls.from_prior(prior)
+    theta = be.theta_from_prior(prior, batch=8, seed=0, device="cpu")
+    rec = theta.provenance["ei_ratio"]
+    assert "applied" in rec
+    if not rec["applied"]:
+        assert rec["reason"]
+
+
+@pytest.mark.parametrize("cls", NO_TIMESCALE)
+def test_unmapped_backends_say_why_rather_than_going_quiet(cls, prior):
+    be = cls.from_prior(prior)
+    theta = be.theta_from_prior(prior, batch=8, seed=0, device="cpu")
+    rec = theta.provenance["timescale"]
+    assert rec["applied"] is False
+    # the reason must be the backend's own considered one, not the generic fallback
+    assert rec["reason"] == cls.timescale_not_mapped_reason
+    assert "never arrived" in rec["consequence"]
+
+
+def test_jansen_rit_maps_its_rate_constant_reciprocally(prior):
+    """`a` is a rate: 1/a is the PSP time constant, so slower parcels get SMALLER a.
+
+    Applying the direct factor to a 1/s parameter would install the anatomical
+    hierarchy backwards while looking perfectly healthy.
+    """
+    be = JansenRit.from_prior(prior)
+    theta = be.theta_from_prior(prior, batch=64, seed=0, device="cpu")
+    rec = theta.provenance["a"]
+    assert rec["applied"] is True and rec["inverse_timescale"] is True
+    a = theta.get("a")[:, :, 0].median(dim=0).values.numpy()
+    # parcels 0..4 have increasing prior timescales -> a must DECREASE
+    assert np.all(np.diff(a[:5]) < 0), a
+    # and 1/a must land in the same band tau_e occupies
+    lo, hi = be.support_of("a")
+    assert lo is not None and hi is not None
+    assert float(a.min()) >= lo * (1 - 1e-6) and float(a.max()) <= hi * (1 + 1e-6)
+
+
+def test_stuart_landau_bifurcation_parameter_is_never_scaled(prior):
+    """`a` changes sign; scaling it would move parcels across the Hopf bifurcation."""
+    be = StuartLandau.from_prior(prior)
+    base = be.sample_theta(16, prior.n_parcels, seed=0, device="cpu")
+    theta = be.theta_from_prior(prior, batch=16, seed=0, device="cpu")
+    assert torch.equal(base.get("a"), theta.get("a"))
+    assert torch.equal(base.get("f"), theta.get("f"))
