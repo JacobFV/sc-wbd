@@ -37,8 +37,10 @@ per `reports/gates/SUMMARY.md`: the *field* gates have in fact passed (`N3`,
 non-identifiability — remains **unexercised**, and there is no trained
 checkpoint. Text asserting instead that item 6 is blocked because "there is no
 IRB, no consent, no participants" was misquoting this contract, and pointed at
-a blocker nobody here can clear instead of the ones they can; see
-`reports/intervene/authorization.md`.
+a blocker nobody here can clear instead of the ones they can. The gate
+statuses above are from `reports/gates/SUMMARY.md`, which is generated; the
+authorization report that first recorded this correction was removed with the
+governance layer (§7a).
 
 The blocker is **capability**, not paperwork, and per §7a paperwork is not this
 project's concern at all: SC-WBD is deep-learning research on open data. The
