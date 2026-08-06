@@ -671,59 +671,51 @@ simulation and research use, but it is **not** what `tms-robotics` consumes.
 
 ---
 
-## 7a. The authorization boundary
+## 7a. Scope: this is a deep-learning project
 
-Recorded 2026-08-06 on the project owner's instruction.
+Recorded 2026-08-06 on the project owner's instruction, superseding the
+authorization-boundary section that stood here.
 
-**Inside this repository, everything is approved computational work and is not
-gated.** Simulation, modelling, intervention physics, dose-response on simulated
-tissue, planning against simulated or previously-recorded open data, training,
-and benchmarking are all covered by a UT Arlington IRB approval for
-computational studies. Code in `scwbd.intervene` must stop carrying a
-per-call disclaimer asserting it is unapproved — that claim is false, and a
-disclaimer on every entry point trains readers to ignore it.
+**SC-WBD is deep-learning research on open data. Ethics approval, consent, and
+prospective-human authorization are not this project's concern and no agent
+should spend effort on them.** The earlier §7a treated the live-application
+boundary as a live design surface; it is not one. Nothing here drives hardware
+and nothing here is applied to a person, so the question does not arise.
 
-**What is gated is live application**: driving stimulation hardware, or
-informing a real person's stimulation, in production in
-`/home/brandonin/Documents/robotics`. That is pending a preliminary review on
-**2026-08-25**.
+The authorization machinery that already exists — `AuthorizationRecord`, R11,
+`authorize_live_application`, the A_safe envelope — **stays**. It is built,
+tested, and its 17-of-17 firing limit sides are a genuine result. It is simply
+**not a place to invest further**. Leave it working; do not extend it, do not
+audit it, do not write more about it.
 
-Three properties this boundary must have:
+### The one compliance surface that is real
 
-1. **One gate, at the export edge.** The refusal lives where an artifact or a
-   plan leaves this repository toward live use — Asimov's surface
-   (`scwbd/runtime/`, the `tms-robotics` bridge) — not distributed across
-   intervention entry points. Twelve partial restrictions are how a hole opens
-   between them.
-2. **It does not open on a calendar comparison.** A date passing is not evidence
-   of an outcome, and a scheduled review is not a completed one. What unlocks
-   live use is a record of the review having occurred *with an approving
-   outcome*; 2026-08-25 is the earliest date such a record could exist. A
-   hardcoded date string also goes silently stale the day after.
-3. **It is orthogonal to `sim2real_ready` and `promotion_eligible`,** which
-   remain `false`. IRB approval is not promotion eligibility, and nothing in
-   this section may be read as relaxing the claim boundary.
+**Inherited data attribution and licensing.** Every artifact this project emits
+carries obligations from the data it was built on, and those obligations are
+enforceable, specific, and ours to get right:
 
-**The notice text is the owner's.** The `scwbd.intervene` notice states, in
-their words: *approved by IRB board UT Arlington for computational studies,
-pending preliminary review on August 25, 2026 before live patient TMS applied
-using it.*
+| source | obligation |
+|---|---|
+| Hansen receptor PET atlas | **CC-BY-NC-SA-4.0** — non-commercial *and* share-alike; infects any checkpoint whose parameters saw it |
+| Tian 2020 subcortical atlas | use without restriction **subject to citation** — attribution is the licence condition |
+| Schaefer 2018 / CBIG | MIT for the code; underlying GSP data under its own terms |
+| HCP S1200 maps | HCP open-access data-use terms |
+| ENIGMA/HCP connectome | BSD-3 for the toolbox; HCP terms for the scans |
+| neuromaps annotations | BSD-3 toolbox; **per-annotation source terms**, which differ |
 
-Faraday objected to putting an unverifiable claim about the world into a source
-string — the defect they were dispatched to remove, inverted — and argued that
-**a false permission does not fail safe the way a false restriction does.** The
-argument was put to the owner and the owner reaffirmed. It is their approval
-and their claim to make. Recorded here so it is not re-litigated.
+Three properties this must have, and they are the standing requirement:
 
-What the decision does **not** touch, and what no agent may quietly relax:
+1. **Checkpoint lineage is routed, not asserted.** A checkpoint prior to the
+   synthetic-data stage must not carry the NC clause, and one whose parameters
+   saw an NC-SA source must. That routing is a computation over the source
+   cards, not a field someone fills in.
+2. **A card that claims data we do not hold is a licence error, not just a
+   bookkeeping error** — it attributes an obligation to the wrong artifact.
+3. **Every emitted artifact carries its citation set.** The Tian licence makes
+   citation a *condition of use*, so an artifact that cannot state what it was
+   built from is not compliant.
 
-- The **string is documentation; `authorize_live_application` is enforcement.**
-  Separate surfaces. The prose does not weaken the gate by one line.
-- 2026-08-25 remains a **lower bound on a review record, never an unlock** — it
-  appears only on the refusing side of every comparison, and
-  `TestTheDateIsNotAnUnlock` proves it at a 2027 clock.
-- An `AuthorizationRecord` remains **necessary and not sufficient**, and a
-  placeholder may not be fabricated; the type refuses one.
-
-A future reader who finds the prose permissive and the code restrictive should
-conclude the code is right, not that the code is stale.
+`AnatomyPrior.families` already carries `FieldProvenance(..., licence,
+licence_is_nc, ...)` per field and `FamilyPartition.nc_licensed_fields()`.
+That is the mechanism; verify it is *read* by the checkpoint policy rather
+than merely populated.
