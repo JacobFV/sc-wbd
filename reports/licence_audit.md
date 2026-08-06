@@ -13,7 +13,34 @@
 > | 1. `harvardoxford` is NC and on the default path | true | **fixed** — the default subcortical atlas is `Aseg14T` (Melbourne Subcortex, attribution-only). Harvard-Oxford is opt-in and records itself. `reports/subcortical_atlas_substitution.md` |
 > | 2. six default-path sources state no terms | true | **still true, and now counted honestly: 18 of 27 anatomy sources read `unknown`** |
 > | 3. the classifier reads vacuous fields as `False` | true | **fixed** — `is_vacuous_licence_text` in `scwbd/release/licence.py`, plus a negation guard; `tests/release/test_vacuous_licence.py` |
-> | 4. post-substitution status | NC yes, SA no, clear unknown | **NC no (no *established* term), SA no, commercially clear STILL UNKNOWN** |
+> | 4. post-substitution status | NC yes, SA no, clear unknown | **no established restriction is *read* by any default prior; one is still *carried* by the object — see the correction below. Commercially clear: STILL UNKNOWN** |
+>
+> **Correction to my own summary, made before publishing it.** A first draft of
+> this table said the family carries "no established NC term". That is false as
+> stated, and the check that caught it was running the classifier over
+> `BrainPrior.load().provenance["sources"]` rather than over the sources the
+> priors read:
+>
+> ```
+> established NC on the default build : ['hansen_receptors']
+> ```
+>
+> `load_maps` builds every map whose data is on disk, so a machine with the PET
+> volumes installed assembles a `BrainPrior` that **contains** 19 receptor maps
+> and `ei_proxy` — CC-BY-NC-SA-4.0 — even though no default prior reads them.
+> The precise claim, and the only one supported:
+>
+> - **read by the default E/I prior:** `hcps1200_maps` only (`unknown`, not NC).
+> - **read by the default subcortical geometry:** `tian2020` (attribution-only,
+>   established).
+> - **carried by the assembled object:** still includes `hansen_receptors`.
+>
+> Whether a *checkpoint* inherits NC-SA depends on which of those a training run
+> touches, and `provenance["ei_ordering"]["licence_keys"]` is the field that
+> answers it. Making the object itself Hansen-free needs an
+> `include_receptors=False` path through `load_maps` — 🧠 Cajal's module, handed
+> over rather than done here, because `receptor_profile()` and thesis §5 depend
+> on those maps existing.
 > | 5. no anatomical source reaches the checkpoint | true | **unchanged** — `load_anatomy()` still returns `synthetic_fallback` |
 >
 > **Two registry fields were also found wrong against licence files vendored in
