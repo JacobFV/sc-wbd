@@ -489,10 +489,45 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
         normal_coherence=coh,
         normal_covered=ncov,
         evidence_class=ec,
-        frame=str(getattr(obj, "frame", "MNI152NLin2009cAsym_RAS")),
+        frame=_declare_frame(obj),
         provenance=str(getattr(obj, "provenance", "scwbd.anatomy.BrainPrior")),
         source_note="adapted from scwbd.anatomy.BrainPrior (agent C)",
     )
+
+
+def _declare_frame(obj: Any) -> str:
+    """The frame the prior's coordinates are ACTUALLY in, read from the atlas.
+
+    This replaces a hardcoded ``"MNI152NLin2009cAsym_RAS"`` default that was
+    always wrong and never wrong out loud. ``BrainPrior`` exposes no ``frame``
+    attribute, so ``getattr(obj, "frame", <default>)`` fell through to the
+    default on every single load, while the real support is the fsLR-32k
+    (conte69) surface and the volumetric Schaefer is ``MNI152NLin6Asym``.
+    Neither is NLin2009cAsym, and the templates differ by several millimetres in
+    ventral and temporal cortex.
+
+    That is worse than an unknown frame, which R01 at least refuses: it is a
+    *declared* frame asserting something untrue, which any downstream
+    registration would trust. It is the same shape as the synthetic-prior
+    incident -- a provenance field that was confidently wrong and unread.
+    """
+    parc = getattr(obj, "parcellation", None)
+    if parc is None:
+        raise AttributeError(
+            "cannot establish the anatomical frame: the prior exposes no "
+            "parcellation. Refusing to assert a template name that nothing "
+            "verified (R01: unknown frame lineage)."
+        )
+    space = str(getattr(parc, "space", "") or "")
+    density = str(getattr(parc, "density", "") or "")
+    tpl = str(getattr(getattr(parc, "provenance", None), "template_id", "") or "")
+    if not space:
+        raise AttributeError(
+            f"parcellation {getattr(parc, 'name', '?')!r} declares no space; the "
+            "frame cannot be established and will not be guessed (R01)."
+        )
+    base = f"{space}_{density}_surface_RAS" if density else f"{space}_RAS"
+    return f"{base} [{tpl}]" if tpl else base
 
 
 def _classify_edges(W: Tensor, L: Tensor) -> Tensor:

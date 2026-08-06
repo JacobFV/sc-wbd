@@ -33,7 +33,30 @@ def tiny_config() -> FoundationConfig:
 
 @pytest.fixture(scope="module")
 def anat():
-    return load_anatomy(device="cpu", n_cortex=40, n_subcortex=12, n_cerebellum=8, density=0.15, seed=7)
+    """The small synthetic prior these contract tests were written against.
+
+    ``force_fallback=True`` is **required**, not decoration. Without it
+    ``load_anatomy`` now finds the real ``scwbd.anatomy`` and returns the
+    414-parcel Schaefer/Tian prior, silently ignoring ``n_cortex=40`` and the
+    rest — so every test in this module was running against a different object
+    than the one it names, and
+    :func:`test_fallback_anatomy_is_labelled_as_not_biological` was asserting a
+    provenance that could no longer occur.
+    """
+    return load_anatomy(
+        device="cpu",
+        n_cortex=40,
+        n_subcortex=12,
+        n_cerebellum=8,
+        density=0.15,
+        seed=7,
+        force_fallback=True,
+    )
+
+
+@pytest.fixture(scope="module")
+def real_anat():
+    return load_anatomy(device="cpu")
 
 
 @pytest.fixture(scope="module")
@@ -84,9 +107,47 @@ def test_every_component_declares_units_and_a_clock():
 # ----------------------------------------------------------------------
 def test_fallback_anatomy_is_labelled_as_not_biological(anat):
     """A synthetic connectome must never be able to masquerade as anatomy."""
+    assert anat.n_regions == 60, "the fixture must actually build the synthetic prior it asks for"
     assert anat.provenance == "synthetic_fallback"
     assert anat.is_biological() is False
     assert "NOT ANATOMY" in anat.source_note.upper()
+
+
+def test_real_anatomy_is_labelled_as_biological(real_anat):
+    """The other direction, without which the guard above cannot discriminate.
+
+    A test that only ever sees the synthetic prior passes whether or not
+    ``is_biological()`` can return True, so it does not distinguish anatomy from
+    a stand-in — which is the exact distinction the synthetic-prior incident was
+    about. This asserts the real prior is recognised, so the pair fails if either
+    label sticks to the wrong object.
+    """
+    assert real_anat.n_regions != 60
+    assert real_anat.provenance != "synthetic_fallback"
+    assert real_anat.is_biological() is True
+
+
+def test_a_real_prior_cannot_be_silently_replaced_by_the_fallback(monkeypatch):
+    """``load_anatomy`` must REFUSE, not substitute, when the real prior breaks.
+
+    This is the incident itself: the adapter raised, the exception was swallowed,
+    and SC-WBD-001-beta trained on a synthetic ellipsoid while every provenance
+    field said so correctly and nothing read them.
+    """
+    import importlib
+
+    import scwbd.foundation.anatomy as fa
+
+    def boom(name):
+        if name == "scwbd.anatomy":
+            raise AttributeError("simulated adapter breakage")
+        return importlib.import_module(name)
+
+    monkeypatch.setattr(fa.importlib, "import_module", boom)
+    with pytest.raises(RuntimeError, match="Refusing to substitute the synthetic prior"):
+        fa.load_anatomy(device="cpu")
+    # ...and the escape hatch still works, because it is a DECLARATION
+    assert fa.load_anatomy(device="cpu", force_fallback=True).is_biological() is False
 
 
 def test_delays_follow_length_over_velocity(anat):

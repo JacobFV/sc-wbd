@@ -84,20 +84,81 @@ def test_corrected_config_has_no_ordering_refusal() -> None:
     assert offending == [], "\n".join(str(r) for r in offending)
 
 
-def test_corrected_config_still_refuses_the_handover_items() -> None:
-    """It is refused, and for reasons that are not ordering errors.
+def test_corrected_config_refuses_only_the_trainer_gate_now_that_anatomy_is_repaired() -> None:
+    """ASSERTS A REPAIR, NOT A DEFECT — see the note on naming below.
 
-    Both are handover items for other owners: the trainer's hard-coded admission
-    gates (X06) and the anatomy adapter that silently substitutes a synthetic
-    prior (X09).  Recorded here so that "the corrected config passes" is never
-    said without them.
+    It is refused, and for a reason that is not an ordering error: the
+    trainer's hard-coded admission gates (X06) remain a handover item.
+
+    **This test used to also demand X09_declared_provenance_contradicted**, and
+    was named ``test_corrected_config_still_refuses_the_handover_items``.  X09
+    fires when the object ``load_anatomy()`` hands the trainer is not
+    biological.  The anatomy adapter has since been repaired — ``load_anatomy()``
+    returns the real 414-parcel Schaefer/Tian prior with
+    ``is_biological() == True`` — so **X09 is correctly silent**, and the old
+    assertion had become a demand that a fixed defect still exist.  It failed
+    as a *consequence of the repair*, which is the failure mode the register
+    calls the inverse category (`reports/decorative_guards.md`, S1).
+
+    X09's ability to fire is **not** dropped along with the stale expectation;
+    that would trade a red guard for a decorative one.  It is exercised against
+    a deliberately degraded fixture in
+    :func:`test_x09_fires_when_the_trainer_would_load_a_non_biological_prior`.
+    If that test is ever deleted, this one stops meaning anything.
     """
     v = validate_config(ORDERED, tiers_path=TIERS)
+    assert not v.ok, "X06 is still a genuine handover item; the config is not clean"
+    codes = set(v.codes())
+    assert codes == {"X06_trainer_gate_contradicts_config"}, (
+        f"expected the trainer gate alone, got {sorted(codes)}"
+    )
+    assert "X09_declared_provenance_contradicted" not in codes, (
+        "X09 fires only when load_anatomy() yields a non-biological prior. "
+        "Seeing it here means the anatomy adapter regressed to the synthetic "
+        "stand-in — that is a real regression, not a stale expectation."
+    )
+
+
+def test_x09_fires_when_the_trainer_would_load_a_non_biological_prior(monkeypatch) -> None:
+    """X09, watched refusing — the guard half of the pair above.
+
+    The corrected config admits a tier-3 source declaring ``is_simulated:
+    false``.  X09 exists to notice when the object the trainer *actually loads*
+    under that name is a labelled synthetic stand-in, which belongs to tier 4.
+    Here that condition is reproduced on purpose by forcing ``load_anatomy``
+    down its ``force_fallback`` path — the same function X09 probes with and
+    the same one ``scwbd/foundation/train.py`` calls.
+
+    Without this, the repair above would leave X09 asserted by nothing.
+    """
+    import scwbd.foundation.anatomy as anatomy_mod
+
+    real_load = anatomy_mod.load_anatomy
+
+    def fallback_only(**kw):
+        kw.pop("force_fallback", None)
+        return real_load(force_fallback=True, **kw)
+
+    monkeypatch.setattr(anatomy_mod, "load_anatomy", fallback_only)
+
+    # The degraded fixture must really be the thing X09 looks for, otherwise
+    # this test could pass while exercising nothing.
+    probe = anatomy_mod.load_anatomy(n_cortex=400)
+    assert probe.is_biological() is False
+    assert probe.provenance == "synthetic_fallback"
+
+    v = validate_config(ORDERED, tiers_path=TIERS)
     assert not v.ok
-    assert set(v.codes()) == {
-        "X06_trainer_gate_contradicts_config",
-        "X09_declared_provenance_contradicted",
-    }
+    fired = [r for r in v.refusals if r.code == "X09_declared_provenance_contradicted"]
+    assert fired, (
+        "X09 did not fire against a non-biological prior. The guard is dead: "
+        f"codes were {sorted(set(v.codes()))}"
+    )
+    ev = fired[0].evidence
+    assert ev["declared_is_simulated"] is False
+    assert ev["runtime_provenance"] == "synthetic_fallback"
+    assert ev["runtime_is_biological"] is False
+    assert ev["source"] in fired[0].message
 
 
 def test_corrected_config_totals_match_the_beta_budget() -> None:

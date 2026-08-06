@@ -72,6 +72,16 @@ class ModelConfig:
     #: fall through to ``local_core``.  Assigning a backend to a family the
     #: anatomy prior does not produce raises rather than silently doing nothing.
     family_cores: dict[str, str] = field(default_factory=dict)
+    #: Permit ``scwbd.foundation.families`` to INFER a family partition when the
+    #: anatomy prior declares none.
+    #:
+    #: Default ``False``, and it must stay ``False`` for any training run. The
+    #: inferred cortical split is Yeo-7, which agent C's Vasa spin null rejects
+    #: as a partition (6 of 21 pairs separate); the evidence supports
+    #: unimodal/association and nothing finer. Setting this ``True`` makes "this
+    #: run's operator assignment rests on a split the evidence rejects" a
+    #: declaration in the config rather than a silent default.
+    family_allow_derived_partition: bool = False
     #: hippocampal H_t = {k,v,g,c,rho} widths (body.tex §5.1).  These set the
     #: padded dimension D for the whole state, so they are the price of N-1 --
     #: ``FamilyStateLayout.padding_fraction()`` reports it.
@@ -95,7 +105,7 @@ class ModelConfig:
     #: state-dependent variance and leaving the control arm on a broadcast
     #: constant would make A1 measure the variance path instead of the structured
     #: state -- the same class of error as an interface that silently narrows one
-    #: arm.  See reports/dynamics/family_state.md §10.
+    #: arm.  See reports/dynamics/family_state.md §9.
     state_dependent_variance: bool = True
 
     #: Declared cross-scale prolongations, written ``"fine<=coarse"``.  Empty

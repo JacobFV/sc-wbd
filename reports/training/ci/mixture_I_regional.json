@@ -64,13 +64,13 @@
     "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
   },
   "per_source_contribution": {
-    "anatomical_prior": 0.13009638710028257,
-    "sim_wholebrain": 0.8699036128997175
+    "anatomical_prior": 0.13007150248691254,
+    "sim_wholebrain": 0.8699284975130874
   },
   "gradient_permission_audit": {
     "anatomical_prior": {
       "n_permitted": 0,
-      "n_blocked": 113,
+      "n_blocked": 111,
       "patterns": [],
       "frozen": [
         "eeg.*",
@@ -94,7 +94,7 @@
     },
     "eegmmidb_real": {
       "n_permitted": 37,
-      "n_blocked": 76,
+      "n_blocked": 74,
       "patterns": [
         "local.*",
         "residual.*",
@@ -122,7 +122,7 @@
     },
     "montage_calibration": {
       "n_permitted": 0,
-      "n_blocked": 113,
+      "n_blocked": 111,
       "patterns": [],
       "frozen": [
         "local.*",
@@ -149,7 +149,7 @@
     },
     "negative_control_shuffled": {
       "n_permitted": 0,
-      "n_blocked": 113,
+      "n_blocked": 111,
       "patterns": [],
       "frozen": [
         "*"
@@ -171,7 +171,7 @@
     },
     "sim_wholebrain": {
       "n_permitted": 41,
-      "n_blocked": 72,
+      "n_blocked": 70,
       "patterns": [
         "local.*",
         "residual.*",

@@ -69,6 +69,7 @@ def build_family_layout(cfg: ModelConfig, anat: AnatomyPrior) -> FamilyStateLayo
         d_grid=cfg.d_grid,
         d_context=cfg.d_context,
         d_prediction=cfg.d_prediction,
+        allow_derived=cfg.family_allow_derived_partition,
     )
     return FamilyStateLayout(part, device=anat.weights.device)
 
@@ -403,6 +404,15 @@ class RolloutResult:
     hemo: Tensor | None  # (B, T_slow, N, 4)
     rho: Tensor  # scalar: mean ||R|| / ||F_local + F_long||
     diagnostics: dict[str, Any]
+    #: ``(B, T_slow, N, 1)`` predictive log-variance for the BOLD head, read from
+    #: ``X_i^uncertainty`` **at the fast step each hemodynamic sample was taken**,
+    #: not at the end of the rollout. `heads.BOLDHead.signal` consumes this;
+    #: computing it here keeps the ``hemo_ratio`` bookkeeping on the side that
+    #: already owns it and keeps `heads.py` free of state-layout knowledge.
+    hemo_logvar: Tensor | None = None
+    #: the fast-clock indices those samples were taken at, so the alignment is
+    #: checkable rather than trusted
+    hemo_steps: tuple[int, ...] = ()
 
 
 class SCWBD(nn.Module):
@@ -477,7 +487,14 @@ class SCWBD(nn.Module):
             )
         self.assimilate = Assimilator(L, self.n_regions, cfg)
         self.register_buffer("tau_prior", anat.timescale_prior.float().clone())
-        self.log_dt_scale = nn.Parameter(torch.zeros(self.n_regions))
+        # Only the control arm uses this: with families on, each learned operator
+        # group carries its own `family_local.log_dt`. Building it anyway would
+        # leave a per-region parameter that receives weight decay, never a
+        # gradient, and no governing binding -- which is exactly what
+        # compiler_bridge.audit_binding calls an ungoverned parameter.
+        self.log_dt_scale = (
+            nn.Parameter(torch.zeros(self.n_regions)) if self.family_layout is None else None
+        )
 
         # -- the typed observation boundary (body.tex §2.1 X_i^uncertainty) ---
         # Built for BOTH §11.4 arms. Giving the treatment arm a state-dependent
@@ -740,6 +757,8 @@ class SCWBD(nn.Module):
         states, mech_e, res_e = [], [], []
         hemo = self.bold.initial(B, self.n_regions, dev) if with_hemo else None
         hemos: list[Tensor] = []
+        hemo_logvars: list[Tensor] = []
+        hemo_steps: list[int] = []
         for t in range(n_steps):
             x, msg, me, re_ = self.step(
                 x, history, lags, film, weights=weights, mech_pack=mech_pack, u=None if u is None else u[:, t]
@@ -752,6 +771,15 @@ class SCWBD(nn.Module):
                 drive = self.layout.get(x, "rate_e").squeeze(-1) if "rate_e" in self.layout else x[..., 0]
                 hemo = self.bold.step(hemo, drive.float())
                 hemos.append(hemo)
+                # The BOLD predictive variance must be read from the state at
+                # the step the hemodynamic sample was TAKEN -- `x` here, index
+                # `t` -- not from the last fast step of the rollout. With
+                # hemo_ratio = 25 that is an off-by-25 waiting to happen, and it
+                # is this side's to get right: `heads.BOLDHead.signal` receives
+                # the value, it does not go looking for it.
+                hemo_steps.append(t)
+                if self.observation is not None:
+                    hemo_logvars.append(self.observation.predictive_logvar(x))
         X = torch.stack(states, dim=1)  # (B,T,N,D)
         if self.family_layout is not None:
             # The guard that justifies N-1. Checked on the whole trajectory, not
@@ -775,6 +803,8 @@ class SCWBD(nn.Module):
             activity=act,
             activity_logvar=logvar,
             hemo=torch.stack(hemos, dim=1) if hemos else None,
+            hemo_logvar=torch.stack(hemo_logvars, dim=1) if hemo_logvars else None,
+            hemo_steps=tuple(hemo_steps),
             rho=rho,
             diagnostics={
                 "rho_ema": self._rho_ema,

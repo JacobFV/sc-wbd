@@ -536,6 +536,32 @@ reader who lands on it will think the pair is still unbuilt. Architect's to
 collapse. The underlying cause is that an ordinal register cannot be written
 concurrently by ten agents; slugs would not have collided.
 
+### Test state on this branch, stated exactly
+
+Green: `tests/transforms`, `tests/schema`, `tests/compiler`,
+`tests/foundation/test_resolution_pair_r02.py`.
+
+Not green, and **not mine** — five `tests/foundation` files fail on this branch
+and each failure arrived with the merge from `master`, not with this work:
+
+| file | first failure |
+|---|---|
+| `test_compiler_binding.py` | `observation.head.w` + 6 siblings are **ungoverned trainable parameters** |
+| `test_family_state.py` | `test_schema_refuses_both_layouts_at_once` (error) |
+| `test_uncertainty_state.py` | `test_the_uncertainty_channel_stays_in_span` |
+| `test_curriculum_admission.py` | `test_anatomical_prior_is_not_gated_on_the_sim_batch` |
+| `test_contracts.py` | `test_fallback_anatomy_is_labelled_as_not_biological` (= gate row **D6**, owned, open) |
+
+The first one deserves routing rather than a footnote. `test_compiler_binding`
+exists specifically to catch a declared permission that governs no tensor, and
+it is now catching one: `observation.head.*` was introduced by `c9b2ff9`
+("typed observation boundary") with no entry in `FOUNDATION_BINDING` or
+`FOUNDATION_FROZEN_BINDING`, so seven trainable tensors are outside the gradient
+permission system while it continues to look enforced. That is the exact defect
+the module's own docstring was written about. Traced with `git log -S`, not
+guessed; the two scale-map groups this branch adds are bound and are *not* in
+the ungoverned list.
+
 ### Unrelated defect found on the way
 
 The main checkout's `assets` symlink pointed at **itself** between 11:23 and

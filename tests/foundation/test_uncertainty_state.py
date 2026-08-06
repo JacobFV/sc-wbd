@@ -1,11 +1,15 @@
 """``X_i^uncertainty`` must actually carry predictive variance.
 
-Run 1 has the lowest MSE of the seven arms and the second-worst NLL.  The cause
-is that ``EEGHead.log_noise`` and ``BOLDHead.log_noise`` are ``nn.Parameter``
-vectors broadcast with ``expand_as``: the predictive variance of both instrument
-heads is constant in state, time, horizon, window, participant and condition,
-while the five held-out-calibrated baselines get a variance of shape
-``(horizon, C)``.
+``EEGHead.log_noise`` and ``BOLDHead.log_noise`` are ``nn.Parameter`` vectors
+broadcast with ``expand_as``: the predictive variance of both instrument heads is
+constant in state, time, horizon, window, participant and condition, while the
+five held-out-calibrated baselines get a variance of shape ``(horizon, C)``.
+
+These tests do **not** claim to repair run 1.  Turing's decomposition attributes
+run 1's FAIL to the *scale* term (0.4467 of the 0.4469 excess) — a training
+schedule defect — with *state* worth 0.1896-0.2587 beyond that and *horizon*
+only 0.0096.  What is tested here is that the state-dependence path exists and
+is real; whether it buys anything is a training result nobody has yet.
 
 These tests are written so they **fail against that implementation**.  A shape
 assertion would not — the broadcast variance already has the right shape.  So
@@ -41,6 +45,9 @@ def _cfg(**kw) -> ModelConfig:
     d = dict(
         hidden=64, n_local_layers=2, region_embed=16, context_dim=32,
         encoder_channels=16, encoder_layers=2,
+        # no anatomy-declared partition on this branch; the fallback refuses
+        # unless opted into, so say so explicitly here
+        family_allow_derived_partition=True,
     )
     d.update(kw)
     return ModelConfig(**d)
@@ -107,7 +114,7 @@ def test_perturbing_a_non_uncertainty_component_changes_the_innovation(anat, arm
     m, res = _rollout(anat, _cfg(**kw))
     x = res.state[:, 0]
     if m.family_layout is not None:
-        name = "cortex_vis"
+        name = "cortex_unimodal"
         prop = m.family_local.uncertainty[name]
         idx = m.family_layout.index(name)
         f = m.family_layout.family(name)
@@ -141,15 +148,15 @@ def test_the_broadcast_parameter_fails_these_tests(anat):
     assert len(m.family_local.uncertainty) == 0, "no uncertainty propagator should be built"
     with torch.no_grad():
         _, lv = m.eeg(res.state)  # (B,T,C)
-    assert float(lv.std(dim=1).max()) == 0.0, "EEG log-variance varies over time; it should not, un-repaired"
-    assert float(lv.std(dim=0).max()) == 0.0, "EEG log-variance varies over samples; it should not, un-repaired"
+    assert float(lv.detach().std(dim=1).max()) == 0.0, "EEG log-variance varies over time; it should not, un-repaired"
+    assert float(lv.detach().std(dim=0).max()) == 0.0, "EEG log-variance varies over samples; it should not, un-repaired"
     # ...and the same for BOLD, which the ruling added to scope. `BOLDHead.signal`
     # returns `self.log_noise.expand_as(y)` -- the identical defect, on the other
     # head that faces measured data and enters the NLL.
     with torch.no_grad():
         hemo = m.bold.initial(res.state.shape[0], m.n_regions, res.state.device)
         _, blv = m.bold.signal(hemo)
-    assert float(blv.std(dim=0).max()) == 0.0, "BOLD log-variance varies over samples; it should not, un-repaired"
+    assert float(blv.detach().std(dim=0).max()) == 0.0, "BOLD log-variance varies over samples; it should not, un-repaired"
 
 
 # ======================================================================
@@ -182,9 +189,9 @@ def test_family_arm_source_features_are_not_narrower_than_the_control(anat):
     )
     # and they must carry each family's own out-ports, not a shared slice
     ports = treat.observation.describe()["out_ports"]
-    assert "oscillatory" in ports["cortex_vis"]
-    assert "recall" in ports["hippocampus"]
-    assert "gate_out" in ports["basal_ganglia"]
+    assert "oscillatory" in ports["cortex_unimodal"]
+    assert "recall" in ports["subcortex_hippo"]
+    assert "gate_out" in ports["subcortex_put"]
 
 
 @pytest.mark.parametrize("arm,kw", ARMS)
@@ -195,8 +202,8 @@ def test_source_features_actually_depend_on_the_private_state(anat, arm, kw):
         f0 = m.observation.source_features(x)
         x2 = x.clone()
         if m.family_layout is not None:
-            sl = m.family_layout.family("cortex_vis").layout.slice("spectral")
-            idx = m.family_layout.index("cortex_vis")
+            sl = m.family_layout.family("cortex_unimodal").layout.slice("spectral")
+            idx = m.family_layout.index("cortex_unimodal")
             x2[:, idx, sl] = x2[:, idx, sl] + 1.0
         else:
             sl = m.layout.slice("spectral")
@@ -259,3 +266,78 @@ def test_the_uncertainty_channel_stays_in_span(anat):
     """The propagator writes only into its own component."""
     m, res = _rollout(anat, _cfg(family_state=True))
     m.family_layout.assert_clean(res.state, where="uncertainty propagation")
+
+
+@pytest.mark.parametrize("arm,kw", ARMS)
+def test_bold_logvar_is_read_at_the_step_the_sample_was_taken(anat, arm, kw):
+    """The off-by-25.  Named, not merely avoided (architect's instruction).
+
+    The slow clock samples every ``hemo_ratio = 25`` fast steps. The BOLD
+    predictive variance must come from the state at the step the hemodynamic
+    sample was **taken**, not from the last fast step of the rollout. Because
+    ``X_i^uncertainty`` grows monotonically over the horizon, reading the wrong
+    step is not a subtle error — it systematically overstates the variance of
+    every sample except the last.
+    """
+    steps = 60
+    m, res = _rollout(anat, _cfg(**kw), steps=steps)
+    theta = torch.randn(3, 6) * 0.3
+    torch.manual_seed(0)
+    with torch.no_grad():
+        r = m.rollout(
+            y_context=torch.randn(3, 8, anat.n_regions) * 0.3,
+            theta=theta,
+            n_steps=steps,
+            with_hemo=True,
+        )
+    ratio = m.cfg.hemo_ratio
+    assert r.hemo is not None and r.hemo_logvar is not None
+    # one entry per slow sample, and the recorded indices are the sampling steps
+    assert r.hemo.shape[1] == r.hemo_logvar.shape[1] == len(r.hemo_steps)
+    assert list(r.hemo_steps) == [t for t in range(steps) if (t + 1) % ratio == 0]
+    # each recorded log-variance equals the interface applied to the state at
+    # that step -- and NOT to the final state
+    with torch.no_grad():
+        for k, t in enumerate(r.hemo_steps):
+            want = m.observation.predictive_logvar(r.state[:, t])
+            assert torch.allclose(r.hemo_logvar[:, k], want, atol=1e-6), f"slow sample {k} misaligned"
+        if len(r.hemo_steps) > 1:
+            last = m.observation.predictive_logvar(r.state[:, -1])
+            assert not torch.allclose(r.hemo_logvar[:, 0], last, atol=1e-4), (
+                "the first slow sample equals the FINAL state's log-variance; the alignment test "
+                "cannot distinguish correct from off-by-hemo_ratio"
+            )
+
+
+@pytest.mark.parametrize("arm,kw", ARMS)
+def test_the_residual_may_not_write_to_the_uncertainty_channel(anat, arm, kw):
+    """``X_i^uncertainty`` has exactly one law.
+
+    If ``R_theta`` could also write there it would buy likelihood by moving the
+    variance directly, bypassing the innovation/decay dynamics that make the
+    channel mean anything — and R05 prices the residual against the mechanistic
+    terms, not against the variance.
+    """
+    torch.manual_seed(0)
+    m = SCWBD(_cfg(**kw), anat)
+    x = torch.randn(2, anat.n_regions, m.layout.dim) * 0.3
+    extra = torch.zeros(2, anat.n_regions, m.cfg.hidden // 2)
+    if m.family_layout is not None:
+        with torch.no_grad():
+            for p in m.family_residual.parameters():
+                torch.nn.init.normal_(p, std=0.5)
+            r = m.family_residual(m.family_layout.zero_pad(x), extra)
+        for f in m.family_layout:
+            u = m.family_layout.get(r, f.name, UNCERTAINTY_COMPONENT)
+            assert float(u.abs().max()) == 0.0, f"{f.name}: residual wrote into X^uncertainty"
+    else:
+        # control arm: SCWBD.step zeroes the slice before adding
+        sl = m.layout.slice(UNCERTAINTY_COMPONENT)
+        with torch.no_grad():
+            for p in m.residual.parameters():
+                torch.nn.init.normal_(p, std=0.5)
+            f_res = m.residual(x, extra)
+            f_res = torch.cat(
+                [f_res[..., : sl.start], torch.zeros_like(f_res[..., sl]), f_res[..., sl.stop :]], dim=-1
+            )
+        assert float(f_res[..., sl].abs().max()) == 0.0

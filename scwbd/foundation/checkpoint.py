@@ -129,7 +129,8 @@ def save_checkpoint(
         manifest.git_sha = payload["git_sha"]
         manifest.weights_hash = hash_file(p)
         manifest.environment = payload["environment"]
-        manifest.save(p.parent / "claim_manifest.json")
+        # D8: the config is in scope here, and R12's prolongation half needs it.
+        manifest.save(p.parent / "claim_manifest.json", config=config)
         (p.parent / "CLAIM_MANIFEST.md").write_text(manifest.to_markdown())
     return p
 

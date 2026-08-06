@@ -203,7 +203,7 @@ class ClaimManifest:
                 continue
         return None
 
-    def refuse_r12(self) -> None:
+    def refuse_r12(self, config: Any = None) -> None:
         """Refuse a §2.1 differentiator claim on a §11.4 control-arm artifact.
 
         Two ways to trip it, because run 1 tripped the second one:
@@ -217,7 +217,11 @@ class ClaimManifest:
         """
         canonical = self._r12_predicate()
         if canonical is not None:
-            canonical(self)  # raises its own R12; this call site stays either way
+            # D8: pass the CONFIG through. Noether's predicate is
+            # `r12_predicate(manifest, config)` and its prolongation half reads
+            # the poset, which a manifest does not record -- calling it with the
+            # manifest alone silently ran only the operator and prose halves.
+            canonical(self, config)
             return
         arm = str(self.regional_state.get("ablation_arm", "")) if self.regional_state else ""
         if arm == "treatment":
@@ -253,8 +257,8 @@ class ClaimManifest:
         )
 
     # -- validation -------------------------------------------------------
-    def validate(self) -> "ClaimManifest":
-        self.refuse_r12()
+    def validate(self, config: Any = None) -> "ClaimManifest":
+        self.refuse_r12(config)
         if not self.cannot_do:
             raise OverclaimError(
                 "ClaimManifest.cannot_do is empty. An explicit statement of what the model cannot do "
@@ -279,8 +283,8 @@ class ClaimManifest:
         d["claims"] = [asdict(c) for c in self.claims]
         return d
 
-    def save(self, path: str | Path) -> Path:
-        self.validate()
+    def save(self, path: str | Path, *, config: Any = None) -> Path:
+        self.validate(config)
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps(self.as_dict(), indent=2, default=str))

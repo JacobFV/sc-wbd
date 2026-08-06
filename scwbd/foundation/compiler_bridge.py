@@ -209,9 +209,39 @@ OBSERVATION_HEADS: tuple[str, ...] = ("parcel_activity", "eeg", "bold", "behavio
 FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
     # F_local: the weight-shared regional vector field, its per-region timestep
     # scaling and the conditioning encoder that modulates it.
-    "operator:local_field:params": ("local.*", "log_dt_scale", "context.*"),
+    #
+    # With `family_state` on the tensors live under `family_local.*` instead;
+    # see FOUNDATION_FAMILY_BINDING, which REPLACES the affected entries rather
+    # than adding to them, because this table is checked in both directions and
+    # a pattern matching nothing is itself reported as a problem.
+    "operator:local_field:params": (
+        "local.*",
+        "log_dt_scale",
+        "context.*",
+        "uncertainty_propagator.*",
+    ),
     # R_theta: the learned residual, kept separable so R05 can price it.
     "operator:local_field:residual": ("residual.*",),
+    # X_i^uncertainty: the innovation/decay law that drives the predictive
+    # variance channel, and the sign-constrained map from it to a log-variance.
+    #
+    # Deliberately its OWN group rather than folded into the residual or the
+    # heads. A source card that may update the conditional mean is not thereby
+    # licensed to update the model's own statement of how uncertain it is --
+    # those are different permissions, and run 1's failure was in the second one.
+    # X_i^uncertainty (body.tex §2.1): the innovation/decay law that drives the
+    # predictive-variance channel.
+    #
+    # It lands in `local_field:params` because that is what it IS -- the
+    # propagator emits `du` as part of `dx`, alongside every other component of
+    # the regional vector field. I wanted it in its own group, so that a source
+    # card permitted to update the conditional MEAN is not thereby permitted to
+    # update the model's own statement of how uncertain it is -- run 1's failure
+    # was in the second one. That needs a group the COMPILER emits, i.e. a new
+    # operator declared in the schema, which this bridge may not invent: a
+    # binding keyed on a group name no compiled model carries is never applied,
+    # and the parameters would read as governed while being unreachable. Filed
+    # as a follow-up in reports/dynamics/family_state.md rather than faked here.
     # F_long: the typed evidence-class gains of the connectome-masked coupling.
     "operator:long_range:params": (
         "coupling.gain_soft",
@@ -227,6 +257,9 @@ FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
     # the lead field at build time; same story, see FOUNDATION_FROZEN_BINDING.
     FRAME_EDGE_KEY: (),
     # Typed ports: the export projection and the read-in of arriving messages.
+    # Typed ports.  With families on, the projection is per family (a hippocampal
+    # family exports (v, rho), a basal-ganglia family exports a gate), so the
+    # patterns cover both the shared and the per-family form of the same port.
     f"port:{_PORT_EXEMPLAR}.message_out": ("msg_proj.*",),
     f"port:{_PORT_EXEMPLAR}.message_in": ("msg_readin.*",),
     # Observation ports are implemented by their heads; the head's nuisance
@@ -254,7 +287,8 @@ FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
     SCALE_MAP_RESTRICTION_KEY: (),
     SCALE_MAP_PROLONGATION_KEY: (),
     # Per-source observation nuisance terms, resolved by head.
-    "observation:parcel_activity:nuisance": ("readout.*",),
+    # The readout boundary, including the state -> predictive-log-variance map.
+    "observation:parcel_activity:nuisance": ("readout.*", "observation.*"),
     "observation:eeg:nuisance": ("eeg.*",),
     "observation:bold:nuisance": ("bold.*",),
     "observation:behaviour:nuisance": ("behaviour.*",),
@@ -268,6 +302,44 @@ FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
         "assimilate.embed",
     ),
 }
+
+#: Overrides applied when the model carries a **family** state layout
+#: (``ModelConfig.family_state``, body.tex §2.1).  These entries **replace** the
+#: corresponding entries of :data:`FOUNDATION_BINDING`; they are not unioned.
+#:
+#: They have to be separate, and the reason is the bridge's own rule: the binding
+#: is checked in *both* directions, so a pattern that matches no tensor is
+#: reported as a decorative permission.  In the §11.4 control arm the model has
+#: no ``family_*`` modules at all (``SCWBD.local`` is built, ``family_local`` is
+#: ``None``), and in the treatment arm the reverse.  Putting both sets of globs
+#: in one table would therefore make every audit report ~232 phantom bindings in
+#: whichever arm was not built -- which is the failure this table exists to
+#: detect, manufactured by the fix for it.
+#:
+#: The *group names* are unchanged across arms on purpose: ``F_local`` is the
+#: same declared thing whichever operator implements it, so a source card cannot
+#: gain or lose a permission by which arm the model was built in.
+FOUNDATION_FAMILY_BINDING: dict[str, tuple[str, ...]] = {
+    "operator:local_field:params": (
+        "family_local.learned.*",
+        "family_local.log_dt.*",
+        "family_local.mech.*",
+        "family_local.uncertainty.*",
+        "context.*",
+    ),
+    "operator:local_field:residual": ("family_residual.*",),
+    f"port:{_PORT_EXEMPLAR}.message_out": ("msg_proj.*", "family_local.ports.out_proj.*"),
+    f"port:{_PORT_EXEMPLAR}.message_in": ("msg_readin.*", "family_local.ports.in_proj.*"),
+    "observation:parcel_activity:nuisance": ("family_readout.*", "observation.*"),
+    REGION_STATE_KEY: (
+        "family_local.learned.*.embed",
+        "family_local.learned.*.films.*.region_scale",
+        "family_local.learned.*.films.*.region_shift",
+        "family_residual.region_embed",
+        "assimilate.embed",
+    ),
+}
+
 
 #: Compiler parameter-group name (or template) -> glob patterns over
 #: ``SCWBD.named_buffers()``.
@@ -323,16 +395,41 @@ def observation_head_for(spec: SourceSpec) -> str:
     return "parcel_activity"
 
 
-def patterns_for_group(group: str, *, schema: Any | None = None) -> tuple[str, ...] | None:
+def patterns_for_group(
+    group: str,
+    *,
+    schema: Any | None = None,
+    family: bool = False,
+    uncertainty: bool = True,
+) -> tuple[str, ...] | None:
     """Torch-parameter globs implied by one compiler parameter group.
 
     Returns ``None`` when the binding table says nothing about the group -- the
     caller must report that, never treat it as "no parameters".  An empty tuple
     is a different statement: "this group is declared to have no trainable
     tensor".
+
+    ``family=True`` selects the region-family arm's implementation of the same
+    declared groups (:data:`FOUNDATION_FAMILY_BINDING`).
+
+    ``uncertainty=False`` says this model has no ``X_i^uncertainty`` state at
+    all, so the ``uncertainty_propagator.*`` / ``observation.*`` globs are
+    dropped rather than left to match nothing.  Two configurations reach it: the
+    ``scalar_state_ablation`` baseline (one scalar per region, no uncertainty
+    component to source a variance from) and ``state_dependent_variance=False``
+    (the un-repaired path, kept so the repair itself can be ablated).  "No
+    tensor" and "a tensor the binding fails to find" are different claims and
+    this keeps them apart.
+
+    Callers should derive both flags from the model rather than pass them by
+    hand; :func:`audit_binding` and :func:`bind_masks` do.
     """
-    if group in FOUNDATION_BINDING:
-        return FOUNDATION_BINDING[group]
+    table = {**FOUNDATION_BINDING, **FOUNDATION_FAMILY_BINDING} if family else dict(FOUNDATION_BINDING)
+    if not uncertainty:
+        drop = ("uncertainty_propagator.*", "observation.*", "family_local.uncertainty.*")
+        table = {k: tuple(p for p in v if p not in drop) for k, v in table.items()}
+    if group in table:
+        return table[group]
 
     parts = group.split(":")
     kind = parts[0]
@@ -342,13 +439,16 @@ def patterns_for_group(group: str, *, schema: Any | None = None) -> tuple[str, .
     # instead would turn a reportable hole into a crash inside the audit that is
     # supposed to describe it.
     if kind == "region" and len(parts) == 4 and parts[2] == "state":
-        return FOUNDATION_BINDING.get(REGION_STATE_KEY)
+        return table.get(REGION_STATE_KEY)
 
     if kind == "frame_edge" and len(parts) == 3 and parts[2] == "calibration":
-        return FOUNDATION_BINDING.get(FRAME_EDGE_KEY)
+        return table.get(FRAME_EDGE_KEY)
 
     if kind == "port" and len(parts) == 2:
         _, _, port_name = parts[1].partition(".")
+        port_key = f"port:{_PORT_EXEMPLAR}.{port_name}"
+        if port_key in FOUNDATION_FAMILY_BINDING and family:
+            return FOUNDATION_FAMILY_BINDING[port_key]
         if port_name in _PORT_BINDING:
             return _PORT_BINDING[port_name]
         return None
@@ -357,13 +457,13 @@ def patterns_for_group(group: str, *, schema: Any | None = None) -> tuple[str, .
         head = _head_of_source(parts[1], schema)
         if head is not None:
             key = f"observation:{head}:nuisance"
-            if key in FOUNDATION_BINDING:
-                return FOUNDATION_BINDING[key]
+            if key in table:
+                return table[key]
         return None
 
     # Last resort: the table may hold a glob (none do today, but a downstream
     # model variant may add one and this keeps the contract honest).
-    for key, pats in FOUNDATION_BINDING.items():
+    for key, pats in table.items():
         if any(ch in key for ch in "*?[") and fnmatchcase(group, key):
             return pats
     return None
@@ -1913,9 +2013,16 @@ class _Binding:
         self.declared_empty: list[str] = []
         self.empty_patterns: list[tuple[str, str, str]] = []
         problems: list[str] = []
+        # Which §11.4 arm this model is, read off the model rather than passed
+        # in: the binding must describe the tensors that exist, and the caller
+        # should not be able to assert the wrong arm.
+        family = getattr(model, "family_layout", None) is not None
+        uncertainty = getattr(model, "observation", None) is not None
 
         for group in compiled.gradient_masks.group_names:
-            pats = patterns_for_group(group, schema=compiled.schema)
+            pats = patterns_for_group(
+                group, schema=compiled.schema, family=family, uncertainty=uncertainty
+            )
             frozen_pats = frozen_patterns_for_group(group)
             if pats is None and not frozen_pats:
                 self.unbound.append(group)

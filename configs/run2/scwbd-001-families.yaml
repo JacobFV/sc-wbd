@@ -65,20 +65,23 @@
 #       Halving them would halve the waste and shrink the hippocampal code; that
 #       trade is a live question, not a settled one. See N-1's "measured cost".
 #
-# Capacity is NOT matched to the base file, and the figures this comment used to
-# carry (2,376,452 vs 1,675,373, "1.42x") were STALE -- they predate the real
-# 414-parcel prior, the nine-family partition, and Hodgkin's observation
-# interface. Regenerated 2026-08-06 against `load_anatomy()`:
+# Capacity is NOT matched to the base file. BOTH previously-recorded figure sets
+# were measured on trees that have since moved, and they disagree by 36%:
 #
-#     this file                                  1,858,597
-#     scwbd-001.yaml         (hidden: 288)       1,715,040   -7.72%
-#     scwbd-001-pooled-param-matched.yaml (314)  1,863,600   +0.27%
+#     "2,376,452 / 1,675,373  (1.42x)"   pre-uncertainty, pre-real-prior
+#     "1,858,597 / 1,715,040  (1.084x)"  Turing, wt/turing @ 34 commits behind
+#     "2,520,811 / 1,688,130  (1.49x)"   master, post-X_i^uncertainty
 #
-# The real ratio to the base file is **1.084, not 1.42**. Do not report a
-# comparison made against the base file at hidden=288: it hands this arm a 7.7%
-# capacity advantage. Use `configs/run2/scwbd-001-pooled-param-matched.yaml`,
-# which is the B1 match -- and note A1 also needs the B2 state-width match,
-# which does not exist yet.
+# Do not quote any of them. Re-measure on the merged tree before pairing the
+# arms -- see the header of configs/run2/scwbd-001-pooled-param-matched.yaml,
+# whose `hidden` is set from a live measurement and must be re-derived whenever
+# either arm's parameter count moves. A capacity claim inherited across a merge
+# is exactly the stale-branch failure that cost this launch a cycle.
+#
+# §11.4 wants an equal-capacity comparison, so whoever runs the pair must set
+# `hidden` on the control arm until `scwbd.dynamics.assert_equal_capacity`
+# passes, and A1 additionally needs the B2 state-width match, which does not
+# exist yet.
 
 base: scwbd-001.yaml
 
