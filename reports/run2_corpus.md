@@ -52,10 +52,13 @@ had, and two of its measured numbers no longer hold.
 
 Also stale in the tree, not in my plan:
 
-- `ARCHITECTURE.md` **N-1** states "414 parcels, **11 families**, `D = max d_f = 59`,
-  padding_fraction 0.523". The landed partition is **9 families** (N-6, Cajal's
-  spin test). N-1's padding arithmetic is computed against a family count that no
-  longer exists. I may not edit that file — the row is in §7 for the architect.
+- `ARCHITECTURE.md` §5b **`padded-family-state`** (formerly N-1; the architect
+  re-keyed §5b by slug at `88a6a79` because the ordinal scheme collided twice)
+  states "414 parcels, **11 families**, `D = max d_f = 59`, padding_fraction
+  0.523". The landed partition is **9 families**. That arithmetic is computed
+  against a family count that no longer exists. I may not edit that file — the
+  row is in §7 for the architect. Re-checked against `master` at `d6a2781`, i.e.
+  after the slug rework: still stale.
 - `CorpusSpec.shard_trajectories` (default 1024) is **read by nothing**. Shard
   size is `spec.batch`. A config field that looks like it controls the shard and
   does not.
@@ -568,13 +571,15 @@ Carried forward from `run2_plan.md` §11 where still true, re-measured where not
 
 **One row for `ARCHITECTURE.md` §5b, which I may not edit:**
 
-> **N-1 correction.** N-1's measured cost is computed against **11 families**
-> and `D = max d_f = 59`, giving `padding_fraction() = 0.523`. The landed
-> partition (N-6, Cajal) is **9 families**. The padding arithmetic, the ragged
+> **`padded-family-state` correction.** Its measured cost is computed against
+> **11 families** and `D = max d_f = 59`, giving `padding_fraction() = 0.523`.
+> The landed partition is **9 families**. The padding arithmetic, the ragged
 > 11,662 / padded 24,426 cell counts and the "two hippocampal parcels set `D`
 > for all 414" conclusion all need re-deriving against the 9-family layout
 > before they can be cited. The direction of the argument is probably
-> unaffected; the numbers are not current.
+> unaffected; the numbers are not current. (Verified still present on `master`
+> at `d6a2781`, after the ordinal→slug rework at `88a6a79`. `ARCHITECTURE.md:302`
+> also still reads "invented: 11 families".)
 
 ---
 
