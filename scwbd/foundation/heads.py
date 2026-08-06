@@ -81,6 +81,17 @@ class LeadField:
     #: volts per unit of the normalised gain, so the normalisation is invertible
     physical_scale: float = 1.0
     note: str = ""
+    #: Free-orientation gain, ``(n_channels, n_regions, 3)``, normalised by the
+    #: same factor as :attr:`matrix`.  ``None`` when the forward solution only
+    #: supplies a fixed-orientation field.
+    #:
+    #: This is what a 3-vector regional moment must be observed through.
+    #: Contracting it against one mean normal per parcel -- which is what
+    #: :attr:`matrix` is -- bakes the folding cancellation into the *operator*,
+    #: and that is where the difference between eta = 0.056 and eta = 0.517
+    #: lives.  A vector state observed through a scalar lead field is still in
+    #: the scalar regime.
+    matrix_vec: Tensor | None = None
 
     def is_individual(self) -> bool:
         return self.provenance.startswith("mne_forward") or "subject" in self.provenance
@@ -192,7 +203,20 @@ def build_lead_field(
     d = elec[:, None, :] - src_s[None, :, :]  # (C, N, 3)
     r = np.linalg.norm(d, axis=-1)
     r = np.maximum(r, 6.0)  # mm floor: no electrode sits on a dipole
-    L = (d * orient[None, :, :]).sum(-1) / (4 * math.pi * conductivity * r**3)
+    # Contract against the per-source orientation to get the fixed-orientation
+    # gain, and keep the uncontracted (C, N, 3) tensor beside it.
+    #
+    # The contraction is where the 9x is lost.  A parcel's contribution to a
+    # sensor is the *vector* sum of its dipoles; summing them against one mean
+    # normal bakes in the folding cancellation irreversibly.  Gauss measured
+    # eta = 0.056 of the whitened lead field for a scalar-per-parcel support
+    # against 0.517 for a 3-vector, and Cajal corroborated geometrically that
+    # subdividing past 400 parcels buys at most a further 1.29x.  Keeping the
+    # three components makes the cancellation a property of the *data* rather
+    # than of the operator.
+    kernel = 1.0 / (4 * math.pi * conductivity * r**3)  # (C, N)
+    L_vec = d * kernel[..., None]  # (C, N, 3) -- free orientation
+    L = (d * orient[None, :, :]).sum(-1) * kernel
     # Two scales, both recorded, neither hidden: `physical_scale` maps the
     # normalised gain back to volts per unit source current, and the matrix
     # itself is normalised so that L @ N(0,I) has unit variance. Without the
@@ -201,6 +225,10 @@ def build_lead_field(
     physical_scale = float(np.abs(L).max() / 1e-5)  # V per unit source amplitude
     gain = float(np.sqrt((L**2).sum(axis=1).mean()))
     L = L / max(gain, 1e-30)
+    # Normalise the free-orientation tensor by the SAME gain, so a 3-vector
+    # moment and a scalar amplitude are in the same units and a run may switch
+    # between them without a silent rescale.
+    L_vec = L_vec / max(gain, 1e-30)
     return LeadField(
         torch.as_tensor(L, dtype=torch.float32, device=dev),
         tuple(kept),
@@ -213,6 +241,7 @@ def build_lead_field(
             "homogeneous conducting sphere with electrodes at real 10-10 montage "
             "positions. Supports no source-localisation or individual-anatomy claim."
         ),
+        matrix_vec=torch.as_tensor(L_vec, dtype=torch.float32, device=dev),
     )
 
 
