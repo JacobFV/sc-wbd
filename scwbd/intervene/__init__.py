@@ -56,6 +56,15 @@ from .base import (
     WaveformSpec,
     simulation_only_notice,
 )
+from .impulse_response import (
+    UNTRAINED_PREDICTION_NOTICE,
+    ImpulseResponse,
+    ParcelDrive,
+    build_latent_drive,
+    parcel_drive,
+    predict_impulse_response,
+    pulse_time_course,
+)
 from .safety import (
     CompilerRefusal,
     Defer,
@@ -100,6 +109,14 @@ __all__ = [
     "TargetEngagement",
     "NetworkEffect",
     "ClinicalUtility",
+    # TMS impulse response (forward model)
+    "UNTRAINED_PREDICTION_NOTICE",
+    "ImpulseResponse",
+    "ParcelDrive",
+    "parcel_drive",
+    "pulse_time_course",
+    "build_latent_drive",
+    "predict_impulse_response",
     # safety / A_safe
     "CompilerRefusal",
     "SafetyLimits",
