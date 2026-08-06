@@ -992,3 +992,44 @@ Two things make this the most instructive entry in the register:
 it, rather than recalled it?** And prefer rules that cannot be complied with
 approximately — the real fix here is to capture the SHA at process start, so the
 binding moment is not a race against the author's own good intentions.
+
+---
+
+## Entry: a documented failure mode is not a check
+
+`scwbd/foundation/anatomy.py`. Found by 🗺️ Ptolemy, in my file, after I had
+already declared the anatomy adapter fixed.
+
+`_from_agent_c` looked up the principal gradient under three attribute names, and
+on miss substituted `torch.zeros(n)`. The real `BrainPrior` keeps it in
+`maps["fc_gradient1"]`, so the lookup always missed. Downstream,
+`ei = theta[:,2] * ei_prior * (1 + theta[:,3] * grad)` — a zero gradient cancels
+`theta[:,3]` algebraically, making `ei_gradient` **unidentifiable by
+construction** on all five backends (verified: `max|Δparam| = 0.000000` for each).
+
+**Eleven lines above it, I had written:** *"A prior that is absent must not
+silently become a constant: that is how the connectome defect would have survived
+a rename-only fix."* I applied that rule to E/I and to timescale, made both raise,
+and left the third case doing exactly what the comment forbids.
+
+`simulate.py`'s `ParameterMappingError` docstring also names this failure mode
+explicitly. **The guard was written and the case it describes was left live one
+line away.**
+
+Two lessons, and the second is the one that generalises:
+
+1. **A comment stating a rule is evidence the author knew the rule, not evidence
+   the code follows it.** Both artefacts here — my comment and the
+   `ParameterMappingError` docstring — read as protection while providing none.
+   Grep for the *pattern* the rule forbids (`else torch.zeros`), not for the rule.
+2. **Fixing N−1 instances of a defect class feels like fixing the class.** I found
+   three silent-constant substitutions, fixed two, and reported the adapter fixed.
+   The completed work supplied the sense of completion. When a defect has a
+   *shape*, enumerate every site mechanically before declaring it closed — the
+   count is the deliverable, not the fix.
+
+**Related near-miss, recorded because it cuts the other way:** main relayed this
+as explaining one of my six bad SBC parameters. It explains none — this run used
+the synthetic fallback, whose gradient is a genuine z-scored map (std 1.000). An
+exculpation that does not apply is not a smaller comfort than one that does; it is
+a false one, and it is harder to refuse because refusing costs you something.

@@ -1,0 +1,33 @@
+Fix for run 2 -- DO NOT APPLY WHILE TRAINING IS LIVE (checkpoint git_sha would
+stop describing the running source). Apply after Stage V completes, before the
+corpus rebuild.
+
+--- a/scwbd/foundation/anatomy.py
++++ b/scwbd/foundation/anatomy.py
+@@
+-    grad = T("gradient", "gradient_prior", "principal_gradient")
++    grad = T("gradient", "gradient_prior", "principal_gradient")
++    if grad is None:
++        # The real BrainPrior carries it in a MapSet, not as an attribute:
++        # scwbd/anatomy/maps.py:189 registers "fc_gradient1".
++        maps = getattr(obj, "maps", None)
++        if maps is not None:
++            for key in ("fc_gradient1", "gradient1", "principal_gradient"):
++                try:
++                    m = maps[key]
++                except (KeyError, TypeError):
++                    continue
++                vals = getattr(m, "values", m)
++                grad = torch.as_tensor(vals, device=device, dtype=torch.float32)
++                break
++    if grad is None:
++        raise AttributeError(
++            "BrainPrior exposes no principal gradient: tried attributes "
++            "gradient/gradient_prior/principal_gradient and maps["
++            "'fc_gradient1'|'gradient1'|'principal_gradient']. A gradient of "
++            "zeros makes theta[:,3] (ei_gradient) unidentifiable by "
++            "construction -- see simulate.py `ei = ... (1 + theta3 * grad)`."
++        )
+@@
+-        gradient=grad if grad is not None else torch.zeros(n, device=device),
++        gradient=grad,

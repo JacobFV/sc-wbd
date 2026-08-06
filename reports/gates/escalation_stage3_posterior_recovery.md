@@ -128,3 +128,78 @@ No changes. Stage IV started 06:59 unaltered; ETA ~08:33 against the 14:22
 deadline. I am **not** proposing run-2 changes off this diagnostic either — the
 final evaluation is the correct trigger, and acting on a diagnostic I promised not
 to act on would erode the commitment through the side door.
+
+---
+
+# ADDENDUM A — Ptolemy's `gradient` defect explains **zero** of my six, not one
+
+🗺️ Ptolemy found that `AnatomyPrior.gradient` falls back to `torch.zeros(n)` in
+`_from_agent_c`, and measured that flipping `theta[:,3]` (`ei_gradient`) then moves
+nothing. Main relayed it as *"one of six explained, five not."*
+
+**I verified it and the scope is narrower still. It explains none of mine.**
+
+## The defect is real, and it is mine
+
+`scwbd/foundation/anatomy.py:324` — `gradient=grad if grad is not None else
+torch.zeros(n, device=device)`. The lookup at line 274 tries `gradient`,
+`gradient_prior`, `principal_gradient`. `BrainPrior` exposes none of those: the
+map lives in `maps["fc_gradient1"]` (`scwbd/anatomy/maps.py:189`), so the lookup
+always misses and the prior always becomes a constant.
+
+The mechanism is exact. `simulate.py:187`:
+`ei = (theta[:,2:3] * ei_prior * (1.0 + theta[:,3:4] * grad)).clamp(...)`.
+With `grad == 0`, `theta[:,3]` cancels algebraically. Measured across all five
+backends, `max|param(θ₃=−0.5) − param(θ₃=+0.5)|`:
+
+| backend | real-prior path (grad=0) | this run's fallback |
+|---|---|---|
+| wilson_cowan | **0.000000** | 2.100 |
+| jansen_rit | **0.000000** | 0.596 |
+| wong_wang | **0.000000** | 2.100 |
+| stuart_landau | **0.000000** | 12.588 |
+| linear_gaussian | **0.000000** | 0.630 |
+
+**And I wrote the principle it violates eleven lines above it** (anatomy.py:261):
+*"A prior that is absent must not silently become a constant: that is how the
+connectome defect would have survived a rename-only fix."* I fixed E/I and
+timescale to raise, and left `gradient` doing precisely the thing the comment
+forbids.
+
+## Why it does not explain my `ei_gradient` result
+
+The zeros path is `_from_agent_c` — the **real** prior adapter. **This run never
+used it.** `anatomy_force_fallback: true`, and the corpus index records
+`anatomy.n_regions: 454`, which is the synthetic fallback (the real prior is 414
+parcels). The fallback constructs a genuine z-scored gradient: std **1.000**,
+range **[−1.828, 1.829]**, `allzero=False`.
+
+So in the corpus that trained this posterior, `ei_gradient` **did** affect the
+observations, on every backend, by the margins in the right-hand column.
+
+**Corrected scope: zero of six explained.** `ei_gradient` (R² 0.045, z_sd 1.48,
+edge mass 0.311) is *not* accounted for by an unidentifiable-by-construction
+parameter. Neither is `log_sigma` (−0.447) nor `log_G` (−0.089). The Stage III
+finding stands entirely unmitigated.
+
+**I am flagging this because it runs against me, not for me.** Main's framing gave
+me one parameter's worth of exculpation and I am declining it, for the same reason
+I declined the G5 overreach in the other direction: an explanation that does not
+apply is not a smaller comfort than one that does, it is a false one. If Popper
+records "one of six was a data-generation defect," that is wrong in my favour.
+
+## What the defect *does* block
+
+Run 2. The rebuild would use the **real** prior, where `grad == 0` — baking an
+unidentifiable parameter into 37,888 labelled trajectories. Ptolemy is right that
+the fix must land first. It is my file; the patch is at
+`reports/training/patch_gradient_fallback.diff` and is **deliberately not applied**
+— see below.
+
+## Why the fix is written but not applied
+
+Applying it would change `scwbd/` while the run is live. The running process
+already holds the old module, but `save_checkpoint` stamps `git_sha()` at save
+time, so every remaining Stage IV/V checkpoint would carry a SHA whose source
+differs from the code that produced it. **That is the provenance violation I
+already committed once in this run.** The patch lands after Stage V.
