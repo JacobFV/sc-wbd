@@ -21,9 +21,24 @@ individual parameters.
 **Is not:** a validated digital twin of any specific person, a clinical device,
 or evidence that any admitted operator is neurally realized. Per
 `thesis_contract.tex` §0.6 the build order stops at item 5 (empirical
-subsystem). **Item 6 (prospective human TMS/tFUS) is out of scope for this
-artifact, and no agent may implement a stimulation controller, a device command
-path, or a dosing computation for a person.**
+subsystem). **No agent may implement a stimulation controller, a device command
+path, or a dosing computation for a person** — that clause is enforced by there
+being no such surface to reach, and it is the part of this sentence that is a
+property of the software.
+
+Item 6 is *not reached yet*, which is a different statement from "out of
+scope". §0.6 item 6 reads: "Only after solver, field, calibration, and causal
+recovery gates pass, instantiate the running TMS or tFUS case **under an
+approved protocol**." That is a conjunction — upstream technical gates *and* an
+approved protocol — and the unmet half is the **technical** one. Specifically,
+per `reports/gates/SUMMARY.md`: the *field* gates have in fact passed (`N3`,
+`N4`, `N6`, `N8`), but `N5` (solver suite) and `N2` (boundary consistency) are
+`COULD_NOT_RUN`, G4's actual claim — that perturbation reduces
+non-identifiability — remains **unexercised**, and there is no trained
+checkpoint. Text asserting instead that item 6 is blocked because "there is no
+IRB, no consent, no participants" was misquoting this contract, and pointed at
+a blocker nobody here can clear instead of the ones they can; see
+`reports/intervene/authorization.md`.
 
 The reason is *capability*, not a hard-coded belief about anyone's paperwork.
 Governance is declared, recorded and carried in provenance: R11 admits a
@@ -288,6 +303,9 @@ it makes the narrowing visible so it can be challenged.
 | **N-3** | §4.2 (arbitrary source-native resolution lattices) | Run 2 declares **one** validated fine/coarse pair with restriction/prolongation, not a general lattice. | One pair tested properly beats a lattice declared and untested. It is also the minimum that gives R02 something to check. | scheduled |
 | **N-4** | §6.1 (per-regional-family phenotype pretraining across all listed modalities) | Stage I pretrains only the families for which we hold data. | We do not have retinotopic, interoceptive, or nociceptive corpora. Families without data are initialised from the prior and **declared untrained** in the manifest. | permanent for run 2 |
 | **N-5** | §5 (competing neuromodulator hypotheses) | Neuromodulation enters as θ-conditioned gain only; no receptor-, target-, and timescale-resolved control fields. | The Hansen receptor maps give spatial density, not dynamics. Modelling the dynamics would be unearned. | permanent for run 2 |
+| **N-6** | `body.tex` §7.4 ("independently validated device, exposure, and protocol limits define the feasible set") | `A_safe` binds only on the axes a proposal **supplies**. An omitted declared axis is reported in `unchecked_declared_axes`, not violated — except for a plan declaring `application="live"`, where every declared axis for the modality must be covered or the plan refuses. | Most axes have no producer for most proposals, so requiring full coverage everywhere would make every simulated study refuse and the rule would be switched off. Two tFUS axes (`cem43_minutes`, `temperature_rise_c`) have **no producer anywhere in `scwbd`**, so under uniform-omission a live tFUS plan was silently unchecked on thermal dose. Coverage is therefore enforced exactly where the consequence is physical. | permanent unless a thermal producer lands; delete the exemption then |
+| **N-7** | `body.tex` §7.2 (prospective targeting for a new person) | A plan declaring intent to drive real hardware or to be applied to a person is refused by `scwbd/intervene/deployment.py` unless a record exists that the preliminary review **occurred** with an approving outcome. A valid `AuthorizationRecord` is necessary and explicitly not sufficient. | The review gating live use is scheduled for 2026-08-25 and has not happened. The gate is a lower bound on a review *record*, never a calendar comparison: it does not open when that date passes, and `tests/intervene/test_deployment.py::TestTheDateIsNotAnUnlock` fires that case at a 2027 clock to prove it. | until a completed-review record exists |
+| **N-8** | `body.tex` §7.4 ("the controller may choose a safer measurement or reversible probe") | Reversibility is *required* of a live plan, not merely available to the controller. | It sat in `a_safe.toml` as `[protocol.reversibility] required = true` with no `min`/`max`, so `SafetyLimits.load` skipped it and nothing ever read it — a cited, reviewed, decorative guard. Moved to `[decision.reversibility]`, read, enforced on the live path, and fired by a test. Enforcing it on the simulated path would refuse most of this repository. | permanent |
 
 ---
 

@@ -208,11 +208,29 @@ class TestTheSimulationOnlyNoticeTravels:
             notice = getattr(obj, "notice", "")
             assert "SIMULATION ONLY" in notice
 
-    def test_the_notice_names_the_missing_approvals(self):
+    def test_the_notice_claims_only_what_the_code_enforces(self):
+        """The notice must describe *this software*, never anyone's paperwork.
+
+        This test used to assert the opposite: that the notice contained the
+        phrases "no consent", "no participants" and "no device".  Those are
+        claims about the world, they were false, and no code checked any of
+        them -- ``scwbd.schema.authorization`` gates prospective human work on
+        a validated declaration and admits a complete one.  A test that pins a
+        false claim in place is worse than no test, so it is inverted here: the
+        notice may not reassert them, and must instead name the properties of
+        the software that are actually enforced.
+        """
         from scwbd.runtime import SIMULATION_ONLY_NOTICE
 
-        for phrase in ("no consent", "no participants", "no device"):
-            assert phrase in SIMULATION_ONLY_NOTICE
+        for banned in ("no consent", "no participants", "no ethics approval"):
+            assert banned not in SIMULATION_ONLY_NOTICE, (
+                f"the notice asserts {banned!r}, which is a claim about the "
+                "world that no code in this repository checks"
+            )
+        # What it must say instead, each clause enforced somewhere:
+        assert "not a device driver" in SIMULATION_ONLY_NOTICE
+        assert "not a dosing" in SIMULATION_ONLY_NOTICE
+        assert "no device command" in SIMULATION_ONLY_NOTICE
 
     def test_nothing_can_be_flagged_as_authorized_for_human_use(
         self, service, head, nominal_pose
