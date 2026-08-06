@@ -1,0 +1,13 @@
+[gpu cap] {'applied': True, 'device': 'NVIDIA GB10', 'total_gib': 121.6270751953125, 'cap_gib': 18.0, 'fraction': 0.14799336390433665, 'mechanism': 'torch.cuda.set_per_process_memory_fraction (allocator-enforced)', 'note': 'host cgroup MemoryMax does not bound CUDA allocations on unified memory; verify with nvidia-smi --query-compute-apps'}
+[preregistered] reports/identifiability/manifest.json
+[regime reference]
+  eeg_only                         rank=6 cond=1.17e+03 lmin_nonprior=0 (503s)
+  fmri_only                        rank=7 cond=12.3 lmin_nonprior=6.042e-22 (283s)
+  joint_native                     rank=8 cond=1.17e+03 lmin_nonprior=2.598e-08 (526s)
+/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/infer/identifiability.py:534: RuntimeWarning: invalid value encountered in scalar divide
+  np.std((tau_hat - tau_true) ** 2, ddof=1)
+  joint_resampled                  rank=9 cond=12.4 lmin_nonprior=2.55e-08 (109s)
+  joint_native_impulse             rank=8 cond=8.92e+03 lmin_nonprior=6.188e-08 (362s)
+  joint_resampled_exactmodel       rank=9 cond=12.4 lmin_nonprior=2.55e-08 (25s)
+  joint_native_impulse_matched     rank=8 cond=9.64e+03 lmin_nonprior=9.868e-11 (54s)
+[regime weak_coupling_long_delay]

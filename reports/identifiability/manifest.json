@@ -114,7 +114,7 @@
   "environment": {
     "cuda_available": true,
     "device_name": "NVIDIA GB10",
-    "git_revision": "32ca47e5b46d76b271984bd60ce34dbc9b4be0fc",
+    "git_revision": "b8820f081b2275e1e40d483e426c481eff0db66c",
     "numpy": "2.5.1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "python": "3.12.13",
@@ -125,18 +125,30 @@
       "cmd": "benchmark",
       "device": null,
       "dtype": "float64",
-      "epoch_seconds": 6.0,
-      "mc_replicates": 192,
-      "n_epochs": 32,
-      "newton": 4,
-      "no_monte_carlo": false,
+      "epoch_seconds": 3.0,
+      "gpu_gib": 18.0,
+      "mc_replicates": 256,
+      "n_epochs": 30,
+      "newton": 3,
+      "no_monte_carlo": true,
       "no_profiles": false,
       "no_recovery": false,
       "out": "reports/identifiability",
       "primary_only": false,
+      "profile_grid": 5,
+      "profile_newton": 1,
       "regimes": null,
-      "replicates": 48,
+      "replicates": 24,
       "seed": 20260805
+    },
+    "gpu_memory_cap": {
+      "applied": true,
+      "cap_gib": 18.0,
+      "device": "NVIDIA GB10",
+      "fraction": 0.14799336390433665,
+      "mechanism": "torch.cuda.set_per_process_memory_fraction (allocator-enforced)",
+      "note": "host cgroup MemoryMax does not bound CUDA allocations on unified memory; verify with nvidia-smi --query-compute-apps",
+      "total_gib": 121.6270751953125
     },
     "profile_and_monte_carlo_regime": "reference",
     "recovery_designs": [
@@ -152,15 +164,15 @@
     "dt_bold_s": 1.0,
     "dt_eeg_s": 0.001,
     "dtype": "float64",
-    "epoch_seconds": 6.0,
+    "epoch_seconds": 3.0,
     "hrf_stages": 8,
     "n_delay_taps": 26,
-    "n_epochs": 32,
+    "n_epochs": 30,
     "state_dimension": 105
   },
   "model_designation": "SC-WBD-001-beta",
-  "n_monte_carlo_fisher_replicates": 192,
-  "n_recovery_replicates": 48,
+  "n_monte_carlo_fisher_replicates": 256,
+  "n_recovery_replicates": 24,
   "non_goals": [
     "no whole-brain training",
     "no real datasets",
@@ -299,5 +311,5 @@
   "seed": 20260805,
   "status": "preregistered_before_run",
   "thesis_reference": "thesis_contract.tex sec. 0.3 (T1-T4), sec. 0.6 item 2, sec. 11",
-  "written_at": "2026-08-05T23:27:25-0700"
+  "written_at": "2026-08-06T03:12:56-0700"
 }

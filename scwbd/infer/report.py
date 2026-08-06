@@ -460,8 +460,13 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
         vals, errs = [], []
         for d in design_names:
             rec = rr["designs"][d].get("recovery")
-            vals.append(rec["delay_error"]["rmse_seconds"] * 1e3 if rec else np.nan)
-            errs.append(abs(rec["delay_error"].get("rmse_seconds_se", 0.0)) * 1e3 if rec else 0)
+            if rec:
+                vals.append(float(rec["delay_error"]["rmse_seconds"] or 0.0) * 1e3)
+                se = rec["delay_error"].get("rmse_seconds_se")
+                errs.append(abs(float(se)) * 1e3 if se is not None else 0.0)
+            else:
+                vals.append(np.nan)
+                errs.append(0.0)
         ax.bar(np.arange(len(design_names)) + i * width, vals, width, yerr=errs,
                capsize=2, label=rn)
     ax.set_xticks(np.arange(len(design_names)) + 0.4 - width / 2)
@@ -568,6 +573,13 @@ def write_report(
     for rname, rr in results["regimes"].items():
         A(f"\n## Regime `{rname}`\n")
         A(f"{rr['description']}\n")
+        if rname in decision.get("delay_degenerate_regimes", []):
+            A("> **Delay comparison is degenerate in this regime.** The true "
+              "conduction delay coincides with the prior mean, so a design that "
+              "learns *nothing* about the delay leaves it at the prior mean and "
+              "scores a near-perfect delay error. Delay evidence in this regime "
+              "is not discriminating; the two held-out regimes place the delay "
+              "away from the prior mean for exactly this reason.\n")
         nat = rr["eta_true_natural"]
         A("Truth: " + ", ".join(f"`{k}`={_fmt(v)}" for k, v in nat.items()) + "\n")
         A("\n### T4 expected Fisher information "
@@ -600,7 +612,7 @@ def write_report(
             A("\n### Recovery (MAP + observed-information intervals)\n")
             A("| design | delay RMSE (ms) | θ RMSE (prior sd) | "
               + " | ".join(f"cov `{p}`" for p in PREREGISTERED_SUBSET)
-              + " | converged |")
+              + " | median Newton decrement |")
             A("|---|---|---|" + "---|" * (len(PREREGISTERED_SUBSET) + 1))
             for d, v in rr["designs"].items():
                 rec = v.get("recovery")
@@ -615,7 +627,13 @@ def write_report(
                     )
                 A(f"| `{d}` | {_fmt(rec['delay_error']['rmse_seconds'] * 1e3)} | "
                   f"{_fmt(trm)} | " + " | ".join(cells) + " | "
-                  f"{_fmt(rec['converged_fraction'])} |")
+                  f"{_fmt(rec['optimiser'].get('median_newton_decrement'))} |")
+            A("\nThe estimator is a fixed-budget damped Newton run from the prior "
+              "mean, preconditioned by the expected information; the Newton "
+              "decrement is the remaining distance to the MAP in posterior "
+              "standard deviations.  Coverage is a property of *that* estimator "
+              "and is measured directly, so a decrement above zero is a reported "
+              "fact rather than an unstated approximation.\n")
             A("\nCoverage cells are empirical / [Wilson 95% interval]; "
               f"n = {next(iter(rr['designs'].values())).get('recovery', {}).get('n_replicates', '?')} replicates.\n")
         if any("fisher_monte_carlo_complete" in v for v in rr["designs"].values()):

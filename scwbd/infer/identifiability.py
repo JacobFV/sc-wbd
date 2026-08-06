@@ -530,9 +530,14 @@ def recover(
         "mean_estimate_seconds": float(tau_hat.mean()),
         "bias_seconds": float(tau_hat.mean() - tau_true),
         "rmse_seconds": float(np.sqrt(((tau_hat - tau_true) ** 2).mean())),
-        "rmse_seconds_se": float(
-            np.std((tau_hat - tau_true) ** 2, ddof=1)
-            / (2 * np.sqrt(((tau_hat - tau_true) ** 2).mean()) * math.sqrt(n_replicates))
+        "rmse_seconds_se": (
+            float(
+                np.std((tau_hat - tau_true) ** 2, ddof=1)
+                / (2 * np.sqrt(((tau_hat - tau_true) ** 2).mean())
+                   * math.sqrt(n_replicates))
+            )
+            if float(((tau_hat - tau_true) ** 2).mean()) > 0
+            else 0.0
         ),
         "mad_seconds": float(np.abs(tau_hat - tau_true).mean()),
     }
