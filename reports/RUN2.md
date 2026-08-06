@@ -102,8 +102,22 @@ than draws, and a gradient clip computed over the **combined** model+posterior
 parameter set rather than the posterior alone. Either could be it. Neither has
 been shown to be.
 
-**The posterior LR/decay change is the best available hypothesis, not a
-demonstrated fix**, and it is recorded as such.
+**And the probe cannot test the fix either.** Both arms are indistinguishable:
+
+```
+0.10 / wd 0        [8.03, 7.29, 8.55, 7.46]   0 rejections / 1200
+0.02 / wd 1e-2     [8.01, 7.27, 8.55, 7.47]   0 rejections / 1200
+```
+
+An instrument that cannot reproduce a failure cannot evaluate a fix for it.
+That is the same lesson as 📐 Fisher's corollary about the linear-Gaussian
+surrogate, arriving from the other direction: there, the failure was
+*unrepresentable* in the test model; here, it is representable but not
+*reachable*.
+
+**So the posterior LR/decay change is the best available hypothesis, not a
+demonstrated fix, and the production run is the only test that exists.** It is
+recorded as such rather than presented as a repair.
 
 **What actually found all of this was the rejection *counter*, not the bound.**
 A guard that returns a boolean would have zeroed the posterior loss for an
