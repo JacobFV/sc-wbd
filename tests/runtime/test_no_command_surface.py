@@ -23,6 +23,7 @@ from pathlib import Path
 import pytest
 
 import scwbd.runtime as runtime
+from scwbd.runtime.admission import CONSUMER_STANDING_INVARIANTS
 
 #: Verb stems that would indicate an actuation or command seam.
 FORBIDDEN_SYMBOL_TOKENS = (
@@ -77,6 +78,15 @@ ALLOWED_EXCEPTIONS = {
     # nothing so far; keep this empty and make it hard to add to
 }
 
+#: Attribute names that *name* a command authority in order to assert it is
+#: absent.  ``robot_command_authority`` is a field of
+#: :class:`~scwbd.runtime.admission.ConsumerInvariants` whose only permitted
+#: value is ``False`` -- constructing it any other way raises.  Naming a
+#: capability in order to refuse it is the opposite of exposing it, and the
+#: test below proves the refusal rather than trusting this list: an entry here
+#: is only honoured if the name is a standing invariant pinned to ``False``.
+NEGATED_INVARIANT_ATTRS = frozenset(CONSUMER_STANDING_INVARIANTS)
+
 
 def _runtime_modules() -> list[str]:
     root = Path(runtime.__file__).parent
@@ -99,9 +109,29 @@ class TestThePublicSurfaceHasNoCommandEntryPoint:
                 for attr in vars(obj):
                     if attr.startswith("_"):
                         continue
+                    if attr in NEGATED_INVARIANT_ATTRS:
+                        # Named in order to be refused; proven below.
+                        continue
                     if any(token in attr.lower() for token in FORBIDDEN_SYMBOL_TOKENS):
                         offenders.append(f"{module_name}.{name}.{attr}")
         assert not offenders, f"actuation-shaped symbols found: {offenders}"
+
+    @pytest.mark.parametrize("invariant", sorted(CONSUMER_STANDING_INVARIANTS))
+    def test_each_excused_invariant_name_is_actually_pinned_false(self, invariant):
+        """The exemption above is only sound if the flag cannot be set true.
+
+        Without this, ``NEGATED_INVARIANT_ATTRS`` would be a way to smuggle a
+        real command-authority flag past the surface test by naming it after an
+        invariant.  So the exemption is not taken on trust: every excused name
+        must refuse construction in the widened state.
+        """
+        from scwbd.runtime import ConsumerInvariants, ConsumerInvariantViolation
+
+        assert CONSUMER_STANDING_INVARIANTS[invariant] is False
+        assert getattr(ConsumerInvariants(), invariant) is False
+        with pytest.raises(ConsumerInvariantViolation) as exc:
+            ConsumerInvariants(**{invariant: True})
+        assert invariant in str(exc.value)
 
     def test_the_targeting_service_surface_is_exactly_reads_and_refusals(self):
         from scwbd.runtime import TargetingService
@@ -118,11 +148,33 @@ class TestThePublicSurfaceHasNoCommandEntryPoint:
         from scwbd.runtime import ServedModel
 
         methods = {n for n in vars(ServedModel) if not n.startswith("_")}
-        assert methods == {"load", "handshake", "describe", "warm_up", "evaluate_batch"}
+        # ``port_contract`` is a read: it returns the model's own declaration of
+        # what it exports, so a consumer can read state by name instead of by
+        # index.  ``admission`` is the export-gate verdict this service was
+        # loaded under, carried so a consumer can record it.  Neither reaches
+        # anything downstream of the registered external scalp target.
+        assert methods == {
+            "load",
+            "handshake",
+            "describe",
+            "warm_up",
+            "evaluate_batch",
+            "port_contract",
+            # ``predictor`` returns the loaded model. It is a read of an
+            # artifact on disk and produces predictions; it reaches no device,
+            # no transport and no controller, and it sits strictly upstream of
+            # the registered external scalp target like everything else here.
+            "predictor",
+            # a dataclass field with a default, hence also a class attribute
+            "admission",
+        }
         assert set(ServedModel.__dataclass_fields__) == {
             "targeting",
             "provenance",
             "checkpoint",
+            "admission",
+            # private cache of the reconstructed model; excluded from equality
+            "_predictor",
         }
 
     def test_no_constructor_accepts_a_command_transport(self):

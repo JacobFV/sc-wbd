@@ -27,13 +27,26 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import TYPE_CHECKING, Any, Iterable, Mapping
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from .ports import PortContract
+    from .predict import LoadedModel
 
 import torch
 
 from ._compat import ClaimManifest, Pose
+from .admission import (
+    SIDECAR_NAME,
+    AdmissionVerdict,
+    CheckpointClaims,
+    CheckpointRefused,
+    ConsumerInvariants,
+    ExportPurpose,
+    admit,
+)
 from .backends import CoilSpec
 from .head import HeadModel, spherical_phantom
 from .provenance import (
@@ -51,6 +64,7 @@ from .types import PoseEvaluation, PoseRequest
 __all__ = [
     "CheckpointNotFound",
     "CheckpointRecord",
+    "CheckpointRefused",
     "discover_checkpoint",
     "coil_pose_over_region",
     "ServedModel",
@@ -66,8 +80,29 @@ __all__ = [
 #: with a ``ClaimManifest`` alongside."
 DEFAULT_CHECKPOINT_ROOT = Path("checkpoints")
 
-_WEIGHT_NAMES = ("weights.pt", "model.pt", "model.safetensors", "state_dict.pt")
-_MANIFEST_NAMES = ("claim_manifest.json", "claim.json", "manifest.json")
+#: Filenames that count as "there are trained weights here".
+#:
+#: ``last.pt`` and the ``stage_*.pt`` names are what ``scwbd.foundation.train``
+#: actually writes.  They were **missing** from this tuple until 2026-08-06,
+#: with the consequence that ``discover_checkpoint`` looked straight at the real
+#: run-1 checkpoint directory and reported ``found=False,
+#: weights_status="analytic_backend"``.  Every downstream guard that keys on
+#: ``weights_status`` therefore passed for the wrong reason: not because the
+#: artifact was correctly classified, but because it was invisible.  A guard
+#: that is green because its input never arrives is not a guard.
+_WEIGHT_NAMES = (
+    "weights.pt",
+    "model.pt",
+    "model.safetensors",
+    "state_dict.pt",
+    "last.pt",
+    "stage_V_individual.pt",
+    "stage_IV_assembly.pt",
+    "stage_III_sliced.pt",
+    "stage_II_interface.pt",
+    "stage_I_regional.pt",
+)
+_MANIFEST_NAMES = (SIDECAR_NAME, "claim.json", "manifest.json")
 
 
 class CheckpointNotFound(FileNotFoundError):
@@ -116,6 +151,27 @@ class CheckpointRecord:
             "claim_class": "surrogate",
             "posterior_class": "pseudo",
         }
+
+    def admission_claims(self) -> CheckpointClaims:
+        """The admission-relevant facts this checkpoint states about itself.
+
+        Read from the sidecar, never inferred from the weights.  A checkpoint
+        with no sidecar yields :meth:`CheckpointClaims.absent`, whose every
+        field is the refusing value -- because "the artifact did not say" and
+        "the artifact said yes" must not be the same input to a gate.
+        """
+        if self.manifest_path is None:
+            claims = CheckpointClaims.absent()
+        else:
+            raw = json.loads(self.manifest_path.read_text())
+            claims = CheckpointClaims.from_manifest(raw)
+        # weights_trained is a fact about the filesystem, not a claim the
+        # manifest gets to make about itself.
+        return replace(
+            claims,
+            weights_trained=self.weights_status == "trained",
+            checkpoint_present=self.root is not None,
+        )
 
 
 def _sha256(path: Path) -> str:
@@ -203,6 +259,14 @@ class ServedModel:
     targeting: TargetingService
     provenance: ModelProvenance
     checkpoint: CheckpointRecord
+    #: The admission decision this service was loaded under.  Always present:
+    #: there is no path to a ``ServedModel`` that did not pass one.
+    admission: AdmissionVerdict | None = None
+    #: Lazily-built :class:`~scwbd.runtime.predict.LoadedModel`.  Not part of
+    #: the value identity of this record -- it is a cache of an expensive
+    #: reconstruction, and two ``ServedModel``s that loaded the same checkpoint
+    #: are the same thing whether or not either has been asked to run it.
+    _predictor: Any = field(default=None, compare=False, repr=False)
 
     # -- loading -----------------------------------------------------------
     @classmethod
@@ -213,12 +277,24 @@ class ServedModel:
         device: str = "cuda",
         checkpoint_root: Path | str = DEFAULT_CHECKPOINT_ROOT,
         require_checkpoint: bool = False,
+        purpose: ExportPurpose = "simulation",
+        invariants: ConsumerInvariants | None = None,
         head_default: HeadModel | None = None,
         coil: CoilSpec | None = None,
         config: TargetingConfig | None = None,
         **service_kwargs: Any,
     ) -> "ServedModel":
         """Build the serving path and record exactly what backs it.
+
+        ``purpose`` is the export gate (:mod:`scwbd.runtime.admission`) and it
+        is checked **before** the service is constructed, so an inadmissible
+        checkpoint never becomes a usable object.  The default,
+        ``"simulation"``, is the only purpose that asks nothing of the
+        checkpoint's claims -- a simulation reported as a simulation needs no
+        artifact to be valid.  Every other purpose, and in particular the live
+        ones, must survive :func:`~scwbd.runtime.admission.admit` and will
+        raise :class:`~scwbd.runtime.admission.CheckpointRefused` naming the
+        conditions that failed.
 
         ``ModelProvenance.device`` records where the field solve **actually
         runs**, which is not always what was asked for: CUDA may be
@@ -229,6 +305,15 @@ class ServedModel:
         asserted away.
         """
         record = discover_checkpoint(model, root=checkpoint_root, require=require_checkpoint)
+
+        # -- the gate, before anything is built ----------------------------
+        verdict = admit(
+            record.admission_claims(),
+            purpose=purpose,
+            invariants=invariants,
+            designation=f"{MODEL_DESIGNATION} ({model})",
+        )
+
         resolved_device = device
         if device.startswith("cuda") and not torch.cuda.is_available():
             resolved_device = "cpu"
@@ -243,6 +328,7 @@ class ServedModel:
         compute_device = str(
             getattr(service.efield_backend, "device", resolved_device)
         )
+        contract_digest, exported = _declared_ports(record)
         prov = replace(
             service.provenance,
             model_designation=MODEL_DESIGNATION,
@@ -250,6 +336,8 @@ class ServedModel:
             checkpoint_sha256=record.weights_sha256,
             weights_status=record.weights_status,
             device=compute_device,
+            port_contract_digest=contract_digest,
+            exported_ports=exported,
             notes={
                 **dict(service.provenance.notes),
                 "requested_device": device,
@@ -261,6 +349,24 @@ class ServedModel:
                 "manifest_path": (
                     str(record.manifest_path) if record.manifest_path else ""
                 ),
+                "export_purpose": purpose,
+                "admission_hash": verdict.content_hash(),
+                "admission_conditions": {
+                    c.code: "pass" if c.passed else "FAIL"
+                    for c in verdict.conditions
+                },
+                # The labels are the point (ARCHITECTURE.md Sec. 7a: ship the
+                # artifact and label it). They are carried in the provenance so
+                # a consumer that logs provenance logs them without having to
+                # know they exist, and `admission_banner` is the form a human
+                # reads.
+                "admission_labels": {
+                    lab.code: ("clean" if lab.clean else lab.detail)
+                    for lab in verdict.labels
+                },
+                "admission_flagged": list(verdict.label_codes),
+                "admission_banner": verdict.banner(),
+                "consumer_standing_invariants": verdict.invariants.as_dict(),
                 "untrained_warning": (
                     ""
                     if record.weights_status == "trained"
@@ -275,7 +381,71 @@ class ServedModel:
             **record.claim_fields(),
         )
         service.provenance = prov
-        return cls(targeting=service, provenance=prov, checkpoint=record)
+        return cls(
+            targeting=service,
+            provenance=prov,
+            checkpoint=record,
+            admission=verdict,
+        )
+
+    # -- the model itself --------------------------------------------------
+    def predictor(self) -> "LoadedModel":
+        """The checkpoint, loaded and runnable.
+
+        This is the path that did not exist: ``ServedModel`` used to hash a
+        checkpoint file and never open it, so every number it served came from
+        the analytic backend regardless of what was on disk. ``predictor()``
+        reconstructs the model and returns something that produces *different
+        numbers for different checkpoints* -- see
+        :mod:`scwbd.runtime.predict` and
+        ``tests/runtime/test_prediction_path.py``.
+
+        Raises :class:`~scwbd.runtime.predict.CheckpointLoadError` when there
+        is no checkpoint to load. It does **not** fall back to the analytic
+        backend: a caller that asked for the model wants the model, and
+        silently handing back something else is the defect this whole module
+        exists to close.
+        """
+        from .predict import CheckpointLoadError, LoadedModel
+
+        if self.checkpoint.weights_path is None:
+            raise CheckpointLoadError(
+                f"no checkpoint weights under {self.checkpoint.root or '<none>'}; "
+                "there is no model to run. The analytic backend remains "
+                "available through evaluate_pose, and is labelled L4"
+            )
+        if self._predictor is None:
+            object.__setattr__(
+                self,
+                "_predictor",
+                LoadedModel.from_checkpoint(
+                    self.checkpoint.weights_path,
+                    device=self.provenance.notes.get("resolved_device", "cpu"),
+                ),
+            )
+        return self._predictor  # type: ignore[return-value]
+
+    # -- the declared port contract ----------------------------------------
+    def port_contract(self) -> "PortContract":
+        """The ports this checkpoint declares, or a refusal.
+
+        A consumer reads model quantities **only** through these (see
+        :mod:`scwbd.runtime.ports`).  The digest is what a consumer pins; when
+        run 2's per-family state lands, the pin fails at load rather than at
+        the first read of a component that moved.
+        """
+        from .ports import LayoutNotDeclared, PortContract
+
+        raw = dict(self.checkpoint.admission_claims().raw)
+        layout = raw.get("state_layout")
+        if not layout:
+            raise LayoutNotDeclared(
+                f"no state_layout in the {SIDECAR_NAME} beside "
+                f"{self.checkpoint.root or '<no checkpoint>'}. A consumer "
+                "cannot be handed ports the artifact did not declare, and the "
+                "runtime will not infer them from tensor shapes"
+            )
+        return PortContract.from_state_layout(layout, source=SIDECAR_NAME)
 
     # -- handshake ---------------------------------------------------------
     def handshake(self, expectation: ProvenanceExpectation) -> ModelProvenance:
@@ -338,6 +508,25 @@ class ServedModel:
             if stop_on_refusal and ev.refused:
                 break
         return tuple(out)
+
+
+def _declared_ports(record: CheckpointRecord) -> tuple[str, tuple[str, ...]]:
+    """``(digest, exported port names)`` from the sidecar, or ``("", ())``.
+
+    An artifact that declares no layout gets empty values rather than an
+    invented contract.  Empty is then something a consumer can assert against;
+    an invented one would not be.
+    """
+    from .ports import LayoutNotDeclared, PortContract
+
+    layout = dict(record.admission_claims().raw).get("state_layout")
+    if not layout:
+        return "", ()
+    try:
+        contract = PortContract.from_state_layout(layout, source=SIDECAR_NAME)
+    except LayoutNotDeclared:
+        return "", ()
+    return contract.digest(), tuple(p.qualified for p in contract.exported_ports())
 
 
 def coil_pose_over_region(

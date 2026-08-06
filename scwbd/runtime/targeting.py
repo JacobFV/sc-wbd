@@ -1167,6 +1167,38 @@ class TargetingService:
                 },
             )
 
+        # Everything below would have been a Recommend.  A service with no
+        # trained artifact behind it does not get there.
+        #
+        # This branch was missing, and its absence is why ``warm_up()`` returned
+        # ``Recommend`` for a coil pose over left DLPFC while its own docstring
+        # said the shipped phantom "is frequently a ``Defer``"
+        # (reports/runtime/consumer_contract.md F4).  The docstring described
+        # the honest behaviour; the code did something else.
+        #
+        # The reason it is a ``Defer`` and not a ``Refuse``: the field solve is
+        # real physics and the ledger is real, so the evaluation is
+        # informative -- what is missing is a fitted model of the *response*,
+        # and that is a gap a measurement can close.  ``Refuse`` is for
+        # proposals that are not repairable by more evidence.
+        if self.provenance.weights_status != "trained":
+            return Defer(
+                reason=(
+                    "the network response comes from prior-specified surrogate "
+                    "propagators over a connectome topology prior, with no "
+                    f"trained artifact behind it (weights_status="
+                    f"{self.provenance.weights_status!r}). The benefit "
+                    f"difference of {benefit:.4g} is a statement about those "
+                    "surrogates, not about a brain, so it cannot support a "
+                    "recommendation however small its uncertainty"
+                ),
+                suggested_action="load_a_trained_checkpoint",
+                detail={
+                    "benefit_margin": float(benefit),
+                    "epistemic": float(epistemic),
+                },
+            )
+
         return Recommend(
             label=name,
             rationale=(

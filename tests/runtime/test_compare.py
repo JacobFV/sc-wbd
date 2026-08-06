@@ -64,7 +64,7 @@ def base_pose(head, nominal_pose):
 
 
 @pytest.fixture()
-def agreeing_service():
+def agreeing_service(as_if_trained):
     """Two nearly-agreeing response operators: a separable comparison exists.
 
     Thresholds sit just under the on-target peak, so a pose 50 mm away drives
@@ -72,7 +72,7 @@ def agreeing_service():
     operators' softplus tail keeps every pose within its own uncertainty and
     the ranking -- correctly -- refuses to order them.
     """
-    return TargetingService(
+    return as_if_trained(TargetingService(
         response_operators=(
             MagnitudeThresholdResponse(threshold_v_per_m=45.0, width_v_per_m=6.0),
             MagnitudeThresholdResponse(
@@ -81,7 +81,7 @@ def agreeing_service():
                 name="efield_magnitude_threshold_b",
             ),
         )
-    )
+    ))
 
 
 class TestPreregistrationIsEnforced:

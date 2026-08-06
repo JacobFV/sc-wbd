@@ -94,6 +94,17 @@ class ModelProvenance:
     claim_manifest_id: str = "runtime_default"
     claim_class: str = "surrogate"
     posterior_class: str = "pseudo"
+    #: Digest of the port contract the checkpoint declares
+    #: (:meth:`scwbd.runtime.ports.PortContract.digest`), or ``""`` when it
+    #: declares none.  A consumer pins this instead of learning a state width:
+    #: run 1 is uniform ``(B,T,454,28)`` and run 2 is per-family with
+    #: heterogeneous widths, so a pinned digest fails loudly at load where a
+    #: pinned ``28`` would have failed silently at the first read.
+    port_contract_digest: str = ""
+    #: ``"family.name"`` of every port the checkpoint declares **and** exports.
+    #: Empty means the artifact declared no consumable ports, which is a
+    #: different statement from "it exports nothing you asked for".
+    exported_ports: tuple[str, ...] = ()
     #: ``thesis_contract.tex`` Sec. 0.6 build-order item this artifact reaches.
     build_order_item: int = 4
 
@@ -161,6 +172,15 @@ class ProvenanceExpectation:
     #: against the scalp.
     require_efield_gates: tuple[str, ...] | None = None
     checkpoint_sha256: str | None = None
+    #: The exact port contract the consumer was written against.  Pin it: a
+    #: mismatch here is the model's state layout having changed underneath the
+    #: consumer, which is the failure this whole handshake exists to make loud.
+    port_contract_digest: str | None = None
+    #: Port names (``"family.name"``) the consumer requires to be **declared
+    #: and exported**.  Asserting the digest pins the whole layout; asserting
+    #: names pins only what is actually read, which is what a consumer that
+    #: wants to survive an unrelated layout change should do.
+    require_exported_ports: tuple[str, ...] | None = None
     #: Minimum number of distinct candidate response models required before the
     #: consumer will look at an engagement distribution at all.
     min_response_models: int | None = None
@@ -178,6 +198,32 @@ class ProvenanceExpectation:
         eq("schema_version", self.schema_version, served.schema_version)
         eq("runtime_api_version", self.runtime_api_version, served.runtime_api_version)
         eq("checkpoint_sha256", self.checkpoint_sha256, served.checkpoint_sha256)
+
+        if (
+            self.port_contract_digest is not None
+            and self.port_contract_digest != served.port_contract_digest
+        ):
+            out.append(
+                f"port_contract_digest: expected "
+                f"{self.port_contract_digest!r}, served "
+                f"{served.port_contract_digest!r} -- the model's declared state "
+                "layout is not the one this consumer was written against. Do "
+                "not re-pin this without re-reading which ports moved: a state "
+                "layout changes between runs (run 1 is uniform 28-wide, run 2 "
+                "is per-family), and a stale pin is the only thing standing "
+                "between a consumer and a silently different quantity"
+            )
+        if self.require_exported_ports is not None:
+            absent = [
+                p for p in self.require_exported_ports if p not in served.exported_ports
+            ]
+            if absent:
+                out.append(
+                    f"exported_ports: required {absent} to be declared and "
+                    f"exported; served exports {list(served.exported_ports)} -- "
+                    "an undeclared port is not an empty read, it is a read this "
+                    "artifact cannot support"
+                )
 
         if (
             self.accept_weights_status is not None

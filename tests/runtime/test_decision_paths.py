@@ -166,8 +166,10 @@ class TestRefuseOutsideASafe:
 
 
 class TestRecommendIsReachableAndBounded:
-    def test_a_confident_well_placed_pose_can_recommend(self, head, nominal_pose):
-        service = TargetingService(
+    def test_a_confident_well_placed_pose_can_recommend(
+        self, head, nominal_pose, as_if_trained
+    ):
+        service = as_if_trained(TargetingService(
             response_operators=(
                 MagnitudeThresholdResponse(threshold_v_per_m=45.0, width_v_per_m=6.0),
                 MagnitudeThresholdResponse(
@@ -176,7 +178,7 @@ class TestRecommendIsReachableAndBounded:
                     name="efield_magnitude_threshold_b",
                 ),
             )
-        )
+        ))
         evaluation = service.evaluate_pose(
             head,
             replace(nominal_pose, uncertainty=PoseUncertainty.isotropic(0.0002, 0.002)),
