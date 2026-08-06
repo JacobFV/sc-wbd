@@ -5,7 +5,7 @@ fail is worthless*, so every gate ships with a world in which its claim is
 false and it must say so.  This module generalises that discipline one level
 down, to the **guards and provenance fields the gates themselves rely on**.
 
-The generalisation was forced by evidence.  Twenty-one times in this project an
+The generalisation was forced by evidence.  Twenty-two times in this project an
 instrument reported a discrimination it was structurally incapable of making,
 and every one of them looked green:
 
@@ -311,6 +311,32 @@ KNOWN_UNINFORMATIVE: tuple[UninformativeField, ...] = (
         found_by="agent J (bench), self-reported after measuring its own suite",
         owner="bench (agent J)",
         still_reported=False,
+    ),
+    UninformativeField(
+        name="verification skipped at the moment of concluding (reviewer-side)",
+        reads="green -- from a suite that was not fully run",
+        why_it_cannot_discriminate=(
+            "THE REVIEWER-SIDE ANALOGUE of the author bias already in this register, and a "
+            "DISTINCT mechanism rather than a variant of it. The author's bias runs toward a "
+            "conclusion they PREFER; this one runs toward ANY conclusion, because the state "
+            "of having reached one is itself what suppresses the check. I verify thoroughly "
+            "while INVESTIGATING and skip verification while CONCLUDING -- 'feels finished' "
+            "is precisely when I stop checking. It fired TWICE in one session, and the "
+            "second time on the ruling where I was most careful about everything else: I "
+            "caught a real pooling artifact in someone else's headline result by "
+            "re-deriving it from the committed JSON, then committed my own finding on a "
+            "partial test suite. RIGOUR IN THE ANALYSIS DOES NOT TRANSFER TO RIGOUR IN THE "
+            "SHIPPING; they are separate habits and only one of them felt like the work"
+        ),
+        remedy=(
+            "run the FULL verification when you think you are DONE, not when you think you "
+            "might be WRONG. The trigger for checking must be the act of concluding, not the "
+            "feeling of doubt -- doubt is exactly the state in which one already checks"
+        ),
+        found_by="agent J (bench), self-reported on the second occurrence",
+        owner="bench (agent J); the mechanism is everyone's",
+        still_reported=False,
+        recurrence="twice in one session; caught on the second, not the third",
     ),
     UninformativeField(
         name="a per-observation average compared across different observation POPULATIONS",
