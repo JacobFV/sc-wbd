@@ -212,6 +212,7 @@ def register_epi_to_template(
     subject: str = "",
     nonlinear: bool = True,
     level_iters: tuple[int, ...] = (100, 50, 25),
+    sampling: float | None = 0.25,
 ) -> TransformChain:
     """Two-stage registration: EPI<-T1w (affine), T1w<-template (affine [+SyN]).
 
@@ -225,7 +226,11 @@ def register_epi_to_template(
     )
     from dipy.align.transforms import AffineTransform3D, RigidTransform3D
 
-    metric = MutualInformationMetric(nbins=32, sampling_proportion=None)
+    # sampling_proportion=None means "use every voxel", which on 1 mm volumes
+    # costs tens of minutes per subject for no measurable accuracy gain. A 25%
+    # random sample is the standard compromise and is what makes 10 subjects x
+    # 2 tasks tractable on a shared box.
+    metric = MutualInformationMetric(nbins=32, sampling_proportion=sampling)
     areg = AffineRegistration(
         metric=metric,
         level_iters=list(level_iters),
