@@ -53,6 +53,7 @@ def _scwbd_scores(trainer, loader, *, max_batches: int | None = None) -> dict[st
     model.eval()
     c = cfg.data.context
     nlls: list[np.ndarray] = []
+    nlls_norm: list[np.ndarray] = []
     mses: list[np.ndarray] = []
     subs: list[str] = []
     for bi, batch in enumerate(loader):
@@ -66,19 +67,38 @@ def _scwbd_scores(trainer, loader, *, max_batches: int | None = None) -> dict[st
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=cfg.model.use_bf16):
             roll = model.rollout(y_context=src, theta=th, n_steps=tgt_e.shape[1], enforce_r05=False)
             mu, lv = model.eeg(roll.state)
-        scale = tgt_e.std(dim=(1, 2), keepdim=True).clamp_min(1e-8)
-        y = (tgt_e / scale).float()
-        m = (mu.float() / scale).float()
-        v = (lv.float() - 2 * torch.log(scale)).clamp(-14, 14)
+        # RAW data units. The baselines score the raw target through
+        # baselines._gaussian_nll, so rescaling by the target's own per-window std
+        # here compared the densities of two DIFFERENT random variables:
+        # NLL_scaled = NLL_raw - log(s). Measured mean log(s) = 0.598 on the real
+        # test split -- roughly 17x the entire spread between the non-trivial
+        # baselines (0.035 nats).
+        y = tgt_e.float()
+        m = mu.float()
+        v = lv.float().clamp(-14, 14)
         nll = 0.5 * (math.log(2 * math.pi) + v + (y - m) ** 2 * torch.exp(-v))
         nlls.append(nll.mean(dim=(1, 2)).cpu().numpy())
         mses.append(((y - m) ** 2).mean(dim=(1, 2)).cpu().numpy())
+        # Secondary, separately labelled: amplitude-normalised score. Defensible as
+        # *a* metric; NOT comparable to the baselines.
+        s_ = tgt_e.std(dim=(1, 2), keepdim=True).clamp_min(1e-8)
+        v_n = (lv.float() - 2 * torch.log(s_)).clamp(-14, 14)
+        nll_n = 0.5 * (math.log(2 * math.pi) + v_n + ((y - m) / s_) ** 2 * torch.exp(-v_n))
+        nlls_norm.append(nll_n.mean(dim=(1, 2)).cpu().numpy())
         subs.extend(list(batch["subject"]))
     model.train()
     return {
         "nll_per_window": np.concatenate(nlls) if nlls else np.zeros(0),
+        "nll_per_window_amplitude_normalised": (
+            np.concatenate(nlls_norm) if nlls_norm else np.zeros(0)
+        ),
         "mse_per_window": np.concatenate(mses) if mses else np.zeros(0),
         "subjects": subs,
+        "units_note": (
+            "nll_per_window and mse_per_window are in RAW data units, matching "
+            "baselines._gaussian_nll. nll_per_window_amplitude_normalised divides by "
+            "the target's own per-window std and is NOT comparable to the baselines."
+        ),
     }
 
 
