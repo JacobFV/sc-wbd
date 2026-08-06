@@ -935,6 +935,32 @@ def run_n9(*, include_axisymmetric: bool = True) -> Any:
                     "backend computes this same expression, so the gate's subject is the "
                     "object actually in the runtime path",
             },
+            "grading_history": {
+                "current": {
+                    "graded_against": "solution_discrepancy_fraction",
+                    "upper_bound": 1.35,
+                    "envelope_min_head_radius_m": min(N9_HEAD_RADII_M),
+                },
+                "superseded": {
+                    "graded_against": "discrepancy_fraction (composite: this "
+                                      "approximation's error PLUS the sphere-vs-head "
+                                      "geometry prior)",
+                    "upper_bound": 2.29,
+                    "envelope_min_head_radius_m": 0.070,
+                    "why_superseded":
+                        "grading an approximation's own error against an interval that "
+                        "also carries someone else's uncertainty is the conflation this "
+                        "gate exists to catch, one level up. It also passed trivially "
+                        "(1.0629 vs 2.29). Both the subject and the envelope changed, so "
+                        "any artifact showing upper_bound 2.29 or a 70 mm minimum radius "
+                        "predates the adjudicated grading and should not be cited.",
+                },
+                "note_on_claim_id":
+                    "this runner emits N9_fallback_field_approximation. A scoreboard row "
+                    "named N9_fallback_field_bound covering the same subject exists; agent "
+                    "Popper owns gate ids and should settle on one. Recorded here so the "
+                    "two are linkable rather than silently divergent.",
+            },
             "bound_provenance": {
                 "pinned": list(N9_PINNED_BOUND["solution_discrepancy_fraction"]),
                 "observed": list(solution) if solution else None,

@@ -161,3 +161,64 @@ gated backend — that it *is* the exact solution of the sphere geometry. N6 and
 substantiate it (analytic vs. an independent spectral reference at 1e-14 and
 1e-12 respectively), but N9 does not test it: N9's subject is the approximation.
 If you want that claim adjudicated in its own row rather than inherited, say so.
+
+---
+
+# Regeneration — artifact now matches the adjudicated grading
+
+Regenerated at `c256168` and committed. `reports/intervene/N9_fallback_field_approximation.json`
+carries: **PASS**, graded against `solution_discrepancy_fraction` upper bound
+**1.35**, measured **1.32039**, envelope down to a 60 mm head radius, and the
+`bound_provenance` pin (`[0.0, 1.35]` pinned = observed).
+
+## Where the stale artifact actually is — three separate files, one of them mine
+
+Worth being precise, because "the N9 report on disk" resolves to three different
+things and only one of them is fixed by regenerating:
+
+| file | owner | state |
+|---|---|---|
+| `reports/intervene/N9_...approximation.json` on `wt/faraday` | me | **correct**, regenerated at `c256168` |
+| `reports/intervene/N9_...approximation.json` on `master` | me | stale: the original FAIL at threshold **0.8**, from `58b9d37` |
+| `reports/gates/numerics/N9_fallback_field_bound.json` on `master` | Popper | the disputed one: PASS at **2.29**, 70 mm envelope |
+
+The master copy of *my* file is stale for a reason regeneration cannot fix: it is
+one commit behind. `c256168` is not an ancestor of `master`. **Landing the branch
+is the fix there, not re-running the gate** — and if the branch lands without this
+being understood, the stale copy would be overwritten by the correct one and the
+"regeneration" would appear to have been what fixed it.
+
+The genuinely disputed artifact is Popper's scoreboard row. It was generated from
+an intermediate state of my runner: after I moved to reading the bound at run time
+but before I pointed it at `solution_discrepancy_fraction` and extended the
+envelope. So it read the composite 2.29 and measured 1.0629 on the 70 mm envelope
+— a trivial pass, exactly the grading Popper objected to. It is not stale relative
+to the runner it ran; the runner has moved.
+
+## Two claim ids for one gate — please settle it
+
+My runner emits **`N9_fallback_field_approximation`**. Popper's scoreboard row is
+**`N9_fallback_field_bound`**. Same subject
+(`primary_tangential_projection`), same physics, two names.
+
+I have not renamed to match, because the instruction I have names the first and
+Popper owns gate ids — picking silently is how the `N7`/`N8` mess started, and
+that one cost churn in Asimov's files. Instead the artifact now carries a
+`grading_history.note_on_claim_id` field recording that both names exist and that
+Popper should settle on one, so the two are linkable rather than silently
+divergent. Rename mine whenever you decide; it is one constant.
+
+## Supersession is now recorded in the artifact, not just in this note
+
+`artifacts.grading_history` states the current grading, the superseded one, and
+why — including the discriminators a reader can check without knowing the history:
+**any N9 artifact showing upper bound 2.29, or a 70 mm minimum head radius,
+predates the adjudicated grading and should not be cited.** A reader who finds the
+wrong file can now tell it is the wrong file from its own contents.
+
+## N4 provenance
+
+Noted, and agreed it is not mine: the subject field naming
+`run_numerics_suite.<locals>.acoustic_solver` is the auto-wiring wrapper, not the
+solver. N4's numbers are unaffected — `0.0125564` with Helmholtz `9.178e-4` comes
+from `run_free_field_monopole` either way. I will not touch it.
