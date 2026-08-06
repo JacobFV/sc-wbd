@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** relative error above tolerance against the closed form, or a mesh-refinement study that does not converge at the advertised order
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git f233f77 · 2026-08-06T08:52:32+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git 0575861 · 2026-08-06T13:29:35+00:00*
 
 ## Sub-checks
 

@@ -139,6 +139,13 @@
         "observed_order": 1.769790426193955
       }
     ],
+    "geometry_provenance": {
+      "geometry_source": "analytic phantom constructed in-process (scwbd.intervene.tms.efield.SphericalHeadModel, or an unbounded homogeneous medium for N3/N4)",
+      "uses_subject_anatomy": false,
+      "uses_scwbd_anatomy_load_anatomy": false,
+      "uses_connectome": false,
+      "note": "These solvers take head GEOMETRY (a radius, a triangulated surface) and never the connectome, so the anatomical-prior defect does not touch these verdicts. Every geometry here is a sphere declared in the artifact; none is derived from a subject, a template or scwbd.anatomy."
+    },
     "fdtd_meta": {
       "wavenumber_per_m": 100.0,
       "sound_speed_m_per_s": 1500.0,
@@ -156,8 +163,8 @@
     }
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T08:49:57+00:00",
-    "git_rev": "f233f77",
+    "timestamp_utc": "2026-08-06T13:27:38+00:00",
+    "git_rev": "0575861",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -173,11 +180,7 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/intervene/run_field_gates.py",
-      "scwbd/intervene/spectral_reference.py",
-      "scwbd/intervene/tms/efield.py",
-      "tests/intervene/test_spectral_reference.py",
-      "tests/intervene/test_tms_efield.py"
+      "scwbd/intervene/run_field_gates.py"
     ],
     "source_clean": false,
     "known_uninformative_fields": {

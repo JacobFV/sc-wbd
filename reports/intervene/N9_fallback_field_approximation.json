@@ -228,6 +228,13 @@
       ],
       "equivalence_pinned_by": "tests/intervene/test_fallback_approximation.py -- asserts the runtime backend computes this same expression, so the gate's subject is the object actually in the runtime path"
     },
+    "geometry_provenance": {
+      "geometry_source": "analytic phantom constructed in-process (scwbd.intervene.tms.efield.SphericalHeadModel, or an unbounded homogeneous medium for N3/N4)",
+      "uses_subject_anatomy": false,
+      "uses_scwbd_anatomy_load_anatomy": false,
+      "uses_connectome": false,
+      "note": "These solvers take head GEOMETRY (a radius, a triangulated surface) and never the connectome, so the anatomical-prior defect does not touch these verdicts. Every geometry here is a sphere declared in the artifact; none is derived from a subject, a template or scwbd.anatomy."
+    },
     "grading_history": {
       "current": {
         "graded_against": "solution_discrepancy_fraction",
@@ -240,7 +247,7 @@
         "envelope_min_head_radius_m": 0.07,
         "why_superseded": "grading an approximation's own error against an interval that also carries someone else's uncertainty is the conflation this gate exists to catch, one level up. It also passed trivially (1.0629 vs 2.29). Both the subject and the envelope changed, so any artifact showing upper_bound 2.29 or a 70 mm minimum radius predates the adjudicated grading and should not be cited."
       },
-      "note_on_claim_id": "this runner emits N9_fallback_field_approximation. A scoreboard row named N9_fallback_field_bound covering the same subject exists; agent Popper owns gate ids and should settle on one. Recorded here so the two are linkable rather than silently divergent."
+      "claim_id_resolution": "Settled 2026-08-06 by agent Popper on N9_fallback_field_approximation, as the accurate name once the subject became the approximation's own error rather than a composite bound. The superseded scoreboard row N9_fallback_field_bound was DELETED rather than kept alongside this one: two files for one gate, both reading PASS, is itself the defect. reports/intervene/ is the authoritative artifact."
     },
     "bound_provenance": {
       "pinned": [
@@ -933,8 +940,8 @@
     ]
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T13:07:07+00:00",
-    "git_rev": "c256168",
+    "timestamp_utc": "2026-08-06T13:48:38+00:00",
+    "git_rev": "0575861",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {

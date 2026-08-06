@@ -7,7 +7,7 @@
     "claim_id": "N8_induced_efield_contact",
     "claim_text": "The induced-field solver is validated in the CONTACT regime (a coil element at clinical standoff from the scalp, a/R_c >= 0.95) to a preregistered tolerance \u2014 the geometry the downstream targeting consumer actually uses.",
     "falsified_by": "no reference or self-convergence study achieves a defensible tolerance at contact geometry, or the solver's error there exceeds the preregistered tolerance",
-    "consequence_if_failed": "Targeting in the contact regime is UNVALIDATED. scwbd.runtime must surface that as Unresolved/Defer rather than returning a confident E-field or engagement number, and no pose ranking may be reported as validated at contact geometry.",
+    "consequence_if_failed": "IF THIS GATE FAILS: targeting in the contact regime is UNVALIDATED, and scwbd.runtime must surface that as Unresolved/Defer rather than returning a confident E-field, with no pose ranking reported as validated at contact geometry. IF IT PASSES: the runtime may proceed INSIDE the declared resolution envelope carrying the calibrated error bound, and must Defer outside it -- which is enforced at the solver rather than left to the caller. A passing gate licenses the envelope, never the whole regime.",
     "thesis_version": "V6",
     "schema_version": "scwbd-schema/1.0.0",
     "bench_schema_version": "scwbd-bench-report/1.0.0",
@@ -48,7 +48,7 @@
           "direction": "greater_is_better",
           "require_interval_beats_threshold": false,
           "exact": true,
-          "note": "a standoff geometry belongs in N6, not here",
+          "note": "a standoff geometry belongs in N6, not here. Validating at a HARDER ratio than the downstream consumer uses is acceptable and is recorded: a clinical figure-eight at 4 mm scalp standoff sits at a/R_c ~ 0.902 because the coil is flat and the head curved, so its nearest winding is ~9.2 mm off. The harder case bounds the easier one; the reverse would not.",
           "passed": true
         }
       ]
@@ -149,6 +149,13 @@
         "field_points": "256 on the 0.07 m cortical shell"
       }
     },
+    "geometry_provenance": {
+      "geometry_source": "analytic phantom constructed in-process (scwbd.intervene.tms.efield.SphericalHeadModel, or an unbounded homogeneous medium for N3/N4)",
+      "uses_subject_anatomy": false,
+      "uses_scwbd_anatomy_load_anatomy": false,
+      "uses_connectome": false,
+      "note": "These solvers take head GEOMETRY (a radius, a triangulated surface) and never the connectome, so the anatomical-prior defect does not touch these verdicts. Every geometry here is a sphere declared in the artifact; none is derived from a subject, a template or scwbd.anatomy."
+    },
     "self_convergence_family": [
       {
         "h": 0.033688282029651094,
@@ -195,8 +202,8 @@
     "uniform_mesh_refinement_is_monotone": false
   },
   "provenance": {
-    "timestamp_utc": "2026-08-06T09:47:48+00:00",
-    "git_rev": "fd466a9",
+    "timestamp_utc": "2026-08-06T13:30:55+00:00",
+    "git_rev": "0575861",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -212,8 +219,7 @@
       "benchmarks"
     ],
     "source_dirty_paths": [
-      "scwbd/intervene/tms/efield.py",
-      "tests/intervene/test_tms_efield.py"
+      "scwbd/intervene/run_field_gates.py"
     ],
     "source_clean": false,
     "known_uninformative_fields": {
