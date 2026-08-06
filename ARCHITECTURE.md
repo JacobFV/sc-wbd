@@ -40,23 +40,11 @@ IRB, no consent, no participants" was misquoting this contract, and pointed at
 a blocker nobody here can clear instead of the ones they can; see
 `reports/intervene/authorization.md`.
 
-*Read this together with §7a, which it predates.* §7a records that
-**computational work in this repository is approved and is not gated** — the
-UT Arlington IRB approval covers it. The restriction above is about **live
-application**, and it holds for a capability reason that §7a does not touch:
-there is no trained checkpoint that could support a targeting claim. The two
-sections agree, and where the boundary is enforced is §7a's answer (one
-refusal at the export edge), not a per-call disclaimer.
-
-The reason is *capability*, not a hard-coded belief about anyone's paperwork.
-Governance is declared, recorded and carried in provenance: R11 admits a
-prospective request only when a validated `AuthorizationRecord`
-(`scwbd/schema/authorization.py`) covers the requested intervention class at
-the requested time, and the resulting artifact carries
-`claim_scope="protocol:<id>@<version>"` in its provenance. Even with a fully
-valid authorization this release still refuses a targeting claim, because there
-is no trained checkpoint, G4 is unexercisable on this corpus, and the impulse's
-energy-matched information gain is ~1. See `reports/governance_authorization.md`.
+The blocker is **capability**, not paperwork, and per §7a paperwork is not this
+project's concern at all: SC-WBD is deep-learning research on open data.
+`AuthorizationRecord`, R11 and `authorize_live_application` exist, are tested,
+and stay — but they are not a surface to invest in. The compliance question
+that *is* real is inherited data attribution and licensing; see §7a.
 
 The word "beta" is load-bearing: this release targets build-order items 1–5 with
 claim-bearing gates, not a whole-brain prediction claim.
