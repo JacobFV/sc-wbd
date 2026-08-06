@@ -1,0 +1,36 @@
+name: Deploy site to GitHub Pages
+
+# The legacy Jekyll builder failed on this repository with a bare
+# "Page build failed." and no diagnostic, despite a committed `.nojekyll` and
+# well-formed HTML.  An Actions workflow uploads `docs/` as a static artifact
+# without invoking Jekyll at all, and reports a real error if it ever fails.
+
+on:
+  push:
+    branches: [master]
+    paths: ["docs/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4
