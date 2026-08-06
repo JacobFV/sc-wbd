@@ -169,3 +169,28 @@ def test_coverage_records_whether_a_brain_mask_was_used(atlas):
     assert "NOT A BRAIN MASK" in fov.notes
     assert "NOT A BRAIN MASK" not in masked.notes
     assert fov.summary()["basis"] == "field_of_view"
+
+
+def test_fov_fraction_is_pure_geometry(atlas):
+    """FOV membership must depend only on the box, not on signal or masks.
+
+    Mutation this catches: computing FOV fraction from the *labelled* EPI grid
+    (which folds in partial-volume sampling) instead of from atlas geometry.
+    With an EPI grid identical to the atlas grid and an identity chain, every
+    parcel is fully inside by construction -- anything less means the measure is
+    contaminated by something other than the field of view.
+    """
+    from scwbd.anatomy.registration import parcel_fov_fraction
+
+    vl, aff, _, _, _ = atlas
+    chain = TransformChain("s", np.eye(4), np.eye(4), "identity", "test")
+
+    full = parcel_fov_fraction(chain, vl.shape, aff, vl, aff, 400)
+    assert np.nanmin(full) > 0.999, "identity chain must place every parcel fully in FOV"
+
+    # A box a quarter the size in z must cut parcels, and must cut them
+    # *differently* -- a uniform loss would mean the geometry is being ignored.
+    small = parcel_fov_fraction(chain, (vl.shape[0], vl.shape[1], vl.shape[2] // 4), aff, vl, aff, 400)
+    assert np.nanmedian(small) < np.nanmedian(full)
+    assert np.nansum(small < 0.01) > 20, "a quartered slab must exclude whole parcels"
+    assert np.nanstd(small) > 0.1, "loss is uniform across parcels; geometry is not being used"

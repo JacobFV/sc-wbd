@@ -451,3 +451,71 @@ identical.
   family's mean normal nearly cancels by symmetry; a family-level dipole
   direction would be an artefact of that cancellation. `FAMILY_FIELDS` is
   unchanged and Hodgkin's contract is not broken.
+
+---
+
+## 11. Correction: the EPI slab does not clip cortex (2026-08-06)
+
+**I withdraw the clipping claim in §10-adjacent D9 analysis as it applied to
+cortical parcels.** It was wrong, it was load-bearing for a fleet decision, and
+the correction is here rather than in a footnote.
+
+### What I claimed
+
+From the ds002336 slab analysis: a 122.9 mm EPI slab against a ~130-140 mm
+brain, head-in-slab 66-76%, coverage by depth band showing 77% at the vertex.
+Mapping those bands onto Schaefer-400 MNI centroids, I reported **31 of 138
+`cortex_unimodal` parcels (22.5%, all SomMot) at reduced coverage**, and
+proposed a clean/clipped split-arm validation design on that basis.
+
+### What is actually true
+
+Registering four subjects and measuring FOV membership **geometrically** —
+atlas voxels pushed through the transform chain, tested against the EPI array
+bounds, no mask, no signal, no partial-volume:
+
+| subject | FOV median | parcels fully outside | parcels <50% | SomMot fully out |
+|---|---|---|---|---|
+| sub-xp107 | 1.000 | 4 / 400 | 19 | 0 / 77 |
+| sub-xp108 | 1.000 | 0 / 400 | 4 | 0 / 77 |
+| sub-xp105 | 1.000 | 7 / 400 | 35 | 3 / 77 |
+| sub-xp101 | 1.000 | 1 / 400 | 5 | 0 / 77 |
+
+**Median FOV coverage is 1.000 for every subject, and at worst 7 of 400 parcels
+fall entirely outside the acquisition.** The predicted 31-parcel SomMot loss is
+not there. The clean/clipped arm distinction has no FOV basis.
+
+### Why I was wrong
+
+The two analyses are in fact consistent; the error was entirely in the
+inference between them. The slab genuinely misses 24-34% of the **head** — that
+is neck and inferior scalp. It misses essentially **no cortex**. My mistake was
+treating a head-tissue depth band as a statement about cortical parcels, via two
+unflagged proxy steps:
+
+1. head tissue (scalp eroded 8 mm) is not cortex, and the missing tissue was
+   overwhelmingly neck;
+2. a parcel's depth below the vertex *in MNI* is not its depth in the subject.
+
+Neither step was tested. Both were presented as a measurement.
+
+### What this changes
+
+- **The split-arm validation design should be revisited.** It was adopted on my
+  evidence and that evidence does not support it. There is no FOV reason to
+  treat xp105/106/107 as a clean arm — and xp105 is in fact the *worst* subject
+  on the signal measure (0.442), which cuts against the grouping directly.
+- **The (subject x parcel) coverage mask stays**, and is still worth declaring —
+  but it is nearly all ones on the FOV axis, and the interesting variation is on
+  a different axis entirely.
+- **D9 is less at risk, not more.** The concern that motivated gating it does
+  not exist.
+
+### What does vary, and is not FOV
+
+Signal-plus-partial-volume coverage (`fraction_observed`) ranges 0.442 to 0.798
+across these four subjects. Most of that is partial volume — a 2x2x3.8 mm grid
+cannot resolve a ~3 mm ribbon, costing about a third of every parcel uniformly.
+**sub-xp105 at 0.442 is a genuine outlier and is not yet explained**; candidates
+are brain-mask quality, real dropout, or a registration failure on that subject.
+It is open.
