@@ -370,12 +370,23 @@ def predict_impulse_response(
     component: str = "rate_e",
     time_course: Tensor | None = None,
     context_mask: Tensor | None = None,
+    baseline_eeg: Tensor | None = None,
 ) -> ImpulseResponse:
     """Roll the model forward with and without the drive, and read the EEG head.
 
     Both rollouts use the same ``y_context``, ``theta`` and initial state, so
     the difference between them is the drive and nothing else.  That is what
     makes :attr:`ImpulseResponse.evoked` interpretable at all.
+
+    ``baseline_eeg`` lets a caller supply an already-computed unperturbed
+    readout.  This is an **exact** reuse, not an approximation: the baseline is
+    the ``u=None`` rollout, so it is a function of ``model``, ``y_context``,
+    ``theta`` and ``context_mask`` alone and does not depend on the drive.  A
+    permutation null that varies only the drive would otherwise recompute the
+    identical trajectory once per draw, which for the staged pose-contrast
+    analysis is half the total cost.  Passing a baseline from a *different*
+    model or context would silently corrupt every evoked response, so it is
+    opt-in and the caller owns that correspondence.
     """
     batch = int(torch.as_tensor(y_context).shape[0])
     u = build_latent_drive(
@@ -394,12 +405,21 @@ def predict_impulse_response(
             y_context=y_context, theta=theta, n_steps=n_steps,
             context_mask=context_mask, u=u,
         )
-        baseline = model.rollout(
-            y_context=y_context, theta=theta, n_steps=n_steps,
-            context_mask=context_mask, u=None,
-        )
         mu, lv = model.eeg(perturbed.state)
-        base_mu, _ = model.eeg(baseline.state)
+        if baseline_eeg is None:
+            baseline = model.rollout(
+                y_context=y_context, theta=theta, n_steps=n_steps,
+                context_mask=context_mask, u=None,
+            )
+            base_mu, _ = model.eeg(baseline.state)
+        else:
+            base_mu = torch.as_tensor(baseline_eeg, dtype=mu.dtype)
+            if base_mu.shape != mu.shape:
+                raise ValueError(
+                    f"supplied baseline_eeg has shape {tuple(base_mu.shape)}, "
+                    f"expected {tuple(mu.shape)}; a mismatched baseline would "
+                    "corrupt every evoked response"
+                )
 
     flayout = getattr(model, "family_layout", None)
     if flayout is not None:
