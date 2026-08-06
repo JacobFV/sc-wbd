@@ -65,12 +65,20 @@ def base_pose(head, nominal_pose):
 
 @pytest.fixture()
 def agreeing_service():
-    """Two nearly-agreeing response operators: a separable comparison exists."""
+    """Two nearly-agreeing response operators: a separable comparison exists.
+
+    Thresholds sit just under the on-target peak, so a pose 50 mm away drives
+    the target region an order of magnitude less. Without that the response
+    operators' softplus tail keeps every pose within its own uncertainty and
+    the ranking -- correctly -- refuses to order them.
+    """
     return TargetingService(
         response_operators=(
-            MagnitudeThresholdResponse(threshold_v_per_m=40.0),
+            MagnitudeThresholdResponse(threshold_v_per_m=45.0, width_v_per_m=6.0),
             MagnitudeThresholdResponse(
-                threshold_v_per_m=42.0, name="efield_magnitude_threshold_b"
+                threshold_v_per_m=46.0,
+                width_v_per_m=6.0,
+                name="efield_magnitude_threshold_b",
             ),
         )
     )
@@ -182,13 +190,13 @@ class TestAmbiguityIsPreservedNotBrokenArbitrarily:
     def test_a_genuinely_separable_set_does_produce_a_winner(
         self, agreeing_service, head, base_pose
     ):
-        tight = replace(base_pose, uncertainty=PoseUncertainty.isotropic(5e-4, 5e-3))
+        tight = replace(base_pose, uncertainty=PoseUncertainty.isotropic(2e-4, 2e-3))
         pose_set = PreregisteredPoseSet(
             study_id="dlpfc_separable",
             question=QUESTION,
             candidates=(
                 _candidate(tight, head, [0] * 6, "on_target"),
-                _candidate(tight, head, [0.045, 0, 0, 0, 0, 0], "far_lateral"),
+                _candidate(tight, head, [0.050, 0, 0, 0, 0, 0], "far_lateral"),
             ),
         )
         ranking = compare_poses(agreeing_service, head, pose_set)
@@ -216,13 +224,13 @@ class TestUnsafeCandidatesNeverEnterTheOrdering:
             hypothesis="deliberately outside A_safe",
             request=replace(base_pose, pose=far_pose, label="out_of_envelope"),
         )
-        tight = replace(base_pose, uncertainty=PoseUncertainty.isotropic(5e-4, 5e-3))
+        tight = replace(base_pose, uncertainty=PoseUncertainty.isotropic(2e-4, 2e-3))
         pose_set = PreregisteredPoseSet(
             study_id="dlpfc_with_unsafe",
             question=QUESTION,
             candidates=(
                 _candidate(tight, head, [0] * 6, "on_target"),
-                _candidate(tight, head, [0.045, 0, 0, 0, 0, 0], "far_lateral"),
+                _candidate(tight, head, [0.050, 0, 0, 0, 0, 0], "far_lateral"),
                 far,
             ),
         )
@@ -266,13 +274,13 @@ class TestTheFourQuantitiesSurviveTheRanking:
     def test_each_ranked_candidate_reports_four_separate_objects(
         self, agreeing_service, head, base_pose
     ):
-        tight = replace(base_pose, uncertainty=PoseUncertainty.isotropic(5e-4, 5e-3))
+        tight = replace(base_pose, uncertainty=PoseUncertainty.isotropic(2e-4, 2e-3))
         pose_set = PreregisteredPoseSet(
             study_id="dlpfc_separable",
             question=QUESTION,
             candidates=(
                 _candidate(tight, head, [0] * 6, "on_target"),
-                _candidate(tight, head, [0.045, 0, 0, 0, 0, 0], "far_lateral"),
+                _candidate(tight, head, [0.050, 0, 0, 0, 0, 0], "far_lateral"),
             ),
         )
         ranking = compare_poses(agreeing_service, head, pose_set)
@@ -289,13 +297,13 @@ class TestTheFourQuantitiesSurviveTheRanking:
     def test_a_ranked_candidate_has_no_scalar_value(
         self, agreeing_service, head, base_pose
     ):
-        tight = replace(base_pose, uncertainty=PoseUncertainty.isotropic(5e-4, 5e-3))
+        tight = replace(base_pose, uncertainty=PoseUncertainty.isotropic(2e-4, 2e-3))
         pose_set = PreregisteredPoseSet(
             study_id="dlpfc_separable",
             question=QUESTION,
             candidates=(
                 _candidate(tight, head, [0] * 6, "on_target"),
-                _candidate(tight, head, [0.045, 0, 0, 0, 0, 0], "far_lateral"),
+                _candidate(tight, head, [0.050, 0, 0, 0, 0, 0], "far_lateral"),
             ),
         )
         ranking = compare_poses(agreeing_service, head, pose_set)
@@ -317,3 +325,33 @@ class TestTheFourQuantitiesSurviveTheRanking:
         assert "NOT a summary" in ranking.ordering_basis
         assert ranking.limits_citations
         assert "SIMULATION ONLY" in ranking.notice
+
+
+class TestAnUnresolvedCandidateIsNeverRankedAtZero:
+    """A field the solver refused has no benefit, not a benefit of zero.
+
+    Letting it through with ``0.0`` would put it last and make the ranking look
+    complete, which is exactly the failure this repository exists to prevent.
+    """
+
+    def test_it_is_reported_separately_and_excluded_from_the_ordering(
+        self, head, base_pose
+    ):
+        from scwbd.runtime import ChargeBEMEField
+
+        service = TargetingService(efield_backend=ChargeBEMEField(uniform_subdiv=1))
+        pose_set = PreregisteredPoseSet(
+            study_id="unresolvable",
+            question=QUESTION,
+            candidates=(
+                _candidate(base_pose, head, [0] * 6, "A"),
+                _candidate(base_pose, head, [0.012, 0, 0, 0, 0, 0], "B"),
+            ),
+        )
+        ranking = compare_poses(service, head, pose_set)
+        assert {label for label, _ in ranking.unresolved} == {"A", "B"}
+        assert ranking.ordered == ()
+        assert isinstance(ranking.decision, Defer)
+        assert ranking.decision.suggested_action == "no_action"
+        assert "unresolved" in ranking.decision.reason
+        assert ranking.summary()["unresolved"][0]["quantities"]

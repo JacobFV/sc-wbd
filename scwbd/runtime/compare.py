@@ -237,6 +237,9 @@ class CandidateRanking:
     ordered: tuple[RankedCandidate, ...]
     ambiguities: tuple[UnresolvedCausalAmbiguity, ...]
     refused: tuple[tuple[str, Refuse], ...]
+    #: Candidates whose field could not be computed, with the quantities that
+    #: came back ``Unresolved``. They are reported, never ranked at zero.
+    unresolved: tuple[tuple[str, tuple[str, ...]], ...]
     decision: Decision
     limits_citations: tuple[str, ...]
     notice: str
@@ -279,6 +282,9 @@ class CandidateRanking:
                 for a in self.ambiguities
             ],
             "refused": [{"label": k, "code": v.code, "reason": v.reason} for k, v in self.refused],
+            "unresolved": [
+                {"label": k, "quantities": list(q)} for k, q in self.unresolved
+            ],
             "decision": type(self.decision).__name__,
             "decision_detail": str(self.decision),
             "notice": self.notice,
@@ -323,6 +329,7 @@ def compare_poses(
 
     evaluations: dict[str, PoseEvaluation] = {}
     refused: list[tuple[str, Refuse]] = []
+    unresolved: list[tuple[str, tuple[str, ...]]] = []
     admissible: list[PreregisteredCandidate] = []
     for cand in pose_set.candidates:
         ev = service.evaluate_pose(head_model, cand.request, label=cand.label)
@@ -330,21 +337,34 @@ def compare_poses(
         if isinstance(ev.decision, Refuse):
             refused.append((cand.label, ev.decision))
             continue
+        if ev.unresolved_quantities():
+            # A candidate whose field could not be computed has no benefit to
+            # rank. Letting it in with a zero would put it last and make the
+            # ranking look complete; it is reported as unresolved instead.
+            unresolved.append((cand.label, ev.unresolved_quantities()))
+            continue
         admissible.append(cand)
 
     if not admissible:
-        return _empty_ranking(
-            pose_set,
-            refused,
-            limits,
-            Refuse(
+        if unresolved:
+            decision: Decision = Defer(
+                reason=(
+                    "no preregistered candidate could be evaluated: "
+                    f"{[label for label, _ in unresolved]} came back unresolved "
+                    f"and {[label for label, _ in refused]} left A_safe"
+                ),
+                suggested_action="no_action",
+                detail={"n_unresolved": float(len(unresolved))},
+            )
+        else:
+            decision = Refuse(
                 code="R11",
                 reason="every preregistered candidate lies outside A_safe",
                 remedy="revise the preregistered set; do not project into the set",
                 offending=pose_set.study_id,
                 violations=tuple(v.reason for _, v in refused),
-            ),
-        )
+            )
+        return _empty_ranking(pose_set, refused, tuple(unresolved), limits, decision)
 
     values: list[float] = []
     epistemics: list[float] = []
@@ -412,6 +432,7 @@ def compare_poses(
         ordered=tuple(ranked),
         ambiguities=ambiguities,
         refused=tuple(refused),
+        unresolved=tuple(unresolved),
         decision=decision,
         limits_citations=limits.citations(),
         notice=service.provenance.notice,
@@ -607,6 +628,7 @@ def _study_decision(
 def _empty_ranking(
     pose_set: PreregisteredPoseSet,
     refused: Sequence[tuple[str, Refuse]],
+    unresolved: Sequence[tuple[str, tuple[str, ...]]],
     limits: SafetyLimits,
     decision: Decision,
 ) -> CandidateRanking:
@@ -620,6 +642,7 @@ def _empty_ranking(
         ordered=(),
         ambiguities=(),
         refused=tuple(refused),
+        unresolved=tuple(unresolved),
         decision=decision,
         limits_citations=limits.citations(),
         notice=SIMULATION_ONLY_NOTICE,

@@ -474,6 +474,15 @@ class FieldAccuracy:
     validation_status: Literal[
         "unvalidated", "solver_refinement_only", "phantom", "cross_solver", "in_vivo"
     ] = "unvalidated"
+    #: The solver's own *calibrated* relative-error bound for the discretisation
+    #: it actually used, looked up in a measured refinement table.  ``None``
+    #: means the backend reports no numerical accuracy, which is recorded as
+    #: unknown rather than as zero.
+    solver_relative_error_bound: float | None = None
+    #: The measured near-source resolution the bound was looked up on:
+    #: ``standoff_m``, ``panel_edge_m``, ``panel_to_standoff``.  Empty for a
+    #: closed-form backend, which discretises no conductor.
+    near_source_resolution: Mapping[str, float] = field(default_factory=dict)
     notice: str = SIMULATION_ONLY_NOTICE
 
     @property
@@ -757,13 +766,17 @@ class PoseEvaluation:
     #: tuple would mean an assumed identity and is refused upstream.
     transform_chain: tuple[str, ...]
 
-    # the four separate reported quantities, in ladder order
-    field_accuracy: FieldAccuracy
-    target_engagement: EngagementDistribution
-    network_response: NetworkResponse
+    # The four separate reported quantities, in ladder order.  Each may be
+    # ``Unresolved`` -- when the field solver refuses (its discretisation does
+    # not resolve the near-source field, say), the honest answer downstream is
+    # a reason, not a number, and ``ARCHITECTURE.md`` Sec. 6 says so.  An
+    # evaluation carrying any ``Unresolved`` can never be a ``Recommend``.
+    field_accuracy: FieldAccuracy | Unresolved
+    target_engagement: EngagementDistribution | Unresolved
+    network_response: NetworkResponse | Unresolved
     utility: UtilityStatus
 
-    efield: EFieldPrediction
+    efield: EFieldPrediction | Unresolved
     ledger: UncertaintyLedger
     decision: Decision
     provenance: ModelProvenance
@@ -781,6 +794,33 @@ class PoseEvaluation:
                 "it through an assumed identity",
                 offending_object=self.label,
             )
+        if self.unresolved_quantities() and isinstance(self.decision, Recommend):
+            raise CompilerRefusal(
+                "R06",
+                f"evaluation {self.label!r} recommends a pose while "
+                f"{sorted(self.unresolved_quantities())} could not be computed; "
+                "a recommendation resting on an unresolved quantity is a "
+                "recommendation resting on nothing",
+                remedy="return Defer with the reason the quantity is unresolved",
+                offending_object=self.label,
+            )
+
+    def unresolved_quantities(self) -> tuple[str, ...]:
+        """Names of the reported quantities that came back ``Unresolved``."""
+        return tuple(
+            name
+            for name, value in (
+                ("efield", self.efield),
+                ("field_accuracy", self.field_accuracy),
+                ("target_engagement", self.target_engagement),
+                ("network_effect", self.network_response),
+            )
+            if isinstance(value, Unresolved)
+        )
+
+    @property
+    def field_resolved(self) -> bool:
+        return not isinstance(self.efield, Unresolved)
 
     # -- the separation the thesis requires --------------------------------
     def four_quantities(self) -> dict[str, Any]:
@@ -811,7 +851,45 @@ class PoseEvaluation:
         return isinstance(self.decision, Defer)
 
     def summary(self) -> dict[str, Any]:
-        """A flat, JSON-ready record. Still carries the notice and the ledger."""
+        """A flat, JSON-ready record. Still carries the notice and the ledger.
+
+        An unresolved quantity appears as its ``reason``, never as ``0.0``.
+        """
+        unresolved = self.unresolved_quantities()
+
+        def _reason(value: Any) -> str:
+            return value.reason if isinstance(value, Unresolved) else ""
+
+        field_block: dict[str, Any] = (
+            {
+                "field_peak_v_per_m": self.field_accuracy.peak_v_per_m,
+                "field_peak_sd_v_per_m": self.field_accuracy.peak_sd_v_per_m,
+                "field_validation_status": self.field_accuracy.validation_status,
+                "field_validated_against": list(self.field_accuracy.validated_against),
+            }
+            if not isinstance(self.field_accuracy, Unresolved)
+            else {"field_unresolved_reason": _reason(self.field_accuracy)}
+        )
+        engagement_block: dict[str, Any] = (
+            {
+                "engagement_mean": self.target_engagement.mean(),
+                "engagement_sd": self.target_engagement.sd(),
+                "engagement_model_disagreement": (
+                    self.target_engagement.model_disagreement()
+                ),
+            }
+            if not isinstance(self.target_engagement, Unresolved)
+            else {"engagement_unresolved_reason": _reason(self.target_engagement)}
+        )
+        network_block: dict[str, Any] = (
+            {
+                "network_model_class_disagreement": (
+                    self.network_response.model_class_disagreement()
+                )
+            }
+            if not isinstance(self.network_response, Unresolved)
+            else {"network_unresolved_reason": _reason(self.network_response)}
+        )
         return {
             "label": self.label,
             "pose": self.pose.label,
@@ -819,17 +897,10 @@ class PoseEvaluation:
             "transform_chain": list(self.transform_chain),
             "decision": type(self.decision).__name__,
             "decision_detail": str(self.decision),
-            "field_peak_v_per_m": self.field_accuracy.peak_v_per_m,
-            "field_peak_sd_v_per_m": self.field_accuracy.peak_sd_v_per_m,
-            "field_validation_status": self.field_accuracy.validation_status,
-            "engagement_mean": self.target_engagement.mean(),
-            "engagement_sd": self.target_engagement.sd(),
-            "engagement_model_disagreement": (
-                self.target_engagement.model_disagreement()
-            ),
-            "network_model_class_disagreement": (
-                self.network_response.model_class_disagreement()
-            ),
+            "unresolved_quantities": list(unresolved),
+            **field_block,
+            **engagement_block,
+            **network_block,
             "utility_estimable": self.utility.estimable,
             "ledger": self.ledger.canonical(),
             "provenance": self.provenance.canonical(),

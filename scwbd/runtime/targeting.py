@@ -77,6 +77,9 @@ from .backends import (
     DEFAULT_RESPONSE_OPERATORS,
     CoilSpec,
     EFieldBackend,
+    FieldResolutionUnresolved,
+    FieldSolve,
+    ImpossiblePlacement,
     NetworkPropagator,
     ResponseOperator,
     resolve_efield_backend,
@@ -157,12 +160,22 @@ class _FieldBundle:
     direction ``i``.  Computing these once and reusing them for the field
     covariance, the engagement variance and the benefit variance is what makes
     the transform-uncertainty term *the same number* everywhere it appears.
+
+    ``solver_variance`` and ``solver_relative_bound`` come from the solver's own
+    ledger.  For the charge BEM that is
+    ``bem_error_envelope(panel_to_standoff)`` evaluated on the mesh actually
+    used -- a step function over gate N7/N8's measured refinement table.  There
+    is no fixed percentage anywhere on this path.
     """
 
     nominal: Tensor
     perturbed: tuple[tuple[Tensor, Tensor], ...]
     coarse: Tensor
     eps: float
+    solver_variance: float = 0.0
+    solver_relative_bound: float | None = None
+    solver_resolution: Mapping[str, float] | None = None
+    solver_validity: Mapping[str, Any] = field(default_factory=dict)
 
 
 class TargetingService:
@@ -234,6 +247,9 @@ class TargetingService:
             posterior_class="pseudo",
             efield_backend=getattr(self.efield_backend, "name", "unknown"),
             efield_backend_class=getattr(self.efield_backend, "backend_class", "unknown"),
+            efield_gate_evidence=tuple(
+                getattr(self.efield_backend, "gate_evidence", ()) or ()
+            ),
             response_models=tuple(r.name for r in self.response_operators),
             dynamics_model_classes=tuple(p.name for p in self.propagators),
             a_safe_source=str(limits.meta.get("source_path", "")),
@@ -295,7 +311,22 @@ class TargetingService:
             pose_src, chain, req, pose_uncertainty
         )
 
-        bundle = self._field_bundle(head, pose_head)
+        try:
+            bundle = self._field_bundle(head, pose_head)
+        except (FieldResolutionUnresolved, ImpossiblePlacement) as exc:
+            # The field solver refused. Two different refusals, two different
+            # answers, and neither is a number (ARCHITECTURE.md Sec. 6).
+            return self._unresolved_evaluation(
+                name=name,
+                pose_head=pose_head,
+                pose_src=pose_src,
+                chain_labels=chain_labels,
+                chain=chain,
+                sigma=sigma,
+                sigma_by_scope=sigma_by_scope,
+                head=head,
+                exc=exc,
+            )
         efield = self._efield_prediction(head, bundle, sigma)
 
         mask = head.region_mask(self.config.target_region)
@@ -341,13 +372,7 @@ class TargetingService:
             pose=pose_head,
             requested_frame=pose_src.parent,
             transform_chain=chain_labels,
-            field_accuracy=FieldAccuracy(
-                peak_v_per_m=efield.peak(),
-                peak_sd_v_per_m=efield.peak_sd(),
-                transform_sd_v_per_m=self._field_transform_sd(bundle, sigma),
-                validated_against=("coil_discretisation_refinement",),
-                validation_status="solver_refinement_only",
-            ),
+            field_accuracy=self._field_accuracy(efield, bundle, sigma),
             target_engagement=engagement,
             network_response=network,
             utility=UtilityStatus(),
@@ -430,7 +455,7 @@ class TargetingService:
 
     # -- field --------------------------------------------------------------
     def _field_bundle(self, head: HeadModel, pose: Pose) -> _FieldBundle:
-        solve = self.efield_backend.solve
+        solve = self._solve_field
         nominal = solve(head, pose, self.coil)
         eps = _TWIST_EPS
         perturbed: list[tuple[Tensor, Tensor]] = []
@@ -453,12 +478,37 @@ class TargetingService:
                 handedness=pose.handedness,
                 epoch=pose.epoch,
             )
-            perturbed.append((solve(head, plus, self.coil), solve(head, minus, self.coil)))
-        coarse = self.efield_backend.solve(
-            head, pose, self.coil.coarsened(self.config.refinement_stride)
-        )
+            # every perturbed pose is checked too: a Jacobian leg that leaves
+            # the solver's validated envelope refuses like any other pose
+            perturbed.append(
+                (solve(head, plus, self.coil).e, solve(head, minus, self.coil).e)
+            )
+        coarse = solve(head, pose, self.coil.coarsened(self.config.refinement_stride))
         return _FieldBundle(
-            nominal=nominal, perturbed=tuple(perturbed), coarse=coarse, eps=eps
+            nominal=nominal.e,
+            perturbed=tuple(perturbed),
+            coarse=coarse.e,
+            eps=eps,
+            solver_variance=float(nominal.numerical_variance),
+            solver_relative_bound=nominal.relative_error_bound,
+            solver_resolution=nominal.resolution,
+            solver_validity=dict(nominal.validity_domain),
+        )
+
+    def _solve_field(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> FieldSolve:
+        """One field solve, with the backend's accuracy report attached.
+
+        Backends written before :class:`FieldSolve` existed expose only
+        ``solve``; they are wrapped rather than required to change, and a
+        backend that reports no numerical accuracy gets ``None`` -- which the
+        ledger records as unknown, never as zero.
+        """
+        if hasattr(self.efield_backend, "solve_field"):
+            return self.efield_backend.solve_field(head, pose, coil)
+        return FieldSolve(  # pragma: no cover - third-party backend
+            e=self.efield_backend.solve(head, pose, coil),
+            relative_error_bound=None,
+            validity_domain={"solver": getattr(self.efield_backend, "name", "unknown")},
         )
 
     def _field_jacobian(self, bundle: _FieldBundle) -> Tensor:
@@ -495,7 +545,15 @@ class TargetingService:
         cov = self._field_covariance(bundle, sigma)
         mag = torch.linalg.norm(bundle.nominal, dim=-1)
         peak = float(mag.max())
-        numerical = float((torch.linalg.norm(bundle.nominal - bundle.coarse, dim=-1)).max())
+        # Two distinct discretisations, measured separately and added:
+        #   * the *coil*'s equivalent-sheet discretisation, measured here by an
+        #     actual refinement of the sheet;
+        #   * the *conductor* discretisation, measured by the solver and looked
+        #     up in gate N7/N8's calibrated envelope. Never a constant.
+        coil_numerical = float(
+            (torch.linalg.norm(bundle.nominal - bundle.coarse, dim=-1)).max()
+        )
+        numerical_variance = coil_numerical**2 + float(bundle.solver_variance)
         lo, hi = getattr(self.efield_backend, "discrepancy_fraction", (-0.4, 0.4))
         ledger = full_ledger(
             units="V/m",
@@ -504,22 +562,32 @@ class TargetingService:
             between_session=0.0,
             parameter=(float(self.coil.didt_relative_sd) * peak) ** 2,
             model_class=0.0,
-            numerical=numerical**2,
+            numerical=numerical_variance,
             bias_interval=(lo * peak, hi * peak),
             bias_status="prior_specified_sensitivity",
             model_discrepancy=abs(hi - lo) * peak / 2.0,
             validity_domain={
                 **head.validity_domain(),
+                **dict(bundle.solver_validity),
                 "efield_backend": getattr(self.efield_backend, "name", "unknown"),
-                "conductivity_enters_solution": getattr(
-                    self.efield_backend, "backend_class", ""
-                )
-                != "analytic",
+                "conductivity_enters_solution": bool(
+                    bundle.solver_validity.get(
+                        "conductivity_enters_solution",
+                        getattr(self.efield_backend, "backend_class", "") != "analytic",
+                    )
+                ),
+                "coil_discretisation_numerical_sd_v_per_m": coil_numerical,
+                "solver_relative_error_bound": bundle.solver_relative_bound,
+                "solver_numerical_variance": float(bundle.solver_variance),
                 "note": (
-                    "the analytic spherical backend is conductivity-independent, "
-                    "so it reports no tissue-parameter variance; its discrepancy "
-                    "against a subject-specific finite-element solve is carried "
-                    "as a prior-specified range, not a measured bound"
+                    "the numerical term is measured, not asserted: the coil "
+                    "sheet by an explicit refinement here, and the conductor "
+                    "discretisation by the solver's own calibrated envelope "
+                    "(gate N7/N8). A spherical backend is "
+                    "conductivity-independent and so reports no tissue-parameter "
+                    "variance; its discrepancy against a subject-specific solve "
+                    "is a separate, prior-specified range and a numerical gate "
+                    "does not narrow it."
                 ),
             },
             notes="E-field ledger",
@@ -534,6 +602,169 @@ class TargetingService:
             backend_class=getattr(self.efield_backend, "backend_class", "unknown"),
             is_trained_artifact=bool(
                 getattr(self.efield_backend, "is_trained_artifact", False)
+            ),
+        )
+
+    def _field_accuracy(
+        self, efield: EFieldPrediction, bundle: _FieldBundle, sigma: Tensor
+    ) -> FieldAccuracy:
+        """Level 1 of the validation ladder, reporting what actually backs it.
+
+        ``validation_status`` is raised to ``cross_solver`` only when the
+        backend names a numerical gate that compared it against an
+        *independent* reference.  Gate N8 does exactly that at contact geometry
+        (0.73 % mean relative error against an axial spectral reference), which
+        is why the contact regime is not a deferral.  It remains a statement
+        about the *discretisation*, not about whether a sphere is a head.
+        """
+        gates = tuple(getattr(self.efield_backend, "gate_evidence", ()) or ())
+        validated = ("coil_discretisation_refinement", *gates)
+        return FieldAccuracy(
+            peak_v_per_m=efield.peak(),
+            peak_sd_v_per_m=efield.peak_sd(),
+            transform_sd_v_per_m=self._field_transform_sd(bundle, sigma),
+            validated_against=validated,
+            validation_status="cross_solver" if gates else "solver_refinement_only",
+            solver_relative_error_bound=bundle.solver_relative_bound,
+            near_source_resolution=dict(bundle.solver_resolution or {}),
+        )
+
+    # -- when the solver refuses --------------------------------------------
+    def _unresolved_evaluation(
+        self,
+        *,
+        name: str,
+        pose_head: Pose,
+        pose_src: Pose,
+        chain_labels: tuple[str, ...],
+        chain: ResolvedChain | None,
+        sigma: Tensor,
+        sigma_by_scope: Mapping[str, Tensor],
+        head: HeadModel,
+        exc: Exception,
+    ) -> PoseEvaluation:
+        """Build the evaluation for a pose whose field could not be computed.
+
+        Every downstream quantity comes back as ``Unresolved`` carrying the
+        solver's own reason and remedy -- never a zero, never a number.  The
+        decision is:
+
+        * ``Defer`` when the refusal was
+          ``ChargeBEM.assert_resolves_sources`` -- the geometry is physical and
+          the mesh is the gap, so the informative next step is to refine the
+          model, not to act;
+        * ``Refuse(code="R06")`` when the coil is not outside the head, because
+          that is not a placement at all.
+        """
+        resolved = isinstance(exc, FieldResolutionUnresolved)
+        reason = str(exc)
+        remedy = str(getattr(exc, "remedy", ""))
+        detail = dict(
+            getattr(exc, "resolution", None) or getattr(exc, "detail", None) or {}
+        )
+        unresolved = Unresolved(
+            reason=reason + (f"  remedy: {remedy}" if remedy else ""),
+            missing=("induced_efield",),
+        )
+
+        if resolved:
+            decision: Decision = Defer(
+                reason=(
+                    "the induced-field solver refused: its discretisation does "
+                    "not resolve the near-source field at this pose, and gate "
+                    "N7/N8 measured non-monotonic refinement beyond that "
+                    "envelope, so no error bound can be attached to a number "
+                    f"computed here. {reason}"
+                ),
+                # Refining a mesh is a modelling step, not a measurement on a
+                # subject and not a probe. Saying "reversible_probe" here would
+                # propose an intervention to fix a discretisation.
+                suggested_action="no_action",
+                detail={k: float(v) for k, v in detail.items() if _is_number(v)},
+            )
+        else:
+            decision = Refuse(
+                code="R06",
+                reason=reason,
+                remedy=remedy,
+                offending=name,
+                violations=(reason,),
+            )
+
+        return PoseEvaluation(
+            label=name,
+            pose=pose_head,
+            requested_frame=pose_src.parent,
+            transform_chain=chain_labels,
+            field_accuracy=unresolved,
+            target_engagement=unresolved,
+            network_response=unresolved,
+            utility=UtilityStatus(),
+            efield=unresolved,
+            ledger=self._pose_only_ledger(
+                head=head,
+                chain=chain,
+                sigma=sigma,
+                sigma_by_scope=sigma_by_scope,
+                reason=reason,
+            ),
+            decision=decision,
+            provenance=self.provenance,
+            safety_axes_checked=(),
+            safety_axes_unchecked=tuple(
+                sorted(
+                    {s.key for s in self.feasible_set.limits.for_modality("tms")}
+                    | {s.key for s in self.feasible_set.limits.for_modality("protocol")}
+                )
+            ),
+        )
+
+    def _pose_only_ledger(
+        self,
+        *,
+        head: HeadModel,
+        chain: ResolvedChain | None,
+        sigma: Tensor,
+        sigma_by_scope: Mapping[str, Tensor],
+        reason: str,
+    ) -> UncertaintyLedger:
+        """The ledger of what is still known when the field is not: the pose.
+
+        In metres, because there is no readout to express anything else in.
+        The three terms that would have described the field are marked *not
+        applicable* in ``validity_domain`` rather than being written as zero --
+        a zero would assert those terms are absent, and they are simply not
+        computed.
+        """
+        return full_ledger(
+            units="m",
+            measurement=float(torch.trace(sigma_by_scope["measurement"][:3, :3])),
+            within_session=float(torch.trace(sigma_by_scope["within_session"][:3, :3])),
+            between_session=float(
+                torch.trace(sigma_by_scope["between_session"][:3, :3])
+            ),
+            parameter=0.0,
+            model_class=0.0,
+            numerical=0.0,
+            bias_interval=(
+                -float(torch.linalg.norm(sigma[:3, :3].diagonal().sqrt())) - 1e-9,
+                float(torch.linalg.norm(sigma[:3, :3].diagonal().sqrt())) + 1e-9,
+            ),
+            bias_status="prior_specified_sensitivity",
+            validity_domain={
+                **head.validity_domain(),
+                "registration_chain": list(chain.labels) if chain is not None else [],
+                "field_unresolved_reason": reason,
+                "terms_not_applicable": ["parameter", "model_class", "numerical"],
+                "terms_not_applicable_reason": (
+                    "the field solve refused, so nothing downstream of it was "
+                    "computed; these are not zero, they are not applicable"
+                ),
+                "human_use_authorized": False,
+            },
+            notes=(
+                "pose-only ledger for an evaluation whose induced field could "
+                "not be computed"
             ),
         )
 
@@ -946,3 +1177,6 @@ class TargetingService:
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         return f"TargetingService({self.provenance.label})"
 
+
+def _is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)

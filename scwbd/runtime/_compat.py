@@ -22,7 +22,7 @@ implementation is available and records that choice.
 from __future__ import annotations
 
 import importlib
-from typing import Any
+from typing import Any, Mapping
 
 __all__ = [
     "optional",
@@ -52,7 +52,20 @@ __all__ = [
     "Unresolved",
     "ClaimManifest",
     "figure_eight_coil",
-    "efield_solver",
+    "tms_pulse_biphasic",
+    "analytic_sphere_efield",
+    "coil_dipoles_in_head_frame",
+    "efield_from_coil",
+    "spherical_head_model",
+    "charge_bem",
+    "layered_sphere_bem",
+    "graded_icosphere",
+    "tri_mesh",
+    "icosphere",
+    "bem_error_envelope",
+    "max_panel_to_standoff",
+    "impossible_geometry",
+    "is_resolution_refusal",
     "anatomy_prior",
 ]
 
@@ -125,16 +138,45 @@ if Unresolved is None:  # pragma: no cover - agent F has landed this
 # -- optional: agent A's claim manifest --------------------------------------
 ClaimManifest = optional("scwbd.schema.claims", "ClaimManifest")
 
-# -- optional: agent G's coil geometry and E-field solver --------------------
+# -- optional: agent G's coil geometry and E-field solvers -------------------
 figure_eight_coil = optional("scwbd.intervene.tms.coil", "FigureEightCoil")
+tms_pulse_biphasic = optional("scwbd.intervene.tms.coil", "biphasic")
 
-#: Agent G owns the TMS E-field solver.  Until it lands, the runtime uses the
-#: analytic spherical backend in :mod:`scwbd.runtime.backends` and *says so* in
+#: Agent G / Faraday own the TMS field physics.  These are the gated
+#: implementations (``reports/intervene/N6_induced_efield.md``,
+#: ``N8_induced_efield_contact.md``); the runtime prefers them and falls back to
+#: the closed-form backend in :mod:`scwbd.runtime.backends` only when they are
+#: absent, *saying so* in
 #: :class:`~scwbd.runtime.provenance.ModelProvenance.efield_backend_class`.
-efield_solver = (
-    optional("scwbd.intervene.tms.efield", "solve_efield")
-    or optional("scwbd.intervene.tms.field", "solve_efield")
+analytic_sphere_efield = optional("scwbd.intervene.tms.efield", "analytic_sphere_efield")
+coil_dipoles_in_head_frame = optional(
+    "scwbd.intervene.tms.efield", "coil_dipoles_in_head_frame"
 )
+efield_from_coil = optional("scwbd.intervene.tms.efield", "efield_from_coil")
+spherical_head_model = optional("scwbd.intervene.tms.efield", "SphericalHeadModel")
+charge_bem = optional("scwbd.intervene.tms.efield", "ChargeBEM")
+layered_sphere_bem = optional("scwbd.intervene.tms.efield", "LayeredSphereBEM")
+graded_icosphere = optional("scwbd.intervene.tms.efield", "graded_icosphere")
+tri_mesh = optional("scwbd.intervene.tms.efield", "TriMesh")
+icosphere = optional("scwbd.intervene.tms.efield", "icosphere")
+bem_error_envelope = optional("scwbd.intervene.tms.efield", "bem_error_envelope")
+max_panel_to_standoff = optional("scwbd.intervene.tms.efield", "MAX_PANEL_TO_STANDOFF")
+impossible_geometry = optional("scwbd.intervene.tms.efield", "ImpossibleGeometry")
+
+
+def is_resolution_refusal(exc: BaseException) -> bool:
+    """Distinguish "the mesh is too coarse" from "the coil is inside the head".
+
+    Both arrive as ``ImpossibleGeometry`` (refusal ``R06``), and the runtime
+    must answer differently: an unresolved near field is a *modelling* gap the
+    caller can close, so it becomes ``Defer``; a source inside the conductor is
+    not a placement at all, so it becomes ``Refuse``.  The discriminator is the
+    refusal's own ``offending_object``, which
+    ``ChargeBEM.assert_resolves_sources`` populates with the measured
+    resolution dict.
+    """
+    obj = getattr(exc, "offending_object", None)
+    return isinstance(obj, Mapping) and "panel_to_standoff" in obj
 
 # -- optional: agent C/I anatomy prior ---------------------------------------
 anatomy_prior = optional("scwbd.foundation.anatomy", "load_anatomy")

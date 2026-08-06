@@ -55,7 +55,9 @@ WeightsStatus = Literal[
     "absent",  # nothing was loaded; the service refuses to evaluate
 ]
 
-BackendClass = Literal["analytic", "numerical_fem", "learned", "unknown"]
+BackendClass = Literal[
+    "analytic", "numerical_bem", "numerical_fem", "learned", "unknown"
+]
 
 
 class ProvenanceMismatch(RuntimeError):
@@ -104,6 +106,11 @@ class ModelProvenance:
 
     efield_backend: str = "analytic_spherical_primary"
     efield_backend_class: BackendClass = "analytic"
+    #: Numerical gates the field solve has passed, by name.  Empty means the
+    #: field computation carries no independent numerical validation, which is
+    #: a different statement from "the field is wrong" and from "the head model
+    #: is right".
+    efield_gate_evidence: tuple[str, ...] = ()
     response_models: tuple[str, ...] = ()
     dynamics_model_classes: tuple[str, ...] = ()
     a_safe_source: str = ""
@@ -170,6 +177,10 @@ class ProvenanceExpectation:
     #: passes ``("trained",)`` and gets a hard failure on a fallback.
     accept_weights_status: tuple[WeightsStatus, ...] | None = None
     accept_efield_backend_class: tuple[BackendClass, ...] | None = None
+    #: Gate names the consumer requires the field solve to have passed, e.g.
+    #: ``("N8_induced_efield_contact",)`` for a lane that positions a coil
+    #: against the scalp.
+    require_efield_gates: tuple[str, ...] | None = None
     checkpoint_sha256: str | None = None
     #: Minimum number of distinct candidate response models required before the
     #: consumer will look at an engagement distribution at all.
@@ -208,6 +219,16 @@ class ProvenanceExpectation:
                 f"{list(self.accept_efield_backend_class)}, served "
                 f"{served.efield_backend_class!r} ({served.efield_backend})"
             )
+        if self.require_efield_gates is not None:
+            missing = [
+                g for g in self.require_efield_gates if g not in served.efield_gate_evidence
+            ]
+            if missing:
+                out.append(
+                    f"efield_gate_evidence: expected {missing} to have passed, "
+                    f"served {list(served.efield_gate_evidence)} -- the field "
+                    "computation carries no such numerical validation"
+                )
         if (
             self.min_response_models is not None
             and len(served.response_models) < self.min_response_models

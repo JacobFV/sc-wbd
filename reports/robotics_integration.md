@@ -88,9 +88,10 @@ A new, self-contained, additive package following the repo's conventions
 
 ## 4. Refusal and defer paths proved by tests
 
-`.venv/bin/python -m pytest tests/runtime -q` → **133 passed**.
-Consumer: `python -m pytest packages/tms-scwbd-bridge/tests -q` → **46 passed,
-27 skipped** without SC-WBD installed; **73 passed** with it.
+`.venv/bin/python -m pytest tests/runtime -q` → **159 passed**.
+Consumer: `python -m pytest packages/tms-scwbd-bridge/tests -q` → **51 passed,
+32 skipped** without SC-WBD installed; **83 passed** with it. The consumer's full
+suite is unaffected: 3230 passed, 51 skipped.
 
 | Path | Trigger | Where proved |
 |---|---|---|
@@ -103,7 +104,10 @@ Consumer: `python -m pytest packages/tms-scwbd-bridge/tests -q` → **46 passed,
 | **`Refuse(code="R11")`** | coil 90 mm off the scalp sphere (`tms.coil_scalp_distance_mm` > 40 mm, Caulfield 2022); also a 120 Hz protocol axis | `TestRefuseOutsideASafe` |
 | **`UnresolvedCausalAmbiguity`** | three preregistered poses 12 mm apart under three disagreeing operators; the ranking groups them and names the discriminating measurement instead of tie-breaking | `tests/runtime/test_compare.py::TestAmbiguityIsPreservedNotBrokenArbitrarily` |
 | **Whole-study `Refuse(R11)`** | every preregistered candidate outside `A_safe` | `TestUnsafeCandidatesNeverEnterTheOrdering` |
-| **Provenance mismatch** | wrong schema / runtime-API / designation / checkpoint hash; demanding `weights_status=("trained",)` against the analytic fallback; too few response models | `tests/runtime/test_provenance_handshake.py` |
+| **`Defer` -- the field solver's discretisation does not resolve the source** | a deliberately coarse BEM mesh (80 panels over a 92 mm sphere), where gate N7/N8 measured 106 % error and *non-monotonic* refinement; `suggested_action="no_action"`, all four quantities `Unresolved` | `tests/runtime/test_field_backends.py::TestTheResolutionRefusalBecomesDefer` |
+| **`Refuse(code="R06")`** | a coil element inside the scalp -- the inverted coil-frame convention, or a placement that intersects the head | `TestTheCoilFrameConvention`, `TestTheResolutionRefusalBecomesDefer` |
+| **An unresolved candidate is excluded from a ranking** | a preregistered set evaluated with a mesh too coarse to resolve the source: the candidates are reported under `CandidateRanking.unresolved`, not ranked at zero, and the study defers | `test_compare.py::TestAnUnresolvedCandidateIsNeverRankedAtZero` |
+| **Provenance mismatch** | wrong schema / runtime-API / designation / checkpoint hash; demanding `weights_status=("trained",)` against the analytic fallback; too few response models; `require_efield_gates=("N8_induced_efield_contact",)` against a backend that has not passed it | `tests/runtime/test_provenance_handshake.py`, `test_field_backends.py::TestAConsumerCanDemandTheGates` |
 | **Ledger always populated** | all six variance components present, non-degenerate bias interval, backed estimator — on every evaluation *including refused ones*, and on every nested object | `tests/runtime/test_ledger_and_separation.py::TestTheLedgerIsAlwaysPopulated` |
 | **Four quantities never collapse** | four distinct objects, four distinct types; `float(engagement)` and `float(network_response)` raise; `UtilityStatus` refuses `estimable=True`; no `score`/`combined`/`fused` attribute anywhere | `TestTheFourQuantitiesNeverCollapse` |
 | **`Unresolved` for unsupported reads** | unknown port, write-only port, a port whose clock has not ticked, an unmodelled readout element, `TargetingService.read(anything)` | `tests/runtime/test_brain_runtime.py::TestUnsupportedReadsAreUnresolved` |
@@ -153,6 +157,96 @@ split is computed from the per-edge adjoint Jacobians, so a between-session
 registration edge lands in `between_session` and a tracker jitter lands in
 `within_session` — tested.
 
+## 6b. Contact geometry: validated, not deferred
+
+`tms-robotics` positions a coil against a registered scalp target, which is the
+**contact** regime. Gate `N8_induced_efield_contact` **passes**:
+
+| metric | value | threshold |
+|---|---|---|
+| `contact.a_over_Rc` | 0.955056 | >= 0.95 |
+| `contact_efield.mean_relative_error` | **0.0073375** | 0.05 (preregistered) |
+| `contact.self_convergence_order` | 2.26347 | >= 1.5 |
+
+The runtime therefore does **not** blanket-defer contact-regime targeting. It
+proceeds inside the declared resolution envelope carrying the calibrated error
+bound, and defers outside it. Three concrete consequences, all wired:
+
+1. **No fixed error figure anywhere on the field path.** `efield_from_coil(solver="bem")`
+   measures the near-source resolution of the mesh it actually used and looks
+   the relative-error bound up in gate N7/N8's refinement table
+   (`bem_error_envelope`). The runtime consumes that number into
+   `EFieldPrediction.ledger.variance["numerical"]` and
+   `FieldAccuracy.solver_relative_error_bound`. A test asserts the reported
+   bound equals `bem_error_envelope(panel_to_standoff)` exactly, and that
+   refining the mesh changes it -- a constant would not move.
+2. **`ChargeBEM.assert_resolves_sources()` is the Defer trigger.** The runtime
+   catches it and returns `Defer(suggested_action="no_action")` naming the
+   measured resolution, rather than letting `ImpossibleGeometry` escape to the
+   bridge. `"no_action"` and not a probe: refining a mesh is a modelling step,
+   and proposing an intervention to fix a discretisation would be absurd.
+   All four reported quantities come back `Unresolved` with the solver's own
+   reason; none is zero, and `PoseEvaluation` refuses to carry a `Recommend`
+   while any quantity is unresolved.
+3. **A clinical figure-eight is comfortably inside the envelope, not at its
+   edge.** Faraday measured a real figure-eight at 4 mm scalp standoff and
+   found its nearest *winding* stands 9.2 mm off the scalp, because the coil is
+   flat and the head is curved -- `a/R_c = 0.902`, **easier** than the 0.955
+   case N8 validated. This runtime reproduces it: on the shipped 92 mm phantom
+   at a 4 mm face standoff the nearest winding is 9.2 mm out and
+   `a/R_c = 0.909`. It is pinned as a regression test
+   (`test_field_backends.py::test_the_windings_clear_the_scalp`) so nobody
+   later assumes contact targeting is marginal when it is not. The 0.955 case
+   is a *concentrated* source, which is the harder one.
+
+The distinction that must not blur: **N8 validates the discretisation of the
+induced-field computation. It does not validate the head model.** The
+sphere-vs-real-head geometry prior stays at its declared +-40 % and a numerical
+gate does not narrow it; a test asserts the two move independently.
+
+### Two defects this wiring exposed in the runtime's own code
+
+Both were live before the gated solver was wired in, and both are now regression
+tests rather than prose.
+
+**The coil frame was upside down.** Agent G's `CoilGeometry.winding_height` is
+measured "above the head-facing face", so the coil frame's `+z` points *away*
+from the head. The runtime's warm-up pose pointed `+z` *into* the head, which
+reads naturally as "the coil is aimed at the cortex" and buried every winding
+5 mm inside the scalp. The interior solution's denominator passes through zero
+there, so the field it returned was inflated -- the shipped phantom reported
+135 V/m where the correct placement gives 58 V/m. The gated solver refuses that
+geometry outright (`ImpossibleGeometry`), which is how it surfaced. The runtime
+now translates that refusal into `Refuse(code="R06")`.
+
+**The runtime's fallback field model was an approximation, not the closed form.**
+`AnalyticSphericalEField` returned the *tangential projection of the primary
+field*, `E_p - (E_p . n) n`. That is not the Sarvas / Heller--van Hulsteyn
+interior solution: the secondary field carries a tangential component too, and
+dropping it overestimates the magnitude by a measured factor of ~1.54 at the
+peak on the shipped phantom, with the direction unchanged. The gated
+implementation is now preferred and the fallback is renamed, relabelled as an
+approximation, given a wider declared discrepancy, and carries no gate evidence.
+It exists only so the runtime's structure -- ledgers, covariance propagation,
+refusals -- stays exercisable when `scwbd.intervene.tms.efield` is absent.
+
+### Also wired
+
+* `ProvenanceExpectation.require_efield_gates` -- a consumer lane that positions
+  a coil against the scalp can demand `("N8_induced_efield_contact",)` and get a
+  hard `ProvenanceMismatch` from a backend that has not passed it. The analytic
+  backend claims `N6` only; the BEM backend claims both.
+* `ModelProvenance.efield_gate_evidence` and `efield_backend_class="numerical_bem"`.
+* `FieldAccuracy.validation_status` rises to `cross_solver` only when the
+  backend names a gate that compared it against an *independent* reference.
+* The grading half-angle is measured from the coil's own angular extent rather
+  than fixed. Faraday's default 0.35 rad cap is calibrated for a concentrated
+  source; a figure-eight's wings sit ~28 degrees off axis on a 92 mm head, so a
+  20-degree cap leaves the wing tips over coarse panels and the guard -- rightly
+  -- refuses a mesh that is fine where the axis is and coarse where the current
+  is. Measuring the cap gives 0.487 panel-to-standoff at 1094 panels, better
+  than uniform subdivision 3 at 1280.
+
 ## 7. What backs the numbers today, and what does not
 
 There is **no trained `SC-WBD-001-beta` checkpoint** in this working tree.
@@ -163,15 +257,18 @@ artifact gets a hard `ProvenanceMismatch` in one line.
 
 What actually computes the predictions:
 
-- **E-field:** closed-form primary field of the coil's equivalent magnetisation
-  sheet with the radial component removed, exact for a spherically symmetric
-  conductor (Heller & van Hulsteyn 1992). Peak on the shipped phantom is
-  ~135 V/m at a 4 mm standoff, which is the right order for a figure-8 coil. It
-  is **conductivity-independent**, so it reports no tissue-parameter variance
-  and its ledger says so; its discrepancy against a subject-specific FEM solve
-  is carried as a ±40 % prior-specified range, not a measured bound. Agent G's
-  solver replaces it through `resolve_efield_backend` the moment it lands, and
-  the provenance field changes with it.
+- **E-field:** `scwbd.intervene.tms.efield.analytic_sphere_efield`, the gated
+  Sarvas / Heller--van Hulsteyn interior solution (gate `N6_induced_efield`),
+  selected automatically by `resolve_efield_backend`. Peak on the shipped
+  phantom is 58 V/m at a 4 mm face standoff with `didt = 4e7 A/s`. It is
+  **conductivity-independent**, so it reports no tissue-parameter variance and
+  its ledger says so; its discrepancy against a solve on a subject mesh is
+  carried as a ±40 % prior-specified range, not a measured bound.
+  `ChargeBEMEField` wraps the surface-charge BEM (gates `N6` + `N8`) for
+  non-spherical geometry and is selectable but not the default: for a
+  spherically symmetric head the closed form is exact and the BEM is a
+  discretisation of it, so defaulting to it would buy discretisation error and
+  a dense solve for nothing.
 - **Field covariance:** first-order propagation of the declared pose-chain twist
   covariance through the solve (finite-difference Jacobian on the 6-DoF twist)
   plus the declared device-gain prior. The same Jacobian bundle is reused for
@@ -188,9 +285,13 @@ What actually computes the predictions:
 - **Head model:** an analytic concentric-sphere phantom. `origin="phantom"`
   travels into every ledger's `validity_domain` as `is_phantom: true`.
 
-None of this has been validated against a measured cortical field, a measured
-evoked response, or any clinical outcome. `FieldAccuracy.validation_status` is
-`"solver_refinement_only"` and says so.
+The field *computation* is validated numerically -- `N6` for induction, `N8` at
+contact geometry to 0.73 % against an independent axial spectral reference --
+and `FieldAccuracy.validation_status` reads `cross_solver` with the gate names
+attached. Nothing else is. There is no measured cortical field, no measured
+evoked response, and no clinical outcome anywhere in this stack, and a
+numerical gate lifts a precondition rather than licensing a claim about target
+engagement, network effect, or utility.
 
 ## 8. What would disable this work
 
@@ -264,7 +365,28 @@ about neither on its own, which is precisely why the comparison should be run
 before a targeting claim is made from either. Neither repository currently has
 the fixture to do it.
 
-**R5 — the bridge's default handshake accepts an analytic-backend model.**
+**R5 — the grading half-angle should follow the source's angular extent.**
+`graded_icosphere`'s default `half_angle_rad = 0.35` is calibrated for a
+concentrated source. A figure-eight coil's wings sit ~28 degrees off axis on a
+92 mm head, outside a 20-degree cap, so the wing tips end up over coarse panels
+and `assert_resolves_sources` refuses a mesh that is fine where the axis is and
+coarse where the current actually is. The runtime works around it by measuring
+the cap from the coil's own dipole positions
+(`ChargeBEMEField(half_angle_rad=None)`, the default), which gives 0.487
+panel-to-standoff at 1094 panels versus 0.959 at 1280 for uniform subdivision 3.
+**Suggested:** either default `graded_icosphere`'s cap to the source extent, or
+document that the 0.35 default is for concentrated sources only. Handed back to
+⚡ Faraday rather than changed, since `scwbd/intervene/**` is theirs.
+
+**R6 — `bem_error_envelope` returns `nan` outside the envelope.**
+That is defensible (there is no bound to report), but it means a caller who
+skips `assert_resolves_sources` and reads the ledger gets a `nan` variance
+rather than a refusal. The runtime never takes that path -- `efield_from_coil`
+calls the guard first -- but a `nan` in a variance field is the kind of thing
+that propagates silently. **Suggested:** consider raising from
+`bem_error_envelope` itself. Also Faraday's call.
+
+**R7 — the bridge's default handshake accepts an analytic-backend model.**
 This is deliberate: refusing outright would tempt a caller to build a local
 approximation of a neuro model, which is worse. But a lane that ever intends to
 make a targeting claim should pass

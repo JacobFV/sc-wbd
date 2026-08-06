@@ -31,9 +31,14 @@ from __future__ import annotations
 from ._compat import SIMULATION_ONLY_NOTICE, Unresolved
 from .backends import (
     AnalyticSphericalEField,
+    ChargeBEMEField,
     CoilSpec,
     DEFAULT_PROPAGATORS,
     DEFAULT_RESPONSE_OPERATORS,
+    FieldResolutionUnresolved,
+    FieldSolve,
+    GatedAnalyticSphereEField,
+    ImpossiblePlacement,
 )
 from .brain_runtime import BrainRuntime, PortSpec, Readout, RuntimeStep
 from .compare import (
@@ -58,6 +63,7 @@ from .serving import (
     CheckpointNotFound,
     CheckpointRecord,
     ServedModel,
+    coil_pose_over_region,
     discover_checkpoint,
 )
 from .targeting import SessionProtocol, TargetingConfig, TargetingService
@@ -109,6 +115,11 @@ __all__ = [
     "spherical_phantom",
     "CoilSpec",
     "AnalyticSphericalEField",
+    "GatedAnalyticSphereEField",
+    "ChargeBEMEField",
+    "FieldSolve",
+    "FieldResolutionUnresolved",
+    "ImpossiblePlacement",
     "DEFAULT_RESPONSE_OPERATORS",
     "DEFAULT_PROPAGATORS",
     # offline comparison
@@ -123,6 +134,7 @@ __all__ = [
     "CheckpointRecord",
     "CheckpointNotFound",
     "discover_checkpoint",
+    "coil_pose_over_region",
     "ModelProvenance",
     "ProvenanceExpectation",
     "ProvenanceMismatch",

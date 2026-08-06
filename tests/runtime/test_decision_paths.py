@@ -169,15 +169,17 @@ class TestRecommendIsReachableAndBounded:
     def test_a_confident_well_placed_pose_can_recommend(self, head, nominal_pose):
         service = TargetingService(
             response_operators=(
-                MagnitudeThresholdResponse(threshold_v_per_m=40.0),
+                MagnitudeThresholdResponse(threshold_v_per_m=45.0, width_v_per_m=6.0),
                 MagnitudeThresholdResponse(
-                    threshold_v_per_m=42.0, name="efield_magnitude_threshold_b"
+                    threshold_v_per_m=46.0,
+                    width_v_per_m=6.0,
+                    name="efield_magnitude_threshold_b",
                 ),
             )
         )
         evaluation = service.evaluate_pose(
             head,
-            replace(nominal_pose, uncertainty=PoseUncertainty.isotropic(0.0005, 0.005)),
+            replace(nominal_pose, uncertainty=PoseUncertainty.isotropic(0.0002, 0.002)),
         )
         assert isinstance(evaluation.decision, Recommend)
         assert evaluation.decision.benefit_margin > evaluation.decision.epistemic_uncertainty
