@@ -37,6 +37,8 @@ union remains the authority.
 
 from __future__ import annotations
 
+import os
+
 import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -78,8 +80,33 @@ class Attribution:
             bits.append(f"    doi:     {self.doi}")
         elif self.url:
             bits.append(f"    url:     {self.url}")
-        bits.append(f"    from:    {self.provenance}")
+        bits.append(f"    from:    {_repo_relative(self.provenance)}")
         return "\n".join(bits)
+
+
+
+def _repo_relative(provenance: str) -> str:
+    """A provenance path as it appears in the repository, never on this machine.
+
+    Registries differ in whether they record card paths absolute or relative, so
+    the same attribution block printed both ``configs/source_cards/...`` and
+    ``/home/<user>/Documents/.../scwbd/sources/cards/...`` -- and that block is
+    published verbatim on the model card. An absolute path there is a reader's
+    dead end (it names a directory only the author has) and it discloses the
+    author's home directory to everyone who downloads the model.
+
+    Normalising at render time rather than at each registry means a registry
+    added later cannot reintroduce it.
+    """
+    if not provenance or not os.path.isabs(provenance):
+        return provenance
+    root = Path(__file__).resolve().parents[2]
+    try:
+        return str(Path(provenance).resolve().relative_to(root))
+    except ValueError:
+        # Outside the repository entirely: report the basename rather than a
+        # path into somebody's filesystem, and say that is what happened.
+        return f"<outside repo>/{Path(provenance).name}"
 
 
 @dataclass

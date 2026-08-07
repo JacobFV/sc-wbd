@@ -755,8 +755,11 @@ def plan_run1_checkpoint(
 
     anat = (ev.get("anatomy") or {})
     is_bio = anat.get("is_biological")
+    card_dir, card_notes = _card_dir(root, ckpt, root / config)
+    blockers += card_notes
+    warnings += _enabled_but_unconsumed(ckpt, card_dir)
     manifest = build_manifest(
-        card_dir=str(root / "configs/source_cards"),
+        card_dir=card_dir,
         config=str(root / config),
         anatomy_is_biological=is_bio,
         assets_manifest=str(root / "assets/MANIFEST.json"),
@@ -1332,6 +1335,135 @@ def _corpus_card(
 # ---------------------------------------------------------------------------
 # planner: the run-2 pilot (path prepared; artifact not yet on disk)
 # ---------------------------------------------------------------------------
+def _enabled_but_unconsumed(ckpt: Path, card_dir: str) -> list[str]:
+    """Sources the mixture enables that these particular weights never saw.
+
+    Deriving the card directory from the run (see :func:`_card_dir`) fixed the
+    artifact reading the wrong card set, and immediately produced the mirror
+    error.  The corrected set has ``ds002336_real`` **enabled**, so its licence
+    and citation now appear under "DATASET INPUTS" -- for a checkpoint whose
+    recorded split contains no participant of that dataset.  A licence claim
+    ahead of its evidence is the same defect as a link ahead of its scores, and
+    an over-declared input is not the harmless direction: it credits a corpus
+    for weights it did not shape.
+
+    ``enabled`` is a statement about the *mixture*, not about a checkpoint.  A
+    card switched on after a run finished is enabled and unconsumed at once, and
+    nothing in the card can distinguish those.  The checkpoint can: it carries
+    the participant split it actually trained on.
+
+    The test is participant counts rather than name matching, because the two
+    corpora label participants differently (``S001`` against ``sub-xp101``) and
+    a string comparison across those returns zero overlap for *both* -- a
+    confident answer about the wrong thing.  So: if the recorded split's size
+    equals exactly one enabled likelihood card's declared ``n_participants``,
+    every other enabled likelihood source contributed no participant to it.
+    Where that is not decidable, this returns nothing rather than a guess.
+    """
+    last = ckpt / "last.pt"
+    if not last.is_file():
+        return []
+    try:
+        import torch
+        import yaml
+
+        rec = torch.load(last, map_location="cpu", weights_only=False)
+        folds = ((rec.get("extra") or {}).get("real_split") or {}).get(
+            "participants_per_fold"
+        ) or {}
+        split = {p for v in folds.values() for p in v}
+        if not split:
+            return []
+        cards = {}
+        for f in sorted(Path(card_dir).glob("*.yaml")):
+            c = yaml.safe_load(f.read_text()) or {}
+            if c.get("role") == "likelihood" and c.get("enabled", True):
+                n = c.get("n_participants")
+                if isinstance(n, int) and n > 0:
+                    cards[str(c.get("id") or f.stem)] = n
+    except Exception:
+        return []
+
+    matches = [sid for sid, n in cards.items() if n == len(split)]
+    if len(matches) != 1 or len(cards) < 2:
+        return []
+    consumed = matches[0]
+    return [
+        f"`{sid}` is enabled in the training mixture but contributed nothing to "
+        f"these weights: the checkpoint's recorded split holds {len(split)} "
+        f"participants, exactly `{consumed}`'s declared count, and `{sid}` "
+        f"declares {cards[sid]} more that appear in no fold. Its licence and "
+        "citation are listed below because the mixture enables it for the next "
+        "run -- read them as terms this artifact will inherit, not as a corpus "
+        "that shaped it."
+        for sid in sorted(cards)
+        if sid != consumed
+    ]
+
+
+def _card_dir(root: Path, ckpt: Path, config_path: Path) -> tuple[str, list[str]]:
+    """The source-card directory that ACTUALLY governed this checkpoint.
+
+    This was ``configs/source_cards`` as a literal, and that is the directory
+    ``tests/curriculum/test_tiers.py`` names ``LEGACY`` -- the corrected set
+    lives at ``configs/curriculum/source_cards`` and is what every run-2 config
+    selects through its ``base:``.  So the artifact's licence and attribution
+    manifest was built from a different card set than the one that trained.
+
+    Today the two agree on every licence-bearing field, which is why nothing was
+    visibly wrong.  They do not agree on ``enabled``: ``ds002336_real`` is on in
+    the corrected set and off in the legacy one.  The moment a run takes a
+    gradient on that BOLD, a manifest built from the legacy directory publishes
+    a model whose card omits a dataset that contributed to it -- an attribution
+    failure produced by reading the wrong directory, not by any mistake in the
+    cards themselves.
+
+    So the directory is *derived*, preferring the checkpoint's own recorded
+    config over the config file, because the checkpoint is evidence of what ran
+    and the file is only evidence of what was intended.  A disagreement between
+    them is a blocker rather than a precedence rule: it means the config on disk
+    is not the config that trained, and every provenance claim on the card
+    inherits that gap.
+    """
+    notes: list[str] = []
+    from_ckpt = from_file = None
+
+    last = ckpt / "last.pt"
+    if last.is_file():
+        try:
+            import torch
+
+            rec = torch.load(last, map_location="cpu", weights_only=False).get("config")
+            if isinstance(rec, dict):
+                from_ckpt = rec.get("mixture_cards")
+        except Exception as exc:  # unreadable checkpoint -> say so, do not assume
+            notes.append(f"could not read mixture_cards from {last}: {exc}")
+
+    try:
+        from ..foundation.config import _resolve_base
+
+        from_file = (_resolve_base(Path(config_path)) or {}).get("mixture_cards")
+    except Exception as exc:
+        notes.append(f"could not read mixture_cards from {config_path}: {exc}")
+
+    if from_ckpt and from_file and from_ckpt != from_file:
+        notes.append(
+            f"the checkpoint trained with mixture_cards={from_ckpt!r} but "
+            f"{config_path} declares {from_file!r}; the published provenance would "
+            "describe a mixture the weights never saw"
+        )
+    chosen = from_ckpt or from_file
+    if not chosen:
+        notes.append(
+            "neither the checkpoint nor the config names a mixture_cards directory, "
+            "so the card set that trained this model cannot be identified. Falling "
+            "back to a default here would build the licence manifest from a "
+            "directory chosen by this function rather than by the run."
+        )
+        return str(root / "configs/source_cards"), notes
+    return str(root / chosen), notes
+
+
 def _final_stage_file(ckpt: Path, config_path: Path) -> str:
     """Name of the checkpoint holding the final stage's weights.
 

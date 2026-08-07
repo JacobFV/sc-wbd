@@ -91,7 +91,6 @@ channels:
       scwbd/sources/parcellate_bold.py; uncovered parcels are NaN and excluded
       by the per-run coverage mask, never imputed.
 is_simulated: false
-is_simulated: false
 losses: [likelihood, forecast]
 
 gradient_permission:
