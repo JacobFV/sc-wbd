@@ -100,6 +100,44 @@ fast signal is already there; the slow one is held across the gap — which is
 invention, and the map says so rather than presenting interpolated values as
 measurements.</p>
 
+<h2>Why the algebra alone does not answer the question</h2>
+
+<p>An algebra for relating supports is necessary and not sufficient, and
+counting the current model says why:</p>
+
+<table>
+<thead><tr><th>what</th><th>how many</th></tr></thead>
+<tbody>
+<tr><td>source cards declared on disk</td><td class="num">9</td></tr>
+<tr><td>of those, involving EEG</td><td class="num">9</td></tr>
+<tr><td>EEG views the model can hold</td><td class="num">1</td></tr>
+</tbody>
+</table>
+
+<p>The lead field is a buffer registered <em>inside</em> the EEG head —
+one <code>L</code>, one <code>L_vec</code>, on a single module. So:</p>
+
+<blockquote>
+<p>Montage A and montage B cannot coexist, because there is exactly one
+<code>L</code>. Adding the second means adding a second head or overwriting the
+first — and neither of those is "two views of one carrier."</p>
+</blockquote>
+
+<p>The number of views is fixed by the model's module list rather than by the
+sources. That is backwards: sources are data and arrive over time, modules are
+code and should not have to change when they do.</p>
+
+<p>The fix is not to delete the heads — <code>EEGHead</code> holds real physics.
+It is that <strong>ownership is misplaced</strong>. An <code>L</code> describes a
+montage; a montage belongs to a source; a source is a card. Move the operator to
+the card, leave the head as the thing that <em>applies</em> a view, and the two
+montages stop being two modules and become two rows.</p>
+
+<p>That is also the point at which this algebra stops being decorative. Once
+each source carries its own operator and support, relating two of them is
+exactly the computation above — and the refusals are what stop two montages
+being quietly averaged into one another.</p>
+
 <h2>What this is not, yet</h2>
 
 <p>Two limits, stated because an entry marked done is how a half-delivered
