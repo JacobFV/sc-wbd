@@ -16,9 +16,27 @@
 # ds002336 is CC0 and ds000113's licence is UNRESOLVED. Combined, the union
 # would have made the CC0 half unknown too, for no reason.
 #
-# DISABLED: declared narrowing N-4a. The BOLD is in scanner space; the model's
-# state is indexed by Schaefer parcels; no registration between them has been
-# run. See ARCHITECTURE.md §5b N-4a and reports/sources/inventory.md §3.
+# STILL DISABLED, but the reason has changed and the old one is no longer true.
+#
+# WAS: "no registration between them has been run". That was accurate and read
+# as "none is available" -- scwbd/anatomy/registration.py had the whole chain
+# and was imported by nothing but its own test.
+#
+# NOW RUN, 2026-08-06, on sub-xp102/task-motorloc:
+#   379 of 400 parcels covered, 21 unobserved (NaN, never 0.0), 161 s
+#   EPI<-T1w rigid 6-DOF (MI); T1w<-MNI152NLin6Asym affine (MI)
+#   see scwbd/sources/parcellate_bold.py and
+#       reports/sources/ds002336_parcellation.md
+#
+# WHAT STILL BLOCKS IT: a dataset/loader that yields BOLD windows batched with
+# their coverage masks. FoundationTrainer.real_bold_losses exists and computes
+# the parcel-space likelihood, and REFUSES without a mask -- so enabling this
+# card before the loader exists would not train on bad data, it would fail to
+# train at all. The remaining work is a loader, not a component.
+#
+# Note the coverage basis: field_of_view, not brain_mask. 379/400 is an upper
+# bound on usable parcels, not a count of good ones, and the registration module
+# says so itself.
 # SECOND BLOCKER, added 2026-08-06 after 🧠 Cajal's D9 slab finding. The EPI is
 # a 128 mm slab, not a head, and whether it contains each subject's whole
 # brain is UNKNOWN (no segmentation tool is installed to settle it). Parcels
