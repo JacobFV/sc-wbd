@@ -2432,10 +2432,28 @@ other; the licence-bearing fields agree today. That is luck, not structure.
 > that disagree are *what trained* and *what the artifact claims about what
 > trained*.
 
+**Sharpened, later the same day.** `tests/curriculum/test_tiers.py` names them:
+
+```python
+CORRECTED = REPO / "configs/curriculum/source_cards"
+LEGACY    = REPO / "configs/source_cards"
+```
+
+So the split is deliberate and documented — and the finding is worse than "two
+directories that could drift", not better. **Training reads `CORRECTED`. The
+release path — licence, attribution, manifest — reads `LEGACY`.** The terms
+attached to a published checkpoint are computed from the card set this
+repository itself labels superseded.
+
+That is not a naming quibble. The corrected set exists because the legacy one
+had defects worth correcting; whatever those were, the published licence
+inherits them.
+
 Handled for now by enabling in the training directory and leaving the release
 directory disabled with the reason written in the file, so the licence follows
-the evidence rather than the intent. That is a workaround. The repair is one
-directory, or a check that the two agree.
+the evidence rather than the intent. That is a workaround. The repair is to
+point the release path at `CORRECTED`, or to delete the distinction — and either
+way it should be a refusal when the two disagree, not a comment.
 
 This is the fifth structure found this way in a day — after
 `curriculum_admission.py`, the `extra.curriculum` block, `registration.py`, and

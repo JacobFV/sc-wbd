@@ -24,6 +24,13 @@ def test_corrected_cards_tier_as_designed() -> None:
     got = {sid: tier_of(c).tier for sid, c in cards.items()}
     assert got == {
         "eegmmidb_real": 1,
+        # Added 2026-08-06 once the parcel-space BOLD path existed end to end:
+        # registration run, 55/55 runs cached, coverage invariant holding. Tier 1
+        # by the documented rule -- role=likelihood and is_simulated=false -- not
+        # by preference. The expectation is updated rather than the test relaxed,
+        # because an enumeration that refuses a silent change to the source set is
+        # exactly what should have caught this.
+        "ds002336_real": 1,
         "sleepedf_real": 1,
         "montage_calibration": 2,
         "anatomical_prior": 3,
