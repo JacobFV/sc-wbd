@@ -296,18 +296,31 @@ figcaption .note-body {
 figcaption .note-toggle:checked + .note-ref + .note-body { display: block; }
 .tablewrap .note-ref { border-bottom: 1px dotted var(--rule-strong); }
 
-/* Narrow viewports: no rail, so notes collapse behind their reference. */
-@media (max-width: 62rem) {
+/* No rail: notes render in the flow, VISIBLE, under the paragraph that cites
+ * them.
+ *
+ * The breakpoint is 78rem, not 62rem. The old value was the container's own
+ * max-width, which is not the width the rail needs: content is --measure (36rem)
+ * centred inside it, and a note floats --margin-col + 1.6rem (20.6rem) past the
+ * content's right edge. Centred content ends at 49rem, so the note wants space
+ * out to 69.6rem -- past the 62rem container. Between 62 and 78rem the rail was
+ * claimed and the notes overflowed. 78rem is measure + margin-col + gutters with
+ * room to spare.
+ *
+ * They are DISPLAYED, not hidden behind the toggle. A note worth writing is
+ * worth reading without a click; the toggle stays for the table case below,
+ * where an expanded note would blow out a row. */
+@media (max-width: 78rem) {
   .note-body {
-    display: none;
+    display: block;
     float: none;
     width: auto;
     margin: 0.7rem 0;
     padding: 0.7rem 0.9rem;
     background: var(--bg-soft);
     border-left: 2px solid var(--rule-strong);
+    font-size: 0.82rem;
   }
-  .note-toggle:checked + .note-ref + .note-body { display: block; }
   .note-ref {
     border-bottom: 1px dotted var(--rule-strong);
   }
@@ -633,3 +646,21 @@ figcaption {
   .masthead, .sitefoot, .theme-toggle { display: none; }
   .note-body { float: none; width: auto; margin: 0.5rem 0; }
 }
+
+/* ---- The WBD mark: 414 parcels at their anatomical coordinates ---- */
+.brainmark {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  aspect-ratio: 4 / 3;
+  margin: 1.2rem auto 0.4rem;
+  touch-action: none;            /* the canvas owns drag; do not scroll the page */
+}
+.brainmark-cap {
+  text-align: center;
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  color: var(--ink-3);
+  margin: 0 0 1.6rem;
+}
+@media (prefers-reduced-motion: reduce) { .brainmark { cursor: grab; } }

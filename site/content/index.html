@@ -7,6 +7,11 @@ standfirst: One subject's brain as a 414-parcel dynamical system that EEG, MEG, 
 ---
 <div class="prose">
 
+<canvas id="wbd-brain" class="brainmark" data-src="static/brain.json"
+        aria-label="414 brain parcels at their anatomical coordinates, coloured by region family. Drag to orbit."></canvas>
+<p class="brainmark-cap">414 parcels in <code>fsLR_32k</code> surface RAS, coloured by
+the 9-family partition &mdash; the model's actual state space. Drag to orbit.</p>
+
 <p class="lede">SC-WBD models a single brain as a 414-parcel dynamical system and
 learns it from whatever was measured. EEG constrains the fast electrical state
 through a lead field built on that subject's head geometry; fMRI constrains a
@@ -14,7 +19,33 @@ slow haemodynamic state in the same parcel space; TMS and tFUS enter as an
 E-field on the same grid. One state, one set of dynamics, four instruments
 looking at it.</p>
 
-<p>The engineering problem is that these instruments disagree about time, space
+<p>Those are the instruments that look <em>at</em> the brain. They are not the
+whole input. A recording session also contains the world that drove the subject
+&mdash; the audio played, the images shown, the text read &mdash; and what the
+subject produced: eye position, button presses, speech, heart rate. SC-WBD types
+each channel by <strong>where it attaches</strong> rather than by what device
+recorded it:</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>attachment</th><th>what it is</th><th>examples</th></tr></thead>
+<tbody>
+<tr><td><code>stimulus</code></td><td>the world driving the subject; known exactly, and evidence about nothing on its own</td><td>audio, video, text, task events</td></tr>
+<tr><td><code>observation</code></td><td>a measurement <em>of</em> the carrier, through a declared forward operator</td><td>EEG via a lead field, BOLD via a haemodynamic model, MEG</td></tr>
+<tr><td><code>boundary_output</code></td><td>produced <em>by</em> the subject and measured outside the skull</td><td>eye tracking, motor, speech, ECG, cognitive-test responses</td></tr>
+<tr><td><code>context</code></td><td>slow conditioning that neither drives nor is driven on the modelled timescale</td><td>time of day, session index, drug state</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The distinction is load-bearing. An <code>observation</code> without a declared
+operator is refused, because it would assert that the model's state <em>is</em>
+the measurement. A <code>stimulus</code> carrying an operator is refused for the
+mirror reason. Forcing gaze or a button press into the observation slot &mdash;
+the only option before this axis existed &mdash; would train them as measurements
+of neural state rather than as behaviour the brain produced.</p>
+
+<p>The engineering problem is that these channels disagree about time, space
 and units. EEG samples at milliseconds and BOLD at seconds. EEG sees a current
 dipole moment in <code>Hz&middot;m</code>; BOLD sees percent signal change. A
 subject scanned with one modality has no measurement of the others. SC-WBD
@@ -24,7 +55,7 @@ it observes and nothing else.</p>
 
 <div class="keyfig">
   <div><span class="n">414</span><span class="l">parcels of structured state<br>400 cortical + 14 subcortical</span></div>
-  <div><span class="n">4</span><span class="l">instrument classes<br>EEG &middot; MEG &middot; fMRI &middot; TMS/tFUS</span></div>
+  <div><span class="n">4</span><span class="l">ways a signal attaches<br>stimulus &middot; observation &middot; boundary output &middot; context</span></div>
   <div><span class="n">51.7%</span><span class="l">of the whitened EEG lead field<br>captured by a 3-vector moment, vs 5.6% scalar</span></div>
 </div>
   <div><span class="n">11</span><span class="l">compiler refusals<br>each with a test that makes it fire</span></div>

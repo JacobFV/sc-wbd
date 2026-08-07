@@ -47,9 +47,13 @@ REPO_URL = os.environ.get("SITE_REPO_URL", "").rstrip("/")
 # broken player.  See reports/site.md.
 MEDIA_URL = os.environ.get("SITE_MEDIA_URL", "").rstrip("/")
 
+# Only what is actually in the bucket. `scwbd-variance-channel.mp4` was listed
+# here and never uploaded -- the r2.dev URL returns 401 for it while the overview
+# returns 200 -- so listing it produced a broken player rather than a missing
+# one. Re-render it (`make video`), upload (`make video-upload`), then add it
+# back; do not add it back first.
 VIDEOS = [
     ("scwbd-overview.mp4", "What SC-WBD is", "22 seconds"),
-    ("scwbd-variance-channel.mp4", "The most expensive 134 seconds", "26 seconds"),
 ]
 
 
@@ -59,8 +63,8 @@ def video_section() -> str:
         return (
             '<div class="todo">\n'
             '<span class="todo-label">Jacob — video hosting</span>\n'
-            "<p><strong>Two videos are rendered and uploaded to R2, but the bucket "
-            "is not served publicly, so there is no URL to embed here.</strong> "
+            "<p><strong>The video is in R2 but no media URL was passed to this "
+            "build, so there is nothing to embed here.</strong> "
             "Making a bucket world-readable is a hosting posture decision, so it "
             "was left to a human rather than taken on your account.</p>\n"
             "<p>To publish them:</p>\n"

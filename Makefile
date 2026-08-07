@@ -43,6 +43,11 @@ CKPT_002 ?= checkpoints/scwbd-002-pilot
 
 # R2 bucket for rendered media. Media is NEVER committed to this repository.
 R2_BUCKET  ?= scwbd-media
+# Public dev URL for the media bucket, enabled 2026-08-07. r2.dev URLs are
+# rate-limited and not for production traffic; attach a custom domain before this
+# carries real load.
+SITE_MEDIA_URL ?= https://pub-045364f0fab44827afa95b1e44b6e18d.r2.dev
+export SITE_MEDIA_URL
 VIDEO_OUT  := $(ROOT)/video/out
 
 .PHONY: help
