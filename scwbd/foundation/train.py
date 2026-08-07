@@ -78,6 +78,16 @@ STAGE_PERMISSIONS: dict[str, tuple[str, ...]] = {
     "V_individual": ("individualizer.*", "eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"),
 }
 
+#: Stages whose curriculum admits the measured (tier-1) sources. These are RUN-1
+#: stage names. Run 2's "integrity-ordered" curriculum renamed every stage to
+#: `T1_measured_founding … T5_distillation`, and nothing here was updated, so on
+#: a run-2 config this set intersects the schedule in NOTHING and the measured
+#: likelihood never reaches a loss. See `smoke()`, which refuses to launch on it.
+REAL_DATA_STAGES: frozenset[str] = frozenset({"III_sliced", "IV_assembly", "V_individual"})
+
+#: The loss key `real_losses` emits, and the source card it is scored against.
+REAL_LOSS_KEY = "eegmmidb_real"
+
 
 def _cycle(loader: Iterable) -> Iterator:
     while True:
@@ -197,6 +207,10 @@ class FoundationTrainer:
             )
         self.theta_prior = ThetaPrior()
         self.model = SCWBD(cfg.model, self.anat).to(self.device)
+        # Step-0 only: the pack/backend cover check below is a claim about the
+        # model that the model can falsify, so it is worth making once and
+        # pointless to repeat every batch.
+        self._theta_bind_audited = False
         self.posterior = AmortizedPosterior(
             cfg.posterior,
             len(THETA_NAMES),
@@ -209,8 +223,19 @@ class FoundationTrainer:
             # Fuse the per-parcel elementwise chain. On the GB10's unified LPDDR5X
             # the regional operator is memory-bandwidth bound, not FLOP bound, so
             # fusing the FiLM/GELU/residual chain is worth ~20% wall clock.
-            self.model.local = torch.compile(self.model.local, dynamic=False)
-            self.model.residual = torch.compile(self.model.residual, dynamic=False)
+            # ONLY what this arm actually built. `local`/`residual` are the
+            # CONTROL arm's module names; on the family arm both are None, and
+            # `torch.compile(None)` does not raise -- it returns a *function*,
+            # which silently overwrote the None sentinel and turned a clean
+            # `AttributeError: 'NoneType'` into `'function' object has no
+            # attribute 'log_scale'`. Net effect: the treatment arm was never
+            # compiled at all, so the ~20% fusion below applies to the control
+            # arm only. Left that way deliberately rather than compiling the
+            # family operators on the eve of a launch -- see the run manifest.
+            for _name in ("local", "residual"):
+                _mod = getattr(self.model, _name, None)
+                if _mod is not None:
+                    setattr(self.model, _name, torch.compile(_mod, dynamic=False))
 
         self.sources = self._load_sources()
         self.compiler_report: dict[str, Any] = self._bind_compiler_masks()
@@ -316,6 +341,15 @@ class FoundationTrainer:
             print(f"[warn] compiler bridge unavailable ({rep['reason']}); using the source cards' own "
                   "torch-level gradient permissions", flush=True)
         return rep
+
+    def stage_uses_real(self, stage: StageConfig) -> bool:
+        """Does this stage's curriculum admit the measured (tier-1) sources?
+
+        ONE definition, used by both `run_stage` and the smoke precondition, so
+        the guard tests the gate the trainer actually runs rather than a second
+        copy of it that can agree with a wrong answer (RL-9).
+        """
+        return stage.name in REAL_DATA_STAGES
 
     def stage_sources(self, stage: StageConfig) -> dict[str, SourceSpec]:
         """Intersect each card's ``A_k`` with the stage allowlist (restrict only)."""
@@ -492,6 +526,144 @@ class FoundationTrainer:
         self._data_ready = True
 
     # ------------------------------------------------------------------
+    # smoke
+    # ------------------------------------------------------------------
+    def smoke(self) -> dict[str, Any]:
+        """One batch, forward **and backward**, through **both** loss paths.
+
+        A launch precondition, not a habit. Every launch-blocking defect of this
+        cycle -- binding drift, the capacity mismatch, and the `SpanViolation`
+        that cost this run its first start -- was a constructor- or
+        first-rollout-time failure, and each was found by launching into a log
+        nobody was watching. All three surface here in under a minute.
+
+        Build-only is not enough: the `SpanViolation` was raised *inside a
+        rollout*, so the batch must actually roll and actually backpropagate.
+
+        **Both arms must be smoked.** The control arm has no mechanistic
+        families, so it passes the `SpanViolation` path no matter what is or is
+        not bound -- only the treatment arm exercises that guard at all, and a
+        fix verified against the control is not verified (RL-11's corollary).
+        """
+        t0 = time.time()
+        print(f"\n=== SMOKE: {self.cfg.train.run_name} ===", flush=True)
+        self.build_data()
+        stages = [s for s in self.cfg.train.stages if s.enabled]
+        if not stages:
+            raise RuntimeError("smoke: config has no enabled stage to draw loss weights from")
+        sim_stage = stages[0]
+        real_stage = next((s for s in stages if s.name in ("III_sliced", "IV_assembly", "V_individual")), sim_stage)
+
+        mech = sorted(self.model.family_local.mech) if self.model.family_local is not None else []
+        print(
+            f"[smoke] mechanistic families ({len(mech)}): {mech if mech else '(none -- control arm; '
+            'this arm CANNOT verify the theta bind)'}",
+            flush=True,
+        )
+
+        params = [p for p in list(self.model.parameters()) + list(self.posterior.parameters()) if p.requires_grad]
+        self.model.train()
+        self.posterior.train()
+        report: dict[str, Any] = {
+            "run_name": self.cfg.train.run_name,
+            "mechanistic_families": mech,
+            "paths": {},
+        }
+        if self.real_train is None:
+            # build_data swallows real-EEG failures with a warning; for a launch
+            # precondition that is a failure, not a warning.
+            raise RuntimeError(
+                "smoke: measured EEG is unavailable, so the real loss path cannot be "
+                "exercised. build_data() only warns about this. Refusing to report a "
+                "pass on half the paths."
+            )
+        # Will the SCHEDULE ever run the measured source? A loss path that works
+        # when called directly (as below) says nothing about whether `run_stage`
+        # ever calls it. Run 2 renamed every stage, `REAL_DATA_STAGES` still
+        # names run 1's, and the intersection is empty -- so the tier-1 measured
+        # likelihood that "FOUNDS the representation" would contribute exactly
+        # nothing, in a run whose first stage is called `T1_measured_founding`.
+        # Scoped to exactly the source `real_losses` emits (REAL_LOSS_KEY). Every
+        # OTHER enabled card -- montage_calibration, negative_control_shuffled --
+        # is a separate question, and sweeping them in here would make this fire
+        # for four reasons when one is true, which is this register's own failure
+        # mode. `anatomical_prior` in particular is NOT affected: it arrives via
+        # `sim_losses` and reaches a loss in every stage.
+        enabled_stages = [s.name for s in self.cfg.train.stages if s.enabled]
+        admitting = [s.name for s in self.cfg.train.stages if s.enabled and self.stage_uses_real(s)]
+        spec = self.sources.get(REAL_LOSS_KEY)
+        report["stages_admitting_measured"] = admitting
+        if spec is not None and spec.enabled and not admitting:
+            raise RuntimeError(
+                f"smoke: source card {REAL_LOSS_KEY!r} is enabled and is the tier-1 measured "
+                f"likelihood, but NONE of the enabled stages {enabled_stages} admits it -- "
+                f"`REAL_DATA_STAGES`={sorted(REAL_DATA_STAGES)} names run 1's stages and "
+                "intersects this schedule in nothing. Every measured window would be loaded, "
+                "split, leakage-audited and then never used: the run would complete on "
+                "simulation alone, and no claim about brains would be supportable from it. "
+                "Fix the curriculum, not this check."
+            )
+        print(f"[smoke] measured source {REAL_LOSS_KEY!r} admitted by stages {admitting}", flush=True)
+
+        if self.device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(self.device)
+        for p in params:
+            p.grad = None
+
+        # BOTH forwards BEFORE any backward -- this is what `run_stage` does, and
+        # `MixtureTrainer.step` then backwards each source with retain_graph=True,
+        # so the real peak holds both activation graphs at once. Backwarding each
+        # path separately would understate peak memory and let an OOM through.
+        losses: dict[str, Tensor] = {}
+        for path, fn, st, loader in (
+            ("sim_losses", self.sim_losses, sim_stage, "sim"),
+            ("real_losses", self.real_losses, real_stage, "real"),
+        ):
+            batch = next(self.sim_loader if loader == "sim" else self.real_loader)
+            ls, _diag = fn(batch, st)
+            for k, v in ls.items():
+                if not torch.isfinite(v):
+                    raise RuntimeError(f"smoke: {path} term {k!r} is non-finite ({float(v)!r})")
+            report["paths"][path] = {"stage": st.name, "terms": sorted(ls),
+                                     "values": {k: float(v.detach()) for k, v in ls.items()}}
+            print(f"[smoke] {path:12s} stage={st.name:14s} "
+                  f"{ {k: round(float(v.detach()), 4) for k, v in ls.items()} }", flush=True)
+            losses.update(ls)
+
+        total = sum(losses.values())
+        total.backward()
+        with torch.no_grad():
+            grads = [p.grad for p in params if p.grad is not None]
+            n_nonfinite = sum(1 for g in grads if not torch.isfinite(g).all())
+            gnorm = float(torch.sqrt(sum((g.float() ** 2).sum() for g in grads))) if grads else 0.0
+        if not grads:
+            raise RuntimeError("smoke: backward produced no gradients at all")
+        if n_nonfinite:
+            raise RuntimeError(f"smoke: {n_nonfinite} parameter gradients are non-finite")
+        report["total_loss"] = float(total.detach())
+        report["params_with_grad"] = len(grads)
+        report["grad_norm"] = gnorm
+        print(f"[smoke] backward ok: grads={len(grads)}/{len(params)} |g|={gnorm:.3e} "
+              f"total={float(total.detach()):.4f}", flush=True)
+        if self.device.type == "cuda":
+            peak = torch.cuda.max_memory_allocated(self.device) / 1e9
+            reserved = torch.cuda.max_memory_reserved(self.device) / 1e9
+            cap = float(self.cfg.train.cuda_reserve_gb)
+            report["peak_allocated_gb"] = round(peak, 2)
+            report["peak_reserved_gb"] = round(reserved, 2)
+            report["cuda_reserve_gb"] = cap
+            print(f"[smoke] peak CUDA allocated={peak:.2f} GB reserved={reserved:.2f} GB "
+                  f"against cap {cap:.1f} GB ({reserved / max(cap, 1e-9):.0%} of budget)", flush=True)
+        for p in params:
+            p.grad = None
+        nf = self.model.eeg.noise_floor_report() if hasattr(self.model.eeg, "noise_floor_report") else {}
+        report["noise_floor_report"] = nf
+        print(f"[smoke] noise_floor_report(eeg) = {json.dumps(nf, default=str)}", flush=True)
+        report["wall_seconds"] = round(time.time() - t0, 1)
+        print(f"[smoke] PASS in {report['wall_seconds']}s -- both loss paths fwd+bwd\n", flush=True)
+        return report
+
+    # ------------------------------------------------------------------
     # losses
     # ------------------------------------------------------------------
     def _split_window(self, act: Tensor) -> tuple[Tensor, Tensor]:
@@ -513,6 +685,41 @@ class FoundationTrainer:
         if empty.any():
             keep[empty, 0] = 1.0
         return keep
+
+    def bind_mechanistic_theta(self, theta: Tensor) -> None:
+        """Bind this batch's ``ParamPack``s to the mechanistic backends.
+
+        **Per batch, never at construction.** ``set_mechanistic_theta`` builds
+        each pack with ``batch=B`` from ``theta.shape[0]`` and fills it with
+        per-row values, so a construction-time bind would pin every batch to
+        whichever theta was drawn first -- silently, and the loss would still go
+        down.  The simulated corpus carries per-trajectory theta, so that bind
+        would destroy exactly the anatomical conditioning the per-family design
+        exists to carry.
+
+        **One call, not a loop.** ``set_mechanistic_theta`` fans out over
+        ``family_local.mech`` internally and slices each pack to that family's
+        own parcels, so ``subcortex_thal`` sees the two thalamic parcels' priors
+        rather than a brain-wide average.  All seven mechanistic families are
+        covered by this single call.
+
+        **Call it outside any autocast block.** The packs are fp32 and the
+        engineered backends integrate in fp32 per the §3 numerical contract;
+        building them under bf16 autocast would not raise and would quietly cost
+        precision in the drift.
+        """
+        self.model.set_mechanistic_theta(theta, self.anat)
+        if not self._theta_bind_audited:
+            self._theta_bind_audited = True
+            # Control arm: no family layout, hence no per-family packs to cover.
+            # It passes the SpanViolation path regardless, which is why a fix
+            # verified against the control is not verified at all (RL-11).
+            if self.model.family_local is not None:
+                assert set(self.model._family_packs) == set(self.model.family_local.mech), (
+                    "mechanistic ParamPack cover mismatch: bound "
+                    f"{sorted(self.model._family_packs)} against backends "
+                    f"{sorted(self.model.family_local.mech)}"
+                )
 
     def sim_losses(self, batch: Mapping[str, Any], stage: StageConfig) -> tuple[dict[str, Tensor], dict[str, Any]]:
         act = batch["activity"].to(self.device, non_blocking=True)
@@ -539,6 +746,8 @@ class FoundationTrainer:
                 amp = torch.rand(B, 1, 1, 1, device=self.device) * 0.4
             u = amp * torch.randn(B, n_pred, N, self.model.layout.dim, device=self.device)
 
+        # This batch's theta, into the engineered backends. Outside the autocast.
+        self.bind_mechanistic_theta(theta)
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
             roll = self.model.rollout(
                 y_context=ctx_y,
@@ -599,16 +808,20 @@ class FoundationTrainer:
             pid = self.participant_index(batch.get("subject", []))
             th = self.individualizer(participant=pid, base=th)
             self.individualizer.observe_session(pid)
+        # AFTER the individualizer, not before: `th` is what the rollout will
+        # actually integrate, and the packs must carry the individualised draw
+        # rather than the raw posterior sample. Outside the autocast.
+        self.bind_mechanistic_theta(th)
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
             roll = self.model.rollout(y_context=src_ctx, theta=th, n_steps=n_pred, enforce_r05=False)
             mu, lv = self.model.eeg(roll.state)
         mu, lv = mu.float(), lv.float()
         scale = tgt_e.std(dim=(1, 2), keepdim=True).clamp_min(1e-8)
         nll = gaussian_nll(tgt_e / scale, mu / scale.clamp_min(1e-8), lv - 2 * torch.log(scale))
-        losses = {"eegmmidb_real": nll}
+        losses = {REAL_LOSS_KEY: nll}
 
         if self.individualizer is not None:
-            losses["eegmmidb_real"] = losses["eegmmidb_real"] + 1e-3 * self.individualizer.prior_penalty()
+            losses[REAL_LOSS_KEY] = losses[REAL_LOSS_KEY] + 1e-3 * self.individualizer.prior_penalty()
         return losses, {"real_eeg_nll": float(nll.detach())}
 
     # ------------------------------------------------------------------
@@ -653,7 +866,7 @@ class FoundationTrainer:
                 sl, sd = self.sim_losses(next(self.sim_loader), stage)
                 losses.update(sl)
                 diag.update(sd)
-            if self.real_train is not None and stage.name in ("III_sliced", "IV_assembly", "V_individual"):
+            if self.real_train is not None and self.stage_uses_real(stage):
                 try:
                     rl, rd = self.real_losses(next(self.real_loader), stage)
                     losses.update(rl)
@@ -867,6 +1080,13 @@ class FoundationTrainer:
             th = self.posterior.sample(ctx_e, 1)[:, 0][:, : len(THETA_NAMES)]
             if self.individualizer is not None:
                 th = self.individualizer(participant=self.participant_index(batch.get("subject", [])), base=th)
+            # Third rollout site, and it does NOT self-announce. At `tag="init"`
+            # this returns early (no `real_val` before `build_data`), which is why
+            # the SpanViolation surfaced in the training loop rather than here.
+            # At every stage boundary it DOES roll out -- and the packs left bound
+            # by the last training batch carry that batch's B (64) against this
+            # loader's (16). Rebind per batch here too, after the individualizer.
+            self.bind_mechanistic_theta(th)
             with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
                 roll = self.model.rollout(y_context=src, theta=th, n_steps=tgt_e.shape[1], enforce_r05=False)
                 mu, _ = self.model.eeg(roll.state)
@@ -979,6 +1199,12 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
     p = argparse.ArgumentParser(description="train SC-WBD-001-beta")
     p.add_argument("--config", default="configs/scwbd_001_beta.yaml")
     p.add_argument("--quick", action="store_true", help="CI-sized smoke run")
+    p.add_argument(
+        "--smoke",
+        action="store_true",
+        help="build, run ONE batch fwd+bwd through both loss paths, report the noise floor, "
+             "and exit non-zero on any raise. A launch precondition -- run it on BOTH arms.",
+    )
     p.add_argument("--no-resume", action="store_true")
     p.add_argument("--max-wall", type=float, default=None)
     p.add_argument("--out", default=None)
@@ -990,6 +1216,16 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
         cfg.train.out_dir = a.out
     t = FoundationTrainer(cfg, resume=not a.no_resume, quick=a.quick)
     print(json.dumps({"parameters": t.model.parameter_report(), "posterior": count_parameters(t.posterior)}, indent=2))
+    if a.smoke:
+        import sys
+        import traceback
+
+        try:
+            return t.smoke()
+        except Exception:  # noqa: BLE001 - the whole point is a non-zero exit
+            traceback.print_exc()
+            print("\n=== SMOKE FAILED -- do not launch ===", flush=True)
+            sys.exit(1)
     return t.train()
 
 

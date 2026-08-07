@@ -817,7 +817,16 @@ class SCWBD(nn.Module):
 
     # -- regularisers -----------------------------------------------------
     def residual_penalty(self) -> Tensor:
-        return self.residual.log_scale.exp() ** 2
+        # Whichever residual this arm actually built. `self.residual` is None on
+        # the family arm (it builds `family_residual` instead), so the unguarded
+        # form raised on every treatment-arm step -- hidden until now behind the
+        # earlier SpanViolation, which aborted the batch before this was reached.
+        # Both classes expose a single scalar `log_scale`, so the penalty is the
+        # identical functional form on both arms and RL-6 parity is preserved.
+        res = self.family_residual if self.family_residual is not None else self.residual
+        if res is None:  # pragma: no cover - neither arm builds nothing
+            return torch.zeros((), device=self.tau_prior.device)
+        return res.log_scale.exp() ** 2
 
     def stability_penalty(self, X: Tensor) -> Tensor:
         """``R_stability``: homeostatic -- the state may not drift without bound."""
