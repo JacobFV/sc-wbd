@@ -1958,3 +1958,57 @@ reporting on its subject**, and staleness counts as a precondition: a log
 nobody is writing to is a broken instrument, not a quiet run. Where a path is
 consumed by more than one caller — a human and a cron — derive it in one place.
 Two hand-derivations of the same path is one typo away from this entry.
+
+### Fourth instance: the name reached the artifact, and there were six copies
+
+The three defects above are all *reports* — files describing a model. Checking
+the run-2 release path turned up the same literal in `scwbd/foundation/checkpoint.py`:
+
+```python
+"model_id": "SC-WBD-001-beta",
+```
+
+Every checkpoint the run-2 trainer wrote stamped the run-1 name into its own
+payload. Not a description of the artifact — the artifact.
+
+The earlier repair had been grepped for and missed this, because that grep was
+scoped to the module that had just been fixed. That is the natural thing to do,
+and it is why the class survives a fix.
+
+**So the fix was a test for the class rather than another grep** — a designation
+appearing as an assigned value anywhere in the package. It found five more:
+
+| site | what it was |
+|---|---|
+| `schema/designation.py` | the canonical constant |
+| `__init__.py` | package-level copy |
+| `bench/report.py` | copy |
+| `runtime/provenance.py` | copy |
+| `foundation/manifest.py` | a dataclass **default** — would misname any standalone manifest |
+| `infer/report.py` | an inline value — would misname every inference report |
+
+Six places for one name to be wrong, two of them live defaults rather than
+inert constants. Now one definition and five imports, plus
+`config.designation(cfg)` for anything that has a config to derive from.
+
+Two properties of the guard are deliberate:
+
+- **Exactly one assignment site, not zero.** The name has to be written down
+  somewhere. What makes it a defect is writing it down six times, so the
+  assertion is `len(sites) == 1` and that the one site is the canonical file.
+- **Prose is allowed.** These literals appear constantly in docstrings and
+  comments discussing the defect. A test that cannot tell a value from a
+  sentence bans writing about the problem — and this repository has already
+  shipped that mistake twice on the site-claims suite, once banning the phrase
+  "state of the art" and firing on a sentence about the *field*.
+
+**The part that could not be fixed in code.** The repair landed while run 2 was
+still training, and a live Python process does not re-read its modules. Every
+checkpoint that run writes — including the final one — still carries the wrong
+name. A fix to the emitter cannot reach an artifact already being emitted, so
+`scripts/restamp_designation.py` corrects the payload after the fact, refuses if
+the name is already right, and records the previous value inside the artifact.
+Weights verified sha256-identical across the rewrite.
+
+> A code fix has a start time. Any artifact produced before it is unaffected by
+> it, and a run long enough to span the fix will produce both kinds.
