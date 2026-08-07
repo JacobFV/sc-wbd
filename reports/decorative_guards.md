@@ -2911,9 +2911,54 @@ reports/training/scwbd-002-pilot_train.jsonl    367 ->  570 lines
 ```
 
 Two smoke runs appended themselves to the training record of the published
-model. Recoverable — the writes were appends and both files are tracked, so
-`git checkout` restored them — but only because they happened to be appends and
-happened to be tracked.
+model.
+
+### And then the cleanup destroyed the data the pollution had not
+
+The paragraph that stood here said the incident was *recoverable*: the writes
+were appends, the files are tracked, `git checkout` restored them. Every clause
+of that is true and the conclusion is false.
+
+`git checkout -- reports/training/` reverts to **HEAD**, and HEAD's
+`run002.log` ends at `global_step=4686`, mid-`T4_simulator_extension`. Run 2 ran
+to 8,700. The last 4,014 steps of the training record — the rest of T4, T5, and
+`T1_individualisation` — were **never committed**, so the restore did not undo
+my appends; it discarded run 2's own tail along with them. The same for
+`scwbd-002-pilot_train.jsonl`.
+
+Not recoverable. `git fsck` finds no dangling blob and a scan of every object in
+the repository finds no copy: the file was never staged, so it never entered the
+object store. Every `git add` today was path-scoped.
+
+**The diff was the evidence and I read it as reassurance.** `273 -> 481 lines`
+is equally consistent with "my two smoke runs appended 208 lines" and with "run 2
+wrote 208 lines that were never committed". I checked that the file had grown
+rather than shrunk, concluded the original was intact, and ran a command whose
+whole purpose is to delete the difference between the file and HEAD — without
+once looking at *what those 208 lines said*. Three commands earlier I had printed
+the line count. I never printed a line.
+
+> A restore is a deletion of everything not committed. Reverting a file to fix
+> contamination assumes the committed version is the good version, and for any
+> file a long-running job writes to, that assumption is usually false — the job's
+> own output is the uncommitted part.
+
+The correct move was `git stash` on that path, or copying the file aside, or
+simply `grep -v` the smoke lines. All three preserve the difference instead of
+resolving it in HEAD's favour.
+
+### What it cost
+
+The per-step curve for the last 46% of run 2. `reports/RUN2.md` §3 discusses that
+curve; those claims were made when the data existed and **can no longer be
+re-derived from this repository**. What survives is the six stage checkpoints
+with their per-stage metrics, `evaluation_run2.json`, and the published model —
+the artifacts, but not the trace.
+
+This is also the fifth instance today of a *fix* causing the damage: applying the
+stage-admission patch made every run-1 config untrainable; deriving the release
+card directory over-claimed a dataset; and here, cleaning up a contaminated file
+deleted the contents it was protecting.
 
 The flag reads as "run this somewhere else". It means "put the weights somewhere
 else". A caller who wanted isolation got it for the artifact that is easy to
