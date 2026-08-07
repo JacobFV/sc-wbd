@@ -60,6 +60,7 @@ classes.
 - [The published artifact carried the author's home directory](#the-published-artifact-carried-the-authors-home-directory) — an absolute path shipped to the Hub
 - [The `-rf` capture bug — fifth instance](#the--rf-capture-bug-fifth-instance) — selecting a report class that excludes the report
 - [The empty-permission class — 88.7% of a model that could not train](#the-empty-permission-class-887-of-a-model-that-could-not-train) — a glob that matches nothing is a legal permission set
+- [`--out` moves the checkpoints and not the record](#--out-moves-the-checkpoints-and-not-the-record) — an isolation flag that isolates some of the outputs
 
 ### The single most transferable sentence in this file
 
@@ -2889,3 +2890,39 @@ Enforced by `tests/foundation/test_card_patterns_reach_the_model.py`, whose thir
 test is the mirror check — *every grant pattern must name at least one real
 parameter* — and is the one that would have caught the rename on the day it
 happened.
+
+---
+
+## `--out` moves the checkpoints and not the record
+
+A scratch run of the production config, launched to test a fix:
+
+```
+.venv/bin/python -m scwbd.foundation.train --config configs/run2/pilot-families.yaml \
+    --out <scratchpad>/fam --quick
+```
+
+`--out` redirects the **checkpoints**. The training log and the per-step JSONL
+are keyed by the config's `run_name`, so they went where run 2's went:
+
+```
+reports/training/run002.log                     273 ->  481 lines
+reports/training/scwbd-002-pilot_train.jsonl    367 ->  570 lines
+```
+
+Two smoke runs appended themselves to the training record of the published
+model. Recoverable — the writes were appends and both files are tracked, so
+`git checkout` restored them — but only because they happened to be appends and
+happened to be tracked.
+
+The flag reads as "run this somewhere else". It means "put the weights somewhere
+else". A caller who wanted isolation got it for the artifact that is easy to
+regenerate and not for the one that is the historical record.
+
+> An isolation flag that isolates *some* of the outputs is worse than none: it
+> produces the belief that the run was contained. Isolation is a property of a
+> run, not of one of its output paths.
+
+The lesson generalises past this flag. Every scratch run in this session wrote
+into `reports/`, and the only reason it is a footnote rather than a data-loss
+incident is that the repository tracks those files.
