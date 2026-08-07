@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>88.7% of the model could not train — SC-WBD</title>
+<meta name="description" content="The regional modules were renamed. The source cards still granted the old names. An unmatched glob is not an error — it is an empty permission set, and the run converged and shipped.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="88.7% of the model could not train — SC-WBD">
+<meta property="og:description" content="The regional modules were renamed. The source cards still granted the old names. An unmatched glob is not an error — it is an empty permission set, and the run converged and shipped.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+<script>
+/* Applied before paint so an explicit theme choice does not flash. */
+(function () {
+  try {
+    var t = localStorage.getItem("scwbd-theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body class="">
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="../index.html">SC&#8209;WBD</a>
+    <nav>
+        <a href="../index.html">Overview</a>
+        <a href="../engineering/index.html" class="active">Engineering</a>
+        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../attribution.html">Attribution</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="pagehead">
+      <p class="kicker">Engineering · 14</p>
+      <h1>88.7% of the model could not receive a gradient</h1>
+      <p class="standfirst">Run 2's treatment arm exists to test family-indexed heterogeneous regional state. That part of the model was a random initialisation for all 8,700 steps, and every number in the report was measured against it.</p>
+    </div>
+<div class="prose">
+
+<h2>The measurement</h2>
+
+<pre><code>2,231,447 of 2,516,530 trainable parameters (88.7%)
+were named by no enabled source card's gradient_permission</code></pre>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>module</th><th>parameters</th><th>what it is</th></tr></thead>
+<tbody>
+<tr><td><code>family_local</code></td><td>1,814,447</td><td>the per-family regional dynamics</td></tr>
+<tr><td><code>family_residual</code></td><td>365,639</td><td>its residual stream</td></tr>
+<tr><td><code>family_readout</code></td><td>26,946</td><td>its readout</td></tr>
+<tr><td><code>behaviour</code></td><td>22,342</td><td>the boundary-output head</td></tr>
+<tr><td><code>observation</code></td><td>2,073</td><td>the projection into observation space</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The first three <em>are</em> the treatment arm.</p>
+
+<h2>The cause is three strings</h2>
+
+<p>When the family-padded architecture landed, the regional modules were
+renamed:</p>
+
+<pre><code>local     -> family_local
+residual  -> family_residual
+readout   -> family_readout</code></pre>
+
+<p>The source cards were not. They still grant <code>local.*</code>,
+<code>residual.*</code>, <code>readout.*</code>. And:</p>
+
+<pre><code>fnmatch("family_local.ports.out_proj.weight", "local.*")   # False</code></pre>
+
+<h2>Why nothing caught it</h2>
+
+<blockquote>
+<p>An unmatched glob is not an error. It is an empty set — and an empty
+permission set is a <em>legal</em> permission set, because "this source trains
+nothing here" is a thing a card is allowed to say.</p>
+</blockquote>
+
+<p>There is no layer at which <em>"you asked to train <code>local.*</code> and
+there is no <code>local.*</code>"</em> is distinguishable from <em>"you asked to
+train nothing"</em>. So the trainer computed gradients with respect to the
+parameters each source permitted, got 285,083 instead of 2,516,530, stepped, and
+the loss went down — because <code>assimilate</code>, <code>context</code>,
+<code>msg_readin</code>, <code>coupling</code> and <code>eeg</code> are enough to
+fit something.</p>
+
+<p>The run completed 8,700 steps over nine hours. The weights were evaluated,
+published, linked, and audited five separate ways. Every one of those audits
+passed over it.</p>
+
+<h2>Two independent methods</h2>
+
+<p>A claim this large needs more than one route to it.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>method</th><th>evidence</th></tr></thead>
+<tbody>
+<tr><td>mechanism</td><td>the enabled cards' globs against the checkpoint's parameter names leave exactly those modules unreachable</td></tr>
+<tr><td>measurement</td><td>those modules are <strong>bit-identical</strong> across every consecutive pair of the five stage checkpoints</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Neither is derived from the other. The measurement never reads a card; the
+mechanism never reads a weight. They name the same set.</p>
+
+<h2>What it costs the result</h2>
+
+<blockquote>
+<p>002 loses to every baseline. It does <strong>not</strong> show that
+family-indexed heterogeneous regional state fails to help, because that part of
+the model was a random initialisation participating in the forward pass for
+8,700 steps.</p>
+</blockquote>
+
+<p>The measurements are unchanged. What they are evidence <em>of</em> is not.</p>
+
+<h2>Four near-misses while writing the check</h2>
+
+<p>All four are the same namespace error as the defect itself, which is why they
+are recorded rather than quietly fixed.</p>
+
+<ol>
+<li><strong>The wrong parameter universe.</strong> The first sweep ran against
+run <em>1</em>'s model names and concluded <code>observation.head</code> never
+trained. The shipped model has no <code>observation.head</code>; it has
+<code>observation.feat.*</code>. The right finding, through a wrong
+instrument.</li>
+<li><strong><code>posterior.*</code> accused</strong> of matching nothing —
+it lives in a sibling state dict that the trainer prefixes at runtime.</li>
+<li><strong><code>individualizer.*</code> accused</strong> — it is constructed
+only in an individualisation stage. Chasing it down found it <em>is</em> dead,
+for a reason the report had already recorded from the curriculum side.</li>
+<li><strong>The number itself.</strong> The first figure was <strong>26.8%</strong>,
+computed by dividing by every state-dict tensor. A state dict carries buffers —
+here a 4.1-million-element connectome. A buffer is not a parameter that failed to
+train; it is not a parameter.</li>
+</ol>
+
+<h2>The standing rule</h2>
+
+<blockquote>
+<p>A permission that names nothing must be as loud as a permission that is
+refused. "Grant <code>local.*</code>" against a model with no
+<code>local.*</code> is not a narrow grant — it is a silent one, and silence is
+what every other guard in this project exists to prevent.</p>
+</blockquote>
+
+<p>Three guards now: the shipped checkpoint's defect pinned against the run-2
+patterns <em>frozen in the test</em> — fixing the cards does not retrain
+published weights; a forward guard that fails when any module is unreachable;
+and the mirror check, <em>every grant pattern must name at least one real
+parameter</em>, which is the one that would have caught the rename on the day it
+happened.</p>
+
+</div>
+
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p><strong>SC-WBD-001 series.</strong> A research programme, not a product.
+    Nothing on this site is a medical device, a clinical claim, or advice.
+    No trained model here has been shown to beat its baselines.</p>
+    <p>Data sources carry their own licences, several of them non-commercial and
+    share-alike. See <a href="../attribution.html">attribution</a>.</p>
+    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+  </div>
+</footer>
+
+<script>
+document.getElementById("theme-toggle").addEventListener("click", function () {
+  var el = document.documentElement;
+  var cur = el.getAttribute("data-theme");
+  if (!cur) {
+    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  var next = cur === "dark" ? "light" : "dark";
+  el.setAttribute("data-theme", next);
+  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
+});
+</script>
+
+</body>
+</html>
