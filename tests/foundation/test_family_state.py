@@ -178,9 +178,18 @@ def test_the_derived_fallback_refuses_unless_explicitly_opted_into(anat):
     6 of 21 pairs, so it is not a partition. Every other call in this file passes
     ``allow_derived=True`` precisely because the default refuses.
     """
+    # The derived fallback is only REACHED by an anatomy that declares no
+    # partition. The real prior declares nine families, and a declaration
+    # correctly needs no opt-in (see
+    # test_an_anatomy_declared_partition_is_consumed_verbatim), so passing `anat`
+    # here exercises the declared path and never reaches the refusal this test is
+    # about. Strip both declaration channels so the fallback is what runs.
+    undeclared = copy.copy(anat)
+    undeclared.families = None
+    undeclared.family_partition = None
     with pytest.raises(ValueError, match="REFUSED by default"):
-        derive_families(anat)
-    part = derive_families(anat, allow_derived=True)
+        derive_families(undeclared)
+    part = derive_families(undeclared, allow_derived=True)
     assert any("REJECTS" in n for n in part.notes), (
         "the opted-in path must still record that the partition is evidence-rejected"
     )
@@ -191,8 +200,17 @@ def test_a_training_config_cannot_reach_the_derived_partition_by_default(anat):
 
     cfg = ModelConfig(family_state=True)  # NOT _small_cfg: that opts in
     assert cfg.family_allow_derived_partition is False, "the default must refuse"
+    # The derived fallback is only REACHED by an anatomy that declares no
+    # partition. The real prior declares nine families, and a declaration
+    # correctly needs no opt-in (see
+    # test_an_anatomy_declared_partition_is_consumed_verbatim), so passing `anat`
+    # here exercises the declared path and never reaches the refusal this test is
+    # about. Strip both declaration channels so the fallback is what runs.
+    undeclared = copy.copy(anat)
+    undeclared.families = None
+    undeclared.family_partition = None
     with pytest.raises(ValueError, match="REFUSED by default"):
-        build_family_layout(cfg, anat)
+        build_family_layout(cfg, undeclared)
 
 
 def test_an_anatomy_declared_partition_is_consumed_verbatim(anat):

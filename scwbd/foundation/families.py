@@ -1003,7 +1003,17 @@ def derive_families(
     d_grid: int = 12,
     d_context: int = 4,
     d_prediction: int = 8,
-    allow_derived: bool = True,
+    # DEFAULT FALSE. Deriving a partition means using the Yeo-7 cortical split,
+    # which separates 6 of 21 pairs under a Vasa spin null -- rejected on the
+    # evidence, not merely approximate. A caller who wants it must say so.
+    #
+    # Checked before flipping: the only production caller of THIS function is
+    # `model.py`, which already passes
+    # `allow_derived=cfg.family_allow_derived_partition` (False by default).
+    # `anatomy.py`'s bare `derive_families(obj)` is a different function of the
+    # same name from `scwbd.anatomy.families` -- itself an instance of O-7, and
+    # the reason this looked like a risky change until the import was read.
+    allow_derived: bool = False,
 ) -> FamilyPartition:
     """Partition the prior's regions into families **using only what it declares or distinguishes**.
 
@@ -1046,6 +1056,34 @@ def derive_families(
     notes: list[str] = []
 
     declared = _declared_families(anat)
+
+    # `allow_derived` was DECORATIVE: it appeared once, in this function's
+    # signature, and nothing ever read it. `ModelConfig.family_allow_derived_
+    # partition` defaults to False and `model.py` threads it here faithfully --
+    # into a parameter that was discarded. The config option, this function's
+    # docstring, and the test that asserts "the default must refuse" all
+    # described a refusal that did not exist.
+    #
+    # What ran instead: agent C tested the Yeo-7 cortical split under a Vasa spin
+    # null and it separates 6 of 21 pairs, so it is NOT a partition on the
+    # evidence. That derived split was being used silently whenever an anatomy
+    # declared nothing.
+    #
+    # Refusing here rather than at the call sites, because the guard belongs
+    # where the fallback is taken -- putting it in the callers is what let
+    # `anatomy.py`'s bare `derive_families(obj)` bypass it.
+    if declared is None and not allow_derived:
+        raise ValueError(
+            "this anatomy declares no family partition, and the derived fallback is "
+            "REFUSED by default.\n"
+            "  The fallback splits cortex by the Yeo-7 networks, which separate 6 of "
+            "21 pairs under a Vasa spin null -- an evidence-REJECTED partition, not a "
+            "cheaper one.\n"
+            "  Pass allow_derived=True (or set model.family_allow_derived_partition) "
+            "to state that a rejected partition is acceptable for this run, and expect "
+            "FamilyPartition.notes to say REJECTS."
+        )
+
     if declared is not None:
         names, dprov = declared
         source = str(dprov["source"])
@@ -1204,7 +1242,20 @@ def derive_families(
         unpopulated=unpopulated,
         provenance=_provenance_key(anat),
         source="anatomy_declared" if declared is not None else "derived_by_foundation",
-        notes=tuple(notes),
+        notes=tuple(
+            notes
+            + (
+                []
+                if declared is not None
+                else [
+                    "REJECTS: this partition was DERIVED, not declared. The cortical "
+                    "split is Yeo-7, which separates 6 of 21 pairs under a Vasa spin "
+                    "null -- rejected on the evidence. The run opted in via "
+                    "allow_derived=True; recorded here so the artifact carries the "
+                    "evidence status rather than the caller having to remember it."
+                ]
+            )
+        ),
     )
 
 
