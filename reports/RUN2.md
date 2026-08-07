@@ -291,12 +291,26 @@ likely cause is the verification work described in §4 — repeated `pytest` run
 draw on the same **one** ~121 GB unified pool the trainer is using. On this box
 there is no separate host memory to hide in.
 
-Worth writing down rather than dismissing: the checks that de-risked the finish
-line cost roughly a third of the training throughput while they ran. That was a
-good trade here, because a publish path that refuses a correct artifact after
-nine hours costs more than an hour of slower steps. But it is a real cost, it
-was invisible until someone compared `wall_s` across stages, and "read-only
-analysis" is not the same as "free".
+**Attribution withdrawn, same session.** The paragraph above originally ended by
+charging the whole slowdown to that verification work. Checking the box
+afterwards — which should have come first — found two unrelated processes
+resident: a 19.6 GB Python belonging to a different project's session and an
+18.1 GB `next-server`, together roughly 38 GB of the pool, with available memory
+down to 5 GiB at one point.
+
+So the honest statement is narrower. The slowdown is real and measured; the
+verification work contributes and is the part under this project's control; but
+the *size* of its contribution was never measured, and a confident cause was
+written down before looking at what else was running. The correct reading is
+that a shared unified pool makes throughput a property of the whole machine
+rather than of one job, and that this run has no isolation from anything else on
+it.
+
+The general point survives intact and is the one worth keeping: "read-only
+analysis" is not the same as "free", and the cost was invisible until someone
+compared `wall_s` across stages. The trade was still right — a publish path that
+refuses a correct artifact after nine hours costs more than an hour of slower
+steps.
 
 Remaining: T4 simulator extension 3334 · T5 distillation 0 · T1
 individualisation 900.
