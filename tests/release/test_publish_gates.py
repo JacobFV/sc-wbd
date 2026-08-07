@@ -263,3 +263,55 @@ def test_no_designation_literal_inside_any_string_the_code_emits():
                 continue
             bad.append(f"{rel}:{node.lineno}: {node.value[:60]!r}")
     assert not bad, "designation baked into a string an artifact carries:\n" + "\n".join(bad)
+
+
+def test_the_card_upload_is_not_conditional_on_a_debugging_flag():
+    """scwbd-002-pilot shipped public with weights and no README.
+
+    The upload sat inside ``if stage is not None:`` and ``--stage-dir`` is a
+    flag for inspecting the rendered card *locally*. ``make publish-002`` does
+    not pass it, so the card was never written and never uploaded.
+
+    It hid because every dry run passes ``--stage-dir`` — that is how you read
+    the card to check it — so the verification path and the shipping path
+    differed in exactly the place the defect lived. The card was verified six
+    times; the thing that publishes it, never.
+
+    Asserted structurally rather than by publishing: the README upload must not
+    live under a branch that tests ``stage``.
+    """
+    import ast
+    import inspect
+
+    from scwbd.release import publish as P
+
+    src = inspect.getsource(P.publish_artifact) if hasattr(P, "publish_artifact") else None
+    if src is None:
+        # find whichever function performs the upload
+        for name, obj in vars(P).items():
+            if callable(obj) and getattr(obj, "__module__", "") == P.__name__:
+                try:
+                    s = inspect.getsource(obj)
+                except (OSError, TypeError):
+                    continue
+                if 'path_in_repo="README.md"' in s:
+                    src = s
+                    break
+    assert src, "could not locate the function that uploads README.md"
+
+    tree = ast.parse(inspect.cleandoc(src))
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.If):
+            continue
+        test = ast.dump(node.test)
+        if "stage" not in test:
+            continue
+        body = ast.dump(ast.Module(body=node.body, type_ignores=[]))
+        # The STAGING write may be conditional -- writing the card to a
+        # --stage-dir for local inspection is exactly what that flag is for.
+        # Only the UPLOAD must be unconditional, so match the upload's own
+        # keyword rather than the filename, which appears in both.
+        assert "path_in_repo" not in body or "README" not in body, (
+            "the README UPLOAD is inside a branch that tests `stage`; "
+            "--stage-dir is a debugging flag and the card must ship regardless"
+        )
