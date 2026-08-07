@@ -731,13 +731,19 @@ def test_r12_refuses_when_no_arm_is_declared_at_all():
 #: `partition`; either satisfies the reader. Verified against a live
 #: `SCWBD.family_report()` rather than guessed, after first misreading
 #: `_families_from_report` as requiring a `families` key that no real report has.
-_TREATMENT_OPERATORS = {
-    "learned_groups": {"d31": ["cortex_association", "cortex_unimodal"]},
-    "mechanistic_families": {
-        "subcortex_accumb": "basal_ganglia_gate",
-        "subcortex_hippo": "hippocampal_code",
-        "subcortex_thal": "thalamic_relay",
-    },
+#: `_families_from_report` reads ``partition["families"]`` -- a NESTED list of
+#: ``{name, n_regions, backend}`` -- not a top-level ``families`` key and not
+#: ``operators``. Traced rather than guessed, after two wrong readings of this
+#: function in one session.
+_TREATMENT_PARTITION = {
+    "families": [
+        {"name": "cortex_association", "n_regions": 200, "backend": "learned"},
+        {"name": "cortex_unimodal", "n_regions": 200, "backend": "learned"},
+        {"name": "subcortex_hippo", "n_regions": 4, "backend": "hippocampal_code"},
+        {"name": "subcortex_thal", "n_regions": 2, "backend": "thalamic_relay"},
+        {"name": "subcortex_accumb", "n_regions": 8, "backend": "basal_ganglia_gate"},
+    ],
+    "unpopulated": ["cerebellum"],
 }
 
 
@@ -746,7 +752,7 @@ def test_r12_admits_the_claim_on_a_treatment_checkpoint():
         regional_state={
             "ablation_arm": "treatment",
             "family_state": True,
-            "operators": _TREATMENT_OPERATORS,
+            "partition": _TREATMENT_PARTITION,
         }
     )
     m.add_claim(_claim("The model maintains heterogeneous regional state.", requires_family_state=True))
