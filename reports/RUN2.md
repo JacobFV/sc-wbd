@@ -1153,6 +1153,56 @@ site"* and not *"predicts held-out participants"*.
 bit-identical — the participant-disjoint split routes every test window to the
 `ar16` fallback. Read the table as **five** distinct comparators, not six.
 
+### The published card was built from the wrong card set, and the fix over-claimed
+
+Found after the numbers were final, so it changes no score — but it changes what
+the artifact *says about itself*, which is the part downstream readers rely on.
+
+`scwbd/release/publish.py` passed `card_dir="configs/source_cards"` as a literal.
+That is the directory `tests/curriculum/test_tiers.py` names `LEGACY` on line 19,
+in the same file that names `configs/curriculum/source_cards` as `CORRECTED`.
+The checkpoint settles which one governed the run, because it records the answer
+rather than the intention:
+
+```
+checkpoints/scwbd-002-pilot/last.pt
+  config["mixture_cards"] = configs/curriculum/source_cards
+```
+
+So for the whole of run 2 the licence and attribution manifest was computed from
+a different card set than the one that trained the weights. Every
+licence-bearing field agrees between the two directories today, which is why
+nothing looked wrong; `enabled` does not agree. `ds002336_real` is on in the
+corrected set and off in the legacy one. The first run to take a gradient on
+that BOLD would have published a card omitting a dataset that contributed to it.
+
+`card_dir` is now derived, preferring the checkpoint's recorded config over the
+config file, and a disagreement between them is a blocker rather than a
+precedence rule.
+
+**Then the fix over-claimed in the other direction.** The corrected card is
+`enabled: true`, so `ds002336` immediately appeared on the published card under
+DATASET INPUTS — for a checkpoint whose recorded split contains none of its
+participants. `enabled` describes the *mixture*, not a checkpoint, and a card
+switched on after a run has finished is enabled and unconsumed at once. The card
+now discloses this, derived from the split the checkpoint stores:
+
+```
+extra["real_split"]  ->  109 participants
+eegmmidb_real   n_participants: 109    <- exactly the split
+ds002336_real   n_participants:  10    <- appear in no fold
+```
+
+The comparison is on counts rather than participant names deliberately: the two
+corpora label participants `S001` against `sub-xp101`, so a name intersection
+returns zero overlap for **both** and would have accused eegmmidb — the corpus
+that actually trained the model — with the same confidence as a correct answer.
+
+One consequence for §4's numbers: none. One for run 3: the moment BOLD enters the
+likelihood, `ds002336` stops being an over-claim and becomes a real input, and
+this disclosure must disappear rather than be carried forward. It is derived, so
+it will.
+
 ### This is still not ablation A1
 
 Unchanged by any of the above, and stated again because a decisive-looking loss
