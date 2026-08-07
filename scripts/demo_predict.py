@@ -30,10 +30,13 @@ def main() -> int:
     n = int(m._model.anat.n_regions)
 
     # A real measured window, not noise: the first cached EEG the trainer uses.
-    from scwbd.foundation.realdata import RealEEGConfig, RealEEGDataset
+    # EEGMMIDBDataset, not RealEEGDataset: the latter is the abstract base and
+    # its _montage() raises NotImplementedError. Instantiating the base is why
+    # this demo silently fell back to synthetic context on its first run.
+    from scwbd.foundation.realdata import EEGMMIDBDataset, RealEEGConfig
 
     try:
-        ds = RealEEGDataset(RealEEGConfig())
+        ds = EEGMMIDBDataset(RealEEGConfig())
         item = ds[0]
         ctx = item["eeg"].unsqueeze(0)  # (1, T, C)
         source = f"{item.get('subject','?')} run {item.get('run','?')} ({ctx.shape[1]} samples, {ctx.shape[2]} ch)"
