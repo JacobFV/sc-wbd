@@ -248,6 +248,31 @@ def shared_components(*, n_uncertainty: int = 4) -> tuple[ComponentSpec, ...]:
         ComponentSpec(
             "uncertainty", n_uncertainty, "log_var", "meta", False, False, "per-region predictive log-variance"
         ),
+        # O-5b, closed 2026-08-07. The dipole moment is the quantity a lead
+        # field integrates against, and it was declared per *cortical family*,
+        # which put it in the `private` block that `SCWBD.build_layout`
+        # deliberately forbids an observation head from addressing. So
+        # `EEGHead.source_moment()` and the `(64, 414, 3)` `matrix_vec` were both
+        # built, both correct, and both unreachable -- the same "the work exists
+        # and the half that would use it is pointed somewhere else" shape this
+        # project keeps finding, in the one place it costs the most: a per-parcel
+        # scalar carries 5.6% of the whitened lead field, a 3-vector moment
+        # 51.7%.
+        #
+        # ARCHITECTURE.md deferred this to run 3 because changing the shared
+        # interface changes every offset and would invalidate the checkpoints of
+        # the run then training. That run is finished, evaluated and published,
+        # so the reason has expired.
+        #
+        # SUBCORTICAL FAMILIES WRITE ZERO, and this is the one place in this
+        # codebase where a zero fill is correct rather than an imputation: a
+        # parcel with no cortical sheet contributes no current dipole, and a zero
+        # moment contributes exactly zero through `L_vec`. The distinction that
+        # makes it correct is that absent *orientation* must stay `NaN` -- a
+        # direction of zero length is a lie -- while an absent *moment* genuinely
+        # is the zero vector. `AnatomyPrior.normal` keeps its NaN for those 14
+        # regions; only the moment is zeroed.
+        ComponentSpec("dipole", 3, "Hz*m", "fast", True, True, "net current-dipole moment, anatomical frame"),
     )
 
 
@@ -285,12 +310,10 @@ def _cortical(*, n_spectral_modes: int, n_adaptation: int, n_uncertainty: int) -
         # resolution buys, and every design decision before this one spent on
         # resolution.
         #
-        # CORTICAL FAMILIES ONLY. Subcortical parcels have no cortical normal
-        # (14 of 414 carry NaN in `AnatomyPrior.normal`), so they do not declare
-        # this component at all -- which is exactly the region-indexed state
-        # space of body.tex §2.1, and is affordable only because the segment
-        # layout charges 400*3 cells for it rather than 414*3.
-        ComponentSpec("dipole", 3, "Hz*m", "fast", True, True, "net current-dipole moment, anatomical frame"),
+        # `dipole` used to be declared here, cortex-only. It is now part of
+        # `shared_components()` at a fixed offset so the observation heads can
+        # address it; see the note there. Declaring it again would give the
+        # cortical families two dipole spans.
     )
     ports = _SHARED_PORTS + (
         Port("oscillatory", ("spectral",), "dimensionless", "out", "quadrature modes carried by long-range edges"),

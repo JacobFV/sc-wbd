@@ -759,7 +759,7 @@ rather than multiplying a scalar amplitude.
 This is not an optimisation. It is the difference between a model that can
 predict a pose-dependent TMS response and one that structurally cannot.
 
-#### O-5b. How the dipole reaches an observation (design, deferred to run 3)
+#### O-5b. How the dipole reaches an observation — **CLOSED 2026-08-07**
 
 The observation half is built: `build_lead_field` emits `matrix_vec`
 `(64, 414, 3)`, `EEGHead` registers it non-persistently and has
@@ -787,10 +787,28 @@ Two ways to close it, and the first is right:
 2. Give `EEGHead` the family layout and read per-family. Rejected: it makes the
    head carry state-layout knowledge, which is exactly what RL-4 moved out.
 
-**Deferred to run 3 for a scheduling reason, not a technical one.** Changing
-the shared interface changes every offset, which invalidates the checkpoints of
-the run currently training. A healthy 8700-step run is worth more than closing
-this two hours earlier.
+~~**Deferred to run 3 for a scheduling reason, not a technical one.**~~ That
+reason expired: the run reached 8,700 steps, was evaluated, and is published.
+
+**Closed by option 1**, as written above. `dipole` is now the fifth member of
+`shared_components()` at a fixed offset, dim 3, `Hz·m`; the cortex-only
+declaration is removed so no family carries it twice.
+`EEGHead.source_moment()` returns `(B, T, 414, 3)` where it returned `None` for
+the whole of run 2 — the head, the `matrix_vec` lead field and the component all
+existed and addressed different spaces, which is the same defect as the source
+cards granting `local.*` to a model whose module is `family_local`.
+
+The cost, recorded rather than absorbed: the padded plane widens from D=59 to
+D=62 because the hippocampal family sets the width, so padding rises **47.34% →
+49.73%**. That strengthens O-6 rather than weakening it — the fix for paying
+414×3 cells to store 400×3 real ones is the ragged layout, not a narrower
+interface.
+
+Guarded by `tests/foundation/test_dipole_reaches_the_head.py`: the component is
+shared and not private, every family declares it exactly once at the same
+offset, `source_moment()` returns a 3-vector, the subcortical *orientation* stays
+`NaN` (the zero-*moment* argument depends on it), and the padding figure is
+pinned.
 
 ### O-6. The state layout is **ragged**, not padded
 
