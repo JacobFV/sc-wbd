@@ -106,6 +106,14 @@ def test_unparsed_subcortical_parcels_are_not_folded_into_a_neighbour(synthetic_
 def test_declared_partition_wins_over_derivation(anat):
     """Cajal's ``AnatomyPrior`` family declaration is used verbatim when present."""
     a = copy.copy(anat)
+    # Declare the partition ONCE. `anat` is the real prior, which already
+    # declares nine families in `families`; `copy.copy` carries that over, so
+    # setting a per-parcel declaration on top of it produces an anatomy that
+    # declares its families twice and differently. `_declared_families` refuses
+    # that outright now -- it used to let the structured one win silently while
+    # still reporting `source="anatomy_declared"`. Clearing it is what makes
+    # this fixture express the thing the test is actually about.
+    a.families = None
     a.family = tuple(
         "hippocampus_declared" if d == "subcortex" else f"cortex_block{i % 3}"
         for i, d in enumerate(anat.division)
@@ -121,6 +129,14 @@ def test_declared_partition_of_arbitrary_size(anat):
     """Build for an arbitrary N declared at load time, not for a fixed list."""
     for n_fam in (2, 3, 17, 41):
         a = copy.copy(anat)
+        # Declare the partition ONCE. `anat` is the real prior, which already
+        # declares nine families in `families`; `copy.copy` carries that over, so
+        # setting a per-parcel declaration on top of it produces an anatomy that
+        # declares its families twice and differently. `_declared_families` refuses
+        # that outright now -- it used to let the structured one win silently while
+        # still reporting `source="anatomy_declared"`. Clearing it is what makes
+        # this fixture express the thing the test is actually about.
+        a.families = None
         a.family = tuple(f"declared_{i % n_fam:03d}" for i in range(anat.n_regions))
         part = derive_families(a, allow_derived=True)
         assert len(part) == n_fam
@@ -129,11 +145,27 @@ def test_declared_partition_of_arbitrary_size(anat):
 
 def test_partial_family_declaration_raises(anat):
     a = copy.copy(anat)
+    # Declare the partition ONCE. `anat` is the real prior, which already
+    # declares nine families in `families`; `copy.copy` carries that over, so
+    # setting a per-parcel declaration on top of it produces an anatomy that
+    # declares its families twice and differently. `_declared_families` refuses
+    # that outright now -- it used to let the structured one win silently while
+    # still reporting `source="anatomy_declared"`. Clearing it is what makes
+    # this fixture express the thing the test is actually about.
+    a.families = None
     a.family_id = torch.zeros(anat.n_regions, dtype=torch.long)
     with pytest.raises(ValueError, match="family_names"):
         derive_families(a, allow_derived=True)
 
     b = copy.copy(anat)
+    # Declare the partition ONCE. `anat` is the real prior, which already
+    # declares nine families in `families`; `copy.copy` carries that over, so
+    # setting a per-parcel declaration on top of it produces an anatomy that
+    # declares its families twice and differently. `_declared_families` refuses
+    # that outright now -- it used to let the structured one win silently while
+    # still reporting `source="anatomy_declared"`. Clearing it is what makes
+    # this fixture express the thing the test is actually about.
+    b.families = None
     b.family = ("only", "three", "labels")
     with pytest.raises(ValueError, match="partial family declaration|family labels for"):
         derive_families(b, allow_derived=True)
