@@ -445,10 +445,32 @@ that is already on disk:
 | `sleepedf_real` | 1 | yes | 2 bipolar derivations cannot constrain a 64-channel head | a **montage adapter** |
 
 Three of the four measured sources are disabled, and **not one of them is
-disabled by policy**. Each is waiting on an operator that does not exist. That
-is the whole of O-1's practical content: the tier system already admits any
-measured likelihood source, and what stops four of them being four views of one
-carrier is that three views have not been written.
+disabled by policy**.
+
+**Correction, same day: two of those operators already exist.**
+`scwbd/anatomy/registration.py` is 513 lines titled *"BOLD → parcel
+registration: bring the atlas to the subject, never the reverse"*, and it
+contains `TransformChain` (EPI ← T1w ← template) and `ParcelCoverage` (*"how
+many EPI voxels each parcel actually got, for one subject/run"*) — which is
+precisely the per-parcel coverage mask `ds000113`'s slab problem calls for.
+
+It is imported by **nothing except its own test file**. No module under
+`scwbd/` references it.
+
+So the row above should read *not run* rather than *does not exist*, and the
+source card's phrasing — "no registration between them **has been run**" — was
+literally accurate in a way I read as "none is available". The distance from
+here to a second measured modality is smaller than the cards suggest: a
+consumer, not a component.
+
+> This is the third structure found this way in one day, after
+> `curriculum_admission.py` and the `extra.curriculum` config block. The pattern
+> is not "the work is missing" — it is **the work was done and not connected**,
+> and each time the artifact that would have used it describes the capability as
+> absent.
+
+What remains genuinely unwritten is the **montage adapter**, which is O-2's
+first real consumer.
 
 Two consequences worth stating plainly.
 
