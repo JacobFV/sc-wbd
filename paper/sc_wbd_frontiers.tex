@@ -76,60 +76,40 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\sffamily\scriptsize\color{muted}SuperCognition Labs \textperiodcentered\ SC-WBD Technical Thesis}
-\fancyhead[R]{\sffamily\scriptsize\color{muted}V6 \textperiodcentered\ Draft. Pending Development}
+\fancyhead[R]{\sffamily\scriptsize\color{muted}V9 \textperiodcentered\ Draft. Pending Development}
 \fancyfoot[L]{\sffamily\scriptsize\color{muted}Integrated Whole-Brain Modeling Program}
 \fancyfoot[C]{\sffamily\scriptsize\color{ink}\thepage}
 \fancyfoot[R]{\sffamily\scriptsize\color{frontpurple}supercognitionlabs.com}
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
 \setlength{\headheight}{12pt}
-\fancypagestyle{versionsix}{%
-  \fancyhf{}
-  \fancyhead[L]{\sffamily\scriptsize\color{muted}SuperCognition Labs}
-  \fancyhead[R]{\sffamily\bfseries\fontsize{8}{9}\selectfont\color{frontred}V6}
-  \fancyfoot[C]{\sffamily\scriptsize\color{ink}\thepage}
-  \renewcommand{\headrulewidth}{0pt}
-  \renewcommand{\footrulewidth}{0pt}
-}
 
 \newcommand{\metatitle}[1]{\vspace{6pt}{\sffamily\bfseries\fontsize{7.2}{8}\selectfont\color{muted}#1}\par\vspace{2pt}}
 
 \input{figures}
 
+% VERSION -- bump when you edit this paper. It appears in the running head of
+% every page after the first; the title page is deliberately bare. Currently V9.
 \begin{document}
-\thispagestyle{versionsix}
+\thispagestyle{empty}
 
-\noindent\colorbox{ink}{\parbox{\dimexpr\textwidth-2\fboxsep\relax}{%
-  \color{white}\sffamily\bfseries\fontsize{10.5}{12}\selectfont
-  SuperCognition Labs\hfill SC-WBD \textperiodcentered\ VERSION 6}}
-
-\vspace{4mm}
 \begin{center}
-\includegraphics[width=0.52\textwidth]{figures/wbd_mark.pdf}\\[-1mm]
-{\sffamily\fontsize{6.6}{8}\selectfont\color{muted}
-414 parcels in fsLR\_32k surface RAS, coloured by the nine-family partition ---
-the model's state space, at its own coordinates\par}
+\includegraphics[width=0.58\textwidth]{figures/wbd_mark.pdf}
 \end{center}
+
 \vspace{2mm}
-{\sffamily\bfseries\fontsize{9}{10}\selectfont\color{frontpurple}
-INDIVIDUALIZED WHOLE-BRAIN DYNAMICS\par}
-\vspace{3mm}
-{\leftskip=1em\noindent\sffamily\bfseries\fontsize{23}{26}\selectfont\color{ink}
+{\noindent\sffamily\bfseries\fontsize{23}{26}\selectfont\color{ink}
 Integrated Whole-Brain Modeling Across\\
 Modalities, Scales, and Dynamics for\\
 Individualized Neurotechnology\par}
-\vspace{3mm}
-{\sffamily\fontsize{13}{15}\selectfont\color{muted}
-Learning one brain's dynamics from EEG, MEG, fMRI and stimulation, in a state space
-that carries orientation, multiple clocks, and per-region structure\par}
 
-\vspace{6mm}
-{\sffamily\bfseries\fontsize{12}{14}\selectfont\color{ink}Jacob Valdez\par}
-{\sffamily\fontsize{9}{11}\selectfont\color{muted}
+\vspace{5mm}
+{\sffamily\fontsize{9}{12}\selectfont\color{ink}
+Jacob Valdez\quad\textperiodcentered\quad
 Founding Architect, SuperCognition Labs\quad\textperiodcentered\quad
 \href{mailto:jacob@supercognitionlabs.com}{jacob@supercognitionlabs.com}\par}
 
-vspace{4mm}\hrule\vspace{4mm}
+\vspace{7mm}
 {\sffamily\bfseries\fontsize{9}{10}\selectfont\color{frontpurple}ABSTRACT\par}
 \vspace{2mm}
 {\fontsize{9.1}{11.25}\selectfont\color{ink}
@@ -171,6 +151,26 @@ Generative AI assisted with drafting, language editing, and the production of sc
 
 \section{Document Status}
 This is a technical thesis and development contract: draft, pending development. It is not a clinical protocol, regulatory submission, completed software release, or report of empirical findings. Its scientific claims are conditional on the falsification gates stated herein.
+
+% ---------------------------------------------------------------- appendix
+% The implementation supplement ships INSIDE this PDF rather than as a second
+% document. paper/sc_wbd_supplement.tex still builds standalone if a venue wants
+% a separate file; it is a thin wrapper around the same \input{appendix}, so the
+% two cannot drift.
+\clearpage
+\appendix
+\section*{Appendix: Implementation Supplement}
+\addcontentsline{toc}{section}{Appendix: Implementation Supplement}
+{\sffamily\fontsize{9}{11}\selectfont\color{muted}
+Candidate data, calibration, source-card and evaluation register.\par}
+\vspace{2mm}
+
+\noindent This register is a listing of candidate sources. A listing is not
+evidence of access, admissibility, compatibility, or scientific value: every
+admitted snapshot must pass the source-card, transform, leakage, and
+claim-specific gates in the main text.
+
+\input{appendix}
 
 \bibliographystyle{Frontiers-Harvard}
 \bibliography{references}
