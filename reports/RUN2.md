@@ -1684,8 +1684,22 @@ test_recovery.py   killed at 5400 s, mid-progress-line, no summary written
 
 So the answer to the outstanding question is: **it does not finish in 90 minutes
 either.** The 39 tests deselected as `slow` remain unmeasured, and two failures
-inside `test_recovery.py` are now visible but unnamed — pytest was killed before
+inside `test_recovery.py` are visible but **unnamed** — pytest was killed before
 it could print the `FAILED` lines that `-rEf` would have given.
+
+Their *positions* are recoverable from the partial progress line `.F...F` read
+against the collection order, which would make them
+`test_interval_coverage_is_nominal` (2) and `test_optimiser_actually_converged`
+(6). That is an inference from progress characters, not a measurement, and it is
+recorded here as an inference. An attempt to corroborate it at
+`SCWBD_TEST_REPLICATES=8` **also timed out** — 900 s, `exit=124`, zero bytes of
+output — so nothing was learned, including about the cost driver.
+
+Two facts survive that attempt. The reduced-replicate run was competing with
+`test_synthetic_slice.py`, so its silence measures the machine and not the test.
+And its `exit=124` is *trustworthy* where the sweep's `exit=0` was not, for a
+reason worth keeping: `echo "exit=$?"` immediately follows the command, with no
+command substitution between them to reset `$?`.
 
 **The recorded `exit=0` is my own capture bug and is worth stating.** The
 launcher wrote:
