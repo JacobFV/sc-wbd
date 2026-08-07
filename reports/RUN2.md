@@ -163,9 +163,6 @@ entire run and shipped a model whose amortized posterior never trained, with a
 green log. 400 rejections in 400 steps is not a rare event, and that number is
 what disproved the first diagnosis — which was mine, and wrong.
 
----
-
-
 ### Direct check on the trained flow, mid-T4
 
 The loss curves say the flow is healthy indirectly — a flat NPE band and zero
@@ -205,6 +202,9 @@ rather than here.
 
 Recorded now because the *first* reading — no collapse — does not depend on the
 caveat at all. Degenerate spread would have shown up under any input whatsoever.
+
+---
+
 ## 3. Training
 
 ### T1 measured founding — complete, 2966 steps
