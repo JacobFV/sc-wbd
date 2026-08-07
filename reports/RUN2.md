@@ -584,8 +584,21 @@ boundary that crashes a nine-hour job at hour eight. Read rather than hoped:
 empty range leaves no unbound name; `OneCycleLR` is built with
 `total_steps=max(stage.steps, 2)` and `pct_start=min(0.3, warmup/max(steps, 1))`,
 so neither the scheduler nor a division sees zero; and `rep`, `best` and the
-checkpoint writes all sit at stage level rather than inside the loop. T5 will
-write a `stage_T5_distillation.pt` containing the T4 weights unchanged.
+checkpoint writes all sit at stage level rather than inside the loop.
+
+**Observed, and my prediction was wrong.** I wrote that T5 would therefore write
+a `stage_T5_distillation.pt` holding the T4 weights unchanged. It wrote nothing:
+the transition at `global_step` 7801 went straight from T4 to
+`T1_individualisation`, and no T5 checkpoint exists. The reason is a check I had
+not read — `T5_distillation` is `enabled: False`, and `run_stage` returns
+`{"skipped": True}` on that before reaching any of the zero-step handling I had
+traced. The analysis was correct and irrelevant; a guard three lines earlier
+decided it.
+
+That is worth keeping as an entry in its own right. Reading a function far
+enough to answer your question is not the same as reading it far enough to know
+your question was the one that mattered — and the tell was available, since
+`enabled` sits in the same config block as `steps`.
 
 That last detail is why `_final_stage_file` filters on `steps > 0` — the last
 *scheduled* stage is T5, and publishing its checkpoint would ship weights under
