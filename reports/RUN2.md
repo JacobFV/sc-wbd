@@ -963,6 +963,59 @@ paired MSE deltas (positive = 002 worse), all excluding zero
 `scwbd_mse_better_than: []`. It loses the mean to `dense_neural`, which it beats
 by 2.12 nats on NLL — so the two failures are not even the same failure.
 
+### The comparison flatters 002, and correcting it makes the loss larger
+
+**Found after publishing, by a test that was already red.**
+`tests/evaluation_audit/test_units_consistency.py` fails on master and says why:
+
+> SC-WBD and the baselines are scored on different random variables: SC-WBD's
+> NLL is **0.6224 nats below** the baselines' on identical (target, mean,
+> log-variance) inputs, entirely from the `-log s` term.
+
+`evaluate.py` scores SC-WBD on `y = target / s`, where `s` is each window's own
+standard deviation, with the Jacobian folded into the log-variance. The
+baselines are scored on the raw target. The algebra is exact and
+model-independent:
+
+```
+NLL_scaled = NLL_raw - log s          the squared-error term cancels exactly
+MSE_scaled = MSE_raw / s²             this one does not cancel
+```
+
+The rescale is **harmless in training** — `s` does not depend on the parameters,
+so the gradient is unchanged — and is a pure unearned advantage **at evaluation
+time**. Measured on the real test fold: `mean(log s) = 0.5694` over 1080 windows
+from 27 test participants, against a spread of 0.035 nats across the three
+non-trivial baselines. The offset is roughly **17× the entire spread it would
+have to be compared against**.
+
+**Direction, stated first because it is the direction that matters.** The offset
+favours SC-WBD. So the published table understates the loss:
+
+| | reported | in the baselines' units |
+|---|---:|---:|
+| 002 NLL | 3.1789 | **≈ 3.75** |
+| gap to `ar16` (2.0454) | 1.13 nats | **≈ 1.70 nats** |
+| 002 MSE | 36.2715 | larger by a factor of `s²` |
+
+The corrected NLL is an *estimate*, not a measurement: it adds the fold's mean
+`log s` to a mean NLL, and the two averages do not commute exactly. The MSE
+correction is worse behaved still — `s²` varies per window and the mean of
+ratios is not the ratio of means — so no single corrected MSE is quoted here.
+**Re-scoring both sides on the raw target is the fix; arithmetic on the
+published numbers is not.**
+
+**What does not change:** every verdict. 002 lost to five baselines on NLL and
+six on MSE with every paired interval excluding zero, and the correction moves
+all of those *away* from 002. The headline is unchanged and understated.
+
+**What this says about process.** The test existed, was red, named the defect in
+its own docstring, and the artifact was published without running it. That is
+the same failure as §2b — a red test nobody read — repeated by the person who
+had spent the day cataloguing it, on the artifact he had just shipped. The
+directory it lives in, `evaluation_audit`, was one of the eight I had listed as
+*unexamined* three hours earlier.
+
 ### The number that explains it
 
 ```
