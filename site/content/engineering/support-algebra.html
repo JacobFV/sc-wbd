@@ -1,0 +1,130 @@
+title: Two montages are two views of one carrier — SC-WBD
+description: Relating two supports used to mean hand-writing a map. An algebra derives what the declarations support and refuses the rest, naming what is missing.
+nav: engineering
+kicker: Engineering · 11
+heading: Two montages are two views of one carrier
+standfirst: A support could say how many elements it had, never what one was. That distinction turned out to be the difference between 5.6% and 51.7% of the whitened lead field — so the algebra that relates supports refuses to treat it as a reshape.
+---
+<div class="prose">
+
+<h2>The question this came from</h2>
+
+<p>Take readings from electrode montage A and readings from montage B. Can they
+inform one higher-dimensional underlying representation, together with a
+high-resolution connectome?</p>
+
+<p>The honest answer had been <em>not without hand-writing something</em>.
+<code>Support</code> — the object describing what a datum physically integrates
+over — carried <code>kind, frame, units, psf, extent, n_elements,
+resolution</code> and <strong>no operators</strong>. Two supports could not be
+related without a bespoke map. That is why the restriction/prolongation pair in
+<a href="resolution-pair.html">Engineering · 04</a> had to be declared as a
+one-off rather than derived.</p>
+
+<h2>What the algebra refuses, and why that is the design</h2>
+
+<p>The first instinct is an algebra that always returns a map. That is worse
+than having none. A fabricated correspondence between two parcellations is
+<strong>indistinguishable at the type level</strong> from a real one — it has
+the same shape, passes the same checks, and silently becomes part of the
+result.</p>
+
+<p>So maps are derived only from what the supports actually declare, and
+everything else raises an error naming the missing declaration:</p>
+
+<table>
+<thead><tr><th>situation</th><th>outcome</th></tr></thead>
+<tbody>
+<tr><td>different frames</td><td>refuse — supply a registration</td></tr>
+<tr><td>different units</td><td>refuse — convert first</td></tr>
+<tr><td>vector components in different frames</td><td>refuse — rotate first</td></tr>
+<tr><td>two named clocks, no declared relation</td><td>refuse — supply a synchronisation record</td></tr>
+<tr><td>scalar ↔ vector, no orientation field</td><td>refuse — see below</td></tr>
+<tr><td>same frame, finer → coarser</td><td>restriction, marked <em>lossy</em></td></tr>
+<tr><td>same frame, coarser → finer</td><td>prolongation, marked <em>invents</em></td></tr>
+</tbody>
+</table>
+
+<h2>The refusal that was measured, not assumed</h2>
+
+<p>A support says how many elements it has. It never said what <em>one element
+is</em>. We had no way to express the difference between one number per parcel
+and three.</p>
+
+<p>That difference is not bookkeeping. Measured on real data: a per-parcel
+scalar carries <strong>5.6%</strong> of the whitened lead field, where three
+numbers per parcel carry <strong>51.7%</strong>.</p>
+
+<p>So collapsing a 3-vector per parcel to a scalar is not a reshape. It is a
+projection onto an orientation — and <em>which</em> orientation is a physical
+fact about the cortex, not a layout choice. The algebra refuses to do it unless
+you hand it an orientation field, and then reports the discarded normal
+component as the uncertainty it is.</p>
+
+<blockquote>
+<p>A support whose elements are scalars is a different kind of object from one
+whose elements are vectors. Anything that cannot tell them apart will eventually
+average one into the other.</p>
+</blockquote>
+
+<h2>Lossy and invents are different fields</h2>
+
+<p>Restriction discards information and is honest about it. Prolongation
+<strong>asserts structure no measurement supports</strong>. A pipeline can
+reasonably tolerate the first; it must declare the second.</p>
+
+<p>They are separate flags, and the constructor enforces the pairing — a
+prolongation declaring <code>invents=False</code> cannot be built, because it
+would be claiming that upsampling is free:</p>
+
+<pre><code>SupportMap(kind="prolongation", n_in=1, n_out=4, invents=False, ...)
+# ValueError: prolongation asserts structure no measurement supports;
+#             invents=False would claim upsampling is free</code></pre>
+
+<h2>Point-spread composes, or it refuses</h2>
+
+<p>Mapping through a support smears the datum, so the kernels compose. Two
+Gaussians compose in closed form — FWHM adds in quadrature. Two opaque
+<code>kernel_ref</code>s do not compose from their <em>descriptions</em>; that
+needs the assets. Refusing beats approximating, because an approximated
+point-spread is exactly the "nominal coordinate substituted for a physical
+support" the thesis rejects.</p>
+
+<p>Nominality is contagious: a composed kernel is no more real than its least
+real factor.</p>
+
+<h2>Clocks</h2>
+
+<p>5000 Hz EEG against 0.5 Hz BOLD refines onto the <em>faster</em> clock. The
+fast signal is already there; the slow one is held across the gap — which is
+invention, and the map says so rather than presenting interpolated values as
+measurements.</p>
+
+<h2>What this is not, yet</h2>
+
+<p>Two limits, stated because an entry marked done is how a half-delivered
+change stops being visible:</p>
+
+<ul>
+<li><strong>Nothing imports it.</strong> It was written during a live training
+run and deliberately kept free of consumers, so that a relaunch could not pick
+up changed code mid-flight. Wiring the observation heads onto it is later work.</li>
+<li><strong>It derives maps; it does not compute them.</strong> You get a typed
+map with element counts, composed point-spread, and uncertainty — not the
+matrix. For two arbitrary parcellations it refuses rather than inventing a
+correspondence, so real geometric overlap is still to come.</li>
+</ul>
+
+<p>The refusal is the honest placeholder. The one-off is now visible as a
+refusal instead of hidden as a hand-written map.</p>
+
+<h2>How it was checked</h2>
+
+<p>21 tests, most of them watching a refusal fire — and mutation-tested three
+ways, because a file that is mostly error paths and passes on the first run is
+the exact thing <a href="decorative-guards.html">our register</a> distrusts.
+Allowing a rank change through, replacing quadrature with a naive sum, and
+letting opaque kernels be silently approximated each failed the intended test
+and only that one.</p>
+
+</div>
