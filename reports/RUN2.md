@@ -356,6 +356,20 @@ What 002 therefore is, stated plainly and carried into the model card:
 That is a legitimate and interesting thing to measure. It is not the thing the
 stage names claim, and it is not what "43 GB corpus" suggests to a reader.
 
+**Run 3 is one patch away, and both prerequisites are already met.** The
+admission tests' header records that
+`test_run2_config_admission_matches_its_declaration` failed *for a different
+reason than predicted* — at `load_config`, on `KeyError: unknown config key
+'anatomy_force_fallback'`, because a second commit was also missing. That commit
+has since landed: `anatomy_force_fallback` is on master at `config.py:233` and
+is read at `train.py:204`. So the only thing still absent is the patch itself,
+and it applies cleanly.
+
+That the test failed for the *wrong reason* and was recorded as such is why this
+is checkable now. A row marked "FAIL, as predicted" would have hidden a second
+missing prerequisite behind the first — which is the blocker-masking pattern
+§4 records for the publish path, in a different file, on the same day.
+
 **The fix, for run 3 — and it should not be a longer tuple.** Adding the run-2
 names to both collections would work and would leave the same trap for run 4.
 The mechanisms should key on a stage *property* the config declares —
