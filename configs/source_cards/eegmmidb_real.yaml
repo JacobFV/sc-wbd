@@ -6,14 +6,31 @@ role: likelihood
 is_simulated: false
 losses: [likelihood, forecast, calibration, posterior]
 gradient_permission:
+  # The family-padded arm prefixes the regional modules (`family_local`,
+  # `family_residual`, `family_readout`); the pooled arm does not. Both
+  # namings are granted because both arms are live, and a glob that matches
+  # nothing is an EMPTY permission set rather than an error -- which is how
+  # run 2 trained 11.3% of its parameters and shipped. See RUN2.md §4.
   - "local.*"
+  - "family_local.*"
   - "residual.*"
+  - "family_residual.*"
   - "coupling.*"
   - "msg_proj.*"
   - "msg_readin.*"
   - "assimilate.*"
   - "context.*"
   - "readout.*"
+  - "family_readout.*"
+  # `observation.*` -- the per-family projection into observation space --
+  # was reachable by NO card in run 2 and sat at its initialisation for the
+  # whole run while on the forward path. Granted here to the sources whose
+  # likelihood it serves. This is a modelling decision made deliberately
+  # rather than a test being made green: leaving it unreachable now would
+  # repeat a defect already measured. `behaviour.*` is NOT granted -- no
+  # source declares a boundary_output channel yet, so nothing has evidence
+  # about it, and that absence is the honest state.
+  - "observation.*"
   - "eeg.*"
   - "log_dt_scale"
   - "individualizer.*"

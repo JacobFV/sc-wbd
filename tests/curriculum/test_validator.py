@@ -501,18 +501,14 @@ def test_no_module_is_in_the_model_but_absent_from_every_card(universe) -> None:
         "uncertainty_propagator.net.0.weight",
         "uncertainty_propagator.net.2.bias",
         "uncertainty_propagator.net.2.weight",
-        # NOT the same story, and the reason this test exists. `observation.head`
-        # is 2,073 scalars in the run-2 checkpoint's parameter report, it is on
-        # the forward path, and no card grants it -- so it was at its
-        # initialisation for every step of run 2. `sim_wholebrain` names
-        # `observation:sim_wholebrain:nuisance` in compiler_permission, which is
-        # a compiler port, not a torch parameter pattern; the two namespaces look
-        # alike and do not meet. Left failing-visible here rather than silently
-        # granted: whether this head should learn is a modelling decision, and
-        # adding `observation.*` to a card to make a test green would be making
-        # that decision by accident.
-        "observation.head.b",
-        "observation.head.w",
+        # `observation.head.*` was here. It was 2,073 scalars on the forward path
+        # that no card could grant, so it sat at its initialisation for every
+        # step of run 2 -- see tests/foundation/test_card_patterns_reach_the_model.py
+        # and RUN2.md §4. `observation.*` is now granted to the sources whose
+        # likelihood the head serves. That was a modelling decision taken
+        # deliberately once the cost was measured, not a test made green: leaving
+        # it unreachable in run 3 would have been repeating a known defect on
+        # purpose.
     }, (
         "the set of parameters no source card can grant a gradient to has changed. "
         "A new entry means a module was added to the model and wired to no card, "
@@ -523,8 +519,6 @@ def test_no_module_is_in_the_model_but_absent_from_every_card(universe) -> None:
     # The stricter subset: not granted AND not frozen, so no card mentions them at
     # all. These do not even appear in a refusal as deliberately-withheld.
     assert set(got["unmentioned"]) == {
-        "observation.head.b",
-        "observation.head.w",
         "uncertainty_propagator.log_decay",
         "uncertainty_propagator.net.0.bias",
         "uncertainty_propagator.net.0.weight",

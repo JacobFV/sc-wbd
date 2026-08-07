@@ -54,6 +54,35 @@ CKPT = REPO / "checkpoints/scwbd-002-pilot/stage_T1_measured_founding.pt"
 #: makes every coverage question answer "covered".
 _NOT_A_GRANTER = {"negative_control_shuffled"}
 
+#: The grant patterns **as they stood during run 2**, before the repair. Frozen
+#: here rather than read from the cards, because the cards have since been fixed
+#: and rewriting them does not retrain the published weights. Reading live cards
+#: to characterise a finished run would report the defect as gone the moment the
+#: configuration changed -- which is the same "artifact vs intention" confusion
+#: that put a LEGACY card directory on the published model card.
+_RUN2_GRANTS: dict[str, tuple[str, ...]] = {
+    "anatomical_prior": ("coupling.gain_*", "coupling.global_scale"),
+    "ds002336_real": ("bold.*", "coupling.*", "local.*", "readout.*"),
+    "eegmmidb_real": (
+        "local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+        "assimilate.*", "context.*", "readout.*", "eeg.*", "log_dt_scale",
+        "individualizer.*",
+    ),
+    "montage_calibration": ("eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*"),
+    "sim_wholebrain": (
+        "local.*", "residual.*", "coupling.*", "msg_proj.*", "msg_readin.*",
+        "assimilate.*", "context.*", "readout.*", "log_dt_scale", "posterior.*",
+    ),
+}
+
+#: Both live architectures. The pooled/run-1 arm names its regional modules
+#: ``local``/``residual``/``readout``; the family-padded arm prefixes them
+#: ``family_*``. A pattern dead in one arm may be intended; a pattern dead in
+#: BOTH is the defect.
+_ARCHITECTURES = ("checkpoints/scwbd-002-pilot/stage_T1_measured_founding.pt",
+                  "checkpoints/ci-smoke/last.pt")
+
+
 
 def _grant_patterns() -> dict[str, list[str]]:
     out: dict[str, list[str]] = {}
@@ -99,9 +128,32 @@ def _state_keys() -> list[str]:
     return sorted(set(keys))
 
 
+def _all_architecture_keys() -> list[str]:
+    """Parameter names across every architecture this repo builds.
+
+    Both arms are live. Checking the cards against one of them reports the
+    other's patterns as matching nothing -- a false accusation of exactly the
+    defect under test.
+    """
+    import torch
+
+    keys: list[str] = []
+    for rel in _ARCHITECTURES:
+        f = REPO / rel
+        if not f.is_file():
+            continue
+        ck = torch.load(f, map_location="cpu", weights_only=False)
+        keys += list((ck.get("model") or {}).keys())
+        for container in ("posterior", "individualizer"):
+            sub = ck.get(container)
+            if isinstance(sub, dict):
+                keys += [f"{container}.{k}" for k in sub]
+    return sorted(set(keys))
+
+
 def _ungrantable() -> list[str]:
     pats = [p for v in _grant_patterns().values() for p in v if p]
-    return [k for k in _state_keys() if not any(fnmatch.fnmatch(k, p) for p in pats)]
+    return [k for k in _all_architecture_keys() if not any(fnmatch.fnmatch(k, p) for p in pats)]
 
 
 @pytest.mark.skipif(not CKPT.is_file(), reason="run-2 checkpoint not on disk")
@@ -122,7 +174,10 @@ def test_the_shipped_model_records_the_defect_it_was_trained_with() -> None:
     :func:`test_no_module_is_unreachable_by_every_enabled_card` is the forward
     guard that has to pass before then.
     """
-    by_module = Counter(k.split(".")[0] for k in _ungrantable())
+    pats = [p for v in _RUN2_GRANTS.values() for p in v]
+    keys = _state_keys()
+    dead = [k for k in keys if not any(fnmatch.fnmatch(k, p) for p in pats)]
+    by_module = Counter(k.split(".")[0] for k in dead)
     assert dict(by_module) == {
         "family_local": 141,
         "family_readout": 36,
@@ -157,17 +212,17 @@ def test_no_module_is_unreachable_by_every_enabled_card() -> None:
 
     ungrantable_modules = sorted({k.split(".")[0] for k in _ungrantable()})
     known = {
-        # The renamed regional model. The whole reason this file exists.
-        "family_local",
-        "family_readout",
-        "family_residual",
-        # Present in the model, named by no card. `sim_wholebrain` declares
-        # `observation:sim_wholebrain:nuisance` in compiler_permission -- a
-        # compiler port, not a torch parameter pattern. The two namespaces look
-        # alike and never meet.
-        "observation",
+        # `family_local`, `family_readout`, `family_residual` and `observation`
+        # were here and are NOT any more -- the cards now grant both the pooled
+        # and the family-padded namings, and `observation.*` is granted to the
+        # sources whose likelihood it serves. They are deliberately absent from
+        # this allowance so that a regression fails rather than being tolerated
+        # by a list that still names them.
+        #
         # Arrived with the attachment axis; no source declares a boundary_output
-        # channel yet, so nothing can grant it. Expected to move when one does.
+        # channel yet, so nothing has evidence about it. Unreachable is the
+        # honest state, not an oversight -- and it is recorded rather than
+        # granted, which is the difference this file is about.
         "behaviour",
         # A prior scale, plausibly intended to be fixed -- but nothing says so,
         # which is the point: "frozen because no card names it" and "frozen
@@ -194,40 +249,17 @@ def test_every_grant_pattern_reaches_at_least_one_parameter() -> None:
     if not CKPT.is_file():
         pytest.skip("no checkpoint on disk to check card patterns against")
 
-    keys = _state_keys()
+    keys = _all_architecture_keys()
     dead: dict[str, list[str]] = {}
     for card, pats in _grant_patterns().items():
         empty = [p for p in pats if p and not any(fnmatch.fnmatch(k, p) for k in keys)]
         if empty:
             dead[card] = empty
 
-    assert dead == {
-        # Every one of these is the rename. Recorded rather than removed: the
-        # cards are what run 3 will be launched from, and deleting the patterns
-        # would hide that these sources intend to train the regional model.
-        #
-        # `log_dt_scale` is here for a different reason and is worth separating:
-        # it is not a rename, it is a parameter the cards grant that this
-        # architecture does not have at all.
-        "ds002336_real": ["local.*", "readout.*"],
-        # `individualizer.*` is dead for a third reason, and the worst of the
-        # three: the individualizer is `None` in EVERY stage checkpoint,
-        # including `stage_T1_individualisation.pt` -- the stage named for it.
-        # `run_stage` only constructs one when `admission.individualize` is
-        # true, so that stage ran without the module it exists to fit. The
-        # published card explains the zero between-participant theta spread by
-        # the participant-disjoint split, which is true and is not the whole
-        # reason: there is no individualizer in the artifact to spread.
-        "eegmmidb_real": [
-            "local.*",
-            "residual.*",
-            "readout.*",
-            "log_dt_scale",
-            "individualizer.*",
-        ],
-        "sim_wholebrain": ["local.*", "residual.*", "readout.*", "log_dt_scale"],
-    }, (
-        "the set of card patterns that match no parameter in the shipped model "
-        "changed. A pattern here grants exactly nothing; it reads in the card as "
-        "though the source trains that module."
+    assert dead == {}, (
+        f"these grant patterns name no parameter in ANY architecture this repo "
+        f"builds: {dead}. A pattern here grants exactly nothing while reading in "
+        "the card as though the source trains that module -- which is how run 2 "
+        "trained 11.3% of its parameters and shipped. Fix the pattern, or delete "
+        "it if the source genuinely should not train that module."
     )
