@@ -206,7 +206,7 @@ caveat at all. Degenerate spread would have shown up under any input whatsoever.
 
 ---
 
-## 2b. The stage names do not match the trainer, and three mechanisms are silently inert
+## 2b. The stage names do not match the trainer, and six gates are silently wrong
 
 **Found at `global_step` 6166, while the run was still going.** This is the
 largest finding of run 2 and it changes what the artifact is.
@@ -276,7 +276,7 @@ strength of a negation that nobody wrote for that purpose.
 ### Why nothing caught it
 
 Nothing crashed. Loss fell. `npe_rejected` stayed at 0. Every dashboard this run
-has was green for nine hours, because **all three mechanisms fail toward
+has was green for nine hours, because **the gates fail toward
 "permissive" rather than toward "error"**: an unmatched name means no real loss,
 no restriction, and no individualizer — never an exception.
 

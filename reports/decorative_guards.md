@@ -2123,7 +2123,7 @@ Every entry above concerns a guard or a claim. This one concerns **three
 mechanisms at once**, and it is the most expensive defect this project has
 produced.
 
-Run 2 renamed all six training stages. Three mechanisms in `train.py` are keyed
+Run 2 renamed all six training stages. Six gates in `train.py` are keyed
 to the **run-1** names. None was updated:
 
 | mechanism | what an unmatched name does |
