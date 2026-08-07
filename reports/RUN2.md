@@ -283,6 +283,21 @@ seconds per second when the stage changed, which is expected: T4 trains against
 the simulator rather than the measured corpus, so it is not waiting on real-data
 assembly. Memory is flat at 37.42 GB reserved against the 72 GB cap.
 
+**Observer effect, measured.** T4's cumulative throughput drifted from 13.3 to
+11.4 trajectory-seconds per second between `global_step` 4467 and 5906, with GPU
+reservation flat at 37.42 GB the whole time. The GPU is not the constraint. The
+likely cause is the verification work described in §4 — repeated `pytest` runs,
+33 MB checkpoint loads, site builds — all of which are CPU-side and all of which
+draw on the same **one** ~121 GB unified pool the trainer is using. On this box
+there is no separate host memory to hide in.
+
+Worth writing down rather than dismissing: the checks that de-risked the finish
+line cost roughly a third of the training throughput while they ran. That was a
+good trade here, because a publish path that refuses a correct artifact after
+nine hours costs more than an hour of slower steps. But it is a real cost, it
+was invisible until someone compared `wall_s` across stages, and "read-only
+analysis" is not the same as "free".
+
 Remaining: T4 simulator extension 3334 · T5 distillation 0 · T1
 individualisation 900.
 
