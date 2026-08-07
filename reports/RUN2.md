@@ -183,9 +183,56 @@ individualisation 900 = **8700 steps**.
 
 ## 4. Evaluation
 
-**PENDING.** Against the pre-registration in
-`reports/ablations/PREREG_A1_run2.md`, which was filed while A1 was
-`COULD_NOT_RUN` and no heterogeneous arm existed.
+Final numbers **PENDING**, against the pre-registration in
+`reports/ablations/PREREG_A1_run2.md`, filed while A1 was `COULD_NOT_RUN` and
+no heterogeneous arm existed.
+
+The path itself is proven end to end on a family-state checkpoint: real-EEG
+holdout available, 54 test participants / 2160 windows against 44 / 1320,
+participant-stratified sampling, participant-clustered 95% CI, plug-in
+estimator matching the baselines' form.
+
+### Two things to watch, read off a 32%-trained checkpoint
+
+Not results — the checkpoint is step ~2800 of 8700, T1 only. Recorded now so
+that if they are still true at 8700 they are a **finding** rather than a
+surprise.
+
+**The amortized posterior recovers nothing yet.**
+
+```
+posterior_r2    [-0.0079, -0.0115, -0.0236, +0.0055, +0.0054, -0.0081]
+sbc_ks_pvalue    all < 0.05, min 1.58e-05
+posterior_z_sd  [0.948, 0.830, 0.942, 0.881, 0.895, 0.960]
+coverage_mae     0.0619
+```
+
+R² at chance across all six θ dimensions, and simulation-based calibration
+fails on every one. `z_sd` slightly under 1 says mildly overconfident rather
+than wildly. **This is the "characterize a general human brain" capability**, so
+if it does not move by 8700 steps that is the single most important negative
+result of run 2 and must lead the card.
+
+Note the evaluator's own caveat, which limits even a *good* number here:
+calibration is measured against the **same simulator that generated the
+training corpus**, so it certifies self-consistency under simulator-conditioned
+evidence and is not evidence about brains.
+
+**Backend NLL spans 19×, and the sampling is confounded with it.**
+
+```
+linear_gaussian  0.0692   n=35
+wong_wang        0.1315   n=179
+wilson_cowan     0.7052   n=155
+jansen_rit       1.0309   n=96
+stuart_landau    1.3141   n=47
+```
+
+The easiest backend has the **fewest** samples and the hardest has the second
+fewest. Sampling is "backend-stratified, fold-proportional with a floor per
+backend", so it inherits the corpus mixture skew already recorded in §6
+(`wong_wang` 33.3% realised against 0.22 declared). **No backend-wise claim may
+be read from this without deconfounding it from n.**
 
 ## 5. Impulse response — the first 002 prediction
 
