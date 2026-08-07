@@ -1726,14 +1726,16 @@ third time in this section a timing or a failure turned out to be a property of
 my machine rather than of the code, which is why it is stated rather than
 counted.
 
-Where the time goes is known: `tests/infer/test_recovery.py` and
-`test_synthetic_slice.py` each exceed ten minutes on an idle machine, and
-`test_recovery`'s module fixture runs `recover()` over 64 replicates
-(`SCWBD_TEST_REPLICATES` is an environment variable, so it is tunable without
-touching the test). Reducing it is a real option and is deliberately **not**
-taken here: lowering a replicate count to make a suite finish changes what the
-test can detect, and doing that in the same commit that reports the suite as
-complete is how a coverage loss gets recorded as a coverage win.
+Where the time goes is **not** where I first said it was. I wrote that
+`test_recovery`'s cost is its 64-replicate `recover()` loop and that
+`SCWBD_TEST_REPLICATES` tunes it. A diagnostic run at `REPLICATES=8` produced no
+output at all after six minutes, so the time is in the module fixture's *design
+build* — `n_delay_taps=22`, `hrf_stages=6`, `n_epochs=10`, at `float64` — and the
+replicate count is not the lever.
+
+Reducing either is deliberately **not** done here: it changes what the tests can
+detect, and doing that in the same commit that reports the suite as complete is
+how a coverage loss gets recorded as a coverage win.
 
 An earlier draft of this paragraph said the slow set "has been run separately".
 It had not been. The retraction is left visible because claiming a check ran when
