@@ -22,7 +22,7 @@ get.  If the prior distinguishes fewer families than the taxonomy names, the
 missing ones are reported as *declared but unpopulated* rather than invented —
 :attr:`FamilyPartition.unpopulated`.
 
-Layout (declared narrowing **N-1**)
+Layout (declared narrowing **`padded-family-state`**)
 -----------------------------------
 State is stored padded to ``D = max_f dim(f)`` with per-family spans ``[0, d_f)``
 on the last axis, because a ragged layout breaks the batched trainer.  That
@@ -72,9 +72,9 @@ __all__ = [
 
 
 class SpanViolation(RuntimeError):
-    """A family touched state outside its declared span (narrowing **N-1**).
+    """A family touched state outside its declared span (narrowing **`padded-family-state`**).
 
-    N-1 permits padded storage *only* because this is enforceable.  If this
+    `padded-family-state` permits padded storage *only* because this is enforceable.  If this
     exception cannot be made to fire, the padded layout is not a narrowing, it is
     a defect, and the ragged/segment layout must be used instead.
     """
@@ -894,7 +894,7 @@ def derive_families(
         )
         if untrained:
             notes.append(
-                "families the prior marks as carrying NO regional data (narrowing N-4 -- "
+                "families the prior marks as carrying NO regional data (narrowing `stage1-data-limited` -- "
                 "initialised from the prior and declared untrained): " + ", ".join(untrained)
             )
     else:
@@ -1004,7 +1004,7 @@ def derive_families(
 
 
 # ======================================================================
-# the padded layout, with the span enforced (narrowing N-1)
+# the padded layout, with the span enforced (narrowing `padded-family-state`)
 # ======================================================================
 class FamilyStateLayout:
     """Padded ``(..., N, D)`` state with per-family spans ``[0, d_f)``, enforced.
@@ -1012,7 +1012,7 @@ class FamilyStateLayout:
     ``D = max_f d_f``.  Region ``i`` belongs to exactly one family, and only
     channels ``[0, d_f)`` of that region are state; the rest is **pad** and must
     remain identically zero for the padded layout to be observationally
-    equivalent to the ragged one N-1 gave up.
+    equivalent to the ragged one `padded-family-state` gave up.
     """
 
     def __init__(self, partition: FamilyPartition, *, device: str | torch.device = "cpu") -> None:
@@ -1109,8 +1109,8 @@ class FamilyStateLayout:
     def padding_fraction(self) -> float:
         """Share of the ``(N, D)`` state plane that is pad.
 
-        The price of N-1.  Reported, not hidden: if it is large, the ragged
-        layout is the better engineering answer and N-1 should be revisited.
+        The price of `padded-family-state`.  Reported, not hidden: if it is large, the ragged
+        layout is the better engineering answer and `padded-family-state` should be revisited.
         """
         real = float(self._in_span.sum())
         return 1.0 - real / float(self.n_regions * self.dim)
@@ -1123,7 +1123,7 @@ class FamilyStateLayout:
             raise SpanViolation(
                 f"family {name!r} declares span [0, {d}) but asked for channels [{lo}, {hi}). "
                 "Out-of-span channels are pad, not zeros with meaning: reading them would make "
-                "the padded layout (narrowing N-1) observationally different from the ragged one."
+                "the padded layout (narrowing `padded-family-state`) observationally different from the ragged one."
             )
         return slice(lo, hi)
 
@@ -1204,7 +1204,7 @@ class FamilyStateLayout:
         """Inverse of :meth:`assemble` (span-clipped): ``(..., N, D) -> [(..., n_f, d_f)]``."""
         return [self.gather(x, f.name) for f in self.families]
 
-    # -- the guard that justifies N-1 -------------------------------------
+    # -- the guard that justifies `padded-family-state` -------------------------------------
     def assert_clean(self, x: Tensor, *, where: str = "", atol: float = 0.0) -> None:
         """Raise if anything ever wrote outside a declared span.
 
@@ -1236,9 +1236,9 @@ class FamilyStateLayout:
             f"out-of-span write detected{(' at ' + where) if where else ''}: region {region} belongs to "
             f"family {fam.name!r} with span [0, {fam.dim}) but channel {chan} holds "
             f"{float(flat[region, chan]):.3e}. {int((mag > atol).sum())} pad element(s) are non-zero. "
-            "Narrowing N-1 permits padded storage ONLY while this cannot happen: a family that can "
+            "Narrowing `padded-family-state` permits padded storage ONLY while this cannot happen: a family that can "
             "write past its span is writing into a channel another family declares with different "
-            "units. Fix the operator to emit d_f channels, or drop N-1 for the ragged layout."
+            "units. Fix the operator to emit d_f channels, or drop `padded-family-state` for the ragged layout."
         )
 
     def zero_pad(self, x: Tensor) -> Tensor:
@@ -1315,7 +1315,7 @@ class FamilyStateLayout:
     def describe(self) -> dict[str, Any]:
         return {
             "layout": "family_padded",
-            "narrowing": "N-1",
+            "narrowing": "padded-family-state",
             "dim": self.dim,
             "n_regions": self.n_regions,
             "padding_fraction": round(self.padding_fraction(), 4),

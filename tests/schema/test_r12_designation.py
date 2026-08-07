@@ -85,7 +85,7 @@ def _family_report(families=REAL_FAMILIES, *, arm: str = "treatment") -> dict:
     """The shape of ``SCWBD.family_report()`` for the treatment arm."""
     return {
         "layout": "family_padded",
-        "narrowing": "N-1",
+        "narrowing": "padded-family-state",
         "family_state": True,
         "ablation_arm": arm,
         "n_regions": sum(n for _, _, n in families),

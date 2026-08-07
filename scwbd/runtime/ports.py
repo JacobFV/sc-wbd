@@ -28,7 +28,7 @@ Three refusals make that structural rather than advisory:
   Internal state is not a consumer-visible quantity just because it is present
   in the same buffer.
 
-Narrowing N-1 (``ARCHITECTURE.md`` Sec. 5b) permits run 2 to pad family state to
+Narrowing `padded-family-state` (``ARCHITECTURE.md`` Sec. 5b) permits run 2 to pad family state to
 a common width.  That narrowing is conditional on out-of-span reads being
 impossible.  :meth:`PortedState.read` enforces the span: a read whose declared
 extent exceeds the storage it was given raises
@@ -87,7 +87,7 @@ class UnexportedPort(PortError):
 
 
 class SpanViolation(PortError):
-    """A declared extent that the storage handed in does not cover (N-1)."""
+    """A declared extent that the storage handed in does not cover (`padded-family-state`)."""
 
 
 class RawStateAccessRefused(PortError):
@@ -293,7 +293,7 @@ class PortContract:
         return tuple(p for p in self.ports if p.clock == clock)
 
     def width_of(self, family: str) -> int:
-        """Total declared element count for ``family`` (its span, per N-1)."""
+        """Total declared element count for ``family`` (its span, per `padded-family-state`)."""
         return sum(p.dim for p in self.ports_of(family))
 
     # -- identity ----------------------------------------------------------
@@ -433,11 +433,11 @@ class PortedState:
         stop = start + port.dim
         width = int(buf.shape[-1])
         if start < 0 or stop > width:
-            # N-1's enforced span: padding is never returned as a value.
+            # `padded-family-state`'s enforced span: padding is never returned as a value.
             raise SpanViolation(
                 f"port {port.qualified!r} declares elements [{start}:{stop}) "
                 f"but family {family!r} storage is {width} wide. Under "
-                "ARCHITECTURE.md Sec. 5b narrowing N-1 padded state is only "
+                "ARCHITECTURE.md Sec. 5b narrowing `padded-family-state` padded state is only "
                 "equivalent to ragged state if out-of-span reads are "
                 "impossible, so this raises instead of returning padding"
             )

@@ -1,6 +1,6 @@
 """O-5 (vector-valued regional state) and O-6 (segment layout).
 
-O-6 retires narrowing N-1 by making its failure mode unrepresentable rather than
+O-6 retires narrowing `padded-family-state` by making its failure mode unrepresentable rather than
 merely guarded: there is no pad, so there is nothing to write into.  The tests
 that made the span guard fire are therefore **not** ported here — they have no
 referent.  What survives is the type discipline: a family still cannot read a
@@ -37,7 +37,7 @@ def test_the_pad_no_longer_exists(layout):
     d = st.describe()
     assert d["cells_ragged"] < d["cells_if_padded"]
     assert d["cells_ragged"] == sum(f.n_regions * f.dim for f in layout)
-    # the number N-1 was costing
+    # the number `padded-family-state` was costing
     assert d["padding_fraction_avoided"] > 0.4
 
 

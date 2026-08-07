@@ -1,8 +1,8 @@
-"""Segment-layout regional state — the retirement of narrowing N-1.
+"""Segment-layout regional state — the retirement of narrowing `padded-family-state`.
 
 ``body.tex`` §2.1: the components of ``X_i`` "need not have equal shape or even
 be ordinary dense tensors".  We stored them padded to ``D = max_f d_f`` anyway,
-declared it as narrowing **N-1**, and enforced a span guard to make the padding
+declared it as narrowing **`padded-family-state`**, and enforced a span guard to make the padding
 observationally equivalent to the ragged layout we had given up.
 
 Measured on the real 414-parcel prior, 9 declared families:
@@ -141,7 +141,7 @@ class FamilyState:
         return next(iter(self.blocks.values())).device
 
     def n_cells(self) -> int:
-        """Total stored scalars per leading element — the number N-1 was wasting."""
+        """Total stored scalars per leading element — the number `padded-family-state` was wasting."""
         return sum(f.n_regions * f.dim for f in self.layout)
 
     def __iter__(self) -> Iterator[tuple[str, Tensor]]:
@@ -233,7 +233,7 @@ class FamilyState:
         ragged = self.n_cells()
         return {
             "layout": "family_segment",
-            "narrowing": "N-1 retired: there is no pad, so there is nothing to enforce",
+            "narrowing": "padded-family-state retired: there is no pad, so there is nothing to enforce",
             "n_families": len(self.layout),
             "n_regions": self.layout.n_regions,
             "cells_ragged": ragged,

@@ -291,7 +291,7 @@ class HippocampalCodeBackend(DynamicsBackend):
     *not* driven by this backend.  Those hypotheses are compared offline by
     ``compare_backends``; here the retrieval is against a fixed codebook, so the
     rollout expresses the state *shape* and the confidence channel but not
-    episodic storage.  Declared narrowing **N-6**.
+    episodic storage.  Declared narrowing **`hippocampal-codebook`**.
     """
 
     info: ClassVar[BackendInfo] = BackendInfo(
@@ -466,7 +466,7 @@ class CerebellarForwardBackend(DynamicsBackend):
     delta rule in ``Cerebellum.learn`` is an offline ``@torch.no_grad`` update
     over an explicit history buffer, which a differentiable rollout cannot carry.
     The **eligibility trace** carries the ``error_delay`` that the delta rule
-    depends on, so the timing structure survives.  Declared narrowing **N-7**.
+    depends on, so the timing structure survives.  Declared narrowing **`cerebellar-readout`**.
 
     ``mechanistic_status`` is ``effective``, matching ``Cerebellum.falsifier``.
     """

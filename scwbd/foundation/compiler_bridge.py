@@ -173,7 +173,7 @@ REGION_STATE_KEY = "region:<id>:state:<component>"
 #: :data:`FOUNDATION_FROZEN_BINDING`.
 FRAME_EDGE_KEY = "frame_edge:<src>-><dst>:calibration"
 
-#: Group keys for the one declared resolution pair (§4.2, N-12).
+#: Group keys for the one declared resolution pair (§4.2, `one-resolution-pair`).
 #: ``parameter_groups_of`` emits ``scale_map:<fine>-><coarse>:<slot>``.  These are
 #: written out rather than derived so the binding table stays a literal, and
 #: :func:`_poset` asserts that ``scwbd.transforms.resolution_pair`` still names
@@ -275,13 +275,13 @@ FOUNDATION_BINDING: dict[str, tuple[str, ...]] = {
     # that on purpose, which is a different claim from "nobody wrote the binding".
     "operator:local_field:delay": (),
     "operator:assimilation:delay": (),
-    # R and P of the one declared resolution pair (§4.2, narrowing N-12).
+    # R and P of the one declared resolution pair (§4.2, narrowing `one-resolution-pair`).
     # Declared-empty, and for a reason worth stating rather than eliding: R is
     # fixed by the parcel membership and the white-surface patch areas of a
     # subject's own cortex, and P is its indicator partner. Neither is learned,
     # and neither is a buffer on this module either -- SC-WBD-001-beta holds no
     # source-space object at all, so there is no tensor here to freeze. That is
-    # narrowing N-13, and it is recorded in ARCHITECTURE.md §5b rather than
+    # narrowing `fine-authority-unimplemented`, and it is recorded in ARCHITECTURE.md §5b rather than
     # disguised as a binding. If the model ever grows fine-scale state, these
     # two entries must move to FOUNDATION_FROZEN_BINDING and name it.
     SCALE_MAP_RESTRICTION_KEY: (),
@@ -712,7 +712,7 @@ def _clocks(dt_model: float, hemo_ratio: int) -> list["ClockSpec"]:
 
 
 def _poset() -> "ResolutionPoset":
-    """Two scales and one validated pair -- thesis §4.2, narrowing N-12.
+    """Two scales and one validated pair -- thesis §4.2, narrowing `one-resolution-pair`.
 
     This function used to say "SC-WBD-001-beta declares no cross-scale
     prolongation, so R02 has nothing to object to -- which is the honest state
@@ -723,7 +723,7 @@ def _poset() -> "ResolutionPoset":
     §4.2's three authority policies had no instance and the compatibility
     pseudo-likelihood was never formed.  See ``reports/scope_gap.md`` G-2.
 
-    What is declared now, and only this (N-12):
+    What is declared now, and only this (`one-resolution-pair`):
 
     ``cortical_source_dipole <= parcel``
         fine  -- the subject's cortical source space, one normal-oriented

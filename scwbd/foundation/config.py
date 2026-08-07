@@ -83,7 +83,7 @@ class ModelConfig:
     #: declaration in the config rather than a silent default.
     family_allow_derived_partition: bool = False
     #: hippocampal H_t = {k,v,g,c,rho} widths (body.tex §5.1).  These set the
-    #: padded dimension D for the whole state, so they are the price of N-1 --
+    #: padded dimension D for the whole state, so they are the price of `padded-family-state` --
     #: ``FamilyStateLayout.padding_fraction()`` reports it.
     d_key: int = 16
     d_value: int = 16

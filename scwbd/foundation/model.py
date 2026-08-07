@@ -555,7 +555,7 @@ class SCWBD(nn.Module):
         state that is only reachable through ``SCWBD.family_layout`` by
         ``(family, component)`` name.  A head that read it directly would be
         reading whatever the family at that region happens to keep there, which
-        is exactly the out-of-span read narrowing N-1 forbids.
+        is exactly the out-of-span read narrowing `padded-family-state` forbids.
         """
         if family_layout is not None:
             shared = shared_components(n_uncertainty=cfg.n_uncertainty)
@@ -782,7 +782,7 @@ class SCWBD(nn.Module):
                     hemo_logvars.append(self.observation.predictive_logvar(x))
         X = torch.stack(states, dim=1)  # (B,T,N,D)
         if self.family_layout is not None:
-            # The guard that justifies N-1. Checked on the whole trajectory, not
+            # The guard that justifies `padded-family-state`. Checked on the whole trajectory, not
             # only the last state: a pad write at any step persists additively.
             self.family_layout.assert_clean(X, where="end of rollout")
             out = self.family_readout(X)

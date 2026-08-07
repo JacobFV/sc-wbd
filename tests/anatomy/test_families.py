@@ -316,7 +316,7 @@ def test_guard_fires_when_atlas_tier_claims_measured_evidence(fams):
 
 
 def test_guard_fires_when_atlas_tier_is_not_marked_untrained(fams):
-    """Mutation: mark an atlas-only family as having regional data (breaks N-4)."""
+    """Mutation: mark an atlas-only family as having regional data (breaks `stage1-data-limited`)."""
     bad = _fam(fams, "subcortex_thal", training_status="has_regional_data")
     others = tuple(f for f in fams if f.family_id != "subcortex_thal")
     with pytest.raises(ValueError, match="prior_only_untrained"):

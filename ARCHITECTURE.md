@@ -758,6 +758,47 @@ it makes the narrowing visible so it can be challenged.
 > The addressing scheme caused this twice (ordinals collided, then slugs were
 > appended rather than merged). Rows are now keyed by slug, and the fix for next
 > time is a uniqueness check, not more care.
+>
+> **Retired ordinal keys.** Consolidation orphaned every `N-` reference in the
+> codebase — roughly twenty of them — so the mapping is recorded here. Trading
+> 37 duplicate rows for twenty dangling pointers would not have been a fix.
+>
+> | retired | now | | retired | now |
+> |---|---|---|---|---|
+> | `N-1`, `N-9` | superseded drafts; see above | | `N-13` | `fine-authority-unimplemented` |
+> | `N-2` | `hippocampal-codebook` | | `N-14` | `psi-ab-unformed` |
+> | `N-3` | `cerebellar-readout` | | `N-15` | `stage1-data-limited` |
+> | `N-4` | `cortical-families-share-backend` | | `N-16` | `neuromod-gain-only` |
+> | `N-5` | `amygdala-relevance` | | `N-17` | `two-cortical-families` |
+> | `N-6` | `per-region-scalar-variance` | | `N-18` | `family-indexed-state` |
+> | `N-7` | `equal-shape-components` | | `N-19` | `asafe-declared-axes-only` |
+> | `N-8` | `family-granular-operators` | | `N-20` | `prospective-targeting` |
+> | `N-10` | `stage1-data-limited` | | `N-21` | `reversibility-live-only` |
+> | `N-11` | `hemo-native-space` | | `N-22` | `runtime-efield-not-model` |
+> | `N-12` | `one-resolution-pair` | | `N-23` | `predict-takes-regional-activity` |
+> | | | | `N-24` | `load-time-labels-not-refusals` |
+>
+> **Do not apply this table to source comments mechanically.** The register was
+> renumbered at least once *before* the slug conversion, and the code's comments
+> were written against the earlier numbering — so they disagree with this table.
+> `families.py` cited `N-4` for *families carrying no regional data*
+> (`stage1-data-limited`), while `N-4` in the table above is
+> `cortical-families-share-backend`. Three references were like this. Every code
+> reference was therefore resolved **by reading what the comment says and
+> matching it to a row**, never by its number.
+>
+> This is the distinction that mattered: a dangling reference is a *visible*
+> defect, and a confidently wrong one is not. It is the same reasoning that gives
+> `_designation` a `"SC-WBD-unnamed"` fallback instead of a plausible name.
+>
+> The sweep also had to be case-sensitive on `N-1` and uppercase-only: the
+> lowercase `n-1` in `leadfield.py` is a Legendre recurrence, not a narrowing.
+> The first pass matched only `narrowing N-1` in lower case and missed
+> `Narrowing N-1` at the start of a sentence — leaving one guard's message
+> pointing at a retired key, caught by the test that asserts the message names
+> its narrowing. *A literal you fix by grepping is a literal you fix only in the
+> spelling you thought of*, which this register already records, and which was
+> reproduced here by the person who wrote that line.
 
 | id | narrows | narrowing | why | status |
 |---|---|---|---|---|

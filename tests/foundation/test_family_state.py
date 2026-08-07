@@ -2,7 +2,7 @@
 
 Every guard in ``scwbd.foundation.families`` has a test here that **makes it
 fire**.  ``reports/decorative_guards.md`` catalogues ~26 checks that looked green
-and were incapable of failing; narrowing N-1 in ``ARCHITECTURE.md`` §5b is only a
+and were incapable of failing; narrowing `padded-family-state` in ``ARCHITECTURE.md`` §5b is only a
 narrowing rather than a defect because the span guard is enforceable, so a
 non-firing guard here would invalidate the narrowing, not just the test.
 """
@@ -290,7 +290,7 @@ def test_backend_assignment_to_a_nonexistent_family_raises(anat):
 
 
 # ======================================================================
-# span enforcement — narrowing N-1.  Each of these MUST fire.
+# span enforcement — narrowing `padded-family-state`.  Each of these MUST fire.
 # ======================================================================
 def test_reading_another_familys_component_raises(flayout):
     """A hippocampal component does not *exist* in a cortical family."""
@@ -327,7 +327,7 @@ def test_pad_write_is_detected_and_the_offender_is_named(flayout):
     with pytest.raises(SpanViolation) as exc:
         flayout.assert_clean(x, where="unit test")
     msg = str(exc.value)
-    assert "subcortex_thal" in msg and f"region {region}" in msg and "N-1" in msg
+    assert "subcortex_thal" in msg and f"region {region}" in msg and "padded-family-state" in msg
 
 
 def test_a_full_width_operator_fires_the_guard(anat):
@@ -337,7 +337,7 @@ def test_a_full_width_operator_fires_the_guard(anat):
     the family arm replaces.  Applying it to a family-layout state writes into
     every channel of every region, including the 52% of the plane that is pad.
     If this test stops raising, the padded layout has silently become
-    unenforceable and N-1 must be withdrawn in favour of the ragged layout.
+    unenforceable and `padded-family-state` must be withdrawn in favour of the ragged layout.
     """
     from scwbd.foundation.model import LearnedResidual
 
@@ -371,7 +371,7 @@ def test_conformant_rollout_leaves_the_pad_clean(anat):
 def test_padding_fraction_is_reported(flayout):
     frac = flayout.padding_fraction()
     assert 0.0 < frac < 1.0
-    # the price of N-1 must be in the artifact's own description of itself
+    # the price of `padded-family-state` must be in the artifact's own description of itself
     assert flayout.describe()["padding_fraction"] == round(frac, 4)
 
 

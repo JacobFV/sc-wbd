@@ -107,7 +107,7 @@ class Budget:
     source: str = "unknown"
     #: total state width summed over regions (PREREG_A1_run2 §3.1 B2).  For a
     #: heterogeneous arm this is ``sum(D_f for each region's family)``; for a
-    #: uniform arm ``N * D``.  Padding does not count — narrowing N-1 pads
+    #: uniform arm ``N * D``.  Padding does not count — narrowing `padded-family-state` pads
     #: family state to the max family dimension and padded cells are not
     #: capacity.
     state_width: int | None = None

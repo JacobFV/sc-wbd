@@ -31,7 +31,7 @@ Two tiers of evidence are recognised and they are never conflated:
     The families are distinct segmented structures in the source atlas, but
     **no per-parcel measurement in this build distinguishes them.**  Their
     separation is an atlas fact.  It is not a measurement, and a family in this
-    tier carries ``training_status="prior_only_untrained"`` per N-4.
+    tier carries ``training_status="prior_only_untrained"`` per `stage1-data-limited`.
 
 Nothing is placed in the first tier because it is anatomically obvious.  The
 von Economo–Koskinas cytoarchitectonic classes are the worked example: they are
@@ -93,7 +93,7 @@ EVIDENCE_TIERS = ("measured_separation", "atlas_separation", "synthetic")
 #:     We hold nothing for this field.  The value is ``None``, never a fill-in.
 FIELD_STATUS = ("measured", "measured_not_separating", "prior_only", "not_established")
 
-#: Per N-4: families we hold no pretraining data for are prior-initialised and
+#: Per `stage1-data-limited`: families we hold no pretraining data for are prior-initialised and
 #: declared untrained rather than quietly trained on a proxy corpus.
 TRAINING_STATUS = ("has_regional_data", "prior_only_untrained")
 
@@ -320,7 +320,7 @@ class FamilyPartition:
         return all(f.evidence_tier != "synthetic" for f in self.families)
 
     def untrained(self) -> tuple[RegionFamily, ...]:
-        """Families that must be marked untrained in the checkpoint manifest (N-4)."""
+        """Families that must be marked untrained in the checkpoint manifest (`stage1-data-limited`)."""
         return tuple(f for f in self.families if f.training_status == "prior_only_untrained")
 
     def nc_licensed_fields(self) -> dict[str, tuple[str, ...]]:
@@ -417,7 +417,7 @@ class FamilyPartition:
             if f.evidence_tier == "atlas_separation" and f.training_status != "prior_only_untrained":
                 raise ValueError(
                     f"family {f.family_id!r} separates only by atlas identity but is "
-                    "not marked prior_only_untrained (N-4)"
+                    "not marked prior_only_untrained (`stage1-data-limited`)"
                 )
 
         if "synthetic" in self.provenance:
@@ -692,7 +692,7 @@ def derive_families(prior: Any) -> FamilyPartition:
                     f"Separated from the other subcortical families by the "
                     f"{sub_atlas['atlas']} segmentation only. No map in this build "
                     "covers subcortex, so no measured regional profile "
-                    "distinguishes it. Prior-only and untrained per N-4."
+                    "distinguishes it. Prior-only and untrained per `stage1-data-limited`."
                 ),
             )
         )

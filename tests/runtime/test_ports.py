@@ -273,7 +273,7 @@ class TestRawAccessIsRefused:
 
 
 class TestSpanEnforcementUnderNarrowingN1:
-    """N-1 permits padded family state *only* if out-of-span reads are impossible."""
+    """`padded-family-state` permits padded family state *only* if out-of-span reads are impossible."""
 
     def test_a_read_past_the_family_span_raises_instead_of_returning_padding(self, run2):
         # cortical_visual declares 33 elements; hand it a 33-wide buffer padded
@@ -288,7 +288,7 @@ class TestSpanEnforcementUnderNarrowingN1:
         )
         with pytest.raises(SpanViolation) as exc:
             ported.read("cortical_visual", "retinotopic")
-        assert "narrowing N-1" in str(exc.value)
+        assert "narrowing `padded-family-state`" in str(exc.value)
         assert "instead of returning padding" in str(exc.value)
         # the port that *does* fit still reads
         assert ported.read("cortical_visual", "rate_e").values.shape == (1,)
