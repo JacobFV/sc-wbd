@@ -698,6 +698,40 @@ def _from_anatomy_partition(anat) -> tuple[tuple[str, ...], dict[str, Any]] | No
     }
 
 
+def _per_parcel_family_labels(anat: Any) -> list[str] | None:
+    """The per-parcel family declaration as a list of names, or ``None``.
+
+    Only the *name-sequence* forms; the ``family_id`` + ``family_names`` form is
+    validated by the main body, which must keep owning its refusals.
+    """
+    for attr in ("family", "families", "family_name"):
+        v = getattr(anat, attr, None)
+        if v is None:
+            continue
+        try:
+            seq = list(v)
+        except TypeError:
+            continue
+        if len(seq) == int(anat.n_regions) and all(isinstance(x, str) for x in seq):
+            return [str(x) for x in seq]
+    return None
+
+
+def _partition_of(labels: "Sequence[str]") -> set[frozenset[int]]:
+    """Group membership as a set of index sets -- names ignored, structure kept."""
+    groups: dict[str, set[int]] = {}
+    for i, name in enumerate(labels):
+        groups.setdefault(str(name), set()).add(i)
+    return {frozenset(v) for v in groups.values()}
+
+
+def _region_family_name(part: Any, region: int) -> str:
+    for f in part:
+        if region in set(getattr(f, "regions", ()) or getattr(f, "parcels", ()) or ()):
+            return str(getattr(f, "name", getattr(f, "family_id", "?")))
+    return "<unassigned>"
+
+
 def _declared_families(anat) -> tuple[tuple[str, ...], dict[str, Any]] | None:
     """Read a family partition **declared by the anatomy prior**, if it has one.
 
@@ -723,6 +757,41 @@ def _declared_families(anat) -> tuple[tuple[str, ...], dict[str, Any]] | None:
     """
     from_c = _from_anatomy_partition(anat)
     if from_c is not None:
+        # Two declaration channels exist: the structured `anat.families` that
+        # `_from_anatomy_partition` reads, and the per-parcel labels
+        # (`family` / `families` / `family_name`, or `family_id` + `family_names`)
+        # parsed below. This short-circuit made the first win UNCONDITIONALLY,
+        # so the second was unreachable for any prior carrying `families` -- and
+        # the result was still stamped `source="anatomy_declared"`, reporting a
+        # different declaration than the one supplied under a provenance that
+        # says "declared".
+        #
+        # Measured: setting a two-family per-parcel declaration on the real prior
+        # returned the prior's own nine families, labelled anatomy_declared, with
+        # nothing raised. The partial-declaration refusal below could not fire
+        # either, because control never reached it.
+        #
+        # Precedence is not the fix -- agreement is. If both channels are present
+        # they must describe the same partition, and if they do not, neither is
+        # safe to pick.
+        labels = _per_parcel_family_labels(anat)
+        if labels is not None:
+            declared = _partition_of(labels)
+            structured = _partition_of(
+                [_region_family_name(from_c, i) for i in range(int(anat.n_regions))]
+            )
+            if declared != structured:
+                raise ValueError(
+                    "the anatomy declares its families TWICE and the two disagree.\n"
+                    f"  anat.families    -> {len(structured)} groups\n"
+                    f"  per-parcel labels -> {len(declared)} groups\n"
+                    "Refusing to pick one. The structured declaration used to win "
+                    "silently while the result was still reported as "
+                    "`anatomy_declared`, so a caller supplying a per-parcel "
+                    "partition got somebody else's and was told it was theirs. "
+                    "Remove whichever declaration is stale (ARCHITECTURE.md O-7: "
+                    "one region ontology)."
+                )
         return from_c
 
     n = int(anat.n_regions)
