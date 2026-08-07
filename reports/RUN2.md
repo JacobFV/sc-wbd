@@ -118,6 +118,46 @@ surrogate, arriving from the other direction: there, the failure was
 **So the posterior LR/decay change was the best available hypothesis, not a
 demonstrated fix, and the production run was the only test that existed.**
 
+### Direct check on the trained flow, mid-T4
+
+The loss curves say the flow is healthy indirectly — a flat NPE band and zero
+rejections. This is the direct test, run on CPU with the GPU hidden so the
+training job was untouched. Load the flow from `last.pt` at `global_step` 5466
+(`dim=6`, `cond_dim=128`, `hidden=320`) and sample 2048 draws per conditioning
+vector:
+
+| conditioning | per-dim sd (mean) | min | max |
+|---|---:|---:|---:|
+| random A | 0.9865 | 0.9648 | 1.0121 |
+| random B | 0.9801 | 0.9580 | 0.9937 |
+| all zeros | 0.9954 | 0.9796 | 1.0194 |
+
+`|mean(A) − mean(B)|`: mean 0.0107, max 0.0309.
+
+Two things follow, and they point in different directions.
+
+**The run-1 failure mode is absent.** A collapsed posterior has spread going to
+zero; this one holds a per-dimension sd of ~0.98–0.99 in every dimension under
+every conditioning vector tried. Nothing is degenerate.
+
+**The conditioning is doing very little so far.** The mean moves by ~1–3% of the
+spread between two completely different conditioning vectors. At this point in
+training the amortised posterior is close to prior-like: it has not collapsed,
+but it has not yet learned to depend strongly on what it is conditioned on
+either.
+
+**The caveat is load-bearing and limits the second reading.** These are
+*synthetic* conditioning vectors — standard normal draws — not the vectors the
+encoder actually produces, whose distribution is different and which pass
+through `cond_norm` from a very different starting point. A weak response to
+inputs the model has never seen is much less informative than a weak response to
+real ones. Measuring that properly needs a forward pass over real data, which
+needs the GPU the trainer is using, so it belongs with the final evaluation
+rather than here.
+
+Recorded now because the *first* reading — no collapse — does not depend on the
+caveat at all. Degenerate spread would have shown up under any input whatsoever.
+
 ### The production run settled it
 
 | step | 0.1× LR, no decay | 0.02× LR + decay 1e-2 |
