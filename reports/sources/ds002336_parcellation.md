@@ -63,3 +63,39 @@ bytes.
 161 s per run, dominated by the two affine registrations. The chain is per
 *subject* and reusable across that subject's runs (`chain=` argument), so
 ds002336's 55 runs cost roughly the number of subjects, not the number of runs.
+
+
+---
+
+## Full corpus, 2026-08-06
+
+All 55 runs parcellated, all six tasks, all ten subjects.
+
+```
+runs discovered   55        runs cached           55
+participants      10        dropped for coverage   0
+windows           485       window frames         32   (64 s at TR 2 s)
+wall clock      1837 s      invariant violations   0
+```
+
+Coverage across all 55 runs:
+
+```
+min 0.8925   median 1.0000   max 1.0000
+below 0.95:  3 runs          below 0.90: 1 run
+```
+
+**The median run covers every parcel.** That is worth stating against the first
+measurement, which happened to be `sub-xp102` at 379/400 and would have made
+94.75% look typical. It is not — it is in the worst quartile. A single run is
+not a coverage estimate.
+
+The invariant — `NaN` rows exactly equal uncovered parcels, parcel by parcel —
+holds on all 55 without exception. That is the property that keeps a fabricated
+zero out of the likelihood, and it is now checked against 55 artifacts rather
+than an argument about the function that writes them.
+
+**What this does not establish.** Coverage is `field_of_view`, not `brain_mask`.
+A parcel inside the acquisition's rectangular array is counted as covered
+whether or not it contains brain, so these figures are upper bounds on usable
+parcels. The registration module says so itself in every sidecar it writes.
