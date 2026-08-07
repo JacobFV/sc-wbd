@@ -2192,6 +2192,81 @@ comparison the present evidence cannot resolve. Fourteen subcortical parcels
 across seven families are declared out of claim: no family-level effect there
 is measurable at any participant count this corpus supports.
 
+\subsection{11.8 Third-Gate Results: What a Second Artifact Reveals}
+
+A second whole-brain model was compiled and trained on the anatomical prior
+described in Section 3, with heterogeneous per-family regional state and a
+segment rather than padded layout. Final scores are not reported here; the run
+is incomplete at the time of writing and any number would be an interim read.
+What is reportable, and is the point of this subsection, is a class of defect
+that only a \emph{second} artifact can expose.
+
+\paragraph{Six defects, one geometry.}
+Seven distinct faults stood between a configured run and its first prediction.
+Six of them shared a single shape: \textbf{a code path declared for two model
+arms and exercised on only one}. The comparison arm carries no engineered
+regional backends and no family layout, so it silently skips every branch that
+exists to serve the other; the automated tests also ran on CPU, while the
+artifact ships on an accelerator. Both axes drifted, and the faults lived in
+the gap---in the trainer, in a regulariser, in the serving path, in the
+intervention path, and in the evaluator.
+
+Two of the six would not have raised an exception. Without binding the
+conditioning parameters, the engineered subcortical backends run on their
+defaults: the anatomical conditioning that motivates per-family backends is
+discarded and \emph{the run completes}. And a regulariser that reads an
+attribute absent on the heterogeneous arm would, had it resolved to anything
+benign, have been missing from precisely the arm whose mechanistic backends it
+exists to protect---leaving the learned residual free to absorb the dynamics,
+so that an ablation would measure a residual block wearing a mechanistic
+model's name. These do not produce a wrong number. They produce a
+right-looking number from a model that has quietly lost the mechanism the
+experiment exists to test.
+
+\paragraph{Naming is a second such class.}
+A refusal that forbids emitting a checkpoint under a designation it has not
+earned was already in force, mutation-tested, and firing. It guarded nothing
+here, because every naming fault found was in a path it does not watch: an
+evaluation stamped the \emph{previous} model's identifier onto its own results
+and ranked its own arm under that label, in the very file a public model card
+reads its scores from; and checkpoint discovery takes a directory name as the
+designation without consulting the identifier recorded inside. The refusal
+guards \emph{emission}; these were \emph{writing} and \emph{discovery}. A guard
+on one verb is not a guard on a noun.
+
+Worse, the second naming fault survived the fix for the first, because the fix
+was verified by searching for the designation as spelled in the first---and the
+second was spelled differently. A literal repaired by search is repaired only
+in the spelling one thought of. The durable remedy is to derive the name once
+and let every consumer read it, leaving no spelling to miss, with a fallback
+that is deliberately \emph{unnamed} rather than any real designation: an
+unnamed artifact is a visible defect, a misnamed one is not.
+
+\paragraph{The uncomfortable inference.}
+All of these faults were as old as the code. None was detectable while the
+project had a single artifact, because every name is trivially correct when
+there is only one thing to name, and no arm can diverge from another when there
+is only one arm. A programme that intends to compare models should build its
+second model earlier than feels necessary---not for the comparison, but because
+the second artifact is the instrument that makes the first one's defects
+visible.
+
+\paragraph{An instrument that cannot reach a failure is not evidence about it.}
+A density collapse in the amortized posterior was diagnosed and repaired
+through three sequential causes. Four isolation probes were built to reproduce
+it---randomised data, real corpus data, progressive masking, and a
+masked-batch probe constructed specifically to mimic the sliced-trajectory
+regime. All four were stable at exactly the configuration that diverged in the
+training loop, and the last compared the candidate repair against the status
+quo and found them indistinguishable. The repair was nevertheless correct: the
+production run held the posterior flat where every prior attempt had diverged
+by two to three orders of magnitude at the same step. The probes were not weak
+evidence against the repair; they were no evidence at all. This is the
+converse of the surrogate blindness recorded in Section 11.5---there a failure
+was \emph{unrepresentable} in the test model, here it was representable but
+\emph{unreachable}---and both are cases of a green instrument saying nothing
+while appearing to say something reassuring.
+
 \section{12. Confidence-Calibrated Development Horizons}
 
 \subsection{12.1 Near-Term: Executable Multimodal Subsystems}
