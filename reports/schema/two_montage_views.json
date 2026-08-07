@@ -1,0 +1,176 @@
+{
+  "generated_by": "benchmarks/schema/two_montage_views.py",
+  "subject": "mne-sample::sample",
+  "mne_version": "1.12.1",
+  "n_fine_dipoles": 7498,
+  "n_assigned_dipoles": 6940,
+  "n_parcels": 68,
+  "carrier": {
+    "id": "cortical_moment_field",
+    "n_elements": 68,
+    "arities": [
+      3
+    ],
+    "n_dof": 204,
+    "content_hash": "7b5ff2bb1e410f7ff4e9c64eace9527f051409e8825e3f4f437d2d61ae88d3d6"
+  },
+  "views": {
+    "montage_A": {
+      "n_channels": 32,
+      "channels": [
+        "EEG 001",
+        "EEG 002",
+        "EEG 004",
+        "EEG 005",
+        "EEG 008",
+        "EEG 009",
+        "EEG 010",
+        "EEG 011",
+        "EEG 012",
+        "EEG 017",
+        "EEG 018",
+        "EEG 019",
+        "EEG 020",
+        "EEG 025",
+        "EEG 026",
+        "EEG 027",
+        "EEG 028",
+        "EEG 029",
+        "EEG 030",
+        "EEG 036",
+        "EEG 037",
+        "EEG 038",
+        "EEG 039",
+        "EEG 044",
+        "EEG 045",
+        "EEG 046",
+        "EEG 047",
+        "EEG 048",
+        "EEG 054",
+        "EEG 057",
+        "EEG 058",
+        "EEG 060"
+      ],
+      "operator_shape": [
+        32,
+        204
+      ],
+      "content_hash": "bb8c4ba417f9644360349badf30691d960926dfb9b5e4ced3699fbe72605044c"
+    },
+    "montage_B": {
+      "n_channels": 27,
+      "channels": [
+        "EEG 003",
+        "EEG 006",
+        "EEG 007",
+        "EEG 013",
+        "EEG 014",
+        "EEG 015",
+        "EEG 016",
+        "EEG 021",
+        "EEG 022",
+        "EEG 023",
+        "EEG 024",
+        "EEG 031",
+        "EEG 032",
+        "EEG 033",
+        "EEG 034",
+        "EEG 035",
+        "EEG 040",
+        "EEG 041",
+        "EEG 042",
+        "EEG 043",
+        "EEG 049",
+        "EEG 050",
+        "EEG 051",
+        "EEG 052",
+        "EEG 055",
+        "EEG 056",
+        "EEG 059"
+      ],
+      "operator_shape": [
+        27,
+        204
+      ],
+      "content_hash": "be5cb97c3b971876add4247a28efd11e73e38b9ce1db62ad1d7d0c3d453225f3"
+    }
+  },
+  "lead_fields_differ": {
+    "frobenius_A": 43193.0917771395,
+    "frobenius_B": 40586.126547994856,
+    "shapes": [
+      [
+        32,
+        204
+      ],
+      [
+        27,
+        204
+      ]
+    ]
+  },
+  "inference": {
+    "A_only": {
+      "rmse_in_prior_sd": 0.9604379178143584,
+      "resolved_dof": 15.06767074183253,
+      "resolved_dof_lh": 8.124873092680737,
+      "resolved_dof_rh": 6.942797649151799,
+      "log_det_precision": 8519.696604265264,
+      "posterior_sd_over_prior_sd": 0.961539726824955,
+      "n_channels": 31
+    },
+    "B_only": {
+      "rmse_in_prior_sd": 0.9660487291986969,
+      "resolved_dof": 13.286151130452907,
+      "resolved_dof_lh": 6.742257210565717,
+      "resolved_dof_rh": 6.543893919887168,
+      "log_det_precision": 8517.653783288431,
+      "posterior_sd_over_prior_sd": 0.9651400199021961,
+      "n_channels": 26
+    },
+    "A_and_B": {
+      "rmse_in_prior_sd": 0.9346271638375967,
+      "resolved_dof": 25.298703668193014,
+      "resolved_dof_lh": 13.254859078051657,
+      "resolved_dof_rh": 12.043844590141374,
+      "log_det_precision": 8542.676670729554,
+      "posterior_sd_over_prior_sd": 0.93388738635899,
+      "n_channels": 57
+    },
+    "A_and_A_mutation": {
+      "rmse_in_prior_sd": 0.9514990802385882,
+      "resolved_dof": 18.030679517972345,
+      "resolved_dof_lh": 9.731652490615716,
+      "resolved_dof_rh": 8.299027027356628,
+      "log_det_precision": 8531.179160041931,
+      "posterior_sd_over_prior_sd": 0.9536042933645593,
+      "n_channels": 62,
+      "note": "montage B replaced by a second independent recording of montage A -- MORE channels than A_and_B, on one support instead of two"
+    }
+  },
+  "arity_refusal": {
+    "raised": "ArityError",
+    "message": "view 'montage_A_mis': operator consumes 204 dof but carrier 'cortical_scalar_field' has 68 (68 elements, arities [1]) -- the operator is free-orientation (3 dof per element) and the carrier is scalar",
+    "remedy": "Declare the carrier's ElementSpec to match the operator, or project the operator onto a declared direction field and say so with ElementSpec.projected_along."
+  },
+  "orientation": {
+    "whitener": "session noise covariance sample_audvis-cov.fif",
+    "fixed_orientation_carrier": {
+      "question": "identical to reports/transforms/resolution_pair.md sec. 3.5: fixed-orientation fine lead field, prior white per unit cortical area on the scalar normal amplitude",
+      "eta_parcel_scalar": 0.05693145511642193,
+      "eta_parcel_scalar_filed": 0.0561,
+      "eta_parcel_dipole_moment": 0.4937291296084399,
+      "eta_parcel_dipole_moment_filed": 0.5171,
+      "ratio": 8.672343410137488,
+      "n_dof_scalar": 68,
+      "n_dof_moment": 204,
+      "moment_restriction_built_as": "area-weighted sum of the embedded normal moment (3 per parcel)"
+    },
+    "free_orientation_carrier": {
+      "question": "the carrier the two views above actually observe: free-orientation dipoles, isotropic 3-component prior. A different question; reported so it is not confused with the one above",
+      "eta_parcel_scalar": 0.03146493347364998,
+      "eta_parcel_vector": 0.02543205981502494
+    }
+  },
+  "wall_time_s": 16.34
+}
