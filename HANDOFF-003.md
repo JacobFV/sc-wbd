@@ -173,12 +173,50 @@ their initialisation — mechanism and measurement, independently.
   tests/evaluation_audit                   33  (6 of 9 files exercise a smoke
                                                 path; 3 are an anatomy mismatch,
                                                 454-region ckpt vs 414 model)
-  tests/infer/test_recovery.py              3  REAL findings, unaddressed:
+  tests/infer/test_recovery.py              3  REAL findings:
       - interval coverage 0.891 [0.791,0.946] excludes nominal 0.95 (n=64)
       - optimiser converged on 34% of replicates vs 0.8 threshold, while the
-        Hessian is PD in >95% — likely under-iterated at n_newton=5, untested
+        Hessian is PD in >95%.  *** THE FIX ALREADY EXISTS, UNMERGED *** — see
+        the worktree section below.
       - naive resampling recovers the delay with ZERO bias, so
         test_naive_resampling_loses_the_delay asserts a premise that is false
+
+=== UNMERGED WORK ON origin: wt/fisher HAS 10 COMMITS MASTER DOES NOT ===
+
+Sixteen agent branches (wt/ada … wt/turing) are now pushed to origin. Fifteen
+are fully merged into master. **wt/fisher is not** — it carries 10 commits and
+~34k lines that exist nowhere else:
+
+    13eab71 infer: stop MAP recovery on the Newton decrement, not a fixed step count
+    b6348a8 identifiability: the five-design benchmark, run to completion
+    9088581 identifiability: add profile likelihoods for the reference regime
+    86e89ab infer: report where each modality's theta information actually goes
+    bb06128 infer: make the benchmark sweep resumable across interruptions
+    e90da26 infer: record deviations from the pre-registration in the report itself
+    ... plus 4 more, and reports/identifiability/results.json (32k lines)
+
+13eab71 is the fix for the convergence failure above, and its reasoning is
+correct: the preconditioner is the expected information at the *prior mean* and
+is never refreshed, so the iteration converges LINEARLY, not quadratically. A
+fixed step count therefore cannot certify convergence. It replaces the fixed loop
+with a Newton-decrement stopping rule (`newton_tol=0.05`) and records
+`n_newton_used` alongside `n_newton_max`.
+
+MERGING IT IS NOT TRIVIAL. `git merge wt/fisher` produces 9 conflicts, and
+cherry-picking 13eab71 alone produces 2 (`scwbd/infer/cli.py`,
+`scwbd/infer/identifiability.py`) — master has edited the same regions since the
+fork at 4d617af. Do this deliberately with the tests as the arbiter, not at the
+end of a session. `tests/infer/test_recovery.py` is the direct check: it should
+go from 3 failures to 2.
+
+Everything is on origin, so nothing is at risk if the worktree directories are
+removed.
+
+WORKTREE LESSON: this was nearly deleted unexamined. The commits were reachable
+from the main checkout the whole time — `git log --all` finds them — but nothing
+prompts you to look, and the tree you are standing in gives no sign that fifteen
+other branches exist with unmerged work. If agents fan out again, have every one
+push its branch on every commit so `git branch -r` shows the real picture.
 
 Everything else green. Suite runs to completion: 3057 tests, ~1066 s.
 
