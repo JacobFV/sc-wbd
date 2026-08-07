@@ -1029,6 +1029,40 @@ shipped. Five separate audits in this document passed over it.
 Neither was derived from the other. The measurement makes no reference to cards;
 the mechanism makes no reference to weights.
 
+#### A third, independent confirmation — from the runtime
+
+Running the published checkpoint through `scripts/demo_predict.py` reports
+
+```
+residual_ratio   0.0000    (R05: ||R|| / ||F_local + F_long||)
+```
+
+exactly zero, and that is not a rounding artifact. Every residual net's **final**
+layer is identically zero:
+
+```
+family_residual tensors all-zero: 10 of 32
+   ZERO  family_residual.nets.d15.4.weight  (15, 144)
+   ZERO  family_residual.nets.d29.4.weight  (29, 144)
+   ...
+   nz    family_residual.nets.d15.0.weight  (144, 255)
+```
+
+The output projections are zero-initialised so the residual block starts as the
+identity — standard, and correct. The other 341,569 weights are at their random
+initialisation. Because the module received no gradient, the output layer stayed
+at zero, so the residual contributes **exactly nothing** to every rollout the
+model will ever produce.
+
+This is a third route to the same finding, and the most independent of the three:
+it reads no source card and no parameter name, only the energy of the residual
+term against the mechanistic term during a forward pass.
+
+One consequence worth stating: **R05 could not have fired for run 2 under any
+data.** The guard bounds `rho = sqrt(E[residual] / E[mechanistic])`, and its
+numerator is identically zero. A guard whose bounded quantity cannot be nonzero
+is not enforcing anything.
+
 #### What this does to the result
 
 Everything below stands as measurement. The *interpretation* does not.
