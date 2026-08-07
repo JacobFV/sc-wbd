@@ -219,11 +219,26 @@ likelihoods, per-modality theta information, and a 32k-line
 `reports/identifiability/results.json`. Merge deliberately, with tests as
 arbiter.
 
-One trap seen while cherry-picking 13eab71: the conflict context surfaced
-`run_signature` / `_load_checkpoint` from bb06128, an ANCESTOR commit, not from
-13eab71 itself. Taking that side would have left dangling calls to functions
-master does not have. When cherry-picking from this branch, check whether a
-conflicting hunk actually belongs to the commit you asked for.
+CHERRY-PICKING FROM THIS BRANCH MOSTLY DOES NOT WORK. Two attempts, one success:
+
+  13eab71  Newton stopping rule       MERGED as b85d68a, 3 conflicts by hand
+  f0b2b20  prior-mean degeneracy      CANNOT be cherry-picked -- it is link 3 of
+                                      a chain:
+        b63d8c3  adds nuisance_identifiability  -> scwbd/infer/report.py
+        e90da26  adds preregistration_delta     -> scwbd/infer/report.py
+        f0b2b20  modifies both, plus the test file the earlier two created
+    Master has NEITHER function, so f0b2b20 alone yields a test importing
+    symbols that do not exist (`DU` on tests/infer/test_report_diagnostics.py).
+
+Two distinct traps, both from commits not being self-contained against master:
+  - the conflict context for 13eab71 surfaced `run_signature`/`_load_checkpoint`
+    from bb06128, an ANCESTOR, not from the commit requested. Taking that side
+    would have left dangling calls.
+  - f0b2b20's dependencies are invisible until the import fails.
+
+CONCLUSION: merge the branch, do not mine it. `git merge wt/fisher` is 9
+conflicts once, versus a growing chain of partial picks each with its own hidden
+prerequisites. Budget an hour with `tests/infer` as the arbiter.
 
 STILL OPEN: whether the fix raises converged_fraction. b85d68a says so in its own
 message. `recover()` at 16 replicates takes >15 min, and the full
