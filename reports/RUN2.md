@@ -5,6 +5,35 @@ Owner: architect. Opened 2026-08-06, while the run is in flight.
 Written *before* the numbers so the framing cannot be chosen to fit them. Any
 section marked **PENDING** is unfilled on purpose; anything filled is measured.
 
+## What run 2 turned out to be — read this first
+
+This document grew while the run did, and the headline is not in §0. It is:
+
+> **002 is a simulation-trained model.** Five of the six stage-name gates in the
+> trainer gave the wrong answer for this run's stage names, so no gradient was
+> ever taken on measured data, the per-stage gradient restrictions never
+> applied, haemodynamic state was off in the rollout, boundary randomisation was
+> off, and no individualizer was ever built. Nothing raised. Loss fell for nine
+> hours. **§2b.**
+
+Three further things a reader should have before the numbers:
+
+- **The fix already existed.** A complete, tested patch for the gate defect was
+  written at 07:04 on the day the run started at 18:32, and was never applied.
+  Six tests naming the defect were red on `master` for the entire run. §2b.
+- **This evaluation cannot answer the thesis question.** Ablation A1 needs six
+  arms; run 2 trains one. The scores compare 002 against generic forecasting
+  baselines, which holds nothing fixed while varying the structure. §4.
+- **What is solid.** The anatomy prior, the 9-family partition and its spin
+  null, the padded-layout guard, R12, the impulse-response measurement, and the
+  publish path — all measured, and several of them corrected today against the
+  artifact rather than against intent.
+
+None of this makes the artifact worthless. It makes it a **simulation-to-
+measurement transfer result from a partially configured trainer**, which is a
+smaller and more specific claim than the one the stage names imply, and it is
+the claim the model card now carries.
+
 ---
 
 ## 0. Why this is 002 and not another 001-beta
