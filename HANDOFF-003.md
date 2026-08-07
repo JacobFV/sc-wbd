@@ -95,10 +95,32 @@ f. Publish. The card must state which sources actually contributed gradient,
 - `dipole` is in the shared state interface, so `EEGHead.source_moment()` returns
   `(B,T,414,3)`. State width D = 62. Loading 002's D=59 weights needs
   `families.layout_of_checkpoint(path)`.
-- The identifiability laboratory is merged and complete: five-design benchmark,
-  profile likelihoods, per-modality theta information, a Newton-decrement stopping
-  rule, and a flag for regimes whose truth sits on the prior mean (where an
-  estimator that ignores the data scores zero bias and 100% coverage).
+- The identifiability laboratory is merged and complete, and IT HAS A VERDICT.
+  `reports/identifiability/results.json`:
+
+      verdict: INCOMPLETE
+      C1_fusion_information        FAILED in every regime
+      C2_native_beats_resampled    FAILED in every regime
+      C3_intervention_information  FAILED in every regime
+      C4_calibrated_recovery       NOT EVALUATED
+      C5_recovery_improvement      NOT EVALUATED
+
+  C1 and C2 are the paper's central claim — that joint multirate inference
+  identifies parameters better than isolated modalities or naive resampling. As
+  measured, on the three-region linear-Gaussian benchmark, they do not. C2 passes
+  in `low_snr_short_delay` alone and fails in the other two regimes, so it fails
+  the "in EVERY regime" rule.
+
+  C4/C5 are unevaluated rather than failed, for two named reasons the benchmark
+  reports itself: `convergence_gated_regimes` (low_snr_short_delay,
+  weak_coupling_long_delay) and `delay_degenerate_regimes` (reference — whose
+  truth sits exactly on the prior mean, 0.000 prior sd on all four parameters, so
+  an estimator that ignores the data scores zero bias and 100% coverage).
+
+  READ THIS BEFORE DESIGNING 003's EVALUATION. It is a measured negative on the
+  thesis's first differentiator, from a benchmark that ran to completion, and it
+  is independent of the 88.8% gradient defect. Do not design an evaluation that
+  cannot see it.
 - `scripts/demo_predict.py` runs the published checkpoint on real measured EEG.
 - `pytest` deselects `slow` by default; `make test-slow` runs the rest.
 
