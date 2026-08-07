@@ -411,6 +411,39 @@ attached to a string literal that nothing checks against the config.
 
 ## 3. Training
 
+### The whole curve, in one table
+
+Every logged step of the run, by stage. `nll` is `sim_forecast_nll` — the only
+loss field this run ever emitted (§2b), so it is simulated forecast NLL
+throughout and nothing here is a measurement on recordings.
+
+| stage | logged pts | first | last | median | min | npe median | max rej |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| T1_measured_founding | 149 | 1.4930 | 0.5933 | 0.6308 | 0.2946 | 7.934 | 0 |
+| T2_boundary_calibration | 26 | 0.6328 | 0.6755 | 0.5950 | 0.3198 | 7.883 | 0 |
+| T3_population_prior | 51 | 0.6527 | 0.7319 | 0.5985 | 0.3773 | 7.832 | 0 |
+| T4_simulator_extension | 167 | 0.5452 | 0.5522 | 0.5828 | 0.2847 | 7.653 | 0 |
+| T1_individualisation | 9+ | 0.5200 | — | 0.5865 | 0.3802 | 7.751 | 0 |
+
+Two things this makes visible that no single stage's log lines do.
+
+**Essentially all of the learning happened in T1.** The forecast NLL falls
+1.49 → 0.59 across the founding stage and then does not improve: stage medians
+run 0.631, 0.595, 0.599, 0.583, 0.587 — a 7% spread across four subsequent
+stages and 5,734 further steps. T4's 3,334 simulator-extension steps moved the
+median by about 0.016 nats.
+
+That is a real finding about the curriculum and it is *not* explained by §2b —
+these stages were all training on the same simulated distribution regardless of
+the gate defect, so the flatness says the model saturated on that distribution
+early, not that a stage was misconfigured. It is a reason to question the stage
+budget itself before spending nine hours on it again.
+
+**The NPE loss drifts down slightly and monotonically across stages** — 7.934,
+7.883, 7.832, 7.653, 7.751 — while never approaching the 1e4 rejection bound.
+`npe_rejected` is 0 in every stage, for every logged step, for the entire run.
+Run 1's collapse signature does not appear anywhere in run 2.
+
 ### T1 measured founding — complete, 2966 steps
 
 ```
