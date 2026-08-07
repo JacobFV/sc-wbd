@@ -194,8 +194,14 @@ test-slow: ## Run the tests `make test` deselects (SLOW: hours, not minutes)
 	@# remembering a flag is a set that does not get run.
 	@#
 	@# It does not finish quickly and may not finish at all: `pytest -m slow` hit a
-	@# 50-minute cap after 17 of 56 tests. tests/infer/test_recovery.py and
-	@# test_synthetic_slice.py each exceed ten minutes on an idle machine.
+	@# 50-minute cap after 17 of 56 tests. Measured one-at-a-time on an idle
+	@# machine afterwards:
+	@#   test_recovery.py                 still running at 5400 s (killed)
+	@#   test_synthetic_slice.py       completed 3578 s, passing
+	@#   test_matches_fisher_benchmark.py completed   29 s, passing
+	@# So ONE file is the blocker, not two. An earlier version of this comment
+	@# said test_synthetic_slice.py also exceeded a cap; that was true of the
+	@# 300 s and 600 s caps it was given, and false of the test.
 	@# SCWBD_TEST_REPLICATES (64 by default) is tunable without editing a test.
 	@# Whether it is the DOMINANT cost is unknown. This comment has claimed both
 	@# answers and neither was measured on an idle machine: the diagnostic that
