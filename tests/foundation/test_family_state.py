@@ -696,15 +696,30 @@ def _claim(statement: str, **kw) -> Claim:
     )
 
 
+#: The control arm's counterpart. `read_operator_assignment`'s
+#: ``family_state is False`` branch reads ``local_core`` and ``n_regions``; a
+#: report carrying only ``{"ablation_arm": "control", "family_state": False}``
+#: says the arm but not what operator the regions run, which R12 refuses -- and
+#: refuses with the GENERIC "says nothing" message rather than the specific
+#: control-arm one, so the tests asserting a specific refusal were matching the
+#: wrong text for the same reason.
+_CONTROL_STATE = {
+    "ablation_arm": "control",
+    "family_state": False,
+    "local_core": "learned",
+    "n_regions": 414,
+}
+
+
 def test_r12_refuses_a_family_state_claim_on_a_control_checkpoint():
-    m = _manifest(regional_state={"ablation_arm": "control", "family_state": False})
+    m = _manifest(regional_state=dict(_CONTROL_STATE))
     m.add_claim(_claim("The model maintains heterogeneous regional state per parcel."))
     with pytest.raises(R12Violation, match=r"\[R12\]"):
         m.validate()
 
 
 def test_r12_catches_the_flag_as_well_as_the_prose():
-    m = _manifest(regional_state={"ablation_arm": "control", "family_state": False})
+    m = _manifest(regional_state=dict(_CONTROL_STATE))
     m.add_claim(_claim("Regions are modelled.", requires_family_state=True))
     with pytest.raises(R12Violation):
         m.validate()
@@ -760,7 +775,7 @@ def test_r12_admits_the_claim_on_a_treatment_checkpoint():
 
 
 def test_r12_lets_an_honest_control_arm_manifest_through():
-    m = _manifest(regional_state={"ablation_arm": "control", "family_state": False})
+    m = _manifest(regional_state=dict(_CONTROL_STATE))
     m.add_claim(_claim("One pooled vector per region; this is the equal-capacity control arm."))
     m.validate()
 
