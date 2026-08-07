@@ -178,8 +178,17 @@ their initialisation — mechanism and measurement, independently.
       - optimiser converged on 34% of replicates vs 0.8 threshold, while the
         Hessian is PD in >95%.  FIX CHERRY-PICKED to master as b85d68a; the
         improvement is NOT yet measured — see the worktree section below.
-      - naive resampling recovers the delay with ZERO bias, so
-        test_naive_resampling_loses_the_delay asserts a premise that is false
+      - naive resampling posts rmse_seconds EXACTLY 0.0 for the delay. Not a
+        false premise: the reference regime's truth IS the prior mean (0.000
+        prior sd on all four preregistered parameters), so an estimator that
+        ignores the data and never moves scores zero bias, zero RMSE and 100%
+        coverage. `tau_hat = exp(uh[:, tau])` simply never left its start.
+        The test is right; the benchmark cannot discriminate. wt/fisher's
+        f0b2b20 diagnoses this exactly and measures each regime's offset from
+        the prior mean, marking anything under 0.25 prior sd as unable to
+        discriminate. It cites fmri_only -- T4 delay information 5e-05 --
+        posting 0.028 ms against EEG's 0.233 ms, eight times "better" purely by
+        not moving. UNMERGED.
 
 === UNMERGED WORK ON origin: wt/fisher HAS 10 COMMITS MASTER DOES NOT ===
 
