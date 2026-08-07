@@ -717,8 +717,38 @@ def test_r12_refuses_when_no_arm_is_declared_at_all():
         m.validate()
 
 
+#: The minimal ``regional_state`` R12 can actually read, in the shape
+#: ``SCWBD.family_report()`` emits.
+#:
+#: The fixtures below passed ``{"ablation_arm": ..., "family_state": True}`` and
+#: nothing else, and R12 refused: *"neither the artifact's family report nor
+#: model.family_state says what operator any region runs."* That refusal is
+#: correct. A report asserting heterogeneous regional state without naming which
+#: operator any region runs is the claim R12 exists to reject -- asserting the
+#: conclusion instead of the evidence.
+#:
+#: A real report carries `operators` (learned_groups + mechanistic_families) and
+#: `partition`; either satisfies the reader. Verified against a live
+#: `SCWBD.family_report()` rather than guessed, after first misreading
+#: `_families_from_report` as requiring a `families` key that no real report has.
+_TREATMENT_OPERATORS = {
+    "learned_groups": {"d31": ["cortex_association", "cortex_unimodal"]},
+    "mechanistic_families": {
+        "subcortex_accumb": "basal_ganglia_gate",
+        "subcortex_hippo": "hippocampal_code",
+        "subcortex_thal": "thalamic_relay",
+    },
+}
+
+
 def test_r12_admits_the_claim_on_a_treatment_checkpoint():
-    m = _manifest(regional_state={"ablation_arm": "treatment", "family_state": True})
+    m = _manifest(
+        regional_state={
+            "ablation_arm": "treatment",
+            "family_state": True,
+            "operators": _TREATMENT_OPERATORS,
+        }
+    )
     m.add_claim(_claim("The model maintains heterogeneous regional state.", requires_family_state=True))
     m.validate()  # must not raise
 
