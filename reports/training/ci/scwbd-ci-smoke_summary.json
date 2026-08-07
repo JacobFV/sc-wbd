@@ -1,12 +1,12 @@
 {
   "run_name": "scwbd-ci-smoke",
-  "git_sha": "966b598f91098a039fda9edb4058f402f0cba4a0-dirty",
+  "git_sha": "3dda128ab202fddfbab9b61d9ba158ee77b1bb29-dirty",
   "corpus_git_sha": "f472ad16d0277db7bfc7342193ff3d5c82bee269-dirty",
   "environment": {
     "python": "3.12.13",
     "torch": "2.13.0+cu130",
     "cuda_available": true,
-    "git_sha": "966b598f91098a039fda9edb4058f402f0cba4a0-dirty",
+    "git_sha": "3dda128ab202fddfbab9b61d9ba158ee77b1bb29-dirty",
     "device": "NVIDIA GB10",
     "capability": "12.1",
     "total_memory_gb": 130.6,
@@ -16,9 +16,9 @@
     {
       "stage": "I_regional",
       "steps": 4,
-      "wall_seconds": 0.6058604717254639,
+      "wall_seconds": 0.6043946743011475,
       "best_loss": 0.9750421047210693,
-      "steps_per_second": 6.602180182853284,
+      "steps_per_second": 6.618192002808662,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -97,9 +97,9 @@
     {
       "stage": "II_interface",
       "steps": 4,
-      "wall_seconds": 0.45322537422180176,
+      "wall_seconds": 0.3952658176422119,
       "best_loss": 0.9595289826393127,
-      "steps_per_second": 8.825631192578506,
+      "steps_per_second": 10.119772116547487,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -178,9 +178,9 @@
     {
       "stage": "III_sliced",
       "steps": 4,
-      "wall_seconds": 0.5393598079681396,
+      "wall_seconds": 0.5438632965087891,
       "best_loss": 0.9873577674084326,
-      "steps_per_second": 7.416199614629577,
+      "steps_per_second": 7.354789384900803,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -307,9 +307,9 @@
     {
       "stage": "IV_assembly",
       "steps": 4,
-      "wall_seconds": 0.4829387664794922,
+      "wall_seconds": 0.5228383541107178,
       "best_loss": 0.9357357469648789,
-      "steps_per_second": 8.28262354906615,
+      "steps_per_second": 7.650548144662219,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -436,9 +436,9 @@
     {
       "stage": "V_individual",
       "steps": 3,
-      "wall_seconds": 0.08819794654846191,
+      "wall_seconds": 0.13090252876281738,
       "best_loss": 0.9999989867210388,
-      "steps_per_second": 34.01439735733073,
+      "steps_per_second": 22.917815479605498,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -612,7 +612,7 @@
       "state_dependent_variance": true
     }
   },
-  "total_wall_seconds": 5.041924715042114,
+  "total_wall_seconds": 4.846733093261719,
   "global_steps": 19,
   "model_parameters": {
     "log_dt_scale": 454,
