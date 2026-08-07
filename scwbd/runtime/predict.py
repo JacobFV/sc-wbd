@@ -359,7 +359,20 @@ class LoadedModel:
         anat_rec = dict((payload.get("extra") or {}).get("anatomy") or {})
         anat = rebuild_anatomy(anat_rec, device=device)
 
-        model = SCWBD(cfg, anat).to(device)
+        # Build in the state layout THIS checkpoint was trained in. O-5b widened
+        # the shared interface (D=59 -> D=62), so a model built to today's
+        # default cannot hold run 2's weights -- and because the load below is
+        # `strict=False`, the failure mode without this is not an exception but a
+        # partially-restored model that predicts. The checkpoint records its own
+        # `state_layout`; the era is read, not guessed.
+        #
+        # This is the serving path: it is what someone who downloads the
+        # published weights runs. It must keep working across a layout change or
+        # the artifact is published and unusable.
+        from scwbd.foundation.families import layout_of_checkpoint
+
+        with layout_of_checkpoint(str(p)):
+            model = SCWBD(cfg, anat).to(device)
         missing, unexpected = model.load_state_dict(raw_state, strict=False)
         inert = tuple(sorted(
             k for flag, names in _INERT_WITHOUT.items()

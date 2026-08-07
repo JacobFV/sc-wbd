@@ -212,7 +212,13 @@ def test_undeclared_new_stage_raises_instead_of_widening() -> None:
     # ...and a run-1 name still resolves, non-strictly, to run 1's behaviour
     a = stage_admission(StageConfig(name="V_individual", steps=10), cards_dir=CARDS, strict=False)
     assert a.individualize is True
-    assert a.provenance.startswith("legacy:")
+    # `legacy:` or `frozen:run1@...` -- the property is that an INHERITED
+    # admission is distinguishable from a declared one (`config:`), not which of
+    # the two inherited spellings it uses. The fallback now serves the frozen
+    # run-1 record, which also carries the sources the three behaviour booleans
+    # never had.
+    assert a.provenance.startswith(("legacy:", "frozen:run1@")), a.provenance
+    assert not a.provenance.startswith("config:")
 
 
 def test_run2_config_admission_matches_its_declaration() -> None:

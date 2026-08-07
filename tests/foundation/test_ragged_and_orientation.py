@@ -117,10 +117,45 @@ def test_segment_layout_compiles_fullgraph(layout):
 # ======================================================================
 # O-5: orientation
 # ======================================================================
-def test_only_cortical_families_declare_a_dipole(layout):
+def test_every_family_declares_a_dipole_and_only_cortex_has_an_orientation(layout):
+    """Renamed and inverted by O-5b, deliberately.
+
+    This asserted that ONLY cortical families declare a dipole, which was true
+    and was the defect: a component declared per-family lives in the ``private``
+    block, and ``SCWBD.build_layout`` forbids an observation head from addressing
+    that. So ``EEGHead.source_moment()`` returned ``None`` for the whole of run 2
+    while the ``(64, 414, 3)`` lead field sat ready for it.
+
+    ``dipole`` is now in the shared interface at a fixed offset, so **every**
+    family declares it and subcortex carries the zero vector. The physical claim
+    the old test was protecting has not gone away — it moved to where it belongs,
+    the orientation:
+
+    * absent **orientation** must stay ``NaN``; a direction of zero length is a
+      lie and would tilt the field;
+    * absent **moment** genuinely *is* zero, and contributes exactly zero
+      through ``L_vec``.
+
+    Asserting both is strictly stronger than the original, which only checked
+    where the component was declared.
+    """
+    import numpy as np
+
     for f in layout:
-        has = "dipole" in f.layout
-        assert has == f.name.startswith("cortex_"), f.name
+        assert "dipole" in f.layout, (
+            f"{f.name} does not declare a dipole. Since O-5b it is part of the "
+            "shared interface, so a family missing it means the shared prefix is "
+            "not shared and the heads read different quantities per region."
+        )
+
+    an = load_anatomy()
+    normal = np.asarray(an.normal)
+    sub = [i for i, d in enumerate(an.division) if d != "cortex"]
+    assert np.all(np.isnan(normal[sub])), (
+        "a subcortical region gained a cortical normal. The zero-moment argument "
+        "depends on there being no orientation to have; filling these NaNs is the "
+        "imputation ARCHITECTURE.md §7 rule 1 forbids."
+    )
     # and it is three numbers, in Hz*m -- a moment, not a rate
     c = layout.family("cortex_unimodal").layout.spec("dipole")
     assert c.dim == 3 and c.units == "Hz*m"

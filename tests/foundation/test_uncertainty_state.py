@@ -175,14 +175,26 @@ def test_family_arm_source_features_are_not_narrower_than_the_control(anat):
     """The mean-path regression the architect ranked above the variance work.
 
     With families on, a head handed ``SCWBD.layout`` sees only the shared
-    interface prefix (``rate_e``, ``rate_i``) = 2 dims, against the control
-    arm's (``rate_e``, ``rate_i``, ``spectral``) = 18.  A1 would then have been
+    interface prefix, against the control arm's
+    (``rate_e``, ``rate_i``, ``spectral``) = 18.  A1 would then have been
     biased *against* the treatment arm by an interface, not by the model.
+
+    The prefix was 2 dims (``rate_e``, ``rate_i``) and is now **5**: O-5b moved
+    ``dipole`` into the shared interface so an observation head can address it
+    at all. That narrows the gap this test is about, which is a side effect and
+    not the fix — 5 against 18 is still narrow, and the reason heads must read
+    their family's own out-ports rather than the interface view is unchanged.
     """
     treat = SCWBD(_cfg(family_state=True), anat)
     ctrl = SCWBD(_cfg(family_state=False), anat)
     narrow = sum(treat.layout.spec(n).dim for n in treat.layout.exported_names())
-    assert narrow == 2, "the interface view is expected to be narrow; that is why heads must not use it"
+    assert narrow == 5, (
+        f"the shared interface view is {narrow} dims. It is expected to be NARROW -- "
+        "that is why heads must not use it. Was 2 (rate_e, rate_i); 5 since O-5b "
+        "added dipole (3). A larger number means something else joined the shared "
+        "prefix, and every head that reads the interface view silently changed "
+        "what it sees."
+    )
     assert treat.observation.feature_dim >= ctrl.observation.feature_dim // 2, (
         f"treatment source features ({treat.observation.feature_dim}) are far narrower than the "
         f"control's ({ctrl.observation.feature_dim}); the ablation would measure the interface"
