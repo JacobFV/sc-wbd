@@ -49,6 +49,7 @@ it, and that union remains the authority.
 from __future__ import annotations
 
 import json
+import re
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -714,6 +715,22 @@ def plan_run1_checkpoint(
         raise PublishBlocked(msg)
     ev = json.loads(eval_path.read_text())
 
+    # A stale evaluation is a wrong name on a card, and the card still renders
+    # perfectly -- about something else. The verdict string opens with the
+    # designation; if it names a different one than the evaluation's own
+    # model_id, that JSON came from an older build.
+    _mid = str(ev.get("model_id") or "")
+    _verdict = str(((ev.get("real_eeg_holdout") or {}).get("verdict")) or "")
+    _wrong = {
+        n for n in re.findall(r"(?:SC-WBD|scwbd)[-_]\d{3}[-\w]*", _verdict) if n != _mid
+    }
+    if _mid and _wrong:
+        blockers.append(
+            f"the evaluation's verdict names {sorted(_wrong)} but its model_id is "
+            f"{_mid!r}; that JSON was written by an older build and the card would "
+            "quote the wrong model in its most prominent line. Re-run the evaluation."
+        )
+
     if not ckpt.is_dir():
         blockers.append(
             f"checkpoint directory {ckpt} does not exist or is not a directory"
@@ -789,23 +806,42 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
     indiv = ho.get("individualization") or {}
     anat = ev.get("anatomy") or {}
 
+    # Identity and framing are DERIVED, because this same function builds the
+    # card for run 2.  It hardcoded "SC-WBD-001-beta" as the title, tagged every
+    # artifact "control-arm", and opened by calling it a negative result -- so
+    # publishing the run-2 treatment arm through it would have shipped the model
+    # under the previous model's name, described as its own control. That is the
+    # exact state R12 refuses, reached through the card instead of the weights.
+    _cfg = ev.get("config") or {}
+    _model_cfg = (_cfg.get("model") or {}) if isinstance(_cfg, dict) else {}
+    name = str(ev.get("model_id") or plan.name)
+    is_treatment = bool(_model_cfg.get("family_state"))
+    arm_word = "treatment" if is_treatment else "control"
+    lost = bool(beaten)
+
     fm = _yaml_front_matter(
         {
             "license": "other",
             "license_name": "see-licence-section",
-            "tags": ["neuroscience", "eeg", "negative-result", "control-arm", "brain-dynamics"],
-            "pretty_name": "SC-WBD-001-beta (run-1, negative result)",
+            "tags": (
+                ["neuroscience", "eeg", "brain-dynamics"]
+                + (["negative-result"] if lost else [])
+                + ([] if is_treatment else ["control-arm"])
+            ),
+            "pretty_name": f"{name} ({arm_word} arm"
+            + (", negative result)" if lost else ")"),
         }
     )
 
     body = [
         fm,
         "",
-        "# SC-WBD-001-beta",
+        f"# {name}",
         "",
         "> **Read this first: this checkpoint loses to copying the last observed "
-        "sample forward.** It is published as a negative result and as a control "
-        "artifact for others, not as a working model. If you are looking for a "
+        "sample forward.** It is published as a negative result and as a "
+        + ("reference" if is_treatment else "control")
+        + " artifact for others, not as a working model. If you are looking for a "
         "brain-dynamics model that works, this is not it.",
         "",
         "## The headline",
@@ -858,14 +894,22 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
         "Two things, and neither is 'the architecture does not work'. Both are "
         "documented in the repository, not inferred here.",
         "",
-        "**1. It is the control arm of our own ablation, shipped under the "
-        "treatment arm's name.** The project's thesis requires comparing a "
-        "*structured regional state* against *one scalar or pooled vector per "
-        "region*. This checkpoint is the second of those. The treatment arm was "
-        "never built, so this result is not a test of the thesis and must not be "
-        "reported as one. It is still an unexplained defect: a 1.76M-parameter "
-        "model losing to persistence is not what the control arm was predicted "
-        "to do either.",
+        (
+            "**1. It is the control arm of our own ablation, shipped under the "
+            "treatment arm's name.** The project's thesis requires comparing a "
+            "*structured regional state* against *one scalar or pooled vector per "
+            "region*. This checkpoint is the second of those. The treatment arm was "
+            "never built, so this result is not a test of the thesis and must not be "
+            "reported as one. It is still an unexplained defect: a 1.76M-parameter "
+            "model losing to persistence is not what the control arm was predicted "
+            "to do either."
+            if not is_treatment
+            else "**1. It is the treatment arm.** Regional state is family-indexed "
+            "and heterogeneous, so unlike run 1 this result *is* a test of the "
+            "thesis and is reported as one. Whatever the numbers above say, they "
+            "say it about the architecture the thesis argues for -- which is the "
+            "whole reason the second artifact was built."
+        ),
         "",
         "**2. The whole loss is in the variance channel.** On the conditional "
         "*mean* this model beats every baseline including persistence — its MSE "
@@ -932,9 +976,15 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
     body += [
         "## What it is legitimately good for",
         "",
-        "- A **control artifact**: an equal-capacity pooled-state model with "
-        "published weights and a published loss, for anyone running the same "
-        "ablation.",
+        (
+            "- A **control artifact**: an equal-capacity pooled-state model with "
+            "published weights and a published loss, for anyone running the same "
+            "ablation."
+            if not is_treatment
+            else "- A **treatment-arm artifact**: family-indexed heterogeneous "
+            "regional state with published weights and a published loss, for "
+            "anyone running the same ablation against their own control."
+        ),
         "- A **worked example of a variance-channel failure**, with the mean/"
         "variance decomposition available in the repository.",
         "- It is **not** evidence for or against the SC-WBD thesis.",

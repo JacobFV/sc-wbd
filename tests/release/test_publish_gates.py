@@ -207,3 +207,59 @@ def test_the_fallback_is_never_a_real_designation():
     got = designation(Empty())
     assert got == "SC-WBD-unnamed"
     assert "001" not in got and "002" not in got
+
+
+def test_no_designation_literal_inside_any_string_the_code_emits():
+    """The whole-value check above missed two, in the most visible place.
+
+    ``evaluate.py`` built its ``verdict`` as
+    ``"SC-WBD-001-beta is beaten by " + ", ".join(...)``.  The literal is a
+    *fragment* of a string, not a whole assigned value, so a regex anchored on
+    ``[:=] "SC-WBD-..."`` slid straight past it -- and ``verdict`` is the single
+    most quoted string on the public model card.
+
+    **Scope is deliberate and was narrowed after measuring.**  The first version
+    of this test swept the whole package and fired on ~15 sites like
+    ``"no trained SC-WBD-001-beta checkpoint was loaded"`` -- error messages
+    *about* run 1's artifact, which are correct and name it on purpose.  Fifteen
+    legitimate hits is evidence the rule is wrong, not that the code is; this
+    repository has already shipped that mistake twice on the site-claims suite.
+
+    So the rule is scoped to the modules whose strings become **artifacts** --
+    the evaluation JSON the card reads, the checkpoint payload, the card itself.
+    In those files a designation is emitted, never discussed, so the literal has
+    no honest use.  Elsewhere it is prose and stays allowed.
+
+    ``ast`` rather than regex, because comments are absent from the tree
+    entirely and docstrings can be excluded by identity instead of guessed at.
+    """
+    import ast
+
+    EMITTERS = (
+        "scwbd/foundation/evaluate.py",
+        "scwbd/foundation/checkpoint.py",
+        "scwbd/release/publish.py",
+    )
+
+    bad: list[str] = []
+    for rel in EMITTERS:
+        path = ROOT / rel
+        tree = ast.parse(path.read_text())
+        docstrings = set()
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                body = getattr(node, "body", None)
+                if (
+                    body
+                    and isinstance(body[0], ast.Expr)
+                    and isinstance(body[0].value, ast.Constant)
+                    and isinstance(body[0].value.value, str)
+                ):
+                    docstrings.add(id(body[0].value))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
+                continue
+            if id(node) in docstrings or "SC-WBD-0" not in node.value:
+                continue
+            bad.append(f"{rel}:{node.lineno}: {node.value[:60]!r}")
+    assert not bad, "designation baked into a string an artifact carries:\n" + "\n".join(bad)

@@ -569,13 +569,17 @@ def real_eeg_holdout(
             "between the two verdicts is the predictive variance, and it is a defect in "
             "the variance channel rather than in the forecast."
         ),
+        # Derived, never a literal.  This read "SC-WBD-001-beta" on both
+        # branches -- and `verdict` is the single most quoted string on the
+        # public model card, so a run-2 evaluation would have announced its
+        # result under the run-1 name in the most visible place available.
         "verdict": (
-            "SC-WBD-001-beta is beaten by "
+            f"{_designation(trainer.cfg)} is beaten by "
             + ", ".join(beaten_by)
             + " on the paired participant-clustered 95% interval of the per-window NLL difference"
             if beaten_by
-            else "No baseline beats SC-WBD-001-beta on the paired participant-clustered 95% "
-            "interval of the per-window NLL difference"
+            else f"No baseline beats {_designation(trainer.cfg)} on the paired "
+            "participant-clustered 95% interval of the per-window NLL difference"
         ),
         "interpretation": (
             "The verdict is the PAIRED interval, not the ranking: two overlapping marginal "
@@ -868,7 +872,7 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
 
     from .train import FoundationTrainer
 
-    p = argparse.ArgumentParser(description="evaluate SC-WBD-001-beta honestly")
+    p = argparse.ArgumentParser(description="evaluate an SC-WBD checkpoint honestly")
     p.add_argument("--config", default="configs/scwbd_001_beta.yaml")
     p.add_argument("--checkpoint", default=None)
     p.add_argument("--out", default="reports/training/evaluation.json")
