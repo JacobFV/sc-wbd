@@ -214,6 +214,14 @@ publish-002: ## Publish SC-WBD-002 to the Hub (requires an evaluation on disk)
 	env -u HF_TOKEN PYTHONPATH=. $(PY) -m scwbd.release.publish run2-pilot \
 	  --namespace $(HF_NAMESPACE) --checkpoint-dir $(CKPT_002) --push --public
 
+.PHONY: restamp-002
+restamp-002: ## Correct the 002 checkpoint's model_id to its config designation
+	@# checkpoint.py hardcoded the run-1 name for all of run 2. The fix landed
+	@# mid-run, and a live process does not re-read its modules -- so the final
+	@# checkpoint still carries it and the artifact must be corrected after the
+	@# fact. Rewrites one string; weights verified bit-identical.
+	env PYTHONPATH=. $(PY) scripts/restamp_designation.py $(CKPT_002)/last.pt --force
+
 evaluate-002: ## Score the 002 checkpoint on the real-EEG holdout
 	@# No --quick: it refuses the holdout on purpose, because a reduced-cost
 	@# variant would silently change the participant set the claim rests on.
