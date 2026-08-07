@@ -52,6 +52,38 @@ shape; 002's 67% was not.
 Memory is not the constraint — activation cost is the rollout (B,T,414,D) over T
 steps. Expect maybe 2-4x run 2's nine hours.
 
+=== THE SECOND BOX: TRAIN HERE, NOT THERE ===
+
+Train on this machine. `~/.ssh/config` lists a second GB10 — `spark-ec4d`, over
+Tailscale, the only one of the three entries that answers — and it is not worth
+the effort. Probed 2026-08-07:
+
+  full disk         184 GB free of 3.7 TB, 95% used. `data/` here is 177 GB, so
+                    a copy lands at ~99% with no room for checkpoints,
+                    foundation_cache or logs. This is the reason.
+  same size, not    GB10, 121 GB unified, identical to this box. 47 GB of it
+  bigger            already in use. "130 GB" is the nominal 128; 121 GiB is what
+                    the allocator sees.
+  bare              CUDA 13.0, but no torch, no repo, no data. Nothing of 003
+                    exists there.
+  busy              live desktop session and an ollama llama-server on the GPU.
+
+This box has 1.1 TB free, all the data in place, and the same memory. Budget the
+hours into the run, not into moving it.
+
+The other two config entries are dead: `spark-gb10` is the same physical machine
+over the NVIDIA Sync direct link, unreachable because `enP7s7` has no carrier
+here; `promaxgb10-4dfb` times out.
+
+If a later run genuinely outgrows this box, the path is: free real space on
+spark-ec4d first, then copy only what the enabled cards read — sim_corpus and
+sim_corpus_414 are 93 of the 177 GB and are tier-4 — then launch under
+`setsid`/`nohup` with a distinct `train.run_name`, because the Tailscale link
+dropping must not kill training. Verify sizes on the far end before enabling a
+card that points at a partial copy; a truncated dataset contributes less gradient
+than the card claims, which is the class of defect 002 shipped with. Do not split
+one run across both boxes — nothing in `scwbd/foundation/` is distributed.
+
 === BEFORE LAUNCHING: TWO CHECKS THAT MUST PASS ===
 
 1.  pytest tests/foundation/test_card_patterns_reach_the_model.py
