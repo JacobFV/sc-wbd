@@ -523,9 +523,9 @@ of absence — arriving for the third time today and, this time, costing the
 thing the whole session exists to protect. `pgrep`, not the output file, is what
 answers "is it still running".
 
-**A third instance, and this one was self-inflicted for hours.** The site
-deploy had been reporting 404 for a page that was committed, pushed, and present
-in `docs/`. Reading the Actions history rather than re-checking the URL:
+**A third instance — and my diagnosis of it was wrong too.** The site deploy had
+been returning 404 for a page that was committed, pushed, and present in
+`docs/`. The Actions history showed:
 
 ```
 04:07  pending
@@ -533,19 +533,32 @@ in `docs/`. Reading the Actions history rather than re-checking the URL:
 03:52  completed / cancelled
 ```
 
-Every deploy was being **cancelled by the next push**. Commits were going out
-every few minutes, and each one pre-empted the deploy still in flight, so none
-ever finished. The content was correct and pushed the whole time; the publishing
-step simply never completed, and the only symptom was a 404 that looked like
-lag.
+I read the cancellations as *self-inflicted*: commits going out every few
+minutes, each pre-empting the deploy still in flight. That is a real mechanism
+and it fit the evidence. I wrote it down.
 
-The diagnosis was delayed by checking the *wrong instrument*: `curl` answers
-"is it live", which is the question, but only the Actions history answers "why
-not", and three polls of the former were spent before one poll of the latter.
+**Then I stopped pushing, and the run stayed `pending` for another ten minutes
+with no jobs allocated at all.** Cancellation by a successor cannot explain a run
+that has no successor. The `github-pages` environment carries only a
+`branch_policy` rule, and deploys from this same branch succeeded four times
+earlier today, so that is not it either. The cause is not determinable from the
+signals available here — most likely runner allocation on GitHub's side — and
+the honest status is *stuck, cause unknown*, not *stuck because of me*.
 
-> Frequent pushes are not free when the deploy is serialised. A commit rate
-> above the deploy duration means the deploy never runs to completion — and the
-> failure presents as staleness, not as an error.
+Recording the wrong version alongside the correction on purpose. It is the
+third time today a cause was written down before it was checked — after the
+throughput attribution and the padding figure — and in all three the mistake had
+the same shape: a mechanism that *could* produce the observed evidence was
+promoted to the one that *did*.
+
+> Fitting the evidence is not the same as being the cause. The test is not "does
+> this explain what I see" but "what would I see if this were false" — and here
+> that test was one experiment away: stop pushing.
+
+What is true and useful regardless: the content was correct and pushed
+throughout, so nothing was lost; and `curl` answers *is it live*, while only the
+run history answers *why not*. Three polls of the former went by before one of
+the latter.
 
 The general point survives intact and is the one worth keeping: "read-only
 analysis" is not the same as "free", and the cost was invisible until someone
