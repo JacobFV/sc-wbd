@@ -302,6 +302,69 @@ rather than `==`, and an unknown name happens to satisfy it.
 That is worth sitting with. The run produced a model for nine hours on the
 strength of a negation that nobody wrote for that purpose.
 
+### The config already declares everything. The trainer reads none of it.
+
+This is the sharpest form of the defect and it was found by explaining the
+curriculum to someone, not by testing.
+
+Run 2's config carries, per stage, an `extra.curriculum` block declaring exactly
+the properties the gates decide by name — including this comment, written by
+whoever built the config:
+
+```yaml
+# --- the four behaviours run 1 keyed on the stage NAME -----------
+# Declared, because a stage not called "I_regional" silently loses
+# boundary randomisation and a stage not called "V_individual"
+# silently never builds the Individualizer.
+boundary_randomisation: true   # matches run 1's I_regional
+with_hemo: false
+individualize: false
+```
+
+Alongside `admits: [1]` (which data tiers this stage may use) and
+`tier_permissions` (what each tier may update). The hazard was known, named, and
+answered in the config **before run 2 started**.
+
+`train.py` never reads `stage.extra`. Not for these flags, not for `admits`, not
+for `tier_permissions` — the string does not appear in the file.
+
+> So `extra.curriculum` is a **decorative configuration block**: it has the
+> shape of configuration, is placed where configuration goes, is read by nobody,
+> and changes nothing. It is the config-side analogue of a decorative guard, and
+> it is worse in one respect — a decorative guard at least runs.
+
+That also settles what the fix is. It is not "add the run-2 names to the
+tuples", and it is not "design a declaration format". **The declaration already
+exists and is already correct.** The patch's whole job is to make the trainer
+read the file it was handed.
+
+### What the curriculum was supposed to be, and what the defect did to it
+
+The stages are an **integrity ordering** — sources ranked by how far they can be
+trusted, admitted progressively:
+
+| tier | name | what it is |
+|---|---|---|
+| 1 | `likelihood_measured` | real recordings |
+| 2 | `boundary_and_calibration` | boundary targets, calibration |
+| 3 | `population_prior` | the anatomical prior, not simulated |
+| 4 | `simulator_conditioned` | simulation |
+| 5 | `distillation` | a teacher model |
+
+The curriculum opens on **tier 1 alone**, widens to tier 4, then closes back to
+**tier 1 alone**: measurement founds the representation, simulation extends it,
+measurement individualises it. That is the reverse of the usual
+pretrain-on-synthetic-then-finetune, and it is the design's central commitment.
+
+Because `real_losses` was never called, **tier 1 was never admitted at any
+stage**. The run trained on tier 4 throughout. So `T1_measured_founding` — a
+stage that admits tier 1 *only*, whose stated premise is *measured EEG founds
+the representation* — ran on simulation; and `T1_individualisation`, tier-1-only
+by design precisely because no simulator can supply an individual's parameters,
+had neither tier-1 data nor an individualizer.
+
+The integrity ordering did not degrade. It inverted.
+
 ### Why nothing caught it
 
 Nothing crashed. Loss fell. `npe_rejected` stayed at 0. Every dashboard this run
