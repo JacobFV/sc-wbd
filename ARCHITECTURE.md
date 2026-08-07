@@ -509,6 +509,39 @@ rather than multiplying a scalar amplitude.
 This is not an optimisation. It is the difference between a model that can
 predict a pose-dependent TMS response and one that structurally cannot.
 
+#### O-5b. How the dipole reaches an observation (design, deferred to run 3)
+
+The observation half is built: `build_lead_field` emits `matrix_vec`
+`(64, 414, 3)`, `EEGHead` registers it non-persistently and has
+`source_moment()`. It is **dormant**, and the reason is a real constraint
+rather than an oversight.
+
+`SCWBD.build_layout` constructs a *shared interface* over the family layout —
+`rate_e, rate_i, hemo, uncertainty, private` — and its contract is that every
+family declares those at **identical offsets**. `EEGHead` reads that interface,
+not `family_layout`. The `dipole` is declared per cortical family
+(`families.py:293`, dim 3, `Hz·m`) and therefore lives inside `private`, which
+the interface deliberately forbids a head from addressing:
+
+> *family-private state + pad; address via `SCWBD.family_layout`, never directly*
+
+Two ways to close it, and the first is right:
+
+1. **Add `dipole` to the shared interface at a fixed offset, dim 3.**
+   Subcortical families write **zero**, which is physically correct — a parcel
+   with no cortical sheet contributes no current dipole, and a zero moment
+   contributes exactly zero through `L_vec`. Note this is the one place a zero
+   is *not* the "silently imputed" failure 🧠 Cajal's `NaN` convention guards
+   against: absent *orientation* must be `NaN` (a direction of zero length is a
+   lie), but absent *moment* genuinely is zero.
+2. Give `EEGHead` the family layout and read per-family. Rejected: it makes the
+   head carry state-layout knowledge, which is exactly what RL-4 moved out.
+
+**Deferred to run 3 for a scheduling reason, not a technical one.** Changing
+the shared interface changes every offset, which invalidates the checkpoints of
+the run currently training. A healthy 8700-step run is worth more than closing
+this two hours earlier.
+
 ### O-6. The state layout is **ragged**, not padded
 
 `padded-family-state` was declared a narrowing with the padding measured at
