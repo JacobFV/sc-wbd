@@ -456,9 +456,12 @@ the fact, and A1 stays available for whichever run trains the controls.
 
 ### Final numbers
 
-**PENDING**, against the pre-registration in
-`reports/ablations/PREREG_A1_run2.md`, filed while A1 was `COULD_NOT_RUN` and
-no heterogeneous arm existed.
+**PENDING** — and, per the section above, they will be *002 against generic
+forecasting baselines*, not against A1's arms. `reports/ablations/PREREG_A1_run2.md`
+was filed while A1 was `COULD_NOT_RUN` and no heterogeneous arm existed; one arm
+now exists and five still do not, so the pre-registration stays unconsumed. When
+the numbers land here they answer "how does this checkpoint forecast held-out
+EEG", which is worth knowing and is not the thesis question.
 
 The path itself is proven end to end on a family-state checkpoint: real-EEG
 holdout available, 54 test participants / 2160 windows against 44 / 1320,
