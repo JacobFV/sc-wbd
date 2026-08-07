@@ -182,7 +182,24 @@ underneath them differs — that is computed per artifact, not asserted once.</p
   3.179 against 2.045 for the best baseline; MSE 36.27 against 4.53. Every
   paired participant-clustered interval excludes zero. Run 1 at least won the
   conditional mean — run 2 does not, so the "the loss is all in the variance
-  channel" diagnosis does not transfer.</span></span> The number that explains it: it scores
+  channel" diagnosis does not transfer.
+
+  And 3.179 <em>flatters</em> it. SC-WBD is scored on <code>target/s</code> with
+  the Jacobian folded into the log-variance; every baseline is scored on the raw
+  target. <code>NLL_scaled = NLL_raw − log s</code>, and <code>mean(log s) =
+  0.5694</code> on this fold — roughly 17× the 0.035-nat spread across the three
+  non-trivial baselines. In their units the NLL is ≈ 3.75 and the gap ≈ 1.70
+  nats. No verdict changes; every interval moves further from SC-WBD.
+
+  Two more things the model card carries. <code>subject_specific_ar</code> is
+  bit-for-bit identical to <code>ar16</code> — the participant-disjoint split
+  leaves no test participant with a fitted model, so the thesis's hardest
+  baseline never ran, while its own <code>describe()</code> reports
+  <code>fallback_subjects=0</code>. Read the table as <strong>five</strong>
+  comparators. And individualisation cannot be measured on this holdout at all:
+  no held-out person has a fitted person effect, so the between-participant
+  spread of the applied θ shift is exactly <code>0.000e+00</code>. That is a
+  property of the split, not a defect of the run.</span></span> The number that explains it: it scores
   <strong>0.565</strong> on simulation and <strong>3.179</strong> on measured
   EEG, because five of six curriculum gates were wrong and no gradient was ever
   taken on a recording.</td>
