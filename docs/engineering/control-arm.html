@@ -293,6 +293,53 @@ bug. The cost is a table. The alternative is discovering, after a training run,
 that you tested the wrong hypothesis.</p>
 </div>
 
+<h2>Run 2 inverted it, and the comparison is <em>still</em> unavailable</h2>
+
+<p>The obvious fix is to build the other arm. We did: run 2 is the candidate —
+family-indexed heterogeneous regional state, with per-family operators. So the
+arms are no longer swapped.</p>
+
+<p>The comparison still cannot be made. Reading the pre-registration properly,
+before its numbers landed, the ablation has <strong>six</strong> arms:</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>arm</th><th>role</th><th>exists</th></tr></thead>
+<tbody>
+<tr><td><code>structured_state</code></td><td>candidate</td><td><span class="chip pass">run 2</span></td></tr>
+<tr><td><code>pooled_vector_per_region@param_matched</code></td><td>capacity control</td><td><span class="chip warn">no</span></td></tr>
+<tr><td><code>pooled_vector_per_region@state_matched</code></td><td>capacity control</td><td><span class="chip warn">no</span></td></tr>
+<tr><td><code>scalar_per_region</code></td><td>floor</td><td><span class="chip warn">no</span></td></tr>
+<tr><td><code>theta_conditioned_pooled</code></td><td>conditioning control</td><td><span class="chip warn">no</span></td></tr>
+<tr><td><code>permuted_family_state</code></td><td>attribution control</td><td><span class="chip warn">no</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Run 2 trains one of six. Its evaluation compares that arm against generic
+forecasting baselines — persistence, an AR model, a VAR model, a pooled
+Gaussian, a dense network. Nothing in that comparison holds the structure fixed
+while varying it.</p>
+
+<blockquote>
+<p>Beating persistence would not show that heterogeneous regional state helps.
+Losing to it would not show that it does not. Both sentences are unavailable
+from this run, in the same way and for the same reason.</p>
+</blockquote>
+
+<p>This was written down <em>before</em> the numbers existed, which is the only
+time it can be written honestly. Afterwards, one of those two sentences always
+looks like the obvious reading.</p>
+
+<div class="callout">
+<span class="callout-label">Transferable</span>
+<p>A pre-registration fixes the endpoint before the data. It does not conjure
+the arms. Filing one against an ablation whose controls are unbuilt is still
+worth doing — it is what stops the endpoint moving later — but the honest status
+is <em>unconsumed</em>, not <em>satisfied</em>, and the gap between those two
+words is five training runs.</p>
+</div>
+
 <p class="lede"><a href="variance-channel.html">Next: the most expensive 134
 seconds →</a></p>
 
