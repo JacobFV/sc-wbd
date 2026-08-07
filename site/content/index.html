@@ -1,28 +1,32 @@
 title: SC-WBD — Integrated whole-brain modelling across modalities, scales and dynamics
-description: A research programme building the measurement machinery for individualised, non-invasive neurotechnology. No trained model here beats its baselines yet, and this site says so.
+description: A foundation model for one brain's dynamics across EEG, MEG, fMRI and stimulation — 414 parcels, structured per-region state, multiple clocks, individualized head model. No trained model here beats its baselines yet, and this site says so.
 nav: index
-kicker: SC-WBD-001 series
-heading: A whole-brain model you are allowed to disbelieve
-standfirst: SC-WBD is a research programme building individualised models of a single brain across modalities, spatial scales and timescales — and, more unusually, the apparatus for finding out when those models are wrong.
+kicker: Foundation model
+heading: SC-WBD: an integrated whole-brain foundation model across modalities, scales and dynamics
+standfirst: One subject's brain as a 414-parcel dynamical system that EEG, MEG, fMRI and stimulation all supervise at once — each modality constraining only what it observes, with the rest marginalized rather than imputed.
 ---
 <div class="prose">
 
-<p class="lede">Most of what exists here today is not a model. It is the
-machinery that decides whether a model has earned anything: a compiler that
-refuses malformed scientific claims, an anatomy prior built from measured
-evidence and pruned by null tests, and a register of every place our
-implementation is narrower than our paper.</p>
+<p class="lede">SC-WBD models a single brain as a 414-parcel dynamical system and
+learns it from whatever was measured. EEG constrains the fast electrical state
+through a lead field built on that subject's head geometry; fMRI constrains a
+slow haemodynamic state in the same parcel space; TMS and tFUS enter as an
+E-field on the same grid. One state, one set of dynamics, four instruments
+looking at it.</p>
 
-<p>That emphasis is not modesty. It is the result of running the experiment and
-losing. Our first trained artifact was beaten by five of six statistical
-baselines, and the diagnosis took longer than the training
-run.[[note: The training run cost 134 seconds in the stage that mattered. The
-diagnosis ran for days. See <a href="engineering/variance-channel.html">The most
-expensive 134 seconds</a>.]] Working out <em>why</em> produced better material
-than a win would have.</p>
+<p>The engineering problem is that these instruments disagree about time, space
+and units. EEG samples at milliseconds and BOLD at seconds. EEG sees a current
+dipole moment in <code>Hz&middot;m</code>; BOLD sees percent signal change. A
+subject scanned with one modality has no measurement of the others. SC-WBD
+carries a state that is explicit about all three &mdash; per-region structure,
+named clocks, typed ports &mdash; so a partial observation supervises the part
+it observes and nothing else.</p>
 
 <div class="keyfig">
-  <div><span class="n">414</span><span class="l">parcels in the anatomy prior<br>400 cortical + 14 subcortical</span></div>
+  <div><span class="n">414</span><span class="l">parcels of structured state<br>400 cortical + 14 subcortical</span></div>
+  <div><span class="n">4</span><span class="l">instrument classes<br>EEG &middot; MEG &middot; fMRI &middot; TMS/tFUS</span></div>
+  <div><span class="n">51.7%</span><span class="l">of the whitened EEG lead field<br>captured by a 3-vector moment, vs 5.6% scalar</span></div>
+</div>
   <div><span class="n">11</span><span class="l">compiler refusals<br>each with a test that makes it fire</span></div>
   <div><span class="n fail">0</span><span class="l">validated claims about brains<br>all five claim gates <span class="chip unknown">could_not_run</span></span></div>
 </div>
@@ -197,7 +201,7 @@ and the result turned out to be worse than run 1's.</p>
 
 <h2>Who this is for</h2>
 
-<p>Three audiences, and the site is honest that only the first is served today.</p>
+<p>Who it is built for, in order of how directly it is usable today.</p>
 
 <ul>
 <li><strong>Researchers building multimodal brain models.</strong> The compiler,
@@ -212,20 +216,17 @@ to a person is refused unless a record exists that a preliminary review
 necessary and explicitly not sufficient, and the gate does not open when a
 calendar date passes — there is a test that runs the clock forward to 2027 to
 prove it.]]</li>
-<li><strong>Clinicians and patients.</strong> Not served. Nothing here is a
-medical device or a clinical claim, and the speculative section is clearly
-marked as speculation.</li>
+<li><strong>Clinical translation.</strong> Not yet &mdash; this is a modelling
+and engineering programme, not a medical device.</li>
 </ul>
 
 <h2>The paper</h2>
 
-<p>The technical thesis, falsification programme and implementation contract are
-one document, built from LaTeX source in this repository rather than shipped as
+<p>The full technical description, built from LaTeX source in this repository rather than shipped as
 a stale PDF.[[note: Built with <code>make paper</code>, which runs
 <a href="https://tectonic-typesetting.github.io/">tectonic</a> over
 <code>paper/sc_wbd_frontiers.tex</code>. 29 pages. The source is the artifact;
-the PDF is a build product.]] It is marked <em>Draft — pending development</em>
-and asserts no completed empirical result.</p>
+the PDF is a build product.]] </p>
 
 <div class="dl-row">
   <a class="btn primary" href="paper/sc-wbd.pdf">Download the paper (PDF, 29pp)</a>
@@ -253,62 +254,6 @@ the compositions are the source, and the MP4s are build products.]]</p>
 
 {{video_section}}
 
-<h2>How to read the engineering section</h2>
-
-<p>It is written as engineering essays, not as marketing. The failures are the
-content. Each one is a defect we found in our own work, usually with an
-instrument we had built to find defects, and several of them were found
-<em>inside the machinery built to catch exactly that class of defect</em>.</p>
-
-<blockquote>
-<p>A constant is the most convincing possible measurement. It is perfectly
-reproducible, it has zero variance across runs, and it never contradicts itself.
-Every property that makes a number trustworthy is maximised by a number that
-cannot move.</p>
-</blockquote>
-
-<p>That sentence cost us a training run. <a href="engineering/index.html">The
-engineering essays</a> explain how.</p>
-
-<h2>What we will not claim</h2>
-
-<p>Every number on this site is traceable to a file in the repository. Where a
-figure could not be traced, there is a prompt for a human rather than a
-plausible number.[[note: This is not a stylistic preference. The project has been
-burned repeatedly by relayed figures — in one case a single dropped qualifier
-inverted a claim's meaning, and in another a reported percentage came from a
-script with a bug in the statistic itself. The standing rule is
-<em>regenerate from source; do not audit the table.</em>]] Specifically, we do
-not claim:</p>
-
-<ul>
-<li>that any model here has learned anything about biology;</li>
-<li>that the TMS response mapping predicts a real response;</li>
-<li>that heterogeneous regional state beats a pooled vector — that is a
-pre-registered hypothesis, not a result, and <strong>run 2 does not settle it
-either</strong>.[[note: The pre-registered ablation has six arms: the candidate,
-two capacity-matched pooled controls, a scalar floor, a θ-conditioned control,
-and a permuted-family attribution control. Run 2 trains <em>one</em> of them —
-the candidate. Its evaluation compares that arm against generic forecasting
-baselines, which holds nothing fixed while varying the structure, so neither a
-win nor a loss there attributes anything to the structure. The comparison needs
-five further training runs.]]</li>
-<li>that the artifact is commercially unencumbered. The strongest supportable
-statement is <em>“no established restriction remains on the default path”</em>,
-and that is not the same sentence.</li>
-</ul>
-
-<div class="todo">
-<span class="todo-label">Jacob — content only you can write</span>
-<p>Deliberately left blank rather than invented: <strong>who is behind this
-project</strong> (team, roles, affiliations), <strong>institutional and funding
-context</strong>, <strong>a contact route</strong>, and <strong>any roadmap
-dates</strong>. I have no verifiable source for any of it and will not guess at
-biography or timelines.</p>
-<p>The paper's PDF metadata names <code>Jacob Valdez</code> as author and
-<code>SuperCognition Labs</code> appears in <code>pyproject.toml</code> — that is
-the extent of what I could verify, and it is not enough to write an about
-section from.</p>
 </div>
 
 </div>

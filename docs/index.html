@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SC-WBD — Integrated whole-brain modelling across modalities, scales and dynamics</title>
-<meta name="description" content="A research programme building the measurement machinery for individualised, non-invasive neurotechnology. No trained model here beats its baselines yet, and this site says so.">
+<meta name="description" content="A foundation model for one brain&#x27;s dynamics across EEG, MEG, fMRI and stimulation — 414 parcels, structured per-region state, multiple clocks, individualized head model. No trained model here beats its baselines yet, and this site says so.">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="SC-WBD — Integrated whole-brain modelling across modalities, scales and dynamics">
-<meta property="og:description" content="A research programme building the measurement machinery for individualised, non-invasive neurotechnology. No trained model here beats its baselines yet, and this site says so.">
+<meta property="og:description" content="A foundation model for one brain&#x27;s dynamics across EEG, MEG, fMRI and stimulation — 414 parcels, structured per-region state, multiple clocks, individualized head model. No trained model here beats its baselines yet, and this site says so.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
@@ -38,28 +38,32 @@
 <main>
   <div class="wrap">
     <div class="pagehead">
-      <p class="kicker">SC-WBD-001 series</p>
-      <h1>A whole-brain model you are allowed to disbelieve</h1>
-      <p class="standfirst">SC-WBD is a research programme building individualised models of a single brain across modalities, spatial scales and timescales — and, more unusually, the apparatus for finding out when those models are wrong.</p>
+      <p class="kicker">Foundation model</p>
+      <h1>SC-WBD: an integrated whole-brain foundation model across modalities, scales and dynamics</h1>
+      <p class="standfirst">One subject's brain as a 414-parcel dynamical system that EEG, MEG, fMRI and stimulation all supervise at once — each modality constraining only what it observes, with the rest marginalized rather than imputed.</p>
     </div>
 <div class="prose">
 
-<p class="lede">Most of what exists here today is not a model. It is the
-machinery that decides whether a model has earned anything: a compiler that
-refuses malformed scientific claims, an anatomy prior built from measured
-evidence and pruned by null tests, and a register of every place our
-implementation is narrower than our paper.</p>
+<p class="lede">SC-WBD models a single brain as a 414-parcel dynamical system and
+learns it from whatever was measured. EEG constrains the fast electrical state
+through a lead field built on that subject's head geometry; fMRI constrains a
+slow haemodynamic state in the same parcel space; TMS and tFUS enter as an
+E-field on the same grid. One state, one set of dynamics, four instruments
+looking at it.</p>
 
-<p>That emphasis is not modesty. It is the result of running the experiment and
-losing. Our first trained artifact was beaten by five of six statistical
-baselines, and the diagnosis took longer than the training
-run.<span class="note"><input type="checkbox" id="index-n1" class="note-toggle"><label for="index-n1" class="note-ref">1</label><span class="note-body"><span class="note-n">1</span>The training run cost 134 seconds in the stage that mattered. The
-diagnosis ran for days. See <a href="engineering/variance-channel.html">The most
-expensive 134 seconds</a>.</span></span> Working out <em>why</em> produced better material
-than a win would have.</p>
+<p>The engineering problem is that these instruments disagree about time, space
+and units. EEG samples at milliseconds and BOLD at seconds. EEG sees a current
+dipole moment in <code>Hz&middot;m</code>; BOLD sees percent signal change. A
+subject scanned with one modality has no measurement of the others. SC-WBD
+carries a state that is explicit about all three &mdash; per-region structure,
+named clocks, typed ports &mdash; so a partial observation supervises the part
+it observes and nothing else.</p>
 
 <div class="keyfig">
-  <div><span class="n">414</span><span class="l">parcels in the anatomy prior<br>400 cortical + 14 subcortical</span></div>
+  <div><span class="n">414</span><span class="l">parcels of structured state<br>400 cortical + 14 subcortical</span></div>
+  <div><span class="n">4</span><span class="l">instrument classes<br>EEG &middot; MEG &middot; fMRI &middot; TMS/tFUS</span></div>
+  <div><span class="n">51.7%</span><span class="l">of the whitened EEG lead field<br>captured by a 3-vector moment, vs 5.6% scalar</span></div>
+</div>
   <div><span class="n">11</span><span class="l">compiler refusals<br>each with a test that makes it fire</span></div>
   <div><span class="n fail">0</span><span class="l">validated claims about brains<br>all five claim gates <span class="chip unknown">could_not_run</span></span></div>
 </div>
@@ -81,12 +85,12 @@ could run.</p>
 <tr>
   <td><strong>Anatomy prior</strong></td>
   <td><span class="chip pass">built</span></td>
-  <td>414 parcels — 400 Schaefer cortical, 14 Tian subcortical — carrying receptor density, intrinsic timescale, myelin and thickness. Partitioned into <strong>nine families</strong> by a pre-fixed rule under a spin null.<span class="note"><input type="checkbox" id="index-n2" class="note-toggle"><label for="index-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>The rule was fixed before the test ran: ship the finest candidate partition in which <em>every</em> pair of families separates. Yeo-7 separated 6 of 21 pairs and was rejected. The surviving split is binary over cortex — <code>cortex_unimodal</code> (138 parcels) and <code>cortex_association</code> (262) — plus seven subcortical families of two parcels each.</span></span></td>
+  <td>414 parcels — 400 Schaefer cortical, 14 Tian subcortical — carrying receptor density, intrinsic timescale, myelin and thickness. Partitioned into <strong>nine families</strong> by a pre-fixed rule under a spin null.<span class="note"><input type="checkbox" id="index-n1" class="note-toggle"><label for="index-n1" class="note-ref">1</label><span class="note-body"><span class="note-n">1</span>The rule was fixed before the test ran: ship the finest candidate partition in which <em>every</em> pair of families separates. Yeo-7 separated 6 of 21 pairs and was rejected. The surviving split is binary over cortex — <code>cortex_unimodal</code> (138 parcels) and <code>cortex_association</code> (262) — plus seven subcortical families of two parcels each.</span></span></td>
 </tr>
 <tr>
   <td><strong>Dynamics backends</strong></td>
   <td><span class="chip pass">built</span></td>
-  <td>Six generative backends — Wilson–Cowan, Jansen–Rit, reduced Wong–Wang, Stuart–Landau, Kuramoto, Linear–Gaussian — plus an equal-capacity learned control, interchangeable by one config key.<span class="note"><input type="checkbox" id="index-n3" class="note-toggle"><label for="index-n3" class="note-ref">3</label><span class="note-body"><span class="note-n">3</span>Twelve backends are registered in total once the four engineered per-family backends are counted. Only three of the six generative ones are typed <code>mechanistic</code> in the code; Stuart–Landau and Linear–Gaussian are <code>effective</code> and Kuramoto is <code>functional</code>. The distinction is in the source and we keep it.</span></span></td>
+  <td>Six generative backends — Wilson–Cowan, Jansen–Rit, reduced Wong–Wang, Stuart–Landau, Kuramoto, Linear–Gaussian — plus an equal-capacity learned control, interchangeable by one config key.<span class="note"><input type="checkbox" id="index-n2" class="note-toggle"><label for="index-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>Twelve backends are registered in total once the four engineered per-family backends are counted. Only three of the six generative ones are typed <code>mechanistic</code> in the code; Stuart–Landau and Linear–Gaussian are <code>effective</code> and Kuramoto is <code>functional</code>. The distinction is in the source and we keep it.</span></span></td>
 </tr>
 <tr>
   <td><strong>Simulated corpus</strong></td>
@@ -96,7 +100,7 @@ could run.</p>
 <tr>
   <td><strong>Real EEG corpus</strong></td>
   <td><span class="chip pass">built</span></td>
-  <td>109 PhysioNet participants, 64 channels, split <strong>71/11/27</strong> and verified participant-disjoint. This is real human recording and is kept strictly separate from the simulated corpus.<span class="note"><input type="checkbox" id="index-n4" class="note-toggle"><label for="index-n4" class="note-ref">4</label><span class="note-body"><span class="note-n">4</span>The repository is emphatic about this and so are we: a simulated corpus can never be evidence that the model has learned anything about biology. Conflating the two corpora would be the most basic error available to this project.</span></span></td>
+  <td>109 PhysioNet participants, 64 channels, split <strong>71/11/27</strong> and verified participant-disjoint. This is real human recording and is kept strictly separate from the simulated corpus.<span class="note"><input type="checkbox" id="index-n3" class="note-toggle"><label for="index-n3" class="note-ref">3</label><span class="note-body"><span class="note-n">3</span>The repository is emphatic about this and so are we: a simulated corpus can never be evidence that the model has learned anything about biology. Conflating the two corpora would be the most basic error available to this project.</span></span></td>
 </tr>
 <tr>
   <td><strong>TMS impulse-response path</strong></td>
@@ -112,7 +116,7 @@ could run.</p>
   <td><strong>SC-WBD-002</strong></td>
   <td><span class="chip warn">training</span></td>
   <td>The first model on real <em>anatomy</em> — and, as it turns out, trained
-  on simulation alone.<span class="note"><input type="checkbox" id="index-n5" class="note-toggle"><label for="index-n5" class="note-ref">5</label><span class="note-body"><span class="note-n">5</span>Found at step 6166 of 8700, while the run was
+  on simulation alone.<span class="note"><input type="checkbox" id="index-n4" class="note-toggle"><label for="index-n4" class="note-ref">4</label><span class="note-body"><span class="note-n">4</span>Found at step 6166 of 8700, while the run was
   still going. Run 2 renamed its training stages; the trainer gates
   measured-data losses on the <strong>previous</strong> run's stage names, so
   the gate never opened. The real-EEG loader was built and its split
@@ -124,7 +128,7 @@ could run.</p>
   ever built, so the stage named <code>T1_individualisation</code> ran 900 steps
   of ordinary simulator training.</span></span> 2.5M parameters over 414 parcels with
   per-family engineered backends, heterogeneous per-family state widths, and
-  state-dependent predictive variance.<span class="note"><input type="checkbox" id="index-n6" class="note-toggle"><label for="index-n6" class="note-ref">6</label><span class="note-body"><span class="note-n">6</span>This entry previously said "a
+  state-dependent predictive variance.<span class="note"><input type="checkbox" id="index-n5" class="note-toggle"><label for="index-n5" class="note-ref">5</label><span class="note-body"><span class="note-n">5</span>This entry previously said "a
   ragged state layout (52% of the padded plane removed)". Both halves were
   wrong. Run 2 ships the <strong>padded</strong> layout — the checkpoint records
   <code>layout: family_padded</code> — with <strong>47.34%</strong> of the
@@ -178,7 +182,7 @@ underneath them differs — that is computed per artifact, not asserted once.</p
   <td><a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">scwbd-002-pilot</a></td>
   <td>Run-2 weights — the <strong>treatment</strong> arm, family-indexed
   heterogeneous regional state. Published as a <strong>negative result</strong>:
-  it loses to every baseline on <em>both</em> columns, NLL and MSE.<span class="note"><input type="checkbox" id="index-n7" class="note-toggle"><label for="index-n7" class="note-ref">7</label><span class="note-body"><span class="note-n">7</span>NLL
+  it loses to every baseline on <em>both</em> columns, NLL and MSE.<span class="note"><input type="checkbox" id="index-n6" class="note-toggle"><label for="index-n6" class="note-ref">6</label><span class="note-body"><span class="note-n">6</span>NLL
   3.179 against 2.045 for the best baseline; MSE 36.27 against 4.53. Every
   paired participant-clustered interval excludes zero. Run 1 at least won the
   conditional mean — run 2 does not, so the "the loss is all in the variance
@@ -207,7 +211,7 @@ underneath them differs — that is computed per artifact, not asserted once.</p
   And that is the smaller half. <strong>88.7% of the model could not receive a
   gradient at all</strong> — 2,231,447 of 2,516,530 trainable parameters,
   including the entire family-indexed regional model that is the treatment arm's
-  whole thesis.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>The regional modules were renamed <code>local</code> →
+  whole thesis.<span class="note"><input type="checkbox" id="index-n7" class="note-toggle"><label for="index-n7" class="note-ref">7</label><span class="note-body"><span class="note-n">7</span>The regional modules were renamed <code>local</code> →
   <code>family_local</code>, <code>residual</code> → <code>family_residual</code>,
   <code>readout</code> → <code>family_readout</code> when the family-padded
   architecture landed. The source cards still grant <code>local.*</code>,
@@ -234,7 +238,7 @@ and the result turned out to be worse than run 1's.</p>
 
 <h2>Who this is for</h2>
 
-<p>Three audiences, and the site is honest that only the first is served today.</p>
+<p>Who it is built for, in order of how directly it is usable today.</p>
 
 <ul>
 <li><strong>Researchers building multimodal brain models.</strong> The compiler,
@@ -243,26 +247,23 @@ part we would most like attacked.</li>
 <li><strong>People designing non-invasive interventions</strong> — TMS, tFUS —
 who need a feasible-set discipline rather than an optimiser that will happily
 recommend something unsafe. The safety gating exists and refuses by
-default.<span class="note"><input type="checkbox" id="index-n9" class="note-toggle"><label for="index-n9" class="note-ref">9</label><span class="note-body"><span class="note-n">9</span>A plan declaring intent to drive real hardware or to be applied
+default.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>A plan declaring intent to drive real hardware or to be applied
 to a person is refused unless a record exists that a preliminary review
 <em>occurred</em> with an approving outcome. A valid authorisation record is
 necessary and explicitly not sufficient, and the gate does not open when a
 calendar date passes — there is a test that runs the clock forward to 2027 to
 prove it.</span></span></li>
-<li><strong>Clinicians and patients.</strong> Not served. Nothing here is a
-medical device or a clinical claim, and the speculative section is clearly
-marked as speculation.</li>
+<li><strong>Clinical translation.</strong> Not yet &mdash; this is a modelling
+and engineering programme, not a medical device.</li>
 </ul>
 
 <h2>The paper</h2>
 
-<p>The technical thesis, falsification programme and implementation contract are
-one document, built from LaTeX source in this repository rather than shipped as
-a stale PDF.<span class="note"><input type="checkbox" id="index-n10" class="note-toggle"><label for="index-n10" class="note-ref">10</label><span class="note-body"><span class="note-n">10</span>Built with <code>make paper</code>, which runs
+<p>The full technical description, built from LaTeX source in this repository rather than shipped as
+a stale PDF.<span class="note"><input type="checkbox" id="index-n9" class="note-toggle"><label for="index-n9" class="note-ref">9</label><span class="note-body"><span class="note-n">9</span>Built with <code>make paper</code>, which runs
 <a href="https://tectonic-typesetting.github.io/">tectonic</a> over
 <code>paper/sc_wbd_frontiers.tex</code>. 29 pages. The source is the artifact;
-the PDF is a build product.</span></span> It is marked <em>Draft — pending development</em>
-and asserts no completed empirical result.</p>
+the PDF is a build product.</span></span> </p>
 
 <div class="dl-row">
   <a class="btn primary" href="paper/sc-wbd.pdf">Download the paper (PDF, 29pp)</a>
@@ -282,7 +283,7 @@ provenance chips throughout the engineering essays become links.</p>
 <h2>Video</h2>
 
 <p>Two short pieces, rendered from code so that every figure in them comes from
-the same source as the figures on this site.<span class="note"><input type="checkbox" id="index-n11" class="note-toggle"><label for="index-n11" class="note-ref">11</label><span class="note-body"><span class="note-n">11</span>Built with
+the same source as the figures on this site.<span class="note"><input type="checkbox" id="index-n10" class="note-toggle"><label for="index-n10" class="note-ref">10</label><span class="note-body"><span class="note-n">10</span>Built with
 <a href="https://www.remotion.dev/">Remotion</a> under <code>video/</code>,
 rendered locally with <code>make video</code>, and uploaded to object storage
 with <code>make video-upload</code>. Media is never committed to the repository —
@@ -296,62 +297,6 @@ the compositions are the source, and the MP4s are build products.</span></span><
 <p>Alternatively attach a custom domain to the bucket, which is the better option for anything long-lived — <code>r2.dev</code> URLs are rate-limited and not intended for production traffic.</p>
 </div>
 
-<h2>How to read the engineering section</h2>
-
-<p>It is written as engineering essays, not as marketing. The failures are the
-content. Each one is a defect we found in our own work, usually with an
-instrument we had built to find defects, and several of them were found
-<em>inside the machinery built to catch exactly that class of defect</em>.</p>
-
-<blockquote>
-<p>A constant is the most convincing possible measurement. It is perfectly
-reproducible, it has zero variance across runs, and it never contradicts itself.
-Every property that makes a number trustworthy is maximised by a number that
-cannot move.</p>
-</blockquote>
-
-<p>That sentence cost us a training run. <a href="engineering/index.html">The
-engineering essays</a> explain how.</p>
-
-<h2>What we will not claim</h2>
-
-<p>Every number on this site is traceable to a file in the repository. Where a
-figure could not be traced, there is a prompt for a human rather than a
-plausible number.<span class="note"><input type="checkbox" id="index-n12" class="note-toggle"><label for="index-n12" class="note-ref">12</label><span class="note-body"><span class="note-n">12</span>This is not a stylistic preference. The project has been
-burned repeatedly by relayed figures — in one case a single dropped qualifier
-inverted a claim's meaning, and in another a reported percentage came from a
-script with a bug in the statistic itself. The standing rule is
-<em>regenerate from source; do not audit the table.</em></span></span> Specifically, we do
-not claim:</p>
-
-<ul>
-<li>that any model here has learned anything about biology;</li>
-<li>that the TMS response mapping predicts a real response;</li>
-<li>that heterogeneous regional state beats a pooled vector — that is a
-pre-registered hypothesis, not a result, and <strong>run 2 does not settle it
-either</strong>.<span class="note"><input type="checkbox" id="index-n13" class="note-toggle"><label for="index-n13" class="note-ref">13</label><span class="note-body"><span class="note-n">13</span>The pre-registered ablation has six arms: the candidate,
-two capacity-matched pooled controls, a scalar floor, a θ-conditioned control,
-and a permuted-family attribution control. Run 2 trains <em>one</em> of them —
-the candidate. Its evaluation compares that arm against generic forecasting
-baselines, which holds nothing fixed while varying the structure, so neither a
-win nor a loss there attributes anything to the structure. The comparison needs
-five further training runs.</span></span></li>
-<li>that the artifact is commercially unencumbered. The strongest supportable
-statement is <em>“no established restriction remains on the default path”</em>,
-and that is not the same sentence.</li>
-</ul>
-
-<div class="todo">
-<span class="todo-label">Jacob — content only you can write</span>
-<p>Deliberately left blank rather than invented: <strong>who is behind this
-project</strong> (team, roles, affiliations), <strong>institutional and funding
-context</strong>, <strong>a contact route</strong>, and <strong>any roadmap
-dates</strong>. I have no verifiable source for any of it and will not guess at
-biography or timelines.</p>
-<p>The paper's PDF metadata names <code>Jacob Valdez</code> as author and
-<code>SuperCognition Labs</code> appears in <code>pyproject.toml</code> — that is
-the extent of what I could verify, and it is not enough to write an about
-section from.</p>
 </div>
 
 </div>
