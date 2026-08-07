@@ -21,6 +21,15 @@ from scwbd.infer.synthetic_slice import (
     validate_schema,
 )
 
+# The whole MODULE is slow, not a subset of its tests.
+#
+# Marking individual tests deselected 8 of 17 and changed the runtime not at all:
+# the cost lives in a module-scoped fixture (`recover(...)` over 64 replicates,
+# the synthetic slice build), and one unmarked test is enough to pay it in full.
+# A per-test marker on a module-scoped cost is a marker that does not do what it
+# says.
+pytestmark = pytest.mark.slow
+
 DEVICE = os.environ.get("SCWBD_TEST_DEVICE", "cpu")
 
 

@@ -47,5 +47,27 @@ packages = ["scwbd"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+# `-m "not slow"` by DEFAULT, and this is a deliberate trade.
+#
+# Before it, `pytest tests/` could not be run to completion at all:
+# tests/infer/test_recovery.py and tests/infer/test_synthetic_slice.py each
+# exceed ten minutes with the machine otherwise idle, so any attempt to produce
+# a complete failure list ran out of patience before it ran out of tests. The
+# result was worse than a slow suite -- it was a suite whose state nobody knew,
+# and "unmeasured" kept getting written down as "passing".
+#
+# Deselection is LOUD: pytest prints "N deselected" on every run, so the deferred
+# set announces itself rather than disappearing. That is the whole difference
+# between this and silently dropping them.
+#
+# The slow set must still be run. It is not optional and it is not a lower tier:
+#     pytest -m slow                      # ~25 min, 10 files
+# reports/RUN2.md §5b records the runtimes and what is in it.
+addopts = "-q -m 'not slow'"
+markers = [
+    # Registered so a typo (`@pytest.mark.slwo`) is an ERROR rather than an
+    # unrecognised marker that silently matches nothing -- which would put a
+    # test in neither the fast set nor the slow one.
+    "slow: takes minutes; deselected by default, run with `pytest -m slow`",
+]
 filterwarnings = ["error::DeprecationWarning:scwbd.*"]
