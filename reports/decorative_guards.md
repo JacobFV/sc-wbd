@@ -62,6 +62,7 @@ classes.
 - [The empty-permission class — 88.7% of a model that could not train](#the-empty-permission-class-887-of-a-model-that-could-not-train) — a glob that matches nothing is a legal permission set
 - [`--out` moves the checkpoints and not the record](#--out-moves-the-checkpoints-and-not-the-record) — an isolation flag that isolates some of the outputs
 - [The design-rationale class — a test that asserts *why*, not *what*](#the-design-rationale-class-a-test-that-asserts-why-not-what) — when a correct test becomes the last defender of a rejected decision
+- [The collection-time class — global state set before any test runs](#the-collection-time-class-global-state-set-before-any-test-runs) — a fix applied where a defect was observed, not where it is caused
 
 ### The single most transferable sentence in this file
 
@@ -3040,3 +3041,87 @@ actually carries it.
 That is the test to apply when a design-rationale guard fails: **what was it
 really protecting, and where does that claim live now?** If the answer is
 "nowhere", the change is not ready.
+
+---
+
+## The collection-time class — global state set before any test runs
+
+`pytest tests/` had never been run to completion in this project. Making it
+possible produced a failure list that was **wrong**, and the way it announced
+that is the useful part.
+
+### The first complete run: 38 failing files
+
+Including `tests/anatomy`. Which sorts **first**.
+
+Nothing had run before it. Whatever contaminated it did so before any test
+executed — and the confirming observation was that `tests/anatomy` failed under
+full collection and passed when its own directory ran alone:
+
+```
+pytest tests/anatomy                            -> green
+pytest tests/ -k "test_registration or ..."     -> RuntimeError
+```
+
+Same tests, same code, different set of files *imported*.
+
+### The cause
+
+```python
+# tests/observe/test_eeg_head.py, module level -- and ten more like it
+torch.set_default_dtype(torch.float64)
+```
+
+Module level means **collection time**, which is before any test runs, and
+`set_default_dtype` is process-global. So the entire suite had been executing in
+float64 whenever those eleven files were collected — which is every run of
+`pytest tests/`, regardless of which directory was actually being exercised.
+
+Four directories away it surfaces as:
+
+```
+quantile() q tensor must be same dtype as the input tensor
+```
+
+inside an anatomy adapter that never mentions dtype, in a test about coordinate
+frames.
+
+### The part that makes this a class and not an incident
+
+`tests/infer/conftest.py` had already fixed it. Its docstring:
+
+> *Module-level `torch.set_default_dtype` runs at collection time, so the last
+> module collected silently decides the dtype for every test that executes
+> later. That is global state leaking across the suite: each module passed in
+> isolation while three failed in the full run.*
+
+Correct diagnosis, correct fix, correct explanation — **scoped to the directory
+where it was noticed.** The eleven modules causing it were in a different
+directory and went on causing it. Someone understood this defect completely and
+fixed their own copy of it.
+
+> A fix applied where a defect was *observed* rather than where it is *caused*
+> leaves the cause in place and removes the evidence. The next person to hit it
+> sees a different symptom, four directories away, with no trace of the earlier
+> diagnosis.
+
+### Why it survived so long
+
+It could not be seen without a complete run, and a complete run was impossible
+for an unrelated reason — two files in `tests/infer` that each take over ten
+minutes. The suite had been measured per directory instead, and **per-directory
+runs are exactly the configuration in which this defect does not appear**: each
+directory gets a fresh process, so `tests/observe`'s dtype never reaches
+`tests/anatomy`.
+
+The workaround for the slowness was hiding the contamination. Both had to be
+fixed before either was visible.
+
+### After
+
+38 failing files → **10**. The other 28 were the measurement.
+
+> The first complete run of a suite that has never completed should be treated as
+> an instrument reading, not a result. Mine reported nearly four times the real
+> number, and the only reason it was caught is that one of the failures was in
+> the directory that sorts first.
