@@ -745,6 +745,35 @@ The pre-registration remains unconsumed. It is not weakened by being unused —
 filing it before the arms existed is what stops the endpoint being chosen after
 the fact, and A1 stays available for whichever run trains the controls.
 
+### What I know about the test suite, and what I do not
+
+After finding six red tests that named §2b's defect and had gone unread, the
+obvious question is *what else is red*. Collection is cheap; execution is not,
+and a full run competes with training badly enough to be deferred. So the
+current state is stated as a boundary rather than a list:
+
+```
+161 test files    foundation 17 · anatomy 15 · intervene 14 · runtime 12
+                  release 12 · dynamics 12 · bench 12 · observe 11
+                  evaluation_audit 11 · sources 10 · infer 9 · schema 8 · …
+```
+
+| | |
+|---|---|
+| **verified green this session** | `release`, `schema`, `runtime`, `anatomy` |
+| **known red** | 17 in `foundation/test_family_state.py`, 6 in `foundation/test_curriculum_admission.py`, 12 xfail-strict in `foundation/test_stage_names_reach_the_trainer.py` |
+| **unknown** | `intervene`, `dynamics`, `bench`, `observe`, `evaluation_audit`, `sources`, `infer`, `transforms`, and the rest of `foundation` |
+
+That last row is the honest one and it is most of the suite. The whole point of
+the unchecked-enumeration class is that *"17 known failures"* was a number I had
+measured and then treated as a total — so the replacement is not a longer list
+of failures, it is an explicit list of **what has not been looked at**.
+
+The complete run is the first thing after publishing, and it is in the
+watchdog's step 2 for that reason. Until then the correct summary of this
+project's test status is *"four directories green, three files red, and eight
+directories unexamined"* — not *"a few known failures"*.
+
 ### Final numbers
 
 **PENDING** — and, per the section above, they will be *002 against generic
