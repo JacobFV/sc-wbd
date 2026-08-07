@@ -763,6 +763,25 @@ posterior_z_sd  [0.948, 0.830, 0.942, 0.881, 0.895, 0.960]
 coverage_mae     0.0619
 ```
 
+**§2b changes how to read this, and the direction is uncomfortable.** These
+numbers were recorded as something to watch. They should now be *expected*
+rather than watched: the posterior is amortized over conditioning derived from
+**simulated** trajectories only, and the individualizer that would fit
+participant-level structure was never constructed. A posterior that recovers
+nothing about individuals, in a run where no individual was ever presented, is
+not a surprising result — it is the arrangement working as configured.
+
+Which means the honest reading cuts both ways. If `posterior_r2` is still near
+zero at 8700, that is **not** evidence the amortized-posterior design fails; the
+design was never given the input it exists to consume. And if it is somehow
+better than zero, that improvement came from simulated conditioning alone and
+says nothing about individualisation either.
+
+This is the clearest case in the run of a measurement that was *pre-registered
+to be informative* and was rendered uninformative by a defect discovered
+afterwards. Recording it is the only thing that keeps it from being read either
+way later.
+
 R² at chance across all six θ dimensions, and simulation-based calibration
 fails on every one. `z_sd` slightly under 1 says mildly overconfident rather
 than wildly. **This is the "characterize a general human brain" capability**, so
