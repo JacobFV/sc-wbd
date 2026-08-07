@@ -877,6 +877,27 @@ class FoundationTrainer:
                     diag.update(rd)
                 except StopIteration:  # pragma: no cover
                     pass
+            # A second measured modality, in its own support.  Gated on the same
+            # admission the EEG term is, and on the loader existing -- a stage
+            # may admit a BOLD source in the config before the corpus is cached,
+            # and that must be a no-op rather than a crash or a silent zero.
+            bold_loader = getattr(self, "bold_loader", None)
+            if bold_loader is not None and admission.admits_measured(self.sources):
+                bold_ids = [
+                    sid
+                    for sid in admission.source_ids
+                    if getattr(self.sources.get(sid), "modality", "") == "bold"
+                    or sid.startswith("ds002336")
+                ]
+                if bold_ids:
+                    try:
+                        bl, bd = self.real_bold_losses(
+                            next(bold_loader), stage, source_id=bold_ids[0]
+                        )
+                        losses.update(bl)
+                        diag.update(bd)
+                    except StopIteration:  # pragma: no cover
+                        pass
             if not losses:
                 raise RuntimeError(f"stage {stage.name} produced no admissible loss; check the source cards")
             mdiag = mixture.step(losses, measure_conflict=(step % 10 == 0))
