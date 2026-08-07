@@ -2333,3 +2333,51 @@ already known to be red.
 the first three, in a report *about* incomplete enumerations — and I found it
 only because `NAME_GATES` existed and disagreed with me. Being the person who
 just wrote down the lesson confers no protection whatsoever.
+
+### Second addendum: decorative *configuration*
+
+The entry above says the fix existed and was not applied. There is a further
+layer, and it is worse.
+
+Every run-2 stage carries an `extra.curriculum` block declaring precisely the
+properties the six gates decide by name — `admits` (which data tiers the stage
+may use), `tier_permissions` (what each tier may update), and the flags
+themselves:
+
+```yaml
+# --- the four behaviours run 1 keyed on the stage NAME -----------
+# Declared, because a stage not called "I_regional" silently loses
+# boundary randomisation and a stage not called "V_individual"
+# silently never builds the Individualizer.
+boundary_randomisation: true   # matches run 1's I_regional
+with_hemo: false
+individualize: false
+```
+
+Someone identified this exact hazard, named it, and answered it in the config
+**before run 2 began**.
+
+`train.py` never reads `stage.extra`. The string does not appear in the file.
+
+> **A configuration block nothing reads is decorative configuration**: it has the
+> shape of configuration, sits where configuration goes, is written with care and
+> justified in comments — and changes nothing. It is the analogue of a decorative
+> guard on the other side of the interface, and worse in one respect: a
+> decorative guard at least *runs*.
+
+The failure mode is specific and worth naming, because it is invisible from
+either side alone. From the config, every behaviour is declared and correct.
+From the trainer, every behaviour is decided and consistent. Only reading them
+*against each other* shows that the two halves never meet — and nothing in
+either file is wrong on its own terms.
+
+**The test that would catch it** is not a test of behaviour. It is: *does any
+code path read this key?* A config schema that permits arbitrary `extra` blocks
+cannot answer that, which is the price of the escape hatch. The cheap version is
+a test asserting that every key under `extra.curriculum` appears somewhere in
+the package's source; the correct version is to stop putting load-bearing
+declarations in a free-form dictionary.
+
+This also resolves what the fix is. Not "add the run-2 names to the tuples", not
+"design a declaration format" — **the declaration exists and is correct.** The
+patch's entire job is to make the trainer read the file it was already handed.

@@ -161,6 +161,46 @@ FAILED test_stage_sources_excludes_unadmitted_sources
 FAILED test_sim_losses_takes_an_admission
 FAILED test_anatomical_prior_is_not_gated_on_the_sim_batch</code></pre>
 
+<h2>And the config had already said so</h2>
+
+<p>There is one more layer, and it is the one that changes the diagnosis.</p>
+
+<p>Every stage in the run-2 config carries a block declaring exactly the
+properties those six gates decide by name — which data tiers the stage may use,
+what each tier may update, and the flags themselves. Including this comment,
+written before the run:</p>
+
+<pre><code># --- the four behaviours run 1 keyed on the stage NAME -----------
+# Declared, because a stage not called "I_regional" silently loses
+# boundary randomisation and a stage not called "V_individual"
+# silently never builds the Individualizer.
+boundary_randomisation: true   # matches run 1's I_regional
+with_hemo: false
+individualize: false</code></pre>
+
+<p>Somebody identified this exact hazard, named it, and answered it — in the
+config, in advance.</p>
+
+<p>The trainer never reads that block. The key does not appear anywhere in the
+file.</p>
+
+<blockquote>
+<p>A configuration block nothing reads is <strong>decorative
+configuration</strong>: it has the shape of configuration, sits where
+configuration goes, is written with care and justified in comments — and changes
+nothing. It is a decorative guard on the other side of the interface, and worse
+in one respect: a decorative guard at least <em>runs</em>.</p>
+</blockquote>
+
+<p>What makes it invisible is that neither half is wrong on its own terms. From
+the config, every behaviour is declared and correct. From the trainer, every
+behaviour is decided and consistent. Only reading them <em>against each
+other</em> shows the two halves never meet.</p>
+
+<p>It also settles what the fix is. Not "add the new names to the tuples", not
+"design a declaration format" — the declaration exists and is already correct.
+The patch's entire job is to make the trainer read the file it was handed.</p>
+
 <h2>Which makes the lesson a different one</h2>
 
 <p>Every other entry in our defect register is about an instrument that could
