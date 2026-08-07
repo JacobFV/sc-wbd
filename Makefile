@@ -197,10 +197,11 @@ test-slow: ## Run the tests `make test` deselects (SLOW: hours, not minutes)
 	@# 50-minute cap after 17 of 56 tests. tests/infer/test_recovery.py and
 	@# test_synthetic_slice.py each exceed ten minutes on an idle machine.
 	@# SCWBD_TEST_REPLICATES (64 by default) is tunable without editing a test.
-	@# It is NOT the dominant cost, which this comment previously claimed: a
-	@# diagnostic run at REPLICATES=8 had produced no output after six minutes,
-	@# so the time is in the module fixture's design build (n_delay_taps=22,
-	@# hrf_stages=6, n_epochs=10 at float64), not in the replicate loop.
+	@# Whether it is the DOMINANT cost is unknown. This comment has claimed both
+	@# answers and neither was measured on an idle machine: the diagnostic that
+	@# suggested the design build (n_delay_taps=22, hrf_stages=6, n_epochs=10 at
+	@# float64) dominates was run beside another pytest process. Measure before
+	@# repeating either.
 	@# Lowering replicates also changes what the tests can detect, so do it
 	@# deliberately and say so -- never to make a run finish.
 	@echo "Running the slow set. Expect hours. reports/RUN2.md §5b records the state."

@@ -1726,12 +1726,24 @@ third time in this section a timing or a failure turned out to be a property of
 my machine rather than of the code, which is why it is stated rather than
 counted.
 
-Where the time goes is **not** where I first said it was. I wrote that
-`test_recovery`'s cost is its 64-replicate `recover()` loop and that
-`SCWBD_TEST_REPLICATES` tunes it. A diagnostic run at `REPLICATES=8` produced no
-output at all after six minutes, so the time is in the module fixture's *design
-build* — `n_delay_taps=22`, `hrf_stages=6`, `n_epochs=10`, at `float64` — and the
-replicate count is not the lever.
+Where the time goes is **not established**, and the two things I have said about
+it are both unsafe.
+
+First I wrote that `test_recovery`'s cost is its 64-replicate `recover()` loop
+and that `SCWBD_TEST_REPLICATES` tunes it — asserted, never tested. Then a
+diagnostic at `REPLICATES=8` produced no output after six minutes and I wrote the
+opposite: that the cost is the module fixture's design build (`n_delay_taps=22`,
+`hrf_stages=6`, `n_epochs=10`, `float64`).
+
+**That second claim is also unsafe.** The diagnostic was running while the sweep's
+`test_synthetic_slice.py` was still going — two `pytest` processes on one
+machine. Six minutes of silence under contention establishes nothing, and this is
+the third time in this section a measurement taken beside my own competing job
+got written down as a property of the code.
+
+So the honest state: the replicate lever is untested, the design-build
+explanation is untested, and neither should be repeated as fact until one is
+measured on an idle machine.
 
 Reducing either is deliberately **not** done here: it changes what the tests can
 detect, and doing that in the same commit that reports the suite as complete is
