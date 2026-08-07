@@ -105,6 +105,21 @@ paper-supplement: ## Build the separate implementation supplement PDF
 health: ## Report on the running training job; fails loud if it cannot tell
 	@$(ROOT)/scripts/health.sh
 
+# ------------------------------------------------------------------ cloudflare
+
+# GitHub Pages deploys sat `pending` with no runners allocated for 45+ minutes
+# across two cancel-and-redispatch attempts, on a workflow that had succeeded
+# four times the same day, with every diagnostic available checked and none
+# explaining it. Cloudflare Pages is a second publishing path that does not
+# depend on that queue: it uploads the built directory directly.
+CF_PROJECT ?= sc-wbd
+
+.PHONY: deploy-cf
+deploy-cf: ## Publish docs/ to Cloudflare Pages (https://sc-wbd.pages.dev)
+	@test -d $(ROOT)/docs || { echo "no docs/ -- run 'make site' and rsync first"; exit 1; }
+	npx wrangler pages deploy $(ROOT)/docs --project-name=$(CF_PROJECT) \
+	  --branch master --commit-dirty=true
+
 # ---------------------------------------------------------------------- site
 
 .PHONY: site
