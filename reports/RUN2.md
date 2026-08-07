@@ -1673,6 +1673,41 @@ Exhaustive over the **selected** set: every test under `tests/` was collected,
 those 56, 17 have since been run; **39 remain unmeasured**, and that is the
 remainder this report still owes.
 
+### `test_recovery.py` exceeds ninety minutes, and my instrument lied about it
+
+Run alone on an idle machine with a 90-minute cap:
+
+```
+test_recovery.py   killed at 5400 s, mid-progress-line, no summary written
+                   partial output: .F...F   (6 tests reached, 2 failing)
+```
+
+So the answer to the outstanding question is: **it does not finish in 90 minutes
+either.** The 39 tests deselected as `slow` remain unmeasured, and two failures
+inside `test_recovery.py` are now visible but unnamed — pytest was killed before
+it could print the `FAILED` lines that `-rEf` would have given.
+
+**The recorded `exit=0` is my own capture bug and is worth stating.** The
+launcher wrote:
+
+```bash
+echo "### $(basename $f) exit=$? secs=..." >> "$O"
+```
+
+`$(basename $f)` is expanded *before* `exit=$?` in the same string, and
+`basename` succeeds — so `$?` is **basename's** status, not pytest's. Every exit
+code in that file is `0` regardless of what happened. An earlier version of the
+same sweep saved `rc=$?` on its own line and reported `124` correctly; rewriting
+it inline lost that.
+
+The tell was internal contradiction: `exit=0` beside two `F`s, and no newline
+before the `###` marker, which means the process died mid-write. The timing
+(5400 s, exactly the cap) is real; the exit code is an artifact of the
+instrument.
+
+Sixth capture bug of the session, and the same family as the other five: it
+produced a *plausible number* rather than an obvious error.
+
 ### The slow set does not finish either
 
 ```
