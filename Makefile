@@ -220,7 +220,15 @@ restamp-002: ## Correct the 002 checkpoint's model_id to its config designation
 	@# mid-run, and a live process does not re-read its modules -- so the final
 	@# checkpoint still carries it and the artifact must be corrected after the
 	@# fact. Rewrites one string; weights verified bit-identical.
-	env PYTHONPATH=. $(PY) scripts/restamp_designation.py $(CKPT_002)/last.pt --force
+	@# EVERY .pt in the directory, not just last.pt: publish prefers the named
+	@# final-stage file over last.pt, so restamping only last.pt would ship an
+	@# un-restamped artifact and defeat the whole repair. Exit 3 means "already
+	@# correct", which is success for this target.
+	@set -e; for f in $(CKPT_002)/*.pt; do \
+	  case "$$f" in *.bak|*.tmp|*.restamped.pt) continue;; esac; \
+	  env PYTHONPATH=. $(PY) scripts/restamp_designation.py "$$f" --force || \
+	    test $$? -eq 3 || exit 1; \
+	done
 
 evaluate-002: ## Score the 002 checkpoint on the real-EEG holdout
 	@# No --quick: it refuses the holdout on purpose, because a reduced-cost
