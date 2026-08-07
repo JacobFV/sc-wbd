@@ -692,10 +692,26 @@ def plan_run1_checkpoint(
     warnings: list[str] = []
 
     if not eval_path.is_file():
-        raise PublishBlocked(
+        # Report everything visible WITHOUT the evaluation, not just the
+        # evaluation.  This used to raise immediately, so the plan reported a
+        # single blocker -- which reads as "one thing left" and actually meant
+        # "one thing visible".  Two run-1 filenames hid behind this raise for
+        # the whole of run 2 and would have refused a correct artifact at the
+        # end of a nine-hour job.
+        also: list[str] = []
+        if not ckpt.is_dir():
+            also.append(f"checkpoint directory {ckpt} does not exist or is not a directory")
+        else:
+            for w in (_final_stage_file(ckpt, root / config), "config.yaml", "provenance.json"):
+                if not (ckpt / w).is_file():
+                    also.append(f"{ckpt / w} is missing")
+        msg = (
             f"{eval_path} not found. The card's every score is read from it; "
             "without it there is no honest card to publish."
         )
+        if also:
+            msg += "\n    also blocking, independent of the evaluation: " + "; ".join(also)
+        raise PublishBlocked(msg)
     ev = json.loads(eval_path.read_text())
 
     if not ckpt.is_dir():
