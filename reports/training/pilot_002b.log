@@ -1,0 +1,39 @@
+[mem] CUDA reserve capped at 72.0 GB (fraction=0.592 of 121.6 GB unified pool)
+{
+  "parameters": {
+    "coupling": 3,
+    "msg_proj": 36,
+    "msg_readin": 1872,
+    "context": 17792,
+    "family_local": 1814447,
+    "family_residual": 365639,
+    "family_readout": 26946,
+    "assimilate": 234587,
+    "observation": 2073,
+    "eeg": 27481,
+    "bold": 3312,
+    "behaviour": 22342,
+    "TOTAL": 2516530
+  },
+  "posterior": 1695232
+}
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=44/11/54 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 290673 windows, train/val/test = 117639/29274/143760
+resumed from checkpoints/scwbd-001-pilot-families/last.pt at step 500; completed stages: []
+[noise-floor init] log_noise +1.9557 -> +1.8727  (variance 18.1065 -> 18.9758, realised 24.0141)
+
+=== Stage T1_measured_founding: 2966 steps, lr=0.000346 ===
+[npe] REJ#0 all=False kept=14/64 per=[8039.523, 231896.953, 26472.826, 16656.854, 93610.633, 84960.289] y|max=19.34 c|max=13.18 u|max=3.962 u_fin=True th|max=6.144
+stage=T1_measured_founding  step=1  global_step=501  loss=-0.7379  lr=1.392e-05  wall_s=3.3  traj_s_per_s=7.5  gpu_reserved_gb=19.67  sim_forecast_nll=0.4062  npe_loss=3743  npe_rejected=1  npe_seen_max=2.377e+06
+[npe] REJ#1 all=False kept=25/64 per=[5402.892, 7072.975, 937992.562, 526859.562, 97142.258, 39443.777] y|max=15.27 c|max=17.93 u|max=3.525 u_fin=True th|max=6.185
+[npe] REJ#2 all=False kept=20/64 per=[1020.827, 969408.688, 161142.219, 10409.829, 13971.606, 13637.556] y|max=11.35 c|max=14.92 u|max=4.356 u_fin=True th|max=6.131
+stage=T1_measured_founding  step=20  global_step=520  loss=0.7792  lr=4.618e-05  wall_s=38  traj_s_per_s=12.9  gpu_reserved_gb=36.52  sim_forecast_nll=0.6321  npe_loss=3053  npe_rejected=20  npe_seen_max=7.06e+06
+stage=T1_measured_founding  step=40  global_step=540  loss=0.8462  lr=0.0001306  wall_s=74.1  traj_s_per_s=13.3  gpu_reserved_gb=36.52  sim_forecast_nll=0.6458  npe_loss=5799  npe_rejected=40  npe_seen_max=8.58e+06
+stage=T1_measured_founding  step=60  global_step=560  loss=0.4998  lr=0.0002342  wall_s=110  traj_s_per_s=13.4  gpu_reserved_gb=36.52  sim_forecast_nll=0.5693  npe_loss=4412  npe_rejected=60  npe_seen_max=8.58e+06
+stage=T1_measured_founding  step=80  global_step=580  loss=0.8161  lr=0.0003167  wall_s=146  traj_s_per_s=13.5  gpu_reserved_gb=36.52  sim_forecast_nll=0.6191  npe_loss=4486  npe_rejected=80  npe_seen_max=8.58e+06
+stage=T1_measured_founding  step=100  global_step=600  loss=0.6488  lr=0.000346  wall_s=209.1  traj_s_per_s=11.8  gpu_reserved_gb=36.52  sim_forecast_nll=0.6015  npe_loss=4810  npe_rejected=100  npe_seen_max=8.58e+06
+stage=T1_measured_founding  step=120  global_step=620  loss=1.269  lr=0.000346  wall_s=280.9  traj_s_per_s=10.5  gpu_reserved_gb=36.52  sim_forecast_nll=0.7156  npe_loss=4674  npe_rejected=120  npe_seen_max=1.12e+07
+stage=T1_measured_founding  step=140  global_step=640  loss=1.843  lr=0.0003458  wall_s=342  traj_s_per_s=10.1  gpu_reserved_gb=36.52  sim_forecast_nll=0.853  npe_loss=4686  npe_rejected=140  npe_seen_max=1.12e+07
+stage=T1_measured_founding  step=160  global_step=660  loss=1.159  lr=0.0003456  wall_s=387.2  traj_s_per_s=10.2  gpu_reserved_gb=36.73  sim_forecast_nll=0.7223  npe_loss=4713  npe_rejected=160  npe_seen_max=1.12e+07

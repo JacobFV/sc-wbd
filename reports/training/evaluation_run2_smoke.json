@@ -1,0 +1,2293 @@
+{
+  "model_id": "scwbd-002-pilot",
+  "git_sha": "86f7fc141e018310e7eb2e708a46923675fb171a-dirty",
+  "evaluated_utc": "2026-08-07T00:17:00Z",
+  "config": {
+    "model": {
+      "n_regions": 414,
+      "local_core": "learned",
+      "family_state": true,
+      "family_cores": {},
+      "family_allow_derived_partition": false,
+      "d_key": 16,
+      "d_value": 16,
+      "d_grid": 12,
+      "d_context": 4,
+      "d_prediction": 8,
+      "state_dependent_variance": true,
+      "scale_prolongations": [],
+      "hidden": 288,
+      "n_local_layers": 3,
+      "region_embed": 96,
+      "context_dim": 128,
+      "message_dim": 12,
+      "n_delay_bins": 8,
+      "n_spectral_modes": 8,
+      "n_adaptation": 2,
+      "n_uncertainty": 4,
+      "dt_model": 0.008,
+      "hemo_ratio": 25,
+      "residual_rho_max": 0.35,
+      "residual_init_scale": 0.05,
+      "encoder_channels": 96,
+      "encoder_layers": 3,
+      "dropout": 0.0,
+      "control_graph": "none",
+      "scalar_state_ablation": false,
+      "dense_coupling_ablation": false,
+      "n_eeg_channels": 64,
+      "n_behaviour": 4,
+      "use_bf16": true,
+      "compile": true
+    },
+    "posterior": {
+      "summary_channels": 128,
+      "summary_layers": 4,
+      "flow_layers": 8,
+      "flow_hidden": 320,
+      "n_bands": 7,
+      "n_pcs": 16,
+      "dropout": 0.0,
+      "nuisance_dim": 0
+    },
+    "data": {
+      "sim_index_fast": "/data/scwbd/sim_corpus_414/index_fast.json",
+      "sim_index_slow": "/data/scwbd/sim_corpus_414/index_slow.json",
+      "real_eeg_root": "/data/scwbd/eegmmidb/1.0.0",
+      "real_sleep_root": "/data/scwbd/sleep-edfx/1.0.0",
+      "window": 48,
+      "context": 24,
+      "fs_hz": 125.0,
+      "batch": 64,
+      "num_workers": 4,
+      "pin_memory": false,
+      "val_fraction": 0.05,
+      "real_test_fraction": 0.5,
+      "seed": 20260805
+    },
+    "train": {
+      "run_name": "scwbd-002-pilot",
+      "out_dir": "checkpoints/scwbd-002-pilot",
+      "report_dir": "reports/training",
+      "seed": 20260805,
+      "device": "cuda",
+      "anatomy_force_fallback": false,
+      "amp_dtype": "bfloat16",
+      "cuda_reserve_gb": 72.0,
+      "max_wall_seconds": 43200,
+      "resume": true,
+      "stages": [
+        {
+          "name": "T1_measured_founding",
+          "steps": 2966,
+          "lr": 0.000346,
+          "weight_decay": 0.01,
+          "warmup": 100,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 250,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.0,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.05,
+          "extra": {
+            "curriculum": {
+              "scope": "I_regional + II_interface",
+              "admits": [
+                1
+              ],
+              "tier_permissions": {
+                "1": [
+                  "local.*",
+                  "residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "readout.*",
+                  "eeg.*",
+                  "log_dt_scale"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "port"
+              ],
+              "boundary_randomisation": true,
+              "with_hemo": false,
+              "individualize": false,
+              "rationale": "2,966 = ceil(189,765 measured train windows / batch 64): one pass over every measured window there is. Regional operator, long-range operator, assimilation encoder and EEG head are all learned here from sensor-space likelihood, before any lower-integrity source exists.",
+              "absence": [
+                {
+                  "tier": 1,
+                  "detail": "STRUCTURAL, and it undercuts this stage's own premise. The measured path (train.real_losses) obtains theta by calling self.posterior.sample(ctx_eeg), i.e. the amortised posterior -- which is simulator-founded and, in this stage, at its random initialisation because lambda_posterior is 0.0 and no simulated source has been admitted. So \"measured data founds the representation\" is true of the operator and the EEG head, and NOT of the theta the rollout is conditioned on: for 2,966 steps that theta is noise from an untrained flow.",
+                  "consequence": "Stage 1 founds the operator under a random theta prior. This is a property of the ordering, not a bug introduced here, and it did not arise in 001-beta because Stage III was the first measured stage and the posterior had already trained for 1,600 steps. It must be stated in any claim that measured evidence founded this model, and it is the strongest argument for adding a fourth arm that orders the posterior separately."
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "T2_boundary_calibration",
+          "steps": 500,
+          "lr": 0.000231,
+          "weight_decay": 0.01,
+          "warmup": 100,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 250,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.0,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "II_interface",
+              "admits": [
+                1,
+                2
+              ],
+              "tier_permissions": {
+                "1": [
+                  "local.*",
+                  "residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "readout.*",
+                  "eeg.*",
+                  "log_dt_scale"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "calibration"
+              ],
+              "boundary_randomisation": false,
+              "with_hemo": false,
+              "individualize": false,
+              "rationale": "500 steps x batch 64 = 32,000 windows against 4 trainable nuisance tensors over 64 channels. Sized by what is estimated, not by corpus size. Tier 1 keeps training throughout, so the calibration is fitted against a live likelihood rather than to a frozen model.",
+              "absence": [
+                {
+                  "tier": 2,
+                  "role": "boundary_target",
+                  "detail": "No boundary-target source is wired into the foundation trainer. Real BEM surfaces, source spaces and forward solutions ARE on disk (mne-sample subject `sample` 3-layer BEM + sol, mne-somato sub-01, mne-spm-face `spm`, an fsaverage template head under ~/mne_data) and 31 digitised electrode files exist in ds004024. They are reachable only from tests/observe: the training EEG head calls scwbd.foundation.heads.build_lead_field, which looks for names scwbd/observe/__init__.py does not export, and falls back to provenance `analytic_sphere_fallback` -- a homogeneous single sphere with real standard_1005 electrode geometry and nothing else.",
+                  "consequence": "Tier 2 is represented in run 2 by the montage calibration factor alone. No lead-field or head-model claim is available. NOTE this interacts with the anatomy change: the lead field is still built against a sphere, so the 414 real parcel centroids are projected through a head model that knows nothing about them."
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "T3_population_prior",
+          "steps": 1000,
+          "lr": 0.000173,
+          "weight_decay": 0.01,
+          "warmup": 100,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 250,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.05,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "III_sliced",
+              "admits": [
+                1,
+                2,
+                3
+              ],
+              "tier_permissions": {
+                "1": [
+                  "local.*",
+                  "residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "readout.*",
+                  "eeg.*",
+                  "log_dt_scale"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*"
+                ],
+                "3": [
+                  "coupling.gain_*",
+                  "coupling.global_scale"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "calibration",
+                "prior"
+              ],
+              "boundary_randomisation": false,
+              "with_hemo": false,
+              "individualize": false,
+              "rationale": "1,000 steps. The anatomical prior contributes a topology regulariser, not data: its n_eff is 1 (one group-average object -- 207 HCP subjects were averaged away, and averaging is not sampling), so its saturating reliability term is 1/(1+24) = 0.04 and it cannot dominate however long it runs. Length is set by how long the coupling gains need to settle within the prior. IN RUN 2 THIS STAGE HAS REAL CONTENT for the first time: verified by calling load_anatomy() on branch wt/turing at f816f2a -- is_biological True, 414 parcels, Schaefer2018 labels, ENIGMA/HCP connectome, density 0.0718, E/I 0.372-3.038 over 396 distinct values, timescale 0.0227-0.2833 s. On master today the same call still returns the synthetic ellipsoid.",
+              "absence": [
+                {
+                  "tier": 3,
+                  "detail": "Every registered real population-prior DATASET remains unavailable: ukbiobank-brain-imaging (MTA + fees), hcp-young-adult (ConnectomeDB terms), adni (DSPC application). None was downloaded. Tier 3 is represented by the derived anatomy prior only.",
+                  "consequence": "No population-level anatomical generalisation claim is available. The prior is one group-average object, not a sample."
+                },
+                {
+                  "tier": 3,
+                  "detail": "The tier-3 loss term `anatomical_prior` is composed inside `FoundationTrainer.sim_losses` (train.py:543), i.e. it is only emitted on a step where the SIMULATED loader ran. In this stage tier 4 is not admitted, so on the unpatched trainer this stage would emit no tier-3 loss at all -- the stage that exists to admit the population prior would admit it in name only. The patch in configs/run2/patches/ moves the term out of sim_losses for exactly this reason.",
+                  "consequence": "Without that patch hunk, T3 trains tiers 1 and 2 and silently nothing else."
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "T4_simulator_extension",
+          "steps": 3334,
+          "lr": 0.000115,
+          "weight_decay": 0.01,
+          "warmup": 100,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 250,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.05,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 1.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "III_sliced + IV_assembly",
+              "admits": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "tier_permissions": {
+                "1": [
+                  "local.*",
+                  "residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "readout.*",
+                  "eeg.*",
+                  "log_dt_scale"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*"
+                ],
+                "3": [
+                  "coupling.gain_*",
+                  "coupling.global_scale"
+                ],
+                "4": [
+                  "local.*",
+                  "residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "readout.*",
+                  "log_dt_scale",
+                  "posterior.*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "calibration",
+                "prior",
+                "posterior",
+                "mechanism",
+                "scale"
+              ],
+              "boundary_randomisation": false,
+              "with_hemo": false,
+              "individualize": false,
+              "rationale": "3,334 steps -- the largest block, deliberately last. At batch 64 that is 213,376 simulated windows, 5.93 passes over the ~35,994 train trajectories. This is where simulation earns its place: rare regimes, controlled interventions, whole-brain coupling and missingness that 46.5 h of resting and imagery EEG from 109 people does not contain. Tier 1 trains throughout, so measured evidence is a live constraint rather than a memory. Tier 4's mask is contained in tier 1's except posterior.*, which carries a named founding exemption in configs/curriculum/tiers.yaml.",
+              "absence": [
+                {
+                  "tier": 4,
+                  "detail": "bold.* is frozen for every source in this run. Three independent reasons, none a preference: (a) the only measured modality is EEG, whose expected Fisher information for beta_hrf, c_under and gain_bold is exactly 0.0 in all three identifiability regimes; (b) the simulated slow/BOLD tier was never generated; (c) the 663 MB of real BOLD on disk (ds000117, 2 subjects, 18 runs) has no loader.",
+                  "consequence": "bold.* stays at its compiled initialisation. No haemodynamic, fMRI-forecast or cross-modal-fusion claim is available."
+                },
+                {
+                  "tier": 4,
+                  "detail": "REGENERATED FOR RUN 2, and worse than the published figure. reports/training/corpus_composition.md attributes the ~40 % regional-timescale gap to DynamicsBackend.theta_from_prior. That function has NO caller in scwbd/ outside tests: the corpus generator is scwbd.foundation.simulate.simulate_batch, which calls _regional_theta instead. Measured through the path that actually generates shards, by perturbing each prior and checking which backend parameters move, the anatomy TIMESCALE prior reaches only `linear_gaussian` -- 5.41 % of the corpus by trajectory count. 94.59 % receives none. (The E/I prior does better than published: it reaches all five backends, 100 %.) Rebuilding at 414 does not repair this; it is a separate defect in _regional_theta, and on the real prior it gets worse, with linear_gaussian's `tau` clamp rising 2.46 % -> 42.68 %.",
+                  "consequence": "Run 2 inherits the timescale gap essentially in full and must not be described as having fixed it. No claim about learned regional timescale heterogeneity is supportable from the simulated corpus in either run."
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "T5_distillation",
+          "steps": 0,
+          "lr": 0.0001,
+          "weight_decay": 0.01,
+          "warmup": 100,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 250,
+          "enabled": false,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.05,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 1.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "III_sliced",
+              "admits": [],
+              "tier_permissions": {},
+              "objective": [],
+              "boundary_randomisation": false,
+              "with_hemo": false,
+              "individualize": false,
+              "rationale": "Present with zero steps rather than omitted. A curriculum that has no tier-5 stage and one whose tier-5 stage was skipped for cause read identically afterwards; this file makes them different.",
+              "absence": [
+                {
+                  "tier": 5,
+                  "detail": "TRIBE v2 is not on disk anywhere in this environment, and no teacher-vs-measured discrepancy measurement exists in reports/ as of 2026-08-06. body.tex 6.3 requires a preregistered branch with no-teacher, generic-feature, time-shuffled and report-mismatched controls, retained only if it beats all four.",
+                  "consequence": "No distillation was applied and none may be claimed."
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "T1_individualisation",
+          "steps": 900,
+          "lr": 5.77e-05,
+          "weight_decay": 0.01,
+          "warmup": 100,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 150,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.05,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.3,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "V_individual",
+              "admits": [
+                1
+              ],
+              "tier_permissions": {
+                "1": [
+                  "individualizer.*",
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "posterior"
+              ],
+              "boundary_randomisation": false,
+              "with_hemo": false,
+              "individualize": true,
+              "rationale": "900 steps, unchanged from 001-beta so the individualisation block is itself matched. Tier 1 alone: an individual's parameters are the one thing a simulator, a population prior and a teacher may never touch. The curriculum both opens and closes on measured data.",
+              "absence": [
+                {
+                  "tier": 1,
+                  "detail": "eegmmidb has ONE session per participant, so it supports no future-session holdout and the G5 individualisation claim is not evaluable on it. sleep-edfx does have a night 1 -> night 2 holdout and is disabled pending a 2-channel montage adapter.",
+                  "consequence": "This stage fits individual parameters that cannot be tested on a held-out session of the same person from this corpus."
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "arm": {
+      "role": "control",
+      "controls_for": "11.4:structured_regional_state",
+      "justification": "Run 2 changes anatomy, corpus and curriculum ordering but keeps one learned operator for all regions, so it is a second instance of the equal-capacity generic control rather than the model. The single fine/coarse pair the compiled poset carries is declared and measured but never applied in the forward pass (N-13), and does not validate at its boundary, so it does not make run 2 the treatment arm. Stated here so no run-2 measurement is read as a measurement of the thesis.\n"
+    },
+    "mixture_cards": "configs/curriculum/source_cards",
+    "notes": "RUN 2 PILOT, treatment arm. De-risking run at 54 test / 44 train, single fold. NOT the A1 endpoint -- the endpoint is 4-fold participant CV and starts when this finishes. No A1 verdict may cite this run. Paired with configs/run2/pilot-pooled-param-matched.yaml, which is capacity-matched to this file at +0.27% (1,863,600 vs 1,858,597, measured against the real 414-parcel prior)."
+  },
+  "n_parameters": {
+    "coupling": 3,
+    "msg_proj": 36,
+    "msg_readin": 1872,
+    "context": 17792,
+    "family_local": 1814447,
+    "family_residual": 365639,
+    "family_readout": 26946,
+    "assimilate": 234587,
+    "observation": 2073,
+    "eeg": 27481,
+    "bold": 3312,
+    "behaviour": 22342,
+    "TOTAL": 2516530
+  },
+  "eval_seed": 0,
+  "anatomy": {
+    "n_regions": 414,
+    "n_cortex": 400,
+    "n_subcortex": 14,
+    "n_cerebellum": 0,
+    "density": 0.0718,
+    "mean_tract_length_mm": 38.76,
+    "edges_by_class": {
+      "hard": 1618,
+      "soft": 7386,
+      "proposed": 3270
+    },
+    "frame": "fsLR_32k_surface_RAS [conte69_32k]",
+    "n_gradient_covered": 400,
+    "gradient_uncovered_are_zero": true,
+    "provenance": "{'atlas': 'Schaefer400x7', 'space': 'fsLR', 'density': '32k', 'length': 'euclidean', 'sources': {'schaefer2018': {'name': 'Schaefer 2018 local-global parcellation', 'url': 'https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal', 'license': 'MIT (CBIG); underlying GSP data under its own terms', 'citation': 'Schaefer A. et al. (2018) Cereb Cortex 28:3095-3114.'}, 'enigma_hcp_sc': {'name': 'ENIGMA/HCP group-average structural connectome', 'url': 'https://enigma-toolbox.readthedocs.io/en/latest/pages/05.HCP/index.html', 'license': 'BSD-3-Clause code; HCP open-access data-use terms for the underlying scans', 'citation': 'Lariviere S. et al. (2021) Nat Methods 18:698-700; Van Essen D.C. et al. (2013) NeuroImage 80:62-79 (HCP).'}, 'neuromaps': {'name': 'neuromaps annotation collection', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'BSD-3-Clause (toolbox); per-annotation source terms', 'citation': 'Markello R.D. et al. (2022) Nat Methods 19:1472-1479.'}, 'tian2020': {'name': 'Tian subcortical parcellation S1-S4', 'url': 'https://github.com/yetianmed/subcortex', 'license': 'Melbourne Subcortex Atlas License: permission to use the atlas without restriction, including the rights to use, copy, modify, merge, publish and distribute, subject to the single condition that any publication using the atlas cites Tian Y. et al. (2020) Nat Neurosci 23:1421-1432. Attribution required.', 'citation': 'Tian Y. et al. (2020) Nat Neurosci 23:1421-1432.'}, 'hansen_receptors': {'name': 'Hansen neurotransmitter receptor/transporter PET atlas', 'url': 'https://github.com/netneurolab/hansen_receptors', 'license': 'CC-BY-NC-SA-4.0', 'citation': 'Hansen J.Y. et al. (2022) Nat Neurosci 25:1569-1581, plus the primary PET study for each tracer (see Table S3 of that paper).'}, 'hcps1200_maps': {'name': 'HCP S1200 group myelin (T1w/T2w), thickness and MEG maps', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'HCP open-access data-use terms', 'citation': 'Glasser M.F., Van Essen D.C. (2011) J Neurosci 31:11597-11616; Shafiei G. et al. (2022) PLoS Biol 20:e3001735 (MEG).'}, 'hill2010': {'name': 'Evolutionary and developmental cortical expansion', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Hill J. et al. (2010) PNAS 107:13135-13140.'}, 'margulies2016': {'name': 'Principal functional connectivity gradient', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Margulies D.S. et al. (2016) PNAS 113:12574-12579.'}, 'raichle_metabolism': {'name': 'Cerebral blood flow / volume / oxygen and glucose metabolism', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Vaishnavi S.N. et al. (2010) PNAS 107:17757-17762.'}, 'sydnor2021': {'name': 'Sensorimotor-association cortical axis', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Sydnor V.J. et al. (2021) Neuron 109:2820-2846.'}}, 'subcortical_atlas': {'name': 'Aseg14T', 'licence_key': 'tian2020', 'licence': 'Melbourne Subcortex Atlas License: permission to use the atlas without restriction, including the rights to use, copy, modify, merge, publish and distribute, subject to the single condition that any publication using the atlas cites Tian Y. et al. (2020) Nat Neurosci 23:1421-1432. Attribution required.', 'is_default': True, 'description': \"Melbourne Subcortex Atlas S1, merged by structure identity to the connectome's 14 aseg structures (anterior + posterior thalamus recombined). Licence grants use without restriction subject to citation; no non-commercial and no share-alike term.\"}, 'sources_note': \"This is what the assembled object CARRIES, which is a superset of what any one prior CONSUMES. load_maps builds every map present on disk, so hansen_receptors appears here whenever the PET volumes are installed -- including when no prior reads them. For the E/I prior specifically, read 'ei_ordering'.\", 'ei_ordering': {'ordering': 'hcp_hierarchy', 'is_default': True, 'description': 'Mean of three z-scored HCP S1200 group maps, oriented so the composite increases toward association cortex. Selected by the pre-committed criterion in reports/ei_ordering_substitution.md S1.', 'combine': 'zscore', 'maps_used': [{'map': 'myelin_t1t2', 'orientation': -1, 'source_key': 'hcps1200_maps', 'licence': 'HCP open-access data-use terms', 'n_covered': 400}, {'map': 'cortical_thickness', 'orientation': 1, 'source_key': 'hcps1200_maps', 'licence': 'HCP open-access data-use terms', 'n_covered': 400}, {'map': 'intrinsic_timescale_meg', 'orientation': 1, 'source_key': 'hcps1200_maps', 'licence': 'HCP open-access data-use terms', 'n_covered': 400}], 'licence_keys': ['hcps1200_maps'], 'declared_licence_keys': ['hcps1200_maps'], 'missing': {}, 'degenerate': None, 'degraded': False, 'available': True, 'n_covered': 400, 'n_parcels': 414, 'selection': 'reports/ei_ordering_substitution.md -- criterion committed at 97086e7 (branch master), measurement and implementation at cf37755. Two immutable SHAs, in that order; that ordering is the evidence that the criterion was not chosen to fit.'}}",
+    "is_biological": true,
+    "source_note": "adapted from scwbd.anatomy.BrainPrior (agent C)",
+    "families": {
+      "atlas": "Schaefer400x7",
+      "n_regions": 414,
+      "n_families": 9,
+      "provenance": "scwbd.anatomy.families.derive_families",
+      "is_biological": true,
+      "families": [
+        {
+          "family_id": "cortex_unimodal",
+          "division": "cortex",
+          "n_parcels": 138,
+          "evidence_tier": "measured_separation",
+          "training_status": "has_regional_data",
+          "membership_source": "schaefer2018",
+          "separating_evidence": [
+            "receptor_panel",
+            "myelin_thickness"
+          ],
+          "fields_established": [
+            "cytoarchitecture",
+            "receptor_profile",
+            "intrinsic_timescale_s",
+            "ei_prior"
+          ],
+          "nc_fields": [
+            "receptor_profile"
+          ]
+        },
+        {
+          "family_id": "cortex_association",
+          "division": "cortex",
+          "n_parcels": 262,
+          "evidence_tier": "measured_separation",
+          "training_status": "has_regional_data",
+          "membership_source": "schaefer2018",
+          "separating_evidence": [
+            "receptor_panel",
+            "myelin_thickness"
+          ],
+          "fields_established": [
+            "cytoarchitecture",
+            "receptor_profile",
+            "intrinsic_timescale_s",
+            "ei_prior"
+          ],
+          "nc_fields": [
+            "receptor_profile"
+          ]
+        },
+        {
+          "family_id": "subcortex_accumb",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_amyg",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_caud",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_hippo",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_pal",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_put",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_thal",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        }
+      ],
+      "declared_absent": [
+        "auditory",
+        "brainstem_hypothalamic_autonomic",
+        "cerebellum"
+      ],
+      "n_untrained": 7
+    },
+    "orientation": {
+      "n_covered": 400,
+      "coherence_median": 0.8511,
+      "coherence_min": 0.2751
+    }
+  },
+  "lead_field": {
+    "n_channels": 64,
+    "n_regions": 414,
+    "units": "V",
+    "frame": "fsLR_32k_surface_RAS [conte69_32k]",
+    "provenance": "analytic_sphere_fallback",
+    "physical_scale_volts_per_unit": 47.7721514208095,
+    "individual_head_model": false,
+    "condition_number": 737.3660888671875,
+    "note": "ANALYTIC SINGLE-SPHERE LEAD FIELD, NOT A HEAD MODEL. Radial dipoles in a homogeneous conducting sphere with electrodes at real 10-10 montage positions. Supports no source-localisation or individual-anatomy claim."
+  },
+  "sensor_to_parcel": {
+    "kind": "minimum_norm_pseudoinverse",
+    "effective_rank": 64.0,
+    "mean_resolution_diagonal": 0.6623556017875671,
+    "note": "Assimilation input only. The likelihood is evaluated in sensor space; this projection supports no source-localisation claim."
+  },
+  "posterior_calibration": {
+    "param_names": [
+      "log_G",
+      "log_velocity",
+      "ei_global",
+      "ei_gradient",
+      "log_sigma",
+      "drive"
+    ],
+    "sbc_ranks": [
+      [
+        50,
+        35,
+        28,
+        57,
+        26,
+        26
+      ],
+      [
+        21,
+        35,
+        0,
+        39,
+        63,
+        49
+      ],
+      [
+        44,
+        30,
+        15,
+        12,
+        4,
+        32
+      ],
+      [
+        35,
+        5,
+        57,
+        29,
+        48,
+        28
+      ],
+      [
+        37,
+        25,
+        54,
+        13,
+        56,
+        19
+      ],
+      [
+        38,
+        19,
+        29,
+        50,
+        25,
+        6
+      ],
+      [
+        26,
+        27,
+        45,
+        52,
+        18,
+        27
+      ],
+      [
+        34,
+        11,
+        54,
+        43,
+        4,
+        61
+      ],
+      [
+        12,
+        39,
+        14,
+        36,
+        28,
+        38
+      ],
+      [
+        18,
+        21,
+        15,
+        46,
+        62,
+        17
+      ],
+      [
+        30,
+        48,
+        52,
+        36,
+        43,
+        10
+      ],
+      [
+        49,
+        35,
+        46,
+        17,
+        32,
+        13
+      ],
+      [
+        46,
+        25,
+        25,
+        39,
+        25,
+        34
+      ],
+      [
+        28,
+        12,
+        59,
+        24,
+        32,
+        13
+      ],
+      [
+        35,
+        34,
+        25,
+        29,
+        6,
+        16
+      ],
+      [
+        56,
+        35,
+        10,
+        18,
+        19,
+        44
+      ],
+      [
+        37,
+        34,
+        49,
+        60,
+        1,
+        46
+      ],
+      [
+        17,
+        45,
+        45,
+        11,
+        32,
+        30
+      ],
+      [
+        26,
+        24,
+        44,
+        18,
+        52,
+        58
+      ],
+      [
+        60,
+        26,
+        57,
+        62,
+        33,
+        25
+      ],
+      [
+        32,
+        40,
+        46,
+        39,
+        34,
+        13
+      ],
+      [
+        46,
+        27,
+        31,
+        0,
+        6,
+        44
+      ],
+      [
+        48,
+        54,
+        39,
+        33,
+        2,
+        15
+      ],
+      [
+        57,
+        18,
+        31,
+        13,
+        52,
+        1
+      ],
+      [
+        13,
+        55,
+        39,
+        36,
+        6,
+        50
+      ],
+      [
+        21,
+        50,
+        53,
+        18,
+        21,
+        36
+      ],
+      [
+        0,
+        30,
+        26,
+        3,
+        20,
+        47
+      ],
+      [
+        59,
+        19,
+        43,
+        53,
+        48,
+        47
+      ],
+      [
+        61,
+        19,
+        24,
+        2,
+        35,
+        5
+      ],
+      [
+        36,
+        21,
+        10,
+        34,
+        0,
+        34
+      ],
+      [
+        12,
+        31,
+        56,
+        45,
+        7,
+        14
+      ],
+      [
+        7,
+        30,
+        38,
+        44,
+        28,
+        58
+      ],
+      [
+        7,
+        19,
+        47,
+        36,
+        46,
+        49
+      ],
+      [
+        33,
+        25,
+        54,
+        39,
+        40,
+        39
+      ],
+      [
+        63,
+        14,
+        61,
+        13,
+        26,
+        27
+      ],
+      [
+        4,
+        19,
+        9,
+        23,
+        7,
+        30
+      ],
+      [
+        40,
+        22,
+        13,
+        11,
+        21,
+        30
+      ],
+      [
+        43,
+        44,
+        60,
+        30,
+        60,
+        40
+      ],
+      [
+        31,
+        39,
+        18,
+        28,
+        59,
+        17
+      ],
+      [
+        48,
+        34,
+        51,
+        24,
+        62,
+        6
+      ],
+      [
+        36,
+        14,
+        19,
+        58,
+        14,
+        26
+      ],
+      [
+        29,
+        25,
+        63,
+        13,
+        4,
+        1
+      ],
+      [
+        23,
+        29,
+        5,
+        62,
+        14,
+        54
+      ],
+      [
+        47,
+        25,
+        43,
+        25,
+        4,
+        10
+      ],
+      [
+        32,
+        23,
+        32,
+        33,
+        58,
+        56
+      ],
+      [
+        10,
+        20,
+        21,
+        46,
+        14,
+        24
+      ],
+      [
+        59,
+        19,
+        37,
+        34,
+        27,
+        51
+      ],
+      [
+        38,
+        49,
+        34,
+        28,
+        58,
+        26
+      ],
+      [
+        25,
+        48,
+        21,
+        40,
+        47,
+        23
+      ],
+      [
+        17,
+        43,
+        27,
+        51,
+        20,
+        36
+      ],
+      [
+        62,
+        40,
+        48,
+        43,
+        21,
+        33
+      ],
+      [
+        40,
+        56,
+        44,
+        59,
+        30,
+        37
+      ],
+      [
+        37,
+        58,
+        7,
+        64,
+        18,
+        10
+      ],
+      [
+        32,
+        45,
+        29,
+        25,
+        4,
+        43
+      ],
+      [
+        42,
+        50,
+        13,
+        26,
+        37,
+        18
+      ],
+      [
+        25,
+        49,
+        10,
+        12,
+        14,
+        46
+      ],
+      [
+        34,
+        26,
+        61,
+        26,
+        8,
+        59
+      ],
+      [
+        14,
+        13,
+        15,
+        35,
+        34,
+        23
+      ],
+      [
+        45,
+        12,
+        43,
+        53,
+        31,
+        19
+      ],
+      [
+        20,
+        16,
+        52,
+        56,
+        52,
+        27
+      ],
+      [
+        40,
+        34,
+        37,
+        43,
+        58,
+        25
+      ],
+      [
+        42,
+        25,
+        7,
+        17,
+        31,
+        2
+      ],
+      [
+        46,
+        23,
+        34,
+        44,
+        12,
+        38
+      ],
+      [
+        24,
+        17,
+        36,
+        59,
+        38,
+        31
+      ],
+      [
+        53,
+        24,
+        52,
+        51,
+        26,
+        35
+      ],
+      [
+        31,
+        17,
+        43,
+        45,
+        44,
+        38
+      ],
+      [
+        49,
+        24,
+        42,
+        46,
+        2,
+        50
+      ],
+      [
+        41,
+        2,
+        56,
+        22,
+        42,
+        45
+      ],
+      [
+        13,
+        3,
+        32,
+        21,
+        52,
+        43
+      ],
+      [
+        20,
+        53,
+        32,
+        32,
+        50,
+        0
+      ],
+      [
+        32,
+        40,
+        20,
+        52,
+        23,
+        0
+      ],
+      [
+        24,
+        26,
+        40,
+        17,
+        2,
+        18
+      ],
+      [
+        34,
+        8,
+        64,
+        2,
+        38,
+        36
+      ],
+      [
+        7,
+        3,
+        2,
+        24,
+        25,
+        7
+      ],
+      [
+        34,
+        3,
+        24,
+        46,
+        16,
+        1
+      ],
+      [
+        9,
+        12,
+        24,
+        54,
+        43,
+        28
+      ],
+      [
+        59,
+        10,
+        36,
+        37,
+        49,
+        0
+      ],
+      [
+        28,
+        58,
+        57,
+        24,
+        52,
+        7
+      ],
+      [
+        4,
+        55,
+        46,
+        20,
+        15,
+        23
+      ],
+      [
+        41,
+        59,
+        23,
+        5,
+        23,
+        42
+      ],
+      [
+        58,
+        62,
+        40,
+        4,
+        46,
+        15
+      ],
+      [
+        25,
+        28,
+        25,
+        44,
+        59,
+        28
+      ],
+      [
+        54,
+        22,
+        47,
+        36,
+        41,
+        54
+      ],
+      [
+        48,
+        18,
+        60,
+        47,
+        25,
+        20
+      ],
+      [
+        41,
+        39,
+        37,
+        40,
+        7,
+        41
+      ],
+      [
+        56,
+        36,
+        18,
+        8,
+        45,
+        0
+      ],
+      [
+        0,
+        32,
+        40,
+        13,
+        58,
+        2
+      ],
+      [
+        5,
+        30,
+        26,
+        54,
+        10,
+        56
+      ],
+      [
+        12,
+        11,
+        38,
+        43,
+        16,
+        34
+      ],
+      [
+        40,
+        13,
+        51,
+        54,
+        63,
+        2
+      ],
+      [
+        12,
+        45,
+        18,
+        45,
+        26,
+        2
+      ],
+      [
+        25,
+        35,
+        40,
+        39,
+        27,
+        43
+      ],
+      [
+        60,
+        46,
+        28,
+        14,
+        45,
+        13
+      ],
+      [
+        62,
+        36,
+        33,
+        19,
+        24,
+        13
+      ],
+      [
+        36,
+        39,
+        37,
+        18,
+        41,
+        45
+      ],
+      [
+        64,
+        3,
+        46,
+        40,
+        18,
+        15
+      ],
+      [
+        0,
+        32,
+        24,
+        48,
+        23,
+        50
+      ],
+      [
+        3,
+        28,
+        64,
+        62,
+        51,
+        44
+      ],
+      [
+        42,
+        55,
+        2,
+        23,
+        37,
+        37
+      ],
+      [
+        32,
+        25,
+        56,
+        17,
+        7,
+        42
+      ],
+      [
+        20,
+        23,
+        47,
+        42,
+        29,
+        45
+      ],
+      [
+        34,
+        38,
+        56,
+        39,
+        25,
+        37
+      ],
+      [
+        39,
+        43,
+        54,
+        41,
+        20,
+        0
+      ],
+      [
+        13,
+        34,
+        29,
+        42,
+        52,
+        36
+      ],
+      [
+        3,
+        28,
+        11,
+        21,
+        20,
+        14
+      ],
+      [
+        5,
+        56,
+        5,
+        22,
+        63,
+        10
+      ],
+      [
+        57,
+        25,
+        63,
+        26,
+        2,
+        26
+      ],
+      [
+        47,
+        30,
+        9,
+        13,
+        36,
+        54
+      ],
+      [
+        48,
+        38,
+        39,
+        41,
+        39,
+        47
+      ],
+      [
+        64,
+        29,
+        25,
+        41,
+        7,
+        23
+      ],
+      [
+        34,
+        16,
+        21,
+        26,
+        14,
+        11
+      ],
+      [
+        34,
+        20,
+        24,
+        27,
+        2,
+        10
+      ],
+      [
+        59,
+        9,
+        26,
+        26,
+        47,
+        14
+      ],
+      [
+        28,
+        57,
+        35,
+        19,
+        31,
+        27
+      ],
+      [
+        44,
+        16,
+        41,
+        35,
+        31,
+        60
+      ],
+      [
+        64,
+        11,
+        23,
+        32,
+        32,
+        13
+      ],
+      [
+        2,
+        13,
+        47,
+        20,
+        3,
+        64
+      ],
+      [
+        6,
+        55,
+        44,
+        20,
+        34,
+        34
+      ],
+      [
+        57,
+        12,
+        28,
+        61,
+        25,
+        54
+      ],
+      [
+        60,
+        63,
+        14,
+        24,
+        45,
+        35
+      ],
+      [
+        37,
+        27,
+        5,
+        24,
+        32,
+        34
+      ],
+      [
+        36,
+        15,
+        38,
+        10,
+        41,
+        38
+      ],
+      [
+        0,
+        22,
+        46,
+        16,
+        36,
+        50
+      ],
+      [
+        4,
+        52,
+        23,
+        22,
+        31,
+        59
+      ],
+      [
+        33,
+        5,
+        47,
+        14,
+        16,
+        17
+      ],
+      [
+        13,
+        27,
+        36,
+        47,
+        25,
+        33
+      ],
+      [
+        60,
+        48,
+        55,
+        8,
+        48,
+        32
+      ],
+      [
+        22,
+        30,
+        17,
+        29,
+        23,
+        24
+      ],
+      [
+        59,
+        23,
+        55,
+        15,
+        41,
+        20
+      ],
+      [
+        64,
+        22,
+        45,
+        39,
+        33,
+        58
+      ],
+      [
+        53,
+        20,
+        42,
+        0,
+        15,
+        48
+      ],
+      [
+        33,
+        23,
+        43,
+        52,
+        40,
+        15
+      ],
+      [
+        33,
+        16,
+        19,
+        32,
+        43,
+        8
+      ],
+      [
+        54,
+        51,
+        39,
+        40,
+        17,
+        42
+      ],
+      [
+        63,
+        38,
+        50,
+        11,
+        24,
+        10
+      ],
+      [
+        43,
+        27,
+        0,
+        21,
+        55,
+        16
+      ],
+      [
+        21,
+        63,
+        9,
+        44,
+        6,
+        37
+      ],
+      [
+        22,
+        40,
+        48,
+        62,
+        43,
+        24
+      ],
+      [
+        45,
+        42,
+        51,
+        43,
+        23,
+        29
+      ],
+      [
+        47,
+        16,
+        18,
+        26,
+        21,
+        45
+      ],
+      [
+        46,
+        38,
+        13,
+        41,
+        44,
+        29
+      ],
+      [
+        0,
+        60,
+        15,
+        27,
+        28,
+        32
+      ],
+      [
+        26,
+        8,
+        43,
+        39,
+        13,
+        24
+      ],
+      [
+        23,
+        54,
+        61,
+        4,
+        58,
+        11
+      ],
+      [
+        58,
+        51,
+        10,
+        46,
+        49,
+        46
+      ],
+      [
+        29,
+        16,
+        29,
+        41,
+        48,
+        39
+      ],
+      [
+        44,
+        22,
+        52,
+        49,
+        40,
+        52
+      ],
+      [
+        26,
+        22,
+        36,
+        33,
+        25,
+        26
+      ],
+      [
+        18,
+        40,
+        24,
+        25,
+        45,
+        59
+      ],
+      [
+        7,
+        35,
+        30,
+        6,
+        23,
+        63
+      ],
+      [
+        45,
+        38,
+        43,
+        41,
+        36,
+        42
+      ],
+      [
+        43,
+        47,
+        39,
+        4,
+        52,
+        45
+      ],
+      [
+        32,
+        33,
+        25,
+        28,
+        45,
+        23
+      ],
+      [
+        8,
+        36,
+        16,
+        7,
+        39,
+        35
+      ],
+      [
+        47,
+        47,
+        59,
+        52,
+        30,
+        6
+      ],
+      [
+        26,
+        45,
+        43,
+        46,
+        22,
+        58
+      ],
+      [
+        14,
+        22,
+        9,
+        6,
+        11,
+        15
+      ],
+      [
+        45,
+        27,
+        0,
+        58,
+        30,
+        18
+      ],
+      [
+        38,
+        17,
+        19,
+        3,
+        51,
+        62
+      ],
+      [
+        53,
+        26,
+        16,
+        0,
+        17,
+        55
+      ],
+      [
+        19,
+        38,
+        35,
+        30,
+        23,
+        6
+      ],
+      [
+        24,
+        43,
+        48,
+        43,
+        7,
+        30
+      ],
+      [
+        59,
+        27,
+        45,
+        36,
+        38,
+        30
+      ],
+      [
+        39,
+        58,
+        8,
+        16,
+        20,
+        4
+      ],
+      [
+        11,
+        1,
+        10,
+        62,
+        45,
+        8
+      ],
+      [
+        38,
+        18,
+        16,
+        10,
+        55,
+        46
+      ],
+      [
+        54,
+        31,
+        31,
+        39,
+        61,
+        26
+      ],
+      [
+        5,
+        45,
+        46,
+        39,
+        41,
+        12
+      ],
+      [
+        7,
+        37,
+        31,
+        35,
+        25,
+        5
+      ],
+      [
+        6,
+        36,
+        38,
+        25,
+        25,
+        47
+      ],
+      [
+        1,
+        19,
+        24,
+        28,
+        14,
+        20
+      ],
+      [
+        48,
+        31,
+        2,
+        48,
+        38,
+        10
+      ],
+      [
+        18,
+        3,
+        25,
+        33,
+        41,
+        5
+      ],
+      [
+        63,
+        4,
+        9,
+        27,
+        31,
+        42
+      ]
+    ],
+    "sbc_n_bins": 64,
+    "sbc_ks_pvalue": [
+      0.1431308823010876,
+      0.001678494696378122,
+      0.10305025304677794,
+      0.035875512867812355,
+      0.08352846195845144,
+      0.031142449726245858
+    ],
+    "sbc_ks_pvalue_min": 0.001678494696378122,
+    "posterior_r2": [
+      0.0046645402908325195,
+      -0.005169987678527832,
+      -0.0008543729782104492,
+      -0.010713934898376465,
+      -0.013113617897033691,
+      -0.03789687156677246
+    ],
+    "posterior_rmse": [
+      1.461459994316101,
+      0.5488649606704712,
+      0.28366586565971375,
+      0.25651195645332336,
+      1.2752805948257446,
+      0.4547824263572693
+    ],
+    "posterior_z_sd": [
+      0.94640052318573,
+      0.819671630859375,
+      0.9053343534469604,
+      0.8904393911361694,
+      0.9062160849571228,
+      0.9307342171669006
+    ],
+    "coverage_mae": 0.05208813026547432,
+    "coverage": {
+      "levels": [
+        0.10000000149011612,
+        0.20000000298023224,
+        0.30000001192092896,
+        0.4000000059604645,
+        0.5,
+        0.6000000238418579,
+        0.699999988079071,
+        0.800000011920929,
+        0.8999999761581421,
+        0.949999988079071
+      ],
+      "coverage_per_param": [
+        [
+          0.1149425283074379,
+          0.14367815852165222,
+          0.10919540375471115,
+          0.08045977354049683,
+          0.09770114719867706,
+          0.1149425283074379
+        ],
+        [
+          0.2586206793785095,
+          0.270114928483963,
+          0.22413793206214905,
+          0.2183908075094223,
+          0.23563218116760254,
+          0.2183908075094223
+        ],
+        [
+          0.36206895112991333,
+          0.36781609058380127,
+          0.3333333432674408,
+          0.37931033968925476,
+          0.32758620381355286,
+          0.31609195470809937
+        ],
+        [
+          0.4712643623352051,
+          0.5,
+          0.4885057508945465,
+          0.49425286054611206,
+          0.5114942789077759,
+          0.4712643623352051
+        ],
+        [
+          0.540229856967926,
+          0.6724137663841248,
+          0.6034482717514038,
+          0.5919539928436279,
+          0.5919539928436279,
+          0.5632184147834778
+        ],
+        [
+          0.6551724076271057,
+          0.7701149582862854,
+          0.7011494040489197,
+          0.7126436829566956,
+          0.6954023241996765,
+          0.6666666865348816
+        ],
+        [
+          0.7298850417137146,
+          0.8218390941619873,
+          0.7701149582862854,
+          0.8103448152542114,
+          0.7701149582862854,
+          0.7643678188323975
+        ],
+        [
+          0.7873563170433044,
+          0.8850574493408203,
+          0.8563218116760254,
+          0.8735632300376892,
+          0.8505747318267822,
+          0.8275861740112305
+        ],
+        [
+          0.8850574493408203,
+          0.9482758641242981,
+          0.931034505367279,
+          0.9022988677024841,
+          0.9022988677024841,
+          0.8850574493408203
+        ],
+        [
+          0.9252873659133911,
+          0.9655172228813171,
+          0.9425287246704102,
+          0.9367815852165222,
+          0.9655172228813171,
+          0.9137930870056152
+        ]
+      ],
+      "coverage_mean": [
+        0.11015325784683228,
+        0.23754790425300598,
+        0.34770116209983826,
+        0.4894636273384094,
+        0.593869686126709,
+        0.7001916170120239,
+        0.7777777910232544,
+        0.8467432856559753,
+        0.9090039134025574,
+        0.9415709376335144
+      ],
+      "coverage_joint": [
+        0.21264368295669556,
+        0.3333333432674408,
+        0.477011501789093,
+        0.568965494632721,
+        0.6666666865348816,
+        0.7586206793785095,
+        0.8160919547080994,
+        0.9195402264595032,
+        0.9482758641242981,
+        0.977011501789093
+      ],
+      "coverage_mae": 0.05208813026547432,
+      "coverage_mae_joint": 0.12281608581542969,
+      "n_datasets": 174,
+      "n_posterior_samples": 64
+    },
+    "note": "Calibration measured against the SAME simulator that generated the training corpus. It certifies self-consistency of the amortized posterior under simulator-conditioned evidence only, and is NOT evidence of biological validity or of correct inference on real data.",
+    "available": true,
+    "n_datasets": 174,
+    "backend_counts": {
+      "jansen_rit": 30,
+      "linear_gaussian": 30,
+      "stuart_landau": 30,
+      "wilson_cowan": 39,
+      "wong_wang": 45
+    },
+    "sampling": "backend-stratified, fold-proportional with a floor per backend"
+  },
+  "backend_comparison": {
+    "per_backend_nll": {
+      "jansen_rit": 1.0168407130986452,
+      "linear_gaussian": 0.3897498808801174,
+      "stuart_landau": 1.3908677473664284,
+      "wilson_cowan": 0.9627612382173538,
+      "wong_wang": 0.22800409188494086
+    },
+    "per_backend_n": {
+      "jansen_rit": 16,
+      "linear_gaussian": 16,
+      "stuart_landau": 16,
+      "wilson_cowan": 16,
+      "wong_wang": 16
+    },
+    "sampling": "backend-stratified, equal windows per backend",
+    "windows_selected_per_backend": {
+      "jansen_rit": 16,
+      "linear_gaussian": 16,
+      "stuart_landau": 16,
+      "wilson_cowan": 16,
+      "wong_wang": 16
+    },
+    "note": "The learned operator is the equal-capacity control for every mechanistic claim (Appendix D). Matching a family's trajectories is not evidence that the family is neurally realized."
+  },
+  "real_eeg_holdout": {
+    "available": false,
+    "reason": "--quick refuses the real-EEG holdout. A reduced-cost variant would silently change the participant set the claim rests on."
+  },
+  "sim_val_nll": 0.5505795619268526,
+  "wall_seconds": 9.515996217727661
+}

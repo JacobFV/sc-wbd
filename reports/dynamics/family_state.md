@@ -216,6 +216,21 @@ padding_fraction                 0.522558   (12 764 / 24 426)
 control-arm cells (N · 28)      11 592
 ```
 
+> **Superseded 2026-08-06 — kept because it is a measurement, not a claim.**
+> The table above was measured against an **11-family** partition derived from
+> the Yeo-7 fallback. The partition that actually landed from the anatomy prior
+> has **9 families**, and regenerating against it gives ragged **12 862**, padded
+> 24 426, `padding_fraction` **0.4734**.
+>
+> The numbers are not struck out, because they were correctly measured against
+> the configuration named beside them. What was wrong was citing them for a
+> configuration that had changed underneath — which is the argument for deriving
+> this quantity at read time rather than transcribing it, since a derived number
+> written down as a constant goes stale without any edit marking it.
+>
+> The conclusion below is unaffected in direction and slightly weakened in
+> magnitude: the padded layout stores about **1.9×** the state it uses, not 2.1×.
+
 **Read those four numbers together.** The heterogeneous state costs
 11 662 vs 11 592 cells — **+0.60 %** over the uniform 28-wide control. The
 *padding* costs **2.11×**. Two hippocampal parcels (`d_f = 59`) set `D` for all

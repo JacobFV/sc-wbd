@@ -59,6 +59,12 @@ Also stale in the tree, not in my plan:
   against a family count that no longer exists. I may not edit that file — the
   row is in §7 for the architect. Re-checked against `master` at `d6a2781`, i.e.
   after the slug rework: still stale.
+  **Resolved 2026-08-06 by the architect.** Regenerated against the landed
+  9-family partition: ragged 12 862, padded 24 426, **`padding_fraction` =
+  0.4734**. Both `ARCHITECTURE.md` §5b and §O-6 now carry the measured figure.
+  The correction moves the number *down* — 9 families over 414 parcels means
+  larger families and fewer short spans than the 11-family fallback implied.
+  This escalation was correct and is closed.
 - `CorpusSpec.shard_trajectories` (default 1024) is **read by nothing**. Shard
   size is `spec.batch`. A config field that looks like it controls the shard and
   does not.

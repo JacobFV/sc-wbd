@@ -1,0 +1,33 @@
+[mem] CUDA reserve capped at 72.0 GB (fraction=0.592 of 121.6 GB unified pool)
+{
+  "parameters": {
+    "coupling": 3,
+    "msg_proj": 36,
+    "msg_readin": 1872,
+    "context": 17792,
+    "family_local": 1814447,
+    "family_residual": 365639,
+    "family_readout": 26946,
+    "assimilate": 234587,
+    "observation": 2073,
+    "eeg": 27481,
+    "bold": 3312,
+    "behaviour": 22342,
+    "TOTAL": 2516530
+  },
+  "posterior": 1694976
+}
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=44/11/54 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 290673 windows, train/val/test = 117639/29274/143760
+resumed from checkpoints/scwbd-001-pilot-families/last.pt at step 500; completed stages: []
+[noise-floor init] log_noise +1.9557 -> +1.8731  (variance 18.1065 -> 18.9541, realised 24.0141)
+
+=== Stage T1_measured_founding: 2966 steps, lr=0.000346 ===
+[npe] REJ#0 all=True kept=0/64 per=[15632983.0, 131390944.0, 32923812.0, 40922700.0, 236934688.0, 11361600.0] y|max=19.34 c|max=13.18 u|max=3.962 u_fin=True th|max=6.144
+stage=T1_measured_founding  step=1  global_step=501  loss=-0.7379  lr=1.392e-05  wall_s=3.1  traj_s_per_s=7.9  gpu_reserved_gb=17.48  sim_forecast_nll=0.4062  npe_loss=0  npe_rejected=1  npe_seen_max=6.91e+08
+[npe] REJ#1 all=True kept=0/64 per=[76565064.0, 6340634.0, 481189184.0, 85862248.0, 186632784.0, 21913638.0] y|max=15.27 c|max=17.93 u|max=3.525 u_fin=True th|max=6.185
+[npe] REJ#2 all=True kept=0/64 per=[3064272.5, 368703328.0, 25659276.0, 15697747.0, 11265800.0, 45103148.0] y|max=11.35 c|max=14.92 u|max=4.356 u_fin=True th|max=6.131
+stage=T1_measured_founding  step=20  global_step=520  loss=0.7789  lr=4.618e-05  wall_s=35.9  traj_s_per_s=13.7  gpu_reserved_gb=32.18  sim_forecast_nll=0.6321  npe_loss=0  npe_rejected=20  npe_seen_max=2.311e+09
+stage=T1_measured_founding  step=40  global_step=540  loss=0.847  lr=0.0001306  wall_s=69.7  traj_s_per_s=14.1  gpu_reserved_gb=32.26  sim_forecast_nll=0.6459  npe_loss=0  npe_rejected=40  npe_seen_max=2.359e+09

@@ -8,15 +8,24 @@ Implements `reports/intervene/impulse_pilot_preregistration.md`, criterion fixed
 
 | | CRR |
 |---|---|
-| trained | 1.3871 |
+| trained | 1.4097 |
 | untrained | 1.3929 |
-| ratio | 0.9959 |
+| ratio | 1.0121 |
 
 Thresholds fixed in advance: collapsed `< 0.1`; attenuated `< 0.5 x` untrained; else survived.
 
 ## Control
 
 same-pose CRR = 0 (must be 0; ok = True)
+
+## Shuffled-normal null (orientation)
+
+- K = 200, seed 20260806
+- null mean 0.7647, sd 0.1868
+- real CRR at the 100.0th percentile
+- one-sided p = 0.0050 (alpha 0.05), direction predicted in advance: crr_real > crr_shuffled
+
+**Orientation carries the contrast: True**
 
 ## What this does not establish
 
@@ -26,13 +35,23 @@ same-pose CRR = 0 (must be 0; ok = True)
 {
   "status": "ran",
   "crr": {
-    "trained": 1.3871015744875945,
+    "trained": 1.4097374926345634,
     "untrained": 1.392872295139151,
-    "ratio_trained_over_untrained": 0.9958569635768512
+    "ratio_trained_over_untrained": 1.0121082151998202
   },
   "reading": "survived",
   "shuffled_normal_null": {
-    "skipped": true
+    "k": 200,
+    "seed": 20260806,
+    "crr_real": 1.4097374926345634,
+    "null_mean": 0.7646626260917395,
+    "null_std": 0.18678670884848847,
+    "null_max": 1.362715191168428,
+    "percentile_of_real": 100.0,
+    "p_one_sided": 0.004975124262273312,
+    "alpha": 0.05,
+    "orientation_carries_the_contrast": true,
+    "direction_predicted_in_advance": "crr_real > crr_shuffled"
   },
   "control": {
     "same_pose_crr": 0.0,
@@ -44,10 +63,10 @@ same-pose CRR = 0 (must be 0; ok = True)
     "checkpoint": {
       "found": true,
       "path": "checkpoints/scwbd-002-pilot/last.pt",
-      "step": 250,
+      "step": 500,
       "stage": "T1_measured_founding",
-      "saved_utc": "2026-08-06T22:49:11Z",
-      "git_sha": "a1311f0aec2f6fcb04344e96a05ff2daa535d610-dirty",
+      "saved_utc": "2026-08-06T23:41:00Z",
+      "git_sha": "af568cf393be1cadfb5e9d5a098523942b9e67db-dirty",
       "strict_load": true,
       "load_report": {},
       "tensors_changed_by_load": 194,

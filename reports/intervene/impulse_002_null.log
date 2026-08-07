@@ -1,0 +1,5 @@
+status: ran
+reading: survived
+CRR trained=1.4097 untrained=1.3929
+shuffled-normal p = 0.0050
+wrote reports/intervene/impulse_pilot.json

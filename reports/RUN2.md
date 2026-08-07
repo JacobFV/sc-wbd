@@ -181,7 +181,7 @@ number. The posterior stays inside the same ±0.6 band it held for all of T1,
 **across a regime change**, which is the part that matters: the earlier
 divergence was triggered by a schedule event, and this is a bigger one.
 
-### T3 population prior — running
+### T3 population prior — complete, 1000 steps
 
 Second transition, also clean.
 
@@ -202,6 +202,27 @@ prior — the thing run 1 did when it collapsed. A flat band means the flow is
 tracking a target that is itself still moving, and `npe_rejected=0` with
 `npe_seen_max=29.19` says it is doing so without ever approaching the 1e4
 rejection bound. The bound has still never fired in run 2.
+
+T3 ran its full 1000 steps and handed over cleanly at `global_step` 4467:
+
+```
+T3 step 1000  fnll 0.7319  npe 8.049  rej 0   global_step 4466  (lr -> 1.2e-09)
+T4 step    1  fnll 0.5452  npe 7.871  rej 0   global_step 4467
+```
+
+The NPE band held where it was — 7.7–8.1 through the whole stage, no trend, and
+`npe_seen_max` never moved off 29.19. The rejection bound has still not fired
+once in run 2. The forecast NLL does not fall monotonically within a stage
+(0.50 at step 380, 0.73 at step 1000); the cosine schedule takes the learning
+rate to ~1e-09 by the end, so late-stage steps are nearly frozen and the
+step-to-step spread is sampling noise across simulated batches, not drift.
+
+### T4 simulator extension — running
+
+Third clean transition of the run. Throughput rose from ~10 to ~14 trajectory-
+seconds per second when the stage changed, which is expected: T4 trains against
+the simulator rather than the measured corpus, so it is not waiting on real-data
+assembly. Memory is flat at 37.42 GB reserved against the 72 GB cap.
 
 Remaining: T4 simulator extension 3334 · T5 distillation 0 · T1
 individualisation 900.

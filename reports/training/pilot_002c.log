@@ -1,0 +1,74 @@
+[mem] CUDA reserve capped at 72.0 GB (fraction=0.592 of 121.6 GB unified pool)
+{
+  "parameters": {
+    "coupling": 3,
+    "msg_proj": 36,
+    "msg_readin": 1872,
+    "context": 17792,
+    "family_local": 1814447,
+    "family_residual": 365639,
+    "family_readout": 26946,
+    "assimilate": 234587,
+    "observation": 2073,
+    "eeg": 27481,
+    "bold": 3312,
+    "behaviour": 22342,
+    "TOTAL": 2516530
+  },
+  "posterior": 1679840
+}
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=44/11/54 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 290673 windows, train/val/test = 117639/29274/143760
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/foundation/train.py", line 1018, in <module>
+    main()
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/foundation/train.py", line 1014, in main
+    return t.train()
+           ^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/foundation/train.py", line 921, in train
+    self.maybe_resume()
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/foundation/train.py", line 827, in maybe_resume
+    payload = load_checkpoint(
+              ^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scwbd/foundation/checkpoint.py", line 176, in load_checkpoint
+    miss, unexp = mod.load_state_dict(payload[name], strict=strict)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 2638, in load_state_dict
+    raise RuntimeError(
+RuntimeError: Error(s) in loading state_dict for AmortizedPosterior:
+	size mismatch for flow.layers.0.mask: copying a param with shape torch.Size([8]) from checkpoint, the shape in current model is torch.Size([6]).
+	size mismatch for flow.layers.0.net.0.weight: copying a param with shape torch.Size([320, 136]) from checkpoint, the shape in current model is torch.Size([320, 134]).
+	size mismatch for flow.layers.0.net.4.weight: copying a param with shape torch.Size([16, 320]) from checkpoint, the shape in current model is torch.Size([12, 320]).
+	size mismatch for flow.layers.0.net.4.bias: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([12]).
+	size mismatch for flow.layers.1.mask: copying a param with shape torch.Size([8]) from checkpoint, the shape in current model is torch.Size([6]).
+	size mismatch for flow.layers.1.net.0.weight: copying a param with shape torch.Size([320, 136]) from checkpoint, the shape in current model is torch.Size([320, 134]).
+	size mismatch for flow.layers.1.net.4.weight: copying a param with shape torch.Size([16, 320]) from checkpoint, the shape in current model is torch.Size([12, 320]).
+	size mismatch for flow.layers.1.net.4.bias: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([12]).
+	size mismatch for flow.layers.2.mask: copying a param with shape torch.Size([8]) from checkpoint, the shape in current model is torch.Size([6]).
+	size mismatch for flow.layers.2.net.0.weight: copying a param with shape torch.Size([320, 136]) from checkpoint, the shape in current model is torch.Size([320, 134]).
+	size mismatch for flow.layers.2.net.4.weight: copying a param with shape torch.Size([16, 320]) from checkpoint, the shape in current model is torch.Size([12, 320]).
+	size mismatch for flow.layers.2.net.4.bias: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([12]).
+	size mismatch for flow.layers.3.mask: copying a param with shape torch.Size([8]) from checkpoint, the shape in current model is torch.Size([6]).
+	size mismatch for flow.layers.3.net.0.weight: copying a param with shape torch.Size([320, 136]) from checkpoint, the shape in current model is torch.Size([320, 134]).
+	size mismatch for flow.layers.3.net.4.weight: copying a param with shape torch.Size([16, 320]) from checkpoint, the shape in current model is torch.Size([12, 320]).
+	size mismatch for flow.layers.3.net.4.bias: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([12]).
+	size mismatch for flow.layers.4.mask: copying a param with shape torch.Size([8]) from checkpoint, the shape in current model is torch.Size([6]).
+	size mismatch for flow.layers.4.net.0.weight: copying a param with shape torch.Size([320, 136]) from checkpoint, the shape in current model is torch.Size([320, 134]).
+	size mismatch for flow.layers.4.net.4.weight: copying a param with shape torch.Size([16, 320]) from checkpoint, the shape in current model is torch.Size([12, 320]).
+	size mismatch for flow.layers.4.net.4.bias: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([12]).
+	size mismatch for flow.layers.5.mask: copying a param with shape torch.Size([8]) from checkpoint, the shape in current model is torch.Size([6]).
+	size mismatch for flow.layers.5.net.0.weight: copying a param with shape torch.Size([320, 136]) from checkpoint, the shape in current model is torch.Size([320, 134]).
+	size mismatch for flow.layers.5.net.4.weight: copying a param with shape torch.Size([16, 320]) from checkpoint, the shape in current model is torch.Size([12, 320]).
+	size mismatch for flow.layers.5.net.4.bias: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([12]).
+	size mismatch for flow.layers.6.mask: copying a param with shape torch.Size([8]) from checkpoint, the shape in current model is torch.Size([6]).
+	size mismatch for flow.layers.6.net.0.weight: copying a param with shape torch.Size([320, 136]) from checkpoint, the shape in current model is torch.Size([320, 134]).
+	size mismatch for flow.layers.6.net.4.weight: copying a param with shape torch.Size([16, 320]) from checkpoint, the shape in current model is torch.Size([12, 320]).
+	size mismatch for flow.layers.6.net.4.bias: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([12]).
+	size mismatch for flow.layers.7.mask: copying a param with shape torch.Size([8]) from checkpoint, the shape in current model is torch.Size([6]).
+	size mismatch for flow.layers.7.net.0.weight: copying a param with shape torch.Size([320, 136]) from checkpoint, the shape in current model is torch.Size([320, 134]).
+	size mismatch for flow.layers.7.net.4.weight: copying a param with shape torch.Size([16, 320]) from checkpoint, the shape in current model is torch.Size([12, 320]).
+	size mismatch for flow.layers.7.net.4.bias: copying a param with shape torch.Size([16]) from checkpoint, the shape in current model is torch.Size([12]).
