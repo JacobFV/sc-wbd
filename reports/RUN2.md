@@ -1527,6 +1527,31 @@ states rather than buries. Six of the nine files exercise a smoke path
 (`max_batches=6`); the first reading of this suite would have claimed all nine
 indict the result, and that claim was corrected before publication.
 
+Three of the 33, measured 2026-08-07, are neither of those things — they are an
+**anatomy mismatch**:
+
+```
+size mismatch for log_dt_scale: checkpoint torch.Size([454]) vs model 414
+```
+
+The `compiled_checkpoint` fixture picks up whichever on-disk checkpoint carries
+`torch.compile`'s `_orig_mod.` prefix; that one was trained on the 454-region
+synthetic fallback, and the test builds `load_anatomy(n_cortex=400)` = 414. The
+checkpoint records its own anatomy in `extra["anatomy"]`, so the mismatch is
+avoidable rather than intrinsic — `LoadedModel.from_checkpoint` already rebuilds
+from that record.
+
+Same class as the `intervene` defect fixed the same day: a model built from one
+anatomy and weights from another, joined by a call that reaches for a default.
+Recorded rather than fixed here because these tests sit inside a suite that is
+red for other reasons, and repairing one loader inside it would make the count
+move for a reason unrelated to what the suite is asserting.
+
+I first "fixed" these by wrapping the model construction in
+`layout_of_checkpoint`, on the assumption that O-5b's D=59→62 change had caused
+them. It had not; the wrap addressed a different mismatch and was reverted. The
+error message said 454 the whole time.
+
 `intervene` was one of these until today. Its failure was real: `SCWBD` never
 stored the anatomy it was built with, so `predict_impulse_response` loaded the
 default prior on every call — right by coincidence for a model built on that
