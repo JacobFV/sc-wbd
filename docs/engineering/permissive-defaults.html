@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nine hours of training on the wrong data, with every dashboard green — SC-WBD</title>
-<meta name="description" content="Run 2 renamed its training stages. Three mechanisms in the trainer were keyed to the old names, all defaulting to permissive, and the model trained on simulation alone.">
+<meta name="description" content="Run 2 renamed its training stages. Six mechanisms in the trainer matched on the old names, all defaulting to permissive, and the model trained on simulation alone — over six red tests that said so.">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Nine hours of training on the wrong data, with every dashboard green — SC-WBD">
-<meta property="og:description" content="Run 2 renamed its training stages. Three mechanisms in the trainer were keyed to the old names, all defaulting to permissive, and the model trained on simulation alone.">
+<meta property="og:description" content="Run 2 renamed its training stages. Six mechanisms in the trainer matched on the old names, all defaulting to permissive, and the model trained on simulation alone — over six red tests that said so.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
@@ -40,7 +40,7 @@
     <div class="pagehead">
       <p class="kicker">Engineering · 12</p>
       <h1>Nine hours of training on the wrong data, with every dashboard green</h1>
-      <p class="standfirst">We renamed the training stages. Three separate mechanisms matched on the old names, and every one of them failed toward "allow" rather than toward "error". The loss fell the whole time.</p>
+      <p class="standfirst">We renamed the training stages. Six separate mechanisms matched on the old names, and five of them gave the wrong answer. The sixth was right by accident. The loss fell the whole time — and a complete, tested fix had been sitting unapplied in the repository since that morning.</p>
     </div>
 <div class="prose">
 
@@ -53,17 +53,28 @@ names that say which is which — <code>T1_measured_founding</code>,
 
 <h2>What happened</h2>
 
-<p>Run 2's config renamed every stage from the run-1 scheme. Three mechanisms in
-the trainer match on the <strong>run-1</strong> names. None was updated.</p>
+<p>Run 2's config renamed every stage from the run-1 scheme. <strong>Six</strong>
+gates in the trainer match on the <strong>run-1</strong> names. None was
+updated, and five of the six gave the wrong answer:</p>
 
+<div class="tablewrap">
 <table>
-<thead><tr><th>mechanism</th><th>what an unmatched name does</th></tr></thead>
+<thead><tr><th>gate</th><th>decides</th><th>run-2 result</th></tr></thead>
 <tbody>
-<tr><td><code>STAGE_PERMISSIONS.get(name, ("*",))</code></td><td>full gradient permission, no restriction</td></tr>
-<tr><td><code>name in ("III_sliced", "IV_assembly", "V_individual")</code></td><td><strong>no measured-data gradient, ever</strong></td></tr>
-<tr><td><code>name == "V_individual"</code></td><td>no individualizer is built</td></tr>
+<tr><td><code>STAGE_PERMISSIONS.get(name, ("*",))</code></td><td>gradient allowlist</td><td><strong>wildcard — no restriction</strong></td></tr>
+<tr><td><code>name == "I_regional"</code></td><td>boundary randomisation of sim inputs</td><td><strong>off</strong></td></tr>
+<tr><td><code>name in ("IV_assembly",)</code></td><td>haemodynamic state in the rollout</td><td><strong>off</strong></td></tr>
+<tr><td><code>name == "V_individual"</code></td><td>build the Individualizer</td><td><strong>off</strong></td></tr>
+<tr><td><code>name != "V_individual"</code></td><td>admit the SIMULATED sources</td><td>admitted ✓</td></tr>
+<tr><td><code>name in ("III_sliced", "IV_assembly", "V_individual")</code></td><td>admit the MEASURED sources</td><td><strong>refused</strong></td></tr>
 </tbody>
 </table>
+</div>
+
+<p>The fifth row is the only reason the run trained at all, and it is correct
+<em>by accident</em> — it is the one gate written as <code>!=</code> rather than
+<code>==</code>, and an unknown name happens to satisfy it. Nine hours of
+training rested on a negation nobody wrote for that purpose.</p>
 
 <p>Measured against the actual config, rather than inferred:</p>
 
@@ -90,10 +101,10 @@ cannot report a typo. <code>.get(name, ("*",))</code> and
 name they reject.</p>
 </blockquote>
 
-<p>All three failed toward <em>permissive</em>. An unmatched name means no
-restriction, no real loss, and no individualizer — never an exception. Nothing
-crashed. Loss fell. The rejection counter held at zero. Every dashboard this run
-has was green for nine hours.</p>
+<p>They fail toward <em>permissive</em>. An unmatched name means no restriction,
+no real loss, no haemodynamic state and no individualizer — never an exception.
+Nothing crashed. Loss fell. The rejection counter held at zero. Every dashboard
+this run has was green for nine hours.</p>
 
 <p>Our own register already had the sentence for this, written about a smaller
 instance: <em>these do not produce a wrong number, they produce a right-looking
@@ -111,6 +122,70 @@ three lines above the branch being checked.</p>
 <p>Nothing in this project would have reported it. Reading a path
 <em>adjacent</em> to the one you care about is how an untested branch gets read
 at all.</p>
+</blockquote>
+
+<h2>The worst part: the fix was already written</h2>
+
+<p>Everything above says the defect went undetected. It did not.</p>
+
+<p>A module sits on the main branch called
+<code>curriculum_admission.py</code>. It contains an inventory of
+<strong>all six</strong> stage-name gates, recorded as data — in its own words,
+<em>"so a test can assert the list is exhaustive rather than trusting that
+someone read the function carefully."</em> It defines an exception,
+<code>UndeclaredStage</code>, whose docstring states the diagnosis better than we
+managed independently ten hours later:</p>
+
+<blockquote>
+<p>Raised rather than defaulted. <code>STAGE_PERMISSIONS.get(name, ("*",))</code>
+answers this question with <strong>everything</strong>, which is the one answer
+that cannot be wrong-looking: an unwired stage and a fully-permitted stage
+produce the same reading.</p>
+</blockquote>
+
+<p>There is a complete 13 KB patch that rewires the trainer to take admission
+from the config. It still applies cleanly. And there are eleven tests whose
+header records the measurement in both directions — <em>7 failed before the
+patch, 11 passed after</em> — with the three that could not discriminate marked
+as such, and one marked as having failed for a different reason than predicted,
+<em>"worth recording rather than counting as a win."</em></p>
+
+<p>The patch is dated <strong>07:04 that same morning</strong>. The run started
+at 18:32. It was never applied. Six of those tests are red on the main branch
+right now, and were red for the entire nine-hour run:</p>
+
+<pre><code>FAILED test_run_stage_has_no_stage_name_gates
+FAILED test_run_stage_consults_stage_admission
+FAILED test_stage_sources_takes_an_admission
+FAILED test_stage_sources_excludes_unadmitted_sources
+FAILED test_sim_losses_takes_an_admission
+FAILED test_anatomical_prior_is_not_gated_on_the_sim_batch</code></pre>
+
+<h2>Which makes the lesson a different one</h2>
+
+<p>Every other entry in our defect register is about an instrument that could
+not see a failure. This one is about an instrument that saw it perfectly, said
+so in plain language, and was not read.</p>
+
+<blockquote>
+<p>A red test nobody reads is worse than no test. It produces the appearance of
+coverage and none of the effect — and it converts <em>"we have no check for
+this"</em>, which prompts action, into <em>"the suite is a bit red"</em>, which
+does not.</p>
+</blockquote>
+
+<p>There is nothing decorative about the name
+<code>test_run_stage_has_no_stage_name_gates</code>. It says exactly what it
+checks. It failed, in the same repository, for the whole run.</p>
+
+<p>And the same error in miniature, ours: we had catalogued <em>"17 pre-existing
+failures in one test file, known and deliberately not fixed"</em> — and never
+asked what <em>else</em> was red. The 17 was measured. Treating it as the total
+was assumed.</p>
+
+<blockquote>
+<p>A known-failures list that is not exhaustive is itself a permissive default:
+anything outside it reads as passing.</p>
 </blockquote>
 
 <h2>What we did, and did not do</h2>
