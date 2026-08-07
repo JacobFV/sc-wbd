@@ -116,7 +116,10 @@ f. Publish. The card must state which sources actually contributed gradient,
                                              [0.791,0.946] excludes nominal 0.95
                                              at n=64.
 
-Everything else green. Full suite: 3057 tests, ~1066 s.
+Everything else green. Full suite counts in this table are PRE-MERGE; the
+wt/fisher merge added tests/infer/test_report_diagnostics.py and
+test_adapters_binding.py, so re-run `pytest tests/` once and correct them before
+relying on the numbers. Prior figure was 3057 selected, 50 failing, ~1066 s.
 
 === OPERATIONAL ===
 
