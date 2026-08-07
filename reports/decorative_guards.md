@@ -2012,3 +2012,62 @@ Weights verified sha256-identical across the rewrite.
 
 > A code fix has a start time. Any artifact produced before it is unaffected by
 > it, and a run long enough to span the fix will produce both kinds.
+
+### Fifth instance, and the one that would actually have shipped: the model card
+
+The four above are literals in code. This one is the **published artifact's front
+page**, and it was two functions deep behind a missing file.
+
+`plan_run2_pilot` delegates to `plan_run1_checkpoint`, which builds its card with
+`_run1_card`. That function hardcoded not only the name but the entire framing:
+
+```
+# SC-WBD-001-beta                              <- H1 title
+pretty_name: SC-WBD-001-beta (run-1, ...)      <- the Hub's display name
+tags: [..., "control-arm", ...]                <- on every artifact
+"It is the control arm of our own ablation,
+ shipped under the treatment arm's name."      <- the diagnosis section
+```
+
+Run 2 is the **treatment** arm. Published through that path it would have
+appeared publicly under the previous model's name, tagged as a control, with
+several paragraphs explaining that it is not a test of the thesis.
+
+> That is the exact state R12 exists to refuse — an artifact carrying a name and
+> an arm that are not its own — reached through the **card** rather than through
+> the weights.
+
+**Why it was invisible.** The publish dry run reported exactly one blocker, the
+missing evaluation. One blocker reads as *one thing left*; it actually meant *one
+thing visible*. Staging a placeholder evaluation under a shell `trap` surfaced
+three more in sequence — a config path that had never existed, a run-1 weights
+filename, and then this. Each was hidden by the one before it.
+
+> A blocker list that stops at the first item is not a list. The refusal now
+> reports what else is wrong alongside what it hit first.
+
+**The guard from the same day missed it.** The class-guard looked for a
+designation as an *assigned value*:
+
+```
+[:=]\s*["']SC-WBD-\d{3}[-\w]*["']
+```
+
+The verdict was built by concatenation — `"SC-WBD-001-beta is beaten by " +
+", ".join(...)`. A literal that is a **fragment** of a string is not a whole
+value, so the pattern slid past it, in the most quoted line on the card.
+
+The replacement parses with `ast`: comments are absent from the tree entirely,
+and docstrings are excluded by identity rather than guessed at. Its first version
+swept the whole package and fired on ~15 sites like `"no trained SC-WBD-001-beta
+checkpoint was loaded"` — error messages *about* run 1, correct and deliberate.
+
+> Fifteen legitimate hits is evidence the rule is wrong, not that the code is.
+
+Scoped now to the three modules whose strings **become artifacts** — the
+evaluation JSON, the checkpoint payload, the card. There a designation is
+emitted rather than discussed. Elsewhere it is prose, and prose stays allowed.
+
+**Generalisation.** Every instance of this class so far was found by building a
+*second* artifact. The name was never checkable while there was only one thing
+to name — but the defects were all present from the first day, waiting.

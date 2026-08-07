@@ -131,6 +131,66 @@ docstrings and comments, and a test that cannot tell a value from a sentence
 bans writing about the defect — a mistake this project has already made twice on
 another suite.</p>
 
+<h2>Where it was actually going to bite</h2>
+
+<p>None of the above was the real exposure. The model card was.</p>
+
+<p>The run-2 publisher delegates to the run-1 publisher, which builds its card
+with a function that hardcoded not just the name but the <em>entire framing</em>:</p>
+
+<pre><code># SC-WBD-001-beta                              &lt;- the H1 title
+pretty_name: SC-WBD-001-beta (run-1, ...)      &lt;- the Hub's display name
+tags: [..., "control-arm", ...]                &lt;- on every artifact
+"It is the control arm of our own ablation,
+ shipped under the treatment arm's name."      &lt;- the diagnosis section</code></pre>
+
+<p>Run 2 is the <strong>treatment</strong> arm. Published through that path it
+would have appeared on a public hub under the previous model's name, tagged as a
+control, with several paragraphs explaining that it is not a test of the
+thesis.</p>
+
+<blockquote>
+<p>That is the exact state R12 exists to refuse — an artifact carrying a name and
+an arm that are not its own — reached through the <em>card</em> rather than
+through the weights. A guard on one verb is not a guard on a noun, for the
+fourth time.</p>
+</blockquote>
+
+<p>It was two functions deep behind a missing evaluation file, which is why it
+took staging a placeholder evaluation to see it at all. The publish path
+reported <em>one</em> blocker, and one blocker reads as "one thing left" when it
+actually meant "one thing visible."</p>
+
+<h2>The guard that missed it</h2>
+
+<p>The class-guard written earlier the same day did not catch this. It looked
+for a designation as an assigned value:</p>
+
+<pre><code>[:=]\s*["']SC-WBD-\d{3}[-\w]*["']</code></pre>
+
+<p>The verdict line was built by concatenation —
+<code>"SC-WBD-001-beta is beaten by " + ", ".join(...)</code>. The literal is a
+<em>fragment</em> of a string, not a whole value, so the pattern slid past it —
+in the single most quoted line on the card.</p>
+
+<p>The replacement parses with <code>ast</code> instead: comments are absent
+from the tree entirely, and docstrings can be excluded by identity rather than
+guessed at from indentation.</p>
+
+<p>Its first version swept the whole package and fired on about fifteen sites
+like <code>"no trained SC-WBD-001-beta checkpoint was loaded"</code> — error
+messages <em>about</em> run 1's artifact, which name it correctly and on
+purpose.</p>
+
+<blockquote>
+<p>Fifteen legitimate hits is evidence the rule is wrong, not that the code is.</p>
+</blockquote>
+
+<p>So it is scoped to the three modules whose strings become artifacts — the
+evaluation JSON, the checkpoint payload, the card. In those, a designation is
+emitted rather than discussed, and the literal has no honest use. Everywhere
+else it is prose, and prose stays allowed.</p>
+
 <h2>The uncomfortable part</h2>
 
 <p>Every one of these — the three in the reports, the six in the package — had
