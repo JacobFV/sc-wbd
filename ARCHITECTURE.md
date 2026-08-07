@@ -672,6 +672,20 @@ times in one day** — a `FamilyPartition` read as per-parcel labels in
 misdiagnosis. Two vocabularies for one concept is not a coordination problem to
 be managed; it is a defect to be removed.
 
+**Corrected 2026-08-06: it is three, not two** — and two `FamilyPartition`s
+besides. `schema.Region`, `anatomy.RegionFamily`, and `foundation.RegionFamily`,
+the last two sharing exactly one field name out of 17 and 9 and disagreeing even
+on what to call a family's identity (`family_id` vs `name`) and its members
+(`parcels` vs `regions`). The audit and what it implies for the fix are under
+[O-3](#o-3-one-region-identity-everything-else-is-a-typed-annotation).
+
+The undercount is worth recording rather than quietly amending. This entry was
+written from the two vocabularies that had *collided in a bug*, not from a count
+of the vocabularies that exist — so the estimate was bounded below by whichever
+pairs had already failed loudly. A defect register populated by incidents will
+always underestimate a defect of this shape, because the members that have not
+yet collided are invisible to it.
+
 ### What this is not
 
 **It is a rewrite of the state and its ontology, and it should be.** This is
