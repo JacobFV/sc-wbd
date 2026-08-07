@@ -1450,20 +1450,18 @@ mismatches on every BOLD parameter. Don't check the report, check the thing.
 
 ## 5b. The complete test-suite state, 2026-08-07
 
-Measured per directory with a 20-minute cap on each, because a whole-suite run
-cannot finish — see the last row. Directory totals, not a sample.
+Measured per directory, then per file where a directory would not finish.
+Directory totals, not a sample.
 
 | directory | state |
 |---|---|
-| `anatomy` `bench` `compiler` `dynamics` `individualize` `observe` `release` `runtime` `schema` `sources` `transforms` | **green** (11 directories) |
-| `curriculum` | **green** |
+| `anatomy` `bench` `compiler` `curriculum` `dynamics` `individualize` `intervene` `observe` `release` `runtime` `schema` `sources` `transforms` | **green** (13 directories) |
 | `foundation` | **17 failing**, all in `test_family_state.py` |
 | `evaluation_audit` | **33 failing** across 9 files |
-| `intervene` | **1 failing** |
-| `infer` | **not measurable** — 3 of 10 files exceed a 5-minute cap |
+| `infer` | 8 of 10 files pass; **2 do not complete** |
 
-**51 failing tests where the suite can be run at all**, plus one directory that
-cannot be run to completion.
+**50 failing tests**, in two directories, plus two files whose outcome is
+unknown.
 
 ### `foundation` — 17, one file
 
@@ -1471,9 +1469,9 @@ All in `tests/foundation/test_family_state.py`: R12 designation refusal against
 *synthetic* manifests. R12 admits the real checkpoint, which is the case that
 matters for the published artifact.
 
-Four other foundation files failed when the sweep first measured them and were
-repaired the same day — three had encoded the pre-O-5b design and one was a real
-defect in the serving path. §4 and `reports/decorative_guards.md` carry both.
+Four other foundation files failed when first measured and were repaired the same
+day — three had encoded the pre-O-5b design and one was a real defect in the
+serving path. See §4 and `reports/decorative_guards.md`.
 
 ### `evaluation_audit` — 33, nine files
 
@@ -1486,46 +1484,60 @@ defect in the serving path. §4 and `reports/decorative_guards.md` carry both.
 This suite is red **and 002 was published past it**, which §4 states rather than
 buries. Six of the nine exercise a smoke path (`max_batches=6`); the first
 reading of this suite would have claimed all nine indict the result, and that
-claim was corrected before it was published.
+claim was corrected before publication.
 
-### `intervene` — 1
+### `intervene` — green as of 2026-08-07
 
-`test_impulse_response.py::TestTheDriveNeverWritesThePad::test_family_rollout_pad_stays_clean`
+Its one failure was real and is fixed. `predict_impulse_response` read
+`getattr(model, "anat", None)`, found nothing — `SCWBD` never stored its
+anatomy — and loaded the default prior on **every** call. Right by coincidence
+for a model built on that prior; the test builds on the 454-region synthetic
+fallback, so it bound a 414-region anatomy and raised out of bounds. The crash
+was the lucky case: two anatomies of equal size with different family membership
+would have bound silently. The model now carries its anatomy and the consumer
+refuses rather than substituting one.
 
-The padded-layout invariant: the drive must never write into pad. Open.
+### `infer` — two files do not complete
 
-### `infer` — the suite cannot be run to completion
-
-Three of ten files do not finish inside five minutes:
+Timed individually, with nothing else running:
 
 ```
-test_fisher.py            exit=124  (300 s cap)
-test_recovery.py          exit=124  (300 s cap)
-test_synthetic_slice.py   exit=124  (301 s cap)
+test_recovery.py          >601 s   (10-min cap, alone)
+test_synthetic_slice.py   >600 s   (10-min cap, alone; 8 tests in before the cap)
 
-test_calibration.py       2 s     test_model_comparison.py   2 s
-test_r09_variational.py   1 s     test_filters.py           32 s
-test_device_parity.py    35 s     test_multirate.py         37 s
-test_sbi.py              37 s
+test_r09_variational.py      1 s   test_calibration.py         2 s
+test_model_comparison.py     2 s   test_filters.py            32 s
+test_device_parity.py       35 s   test_multirate.py          37 s
+test_sbi.py                 37 s   test_fisher.py             65 s
 ```
 
-The other seven pass. The three are **not** known to fail — they are unmeasured,
-and that is a different fact. A directory nobody can run is not a directory that
-passes, which is the same distinction `Verdict.ok` was corrected to make today:
-a check that could not run had been reading as a check that passed.
+The other eight pass. The two are **not** known to fail — they are unmeasured,
+and that is a different fact. A file nobody can run is not a file that passes,
+which is the distinction `Verdict.ok` was corrected to make on the same day: a
+check that could not run had been reading as a check that passed.
 
-> **A correction to my own reporting.** I twice named
-> `tests/infer/test_r09_variational.py` as the blocker. That came from mapping a
-> completed-test count onto the collection order — arithmetic, not measurement.
-> Timed directly, it runs in **one second**, and the real blockers are three
-> other files. The method that produced the wrong answer produced it with no
-> visible uncertainty, which is why the per-file timing exists.
+### Two corrections to my own reporting of this section
+
+Both are the same error, and it is the one this report keeps recording: **a
+measurement of the instrument reported as a property of the subject.**
+
+1. I twice named `tests/infer/test_r09_variational.py` as the blocker. That came
+   from mapping a completed-test count onto the collection order — arithmetic,
+   not measurement. Timed directly it runs in **one second**.
+
+2. The first version of this section said **three** files exceed a five-minute
+   cap, naming `test_fisher.py` among them. That timing was taken while three of
+   my own jobs were running on the same machine. Alone, `test_fisher.py`
+   **passes in 65 seconds**. Two files exceed the cap, not three.
+
+The per-file timings above were taken with the machine otherwise idle, verified
+before starting rather than assumed.
 
 ### What this list is, and what it is not
 
 It is exhaustive over directories: every directory under `tests/` was run and
 every one is accounted for. It is **not** exhaustive over tests, because
-`tests/infer` contains three files whose outcome nobody currently knows.
+`tests/infer` contains two files whose outcome nobody currently knows.
 
 Recorded that way deliberately. A known-failures list that silently omits the
 untested part is a permissive default wearing a table.
