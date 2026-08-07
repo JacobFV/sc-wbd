@@ -56,6 +56,9 @@ classes.
 - [A corollary about fixing things](#a-corollary-about-fixing-things) · [Where this bites hardest](#where-this-bites-hardest)
 - [A defect chain is not a defect list](#a-defect-chain-is-not-a-defect-list)
 - [The inverse category](#the-inverse-category-guards-that-assert-a-defect-still-exists) — guards asserting a defect still exists
+- [The mirror class — a correct fix that installs the opposite error](#the-mirror-class-a-correct-fix-that-installs-the-opposite-error) — a fix that installs the opposite error
+- [The published artifact carried the author's home directory](#the-published-artifact-carried-the-authors-home-directory) — an absolute path shipped to the Hub
+- [The `-rf` capture bug — fifth instance](#the--rf-capture-bug-fifth-instance) — selecting a report class that excludes the report
 
 ### The single most transferable sentence in this file
 
@@ -2626,3 +2629,143 @@ empty output — a `grep` for a pytest summary line that `-q --tb=no` does not
 print. Three terminations to stop a job whose real defect was that I had guessed
 at its output format instead of looking at it, which is the fourth capture bug
 of the day.
+
+---
+
+## The mirror class — a correct fix that installs the opposite error
+
+Resolving the two-directory split above produced, in one step, the exact defect
+that section warns about — pointing the other way.
+
+### The fix
+
+`publish.py` had `card_dir="configs/source_cards"` as a literal. That is the
+directory `tests/curriculum/test_tiers.py` names `LEGACY`, on line 19, in the
+same file that names `configs/curriculum/source_cards` as `CORRECTED`. The
+release path had been reading the legacy set for the whole of run 2, and the
+test suite had been saying so in a variable name the whole time.
+
+The checkpoint settles which one governed training, because it records the
+answer rather than the intention:
+
+```
+checkpoints/scwbd-002-pilot/last.pt
+  config["mixture_cards"] = configs/curriculum/source_cards
+```
+
+So the artifact's licence and attribution manifest was computed from a different
+card set than the one that trained the weights. Every licence-bearing field
+happens to agree today, which is why nothing looked wrong. `enabled` does not
+agree: `ds002336_real` is on in the corrected set and off in the legacy one.
+
+The fix derives `card_dir` from the run, preferring the checkpoint's recorded
+config over the config file — the checkpoint is evidence of what ran, the file
+only of what was intended — and makes a disagreement between the two a blocker
+rather than a precedence rule.
+
+### The mirror
+
+The corrected card is `enabled: true`. So the moment release read it, `ds002336`
+appeared on the published card under **DATASET INPUTS (2)**, with its citation
+and its CC0 term — for a checkpoint whose recorded participant split contains
+none of its participants.
+
+The section above warned about exactly this shape: *"a licence claim ahead of
+its evidence — the same error as linking a model before its scores exist."* I
+wrote that warning, then walked into it from the other side, in the step that
+fixed the thing it was written about.
+
+**Why it happens is structural, not careless.** `enabled` is a statement about
+the *mixture*, not about any checkpoint. A card switched on after a run has
+finished is enabled and unconsumed simultaneously, and nothing in the card can
+distinguish those two states — the field has no tense. Reading it as "was an
+input" is a type error that only shows up when the mixture and the artifact are
+at different points in time, which is precisely the situation a *fix* creates.
+
+### What separates them
+
+The checkpoint knows what it trained on, because it stores the split:
+
+```
+extra["real_split"]["participants_per_fold"]  ->  109 participants
+eegmmidb_real   n_participants: 109     <- exactly the split
+ds002336_real   n_participants:  10     <- appear in no fold
+```
+
+### The near-miss inside the near-miss
+
+The obvious implementation is to intersect the split's participant IDs with each
+dataset's subject IDs. Run directly, that returns:
+
+```
+data/ds002336: overlap with split = 0
+data/eegmmidb: overlap with split = 0     <- the corpus that trained the model
+```
+
+Zero for **both**, because the two corpora label participants differently
+(`S001` against `sub-xp101`, and eegmmidb's own directories are bare `001`). The
+check would have flagged the dataset that *did* train the model as unconsumed,
+with the same confidence and the same shape of output as a correct answer. It is
+the process-matching misfire again — an eleventh instance — this time in
+identifier space rather than process space, which is a reminder that the class is
+not about `pgrep`. It is about comparing two things that were never in the same
+namespace and reading the null result as a finding.
+
+The shipped check compares **counts**, which are namespace-free, and returns
+nothing at all when the comparison is not decidable rather than guessing.
+
+### Standing rule this produces
+
+> A fix that moves which source a consumer reads must be checked in the
+> direction it now over-claims, not only the direction it previously
+> under-claimed. Correcting a pointer changes the error's sign, not its
+> existence.
+
+---
+
+## The published artifact carried the author's home directory
+
+`Attribution.render()` emitted `provenance` verbatim:
+
+```
+from:    /home/<user>/Documents/integrated-whole-brain-modeling-.../scwbd/sources/cards/ds002336.yaml
+```
+
+on the model card, published to the Hub, for every reader. Two defects in one
+line: a reader's dead end (it names a directory only the author has), and an
+unnecessary disclosure of the author's filesystem layout to everyone who
+downloads the model.
+
+It was invisible because *some* entries were relative — `configs/source_cards/
+montage_calibration.yaml` renders correctly right beside it. Different
+registries record provenance differently, and the block that prints them does
+not normalise. A block that is right in most of its rows reads as right.
+
+Normalised at the renderer rather than at each registry, so a registry added
+later cannot reintroduce it, and a path genuinely outside the repository renders
+as `<outside repo>/<name>` — which says what happened instead of silently
+printing a home directory.
+
+---
+
+## The `-rf` capture bug — fifth instance
+
+Running the full suite to enumerate known failures:
+
+```
+pytest tests/ -q -p no:warnings --tb=no -rf
+```
+
+`-rf` reports **failures**. The run in progress was producing large contiguous
+blocks of `E` — *errors*, which need `-rE`. The command could not answer the
+question it was run to answer, and would have terminated with a confident
+`FAILED` list that omitted every error in the suite.
+
+Fifth capture bug of the same family: grepping for a summary before pytest
+writes it; `cut -c1-115` truncating counts; `tail -2` dropping the summary line;
+grepping for a line `-q --tb=no` never prints; and now selecting a report class
+that excludes most of what there is to report.
+
+> Every one of these produced *output*. None of them produced empty output that
+> announced itself. The failure mode of a capture bug is a plausible partial
+> answer, which is why "I got a list" is not evidence that the list is the list.

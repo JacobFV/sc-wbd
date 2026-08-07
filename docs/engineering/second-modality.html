@@ -192,6 +192,62 @@ Each time, the artifact that would have consumed it describes the capability as
 absent — so the codebase reads its own silence as a limitation.</p>
 </blockquote>
 
+<h2>Follow-up: fixing it installed the opposite error</h2>
+
+<p>The split above is now closed. The release path no longer names a directory;
+it derives one from the checkpoint, which records what actually trained:</p>
+
+<pre><code>checkpoints/scwbd-002-pilot/last.pt
+  config["mixture_cards"] = configs/curriculum/source_cards</code></pre>
+
+<p>Which settled the question the two directories left open — and revealed that
+the literal in <code>publish.py</code> pointed at the set
+<code>tests/curriculum/test_tiers.py</code> names <code>LEGACY</code>, on line
+19, in the same file that names the other one <code>CORRECTED</code>. The test
+suite had been saying so in a variable name the whole time.</p>
+
+<p>Then the correction produced, in one step, the error this page warned
+about — pointing the other way. The corrected card is <code>enabled</code>, so
+<code>ds002336</code> immediately appeared on the published card under
+<strong>DATASET INPUTS</strong>, with its citation and its CC0 term, for a
+checkpoint whose recorded participant split contains none of its
+participants.</p>
+
+<blockquote>
+<p><code>enabled</code> is a statement about the <em>mixture</em>, not about a
+checkpoint. A card switched on after a run has finished is enabled and unconsumed
+at once, and nothing in the card can distinguish those — the field has no tense.
+Reading it as "was an input" only breaks when the mixture and the artifact sit at
+different points in time, which is exactly the situation a fix creates.</p>
+</blockquote>
+
+<p>The checkpoint can tell them apart, because it stores the split it trained
+on. 109 participants — exactly <code>eegmmidb_real</code>'s declared count, with
+<code>ds002336_real</code>'s 10 appearing in no fold. The card now says so.</p>
+
+<h2>The check that would have accused the right dataset</h2>
+
+<p>The obvious implementation intersects participant IDs. Run directly:</p>
+
+<pre><code>data/ds002336: overlap with split = 0
+data/eegmmidb: overlap with split = 0   &lt;- the corpus that trained the model</code></pre>
+
+<p>Zero for <strong>both</strong> — the corpora label participants differently
+(<code>S001</code> against <code>sub-xp101</code>). The check would have flagged
+the dataset that <em>did</em> train the model as unconsumed, with the same
+confidence and the same shape of output as a correct answer.</p>
+
+<p>So the shipped check compares <strong>counts</strong>, which belong to no
+namespace, and returns nothing when the comparison is not decidable rather than
+guessing. The standing rule it produced:</p>
+
+<blockquote>
+<p>A fix that moves which source a consumer reads must be checked in the
+direction it now <em>over</em>-claims, not only the direction it previously
+under-claimed. Correcting a pointer changes the error's sign, not its
+existence.</p>
+</blockquote>
+
 </div>
 
   </div>
