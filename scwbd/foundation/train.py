@@ -535,6 +535,48 @@ class FoundationTrainer:
             print(f"[warn] real EEG unavailable ({type(exc).__name__}: {exc}); "
                   "training will proceed on simulator-conditioned evidence only, and the claim "
                   "manifest will say so.", flush=True)
+
+        # measured BOLD, already in parcel space with its coverage mask.  Built
+        # only from the CACHE: parcellating a run costs ~160 s of registration,
+        # which does not belong inside a training step, and a stage that silently
+        # spent twenty minutes registering would look like a hang.
+        self.bold_loader = None
+        try:
+            from .bolddata import ParcelBOLDConfig, ParcelBOLDDataset
+
+            bcfg = ParcelBOLDConfig()
+            bds = ParcelBOLDDataset(bcfg, build=False)
+            if len(bds) > 0:
+                self.bold_dataset = bds
+                self.bold_loader = _cycle(
+                    torch.utils.data.DataLoader(
+                        bds,
+                        batch_size=max(4, d.batch // 8),
+                        shuffle=True,
+                        num_workers=min(2, d.num_workers),
+                        drop_last=True,
+                    )
+                )
+                s = bds.summary()
+                print(
+                    f"measured BOLD: {s['windows']} windows over {s['participants']} "
+                    f"participants, {s['runs_cached']}/{s['runs_discovered']} runs cached, "
+                    f"{s['runs_dropped_low_coverage']} dropped for coverage",
+                    flush=True,
+                )
+                if bds.dropped_runs:
+                    print(f"  dropped: {bds.dropped_runs}", flush=True)
+            else:
+                print(
+                    "[warn] parcel-space BOLD found no cached windows. Run "
+                    "ParcelBOLDDataset(cfg).build_cache() first (~160 s per run); this "
+                    "stage will contribute no BOLD term rather than a zero one.",
+                    flush=True,
+                )
+        except Exception as exc:  # noqa: BLE001 - BOLD optional at build time
+            print(f"[warn] parcel BOLD unavailable ({type(exc).__name__}: {exc}); "
+                  "no BOLD likelihood will be computed.", flush=True)
+
         self._data_ready = True
 
     # ------------------------------------------------------------------

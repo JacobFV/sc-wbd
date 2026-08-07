@@ -28,7 +28,7 @@
 #   see scwbd/sources/parcellate_bold.py and
 #       reports/sources/ds002336_parcellation.md
 #
-# NOT enabled HERE, deliberately -- see the two-directory note below.
+# ENABLED. This is the directory TRAINING reads (cfg.mixture_cards) -- see the two-directory note below.
 # configs/source_cards/ is read by the RELEASE path (licence, attribution,
 # manifest: 17 references). configs/curriculum/source_cards/ is what TRAINING
 # reads (cfg.mixture_cards). Enabling here would add this dataset's terms to a
@@ -67,7 +67,8 @@
 
 id: ds002336_real
 role: likelihood
-enabled: false
+enabled: true
+is_simulated: false
 is_simulated: false
 losses: [likelihood, forecast]
 

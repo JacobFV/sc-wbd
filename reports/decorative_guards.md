@@ -2402,3 +2402,42 @@ that nothing reads them, and that is the price of the escape hatch.
 This also resolves what the fix is. Not "add the run-2 names to the tuples", not
 "design a declaration format" — **the declaration exists and is correct.** The
 patch's entire job is to make the trainer read the file it was already handed.
+
+## Two source-card directories, and the one the trainer reads is not the one the card reads
+
+Found while enabling `ds002336` — by enabling it in the wrong place and checking
+whether it took, rather than by trusting that it had.
+
+```
+configs/source_cards/             9 cards   read by RELEASE (17 references:
+                                            licence.py, manifest.py, publish.py)
+configs/curriculum/source_cards/  7 cards   read by TRAINING (cfg.mixture_cards)
+```
+
+**The two BOLD datasets exist only in the release directory.** So a card enabled
+there changes nothing about training, and — worse in the other direction —
+*would* change the licence and attribution computed for a published checkpoint.
+Enabling `ds002336` there would have added its terms to a model card without any
+checkpoint having consumed it: **a licence claim ahead of its evidence**, which
+is the same error as linking a model before its scores exist, in the one place
+this project is most careful about.
+
+All seven shared cards differ between the directories. Materially the diffs are
+comments plus an `is_simulated` field present in one set and absent in the
+other; the licence-bearing fields agree today. That is luck, not structure.
+
+> Two directories of the same object, read by different halves of the system,
+> agree until the first time somebody edits one. The failure mode is not that
+> they diverge — it is that **nothing reports the divergence**, and the halves
+> that disagree are *what trained* and *what the artifact claims about what
+> trained*.
+
+Handled for now by enabling in the training directory and leaving the release
+directory disabled with the reason written in the file, so the licence follows
+the evidence rather than the intent. That is a workaround. The repair is one
+directory, or a check that the two agree.
+
+This is the fifth structure found this way in a day — after
+`curriculum_admission.py`, the `extra.curriculum` block, `registration.py`, and
+the unapplied patch. Same shape every time: **the work exists, and the half that
+would use it is pointed somewhere else.**
