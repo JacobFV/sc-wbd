@@ -406,11 +406,38 @@ def predict_impulse_response(
     # families.  Without it a family-state checkpoint raises SpanViolation.
     _bind = getattr(model, "set_mechanistic_theta", None)
     if _bind is not None and getattr(model, "family_layout", None) is not None:
-        _anat = getattr(model, "anat", None) or getattr(model, "_anat", None)
+        # `is None`, not `or`. The previous line was
+        #     _anat = getattr(model, "anat", None) or getattr(model, "_anat", None)
+        # which treats any FALSY anatomy as absent -- and an object defining
+        # __len__ or __bool__ is falsy without being missing. The distinction
+        # matters here because the consequence of "absent" is loading a
+        # different brain.
+        _anat = getattr(model, "anat", None)
         if _anat is None:
-            from scwbd.foundation.anatomy import load_anatomy
-
-            _anat = load_anatomy()
+            _anat = getattr(model, "_anat", None)
+        if _anat is None:
+            # Refuse rather than substitute. Loading "the" anatomy binds whatever
+            # prior happens to be on disk to a model built from some other one;
+            # it raised out-of-bounds here only because the region counts
+            # differed, and two anatomies of equal size with different family
+            # membership would have bound silently and returned numbers.
+            raise ValueError(
+                "this model does not carry the anatomy it was built with, so the "
+                "mechanistic theta cannot be bound. Loading the default prior "
+                "here would silently attach a different brain: family membership "
+                "is indexed by parcel, and nothing downstream checks that the "
+                "indices belong to the same parcellation. Build the model via "
+                "SCWBD(cfg, anat) (which records it) or pass the anatomy in."
+            )
+        _n = int(getattr(_anat, "n_regions", 0) or 0)
+        _layout = getattr(model, "family_layout", None)
+        _max = max((max(f.regions) for f in getattr(_layout, "families", ()) or ()), default=-1)
+        if _n and _max >= _n:
+            raise ValueError(
+                f"the model's family layout indexes region {_max} but this anatomy has "
+                f"{_n} regions. These are different parcellations, and binding one to "
+                "the other would mis-assign every family."
+            )
         _bind(theta, _anat)
 
     with torch.no_grad():

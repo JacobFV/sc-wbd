@@ -433,6 +433,24 @@ class SCWBD(nn.Module):
     ) -> None:
         super().__init__()
         self.cfg = cfg
+        # The anatomy this model was BUILT with, kept so consumers never have to
+        # re-load "the" anatomy and hope it is the same one.
+        #
+        # `scwbd.intervene.impulse_response` did exactly that: it read
+        # `getattr(model, "anat", None)`, found nothing -- because nothing was
+        # ever stored -- and fell back to `load_anatomy()`. For a model built on
+        # the default prior that is right by coincidence. For a model built on
+        # the synthetic fallback (454 regions, derived families reaching index
+        # 453) it bound a 414-region anatomy and raised
+        # `INDICES element is out of DATA bounds, id=432 axis_dim=414`.
+        #
+        # The out-of-bounds is the lucky case. Two anatomies with the SAME region
+        # count and different family membership would have bound silently and
+        # returned plausible numbers, which is the failure this attribute exists
+        # to make impossible. Assigned plainly: `AnatomyPrior` is not an
+        # `nn.Module`, so it is not registered as a submodule and does not enter
+        # `state_dict()`.
+        self.anat = anat
         self.anat_summary = anat.summary()
         self.n_regions = anat.n_regions
         self.theta_dim = theta_dim
