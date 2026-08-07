@@ -816,6 +816,20 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
     _model_cfg = (_cfg.get("model") or {}) if isinstance(_cfg, dict) else {}
     name = str(ev.get("model_id") or plan.name)
     is_treatment = bool(_model_cfg.get("family_state"))
+
+    # Whether ANY stage actually took a gradient on measured data.  `train.py`
+    # computes a real-data loss only for these three stage names; run 2 renamed
+    # every stage, so none matched and the model trained on simulation alone
+    # while its stages were called things like "T1_measured_founding".  Derived
+    # from the evaluation's own recorded config rather than assumed, because the
+    # honest description of the artifact depends on it.
+    _REAL_STAGES = {"III_sliced", "IV_assembly", "V_individual"}
+    _stages = ((_cfg.get("train") or {}).get("stages") or []) if isinstance(_cfg, dict) else []
+    _stage_names = {
+        str(s.get("name")) for s in _stages if isinstance(s, dict) and s.get("name")
+    }
+    trained_on_measured = bool(_stage_names & _REAL_STAGES)
+    sim_only = bool(_stage_names) and not trained_on_measured
     arm_word = "treatment" if is_treatment else "control"
     lost = bool(beaten)
 
@@ -843,6 +857,20 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
         + ("reference" if is_treatment else "control")
         + " artifact for others, not as a working model. If you are looking for a "
         "brain-dynamics model that works, this is not it.",
+        "",
+        (
+            "> **This model never saw measured data during training.** Every "
+            "training stage computed its loss on *simulated* trajectories over a "
+            "real anatomical prior. The real-EEG loader was constructed and its "
+            "split fingerprinted, but no stage ever took a gradient on it -- the "
+            "trainer gates measured-data losses on stage names this run does not "
+            "use, so the gate never opened and nothing raised. The scores below "
+            "are therefore a **simulation-to-measurement transfer** result, not a "
+            "held-out-performance result, and a stage named for measurement is "
+            "not evidence that measurement occurred."
+            if sim_only
+            else ""
+        ),
         "",
         "## The headline",
         "",
