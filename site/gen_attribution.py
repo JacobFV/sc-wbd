@@ -174,17 +174,11 @@ is recorded in the release manifest as
 This site does not assert an answer. The conservative reading — assume it does —
 is the one that fails safe.[[src: scwbd/release/manifest.py]]</p>
 
-<div class="todo">
-<span class="todo-label">Jacob — decision required</span>
-<p><strong>The repository has no LICENSE file, and <code>pyproject.toml</code>
-declares <code>license = {{ text = "Proprietary" }}</code>.</strong> If any
-released artifact inherits CC-BY-NC-SA-4.0, ShareAlike requires derivatives be
-released under that same licence, and “Proprietary” is not compatible with it.
-This needs a human decision before anything is published, and it is a legal
-question rather than an engineering one.</p>
-<p>Also needed here: whether SC-WBD is being offered commercially, since that
-determines whether the NonCommercial term is a live constraint or a moot one.</p>
-</div>
+<p>The repository is released under
+<a href="https://github.com/JacobFV/sc-wbd/blob/master/LICENSE">CC BY-NC-SA
+4.0</a>, matching the most restrictive term inherited from the atlas inputs.
+ShareAlike propagates to derivatives, and NonCommercial is a live constraint
+rather than a moot one.</p>
 
 <h2>Owner licence decision, on the record</h2>
 
