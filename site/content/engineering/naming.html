@@ -1,0 +1,95 @@
+title: A guard on one verb is not a guard on a noun — SC-WBD
+description: We built a refusal that stops a model shipping under a name it has not earned. Then a run-2 evaluation stamped a run-1 name on its own results, and nothing objected.
+nav: engineering
+kicker: Engineering · 09
+heading: A guard on one verb is not a guard on a noun
+standfirst: We built a refusal specifically to stop an artifact carrying a designation it has not earned. It is mutation-tested and it works. Then a run-2 evaluation labelled its own results with a run-1 name, wrote them into the file the public model card reads, and nothing objected at all.
+---
+<div class="prose">
+
+<h2>What the refusal does</h2>
+
+<p>The rule is simple. A model may not be emitted under the project's
+designation when it is structurally the control arm of its own ablation — one
+operator across every region, no cross-scale structure. That was a real
+mistake, made once, and the refusal exists so it cannot be made silently
+again.</p>
+
+<p>It is tested by mutation: break the config so the condition holds, watch it
+refuse; restore it, watch it pass. It fires. It is not decoration.</p>
+
+<h2>What it did not stop</h2>
+
+<p>An evaluation of the new model produced a results file whose
+<code>model_id</code> read <code>SC-WBD-001-beta</code> — the <em>previous</em>
+model. A hardcoded string. That file is the one the public model card reads
+every score from.</p>
+
+<p>Fixing it revealed a second: the comparison table inside the same file
+ranked the new model's own arm under the label
+<code>scwbd_001_beta</code>, in four places.</p>
+
+<p>And a third, in a different module: the checkpoint discovery function takes
+the <em>directory name</em> as the designation and never reads the
+<code>model_id</code> recorded inside the checkpoint. Rename a folder, rename
+the model.</p>
+
+<table>
+<thead><tr><th>site</th><th>what it reaches</th></tr></thead>
+<tbody>
+<tr><td>evaluation <code>model_id</code></td><td>the file the model card reads its scores from</td></tr>
+<tr><td>evaluation arm label</td><td>the comparison table inside that file</td></tr>
+<tr><td>checkpoint discovery</td><td>anything that loads a checkpoint by path</td></tr>
+</tbody>
+</table>
+
+<h2>Why nothing refused</h2>
+
+<p>The guard watches <strong>emission</strong>. These were <strong>writing</strong>
+and <strong>discovery</strong>. Same wrong state — an artifact carrying a name
+that is not its own — reached by verbs the guard has no view of.</p>
+
+<blockquote>
+<p>A guard on one verb is not a guard on a noun. Ask of any refusal: what else
+can produce this same wrong state by a different verb?</p>
+</blockquote>
+
+<h2>The second defect survived the first fix</h2>
+
+<p>This part is the one worth carrying. After fixing <code>model_id</code>, the
+obvious check was a grep for the designation. It came back clean.</p>
+
+<p>The arm label was lowercase, with underscores.</p>
+
+<blockquote>
+<p>A literal you fix by grepping is a literal you fix only in the spelling you
+thought of.</p>
+</blockquote>
+
+<p>So the repair is not a better grep. It is to derive the name <em>once</em>
+and let every consumer read it, leaving no spelling to miss:</p>
+
+<pre><code>def _designation(cfg) -> str:
+    for obj in (cfg.train, cfg.model, cfg):
+        for attr in ("model_id", "designation", "run_name"):
+            v = getattr(obj, attr, None)
+            if isinstance(v, str) and v:
+                return v
+    return "SC-WBD-unnamed"</code></pre>
+
+<p>The fallback is deliberate. It never returns a real designation, because an
+<em>unnamed</em> artifact is a visible defect and a <em>misnamed</em> one is
+not. If the lookup ever fails, we would rather ship something obviously broken
+than something quietly wrong.</p>
+
+<h2>The uncomfortable part</h2>
+
+<p>All three defects had existed for as long as the code had. They surfaced
+only because a second model finally existed to be misnamed. A single-artifact
+project cannot detect a naming bug at all — every name is trivially correct
+when there is only one thing to name.</p>
+
+<p>Which is a reason to build the second artifact earlier than feels
+necessary.</p>
+
+</div>
