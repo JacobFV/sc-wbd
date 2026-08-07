@@ -75,7 +75,8 @@ def test_posterior_marginal_has_a_usable_effective_sample_size(
 
     path, payload = compiled_checkpoint
     d = cfg.data
-    anat = load_anatomy(device="cpu", n_cortex=400)
+    from scwbd.runtime.predict import rebuild_anatomy
+    anat = rebuild_anatomy((payload.get("extra") or {}).get("anatomy") or {}, device="cpu")
     model = SCWBD(cfg.model, anat)
     miss, unexp = model.load_state_dict(
         {k.replace("._orig_mod.", "."): v for k, v in payload["model"].items()}, strict=False

@@ -23,7 +23,8 @@ def test_compiled_checkpoint_keys_match_a_cpu_built_model(cfg, compiled_checkpoi
     from scwbd.foundation.model import SCWBD
 
     path, payload = compiled_checkpoint
-    anat = load_anatomy(device="cpu", n_cortex=400)
+    from scwbd.runtime.predict import rebuild_anatomy
+    anat = rebuild_anatomy((payload.get("extra") or {}).get("anatomy") or {}, device="cpu")
     model = SCWBD(cfg.model, anat)
 
     before = {k: v.clone() for k, v in model.state_dict().items()}
@@ -50,8 +51,10 @@ def test_load_checkpoint_reports_what_it_dropped(cfg, compiled_checkpoint):
     from scwbd.foundation.checkpoint import load_checkpoint
     from scwbd.foundation.model import SCWBD
 
-    path, _ = compiled_checkpoint
-    anat = load_anatomy(device="cpu", n_cortex=400)
+    path, peek = compiled_checkpoint
+    from scwbd.runtime.predict import rebuild_anatomy
+
+    anat = rebuild_anatomy((peek.get("extra") or {}).get("anatomy") or {}, device="cpu")
     model = SCWBD(cfg.model, anat)
     payload = load_checkpoint(
         str(path), model=model, map_location="cpu", strict=False, restore_rng=False
