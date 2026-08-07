@@ -2580,3 +2580,49 @@ Accepted only because run 1 is finished and its configs are frozen.
 
 > A live curriculum must declare its admission. Only a dead one may inherit it
 > from a table.
+
+### Ninth and tenth instances, in consecutive lines of the same command
+
+The eighth entry above ends: *"the repair is not care."* What followed is the
+strongest evidence for that sentence in this file.
+
+Stopping a sweep, I wrote a guard against self-matching — and then, in the very
+next line of the same command, did not:
+
+```bash
+PIDS=$(pgrep -f "counts\.sh" | grep -v "^$$\$")   # guarded
+for p in $(pgrep -f "python -m pytest tests/"); do kill "$p"; done   # not guarded
+```
+
+The second pattern was in my own argv. Exit 144. I killed the shell that was
+killing things, having just written the code that prevents exactly that, one
+line earlier.
+
+The next attempt used the bracket trick — `pkill -f "count[s].sh"`, a pattern
+whose literal text does not match itself, which is the standard repair. Exit 144
+again. Three self-inflicted terminations in four commands, each after adopting
+the fix for the previous one.
+
+### What this actually demonstrates
+
+Not that the trick is wrong — it is right, and it is the correct repair. What it
+demonstrates is that **a correct technique applied by hand, under time pressure,
+in a multi-line command, will be applied to the first pattern and forgotten on
+the second.** That is not a knowledge problem. Knowing the fix, writing the fix,
+and then omitting it eight words later is the whole failure.
+
+> When a class of defect recurs after its repair is known and adopted, the
+> repair is at the wrong level. A rule that must be remembered per-invocation
+> will be forgotten per-invocation.
+
+The level that works is not remembering: it is never issuing a pattern-matched
+kill from an interactive shell at all. Use the supervisor that already holds the
+pid — the harness's own background-task handle, a recorded `$!`, a pidfile.
+Every one of those knows exactly which process it started and cannot match
+anything else, including itself.
+
+**And the cost was paid for nothing.** The sweep being killed was producing
+empty output — a `grep` for a pytest summary line that `-q --tb=no` does not
+print. Three terminations to stop a job whose real defect was that I had guessed
+at its output format instead of looking at it, which is the fourth capture bug
+of the day.
