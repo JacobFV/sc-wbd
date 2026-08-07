@@ -818,6 +818,32 @@ Recorded now, not after the numbers.
   addressed. See §4. This is the limit that most changes what the artifact is
   *for*: it is a candidate arm, not an answer.
 
+### Run 3, concretely
+
+The gate defect (§2b) has to be fixed before any further arm is trained, because
+an arm trained through the same gates measures the same wrong thing. The
+sequence, in order, with both prerequisites already verified:
+
+```
+1. git apply configs/run2/patches/0001-run_stage-config-driven-admission.patch
+2. pytest tests/foundation/test_curriculum_admission.py     # expect 11 passed
+3. pytest tests/foundation/test_stage_names_reach_the_trainer.py
+                                                            # expect 12 XPASS -> FAIL
+                                                            # then delete the xfail marker
+4. relaunch training with the same config
+```
+
+Step 3 is the one that is easy to get wrong. Those tests are
+`xfail(strict=True)`, so when the gates are fixed they stop failing, pytest
+reports the XPASS as an **error**, and the marker must be removed by hand. That
+is deliberate: it is the only mechanism that forces a fix to be acknowledged
+rather than silently absorbed.
+
+Do **not** make step 3 pass by adding the run-2 stage names to `REAL_DATA_STAGES`
+or to `STAGE_PERMISSIONS`. That turns the tests green without making the trainer
+use measured data, and is the decorative-guard move this project exists to
+catalogue.
+
 ### What would actually make A1 answerable
 
 Ordered by information per training run, so the list is usable rather than
