@@ -1187,6 +1187,38 @@ state-dependence — which is exactly the `X_i^uncertainty` claim. Caveat carrie
 from the pre-registration: L4 is in-sample for SC-WBD and genuinely held out
 for the baselines, so it *flatters* SC-WBD, and it still only ties `ar16`.
 
+**RL-14 — stage behaviour is selected by a declared property, never by matching
+the stage's name.** Run 2 renamed all six curriculum stages. Six gates in
+`train.py` select behaviour by comparing `stage.name` against the **run-1**
+names, and five returned the wrong answer for the whole nine-hour run: no
+gradient was ever taken on measured data, the per-stage gradient allowlist fell
+back to `("*",)`, boundary randomisation and haemodynamic state were off, and no
+individualizer was constructed. Nothing raised. The sixth gate — the only reason
+the run trained at all — is correct by accident, being the one written as `!=`.
+
+The ruling is not "keep the tuples in sync". A longer tuple leaves the same trap
+for the next rename. It is:
+
+> A lookup keyed on a name, with a default that **grants**, is a configuration
+> system that cannot report a typo. `PERMISSIONS.get(name, ("*",))` and
+> `name in (...)` are unfalsifiable by construction: no name exists that they
+> reject.
+
+So each such decision must read a field the config *declares* —
+`uses_real_data`, `individualises`, `trainable` — and a stage that declares none
+must be **refused at config load**, not silently granted everything.
+`scwbd/foundation/curriculum_admission.py` already implements this and states
+the reasoning in its own docstring; the patch wiring it into `run_stage` is
+`configs/run2/patches/0001-run_stage-config-driven-admission.patch`, which
+applies cleanly and was written before run 2 began.
+
+Recorded as a ruling rather than a bug because the bug already had a fix in the
+repository, six failing tests naming it, and a module built to prevent it — and
+none of that stopped the run. What was missing was a **binding statement that
+this pattern is not allowed**, which is what §5c is for. See
+`reports/RUN2.md` §2b and the permissive-default class in
+`reports/decorative_guards.md`.
+
 ---
 
 ## 6. Downstream consumer: `~/Documents/robotics` (`tms-robotics`)
