@@ -2116,3 +2116,79 @@ moved it from 52.26% to 47.34% — **weakening** the argument for retiring the
 narrowing. A correction that happens to favour the position you already held
 deserves more suspicion than one that does not; this one did not, which is mild
 evidence the measurement was real rather than motivated.
+
+## The permissive-default class — the largest instance, found at hour eight
+
+Every entry above concerns a guard or a claim. This one concerns **three
+mechanisms at once**, and it is the most expensive defect this project has
+produced.
+
+Run 2 renamed all six training stages. Three mechanisms in `train.py` are keyed
+to the **run-1** names. None was updated:
+
+| mechanism | what an unmatched name does |
+|---|---|
+| `STAGE_PERMISSIONS.get(name, ("*",))` | full gradient permission, no restriction |
+| `name in ("III_sliced", "IV_assembly", "V_individual")` | **no measured-data gradient, ever** |
+| `name == "V_individual"` | no individualizer is built |
+
+Measured, not inferred:
+
+```
+stages with a permission entry      : NONE  -> all fall back to ("*",)
+stages that compute a real-data loss: NONE
+stages that build an individualizer : NONE
+```
+
+So the run trained for nine hours on **simulated trajectories alone**, with the
+per-stage gradient restrictions inert and no individualizer, under stage names
+including `T1_measured_founding` and `T1_individualisation`. The real-EEG loader
+was constructed and its split fingerprinted; the gradient was never taken. The
+log confirms it at every step of every stage: the only NLL field ever emitted is
+`sim_forecast_nll`.
+
+### The shape
+
+> **A dictionary lookup with a permissive default is a configuration system that
+> cannot report a typo.** `.get(name, ("*",))` and `name in (...)` are
+> unfalsifiable by construction — there is no stage name they reject.
+
+All three failed toward *permissive*: an unmatched name means no restriction, no
+real loss, and no individualizer, never an exception. Nothing crashed, loss fell,
+`npe_rejected` held at 0, and every dashboard was green for nine hours.
+
+This is the arm-asymmetry lesson at full scale, and this register already had
+the sentence for it: *"These do not produce a wrong number. They produce a
+right-looking number from a model that quietly lost the mechanism the experiment
+exists to test."*
+
+### Why it was found at all
+
+Not by a guard. By reading `train.py` to answer an unrelated question — whether
+`evaluate.py`'s individualizer branch, which had never executed in run 2, would
+crash after the final stage. The gate three lines above it was the defect.
+
+> Nothing in this project would have reported it. Checking a path *adjacent* to
+> the one you care about is how the untested branch gets read at all.
+
+### What was and was not done
+
+The run was **not** killed — roughly an hour remained, and a fix to the stage
+gates cannot be validated except by another full run, which is the same
+untestable-fix trap recorded above for the posterior LR change. `train.py` was
+left untouched while the process was live, because a crash-and-resume would
+continue under different rules than it began with: one run, two regimes.
+
+Instead the artifact is described accurately everywhere a reader meets it — the
+report, the model card, and the site all now say **simulation-trained, evaluated
+on real EEG it never saw** — and four `xfail(strict=True)` tests were added that
+would have caught it on day one. `strict=True` matters: when run 3 fixes the
+gates they XPASS, pytest reports that as a failure, and the marker cannot be left
+behind.
+
+**The fix is not a longer tuple.** Adding the run-2 names to both collections
+works and leaves the identical trap for run 4. Key the mechanisms on a *declared
+stage property* — `uses_real_data`, `individualises` — so a stage that fails to
+declare one is refused at config load. Every one of the three defects is the
+same defect: behaviour attached to a string literal that nothing checks against
+the config.
