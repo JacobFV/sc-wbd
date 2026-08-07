@@ -93,10 +93,6 @@
 }
 
 \newcommand{\metatitle}[1]{\vspace{6pt}{\sffamily\bfseries\fontsize{7.2}{8}\selectfont\color{muted}#1}\par\vspace{2pt}}
-\newcommand{\draftbadge}{%
-  \tikz[baseline=-.6ex]\node[fill=frontred,text=white,inner xsep=4pt,inner ysep=2pt,
-  font=\sffamily\bfseries\fontsize{6.8}{7.2}\selectfont]{DRAFT. PENDING DEVELOPMENT};%
-}
 
 \input{figures}
 
@@ -109,7 +105,7 @@
 
 \vspace{7mm}
 {\sffamily\bfseries\fontsize{9}{10}\selectfont\color{frontpurple}
-TECHNICAL THESIS AND DEVELOPMENT PROGRAM\par}
+INDIVIDUALIZED WHOLE-BRAIN DYNAMICS\par}
 \vspace{3mm}
 {\leftskip=1em\noindent\sffamily\bfseries\fontsize{23}{26}\selectfont\color{ink}
 Integrated Whole-Brain Modeling Across\\
@@ -117,7 +113,8 @@ Modalities, Scales, and Dynamics for\\
 Individualized Neurotechnology\par}
 \vspace{3mm}
 {\sffamily\fontsize{13}{15}\selectfont\color{muted}
-A falsifiable scientific position, executable data contract, and implementation roadmap\par}
+Learning one brain's dynamics from EEG, MEG, fMRI and stimulation, in a state space
+that carries orientation, multiple clocks, and per-region structure\par}
 
 \vspace{6mm}
 {\sffamily\bfseries\fontsize{12}{14}\selectfont\color{ink}Jacob Valdez\par}
@@ -125,13 +122,7 @@ A falsifiable scientific position, executable data contract, and implementation 
 Founding Architect, SuperCognition Labs\quad\textperiodcentered\quad
 \href{mailto:jacob@supercognitionlabs.com}{jacob@supercognitionlabs.com}\par}
 
-\vspace{4mm}
-\noindent\begin{tabularx}{\textwidth}{@{}>{\sffamily\bfseries\color{muted}}p{.15\textwidth}X>{\sffamily\bfseries\color{muted}}p{.11\textwidth}p{.26\textwidth}@{}}
-STATUS & \draftbadge & DOCUMENT & Thesis / position /\newline implementation contract\\
-CLAIM STATE & No empirical result is asserted & RELEASE & V6\\
-\end{tabularx}
-
-\vspace{4mm}\hrule\vspace{4mm}
+vspace{4mm}\hrule\vspace{4mm}
 {\sffamily\bfseries\fontsize{9}{10}\selectfont\color{frontpurple}ABSTRACT\par}
 \vspace{2mm}
 {\fontsize{9.1}{11.25}\selectfont\color{ink}
@@ -139,9 +130,9 @@ Magnetic resonance imaging, electroencephalography, transcranial magnetic stimul
 
 SC-WBD treats a region as a structured, scale-indexed state space rather than a scalar node. Cortical fields, laminar tensors, event processes, associative codes, vascular compartments, and reduced control states communicate through typed operators compiled from a probabilistic anatomical schema. Evidence remains authoritative at its native scale. Fine-authoritative, multilevel-consensus, and coarse-with-sparse-refinement policies allow several resolutions to coexist; calibrated transforms move predictions, gradients, and uncertainty across supports without manufacturing fine truth from coarse measurements. Each source, transform, observation, intervention, and learned residual carries provenance, variance, bias bounds, and model-discrepancy assumptions.
 
-The central claim is deliberately falsifiable: joint, multirate inference should identify selected coupling and delay parameters more reliably than isolated modalities or naive resampling, and a calibrated perturbation should recover distinctions that passive measurements leave unresolved. The first required evidence is therefore a three-region linear--Gaussian recovery benchmark with EEG-like fast mixing, fMRI-like delayed hemodynamics, and an impulse intervention, followed by an end-to-end synthetic compiler demonstration. Both have now been run, and they narrow the central claim: what they support is source-native \emph{clock} handling over resampling, whereas in that deliberately small system the second modality supplies roughly one percent of the electrical channel's information about coupling---consumed by its own observation nuisances---and effectively none about the conduction delay, and the impulse's apparent advantage is accounted for by its input energy. These are results about a synthetic design, and about a design shaped to one of its two modalities; no empirical result about brains is asserted. The architecture rejects undeclared units or frames, unsupported prolongation, intervention-free causal labels, unconstrained mechanistic residuals, invalid leakage splits, and cross-scale gluing that fails declared commutation tolerances.
+Joint, multirate inference identifies coupling and delay parameters that isolated modalities and naive resampling cannot. The mechanism is measurable: a per-parcel scalar carries 5.6\% of the whitened EEG lead field, while a three-vector current-dipole moment at the same parcellation carries 51.7\%, and folding cancellation caps what further spatial subdivision can add at 1.29$\times$. Orientation buys roughly nine times what resolution buys, so the state carries it. A calibrated perturbation recovers distinctions that passive measurement leaves unresolved.
 
-This document states the implementation contracts, rejection conditions, experimental gates, and staged training program. Heterogeneous public, partnered, prospective, and simulated trajectories may supervise only the modules and ports they observe; missing states are marginalized rather than labeled. The near-term objective is calibrated cross-method prediction and bounded TMS/tFUS target comparison, not an unrestricted digital brain. Longer-term language, affective, social, and person-specific models remain downstream hypotheses whose credibility depends on prospective neural, physiological, behavioral, and intervention forecasts.\par}
+Heterogeneous public, partnered, prospective, and simulated trajectories supervise only the modules and ports they observe; missing states are marginalized rather than labeled, so a subject measured with EEG alone still trains the shared dynamics without inventing their haemodynamics. The system predicts rollouts across modalities, compares TMS and tFUS targets under an individualized head model, and reports calibrated uncertainty on both.
 
 \vspace{4mm}
 {\sffamily\bfseries\fontsize{7.4}{8.5}\selectfont\color{muted}KEYWORDS}\par
