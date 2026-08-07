@@ -176,8 +176,8 @@ their initialisation — mechanism and measurement, independently.
   tests/infer/test_recovery.py              3  REAL findings:
       - interval coverage 0.891 [0.791,0.946] excludes nominal 0.95 (n=64)
       - optimiser converged on 34% of replicates vs 0.8 threshold, while the
-        Hessian is PD in >95%.  *** THE FIX ALREADY EXISTS, UNMERGED *** — see
-        the worktree section below.
+        Hessian is PD in >95%.  FIX CHERRY-PICKED to master as b85d68a; the
+        improvement is NOT yet measured — see the worktree section below.
       - naive resampling recovers the delay with ZERO bias, so
         test_naive_resampling_loses_the_delay asserts a premise that is false
 
@@ -195,19 +195,33 @@ are fully merged into master. **wt/fisher is not** — it carries 10 commits and
     e90da26 infer: record deviations from the pre-registration in the report itself
     ... plus 4 more, and reports/identifiability/results.json (32k lines)
 
-13eab71 is the fix for the convergence failure above, and its reasoning is
+13eab71 IS NOW ON MASTER (b85d68a, cherry-picked and conflict-resolved). Its
+reasoning is
 correct: the preconditioner is the expected information at the *prior mean* and
 is never refreshed, so the iteration converges LINEARLY, not quadratically. A
 fixed step count therefore cannot certify convergence. It replaces the fixed loop
 with a Newton-decrement stopping rule (`newton_tol=0.05`) and records
 `n_newton_used` alongside `n_newton_max`.
 
-MERGING IT IS NOT TRIVIAL. `git merge wt/fisher` produces 9 conflicts, and
-cherry-picking 13eab71 alone produces 2 (`scwbd/infer/cli.py`,
-`scwbd/infer/identifiability.py`) — master has edited the same regions since the
-fork at 4d617af. Do this deliberately with the tests as the arbiter, not at the
-end of a session. `tests/infer/test_recovery.py` is the direct check: it should
-go from 3 failures to 2.
+THE REMAINING 9 COMMITS ARE STILL UNMERGED. `git merge wt/fisher` produces 9
+conflicts — master has edited the same regions since the fork at 4d617af. The
+valuable ones look like the five-design benchmark run to completion, profile
+likelihoods, per-modality theta information, and a 32k-line
+`reports/identifiability/results.json`. Merge deliberately, with tests as
+arbiter.
+
+One trap seen while cherry-picking 13eab71: the conflict context surfaced
+`run_signature` / `_load_checkpoint` from bb06128, an ANCESTOR commit, not from
+13eab71 itself. Taking that side would have left dangling calls to functions
+master does not have. When cherry-picking from this branch, check whether a
+conflicting hunk actually belongs to the commit you asked for.
+
+STILL OPEN: whether the fix raises converged_fraction. b85d68a says so in its own
+message. `recover()` at 16 replicates takes >15 min, and the full
+`tests/infer/test_recovery.py` takes 74 min on an idle machine; it should go from
+3 failures to 2 if the fix works. Note the criterion also TIGHTENED — 0.1 to
+newton_tol=0.05 — so a smaller improvement than expected is not automatically a
+failure of the stopping rule.
 
 Everything is on origin, so nothing is at risk if the worktree directories are
 removed.
