@@ -502,7 +502,39 @@ them, and delete the declaration.
 
 Same for `padding_fraction`, which was filed as a measured cost against an
 11-family partition that no longer exists — a derived quantity written down as
-a constant goes stale silently.
+a constant goes stale silently. *(Regenerated 2026-08-06: 0.4734. The claim was
+right; the specific instance is now fixed and the general point stands.)*
+
+**Status (run 2): measured, and the claim holds — with one honest caveat.**
+Run over the real `Schaefer400x7` prior, all 9 landed families:
+
+| evidence_tier | n | training_status | forced by |
+|---|---|---|---|
+| `measured_separation` | 2 | `has_regional_data` (both) | nothing — see below |
+| `atlas_separation` | 7 | `prior_only_untrained` (all 7) | the validator, line 417 |
+
+`training_status` carries **zero independent information** across the whole
+partition: given `evidence_tier`, it is determined in every one of the 9 cases,
+and there are no disagreements to find. That is O-4's premise, now measured
+rather than argued.
+
+The caveat is worth stating precisely rather than rounding off. Only 7 of the 9
+are forced by a *rule*: `families.py` already raises if an `atlas_separation`
+family is not `prior_only_untrained`. The other 2 are forced by nothing — a
+`measured_separation` family could in principle be untrained (we separated it,
+but hold no pretraining data for it), and the validator would allow that. In
+this partition it does not happen.
+
+So the honest repair is not simply "delete the declaration". It is:
+
+1. enforce the second implication as well, or
+2. keep the field **only** for the case it can actually vary in, and derive the
+   rest.
+
+Deleting it outright would silently convert the second row from a coincidence
+into an assumption — which is the same move O-4 exists to object to, made in
+the other direction. Two declared fields that cannot disagree are one field; two
+that *usually* agree are still two.
 
 ### O-5. Regional state is **vector-valued**, not scalar-per-parcel
 
