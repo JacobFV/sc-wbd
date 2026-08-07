@@ -1487,14 +1487,31 @@ def publish(
         exist_ok=allow_existing,
     )
     uploaded: list[str] = []
-    if stage is not None:
-        api.upload_file(
-            path_or_fileobj=str(stage / "README.md"),
-            path_in_repo="README.md",
-            repo_id=repo_id,
-            repo_type=plan.repo_type,
-        )
-        uploaded.append("README.md")
+    # The card is NOT conditional on --stage-dir.  It was: the upload sat inside
+    # `if stage is not None`, and --stage-dir is a debugging flag for inspecting
+    # the rendered card locally.  So `make publish-002`, which does not pass it,
+    # shipped scwbd-002-pilot public with weights and no model card at all --
+    # no scores, no licence section, and none of the disclosure about the
+    # curriculum defect.
+    #
+    # It hid because every dry run passed --stage-dir in order to READ the card,
+    # so the verification path and the shipping path differed in exactly the
+    # place the defect lived. An artifact's card is not an optional attachment;
+    # publishing weights without one is publishing a claim with its caveats
+    # removed.
+    import tempfile as _tempfile
+
+    _card_dir = stage if stage is not None else Path(_tempfile.mkdtemp(prefix="scwbd-card-"))
+    _card = _card_dir / "README.md"
+    if not _card.exists():
+        _card.write_text(plan.card)
+    api.upload_file(
+        path_or_fileobj=str(_card),
+        path_in_repo="README.md",
+        repo_id=repo_id,
+        repo_type=plan.repo_type,
+    )
+    uploaded.append("README.md")
     for f in plan.files:
         api.upload_file(
             path_or_fileobj=str(f.local),
