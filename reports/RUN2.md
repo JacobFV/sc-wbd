@@ -598,6 +598,16 @@ aspirational:
    partition matters or merely having nine groups of those sizes does. If the
    permuted arm matches the candidate, every other control becomes much less
    interesting.
+
+   *Not yet implementable from config alone.* `ABLATIONS["A1_structured_state"]`
+   names the arm, but nothing in `FoundationConfig` carries a permutation seed —
+   the shuffle has to happen where the region→family map is built, which is
+   model code and was therefore off-limits while run 2 was training. The
+   constraint that matters when it is written: permute the **assignment** while
+   preserving the multiset of family sizes and every per-family dimension, so
+   the permuted arm is byte-identical in capacity and differs only in *which*
+   regions share an operator. A permutation that also changes family sizes tests
+   nothing, because then two things moved.
 2. **`pooled_vector_per_region@param_matched`** — the §11.4 comparison proper.
 3. **`scalar_per_region`** — the floor. Cheap, and it bounds the others.
 4. `@state_matched` and `theta_conditioned_pooled` — needed for attribution, but
