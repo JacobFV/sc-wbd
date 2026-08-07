@@ -186,6 +186,22 @@ test: ## Run the test suite
 test-fast: ## Run the test suite, stopping at the first failure
 	cd $(ROOT) && PYTHONPATH=$(ROOT) $(PYTEST) -x -q
 
+.PHONY: test-slow
+test-slow: ## Run the tests `make test` deselects (SLOW: hours, not minutes)
+	@# `make test` carries `-m 'not slow'` from pyproject.toml, and prints the
+	@# deselected count on every run so the deferral is visible. This is the other
+	@# half, and it exists as a NAMED target because a set you can only run by
+	@# remembering a flag is a set that does not get run.
+	@#
+	@# It does not finish quickly and may not finish at all: `pytest -m slow` hit a
+	@# 50-minute cap after 17 of 56 tests. tests/infer/test_recovery.py and
+	@# test_synthetic_slice.py each exceed ten minutes on an idle machine.
+	@# SCWBD_TEST_REPLICATES tunes the dominant cost (64 by default) WITHOUT
+	@# editing a test -- but lowering it changes what the test can detect, so do
+	@# that deliberately and say so, never to make a run finish.
+	@echo "Running the slow set. Expect hours. reports/RUN2.md §5b records the state."
+	cd $(ROOT) && PYTHONPATH=$(ROOT) $(PYTEST) -q -m slow
+
 .PHONY: test-site
 test-site: site-check ## Alias for site-check
 
