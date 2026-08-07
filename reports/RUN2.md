@@ -312,6 +312,21 @@ compared `wall_s` across stages. The trade was still right — a publish path th
 refuses a correct artifact after nine hours costs more than an hour of slower
 steps.
 
+**The zero-step stage is safe, checked rather than assumed.** `T5_distillation`
+is scheduled for **0 steps**, and a stage that runs no steps is the kind of
+boundary that crashes a nine-hour job at hour eight. Read rather than hoped:
+`step = 0` is bound *before* `for step in range(1, stage.steps + 1)`, so the
+empty range leaves no unbound name; `OneCycleLR` is built with
+`total_steps=max(stage.steps, 2)` and `pct_start=min(0.3, warmup/max(steps, 1))`,
+so neither the scheduler nor a division sees zero; and `rep`, `best` and the
+checkpoint writes all sit at stage level rather than inside the loop. T5 will
+write a `stage_T5_distillation.pt` containing the T4 weights unchanged.
+
+That last detail is why `_final_stage_file` filters on `steps > 0` — the last
+*scheduled* stage is T5, and publishing its checkpoint would ship weights under
+the name of a stage that did nothing. The last stage that actually runs is
+`T1_individualisation`, and that is what the publish path selects.
+
 Remaining: T4 simulator extension 3334 · T5 distillation 0 · T1
 individualisation 900.
 
