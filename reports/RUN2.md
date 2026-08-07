@@ -1503,7 +1503,7 @@ With that fixed, 38 files became 10.
 
 | file | n |
 |---|---|
-| `foundation/test_family_state.py` | 6 (was 17) |
+| `foundation/test_family_state.py` | 5 (was 17) |
 | `evaluation_audit/test_simulated_sample_coverage.py` | 8 |
 | `evaluation_audit/test_sampling_representativeness.py` | 7 |
 | `evaluation_audit/test_split_and_verdict_integrity.py` | 4 |
@@ -1550,10 +1550,21 @@ Also found: `subcortex_amyg` maps to backend kind `amygdala`, which
 learned core in silence — the exact failure that test's docstring says it exists
 to catch. Pinned as a known set so closing it is what changes the line.
 
-The remaining **6** are the R12 group against *synthetic* manifests. Confirmed
-directly, and it is the fact that governs the published model: **R12 admits a
-real treatment report** — `read_operator_assignment` returns the full backend
-map from `SCWBD.family_report()`.
+The remaining **5** are the R12 group against *synthetic* manifests, and the
+cause is now known rather than assumed: those fixtures did not carry what a real
+`family_report()` carries. `_families_from_report` reads a **nested**
+`partition["families"]` list of `{name, n_regions, backend}` — not a top-level
+`families` key, not `operators` — and the `family_state is False` branch reads
+`local_core` and `n_regions`. Supplying those closed the treatment case and moved
+the control case from the generic *"says nothing about what operator any region
+runs"* refusal to R12's real one, which asks for `arm.role='control'` with a
+`controls_for` and a justification. The manifest-side arm declaration is the next
+step and is left untraced rather than guessed at — I misread this function twice
+today.
+
+The fact that governs the published model was checked directly: **R12 admits a
+real treatment report** — `read_operator_assignment` returns the full backend map
+from `SCWBD.family_report()`.
 
 **`evaluation_audit` — 33.** Red, **and 002 was published past it**, which §4
 states rather than buries. Six of the nine files exercise a smoke path
