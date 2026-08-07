@@ -321,8 +321,13 @@ def test_hypothalamus_does_not_inherit_the_thalamic_backend():
     """``hypothal`` contains ``thal``.  It is not a thalamic nucleus."""
     from scwbd.foundation.families import _kind_from_declared_name
 
+    # The point of this test is the substring trap: "hypothal" contains "thal",
+    # so a naive match gives the hypothalamus a thalamic relay backend. That
+    # assertion is unchanged and is the one that matters.
     assert _kind_from_declared_name("subcortex_hypothal") is None
-    assert _kind_from_declared_name("subcortex_thal") == "subcortex_thal"
+    # The comparison value is a backend KIND, not a family id -- same O-7
+    # vocabulary slip as in test_agent_c_family_ids_map_onto_the_engineered_backends.
+    assert _kind_from_declared_name("subcortex_thal") == "thalamus"
 
 
 def test_an_unrecognised_non_cortical_family_is_reported_loudly(anat):

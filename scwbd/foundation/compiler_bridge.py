@@ -885,6 +885,11 @@ _COMPONENT_UNITS: dict[str, str] = {
     "spectral": "dimensionless",
     "hemo": "dimensionless",
     "uncertainty": "dimensionless",
+    # O-5b. Hz*m, NOT Hz: this is a current-dipole MOMENT. The unit is what stops
+    # a port carrying activity being wired to `dipole_out`, so declaring it
+    # `dimensionless` here to make a build pass would disable the very check the
+    # 3-vector exists for.
+    "dipole": "Hz*m",
     # per-family components (scwbd.foundation.families)
     "relay": "dimensionless",
     "trn": "dimensionless",
@@ -910,6 +915,11 @@ _COMPONENT_KINDS: dict[str, str] = {
     "spectral": "frequency",
     "hemo": "metabolic",
     "uncertainty": "uncertainty",
+    # `field`, from the schema's extension set (field, channels, event, latent).
+    # Not `population`: a dipole moment is a vector field sampled per parcel, not
+    # a population rate, and the kind is what a consumer reads to know it may not
+    # be summed as a scalar.
+    "dipole": "field",
     # per-family components. body.tex §2.1's component vocabulary is
     # (sheet, layer, population, frequency, memory, metabolic, uncertainty);
     # the schema adds (field, channels, event, latent).
