@@ -1077,6 +1077,38 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
     body.append("")
 
     body += ["## Known defects", ""]
+
+    # Derived from the artifact, not asserted: two baselines identical means the
+    # subject-specific arm never ran, and that is a fact about THIS evaluation
+    # rather than a general caveat.
+    _res = ho.get("results") or {}
+    _ss, _ar = _res.get("subject_specific_ar"), _res.get("ar16")
+    if _ss and _ar and _ss.get("nll_per_sample") == _ar.get("nll_per_sample"):
+        body.append(
+            "- **The hardest baseline was not actually run, and reports itself "
+            "healthy.** `subject_specific_ar` is bit-for-bit identical to `ar16`: "
+            "the participant-disjoint split leaves no test participant with a "
+            "fitted model, so every scored window routes to the pooled fallback. "
+            "Its own `describe()` reports `n_subject_models=8, fallback_subjects=0` "
+            "— which reads as healthy. A field only ever written on success is not "
+            "a record. **Read the table as five distinct comparators, not six**, "
+            "and note that the strongest one the thesis names is absent."
+        )
+
+    if (ho.get("individualization") or {}).get("applied") is False:
+        body.append(
+            "- **Individualisation cannot be measured on this holdout at all — "
+            "not by retraining, not by patching the evaluation.** Refusal R10 "
+            "makes the folds participant-disjoint, so no held-out person has a "
+            "fitted person effect: the between-participant spread of the applied "
+            "theta shift on the test fold is exactly `0.000e+00`. Every held-out "
+            "person receives the identical population term. Measuring "
+            "individualisation needs a *within-participant temporal* split, "
+            "reported as a different claim. This is a property of the design, not "
+            "a defect of this run, and it is why the individualisation figures "
+            "here are absent rather than poor."
+        )
+
     if sim_only:
         body.append(
             "- **Five of six training-stage gates gave the wrong answer** (see the "
