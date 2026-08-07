@@ -49,6 +49,26 @@ __all__ = ["evaluate_model", "real_eeg_holdout", "posterior_calibration", "sourc
 # real EEG held-out likelihood
 # ======================================================================
 @torch.no_grad()
+def _bind_mechanistic(model, theta) -> None:
+    """Bind theta-conditioned ParamPacks before a rollout, if the arm needs them.
+
+    Seventh site to require this.  Every one was a path declared for both arms
+    and exercised only on the control, which has no mechanistic families -- see
+    ``reports/decorative_guards.md``, "the arm-asymmetry class".  Without it a
+    family-state checkpoint raises ``SpanViolation``; with a naive workaround it
+    would silently run the engineered subcortical backends on their defaults.
+    """
+    bind = getattr(model, "set_mechanistic_theta", None)
+    if bind is None or getattr(model, "family_layout", None) is None:
+        return
+    anat = getattr(model, "anat", None) or getattr(model, "_anat", None)
+    if anat is None:
+        from scwbd.foundation.anatomy import load_anatomy
+
+        anat = load_anatomy()
+    bind(theta, anat)
+
+
 def _scwbd_scores(
     trainer,
     loader,
@@ -90,6 +110,7 @@ def _scwbd_scores(
     def _score(th: Tensor, y: Tensor) -> tuple[Tensor, Tensor]:
         """Return (per-element NLL summed over the window, mean prediction)."""
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=cfg.model.use_bf16):
+            _bind_mechanistic(model, th)
             roll = model.rollout(y_context=src, theta=th, n_steps=y.shape[1], enforce_r05=False)
             mu, lv = model.eeg(roll.state)
         m_k = mu.float()
@@ -714,6 +735,7 @@ def _sim_val_nll(trainer, *, n_windows: int = 512) -> float:
         th = b["theta"].to(trainer.device)
         ctx, tgt = act[:, :c], act[:, c:]
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=trainer.cfg.model.use_bf16):
+            _bind_mechanistic(trainer.model, th)
             r = trainer.model.rollout(y_context=ctx, theta=th, n_steps=tgt.shape[1], enforce_r05=False)
         tot += float(gaussian_nll(tgt, r.activity.float(), r.activity_logvar.float())) * act.shape[0]
         n += act.shape[0]
@@ -748,6 +770,7 @@ def backend_comparison(trainer, *, per_backend: int = 64) -> dict[str, Any]:
         th = b["theta"].to(trainer.device)
         ctx, tgt = act[:, :c], act[:, c:]
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=trainer.cfg.model.use_bf16):
+            _bind_mechanistic(trainer.model, th)
             r = trainer.model.rollout(y_context=ctx, theta=th, n_steps=tgt.shape[1], enforce_r05=False)
         lv = r.activity_logvar.float().clamp(-14, 14)
         nll = (0.5 * (math.log(2 * math.pi) + lv + (tgt - r.activity.float()) ** 2 * torch.exp(-lv))).mean(dim=(1, 2))
