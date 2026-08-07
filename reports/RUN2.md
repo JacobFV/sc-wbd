@@ -523,6 +523,30 @@ of absence — arriving for the third time today and, this time, costing the
 thing the whole session exists to protect. `pgrep`, not the output file, is what
 answers "is it still running".
 
+**A third instance, and this one was self-inflicted for hours.** The site
+deploy had been reporting 404 for a page that was committed, pushed, and present
+in `docs/`. Reading the Actions history rather than re-checking the URL:
+
+```
+04:07  pending
+04:04  completed / cancelled
+03:52  completed / cancelled
+```
+
+Every deploy was being **cancelled by the next push**. Commits were going out
+every few minutes, and each one pre-empted the deploy still in flight, so none
+ever finished. The content was correct and pushed the whole time; the publishing
+step simply never completed, and the only symptom was a 404 that looked like
+lag.
+
+The diagnosis was delayed by checking the *wrong instrument*: `curl` answers
+"is it live", which is the question, but only the Actions history answers "why
+not", and three polls of the former were spent before one poll of the latter.
+
+> Frequent pushes are not free when the deploy is serialised. A commit rate
+> above the deploy duration means the deploy never runs to completion — and the
+> failure presents as staleness, not as an error.
+
 The general point survives intact and is the one worth keeping: "read-only
 analysis" is not the same as "free", and the cost was invisible until someone
 compared `wall_s` across stages. The trade was still right — a publish path that
