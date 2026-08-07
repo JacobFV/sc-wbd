@@ -849,3 +849,48 @@ def test_r12s_remedy_names_a_field_this_manifest_cannot_carry() -> None:
         "regional_state is how this manifest describes its operators; if it is "
         "gone, R12's input has changed and this whole group needs re-deriving"
     )
+
+
+def test_r12_is_implemented_twice_and_the_two_do_not_share_a_hierarchy() -> None:
+    """One rule, two enforcers, two exception vocabularies.
+
+    ``scwbd/foundation/manifest.py`` raises ``R12Violation`` (an
+    ``OverclaimError``, i.e. a ``ValueError``). ``scwbd/schema/designation.py``
+    raises ``CompilerRefusal``. Neither is a subclass of the other, and both
+    enforce R12.
+
+    ``ClaimManifest.validate()`` reaches the designation one first, so the
+    manifest's own check — and its message *"this checkpoint declares no
+    regional-state arm"*, which is exactly the string the sibling tests match
+    on — is never reached. Those tests are matching a live, correct
+    implementation that a second implementation pre-empts.
+
+    That is the root cause of the remaining R12 failures in this file, and
+    deciding which enforcer is authoritative is a design decision rather than a
+    repair — so it is pinned here rather than resolved.
+
+    Asserted as the CURRENT state: unifying them makes THIS test fail, which is
+    the prompt to revisit the sibling tests in the same change. See
+    ``ARCHITECTURE.md`` O-7 and ``reports/RUN2.md`` §5b.
+    """
+    from scwbd.foundation.manifest import R12Violation
+    from scwbd.schema.refusals import CompilerRefusal
+
+    assert not issubclass(R12Violation, CompilerRefusal), (
+        "R12Violation now derives from CompilerRefusal -- the two R12 enforcers "
+        "have been reconciled. Re-enable the sibling R12 tests, which match on "
+        "the manifest's message, and delete this pin."
+    )
+    assert not issubclass(CompilerRefusal, R12Violation), "the hierarchies inverted"
+
+    # Both messages exist in the tree. The manifest's is the one the sibling
+    # tests match; it is unreachable through validate() because the designation
+    # check runs first.
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parents[2]
+    manifest_msg = (root / "scwbd/foundation/manifest.py").read_text()
+    assert "declares no regional-state arm" in manifest_msg, (
+        "the manifest's R12 message changed; the sibling tests match on it, so "
+        "they need updating together with this pin"
+    )
