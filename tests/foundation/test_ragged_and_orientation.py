@@ -203,3 +203,52 @@ def test_orientation_energy_is_reported(anat):
     assert rep["n_covered"] == 400 and rep["n_regions"] == 414
     assert 0.0 < rep["energy_retained_by_coherence"] < 1.0
     assert rep["below_half"] == 23
+
+
+# ======================================================================
+# O-5, second half: the observation operator must consume the vector
+# ======================================================================
+def test_the_vector_lead_field_has_a_third_axis(anat):
+    from scwbd.foundation.orientation import build_vector_lead_field
+
+    V = build_vector_lead_field(anat)
+    assert V.L.shape == (64, anat.n_regions, 3)
+    m = torch.randn(2, 3, anat.n_regions, 3)
+    assert V(m).shape == (2, 3, 64)
+
+
+def test_a_scalar_matrix_is_refused_as_a_vector_lead_field(anat):
+    from scwbd.foundation.heads import build_lead_field
+    from scwbd.foundation.orientation import VectorLeadField
+
+    scalar = build_lead_field(anat, device="cpu").matrix
+    with pytest.raises(ValueError, match="n_channels, n_regions, 3"):
+        VectorLeadField(scalar, ("a",) * 64)
+
+
+def test_contraction_reproduces_the_scalar_operator_and_loses_energy(anat):
+    """The loss becomes a named step with a measured size."""
+    from scwbd.foundation.orientation import build_vector_lead_field
+
+    V = build_vector_lead_field(anat)
+    s = V.contract(anat.normal, anat.normal_coherence)
+    assert s.shape == (64, anat.n_regions)
+    hr = V.orientation_headroom(anat.normal, anat.normal_coherence)
+    assert hr["fraction_retained_by_contraction"] < 1.0
+    assert hr["headroom_multiple"] > 1.5
+    assert hr["dof_vector"] == 3 * hr["dof_scalar"]
+
+
+def test_rank_is_capped_by_the_montage_not_by_orientation(anat):
+    """Bounds what O-5 can deliver, and is the thing most likely to be overclaimed.
+
+    64 electrodes cap the observable rank at 64 whether the operator consumes
+    one number per parcel or three.  Orientation does not buy degrees of
+    freedom here; it buys a better-aligned and better-conditioned 64-dimensional
+    subspace.  Any claim that it multiplies resolvable sources is false.
+    """
+    from scwbd.foundation.orientation import build_vector_lead_field
+
+    V = build_vector_lead_field(anat)
+    hr = V.orientation_headroom(anat.normal, anat.normal_coherence)
+    assert hr["rank_vector"] == hr["rank_scalar"] == 64
