@@ -74,7 +74,18 @@ could run.</p>
 <tr>
   <td><strong>SC-WBD-002</strong></td>
   <td><span class="chip warn">training</span></td>
-  <td>The first model on real anatomy. 2.5M parameters over 414 parcels with
+  <td>The first model on real <em>anatomy</em> — and, as it turns out, trained
+  on simulation alone.[[note: Found at step 6166 of 8700, while the run was
+  still going. Run 2 renamed its training stages; the trainer gates
+  measured-data losses on the <strong>previous</strong> run's stage names, so
+  the gate never opened. The real-EEG loader was built and its split
+  fingerprinted, and no stage ever took a gradient on it — for nine hours the
+  only loss field emitted was <code>sim_forecast_nll</code>. Nothing raised,
+  because an unmatched stage name means "no real loss" rather than "unknown
+  stage". Two further mechanisms were inert for the same reason: per-stage
+  gradient permissions all fell back to the wildcard, and no individualizer was
+  ever built, so the stage named <code>T1_individualisation</code> ran 900 steps
+  of ordinary simulator training.]] 2.5M parameters over 414 parcels with
   per-family engineered backends, heterogeneous per-family state widths, and
   state-dependent predictive variance.[[note: This entry previously said "a
   ragged state layout (52% of the padded plane removed)". Both halves were
