@@ -197,3 +197,28 @@ def test_the_prose_layout_matches_what_the_checkpoint_says_it_is():
                 f"{where} calls run 2's layout {m.group(1)!r}, "
                 f"but the checkpoint records {layout!r}: ...{m.group(0)[:110]}..."
             )
+
+
+def test_every_engineering_page_is_linked_from_its_index():
+    """A published page nothing links to is a page nobody reads.
+
+    Three pages sat unlinked for a day: 10, 11 and 12 were written, built,
+    deployed, and reachable only by typing the URL. The section index still
+    listed nine.
+
+    This is the same shape as the failing-test list that was assumed complete
+    and was not -- an enumeration nobody checked against the thing it
+    enumerates. Cheap to test, invisible otherwise, because the index renders
+    perfectly with entries missing.
+    """
+    eng = SITE / "engineering"
+    if not eng.is_dir():
+        pytest.skip("no engineering section")
+    index = eng / "index.html"
+    if not index.is_file():
+        pytest.skip("no engineering index")
+    text = index.read_text()
+    pages = sorted(p.name for p in eng.glob("*.html") if p.name != "index.html")
+    assert pages, "no engineering pages found -- this test would pass vacuously"
+    missing = [p for p in pages if p not in text]
+    assert not missing, f"engineering pages not linked from index.html: {missing}"
