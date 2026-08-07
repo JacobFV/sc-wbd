@@ -214,7 +214,26 @@ Recorded now, not after the numbers.
   | scalar per parcel | 414 | 0.3795 |
   | 3-vector per parcel | 1242 | 1.0000 |
 
-  ratio **2.64×**. 🧭 Gauss's 0.056 → 0.517 (~9×) was measured on a real BEM
+  ratio **2.64×**.
+
+  **The observation half is wired and dormant.** `EEGHead` now registers
+  `L_vec` and has `source_moment()`; when the state carries a 3-vector it
+  contracts directly, `einsum("cnk,btnk->btc")`, with no projection onto a mean
+  normal anywhere. But:
+
+  ```
+  eeg layout is family_layout : False
+  eeg exported                : ['rate_e', 'rate_i']
+  dipole in eeg layout        : False
+  ```
+
+  The dipole **is** declared per cortical family (`families.py:293`, 3
+  components, `Hz·m`). It is not exported through the observation interface the
+  head reads, so `source_moment()` returns `None` and the scalar path runs
+  unchanged and bit-identically. **Closing that is O-1's job** — heads read
+  declared out-ports (RL-4) — **and it is the remaining half of O-5.** The
+  wiring fails closed on purpose: a vector moment cannot silently reach a
+  scalar operator. 🧭 Gauss's 0.056 → 0.517 (~9×) was measured on a real BEM
   lead field over 7498 source-space dipoles into 68 parcels; ours is the
   analytic single-sphere fallback with near-radial orientations, where the
   scalar contraction already captures 38% rather than 5.6%. 🌊 Hodgkin doubted
