@@ -284,9 +284,16 @@ class EEGHead(nn.Module):
         # 3-vector, a ratio of 2.64x.  (Gauss's ~9x was on a real BEM solution;
         # ours is the analytic sphere, where the scalar contraction already
         # captures 38% rather than 5.6%.)
+        # persistent=False: the lead field is COMPILED PHYSICS, not fitted, so it
+        # is rebuilt from the anatomy at construction and must never enter a
+        # checkpoint.  Making it persistent broke every existing checkpoint --
+        # `1 missing: eeg.L_vec` -- and the loader correctly refused rather than
+        # scoring a model with an uninitialised buffer.  A derived quantity in a
+        # state dict is a version-compatibility bomb with no upside.
         self.register_buffer(
             "L_vec",
             lead_field.matrix_vec.clone() if lead_field.matrix_vec is not None else None,
+            persistent=False,
         )
         self.lead_field_meta = lead_field.summary()
         self.channel_names = lead_field.channel_names
