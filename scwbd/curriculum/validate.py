@@ -82,15 +82,39 @@ class Verdict:
 
     @property
     def ok(self) -> bool:
-        return not self.refusals
+        """Accepted *and* fully evaluated. A check that could not run blocks this.
+
+        This used to be ``not self.refusals``, which made "no refusal fired" and
+        "the check could not run" indistinguishable in the headline. That is not
+        hypothetical: when ``217b01f`` removed the stage-name gates from
+        ``run_stage``, the X06 trainer-gate check stopped being evaluable, moved
+        from ``refusals`` into ``not_evaluable``, and the corrected config's
+        verdict silently changed from REFUSED to ACCEPTED. Nothing about the
+        config improved. The check just stopped being able to fail, and a
+        verdict that reports that as acceptance is the permissive default one
+        level up from the ones in ``reports/decorative_guards.md``.
+        """
+        return not self.refusals and not self.not_evaluable
+
+    @property
+    def inconclusive(self) -> bool:
+        """Nothing refused, but at least one check could not be run."""
+        return not self.refusals and bool(self.not_evaluable)
 
     def codes(self) -> tuple[str, ...]:
         return tuple(sorted({r.code for r in self.refusals}))
 
+    def unevaluable_checks(self) -> tuple[str, ...]:
+        return tuple(sorted({str(n.get("check", "?")) for n in self.not_evaluable}))
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "config": self.config,
-            "verdict": "ACCEPTED" if self.ok else "REFUSED",
+            # Three states, not two: a run whose checks could not all execute is
+            # not the same artifact as one that passed them.
+            "verdict": (
+                "ACCEPTED" if self.ok else "INCONCLUSIVE" if self.inconclusive else "REFUSED"
+            ),
             "refusal_codes": list(self.codes()),
             "refusals": [
                 {"code": r.code, "stage": r.stage, "message": r.message, "evidence": r.evidence}

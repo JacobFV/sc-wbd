@@ -1,0 +1,129 @@
+{
+ "_provenance": {
+  "captured_from": "scwbd/foundation/train.py :: FoundationTrainer.run_stage",
+  "git_sha": "b2b5f7b5f4c75b5fccda7030d394cfd5f153784a",
+  "removed_by": "217b01f FIX: stage behaviour now comes from the config, not from the stage's name",
+  "card_tiers_from": "configs/source_cards",
+  "why": "The gates this was parsed out of no longer exist. Captured so run-1 configs stay validatable and RUN2.md section 2's refusals stay reproducible; it CANNOT be re-derived from the current tree."
+ },
+ "sim_excluded_stage": "V_individual",
+ "real_admitted_stages": [
+  "III_sliced",
+  "IV_assembly",
+  "V_individual"
+ ],
+ "stages": {
+  "I_regional": {
+   "admits": [
+    4
+   ],
+   "tier_permissions": {
+    "4": [
+     "local.*",
+     "log_dt_scale",
+     "readout.*",
+     "assimilate.*",
+     "context.*",
+     "residual.*"
+    ]
+   },
+   "objective": [
+    "composite: see StageConfig lambda_* weights"
+   ],
+   "absence": [],
+   "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+   "source_ids": [
+    "sim_wholebrain"
+   ]
+  },
+  "II_interface": {
+   "admits": [
+    4
+   ],
+   "tier_permissions": {
+    "4": [
+     "coupling.*",
+     "msg_proj.*",
+     "msg_readin.*",
+     "readout.*"
+    ]
+   },
+   "objective": [
+    "composite: see StageConfig lambda_* weights"
+   ],
+   "absence": [],
+   "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+   "source_ids": [
+    "sim_wholebrain"
+   ]
+  },
+  "III_sliced": {
+   "admits": [
+    1,
+    4
+   ],
+   "tier_permissions": {
+    "1": [
+     "*"
+    ],
+    "4": [
+     "*"
+    ]
+   },
+   "objective": [
+    "composite: see StageConfig lambda_* weights"
+   ],
+   "absence": [],
+   "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+   "source_ids": [
+    "sim_wholebrain",
+    "eegmmidb_real"
+   ]
+  },
+  "IV_assembly": {
+   "admits": [
+    1,
+    4
+   ],
+   "tier_permissions": {
+    "1": [
+     "*"
+    ],
+    "4": [
+     "*"
+    ]
+   },
+   "objective": [
+    "composite: see StageConfig lambda_* weights"
+   ],
+   "absence": [],
+   "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+   "source_ids": [
+    "sim_wholebrain",
+    "eegmmidb_real"
+   ]
+  },
+  "V_individual": {
+   "admits": [
+    1
+   ],
+   "tier_permissions": {
+    "1": [
+     "individualizer.*",
+     "eeg.log_gain",
+     "eeg.offset",
+     "eeg.log_noise",
+     "eeg.nuisance*"
+    ]
+   },
+   "objective": [
+    "composite: see StageConfig lambda_* weights"
+   ],
+   "absence": [],
+   "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+   "source_ids": [
+    "eegmmidb_real"
+   ]
+  }
+ }
+}

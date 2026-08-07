@@ -309,9 +309,23 @@ class Curriculum:
                     f"{p}: stages {[stages[i].name for i in need_legacy]} declare no "
                     "extra.curriculum block and legacy reconstruction was disabled"
                 )
-            from .legacy import reconstruct_stage_admission
+            from .legacy import GateNotFound, _frozen_admission, reconstruct_stage_admission
 
-            recon = reconstruct_stage_admission()
+            # The live read first: if the gates ever come back, they win over any
+            # stored copy. They will not -- 217b01f removed them on purpose -- so
+            # in practice this takes the frozen branch, and the distinction is
+            # kept because a stored copy silently standing in for a live read is
+            # the exact defect `legacy.py` was written to prevent.
+            try:
+                recon = reconstruct_stage_admission()
+            except GateNotFound:
+                recon = _frozen_admission()
+                if recon is None:
+                    raise
+                # Every stage built below carries r.provenance, which for this
+                # branch reads `frozen:run1@b2b5f7b` -- so a downstream consumer
+                # can tell a captured admission from a reconstructed one without
+                # asking this function which branch it took.
             for i in need_legacy:
                 s = stages[i]
                 r = recon.for_stage(s.name)

@@ -87,6 +87,68 @@ class LegacyAdmission:
         )
 
 
+#: Where the run-1 admission is kept now that the gates it was read from are
+#: gone.  See :func:`_frozen_admission`.
+FROZEN_RUN1 = "configs/curriculum/legacy_run1_admission.json"
+
+
+def _frozen_admission() -> "LegacyAdmission | None":
+    """The run-1 admission as captured from the trainer *before* the gates went.
+
+    ``reconstruct_stage_admission`` reads the gates out of the running trainer
+    and refuses when they are absent. As of ``217b01f`` they are absent
+    permanently and on purpose — ``run_stage`` reads each stage's declared
+    admission instead. That refusal is correct, and it had a cost nobody had
+    priced: ``Curriculum.from_config`` needs an admission for every stage, so
+    every *run-1* config became unloadable, and with it the validation that
+    produces RUN2.md §2's X01–X06 refusals. The report's headline findings stop
+    being reproducible from the tree that contains them.
+
+    So the values are captured once, from
+    ``b2b5f7b5f4c75b5fccda7030d394cfd5f153784a`` — the last commit where the
+    gates existed — and stored as data with that sha attached. Reproduced
+    exactly what the deleted tests asserted (``V_individual`` excluded from the
+    simulated sources; ``III_sliced``/``IV_assembly``/``V_individual`` admitting
+    measured; ``I_regional`` seeing ``sim_wholebrain`` alone), which is the only
+    cross-check available and is the reason to trust the capture.
+
+    **It is a frozen record, not a reconstruction**, and it says so in its own
+    ``provenance`` — ``frozen:run1@b2b5f7b`` rather than ``reconstructed:``. A
+    consumer that treats the two alike is claiming a live read of a function
+    that no longer contains what it is being read for. Nothing re-derives this
+    from the current tree, and nothing can.
+    """
+    import json
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[2] / FROZEN_RUN1
+    if not path.is_file():
+        return None
+    raw = json.loads(path.read_text())
+    sha = str((raw.get("_provenance") or {}).get("git_sha", ""))[:7]
+    stamp = f"frozen:run1@{sha}" if sha else "frozen:run1"
+    by_stage = {}
+    for name, d in (raw.get("stages") or {}).items():
+        by_stage[name] = StageAdmission(
+            admits=tuple(d.get("admits") or ()),
+            tier_permissions={int(k): tuple(v) for k, v in (d.get("tier_permissions") or {}).items()},
+            objective=tuple(d.get("objective") or ()),
+            absence=tuple(d.get("absence") or ()),
+            provenance=stamp,
+            source_ids=tuple(d.get("source_ids") or ()),
+        )
+    return LegacyAdmission(
+        by_stage=by_stage,
+        sim_excluded_stage=str(raw.get("sim_excluded_stage") or ""),
+        real_admitted_stages=tuple(raw.get("real_admitted_stages") or ()),
+        stage_permissions={},
+        trainer_sha_note=(
+            f"captured from run_stage at {(raw.get('_provenance') or {}).get('git_sha','?')}; "
+            "the gates were removed by 217b01f and this cannot be re-derived"
+        ),
+    )
+
+
 def reconstruct_stage_admission(*, card_tiers: dict[str, int] | None = None) -> LegacyAdmission:
     """Read admission gates out of the trainer and project them onto tiers.
 

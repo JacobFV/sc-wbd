@@ -53,7 +53,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         Path(a.json_out).parent.mkdir(parents=True, exist_ok=True)
         Path(a.json_out).write_text(json.dumps(verdict.as_dict(), indent=2, default=str))
         print(f"\nwrote {a.json_out}")
-    return 0 if verdict.ok else 1
+    # Three exit codes, matching the three verdict states. `verdict.ok` now
+    # requires that every check actually ran, so an INCONCLUSIVE config no
+    # longer exits 0 -- but collapsing it onto 1 would tell a caller a refusal
+    # fired when none did, and the difference between "this config is wrong" and
+    # "I could not tell" is the whole reason the third state exists.
+    if verdict.ok:
+        return 0
+    if verdict.inconclusive:
+        print(
+            "\nINCONCLUSIVE: nothing refused, but these checks could not run: "
+            + ", ".join(verdict.unevaluable_checks())
+        )
+        return 2
+    return 1
 
 
 if __name__ == "__main__":  # pragma: no cover

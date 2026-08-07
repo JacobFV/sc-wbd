@@ -68,14 +68,32 @@ def test_refuses_the_shipped_config() -> None:
     assert bold and all(n.startswith("bold.") for n in bold[0].evidence["widened"])
 
 
-def test_shipped_config_admission_is_read_from_the_trainer_not_guessed() -> None:
-    """001-beta declares no curriculum, so admission is reconstructed."""
+def test_shipped_config_admission_is_a_frozen_capture_and_says_so() -> None:
+    """001-beta declares no curriculum, so admission comes from the run-1 capture.
+
+    Renamed from ``..._is_read_from_the_trainer_not_guessed``, because it is no
+    longer read from the trainer and pretending otherwise would be worse than
+    either. ``217b01f`` removed the stage-name gates; the admission is now a
+    record captured from ``b2b5f7b``, the last commit that had them.
+
+    The values are unchanged — that is the point of asserting them here — but
+    the *provenance* must not be. A frozen capture labelled ``reconstructed:``
+    would claim a live read of a function that no longer contains what it is
+    being read for, which is the failure this module was written to prevent,
+    committed by the module itself.
+    """
     cur = Curriculum.from_config(BETA)
     assert cur.fully_declared is False
     by_name = {s.name: s for s in cur.stages}
     assert by_name["I_regional"].admits == (4,)
     assert 1 in by_name["III_sliced"].admits
-    assert all("reconstructed" in s.provenance for s in cur.stages)
+    assert all(s.provenance.startswith("frozen:run1@") for s in cur.stages), (
+        f"provenances: {sorted({s.provenance for s in cur.stages})}"
+    )
+    assert not any("reconstructed" in s.provenance for s in cur.stages), (
+        "a captured record is labelled as a reconstruction; a consumer cannot "
+        "tell it from a live read of the trainer"
+    )
 
 
 def test_corrected_config_has_no_ordering_refusal() -> None:
@@ -107,11 +125,22 @@ def test_corrected_config_refuses_only_the_trainer_gate_now_that_anatomy_is_repa
     If that test is ever deleted, this one stops meaning anything.
     """
     v = validate_config(ORDERED, tiers_path=TIERS)
-    assert not v.ok, "X06 is still a genuine handover item; the config is not clean"
-    codes = set(v.codes())
-    assert codes == {"X06_trainer_gate_contradicts_config"}, (
-        f"expected the trainer gate alone, got {sorted(codes)}"
+    assert not v.ok, "X06 cannot be evaluated; the config is not clean"
+
+    # X06 is no longer a *refusal*. `217b01f` removed the stage-name gates it
+    # read, so it cannot fire either way -- and that is strictly weaker than
+    # having fired and passed. The verdict must say so in its own third state
+    # rather than reporting the config as accepted.
+    assert set(v.codes()) == set(), (
+        f"expected no firing refusals, got {sorted(v.codes())}"
     )
+    assert v.inconclusive, "nothing refused and a check could not run -- that is INCONCLUSIVE"
+    assert v.as_dict()["verdict"] == "INCONCLUSIVE"
+    assert "X06_trainer_gate_contradicts_config" in v.unevaluable_checks(), (
+        f"X06 vanished entirely rather than being reported unevaluable: "
+        f"{v.unevaluable_checks()}"
+    )
+    codes = set(v.codes()) | set(v.unevaluable_checks())
     assert "X09_declared_provenance_contradicted" not in codes, (
         "X09 fires only when load_anatomy() yields a non-biological prior. "
         "Seeing it here means the anatomy adapter regressed to the synthetic "
@@ -356,8 +385,21 @@ def _rules():
 # the glob/name-space trap (decorative_guards defect 1)
 # ======================================================================
 def test_universe_is_the_model_that_runs(universe) -> None:
+    """The count is a tripwire for unnoticed growth, so it is re-baselined with a reason.
+
+    152 -> 163 on 2026-08-07. The eleven are named rather than absorbed, because
+    a count updated without naming its delta is a tripwire that has been disabled:
+
+      behaviour.*               5   boundary-output head (eye, motor, speech)
+      uncertainty_propagator.*  5   variance propagation through the rollout
+      bold.logvar_gain          1   the BOLD head's variance channel
+
+    All three arrived with the attachment-axis and parcel-BOLD work. See
+    ``test_no_module_is_in_the_model_but_absent_from_every_card`` for what is --
+    and is not -- governing them.
+    """
     names, prov = universe
-    assert len(names) == 152
+    assert len(names) == 163
     assert "posterior.summary.conv.0.weight" in names
     assert "individualizer.mu" in names
     assert "coupling.gain_soft" in names
@@ -375,6 +417,10 @@ def test_expand_resolves_globs_against_real_tensors(universe) -> None:
         "bold.rho",
         "bold.neural_gain",
         "bold.log_noise",
+        # added with the parcel-space BOLD likelihood: the variance channel the
+        # masked gaussian_nll scores against, so `bold.*` in a card's
+        # gradient_permission now grants one more tensor than it used to.
+        "bold.logvar_gain",
     }
     assert expand(["coupling.*"], names, frozen=["coupling.global_scale"]) == {
         "coupling.gain_soft",
@@ -382,3 +428,122 @@ def test_expand_resolves_globs_against_real_tensors(universe) -> None:
     }
     # a glob that names nothing expands to nothing, and is therefore visible
     assert expand(["nonexistent_module.*"], names) == set()
+
+
+# ======================================================================
+# what no card can ever grant
+# ======================================================================
+def _never_grantable(universe_names: tuple[str, ...]) -> dict[str, list[str]]:
+    """Universe names that no *real* source card lists in ``gradient_permission``.
+
+    ``negative_control_shuffled`` is excluded: it carries a bare ``*`` in
+    ``frozen`` by design, and including it makes every coverage question answer
+    "covered" — the first version of this sweep reported **0 ungoverned
+    parameters** for exactly that reason, which is a vacuous check returning the
+    reassuring answer.
+    """
+    import fnmatch
+
+    import yaml
+
+    grant: dict[str, set[str]] = {}
+    froze: dict[str, set[str]] = {}
+    for f in sorted((REPO / "configs/curriculum/source_cards").glob("*.yaml")):
+        if f.stem == "negative_control_shuffled":
+            continue
+        card = yaml.safe_load(f.read_text()) or {}
+        for key, dest in (("gradient_permission", grant), ("frozen", froze)):
+            for pat in card.get(key) or []:
+                dest.setdefault(str(pat).split("#")[0].strip(), set()).add(f.stem)
+
+    def covered(name: str, table: dict[str, set[str]]) -> bool:
+        return any(p and fnmatch.fnmatch(name, p) for p in table)
+
+    return {
+        "ungrantable": [n for n in universe_names if not covered(n, grant)],
+        "unmentioned": [
+            n
+            for n in universe_names
+            if not covered(n, grant) and not covered(n, froze)
+        ],
+    }
+
+
+def test_no_module_is_in_the_model_but_absent_from_every_card(universe) -> None:
+    """A tensor no card can grant never learns, and nothing says so.
+
+    Gradient reaches a parameter only if some admitted source's
+    ``gradient_permission`` matches it. A tensor matched by no card's grant
+    pattern sits at its initialisation for the whole of training while still
+    participating in the forward pass — which is not an error the loss can
+    surface, because the model is perfectly happy to use a constant.
+
+    Pinned as an exact set rather than a count, so that a module added tomorrow
+    and wired to nothing fails here by name. Two of these three groups arrived
+    with the attachment-axis work and are genuinely not wired yet; the third is
+    the one worth arguing about.
+    """
+    names, _ = universe
+    got = _never_grantable(names)
+
+    assert set(got["ungrantable"]) == {
+        # The boundary-output head (eye position, motor, speech). Added with the
+        # attachment axis; no card declares a boundary_output channel yet, so
+        # nothing can grant it. Expected to move once such a source is enabled.
+        "behaviour.net.0.bias",
+        "behaviour.net.0.weight",
+        "behaviour.net.2.bias",
+        "behaviour.net.2.weight",
+        "behaviour.pool",
+        # Variance propagation through the rollout. Same story.
+        "uncertainty_propagator.log_decay",
+        "uncertainty_propagator.net.0.bias",
+        "uncertainty_propagator.net.0.weight",
+        "uncertainty_propagator.net.2.bias",
+        "uncertainty_propagator.net.2.weight",
+        # NOT the same story, and the reason this test exists. `observation.head`
+        # is 2,073 scalars in the run-2 checkpoint's parameter report, it is on
+        # the forward path, and no card grants it -- so it was at its
+        # initialisation for every step of run 2. `sim_wholebrain` names
+        # `observation:sim_wholebrain:nuisance` in compiler_permission, which is
+        # a compiler port, not a torch parameter pattern; the two namespaces look
+        # alike and do not meet. Left failing-visible here rather than silently
+        # granted: whether this head should learn is a modelling decision, and
+        # adding `observation.*` to a card to make a test green would be making
+        # that decision by accident.
+        "observation.head.b",
+        "observation.head.w",
+    }, (
+        "the set of parameters no source card can grant a gradient to has changed. "
+        "A new entry means a module was added to the model and wired to no card, "
+        "so it will train at its initialisation. Wire it, or add it here with the "
+        "reason it stays unwired."
+    )
+
+    # The stricter subset: not granted AND not frozen, so no card mentions them at
+    # all. These do not even appear in a refusal as deliberately-withheld.
+    assert set(got["unmentioned"]) == {
+        "observation.head.b",
+        "observation.head.w",
+        "uncertainty_propagator.log_decay",
+        "uncertainty_propagator.net.0.bias",
+        "uncertainty_propagator.net.0.weight",
+        "uncertainty_propagator.net.2.bias",
+        "uncertainty_propagator.net.2.weight",
+    }
+
+
+def test_the_coverage_sweep_is_not_vacuous(universe) -> None:
+    """The guard above must be able to fail; its first version could not.
+
+    Written after the sweep reported zero ungoverned parameters — a clean result
+    produced entirely by ``negative_control_shuffled``'s bare ``*``. A probe name
+    belonging to no module must come back ungoverned; if it does not, some
+    pattern is matching everything and the assertion above is decoration.
+    """
+    names, _ = universe
+    probed = _never_grantable((*names, "totally_invented_module.weight"))
+    assert "totally_invented_module.weight" in probed["ungrantable"], (
+        "a parameter belonging to no module was reported as grantable -- some "
+        "card pattern matches everything, and the coverage assertion is vacuous"
+    )
