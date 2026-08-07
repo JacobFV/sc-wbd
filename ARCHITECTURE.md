@@ -427,7 +427,7 @@ This is the change that makes the example in the question expressible. It is
 also what `SourceCard.observation.target_ports` was reaching for without a
 target to point at.
 
-### O-2. `Support` must compose
+### O-2. `Support` must compose — *algebra landed, not yet wired*
 
 `Support` today is a passive descriptor — `kind, frame, units, psf, extent,
 n_elements, resolution` and **no operators**. Two supports cannot be related
@@ -446,6 +446,28 @@ whitened lead field against 51.7% for three numbers per parcel. So the algebra
 must carry **orientation**, not just extent — a support whose elements are
 scalars is a different kind of object from one whose elements are vectors, and
 today `Support` cannot tell them apart.
+
+**Status (run 2).** `scwbd/schema/support_algebra.py` implements the algebra:
+`ElementType` (rank/dim/component_frame — the scalar-vs-vector distinction
+`Support` could not make), `compose_psf` (quadrature for Gaussians, refusal for
+opaque `kernel_ref`s), `relate` (identity / restriction / prolongation /
+orientation, each carrying whether it is *lossy* or *invents*), and
+`common_temporal_refinement` for the 5000 Hz-against-0.5 Hz case. 21 tests,
+mutation-checked three ways.
+
+Two things it is **not** yet, stated so the entry is not read as finished:
+
+- **Nothing imports it.** It was written during a live training run and kept
+  deliberately free of consumers so a relaunch could not pick up changed code.
+  Wiring `SourceCard` and the observation heads onto it is run-3 work, together
+  with O-1 and O-5b.
+- **It derives maps, it does not compute them.** `relate` returns a typed map
+  with its element counts, composed PSF, and uncertainty — not the matrix. For
+  two arbitrary parcellations in the same frame it refuses rather than inventing
+  a correspondence, which is correct but means the *geometric* refinement (real
+  overlap areas between cells) is still to come. The refusal is the honest
+  placeholder: today the one-off is visible as a refusal instead of hidden as a
+  hand-written map.
 
 ### O-3. One region identity; everything else is a typed annotation
 
