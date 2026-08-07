@@ -148,7 +148,34 @@ what disproved the first diagnosis — which was mine, and wrong.
 
 ## 3. Training
 
-**PENDING** — filled from `reports/training/run002.log` on completion.
+### T1 measured founding — complete, 2966 steps
+
+```
+149 logged points, steps 1..2960
+fnll   1.4930 -> 0.5933   min 0.2946     60% reduction
+npe    8.1960 -> 7.7820   mean 7.9351    max 8.5320
+rejections                0
+tracebacks                0
+```
+
+**The posterior's maximum across the entire stage was 8.532.** For comparison,
+the same stage before the three fixes reached 3582 by step 1180, and 4.489e9
+before that. It did not merely avoid diverging — it never left a ±0.6 band
+across 2960 steps.
+
+### T2 boundary calibration — running
+
+The first stage transition this model has crossed. New losses, new source
+cards, fresh optimiser and schedule; both heads came through without a
+rejection:
+
+```
+T2 step 20   fnll 0.4885   npe 7.597   rej 0
+T2 step 40   fnll 0.6343   npe 7.920   rej 0
+```
+
+Remaining: T3 population prior 1000 · T4 simulator extension 3334 · T5
+distillation 0 · T1 individualisation 900.
 
 Schedule: T1 measured founding 2966 · T2 boundary calibration 500 · T3
 population prior 1000 · T4 simulator extension 3334 · T5 distillation 0 · T1
