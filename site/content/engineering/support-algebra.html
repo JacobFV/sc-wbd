@@ -138,6 +138,43 @@ each source carries its own operator and support, relating two of them is
 exactly the computation above — and the refusals are what stop two montages
 being quietly averaged into one another.</p>
 
+<h2>What is actually blocking the other sources</h2>
+
+<p>"Nine sources, one view" is the abstract statement. The concrete one is a
+list of three missing operators, each blocking a specific dataset that is
+already sitting on disk:</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>source</th><th>what it is</th><th>blocked by</th><th>needs</th></tr></thead>
+<tbody>
+<tr><td><code>eegmmidb</code></td><td>64-channel EEG</td><td><span class="chip pass">enabled</span></td><td>—</td></tr>
+<tr><td><code>ds002336</code></td><td>EEG <em>and</em> fMRI, CC0</td><td>BOLD is in scanner space; model state is parcels</td><td>a registration</td></tr>
+<tr><td><code>ds000113</code></td><td>7 T fMRI</td><td>a 116 mm slab — parcels outside it are unmeasured in every subject</td><td>a coverage mask</td></tr>
+<tr><td><code>sleepedf</code></td><td>2 EEG derivations</td><td>2 channels cannot constrain a 64-channel head</td><td>a montage adapter</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Three of the four measured sources are switched off, and <strong>not one of
+them is switched off by policy</strong>. Each is waiting on an operator nobody
+has written.</p>
+
+<blockquote>
+<p>These blockers are not interchangeable with permission. A likelihood term
+over parcels outside the acquisition slab is an <em>imputation</em>. A
+parcel-space likelihood computed from scanner-space voxels with no registration
+is not a weaker claim — it is a different quantity. Enabling those sources
+without the transforms would not be a relaxed standard; it would be a wrong
+number.</p>
+</blockquote>
+
+<p>The third row is the one this page is about. Two derivations against
+sixty-four is <em>literally</em> montage A and montage B — so
+<code>sleepedf</code> is the cheapest of the three to unlock, and the natural
+first consumer of the algebra. It is what turns this module from something with
+no importers into the thing that admits a second measured dataset.</p>
+
 <h2>What this is not, yet</h2>
 
 <p>Two limits, stated because an entry marked done is how a half-delivered
