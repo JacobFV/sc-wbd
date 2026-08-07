@@ -584,6 +584,42 @@ Two things it is **not** yet, stated so the entry is not read as finished:
   placeholder: today the one-off is visible as a refusal instead of hidden as a
   hand-written map.
 
+### O-1b. Attachment: where a channel meets the carrier
+
+**Landed 2026-08-06** as `scwbd/schema/attachment.py`, with `SourceSpec.channels`
+as its consumer and `ds002336_real` as the first card to declare it.
+
+The integrity tiers rank a source by *how far it can be trusted*. They cannot
+say whether a channel is a stimulus, a measurement, or something the subject
+produced — and that is a different question with a different answer for
+different channels **of the same card**.
+
+| attachment | what it is | operator |
+|---|---|---|
+| `stimulus` | the world driving the subject — audio, video, text | forbidden |
+| `observation` | a measurement *of* the carrier | **required** |
+| `boundary_output` | produced *by* the subject, measured outside the skull | forbidden |
+| `context` | slow conditioning, neither driving nor driven | forbidden |
+
+Two refusals, both structural rather than stylistic:
+
+- an **observation with no operator** asserts that the carrier's state *is* the
+  measurement — no lead field, no haemodynamic model, no projection. That is the
+  error the lead field exists to prevent, stated as a type;
+- a **stimulus or boundary output with an operator** claims it passes through a
+  forward model of neural activity, which it does not.
+
+**It does not default from `role`, and that is the whole point.** One
+`likelihood` card may carry EEG, the audio that was played, and the
+participant's gaze. Guessing `observation` because the role is `likelihood` is
+precisely how a stimulus gets trained as a measurement of the brain — not a
+smaller claim than the truth, a different one, and a silent one. RL-14 applied
+where the same mistake would otherwise be made a second time.
+
+The register's next sources force this: MEG-MASC ships aligned audio with
+phonetic annotation, `ds003768` ships eye tracking and ECG alongside concurrent
+EEG-fMRI. Neither is a lower-integrity observation; neither is an observation.
+
 ### O-3. One region identity; everything else is a typed annotation — *audited*
 
 **Measured 2026-08-06.** There are **two** `RegionFamily` classes and **two**
