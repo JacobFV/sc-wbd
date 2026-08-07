@@ -2195,8 +2195,13 @@ is measurable at any participant count this corpus supports.
 \subsection{11.8 Third-Gate Results: What a Second Artifact Reveals}
 
 A second whole-brain model was compiled and trained on the anatomical prior
-described in Section 3, with heterogeneous per-family regional state and a
-segment rather than padded layout. Final scores are not reported here; the run
+described in Section 3, with heterogeneous per-family regional state stored in a
+padded layout with enforced per-family spans. (An earlier draft of this sentence
+said \emph{segment rather than padded}; that is the alternative layout, which is
+built and tested but is not what these weights use. The artifact records
+\texttt{layout: family\_padded}, and $47.34\%$ of the $414 \times 59$ state
+plane is pad, because two hippocampal parcels of width two set the width for
+every region.) Final scores are not reported here; the run
 is incomplete at the time of writing and any number would be an interim read.
 What is reportable, and is the point of this subsection, is a class of defect
 that only a \emph{second} artifact can expose.
