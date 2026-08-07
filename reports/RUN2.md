@@ -1695,7 +1695,38 @@ Every other slow file measured in this session completes and passes. What
 remains genuinely unmeasured is that one file's tail: it reached six of its eight
 tests before the 90-minute kill, with two failing.
 
-### `test_recovery.py` exceeds ninety minutes, and my instrument lied about it
+### `test_recovery.py`, measured to completion: 74 minutes, three real failures
+
+Run alone on an idle machine with a four-hour cap, and with the exit code read
+correctly (`rc=$?` on its own line):
+
+```
+exit=1   secs=4426   progress .F...FF.
+```
+
+It does **not** need more than 90 minutes — it needs 74, and the earlier 5400 s
+kill was ~15 minutes short. The three failures are substantive findings about the
+identifiability path, not harness noise:
+
+| test | assertion |
+|---|---|
+| `test_interval_coverage_is_nominal` | `a21: empirical coverage 0.891 [0.791, 0.946] excludes the nominal 0.95 over n=64 replicates` |
+| `test_optimiser_actually_converged` | `assert 0.34375 > 0.8` — only 34% of replicates met the convergence criterion at `n_newton=5` |
+| `test_naive_resampling_loses_the_delay` | `assert 0.0 > 3 * 0.00036` — naive resampling recovers the delay with **zero** bias, so the test's premise (that it should lose it) does not hold |
+
+The first two say the estimator is worse than the suite claims: an interval that
+under-covers, and an optimiser that converges on a third of runs. The third says
+a *test* is wrong — it asserts a method fails, and the method succeeds.
+
+**And my inference was wrong in a way worth recording.** From the killed run's
+partial `.F...F` I inferred two failures at positions 2 and 6. There are three:
+positions 2, 6 **and 7**. The kill landed between them, so the partial line could
+not have shown it. The inference was right about what it saw and silent about
+what it could not see — which is the failure mode of reading a truncated
+instrument, and the reason it was labelled an inference rather than written in as
+fact.
+
+### The earlier record of this file, superseded above
 
 Run alone on an idle machine with a 90-minute cap:
 
