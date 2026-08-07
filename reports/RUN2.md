@@ -1086,6 +1086,58 @@ that recovers nothing about individuals, in a run where no individual was ever
 presented, is the arrangement working as configured** — not evidence that
 amortised inference fails here.
 
+### The evaluation-audit suite is entirely red, and I published past it
+
+`tests/evaluation_audit/` contains **nine** test files auditing the validity of
+this exact evaluation. All nine fail on `master`, and all nine were failing when
+002 was published. The directory was on the *unexamined* list in the section
+above, written three hours before the publish.
+
+Checked one at a time against the run that actually produced the numbers, rather
+than assumed — several exercise a **smoke path** (`max_batches=6`) and do not
+describe what shipped:
+
+| audit | applies to the published run? |
+|---|---|
+| `test_units_consistency` | **YES** — SC-WBD on `target/s`, baselines on raw. ~0.57 nats, disclosed above |
+| `test_baseline_integrity` — `subject_specific_ar` ≡ `ar16` | **YES** — confirmed bit-identical in the artifact |
+| `test_individualization_measurability` | **YES**, and it is a design limit, not a defect |
+| `test_baseline_integrity` — "640 windows from 1 participant" | no — that is `max_batches=6`; the run fitted on **1320 windows from 44 participants** |
+| `test_sampling_representativeness` | no — same smoke path; the run used participant-stratified sampling |
+| `test_patched_path` — estimator asymmetry | no — the run reports *plug-in at posterior mean*, matching the baselines |
+
+**The distinction matters more than the count.** Three of nine invalidate
+something about the published comparison. The rest describe a default
+configuration nobody ran. Reporting "nine red audits" as though all nine
+indicted the result would be its own overstatement, in the opposite direction
+from the one this report has been correcting all day.
+
+#### The individualisation finding is stronger than what §4 said
+
+I recorded that individualisation was "not applied — no individualizer on the
+trainer". The audit says something a rerun cannot fix:
+
+> `z_person` is nonzero for 71 of 71 **training** participants and 0 of 27
+> **test** participants. Refusal R10 makes the folds participant-disjoint, so no
+> held-out person has a fitted person effect and **G5 cannot be measured on this
+> holdout by any patch to the evaluation.** It needs a within-participant
+> temporal split, reported as a different claim.
+
+So the missing individualizer (§2b) is not the binding constraint. Even a run
+with one, on this split, would apply an identical θ shift to every held-out
+person — the audit measures a between-participant spread of exactly `0.000e+00`.
+**Participant-disjoint splitting and individualisation measurement are mutually
+exclusive by construction**, and no amount of training fixes it.
+
+#### And the baseline reports itself healthy while not running
+
+`subject_specific_ar` routes 100% of test windows to the pooled `ar16` fallback,
+because no test participant has a fitted model — and `describe()` reports
+`n_subject_models=8, fallback_subjects=0`, which reads as healthy. §4 already
+noted the two arms are identical; it did not note that **the instrument says
+otherwise**. A field only ever written on success is not a record. The thesis's
+hardest baseline is not being run, and nothing in the artifact says so.
+
 ### Two caveats that travel with these numbers
 
 **The split cannot falsify a site shortcut.** The evaluation logged it itself:
