@@ -704,7 +704,13 @@ def plan_run1_checkpoint(
         )
         files: tuple[FileSpec, ...] = ()
     else:
-        wanted = ["stage_V_individual.pt", "config.yaml", "provenance.json"]
+        # The final-stage checkpoint, DERIVED from the config's stage list
+        # rather than hardcoded.  This read ["stage_V_individual.pt", ...] --
+        # run 1's stage name -- so run 2 would have been blocked at the finish
+        # line by a filename belonging to the previous run.  Same class as the
+        # designation literals: a run-1 name reached for by a run-2 path.
+        weights = _final_stage_file(ckpt, root / config)
+        wanted = [weights, "config.yaml", "provenance.json"]
         files = tuple(
             FileSpec(local=ckpt / w, repo_path=w, n_bytes=(ckpt / w).stat().st_size)
             for w in wanted
@@ -1088,11 +1094,39 @@ def _corpus_card(
 # ---------------------------------------------------------------------------
 # planner: the run-2 pilot (path prepared; artifact not yet on disk)
 # ---------------------------------------------------------------------------
+def _final_stage_file(ckpt: Path, config_path: Path) -> str:
+    """Name of the checkpoint holding the final stage's weights.
+
+    Prefers the named stage file, because it is unambiguous about *which* stage
+    produced the weights.  Falls back to ``last.pt``, which is the same tensors
+    under a name that does not say so.  Returns the run-1 name only if that is
+    what is actually on disk, so a run-1 directory still plans correctly.
+    """
+    try:
+        from ..foundation.config import load_config
+
+        stages = [s for s in load_config(str(config_path)).train.stages if s.steps > 0]
+        if stages:
+            named = f"stage_{stages[-1].name}.pt"
+            if (ckpt / named).is_file():
+                return named
+    except Exception:
+        pass  # a config we cannot read is not a reason to publish nothing
+    for fallback in ("stage_V_individual.pt", "last.pt"):
+        if (ckpt / fallback).is_file():
+            return fallback
+    return "last.pt"
+
+
 def plan_run2_pilot(
     *,
     checkpoint_dir: str | Path,
     evaluation: str | Path = "reports/training/evaluation_run2.json",
-    config: str | Path = "configs/scwbd_002_pilot.yaml",
+    # The run-2 config actually on disk.  This defaulted to
+    # "configs/scwbd_002_pilot.yaml", which has never existed -- a second blocker
+    # sitting behind the missing-evaluation one, invisible until the first was
+    # cleared. A blocker list that stops at the first item hides the rest.
+    config: str | Path = "configs/run2/pilot-families.yaml",
     name: str = "scwbd-002-pilot",
     repo_root: Path | None = None,
 ) -> ArtifactPlan:
