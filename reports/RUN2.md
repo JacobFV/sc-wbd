@@ -1562,8 +1562,35 @@ runs"* refusal to R12's real one, which asks for `arm.role='control'` with a
 step and is left untraced rather than guessed at — I misread this function twice
 today.
 
-**And the last two cannot pass as written — R12's remedy names a field that
-does not exist on the manifest R12 validates.**
+**Root cause of all five, found 2026-08-07: R12 is implemented twice.**
+
+```
+scwbd/foundation/manifest.py:247   raises R12Violation      (-> OverclaimError -> ValueError)
+scwbd/schema/designation.py:685    raises CompilerRefusal   (unrelated hierarchy)
+```
+
+`R12Violation` is **not** a subclass of `CompilerRefusal`. Both check the same
+rule; the designation one runs first inside `validate()`, so the manifest's own
+check — and its message, *"this checkpoint declares no regional-state arm"*,
+which is exactly what these tests match on — is never reached. The tests are
+matching a live, correct implementation that a second implementation pre-empts.
+
+That is one rule, two enforcers, two exception vocabularies. The fifth instance
+of the O-7 pattern today, now in the *refusal* vocabulary rather than the region
+or claim one. Deciding which R12 is authoritative is the fix, and it is a design
+decision rather than a repair, so it is named here and not attempted.
+
+Two contributing defects were repaired along the way, both real:
+
+* `read_arm` was annotated `Mapping` and called `config.get(ARM_KEY)`, so passing
+  a `FoundationConfig` — which the checkpoint-emission path does — raised
+  `AttributeError`. The arm could not be read from a config object at all, so no
+  run could declare itself a control through the object that describes it.
+* `FoundationConfig.arm` is an `ArmConfig` carrying `role`/`controls_for`/
+  `justification` — the same three fields as `ArmDeclaration` under a fourth name
+  for one concept. Now read structurally.
+
+**And the manifest that reaches R12 cannot carry R12's remedy.**
 
 The refusal ends: *"or declare the run a control (`arm.role='control'` naming
 …)"*. `arm.role` belongs to `scwbd.schema.designation.ArmDeclaration`. The class
