@@ -231,7 +231,40 @@ def stage_admission(
                 "STAGE_PERMISSIONS.get(name, ('*',)), which grants everything, so an "
                 "unwired stage and a fully-permitted stage read identically."
             )
-        return StageAdmission(stage=name, provenance="legacy:run_stage stage-name gates", **legacy)
+        # The three booleans are not an admission. `_LEGACY_FLAGS` carries
+        # boundary_randomisation / with_hemo / individualize and says nothing
+        # about which SOURCES the stage sees, so this returned admits=() and
+        # source_ids=() -- and `run_stage` then raises "produced no admissible
+        # loss". Every run-1 config, `configs/scwbd_ci_smoke.yaml` included, was
+        # unable to train at all once admission became config-driven.
+        #
+        # The missing half exists: `configs/curriculum/legacy_run1_admission.json`
+        # is the run-1 admission captured from the trainer at b2b5f7b, the last
+        # commit that still had the gates. Used here rather than re-derived,
+        # because it cannot be re-derived -- and stamped `frozen:run1@...` so a
+        # reader can tell a captured admission from a declared one.
+        admits: tuple[int, ...] = ()
+        source_ids: tuple[str, ...] = ()
+        provenance = "legacy:run_stage stage-name gates"
+        try:
+            from scwbd.curriculum.legacy import _frozen_admission
+
+            rec = _frozen_admission()
+        except Exception:
+            rec = None
+        if rec is not None:
+            st = rec.for_stage(name)
+            if st.source_ids or st.admits:
+                admits = tuple(st.admits)
+                source_ids = tuple(st.source_ids)
+                provenance = st.provenance
+        return StageAdmission(
+            stage=name,
+            admits=admits,
+            source_ids=source_ids,
+            provenance=provenance,
+            **legacy,
+        )
 
     if cards is None:
         cards = load_mixture_cards(cards_dir or "configs/curriculum/source_cards")

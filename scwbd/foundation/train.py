@@ -742,6 +742,55 @@ class FoundationTrainer:
             losses["eegmmidb_real"] = losses["eegmmidb_real"] + 1e-3 * self.individualizer.prior_penalty()
         return losses, {"real_eeg_nll": float(nll.detach())}
 
+    def _whole_brain_hemo(self, state: "Tensor") -> "Tensor":
+        """``(..., N, D)`` structured state -> ``(..., N, 4)`` Balloon state.
+
+        This line used to read ``family_layout.component(state, "hemo")``, a
+        method that does not exist on :class:`FamilyStateLayout`. It had never
+        raised because the whole BOLD branch was unreachable until
+        ``ds002336_real`` was admitted -- the fourth thing in this function to
+        fail the first time it ran.
+
+        The layout is per-family by construction: ``get()`` returns
+        ``(..., n_f, dim)`` for one family, and there is no whole-brain read,
+        because a component means different channels in different families. So
+        the assembly is explicit -- gather each family's ``hemo`` and scatter it
+        onto that family's region indices.
+
+        A family that declares no ``hemo`` **refuses** rather than contributing
+        zeros. Zero is a valid Balloon state (``v`` and ``q`` at rest), so a
+        silent zero-fill would produce a plausible BOLD prediction for regions
+        with no haemodynamic model at all, which is a fabricated observation on
+        the model side of the likelihood.
+        """
+        layout = getattr(self.model, "family_layout", None)
+        if layout is None:
+            return state
+        out = torch.zeros(
+            (*state.shape[:-1], 4), dtype=state.dtype, device=state.device
+        )
+        for fam in layout.families:
+            # `.name` on the layout's own RegionFamily, NOT `.family_id` -- the
+            # anatomy prior's RegionFamily uses `family_id`, the state layout's
+            # uses `name`, and they are different classes with overlapping
+            # vocabulary. Reaching for the wrong one interpolated an entire
+            # dataclass into a KeyError.
+            name = str(getattr(fam, "name", fam))
+            try:
+                block = layout.get(state, name, "hemo")  # (..., n_f, 4)
+            except Exception as exc:
+                raise ValueError(
+                    f"family {name!r} declares no 'hemo' component "
+                    f"({type(exc).__name__}). The BOLD "
+                    "likelihood needs a Balloon state for every region it scores. "
+                    "Refusing to zero-fill: zero is a legal Balloon state, so the "
+                    "missing regions would score as resting tissue rather than as "
+                    "unmodelled ones."
+                ) from exc
+            idx = layout.index(name, device=state.device)
+            out = out.index_copy(-2, idx, block.to(out.dtype))
+        return out
+
     def real_bold_losses(
         self, batch: Mapping[str, Any], stage: StageConfig, *, source_id: str = "ds002336_real"
     ) -> tuple[dict[str, Tensor], dict[str, Any]]:
@@ -782,6 +831,54 @@ class FoundationTrainer:
                 "an empty likelihood."
             )
 
+        # The atlas is cortex-only; the carrier is not.
+        #
+        # `Schaefer400x7` gives 400 parcels. The model's regional state is 414 --
+        # 400 cortical, 14 subcortical (Tian) -- and the anatomy's label order is
+        # cortex first, verified below rather than assumed. So parcel *i* is
+        # region *i* for i < 400, and the 14 subcortical regions have no BOLD
+        # measurement at all.
+        #
+        # They are padded in as UNCOVERED rather than dropped, because dropping
+        # them would mean the likelihood scores a 400-vector against a 414-vector
+        # by truncating the model -- silently deciding that subcortex does not
+        # exist. Uncovered is the true statement: this acquisition and this atlas
+        # say nothing about those regions, and `gaussian_nll(..., mask=)`
+        # marginalises them out.
+        n_regions = int(getattr(self.anat, "n_regions", bold.shape[-1]))
+        if bold.shape[-1] != n_regions:
+            n_atlas = int(bold.shape[-1])
+            # Verified against the carrier's own per-region division, not
+            # against a count. The property that makes index alignment valid is
+            # "the first n_atlas regions are exactly the cortical ones", and a
+            # count of 400 would also be satisfied by an ordering that
+            # interleaves them.
+            div = [str(x) for x in (getattr(self.anat, "division", ()) or ())]
+            head_ok = n_atlas <= n_regions and len(div) == n_regions
+            head_ok = head_ok and all(d == "cortex" for d in div[:n_atlas])
+            head_ok = head_ok and not any(d == "cortex" for d in div[n_atlas:])
+            if not head_ok:
+                seen = sorted(set(div)) or ["<no division>"]
+                raise ValueError(
+                    f"{source_id}: BOLD carries {n_atlas} parcels and the carrier has "
+                    f"{n_regions} regions (divisions {seen}). Index alignment is only "
+                    "valid when the atlas is exactly the carrier's cortical prefix, and "
+                    "that is not the case here. Refusing to align two parcellations by "
+                    "index when nothing establishes they are the same parcellation -- "
+                    "the namespace error this project keeps finding, applied to anatomy."
+                )
+            pad = torch.full(
+                (*bold.shape[:-1], n_regions - n_atlas),
+                float("nan"),
+                dtype=bold.dtype,
+                device=bold.device,
+            )
+            bold = torch.cat([bold, pad], dim=-1)
+            mask = torch.cat(
+                [mask, torch.zeros((mask.shape[0], n_regions - n_atlas), dtype=torch.bool, device=mask.device)],
+                dim=-1,
+            )
+
         c = self.cfg.data.context
         ctx_b, tgt_b = bold[:, :c], bold[:, c:]
         n_pred = tgt_b.shape[1]
@@ -796,35 +893,80 @@ class FoundationTrainer:
             denom = m3.sum(dim=(1, 2), keepdim=True).clamp_min(1)
             mean = (src_ctx * m3).sum(dim=(1, 2), keepdim=True) / denom
             var = (((src_ctx - mean) * m3) ** 2).sum(dim=(1, 2), keepdim=True) / denom
-            src_ctx = torch.where(m3, (src_ctx - mean) / var.sqrt().clamp_min(1e-6), torch.zeros_like(src_ctx))
+            scale = var.sqrt().clamp_min(1e-6)
+            src_ctx = torch.where(m3, (src_ctx - mean) / scale, torch.zeros_like(src_ctx))
 
-        # theta from the same amortised posterior the EEG path uses. Its
-        # conditioning was fitted on EEG context, so on BOLD it is out of
-        # distribution -- recorded rather than hidden, because a posterior asked
-        # for theta from an input it never saw is a real caveat and not a
-        # detail. Ordering the posterior separately per modality is the fix and
-        # is not attempted here.
-        th = self.posterior.sample(ctx_b.mean(-1), 1)[:, 0][:, : len(THETA_NAMES)].detach()
+        # theta from the PRIOR, not from the amortised posterior.
+        #
+        # This line used to read `self.posterior.sample(ctx_b.mean(-1), 1)`, and
+        # it had never executed: `ds002336_real` was not admitted by any stage
+        # until 2026-08-07, so the whole BOLD branch was unreachable. The first
+        # time it ran it raised `not enough values to unpack (expected 3, got 2)`
+        # -- `ctx_b.mean(-1)` is `(B, T)` and the summary encoder wants
+        # `(B, T, C)`.
+        #
+        # The rank was the symptom. The posterior's summary encoder is built
+        # around a fixed channel count -- the EEG montage's 64 -- and BOLD
+        # context is 400 parcels. There is no shape-compatible way to pass it
+        # without inventing a 400 -> 64 projection, and a projection invented
+        # here would be an unvalidated forward operator sitting inside a
+        # likelihood, which is precisely what the lead field exists to prevent
+        # (ARCHITECTURE.md RL-05).
+        #
+        # So the BOLD likelihood gets prior theta and says so. That is weaker
+        # than amortised inference and it is honest about which: the posterior
+        # was fitted on EEG summaries and has no claim on parcel-space input.
+        # The real fix is a per-modality posterior, which is a modelling change
+        # and not something to smuggle in as a reshape.
+        th = self.theta_prior.sample(
+            bold.shape[0], seed=int(self.global_step), device=str(bold.device)
+        )[:, : len(THETA_NAMES)].detach()
 
         self.model.set_mechanistic_theta(th, self.anat)
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
             roll = self.model.rollout(y_context=src_ctx, theta=th, n_steps=n_pred, enforce_r05=False)
-            hemo = (
-                self.model.family_layout.component(roll.state, "hemo")
-                if self.model.family_layout is not None
-                else roll.state
-            )
+            hemo = self._whole_brain_hemo(roll.state)
             mu, lv = self.model.bold.signal(hemo, roll.state)
         mu, lv = mu.float(), lv.float()
 
         # The mask is the whole point: gaussian_nll marginalises unobserved
         # elements out rather than scoring them, so uncovered parcels contribute
         # nothing and do not enter the denominator either.
+        # The TARGET is normalised with the CONTEXT's statistics.
+        #
+        # It was not, and the first run of this path scored a normalised
+        # prediction against a raw percent-signal-change target: real_bold_nll
+        # came out at 1.7e+07, which would have dominated every other term and
+        # destroyed the run without ever looking like a units bug -- it looks
+        # like a model that cannot fit BOLD.
+        #
+        # This is the same defect already catalogued on the EEG side, where the
+        # published comparison is offset by `mean(log s) = 0.5694` nats
+        # (reports/RUN2.md §4). The lesson taken from it here is not just to
+        # scale, but to REPORT the scale: `bold_log_scale` is the Jacobian term,
+        # so `NLL_raw = NLL_scaled + bold_log_scale` and nobody has to rediscover
+        # the offset from the source.
+        #
+        # Statistics come from the context window only. Taking them over the
+        # target too would leak the thing being predicted into its own
+        # normalisation.
         m3t = mask.unsqueeze(1).expand_as(tgt_b).to(mu.dtype)
-        nll = gaussian_nll(torch.nan_to_num(tgt_b, nan=0.0), mu, lv, mask=m3t)
+        tgt_n = torch.where(
+            m3t.bool(),
+            (torch.nan_to_num(tgt_b, nan=0.0) - mean) / scale,
+            torch.zeros_like(tgt_b),
+        )
+        nll = gaussian_nll(tgt_n, mu, lv, mask=m3t)
+        log_scale = float(scale.log().mean().detach())
 
         return {source_id: nll}, {
             "real_bold_nll": float(nll.detach()),
+            # Named in the metrics so a reader of the run does not have to infer
+            # it from the source: this term is not amortised.
+            "bold_theta_source": "prior",
+            # NLL_raw = NLL_scaled + bold_log_scale. Reported so the BOLD term is
+            # comparable against anything scored in percent signal change.
+            "bold_log_scale": log_scale,
             "bold_parcels_covered": int(mask[0].sum()),
             "bold_parcels_total": int(mask.shape[1]),
         }
