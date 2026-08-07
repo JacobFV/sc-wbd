@@ -186,9 +186,22 @@ divergence was triggered by a schedule event, and this is a bigger one.
 Second transition, also clean.
 
 ```
-T3 step  1   fnll 0.6527   npe 7.783   rej 0
-T3 step 20   fnll 0.5695   npe 8.114   rej 0
+T3 step   1   fnll 0.6527   npe 7.783   rej 0
+T3 step  20   fnll 0.5695   npe 8.114   rej 0
+T3 step 380   fnll 0.5045   npe 7.703   rej 0    global_step 3846
 ```
+
+Through 380 of T3's 1000 steps the two losses are doing different things, which
+is what we wanted to see. The forecast NLL is falling (0.65 → 0.50). The NPE
+loss is *not* — it sits in a band around 7.7–8.1 and does not trend.
+
+That is the correct shape for this stage, and worth stating plainly because the
+opposite reading is available to anyone glancing at the log. A flow loss that
+fell steadily here would mean the posterior was sharpening on the population
+prior — the thing run 1 did when it collapsed. A flat band means the flow is
+tracking a target that is itself still moving, and `npe_rejected=0` with
+`npe_seen_max=29.19` says it is doing so without ever approaching the 1e4
+rejection bound. The bound has still never fired in run 2.
 
 Remaining: T4 simulator extension 3334 · T5 distillation 0 · T1
 individualisation 900.
