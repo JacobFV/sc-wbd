@@ -653,7 +653,29 @@ def _from_anatomy_partition(anat) -> tuple[tuple[str, ...], dict[str, Any]] | No
 
     Duck-typed on purpose — this module must not import ``scwbd.anatomy``.
     """
-    part = getattr(anat, "families", None) or getattr(anat, "family_partition", None)
+    # `families` and `family_partition` are the SAME declaration in two spellings
+    # (ARCHITECTURE.md O-7). This was `families or family_partition`, so whenever
+    # both were present the first won and the second was discarded without a
+    # word -- the third instance in this file of one declaration channel silently
+    # overriding another.
+    #
+    # Refuse when both are present and describe different partitions. When they
+    # agree, or only one exists, behave exactly as before.
+    direct = getattr(anat, "families", None)
+    named = getattr(anat, "family_partition", None)
+    if direct and named:
+        d_groups = _partition_of_families(direct)
+        n_groups = _partition_of_families(getattr(named, "families", None) or named)
+        if d_groups and n_groups and d_groups != n_groups:
+            raise ValueError(
+                "the anatomy carries BOTH `families` and `family_partition`, and they "
+                f"describe different partitions ({len(d_groups)} vs {len(n_groups)} "
+                "groups). These are two spellings of one declaration; picking either "
+                "silently is how a caller's partition gets replaced by somebody "
+                "else's under a provenance that still says `anatomy_declared`. "
+                "Remove whichever is stale (ARCHITECTURE.md O-7)."
+            )
+    part = direct or named
     if part is None:
         return None
     fams = getattr(part, "families", None)
@@ -696,6 +718,21 @@ def _from_anatomy_partition(anat) -> tuple[tuple[str, ...], dict[str, Any]] | No
         "declared_absent": dict(getattr(part, "declared_absent", {}) or {}),
         "separation_evidence": dict(getattr(part, "separation_evidence", {}) or {}),
     }
+
+
+def _partition_of_families(obj: Any) -> set[frozenset[int]]:
+    """Group membership of a family container, names ignored, or empty if unreadable."""
+    fams = getattr(obj, "families", None)
+    if fams is None:
+        fams = obj
+    out: set[frozenset[int]] = set()
+    try:
+        for f in fams:
+            members = getattr(f, "regions", None) or getattr(f, "parcels", None) or ()
+            out.add(frozenset(int(i) for i in members))
+    except TypeError:
+        return set()
+    return {g for g in out if g}
 
 
 def _per_parcel_family_labels(anat: Any) -> list[str] | None:

@@ -222,6 +222,12 @@ def test_an_anatomy_declared_partition_is_consumed_verbatim(anat):
     ctx = [i for i, d in enumerate(anat.division) if d == "cortex"]
     sub = [i for i, d in enumerate(anat.division) if d != "cortex"]
     a = copy.copy(anat)
+    # Declare the partition ONCE: `families` and `family_partition` are two
+    # spellings of one declaration, and `_from_anatomy_partition` used to take
+    # the first and discard the second in silence. It refuses a disagreement
+    # now, so a fixture supplying `family_partition` must not also carry the
+    # real prior's `families` inherited through `copy.copy`.
+    a.families = None
     a.family_partition = _P(
         families=(
             _F("cortex_unimodal", tuple(ctx[: len(ctx) // 3])),
@@ -292,6 +298,12 @@ def test_an_unrecognised_non_cortical_family_is_reported_loudly(anat):
     ctx = [i for i, d in enumerate(anat.division) if d == "cortex"]
     sub = [i for i, d in enumerate(anat.division) if d != "cortex"]
     a = copy.copy(anat)
+    # Declare the partition ONCE: `families` and `family_partition` are two
+    # spellings of one declaration, and `_from_anatomy_partition` used to take
+    # the first and discard the second in silence. It refuses a disagreement
+    # now, so a fixture supplying `family_partition` must not also carry the
+    # real prior's `families` inherited through `copy.copy`.
+    a.families = None
     a.family_partition = _P(families=(_F("cortex_all", tuple(ctx)), _F("subcortex_zzz", tuple(sub))))
     part = derive_families(a)
     assert any("NON-CORTICAL FAMILIES WITH NO RECOGNISED BACKEND" in n for n in part.notes)
@@ -311,6 +323,12 @@ def test_an_incomplete_anatomy_partition_raises(anat):
         families: tuple
 
     a = copy.copy(anat)
+    # Declare the partition ONCE: `families` and `family_partition` are two
+    # spellings of one declaration, and `_from_anatomy_partition` used to take
+    # the first and discard the second in silence. It refuses a disagreement
+    # now, so a fixture supplying `family_partition` must not also carry the
+    # real prior's `families` inherited through `copy.copy`.
+    a.families = None
     a.family_partition = _P(families=(_F("only_some", tuple(range(10))),))
     with pytest.raises(ValueError, match="unassigned"):
         derive_families(a)
