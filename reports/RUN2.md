@@ -931,6 +931,28 @@ the unchecked-enumeration class is that *"17 known failures"* was a number I had
 measured and then treated as a total — so the replacement is not a longer list
 of failures, it is an explicit list of **what has not been looked at**.
 
+**Swept 2026-08-07, and the number was wrong by more than an order of
+magnitude.** A per-directory run over all sixteen test packages found failures
+in four:
+
+| directory | state |
+|---|---|
+| `curriculum` | failing — `test_validator` (163 parameter names against a hardcoded 152, from model evolution) and `test_legacy_gates` (the stage gates were removed on purpose; see §2b) |
+| `evaluation_audit` | failing — **`test_units_consistency`, which invalidates the published comparison**; see above |
+| `foundation` | failing — `test_family_state`, the 17 already known |
+| `intervene` | failing — pad-cleanliness under a family rollout |
+| the other twelve | no failures surfaced in this sweep |
+
+The count that matters is not the total. It is that **`evaluation_audit` was on
+the unexamined list when 002 was published**, and the defect it names —
+SC-WBD and the baselines scored on different random variables — was sitting red
+in a directory I had written down as *not looked at* and then shipped past.
+
+A partial mid-sweep tally of 1158 passed / 123 errors / 88 failures was recorded
+at 44% and is **not** quoted as a total here: partial counts presented as totals
+are the same error one level down, and the completed per-directory sweep
+supersedes it.
+
 The complete run is the first thing after publishing, and it is in the
 watchdog's step 2 for that reason. Until then the correct summary of this
 project's test status is *"four directories green, three files red, and eight
