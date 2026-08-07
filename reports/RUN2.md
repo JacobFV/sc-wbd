@@ -270,6 +270,37 @@ supplies the engineered subcortical backends and leaves cortical families on
 empty. A guard reading the declaration rather than the effect would refuse this
 artifact wrongly, which is why R12 reads the artifact's own family report.
 
+### The publish path, audited the same way
+
+Rehearsing the release while training still ran turned out to matter more than
+the model checks. The dry run reported **one** blocker — the missing evaluation
+— which reads as *one thing left*. Staging a placeholder evaluation under a
+shell `trap` (so it could not survive into the real path) revealed three more,
+each hidden by the one before it:
+
+| # | what | would have happened |
+|---|---|---|
+| 1 | config default `configs/scwbd_002_pilot.yaml` | a path that has never existed; no `--config` flag overrides it |
+| 2 | weights filename hardcoded `stage_V_individual.pt` | run 1's final stage; run 2's is `T1_individualisation` |
+| 3 | **the model card** | titled `SC-WBD-001-beta`, tagged `control-arm`, with a section explaining the artifact is not a test of the thesis |
+
+The third is the one that mattered. Run 2 is the **treatment** arm. Published
+through that path it would have appeared publicly under the previous model's
+name, tagged as its own control — the exact state R12 refuses, reached through
+the card rather than the weights.
+
+All three are fixed: the filename derives from the config's stage list, and the
+card's name, arm, and tags derive from the evaluation (`model_id`,
+`config.model.family_state`, and whether any baseline actually won). A
+stale-evaluation blocker was added on top, and watched firing on a genuinely
+stale artifact rather than a synthetic one.
+
+The transferable part is about the instrument:
+
+> A single blocker is the least informative report a gate can produce: it cannot
+> distinguish *one thing left* from *one thing visible*. The refusal now lists
+> what else is wrong alongside what it hit first.
+
 ### Final numbers
 
 **PENDING**, against the pre-registration in
