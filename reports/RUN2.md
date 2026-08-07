@@ -585,6 +585,20 @@ sequence was necessary.
 > this explain what I see" but "what would I see if this were false" — and here
 > that test was one experiment away: stop pushing.
 
+**Final state, recorded because it is a limitation of the deliverable and not a
+detail.** The Pages deploy sat `pending` with **no jobs allocated** for 45
+minutes, across two cancel-and-redispatch attempts, with no pushes in between to
+pre-empt it. Deploys from this same branch and workflow succeeded four times
+earlier in the day. Every diagnostic available from here — run history,
+environment protection rules, the path filter, the concurrency group — has been
+checked and none explains it. The cause is upstream and outside this project's
+control.
+
+What follows for anyone reading the site: **`docs/` in the repository is ahead of
+what jacobfv.github.io serves.** The content is committed and pushed; only the
+publishing step has not run. The repository is the authority, and any page
+described in this report but returning 404 is deployed-pending, not withdrawn.
+
 What is true and useful regardless: the content was correct and pushed
 throughout, so nothing was lost; and `curl` answers *is it live*, while only the
 run history answers *why not*. Three polls of the former went by before one of
