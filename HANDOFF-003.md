@@ -42,7 +42,7 @@ the work. ds002336's parcel-space BOLD loader exists and is verified: 485 window
   Loading 002's weights needs families.layout_of_checkpoint(path).
 - pytest deselects `slow` by default; `make test-slow` runs the rest (~75 min).
 
-=== MAKE IT BIGGER. 002 WAS 2.5M PARAMETERS AND USED 3% OF THE MACHINE ===
+=== MAKE IT BIGGER: TARGET 25M. 002 WAS 2.5M AND USED 3% OF THE MACHINE ===
 
 002 total: 2,516,530 params (+1,679,840 posterior). The training log shows
 gpu_reserved_gb=4.08 on a 121GB unified-memory box. Nine hours at ~3% utilisation.
@@ -56,31 +56,45 @@ Where they sit:
 Current config: hidden=288, n_local_layers=3, encoder_channels=96, region_embed=96.
 These descend from a CI smoke config and were never deliberately sized.
 
-Target 50-80M for 003. Lever order:
-    hidden 288 -> 1024          ~12x on family_local (quadratic)  -> ~23M
-    n_local_layers 3 -> 6       ~2x                               -> ~46M
-    encoder_channels 96 -> 256  the EEG encoder is undersized for 64 channels
-    region_embed 96 -> 256      cheap, 414 rows
+TARGET FOR 003: ~25M. Roughly 10x 002, and small enough that a full run is hours
+rather than days, so the curriculum and the data can be debugged at a size where
+mistakes are cheap.
 
-Memory is not the constraint — activation cost is dominated by the rollout
-(B,T,414,62) over T steps, not by weights. 500M params is ~6GB with AdamW states.
-Wall-clock grows maybe 3-10x, not proportionally, because much of the step is ODE
-integration. Budget 1-4 days rather than 9 hours.
+Primary lever is width; the MLP blocks scale quadratically in `hidden`:
+    hidden=768   7.11x   est ~17.9M
+    hidden=896   9.68x   est ~24.3M   <- start here
+    hidden=1024 12.64x   est ~31.7M
+    hidden=1152 16.00x   est ~40.2M
 
-To exceed ~80M you must break the per-family cap: the model has 9 shared cores
-across 414 regions, so width is the only lever until you add per-region low-rank
-adapters over the family cores. That trades the family thesis for capacity — do
-it deliberately, not by inflating a width until the number looks right.
+Keep n_local_layers=3 at this size. Raise encoder_channels 96 -> 192 (the EEG
+encoder is undersized for 64 channels) and region_embed 96 -> 192 (cheap, 414
+rows); both are small contributions to the total.
 
-CAUTION, and it is the reason to stage this: family_local NEVER RECEIVED A
-GRADIENT in 002. There is no evidence about what capacity is useful here, because
-the 1.8M version has never once trained. Do hidden=1024 (~50M) first, confirm the
-regional tensors move and the loss responds, then scale from a known-good point.
-Going straight to 500M makes the first real training run also the largest, and a
-failure would be unattributable between capacity, curriculum, and data.
+THE ESTIMATES ABOVE ARE ARITHMETIC, NOT MEASUREMENTS. They assume every listed
+block scales as hidden^2, which is true of the MLP cores and only approximately
+true of the rest. Build the model and read the real number off
+`extra.parameter_report` in a smoke checkpoint BEFORE launching the full run.
+If it lands outside 20-30M, adjust `hidden` and re-read; do not launch against
+an estimate.
 
-Data supports it: 93GB of simulation corpus, and simulation is generable. The
-measured side is thinner (109 EEG subjects, 10 concurrent EEG-fMRI), so
+Memory is not the constraint at this size — activation cost is dominated by the
+rollout (B,T,414,62) over T steps, not by weights. 25M params is ~300MB with
+AdamW states. Expect wall-clock maybe 2-4x run 2's nine hours.
+
+Do NOT jump to 500M. family_local NEVER RECEIVED A GRADIENT in 002, so there is
+no evidence about what capacity is useful here — the 1.8M version has never once
+trained. 25M establishes that the regional model learns at all when it is
+reachable, and gives a known-good point to scale from. A first real run that is
+also the largest makes any failure unattributable between capacity, curriculum,
+and data.
+
+Past ~80M the per-family cap binds anyway: 9 shared cores across 414 regions
+means width is the only lever until per-region low-rank adapters are added over
+the family cores, which trades the family thesis for capacity and is a modelling
+decision rather than a config change.
+
+Data supports 25M easily: 93GB of simulation corpus, and simulation is generable.
+The measured side is thinner (109 EEG subjects, 10 concurrent EEG-fMRI), so
 measured-only heads saturate earlier than the simulator-trained trunk.
 
 === THE ONE GUARD THAT MATTERS ===
