@@ -1673,6 +1673,28 @@ Exhaustive over the **selected** set: every test under `tests/` was collected,
 those 56, 17 have since been run; **39 remain unmeasured**, and that is the
 remainder this report still owes.
 
+### The slow set, measured properly at last
+
+Three files run one at a time with a 90-minute cap and nothing else on the
+machine:
+
+```
+test_recovery.py                 killed at 5400 s   (cap) -- 2 failures visible
+test_synthetic_slice.py       completed in 3578 s   no FAILED lines
+test_matches_fisher_benchmark.py  completed in 29 s  no FAILED lines
+```
+
+**This revises what I recorded earlier.** `test_synthetic_slice.py` was written
+down as exceeding a cap and therefore unmeasurable. It is not: it takes about an
+hour and it **passes**. The earlier reading came from a 300 s cap and then a
+600 s cap, both too short, and one of them taken under contention — so "exceeds
+the cap" was a statement about my cap, not about the test.
+
+So the blocker is **`test_recovery.py` alone**, not three files and not two.
+Every other slow file measured in this session completes and passes. What
+remains genuinely unmeasured is that one file's tail: it reached six of its eight
+tests before the 90-minute kill, with two failing.
+
 ### `test_recovery.py` exceeds ninety minutes, and my instrument lied about it
 
 Run alone on an idle machine with a 90-minute cap:
