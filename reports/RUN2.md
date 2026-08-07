@@ -163,19 +163,35 @@ the same stage before the three fixes reached 3582 by step 1180, and 4.489e9
 before that. It did not merely avoid diverging — it never left a ±0.6 band
 across 2960 steps.
 
-### T2 boundary calibration — running
+### T2 boundary calibration — complete, 500 steps
 
-The first stage transition this model has crossed. New losses, new source
-cards, fresh optimiser and schedule; both heads came through without a
-rejection:
+The first stage transition this model has crossed: new losses, new source
+cards, a fresh optimiser and schedule.
 
 ```
-T2 step 20   fnll 0.4885   npe 7.597   rej 0
-T2 step 40   fnll 0.6343   npe 7.920   rej 0
+26 logged points, steps 1..500
+fnll   0.6328 -> 0.6755   min 0.3198
+npe    mean 7.9224        max 8.3890
+rejections                0
 ```
 
-Remaining: T3 population prior 1000 · T4 simulator extension 3334 · T5
-distillation 0 · T1 individualisation 900.
+`fnll` does not fall over T2, which is expected — boundary calibration fits
+interface adapters rather than the forecast, and its own losses are not in that
+number. The posterior stays inside the same ±0.6 band it held for all of T1,
+**across a regime change**, which is the part that matters: the earlier
+divergence was triggered by a schedule event, and this is a bigger one.
+
+### T3 population prior — running
+
+Second transition, also clean.
+
+```
+T3 step  1   fnll 0.6527   npe 7.783   rej 0
+T3 step 20   fnll 0.5695   npe 8.114   rej 0
+```
+
+Remaining: T4 simulator extension 3334 · T5 distillation 0 · T1
+individualisation 900.
 
 Schedule: T1 measured founding 2966 · T2 boundary calibration 500 · T3
 population prior 1000 · T4 simulator extension 3334 · T5 distillation 0 · T1
