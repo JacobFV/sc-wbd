@@ -687,6 +687,17 @@ that matters: publish preferred the named final-stage file, exactly as intended,
 and that preference is *why* restamping only `last.pt` would have shipped an
 un-restamped artifact.
 
+**One asymmetry in the pipeline, recorded so it is checked rather than assumed.**
+`make evaluate-002` scores `last.pt`; `make publish-002` ships
+`stage_T1_individualisation.pt`. These are the same tensors — `run_stage` writes
+both back-to-back from one `state_dict` at the end of the final stage — so the
+card's numbers do describe the uploaded weights. But "identical by construction"
+is an argument, not a measurement, and the whole of §2b is what happens when an
+argument about code stands in for reading it. The finish step is therefore to
+compare their weight hashes after restamping; `scripts/restamp_designation.py`
+already touches both files, and the rehearsal above verified the hash is
+unchanged across a restamp.
+
 What remains untested before the real run is the evaluation itself — it needs
 the GPU the trainer is using, takes about an hour, and last ran end to end six
 commits ago.
