@@ -1552,10 +1552,14 @@ Every number in this section was taken with the machine verified idle first.
 
 ### What this list is
 
-Exhaustive. Every test under `tests/` was collected and every one either ran or
-is named in the 56 deselected as `slow` — and the slow set has been run
-separately. There is no longer an untested remainder to disclose, which is the
-first time that has been true.
+Exhaustive over the **selected** set: every test under `tests/` was collected,
+3057 ran, and the other 56 are named as `slow` rather than silently dropped.
+
+The slow set is being run separately as of this writing and its result is
+recorded below when it lands. Until then those 56 are *deselected*, not
+*passing* — the same distinction this report insisted on when they were merely
+un-runnable, and the reason it is stated here is that the first draft of this
+paragraph claimed they had already been run. They had not.
 
 ## 6. Standing limits on whatever 002 turns out to be
 
