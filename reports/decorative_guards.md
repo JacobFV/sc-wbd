@@ -63,6 +63,7 @@ classes.
 - [`--out` moves the checkpoints and not the record](#--out-moves-the-checkpoints-and-not-the-record) — an isolation flag that isolates some of the outputs
 - [The design-rationale class — a test that asserts *why*, not *what*](#the-design-rationale-class-a-test-that-asserts-why-not-what) — when a correct test becomes the last defender of a rejected decision
 - [The collection-time class — global state set before any test runs](#the-collection-time-class-global-state-set-before-any-test-runs) — a fix applied where a defect was observed, not where it is caused
+- [The recency class — attributing a failure to the last thing you changed](#the-recency-class-attributing-a-failure-to-the-last-thing-you-changed) — the error contained the number that disproved the hypothesis
 
 ### The single most transferable sentence in this file
 
@@ -3125,3 +3126,61 @@ fixed before either was visible.
 > an instrument reading, not a result. Mine reported nearly four times the real
 > number, and the only reason it was caught is that one of the failures was in
 > the directory that sorts first.
+
+---
+
+## The recency class — attributing a failure to the last thing you changed
+
+Three times in one day I diagnosed a failure as caused by my most recent change,
+and twice I was wrong. The pattern is worth naming because the wrong diagnosis
+was *plausible every time* — the change really had touched that area, and the
+failure really was new to me.
+
+### The instance that cost work
+
+`tests/evaluation_audit` showed three `RuntimeError: Error(s) in loading
+state_dict for SCWBD`. I had just widened the shared state interface (O-5b,
+D=59→62) and had already fixed two other loaders for exactly that. So I wrapped
+the audit's model construction in `layout_of_checkpoint` and re-ran.
+
+Still three errors. Reading them properly:
+
+```
+size mismatch for log_dt_scale: checkpoint torch.Size([454]) vs model 414
+```
+
+**454.** Not 59, not 62. A checkpoint trained on the synthetic fallback anatomy
+loaded into a 414-region model — a pre-existing anatomy mismatch, the same class
+as the `intervene` defect fixed the same morning, and entirely unrelated to the
+layout. The edits were reverted.
+
+The error message contained the number that disproved my hypothesis, in the
+first line, before I made the change.
+
+### The two near-misses of the same shape
+
+* A `pytest` timeout was attributed to a slow test file. It was three of my own
+  jobs competing for the machine; that file passes in 65 s alone.
+* The first complete suite run's 38 failing files were attributed to real
+  breakage. 28 of them were a dtype set at collection time.
+
+### Why the class is specific
+
+This is not "check your assumptions". It is narrower and more predictable:
+
+> After making a change, every failure in the neighbourhood acquires a ready
+> explanation, and the readiest one is the change you just made. That
+> explanation is available *before* the error is read, and it is consistent with
+> everything you know, so reading the error feels like confirmation rather than
+> investigation.
+
+The tell is that the fix does not work and the failure count does not move. At
+that point the hypothesis has been falsified and the correct next action is to
+read the message rather than to try a second variant of the same fix.
+
+### The habit that catches it
+
+Read the **numbers** in the error before deciding what caused it. `454` is not
+`62`. `id=432 axis_dim=414` is not a layout width. A shape mismatch names the two
+things that disagree, and if neither of them is the thing you changed, you have
+the wrong suspect regardless of how recently you touched the file.
