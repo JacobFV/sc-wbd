@@ -149,3 +149,51 @@ def test_jacob_prompts_are_visible_not_just_commented():
     assert n_rendered > 0 or n_comment == 0, (
         f"{n_comment} JACOB comments and no rendered TODO block"
     )
+
+
+def test_the_prose_layout_matches_what_the_checkpoint_says_it_is():
+    """Run 2 was described as *ragged* in three places. It is padded.
+
+    ``reports/RUN2.md``, the landing page, and ``paper/body.tex`` all said run 2
+    used a segment/ragged state layout. The checkpoint's own ``state_layout``
+    says ``family_padded``, and the ragged layout -- while built and tested -- is
+    not what these weights use.
+
+    All three errors ran the same direction: toward the design the project
+    argues for. That is the drift-toward-intent class in
+    ``reports/decorative_guards.md``, and the reason it survived is that nobody
+    asked the checkpoint what it was.
+
+    So this test asks. It is deliberately narrow -- one claim, checked against
+    the artifact's self-report rather than against anyone's memory.
+    """
+    import torch
+
+    ckpt = ROOT / "checkpoints/scwbd-002-pilot/last.pt"
+    if not ckpt.is_file():
+        pytest.skip("no run-2 checkpoint on disk")
+    ck = torch.load(ckpt, map_location="cpu", weights_only=False)
+    layout = (ck.get("regional_state") or {}).get("layout")
+    if not layout:
+        pytest.skip("the checkpoint records no layout")
+
+    surfaces = {
+        "reports/RUN2.md": (ROOT / "reports/RUN2.md").read_text(),
+        "site": _all_site_text(),
+    }
+    for where, text in surfaces.items():
+        # Only sentences that describe *this run's* state layout, not the ones
+        # discussing the alternative -- which we legitimately built and write
+        # about. Anchor on the pairing of "002"/"run 2" with a layout word.
+        for m in re.finditer(
+            r"(?:002|run[- ]2)[^.\n]{0,120}?\b(ragged|segment)\b[^.\n]{0,40}\blayout\b",
+            text,
+            re.I,
+        ):
+            window = text[max(0, m.start() - 200) : m.end() + 200]
+            if "family_padded" in window or "padded" in window.lower():
+                continue  # the sentence names the real layout too
+            pytest.fail(
+                f"{where} calls run 2's layout {m.group(1)!r}, "
+                f"but the checkpoint records {layout!r}: ...{m.group(0)[:110]}..."
+            )
