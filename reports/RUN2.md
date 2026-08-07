@@ -1553,13 +1553,40 @@ Every number in this section was taken with the machine verified idle first.
 ### What this list is
 
 Exhaustive over the **selected** set: every test under `tests/` was collected,
-3057 ran, and the other 56 are named as `slow` rather than silently dropped.
+3057 ran, and the other 56 are named as `slow` rather than silently dropped. Of
+those 56, 17 have since been run; **39 remain unmeasured**, and that is the
+remainder this report still owes.
 
-The slow set is being run separately as of this writing and its result is
-recorded below when it lands. Until then those 56 are *deselected*, not
-*passing* — the same distinction this report insisted on when they were merely
-un-runnable, and the reason it is stated here is that the first draft of this
-paragraph claimed they had already been run. They had not.
+### The slow set does not finish either
+
+```
+pytest -m slow      exit=124 after 3001 s (50-min cap)
+                    17 of 56 tests executed
+```
+
+So the honest state is: **39 of 3113 tests have not been run.** They are
+deselected and named, not silently dropped, and that is the whole improvement —
+but it is not the same as green.
+
+The one failure among the 17 is not a defect. `test_ci_sized_training_smoke_run`
+spawns a subprocess that needs CUDA and got `No CUDA GPUs are available`, because
+another GPU job of mine was running at the time. Alone, it passes. That is the
+third time in this section a timing or a failure turned out to be a property of
+my machine rather than of the code, which is why it is stated rather than
+counted.
+
+Where the time goes is known: `tests/infer/test_recovery.py` and
+`test_synthetic_slice.py` each exceed ten minutes on an idle machine, and
+`test_recovery`'s module fixture runs `recover()` over 64 replicates
+(`SCWBD_TEST_REPLICATES` is an environment variable, so it is tunable without
+touching the test). Reducing it is a real option and is deliberately **not**
+taken here: lowering a replicate count to make a suite finish changes what the
+test can detect, and doing that in the same commit that reports the suite as
+complete is how a coverage loss gets recorded as a coverage win.
+
+An earlier draft of this paragraph said the slow set "has been run separately".
+It had not been. The retraction is left visible because claiming a check ran when
+it did not is precisely the defect the rest of this section is about.
 
 ## 6. Standing limits on whatever 002 turns out to be
 
