@@ -315,26 +315,35 @@ That was the commitment made here while it was still training — <em>"it will b
 listed with its measured result, whatever that result turns out to be"</em> —
 and the result turned out to be worse than run 1's.</p>
 
-<h2>Who this is for</h2>
-
-<p>Who it is built for, in order of how directly it is usable today.</p>
+<h2>What you would use it for</h2>
 
 <ul>
-<li><strong>Researchers building multimodal brain models.</strong> The compiler,
-the refusal set and the identifiability machinery are usable now and are the
-part we would most like attacked.</li>
-<li><strong>People designing non-invasive interventions</strong> — TMS, tFUS —
-who need a feasible-set discipline rather than an optimiser that will happily
-recommend something unsafe. The safety gating exists and refuses by
-default.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>A plan declaring intent to drive real hardware or to be applied
-to a person is refused unless a record exists that a preliminary review
-<em>occurred</em> with an approving outcome. A valid authorisation record is
-necessary and explicitly not sufficient, and the gate does not open when a
-calendar date passes — there is a test that runs the clock forward to 2027 to
-prove it.</span></span></li>
-<li><strong>Clinical translation.</strong> Not yet &mdash; this is a modelling
-and engineering programme, not a medical device.</li>
+<li><strong>Building a multimodal model of one subject.</strong> You have EEG for
+some sessions, fMRI for others, a stimulus log, maybe eye tracking. SC-WBD fuses
+them without requiring every subject to have every modality: each channel
+supervises the part it observes, and what was not measured is marginalised rather
+than filled in.</li>
+
+<li><strong>Choosing where to stimulate.</strong> TMS and tFUS targets compared
+under an E-field model on the subject's own head geometry, with the dose and the
+predicted effect separated rather than collapsed into one score.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>The
+planner refuses by default when a plan declares intent to drive real hardware or
+be applied to a person, and a valid authorisation record is necessary but
+explicitly not sufficient. The gate does not open by a calendar date passing —
+there is a test that runs the clock forward to 2027 to prove it.</span></span></li>
+
+<li><strong>Designing an experiment before running it.</strong> The
+identifiability laboratory answers what a proposed design can actually resolve —
+per parameter, per modality — so a session that cannot separate two hypotheses is
+visible before anyone is scanned.</li>
+
+<li><strong>Reading a brain-derived signal into software.</strong> The runtime
+returns typed outputs with their predictive variance, and an output whose
+parameters were not restored comes back as <code>Unresolved</code> rather than as
+a plausible number.</li>
 </ul>
+
+<p>It is a modelling and engineering programme. Nothing here is a medical device.</p>
 
 <h2>The paper</h2>
 
