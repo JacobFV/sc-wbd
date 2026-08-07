@@ -1526,6 +1526,26 @@ The mirror guard is the one that matters going forward. It is the check that
 would have caught the rename on the day it happened, and it is mutation-tested:
 a typo'd pattern fails naming the offending card and glob.
 
+**Step 0b, also landed 2026-08-07: O-5b.** `ARCHITECTURE.md` deferred the dipole
+to run 3 because changing the shared state interface would invalidate the
+checkpoints of the run then training. That run is finished and published, so the
+reason expired. `EEGHead.source_moment()` returned `None` for the whole of run 2
+— the `(64, 414, 3)` lead field and the head that projects it both existed, and
+`dipole` was declared per cortical family, which put it in the `private` block an
+observation head is forbidden to address. It is now shared at a fixed offset.
+
+This matters more than its size suggests: a per-parcel scalar carries **5.6%** of
+the whitened EEG lead field and a 3-vector moment **51.7%**. Run 2's EEG
+likelihood was reading the 5.6% path. The cost is recorded — D goes 59 → 62 and
+padding 47.34% → 49.73%, because the 14 subcortical regions now carry a zero
+dipole — and it strengthens O-6 rather than weakening it.
+
+**Consequence for comparability:** run 3 will not be a clean A/B against run 2.
+Between them the card patterns changed, the BOLD likelihood began contributing,
+and the state layout widened. Any difference in the headline numbers has at least
+four candidate causes, and the arms within run 3 are the only comparison that
+holds anything fixed.
+
 The gate defect (§2b) also has to be fixed before any further arm is trained,
 because an arm trained through the same gates measures the same wrong thing. The
 sequence, in order — steps 1–3 verified complete on 2026-08-07, 26 tests passing
