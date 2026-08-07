@@ -469,8 +469,34 @@ consumer, not a component.
 > and each time the artifact that would have used it describes the capability as
 > absent.
 
+**Status 2026-08-06, after wiring it.** The BOLD path is now built end to end
+and every piece has been exercised on real bytes:
+
+| piece | state |
+|---|---|
+| `anatomy/registration.py` | existed, unused → **run**: sub-xp102, 379/400 parcels, 161 s |
+| `sources/parcellate_bold.py` | **new** — the consumer that joins registration to the atlas |
+| `foundation/bolddata.py` | **new** — parcel-space windows + coverage, cached, per-subject chain reuse |
+| `FoundationTrainer.real_bold_losses` | **new** — parcel-space likelihood, refuses without a mask |
+| `run_stage` | **wired** — computes it under the same admission as the EEG term |
+| `configs/source_cards/ds002336_real.yaml` | still disabled, pending the cache |
+
+Discovery on ds002336 finds **55 runs across 10 subjects and 6 tasks**, every one
+with its own T1w.
+
+Three refusals were built in deliberately, because each is a place where the
+convenient behaviour is a wrong number rather than a smaller one:
+
+- a subject with **no T1w** is skipped, not registered to the template — someone
+  else's brain is a systematic several-mm error, not a degraded mode;
+- a run covering less than `min_coverage` of parcels is **dropped into
+  `dropped_runs`**, loudly, rather than averaged in;
+- `real_bold_losses` **raises without a coverage mask**, so a caller who forgets
+  it gets no number instead of a plausible one.
+
 What remains genuinely unwritten is the **montage adapter**, which is O-2's
-first real consumer.
+first real consumer — and it is now the only one of the three original blockers
+still outstanding.
 
 Two consequences worth stating plainly.
 
