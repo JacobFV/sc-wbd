@@ -59,6 +59,7 @@ classes.
 - [The mirror class — a correct fix that installs the opposite error](#the-mirror-class-a-correct-fix-that-installs-the-opposite-error) — a fix that installs the opposite error
 - [The published artifact carried the author's home directory](#the-published-artifact-carried-the-authors-home-directory) — an absolute path shipped to the Hub
 - [The `-rf` capture bug — fifth instance](#the--rf-capture-bug-fifth-instance) — selecting a report class that excludes the report
+- [The empty-permission class — 88.7% of a model that could not train](#the-empty-permission-class-887-of-a-model-that-could-not-train) — a glob that matches nothing is a legal permission set
 
 ### The single most transferable sentence in this file
 
@@ -2769,3 +2770,122 @@ that excludes most of what there is to report.
 > Every one of these produced *output*. None of them produced empty output that
 > announced itself. The failure mode of a capture bug is a plausible partial
 > answer, which is why "I got a list" is not evidence that the list is the list.
+
+---
+
+## The empty-permission class — 88.7% of a model that could not train
+
+The largest defect in this project, found on the last day, by a check written to
+answer a different question.
+
+### The finding
+
+```
+2,231,447 of 2,516,530 trainable parameters (88.7%)
+were named by no enabled source card's gradient_permission
+```
+
+`family_local` (1,814,447), `family_residual` (365,639), `family_readout`
+(26,946), `behaviour` (22,342), `observation` (2,073). The entire family-indexed
+regional model — the thing run 2's treatment arm exists to test.
+
+### The cause is three strings
+
+When the family-padded architecture landed, the regional modules were renamed:
+
+```
+local     -> family_local
+residual  -> family_residual
+readout   -> family_readout
+```
+
+The source cards were not. They still grant `local.*`, `residual.*`,
+`readout.*`. And:
+
+```python
+fnmatch("family_local.ports.out_proj.weight", "local.*")   # False
+```
+
+### Why nothing caught it
+
+**An unmatched glob is not an error. It is an empty set.** And an empty
+permission set is a perfectly legal permission set — it means "this source
+trains nothing here", which is a thing a card is allowed to say. There is no
+layer at which "you asked to train `local.*` and there is no `local.*`" is
+distinguishable from "you asked to train nothing".
+
+So the trainer computed gradients with respect to the parameters each source
+permitted, got 285,083 instead of 2,516,530, stepped, and **the loss went down**
+— because `assimilate`, `context`, `msg_readin`, `coupling` and `eeg` are enough
+to fit something. The run completed 8,700 steps over nine hours. The weights
+were evaluated, published, linked, and audited five separate ways in `RUN2.md`.
+Every one of those audits passed over it.
+
+This is the sharpest form of a shape this register keeps recording: **the work
+exists and the half that would use it is pointed somewhere else.** Previously
+that meant an unapplied patch, an unread config block, a module with no caller.
+Here both halves exist, both run, and they are separated by a prefix.
+
+### What made it findable
+
+Not a suspicion about training. A test for something else entirely — checking
+whether the *validator's* parameter universe had grown — surfaced module names
+(`family_local`) that did not look like the names in the cards (`local.*`). The
+question "why do these not match?" was the whole discovery.
+
+### Two independent methods, and why that matters here
+
+A claim this large needs more than one route to it:
+
+| method | evidence |
+|---|---|
+| mechanism | the enabled cards' globs against the checkpoint's parameter names leave exactly those modules unreachable |
+| measurement | those modules are **bit-identical** across every consecutive pair of the five stage checkpoints |
+
+Neither is derived from the other — the measurement never reads a card, the
+mechanism never reads a weight. They name the same set.
+
+### Three near-misses while writing the check
+
+All three are the same namespace error the defect itself is, which is the reason
+to record them rather than quietly fix them:
+
+1. **`observation.head`.** The first sweep ran against
+   `parameter_universe(configs/scwbd_001_beta.yaml)` — the *run-1* model's
+   names — and concluded `observation.head` (2,073 scalars) never trained in run
+   2. The shipped model has no `observation.head`; it has `observation.feat.*`.
+   The right finding, reached through a wrong instrument.
+2. **`posterior.*` accused.** Reading only `ck["model"]` reports `posterior.*` as
+   matching nothing. It lives in a sibling state dict that `_CombinedModule`
+   prefixes at runtime.
+3. **`individualizer.*` accused.** Checking a single stage checkpoint reports it
+   dead; the individualizer is constructed only in an individualisation stage.
+   Chasing that one down found it *is* dead — `individualizer` is `None` in every
+   checkpoint including `stage_T1_individualisation.pt` — for a real reason the
+   report had already recorded from the curriculum side.
+
+A fourth, in the number itself: the first published figure was **26.8%**,
+computed by dividing by the summed size of every state-dict tensor. A state dict
+carries buffers — here a 4.1-million-element connectome. A buffer is not a
+parameter that failed to train; it is not a parameter. The honest denominator is
+the checkpoint's own parameter report, and the figure is 88.7%.
+
+### What it costs the result
+
+> 002 loses to every baseline. It does **not** show that family-indexed
+> heterogeneous regional state fails to help, because that part of the model was
+> a random initialisation participating in the forward pass for 8,700 steps.
+
+The measurements are unchanged. What they are evidence *of* is not.
+
+### The standing rule
+
+> A permission that names nothing must be as loud as a permission that is
+> refused. "Grant `local.*`" against a model with no `local.*` is not a narrow
+> grant — it is a silent one, and silence is what every other guard in this
+> project is written to prevent.
+
+Enforced by `tests/foundation/test_card_patterns_reach_the_model.py`, whose third
+test is the mirror check — *every grant pattern must name at least one real
+parameter* — and is the one that would have caught the rename on the day it
+happened.
