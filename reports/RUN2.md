@@ -137,6 +137,35 @@ surrogate, arriving from the other direction: there, the failure was
 **So the posterior LR/decay change was the best available hypothesis, not a
 demonstrated fix, and the production run was the only test that existed.**
 
+### The production run settled it
+
+| step | 0.1× LR, no decay | 0.02× LR + decay 1e-2 |
+|---:|---:|---:|
+| 1000 | 36.46 | **7.684** |
+| 1020 | 67.41 | **7.820** |
+| 1040 | 190.9 | **8.306** |
+| 1060 | 688.8 | **8.114** |
+| 1080 | — | **7.739** |
+
+Flat at ~8 with 0 rejections through the zone where every prior attempt
+diverged — an **85× difference at step 1060** — while the forecast head reached
+its best value yet (0.4774).
+
+Worth stating plainly: **four isolation probes said this change would make no
+difference**, and the last one compared the two settings directly and found
+them indistinguishable. They were all wrong, because none of them could reach
+the failure. The hypothesis was right and the instruments that could not test
+it were not evidence against it — they were not evidence at all.
+
+**What actually found all of this was the rejection *counter*, not the bound.**
+A guard that returns a boolean would have zeroed the posterior loss for an
+entire run and shipped a model whose amortized posterior never trained, with a
+green log. 400 rejections in 400 steps is not a rare event, and that number is
+what disproved the first diagnosis — which was mine, and wrong.
+
+---
+
+
 ### Direct check on the trained flow, mid-T4
 
 The loss curves say the flow is healthy indirectly — a flat NPE band and zero
@@ -176,35 +205,6 @@ rather than here.
 
 Recorded now because the *first* reading — no collapse — does not depend on the
 caveat at all. Degenerate spread would have shown up under any input whatsoever.
-
-### The production run settled it
-
-| step | 0.1× LR, no decay | 0.02× LR + decay 1e-2 |
-|---:|---:|---:|
-| 1000 | 36.46 | **7.684** |
-| 1020 | 67.41 | **7.820** |
-| 1040 | 190.9 | **8.306** |
-| 1060 | 688.8 | **8.114** |
-| 1080 | — | **7.739** |
-
-Flat at ~8 with 0 rejections through the zone where every prior attempt
-diverged — an **85× difference at step 1060** — while the forecast head reached
-its best value yet (0.4774).
-
-Worth stating plainly: **four isolation probes said this change would make no
-difference**, and the last one compared the two settings directly and found
-them indistinguishable. They were all wrong, because none of them could reach
-the failure. The hypothesis was right and the instruments that could not test
-it were not evidence against it — they were not evidence at all.
-
-**What actually found all of this was the rejection *counter*, not the bound.**
-A guard that returns a boolean would have zeroed the posterior loss for an
-entire run and shipped a model whose amortized posterior never trained, with a
-green log. 400 rejections in 400 steps is not a rare event, and that number is
-what disproved the first diagnosis — which was mine, and wrong.
-
----
-
 ## 3. Training
 
 ### T1 measured founding — complete, 2966 steps
