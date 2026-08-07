@@ -495,6 +495,23 @@ attached to a string literal that nothing checks against the config.
 
 ## 3. Training
 
+> **Data loss, 2026-08-07.** The per-step record behind this section no longer
+> exists for the last 46% of the run. `reports/training/run002.log` and
+> `scwbd-002-pilot_train.jsonl` end at `global_step=4686`, mid-`T4`; run 2 ran to
+> 8,700. Two scratch runs had appended to both files (`--out` moves the
+> checkpoints, not the log), and I ran `git checkout -- reports/training/` to
+> undo that. HEAD's copy ends at 4686 — the last 4,014 steps had never been
+> committed, so the restore discarded run 2's own tail rather than my appends.
+> Not recoverable: the file was never staged, so no blob exists in the object
+> store.
+>
+> Everything below was written while the data existed and is unchanged. It
+> **cannot be re-derived from this repository**. What survives is the six stage
+> checkpoints with their per-stage metrics (`last.pt` records `step=8700`),
+> `evaluation_run2.json`, and the published weights — the artifacts, not the
+> trace. `reports/decorative_guards.md` records how the mistake was made.
+
+
 ### The whole curve, in one table
 
 Every logged step of the run, by stage. `nll` is `sim_forecast_nll` — the only

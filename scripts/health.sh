@@ -16,6 +16,7 @@ cd "$(dirname "$0")/.."
 
 CONFIG="${CONFIG:-configs/run2/pilot-families.yaml}"
 LOG="${LOG:-reports/training/run002.log}"
+CKPT="${CKPT:-checkpoints/scwbd-002-pilot}"
 STALE_S="${STALE_S:-900}"   # 15 min without a new line is stale; a step is ~3 s
 
 fail() { echo "UNHEALTHY($1): ${*:2}"; exit "$1"; }
@@ -38,6 +39,31 @@ age=$(( $(date +%s) - $(stat -c %Y "$LOG") ))
 # of its own evaluation.
 TARGET="${TARGET:-8700}"
 last=$(grep -oE 'global_step=[0-9]+' "$LOG" | tail -1 | cut -d= -f2)
+
+# The CHECKPOINT is the authority on how far training got; the log is a
+# transcript of it and can be shorter than the run for reasons that have nothing
+# to do with training.  It happened: `git checkout -- reports/training/` reverted
+# run002.log to HEAD, which ends at 4686, and this script then reported a
+# COMPLETE 8700-step run as "a death, not a completion" -- an instrument
+# reporting on its own input rather than on its subject.  The weights say 8700.
+CKPT_STEP=""
+if [ -f "$CKPT/last.pt" ]; then
+    CKPT_STEP=$(.venv/bin/python - "$CKPT/last.pt" 2>/dev/null <<'PYEOF'
+import sys
+try:
+    import torch
+    print(int(torch.load(sys.argv[1], map_location="cpu", weights_only=False).get("step") or 0))
+except Exception:
+    pass
+PYEOF
+)
+fi
+# Take the FURTHEST evidence of progress, not the most recent instrument. Both
+# are lower bounds on what ran; neither can overstate it.
+if [ -n "${CKPT_STEP:-}" ] && [ "${CKPT_STEP:-0}" -gt "${last:-0}" ]; then
+    [ -n "${last:-}" ] && echo "note: log ends at global_step=$last but the checkpoint records $CKPT_STEP; trusting the checkpoint"
+    last="$CKPT_STEP"
+fi
 # Count only the real python invocation.  `pgrep -f` matches ANY command line
 # containing the pattern -- including the shell running this very check, because
 # make echoes the recipe and the recipe names the module.  That self-match made
