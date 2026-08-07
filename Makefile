@@ -38,6 +38,8 @@ RUNPY := PYTHONPATH=$(ROOT) $(PY)
 # Where the site is assembled and what gets published.
 SITE_OUT   ?= $(ROOT)/site/_build
 PAPER_PDF  := $(ROOT)/paper/output/sc_wbd_frontiers.pdf
+HF_NAMESPACE ?= jacob-valdez
+CKPT_002 ?= checkpoints/scwbd-002-pilot
 
 # R2 bucket for rendered media. Media is NEVER committed to this repository.
 R2_BUCKET  ?= scwbd-media
@@ -182,6 +184,33 @@ attribution-json: ## Emit the citation set as JSON
 	  --tag SC-WBD-001-beta
 
 # -------------------------------------------------------------------- deploy
+
+publish-dry: ## Dry-run the HF publish for every artifact (creates nothing)
+	@# `env -u HF_TOKEN` is NOT optional. An HF_TOKEN in the environment silently
+	@# overrides the stored CLI token, so `hf auth whoami` resolved to a different
+	@# account than the one the operator had just logged into. The publisher now
+	@# refuses on an identity mismatch, but only if it sees the right identity.
+	@for a in anatomy-prior run1-checkpoint run2-pilot sim-corpus; do \
+	  echo "=== $$a ==="; \
+	  env -u HF_TOKEN PYTHONPATH=. $(PY) -m scwbd.release.publish $$a \
+	    --namespace $(HF_NAMESPACE) --checkpoint-dir $(CKPT_002) || true; \
+	done
+
+publish-002: ## Publish SC-WBD-002 to the Hub (requires an evaluation on disk)
+	@test -f reports/training/evaluation_run2.json || { \
+	  echo "refusing: reports/training/evaluation_run2.json is missing."; \
+	  echo "The card reads every score from it; without it there is no honest card."; \
+	  echo "Run: make evaluate-002"; exit 1; }
+	env -u HF_TOKEN PYTHONPATH=. $(PY) -m scwbd.release.publish run2-pilot \
+	  --namespace $(HF_NAMESPACE) --checkpoint-dir $(CKPT_002) --push --public
+
+evaluate-002: ## Score the 002 checkpoint on the real-EEG holdout
+	@# No --quick: it refuses the holdout on purpose, because a reduced-cost
+	@# variant would silently change the participant set the claim rests on.
+	env PYTHONPATH=. $(PY) -m scwbd.foundation.evaluate \
+	  --config configs/run2/pilot-families.yaml \
+	  --checkpoint $(CKPT_002)/last.pt \
+	  --out reports/training/evaluation_run2.json
 
 .PHONY: deploy
 deploy: site site-check ## Publish site/_build to GitHub Pages (needs a git remote)
