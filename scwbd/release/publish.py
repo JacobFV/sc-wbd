@@ -1382,10 +1382,79 @@ def _unreachable_parameters(ckpt: Path, card_dir: str) -> list[str]:
     if not names:
         return []
 
-    pats: list[str] = []
-    for f in sorted(Path(card_dir).glob("*.yaml")):
+    # The cards AS OF THE RUN, not as of today.
+    #
+    # This read the live card directory, so it characterised a finished run using
+    # current configuration. Caught by comparing the published card against a
+    # freshly generated one: the live card says 88.7% and regenerating now says
+    # 0.9%, because the card patterns were repaired after the run. Republishing
+    # would have silently erased the artifact's headline finding and replaced it
+    # with a number describing a run that never happened.
+    #
+    # Same class as `_card_dir` reading the LEGACY directory and as the test that
+    # pins run 2's defect: fixing the configuration does not retrain the weights,
+    # so anything said about the weights must be computed from the configuration
+    # they were trained under. The checkpoint records `git_sha`; the cards at that
+    # commit are the ones that governed it.
+    sha = ""
+    for f in stages:
         try:
-            card = yaml.safe_load(f.read_text()) or {}
+            sha = str(torch.load(f, map_location="cpu", weights_only=False).get("git_sha") or "")
+        except Exception:
+            continue
+        if sha:
+            break
+
+    def _cards_at(rev: str) -> list[tuple[str, str]]:
+        import subprocess
+
+        rel = Path(card_dir)
+        try:
+            rel = rel.relative_to(Path.cwd())
+        except ValueError:
+            pass
+        try:
+            names = subprocess.run(
+                ["git", "ls-tree", "--name-only", f"{rev}:{rel}"],
+                capture_output=True, text=True, timeout=30, check=True,
+            ).stdout.split()
+        except Exception:
+            return []
+        out = []
+        for n in names:
+            if not n.endswith(".yaml"):
+                continue
+            try:
+                out.append((n, subprocess.run(
+                    ["git", "show", f"{rev}:{rel}/{n}"],
+                    capture_output=True, text=True, timeout=30, check=True,
+                ).stdout))
+            except Exception:
+                return []
+        return out
+
+    # Run 2's checkpoint records `af568cf...-dirty`: the working tree carried
+    # uncommitted changes when it trained. `-dirty` is not a rev, so it is
+    # stripped and the base commit used -- and the fact is disclosed, because the
+    # cards that governed the run may have differed from the ones at that commit
+    # in exactly the way the suffix warns about.
+    dirty = sha.endswith("-dirty")
+    base = sha[: -len("-dirty")] if dirty else sha
+    historical = _cards_at(base) if base else []
+    if not historical:
+        return [
+            "The share of this model that could not receive a gradient is NOT "
+            f"stated here. It must be computed from the source cards as of the run "
+            f"(git_sha {sha or 'unrecorded'}), and those could not be read. "
+            "Computing it from the cards currently on disk would describe a run "
+            "that never happened -- the cards have been edited since, and editing "
+            "a card does not retrain a checkpoint."
+        ]
+
+    pats: list[str] = []
+    for name, text in historical:
+        try:
+            card = yaml.safe_load(text) or {}
         except Exception:
             continue
         # A card that grants nothing cannot make anything reachable, and one
@@ -1434,6 +1503,17 @@ def _unreachable_parameters(ckpt: Path, card_dir: str) -> list[str]:
     )
     n_dead = sum(int(v) for k, v in report.items() if k != "TOTAL" and k in set(mods))
     pct = (100.0 * n_dead / n_all) if n_all else 0.0
+    provenance = (
+        f" Computed from the source cards at `{base[:7]}`, the commit this "
+        "checkpoint records."
+        + (
+            " That commit is recorded with a `-dirty` suffix, so the tree that "
+            "trained carried uncommitted changes and the cards it used may differ "
+            "from the cards at the commit."
+            if dirty
+            else ""
+        )
+    )
     return [
         f"**{n_dead:,} of {n_all:,} parameters ({pct:.1f}%) could not receive a "
         f"gradient from any enabled source card during this run.** The modules "
@@ -1445,7 +1525,7 @@ def _unreachable_parameters(ckpt: Path, card_dir: str) -> list[str]:
         "grant the old names. An unmatched glob is an empty permission set, not "
         "an error, so the loss fell and the run finished. Read the result "
         "accordingly -- it does not show that heterogeneous regional state fails, "
-        "because the heterogeneous regional state never trained."
+        "because the heterogeneous regional state never trained." + provenance
     ]
 
 
