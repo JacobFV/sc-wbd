@@ -26,7 +26,9 @@ fail() { echo "UNHEALTHY($1): ${*:2}"; exit "$1"; }
 [ -s "$LOG" ] || fail 1 "log is empty: $LOG"
 
 age=$(( $(date +%s) - $(stat -c %Y "$LOG") ))
-[ "$age" -lt "$STALE_S" ] || fail 1 "log stale: no write for ${age}s (limit ${STALE_S}s)"
+# Staleness is checked LATER, only for a job that is supposed to be running.
+# A finished run's log is stale by definition and stays stale forever, so
+# testing it first reported a completed run as a broken instrument.
 
 # 2. Did it FINISH?  Checked before liveness, because "no process" is the same
 # observation for a completed run and a dead one -- and the caller's response to
@@ -51,6 +53,10 @@ fi
 
 # 3. The job is supposed to be running, so absence now means death.
 [ "${procs:-0}" -gt 0 ] || fail 2 "no training process, and global_step=${last:-none} < target $TARGET — this is a death, not a completion"
+
+# 3b. Only now does staleness mean something: a LIVE process whose log has gone
+# quiet is a hang. The same silence from a finished job is just a finished job.
+[ "$age" -lt "$STALE_S" ] || fail 1 "log stale: process alive but no write for ${age}s (limit ${STALE_S}s) — this is a hang"
 
 tb=$(grep -c 'Traceback' "$LOG" || true)
 [ "${tb:-0}" -eq 0 ] || fail 2 "$tb traceback(s) in $LOG"
