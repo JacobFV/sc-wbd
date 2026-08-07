@@ -276,6 +276,18 @@ class EEGHead(nn.Module):
         super().__init__()
         self.layout = layout
         self.register_buffer("L", lead_field.matrix.clone())
+        # Free-orientation gain, when the forward solution supplies one.  A
+        # 3-vector regional moment must be observed through this; contracting
+        # it against one mean normal per parcel -- which is what ``L`` is --
+        # bakes the folding cancellation into the operator.  Measured on this
+        # forward model: eta 0.3795 for the scalar support against 1.0 for the
+        # 3-vector, a ratio of 2.64x.  (Gauss's ~9x was on a real BEM solution;
+        # ours is the analytic sphere, where the scalar contraction already
+        # captures 38% rather than 5.6%.)
+        self.register_buffer(
+            "L_vec",
+            lead_field.matrix_vec.clone() if lead_field.matrix_vec is not None else None,
+        )
         self.lead_field_meta = lead_field.summary()
         self.channel_names = lead_field.channel_names
         n_ch = self.L.shape[0]
@@ -396,6 +408,22 @@ class EEGHead(nn.Module):
             "state_dependent_variance": self.state_dependent_variance,
         }
 
+    def source_moment(self, x: Tensor) -> Tensor | None:
+        """``(..., N, D) -> (..., N, 3)`` regional dipole moment, or ``None``.
+
+        Returns ``None`` unless the state actually declares a ``dipole``
+        component, so a scalar-state model keeps its old path exactly.  This is
+        the only place a 3-vector reaches an observation; every other consumer
+        sees the contracted scalar and cannot tell the difference, which is
+        precisely why the contraction had to move out of ``build_lead_field``.
+        """
+        layout = self.layout
+        has = getattr(layout, "__contains__", None)
+        if has is None or "dipole" not in layout:
+            return None
+        m = layout.get(x, "dipole")
+        return m if m.shape[-1] == 3 else None
+
     def source_amplitude(self, x: Tensor) -> Tensor:
         """``(..., N, D) -> (..., N)`` source-current amplitude (arbitrary units)."""
         feat = torch.cat([self.layout.get(x, n) for n in self._exported], dim=-1)
@@ -403,8 +431,16 @@ class EEGHead(nn.Module):
 
     def forward(self, x: Tensor, *, gain: Tensor | None = None) -> tuple[Tensor, Tensor]:
         """``x (B,T,N,D) -> (mean (B,T,C), logvar (B,T,C))``."""
-        s = self.source_amplitude(x)  # (B,T,N)
-        y = torch.einsum("cn,btn->btc", self.L.to(s.dtype), s)
+        m = self.source_moment(x)  # (B,T,N,3) or None
+        if m is not None and self.L_vec is not None:
+            # Observe the vector moment through the vector lead field.  No
+            # projection onto a mean normal happens anywhere: the cancellation
+            # becomes a property of the data rather than of the operator.
+            s = m.norm(dim=-1)  # kept only for the nuisance/logvar path below
+            y = torch.einsum("cnk,btnk->btc", self.L_vec.to(m.dtype), m)
+        else:
+            s = self.source_amplitude(x)  # (B,T,N)
+            y = torch.einsum("cn,btn->btc", self.L.to(s.dtype), s)
         feat = torch.cat([self.layout.get(x, n) for n in self._exported], dim=-1).mean(-2)
         y = y + torch.einsum("ck,btk->btc", self.nuisance.to(s.dtype), self.nuisance_drive(feat))
         g = self.log_gain.exp()
