@@ -333,6 +333,13 @@ class TestTheDriveNeverWritesThePad:
         cfg = ModelConfig(
             family_state=True, hidden=64, n_local_layers=2, region_embed=16,
             context_dim=32, encoder_channels=16, encoder_layers=2,
+            # The synthetic fallback anatomy declares no family partition, so the
+            # model has to DERIVE one -- and deriving is refused by default now
+            # that `allow_derived` is enforced rather than decorative. This test
+            # is about pad-cleanliness under a family layout, not about which
+            # partition is used, so opting in is the honest declaration: it says
+            # a rejected partition is acceptable here, which it is.
+            family_allow_derived_partition=True,
         )
         m = SCWBD(cfg, a)
         assert m.family_layout is not None, "expected a family-state model"
