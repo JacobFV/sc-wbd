@@ -103,7 +103,19 @@ def reconstruct_stage_admission(*, card_tiers: dict[str, int] | None = None) -> 
         raise GateNotFound(
             "FoundationTrainer.run_stage no longer contains the simulated-source gate "
             "`if stage.name != '<stage>':`. The admission of a config without an explicit "
-            "curriculum block cannot be established; refusing to assume it."
+            "curriculum block cannot be established; refusing to assume it.\n\n"
+            "This is expected as of 2026-08-06 and is not a regression to repair here. "
+            "run_stage now reads each stage's DECLARED admission instead of matching its "
+            "name (ARCHITECTURE.md RL-14), so the gates this module reads are gone on "
+            "purpose. Run 1's behaviour survives only as the hardcoded _LEGACY_FLAGS "
+            "table in scwbd.foundation.curriculum_admission.\n\n"
+            "What that costs, stated because this module exists to prevent exactly it: "
+            "the table is a transcription of gates that no longer exist, so nothing in "
+            "this repository can now falsify it. The check that could have -- reading "
+            "the gates out of the function that runs -- is what this refusal reports as "
+            "unavailable. The cost is accepted because run 1 is finished and its configs "
+            "are frozen: a LIVE curriculum must declare its admission, and only a dead "
+            "one may inherit it from a table."
         )
     sim_excluded = m_sim.group("excluded")
 

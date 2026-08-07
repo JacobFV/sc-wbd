@@ -159,9 +159,22 @@ class StageAdmission:
 
 # ----------------------------------------------------------------------
 #: What each of run 1's stage names did, so an *undeclared* legacy config keeps
-#: its behaviour exactly.  This is a transcription of the six gates in
-#: :data:`NAME_GATES`, and ``tests/foundation/test_curriculum_admission.py``
-#: checks it against ``inspect.getsource`` rather than trusting the transcription.
+#: its behaviour exactly.  A transcription of the six gates in :data:`NAME_GATES`.
+#:
+#: **Correction 2026-08-06.** This comment previously claimed that
+#: ``tests/foundation/test_curriculum_admission.py`` "checks it against
+#: ``inspect.getsource`` rather than trusting the transcription".  It does not.
+#: The only test touching the inventory asserts ``len(NAME_GATES) == 6`` and says
+#: of itself *"Not a discriminator -- it passes pre-patch too."*  So the
+#: transcription was never verified against the source, and since the patch
+#: removed those gates from ``run_stage`` there is no longer a source to verify
+#: it against.
+#:
+#: The table is therefore an assertion about a dead code path that nothing can
+#: falsify.  That is acceptable only because run 1 is finished and its configs
+#: are frozen -- a live curriculum must declare its admission.  A comment
+#: claiming a verification that does not exist is worse than no comment, which is
+#: why this correction replaces it rather than sitting beside it.
 _LEGACY_FLAGS: dict[str, dict[str, bool]] = {
     "I_regional": {"boundary_randomisation": True, "with_hemo": False, "individualize": False},
     "II_interface": {"boundary_randomisation": False, "with_hemo": False, "individualize": False},

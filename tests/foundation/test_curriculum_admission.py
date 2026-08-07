@@ -222,11 +222,17 @@ def test_run2_config_admission_matches_its_declaration() -> None:
         for s in cfg.train.stages
         if s.enabled and s.steps > 0
     }
-    assert got["T1_measured_founding"] == ("eegmmidb_real",)
-    assert got["T2_boundary_calibration"] == ("eegmmidb_real", "montage_calibration")
-    assert got["T3_population_prior"] == ("anatomical_prior", "eegmmidb_real", "montage_calibration")
+    # ds002336_real joined tier 1 on 2026-08-06, once the parcel-space BOLD path
+    # was complete end to end (registration run, 55/55 runs cached, coverage
+    # invariant holding on every artifact). The expectations are widened rather
+    # than loosened: each still names the exact source set, so the next addition
+    # is refused the same way this one was.
+    MEASURED = ("ds002336_real", "eegmmidb_real")
+    assert got["T1_measured_founding"] == MEASURED
+    assert got["T2_boundary_calibration"] == (*MEASURED, "montage_calibration")
+    assert got["T3_population_prior"] == ("anatomical_prior", *MEASURED, "montage_calibration")
     assert "sim_wholebrain" in got["T4_simulator_extension"]
-    assert got["T1_individualisation"] == ("eegmmidb_real",)
+    assert got["T1_individualisation"] == MEASURED
     # the simulator is admitted LAST among the training tiers, and only there
     assert [n for n, ids in got.items() if "sim_wholebrain" in ids] == ["T4_simulator_extension"]
     # ...and the individualisation flag survives the rename
