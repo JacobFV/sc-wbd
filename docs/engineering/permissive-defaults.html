@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nine hours of training on the wrong data, with every dashboard green — SC-WBD</title>
+<meta name="description" content="Run 2 renamed its training stages. Three mechanisms in the trainer were keyed to the old names, all defaulting to permissive, and the model trained on simulation alone.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Nine hours of training on the wrong data, with every dashboard green — SC-WBD">
+<meta property="og:description" content="Run 2 renamed its training stages. Three mechanisms in the trainer were keyed to the old names, all defaulting to permissive, and the model trained on simulation alone.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+<script>
+/* Applied before paint so an explicit theme choice does not flash. */
+(function () {
+  try {
+    var t = localStorage.getItem("scwbd-theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body class="">
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="../index.html">SC&#8209;WBD</a>
+    <nav>
+        <a href="../index.html">Overview</a>
+        <a href="../engineering/index.html" class="active">Engineering</a>
+        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../attribution.html">Attribution</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="pagehead">
+      <p class="kicker">Engineering · 12</p>
+      <h1>Nine hours of training on the wrong data, with every dashboard green</h1>
+      <p class="standfirst">We renamed the training stages. Three separate mechanisms matched on the old names, and every one of them failed toward "allow" rather than toward "error". The loss fell the whole time.</p>
+    </div>
+<div class="prose">
+
+<h2>What was supposed to happen</h2>
+
+<p>Run 2 trains in six stages. Some train on simulated trajectories; some take a
+gradient on real EEG; the last individualises to participants. The stages carry
+names that say which is which — <code>T1_measured_founding</code>,
+<code>T1_individualisation</code>.</p>
+
+<h2>What happened</h2>
+
+<p>Run 2's config renamed every stage from the run-1 scheme. Three mechanisms in
+the trainer match on the <strong>run-1</strong> names. None was updated.</p>
+
+<table>
+<thead><tr><th>mechanism</th><th>what an unmatched name does</th></tr></thead>
+<tbody>
+<tr><td><code>STAGE_PERMISSIONS.get(name, ("*",))</code></td><td>full gradient permission, no restriction</td></tr>
+<tr><td><code>name in ("III_sliced", "IV_assembly", "V_individual")</code></td><td><strong>no measured-data gradient, ever</strong></td></tr>
+<tr><td><code>name == "V_individual"</code></td><td>no individualizer is built</td></tr>
+</tbody>
+</table>
+
+<p>Measured against the actual config, rather than inferred:</p>
+
+<pre><code>stages with a permission entry      : NONE  -&gt; all fall back to ("*",)
+stages that compute a real-data loss: NONE
+stages that build an individualizer : NONE</code></pre>
+
+<p>So the run trained for nine hours on <strong>simulated trajectories
+alone</strong>, with the per-stage gradient restrictions inert and no
+individualizer, under a stage named <em>measured founding</em>. The real-EEG
+loader was constructed and its split fingerprinted. The gradient was never
+taken.</p>
+
+<p>The log says so at every step of every stage. The only loss field it has ever
+emitted is <code>sim_forecast_nll</code>. There is no real-data term anywhere in
+nine hours of output.</p>
+
+<h2>The shape of it</h2>
+
+<blockquote>
+<p>A dictionary lookup with a permissive default is a configuration system that
+cannot report a typo. <code>.get(name, ("*",))</code> and
+<code>name in (...)</code> are unfalsifiable by construction — there is no stage
+name they reject.</p>
+</blockquote>
+
+<p>All three failed toward <em>permissive</em>. An unmatched name means no
+restriction, no real loss, and no individualizer — never an exception. Nothing
+crashed. Loss fell. The rejection counter held at zero. Every dashboard this run
+has was green for nine hours.</p>
+
+<p>Our own register already had the sentence for this, written about a smaller
+instance: <em>these do not produce a wrong number, they produce a right-looking
+number from a model that quietly lost the mechanism the experiment exists to
+test.</em></p>
+
+<h2>How it was found, which is the uncomfortable part</h2>
+
+<p>Not by a guard. Not by a dashboard. By reading the trainer to answer an
+unrelated question — whether a branch in the <em>evaluation</em> code, which had
+never executed in this run, would crash after the final stage. The defect was
+three lines above the branch being checked.</p>
+
+<blockquote>
+<p>Nothing in this project would have reported it. Reading a path
+<em>adjacent</em> to the one you care about is how an untested branch gets read
+at all.</p>
+</blockquote>
+
+<h2>What we did, and did not do</h2>
+
+<p>We did <strong>not</strong> kill the run. About an hour remained, and a fix to
+the stage gates cannot be validated except by another full run — the same
+untestable-fix trap we had already recorded once this run, when a repair to the
+posterior could not be evaluated by any probe that failed to reproduce the
+original failure.</p>
+
+<p>The trainer was also left untouched while the process was live. Editing it
+would not have affected the running job — Python does not re-read its modules —
+but a crash-and-resume would have continued under different rules than it began
+with. One run, two regimes, and no way to say which weights came from which.</p>
+
+<p>What we did instead was describe the artifact accurately everywhere a reader
+meets it:</p>
+
+<blockquote>
+<p><strong>A simulation-trained model over a real anatomical prior, evaluated on
+real EEG it never saw during training.</strong> Its holdout numbers are a
+simulation-to-measurement <em>transfer</em> result, not a held-out-performance
+result.</p>
+</blockquote>
+
+<p>That is a legitimate thing to measure. It is not what the stage names claim,
+and it is not what "43 GB corpus" suggests to a reader — so the model card says
+it above the scores, and so does this site.</p>
+
+<h2>The test that should have existed</h2>
+
+<p>Four checks: every declared stage must be known to the permission table; at
+least one must take a gradient on measured data; a stage named for
+individualisation must actually individualise; a stage named for measurement
+must use measurement.</p>
+
+<p>All twelve cases fail today, across all three run-2 configs. They are marked
+<code>xfail(strict=True)</code> rather than skipped or deleted — so the suite
+stays green and does not block shipping, the failure stays <em>runnable</em>
+rather than living only in a report, and when the gates are fixed the tests
+<strong>XPASS</strong>, which pytest reports as a failure, forcing whoever fixed
+it to come back and remove the marker.</p>
+
+<p>The file also says, in as many words, not to make them pass by adding the
+run-2 names to the tuple. That would turn the tests green without making the
+trainer use measured data, which is precisely the move this whole register
+exists to catalogue.</p>
+
+<h2>The fix is not a longer tuple</h2>
+
+<p>Adding the run-2 names to both collections works, and leaves the identical
+trap for run 4. The mechanisms should key on a stage <em>property the config
+declares</em> — <code>uses_real_data</code>, <code>individualises</code> — so a
+stage that fails to declare one is refused at config load rather than granted a
+silent wildcard.</p>
+
+<blockquote>
+<p>All three defects are one defect: behaviour attached to a string literal that
+nothing checks against the config.</p>
+</blockquote>
+
+</div>
+
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p><strong>SC-WBD-001 series.</strong> A research programme, not a product.
+    Nothing on this site is a medical device, a clinical claim, or advice.
+    No trained model here has been shown to beat its baselines.</p>
+    <p>Data sources carry their own licences, several of them non-commercial and
+    share-alike. See <a href="../attribution.html">attribution</a>.</p>
+    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+  </div>
+</footer>
+
+<script>
+document.getElementById("theme-toggle").addEventListener("click", function () {
+  var el = document.documentElement;
+  var cur = el.getAttribute("data-theme");
+  if (!cur) {
+    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  var next = cur === "dark" ? "light" : "dark";
+  el.setAttribute("data-theme", next);
+  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
+});
+</script>
+
+</body>
+</html>
