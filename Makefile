@@ -95,6 +95,16 @@ paper-supplement: ## Build the separate implementation supplement PDF
 	@mkdir -p $(ROOT)/paper/output
 	cd $(ROOT)/paper && tectonic -X compile sc_wbd_supplement.tex --outdir output --keep-logs
 
+# --------------------------------------------------------------------- health
+
+# The single caller-facing name for "is the training run alive?".  Humans and
+# the cron watchdog must both come through here rather than each re-deriving the
+# log path -- see reports/decorative_guards.md, the silent-instrument class.
+# Exit 0 healthy, 1 the instrument is broken (you know nothing), 2 the job died.
+.PHONY: health
+health: ## Report on the running training job; fails loud if it cannot tell
+	@$(ROOT)/scripts/health.sh
+
 # ---------------------------------------------------------------------- site
 
 .PHONY: site
