@@ -1075,6 +1075,38 @@ Recorded now, not after the numbers.
   addressed. See §4. This is the limit that most changes what the artifact is
   *for*: it is a candidate arm, not an answer.
 
+### An hparam question the config raises on its own
+
+Independent of §2b, and worth arguing about before run 3 rather than after:
+
+```
+T1_measured_founding      2966 steps   lr 3.46e-4
+T2_boundary_calibration    500 steps   lr 2.31e-4
+T3_population_prior       1000 steps   lr 1.73e-4
+T4_simulator_extension    3334 steps   lr 1.15e-4     <- largest block, new tier
+T1_individualisation       900 steps   lr 5.77e-5
+```
+
+The learning rate decays monotonically across stages, which is the right shape
+for a curriculum whose later stages *refine* what the earlier ones established.
+But this curriculum's later stages are not refinements — each one **admits a new
+data tier**. T4 is the largest block in the run, it is where the config says
+"simulation earns its place", and it introduces tier 4 for the first time at
+**one third of T1's learning rate**.
+
+So the schedule encodes an assumption — that later means finer — which the
+curriculum's own design contradicts. A stage seeing a distribution for the first
+time is not fine-tuning.
+
+This is **not** a conclusion that the schedule is wrong. Both readings are
+defensible: a lower rate protects a representation founded on measured data from
+being overwritten by simulation, which is exactly what the integrity ordering
+exists to do. The point is that the tension is real, was not argued anywhere,
+and is invisible while the gates are broken — because with every stage drawing
+from one pool there is no "new tier" for the rate to be wrong about.
+
+Add it to the list of things run 3 can measure and run 2 cannot.
+
 ### Run 3, concretely
 
 The gate defect (§2b) has to be fixed before any further arm is trained, because
