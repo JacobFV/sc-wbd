@@ -924,19 +924,102 @@ watchdog's step 2 for that reason. Until then the correct summary of this
 project's test status is *"four directories green, three files red, and eight
 directories unexamined"* — not *"a few known failures"*.
 
-### Final numbers
+### Final numbers — 002 loses to every baseline, on both columns
 
-**PENDING** — and, per the section above, they will be *002 against generic
-forecasting baselines*, not against A1's arms. `reports/ablations/PREREG_A1_run2.md`
-was filed while A1 was `COULD_NOT_RUN` and no heterogeneous arm existed; one arm
-now exists and five still do not, so the pre-registration stays unconsumed. When
-the numbers land here they answer "how does this checkpoint forecast held-out
-EEG", which is worth knowing and is not the thesis question.
+Evaluated 2026-08-06 on the real-EEG holdout: 54 test participants / 2160
+windows, participant-clustered 95% intervals, plug-in estimator matching the
+baselines' form. 1554 s.
 
-The path itself is proven end to end on a family-state checkpoint: real-EEG
-holdout available, 54 test participants / 2160 windows against 44 / 1320,
-participant-stratified sampling, participant-clustered 95% CI, plug-in
-estimator matching the baselines' form.
+| arm | NLL | 95% CI | MSE |
+|---|---:|---|---:|
+| `ar16` | **2.0454** | [1.9890, 2.1165] | 4.5904 |
+| `subject_specific_ar` | 2.0454 | [1.9890, 2.1165] | 4.5904 |
+| `var4` | 2.0481 | [1.9905, 2.1225] | **4.5315** |
+| `population_gaussian` | 2.0783 | [2.0273, 2.1439] | 4.8155 |
+| `persistence` | 2.3182 | [2.2619, 2.3861] | 8.2644 |
+| **`scwbd-002-pilot`** | **3.1789** | [3.1342, 3.2303] | **36.2715** |
+| `dense_neural` | 5.3027 | [4.9665, 5.6809] | 4.9866 |
+
+**Verdict, verbatim from the artifact:**
+
+> `scwbd-002-pilot` is beaten by persistence, ar16, var4, population_gaussian,
+> subject_specific_ar on the paired participant-clustered 95% interval of the
+> per-window NLL difference
+
+Every paired interval excludes zero. There are no inconclusive comparisons.
+
+**And it is worse than run 1 in the one place run 1 had a story.** Run 1 lost on
+NLL and *won on the conditional mean* — its MSE was the best in its table, and
+"the whole loss is in the variance channel" was a real, defensible diagnosis.
+Run 2 has no such consolation:
+
+```
+paired MSE deltas (positive = 002 worse), all excluding zero
+  persistence          +28.01      ar16                 +31.68
+  var4                 +31.74      population_gaussian  +31.46
+  subject_specific_ar  +31.68      dense_neural         +31.28
+```
+
+`scwbd_mse_better_than: []`. It loses the mean to `dense_neural`, which it beats
+by 2.12 nats on NLL — so the two failures are not even the same failure.
+
+### The number that explains it
+
+```
+sim_forecast_nll  (simulation validation)   0.565
+real EEG holdout NLL                        3.179
+```
+
+**The model predicts simulation well and measured EEG badly, by a factor of
+5.6.** That is not a subtle result and it is exactly what §2b predicts: five of
+six stage gates were wrong, no gradient was ever taken on a recording, and the
+artifact was then asked to forecast recordings. This is a
+simulation-to-measurement *transfer* number, and it is the honest headline.
+
+It also means the obvious inference is unavailable. **A reader must not conclude
+that heterogeneous regional state does not work.** What was measured is a model
+fit to one distribution being scored on another, which is a statement about the
+curriculum defect, not about the architecture.
+
+### The posterior, and why it could not have been otherwise
+
+| quantity | value |
+|---|---|
+| `posterior_r2` | 0.025, −0.005, −0.017, 0.010, 0.005, −0.005 |
+| SBC KS *p* | 3 of 6 below 0.05; min 6.1 × 10⁻¹¹ |
+| `posterior_z_sd` | 0.90 – 0.97 |
+| individualisation | **not applied** — "no individualizer on the trainer" |
+
+The amortised posterior recovers essentially nothing (R² ≈ 0 on every one of
+the six parameters) and fails simulation-based calibration on three. As §4
+recorded *before* these numbers existed: this was rendered uninformative in
+advance. The posterior was amortised over simulated conditioning only, and the
+individualizer the final stage is named for was never constructed. **A posterior
+that recovers nothing about individuals, in a run where no individual was ever
+presented, is the arrangement working as configured** — not evidence that
+amortised inference fails here.
+
+### Two caveats that travel with these numbers
+
+**The split cannot falsify a site shortcut.** The evaluation logged it itself:
+
+> all records come from one site: this split cannot falsify a site/device
+> shortcut
+
+Participant-disjoint splitting rules out memorising people. It does not rule out
+keying on the amplifier. 002 supports *"predicts held-out participants at this
+site"* and not *"predicts held-out participants"*.
+
+**Two baselines are one baseline.** `ar16` and `subject_specific_ar` are
+bit-identical — the participant-disjoint split routes every test window to the
+`ar16` fallback. Read the table as **five** distinct comparators, not six.
+
+### This is still not ablation A1
+
+Unchanged by any of the above, and stated again because a decisive-looking loss
+invites the wrong summary: A1 needs six arms and this run trains one. Nothing
+here holds the structure fixed while varying it, so *"heterogeneous state does
+not help"* is as unavailable now as *"it does"* would have been on a win.
 
 ### Two things to watch, read off a 32%-trained checkpoint
 
