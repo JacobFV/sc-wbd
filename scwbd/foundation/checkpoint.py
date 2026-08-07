@@ -16,7 +16,7 @@ from typing import Any, Mapping
 
 import torch
 
-from .config import FoundationConfig
+from .config import FoundationConfig, designation
 from .manifest import ClaimManifest, hash_file
 from .util import env_fingerprint, git_sha
 
@@ -80,7 +80,11 @@ def save_checkpoint(
     p.parent.mkdir(parents=True, exist_ok=True)
     payload: dict[str, Any] = {
         "format": "scwbd-foundation-checkpoint/1",
-        "model_id": "SC-WBD-001-beta",
+        # Derived, never a literal.  This field was hardcoded to
+        # "SC-WBD-001-beta", so every checkpoint the run-2 trainer wrote stamped
+        # the run-1 name into its own payload -- the naming class again, in the
+        # artifact itself rather than in a report about it.
+        "model_id": designation(config),
         "step": int(step),
         "stage": stage,
         "saved_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

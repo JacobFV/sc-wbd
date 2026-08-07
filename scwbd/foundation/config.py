@@ -371,3 +371,28 @@ def load_config(path: str | Path, **overrides: Any) -> FoundationConfig:
             node = node.setdefault(part, {})
         node[parts[-1]] = val
     return FoundationConfig.from_dict(payload)
+
+
+def designation(cfg: Any) -> str:
+    """The model's own designation, derived once, never a literal.
+
+    This lives in ``config`` rather than in any one consumer because the naming
+    class of defect is *several* consumers each spelling the name themselves.
+    ``evaluate.py`` hardcoded ``"SC-WBD-001-beta"`` and stamped a run-1 name onto
+    run-2 results; ``checkpoint.py`` hardcoded the same literal into the payload
+    of every checkpoint the run-2 trainer wrote. Fixing the first by grepping did
+    not find the second, because the second was in a different module and the
+    same spelling -- and a literal you fix by grepping is a literal you fix only
+    in the spelling you thought of.
+
+    The fallback is deliberate and is never a real designation. An **unnamed**
+    artifact is a visible defect; a **misnamed** one is not. If this lookup ever
+    fails we would rather ship something obviously broken than something quietly
+    wrong.
+    """
+    for obj in (getattr(cfg, "train", None), getattr(cfg, "model", None), cfg):
+        for attr in ("model_id", "designation", "run_name"):
+            v = getattr(obj, attr, None) if obj is not None else None
+            if isinstance(v, str) and v:
+                return v
+    return "SC-WBD-unnamed"

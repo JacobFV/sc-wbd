@@ -123,11 +123,16 @@ class Claim:
             )
 
 
+from ..schema.designation import MODEL_DESIGNATION
+
+
 @dataclass
 class ClaimManifest:
     """The artifact's epistemic contract.  Written next to the weights."""
 
-    model_id: str = "SC-WBD-001-beta"
+    #: Derived by ``save_checkpoint`` from the config; this default exists only
+    #: for manifests built standalone and must never be a second literal.
+    model_id: str = MODEL_DESIGNATION
     schema_version: str = "scwbd-schema/1.0.0"
     created_utc: str = field(default_factory=lambda: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
     git_sha: str = ""

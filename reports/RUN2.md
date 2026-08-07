@@ -233,7 +233,46 @@ individualisation 900 = **8700 steps**.
 
 ## 4. Evaluation
 
-Final numbers **PENDING**, against the pre-registration in
+### What was checked before the run finished
+
+An evaluation that fails at step 8700 costs the whole run's wall-clock. These
+were checked mid-flight, on CPU with the GPU hidden (`CUDA_VISIBLE_DEVICES=""`),
+because a second CUDA process would reserve against the same ~121 GB unified
+pool the trainer is using and could take the box down.
+
+| check | result |
+|---|---|
+| `SCWBD(cfg.model, anat)` loads `last.pt` | **0 missing, 0 unexpected** of 298 tensors |
+| designation resolves from config | `scwbd-002-pilot`, not a literal |
+| `regional_state` recorded in the checkpoint | present, `ablation_arm="treatment"` |
+| **R12 against the real checkpoint** | **ADMITS**, with and without config |
+
+The R12 result is the one that mattered. The gate refuses a checkpoint whose
+regional operator assignment is constant across regions — the §11.4 control arm
+wearing the model's name — and run 1 was exactly that. Reading the artifact's own
+`regional_state` confirms 002 is not: `subcortex_accumb` and `subcortex_caud`
+run `basal_ganglia_gate`, the cortical families run the learned core, and the
+learned groups are split by width (`d15` for amygdala, `d31` for the two
+cortical families). The heterogeneity is a property of the weights, not a
+sentence in this report.
+
+One scare along the way was self-inflicted and is worth recording, because the
+instrument was mine. Printing `sorted(ck)[:8]` showed no `regional_state` key
+and I read that as "the trainer never wrote it" — the slice cut at `model`, and
+`regional_state` sorts after. A truncated listing looks exactly like a short
+one. That is the third instrument failure of the day in the same family, all
+catalogued in `reports/decorative_guards.md`.
+
+Also settled: `model.family_cores` is `{}` in the config, which *reads* like the
+uniform-operator control. It is empty on purpose — `DEFAULT_FAMILY_CORES`
+supplies the engineered subcortical backends and leaves cortical families on
+`local_core`. The effective assignment is heterogeneous; only the declaration is
+empty. A guard reading the declaration rather than the effect would refuse this
+artifact wrongly, which is why R12 reads the artifact's own family report.
+
+### Final numbers
+
+**PENDING**, against the pre-registration in
 `reports/ablations/PREREG_A1_run2.md`, filed while A1 was `COULD_NOT_RUN` and
 no heterogeneous arm existed.
 

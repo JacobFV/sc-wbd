@@ -41,7 +41,7 @@ __all__ = [
 ]
 
 #: The one model this release serves.
-MODEL_DESIGNATION = "SC-WBD-001-beta"
+from ..schema.designation import MODEL_DESIGNATION  # one definition, imported
 #: ``ARCHITECTURE.md`` header, "Schema version".
 SCHEMA_VERSION = "scwbd-schema/1.0.0"
 #: The shape of :class:`~scwbd.runtime.targeting.PoseEvaluation` and friends.

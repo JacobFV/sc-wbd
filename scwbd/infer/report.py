@@ -108,6 +108,9 @@ DECISION_RULE: dict[str, Any] = {
 }
 
 
+from ..schema.designation import MODEL_DESIGNATION
+
+
 def _git_revision() -> str:
     try:
         return subprocess.check_output(
@@ -151,7 +154,7 @@ def write_manifest(
         "artifact": "SC-WBD linear identifiability laboratory",
         "thesis_reference": "thesis_contract.tex sec. 0.3 (T1-T4), sec. 0.6 item 2, sec. 11",
         "schema_version": "scwbd-schema/1.0.0",
-        "model_designation": "SC-WBD-001-beta",
+        "model_designation": MODEL_DESIGNATION,
         "written_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "status": "preregistered_before_run",
         "environment": _env(),

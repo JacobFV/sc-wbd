@@ -147,3 +147,63 @@ def test_an_evaluation_on_disk_carries_the_right_model_id():
             continue
         d = json.loads(f.read_text())
         assert "001" not in str(d.get("model_id", "")), f"{name}: {d.get('model_id')}"
+
+
+# ---------------------------------------------------------------- the name
+
+
+def test_no_module_assigns_a_hardcoded_designation():
+    """The naming class, fourth instance: ``checkpoint.py`` stamped every
+    run-2 checkpoint with ``model_id="SC-WBD-001-beta"``.
+
+    ``evaluate.py`` had been fixed for the identical literal, and grepping for
+    it did not find this one -- the earlier search was scoped to the module that
+    had just been repaired.  So this checks the *class*: a designation appearing
+    as an assigned value anywhere in the package, rather than one spelling in
+    one file.  Prose is allowed; the literals below are discussed constantly in
+    docstrings and comments, and a test that could not tell a value from a
+    sentence would ban writing about the defect.
+    """
+    import re
+
+    CANONICAL = "scwbd/schema/designation.py"
+
+    sites: list[str] = []
+    for path in (ROOT / "scwbd").rglob("*.py"):
+        rel = str(path.relative_to(ROOT))
+        for n, line in enumerate(path.read_text().splitlines(), 1):
+            stripped = line.lstrip()
+            if stripped.startswith("#"):
+                continue
+            if re.search(r'[:=]\s*["\']SC-WBD-\d{3}[-\w]*["\']', line):
+                sites.append(f"{rel}:{n}: {stripped[:70]}")
+
+    # Exactly one definition is the goal, not zero: the name has to be written
+    # down somewhere.  Six copies is what makes it a naming defect.
+    assert len(sites) == 1, "designation assigned in more than one place:\n" + "\n".join(sites)
+    assert sites[0].startswith(CANONICAL), (
+        f"the single definition moved out of {CANONICAL}: {sites[0]}"
+    )
+
+
+def test_the_designation_helper_lives_in_one_place():
+    """Two derivations of one name is the same defect as two literals."""
+    from scwbd.foundation.config import designation
+    import scwbd.foundation.evaluate as E
+
+    cfg = __import__("scwbd.foundation.config", fromlist=["x"]).load_config(
+        "configs/run2/pilot-families.yaml"
+    )
+    assert E._designation(cfg) == designation(cfg) == "scwbd-002-pilot"
+
+
+def test_the_fallback_is_never_a_real_designation():
+    """An unnamed artifact is a visible defect; a misnamed one is not."""
+    from scwbd.foundation.config import designation
+
+    class Empty:
+        pass
+
+    got = designation(Empty())
+    assert got == "SC-WBD-unnamed"
+    assert "001" not in got and "002" not in got

@@ -66,7 +66,7 @@ __all__ = [
 BENCH_SCHEMA_VERSION = "scwbd-bench-report/1.0.0"
 THESIS_VERSION = "V6"
 SCHEMA_VERSION = "scwbd-schema/1.0.0"
-MODEL_DESIGNATION = "SC-WBD-001-beta"
+from ..schema.designation import MODEL_DESIGNATION  # one definition, imported
 
 Status = Literal["PASS", "FAIL", "COULD_NOT_RUN"]
 ReportKind = Literal["gate", "ablation", "leakage", "numerics", "instrument",

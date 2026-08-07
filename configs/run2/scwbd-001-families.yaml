@@ -60,10 +60,15 @@
 #
 #   d_key/d_value/d_grid/d_context = 16/16/12/4
 #       body.tex §5.1's H_t = {k,v,g,c,rho}. These set the padded width D for the
-#       WHOLE state, because the layout is padded to max_f d_f (narrowing N-1):
-#       with these values D = 59, and 52.26% of the (414, 59) state plane is pad.
+#       WHOLE state, because the layout is padded to max_f d_f (narrowing
+#       `padded-family-state`): with these values D = 59, and 47.34% of the
+#       (414, 59) state plane is pad -- 12 862 real cells against 24 426 stored,
+#       measured 2026-08-06 against the landed 9-family partition. This comment
+#       read 52.26% until then, a figure computed against an 11-family fallback
+#       partition that no longer exists.
 #       Halving them would halve the waste and shrink the hippocampal code; that
-#       trade is a live question, not a settled one. See N-1's "measured cost".
+#       trade is a live question, not a settled one. See the narrowing's
+#       "measured cost" row in ARCHITECTURE.md Sec. 5b.
 #
 # Capacity is NOT matched to the base file. BOTH previously-recorded figure sets
 # were measured on trees that have since moved, and they disagree by 36%:

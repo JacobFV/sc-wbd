@@ -37,7 +37,7 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from .config import FoundationConfig, load_config
+from .config import FoundationConfig, load_config, designation as _cfg_designation
 from .heads import gaussian_nll
 from .simulate import THETA_NAMES, ThetaPrior
 from .util import Timer, git_sha, set_determinism
@@ -50,20 +50,13 @@ __all__ = ["evaluate_model", "real_eeg_holdout", "posterior_calibration", "sourc
 # ======================================================================
 @torch.no_grad()
 def _designation(cfg) -> str:
-    """The model's own designation, never a literal.
+    """Delegates to :func:`scwbd.foundation.config.designation`.
 
-    ``evaluate.py`` hardcoded ``"SC-WBD-001-beta"`` in two places, so a run-2
-    evaluation stamped a run-1 name onto its own results -- exactly the naming
-    hole R12 exists to close, reached from a direction R12 cannot see (it
-    guards checkpoint emission, not report writing).  A designation that is a
-    string literal is a designation that cannot be wrong out loud.
+    Kept as a name so existing call sites and tests do not move, but it must not
+    carry a second copy of the rule: two derivations of one name is the same
+    defect as two literals, one refactor later.
     """
-    for obj in (getattr(cfg, "train", None), getattr(cfg, "model", None), cfg):
-        for attr in ("model_id", "designation", "run_name"):
-            v = getattr(obj, attr, None) if obj is not None else None
-            if isinstance(v, str) and v:
-                return v
-    return "SC-WBD-unnamed"
+    return _cfg_designation(cfg)
 
 
 def _bind_mechanistic(model, theta) -> None:

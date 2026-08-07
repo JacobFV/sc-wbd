@@ -18,12 +18,15 @@ codes against:
 from __future__ import annotations
 
 __version__ = "0.1.0"
-#: Model designation from ARCHITECTURE.md.
-DESIGNATION = "SC-WBD-001-beta"
 #: Thesis version this implementation is bound to.
 THESIS_VERSION = "V6"
 
 from . import compiler, schema  # noqa: E402
+
+#: Model designation from ARCHITECTURE.md.  Re-exported from the one definition
+#: in ``scwbd.schema.designation`` -- a package constant that repeats the literal
+#: is a fifth place for the name to be wrong.
+from .schema.designation import MODEL_DESIGNATION as DESIGNATION  # noqa: E402
 from .compiler import CompiledModel, compile  # noqa: E402
 from .schema import (  # noqa: E402
     SCHEMA_VERSION,
