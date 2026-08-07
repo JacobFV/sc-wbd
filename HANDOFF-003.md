@@ -126,22 +126,23 @@ f. Publish. The card must state which sources actually contributed gradient,
 
 === KNOWN FAILING (do not "fix" by weakening) ===
 
-  tests/foundation/test_family_state.py   5  R12 is implemented twice, in
-                                             unrelated exception hierarchies
-                                             (R12Violation vs CompilerRefusal).
-                                             Which is authoritative is a design
-                                             call.
-  tests/evaluation_audit                 33  6 of 9 files exercise a smoke path;
-                                             3 are an anatomy mismatch
-                                             (454-region ckpt vs 414 model).
-  tests/infer/test_recovery.py            1  interval coverage 0.891
-                                             [0.791,0.946] excludes nominal 0.95
-                                             at n=64.
+Measured post-merge on an idle machine: 38 failures in 10 files, 1238 s.
 
-Everything else green. Full suite counts in this table are PRE-MERGE; the
-wt/fisher merge added tests/infer/test_report_diagnostics.py and
-test_adapters_binding.py, so re-run `pytest tests/` once and correct them before
-relying on the numbers. Prior figure was 3057 selected, 50 failing, ~1066 s.
+  evaluation_audit                       33  across 9 files. 6 of 9 exercise a
+                                             smoke path (max_batches=6); 3 are an
+                                             anatomy mismatch, a 454-region
+                                             checkpoint loaded into a 414-region
+                                             model.
+  foundation/test_family_state.py         5  R12 is implemented twice, in
+                                             unrelated exception hierarchies
+                                             (R12Violation, an OverclaimError, vs
+                                             CompilerRefusal). validate() reaches
+                                             the second first, so the message the
+                                             tests match on is unreachable.
+                                             Deciding which is authoritative is a
+                                             design call, not a repair.
+
+Everything else green, including tests/infer and tests/intervene.
 
 === OPERATIONAL ===
 
