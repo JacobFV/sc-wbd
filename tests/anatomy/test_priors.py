@@ -66,13 +66,19 @@ def test_ei_prior_span_is_the_declared_modelling_range(brain_prior):
     assert 1.2 < ratios.max() / ratios.min() < 12.0
 
 
-def test_parcels_without_receptor_coverage_get_a_wider_prior_not_a_made_up_value(brain_prior):
+def test_parcels_without_ordering_coverage_get_a_wider_prior_not_a_made_up_value(brain_prior):
+    """Renamed from ...without_receptor_coverage... on 2026-08-06.
+
+    The E/I prior no longer defaults to a receptor map, so the wording is now
+    about the ordering; the invariant is unchanged and so is the branch it
+    guards. See ``reports/ei_ordering_substitution.md``.
+    """
     priors = brain_prior.ei_ratio_prior()
     sub = np.flatnonzero(brain_prior.structure == "subcortex")
     ctx = np.flatnonzero(brain_prior.structure == "cortex")
     assert priors[sub[0]].sigma > priors[ctx[0]].sigma
     assert priors[sub[0]].mu == 0.0
-    assert "NO RECEPTOR COVERAGE" in priors[sub[0]].provenance
+    assert "NO ORDERING COVERAGE" in priors[sub[0]].provenance
 
 
 def test_timescale_prior_is_one_distribution_per_parcel(brain_prior):

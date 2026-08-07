@@ -657,6 +657,9 @@ class SyntheticFisher:
     n_theta: int = 3
     n_nuisance: int = 3
     nuisance_only_gain: bool = False
+    #: agent Fisher's finding as a fixture: the impulse's apparent gain is
+    #: entirely input energy, so the ENERGY-MATCHED design buys nothing.
+    energy_explains_gain: bool = False
     seed: int = 0
 
     def __call__(self, design: str) -> np.ndarray:
@@ -673,8 +676,15 @@ class SyntheticFisher:
             impulse = np.diag(np.array([0.0, 0.0, 0.0] + [0.0, 0.0, 2.5])[:p])
         else:
             impulse = np.diag(np.array([0.4, 0.5, 1.4] + [0.0, 0.0, 0.6])[:p])
+        # energy-matched impulse: the same input energy spent on the background
+        # drive instead of concentrated in one impulse
+        if self.energy_explains_gain:
+            matched = np.zeros((p, p))          # no theta gain once energy is held equal
+        else:
+            matched = np.diag(np.array([0.3, 0.35, 1.0] + [0.0, 0.0, 0.4])[:p])
         table = {
             "prior": np.eye(p) * 1e-3,
+            "joint_native_impulse_matched": joint_native + matched,
             "eeg": eeg,
             "fmri": fmri,
             "joint_native": joint_native,

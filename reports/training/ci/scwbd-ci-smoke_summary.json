@@ -1,11 +1,11 @@
 {
   "run_name": "scwbd-ci-smoke",
-  "git_sha": "32ca47e5b46d76b271984bd60ce34dbc9b4be0fc-dirty",
+  "git_sha": "9b7a5a0d2a608c7a50f6a5870711e75527780955-dirty",
   "environment": {
     "python": "3.12.13",
     "torch": "2.13.0+cu130",
     "cuda_available": true,
-    "git_sha": "32ca47e5b46d76b271984bd60ce34dbc9b4be0fc-dirty",
+    "git_sha": "9b7a5a0d2a608c7a50f6a5870711e75527780955-dirty",
     "device": "NVIDIA GB10",
     "capability": "12.1",
     "total_memory_gb": 130.6,
@@ -15,9 +15,9 @@
     {
       "stage": "I_regional",
       "steps": 4,
-      "wall_seconds": 2.5736656188964844,
-      "best_loss": 0.13313843213553803,
-      "steps_per_second": 1.5542034562030975,
+      "wall_seconds": 2.7964813709259033,
+      "best_loss": 0.951659599642183,
+      "steps_per_second": 1.430368906292988,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -84,8 +84,8 @@
           "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
         },
         "per_source_contribution": {
-          "anatomical_prior": 0.25549529575204344,
-          "sim_wholebrain": 0.7445047042479566
+          "anatomical_prior": 0.12910857721013283,
+          "sim_wholebrain": 0.8708914227898673
         },
         "gradient_permission_audit": {
           "anatomical_prior": {
@@ -233,9 +233,9 @@
     {
       "stage": "II_interface",
       "steps": 4,
-      "wall_seconds": 1.6060528755187988,
-      "best_loss": 0.29902757426506077,
-      "steps_per_second": 2.49057802577508,
+      "wall_seconds": 1.273792028427124,
+      "best_loss": 0.9570320410428838,
+      "steps_per_second": 3.140230045982618,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -302,8 +302,8 @@
           "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
         },
         "per_source_contribution": {
-          "anatomical_prior": 0.1149791817997979,
-          "sim_wholebrain": 0.8850208182002022
+          "anatomical_prior": 0.13138595787763466,
+          "sim_wholebrain": 0.8686140421223654
         },
         "gradient_permission_audit": {
           "anatomical_prior": {
@@ -450,9 +450,9 @@
     {
       "stage": "III_sliced",
       "steps": 4,
-      "wall_seconds": 2.074100971221924,
-      "best_loss": 0.5851283554381149,
-      "steps_per_second": 1.928546418665174,
+      "wall_seconds": 2.5755774974823,
+      "best_loss": 0.7642725831136582,
+      "steps_per_second": 1.5530497544376412,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -519,9 +519,9 @@
           "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
         },
         "per_source_contribution": {
-          "anatomical_prior": 0.032110719639710496,
-          "eegmmidb_real": 0.9114627579339276,
-          "sim_wholebrain": 0.056426522426361835
+          "anatomical_prior": 0.027746564598447303,
+          "eegmmidb_real": 0.7873472136987261,
+          "sim_wholebrain": 0.18490622170282667
         },
         "gradient_permission_audit": {
           "anatomical_prior": {
@@ -688,9 +688,9 @@
     {
       "stage": "IV_assembly",
       "steps": 4,
-      "wall_seconds": 1.4489483833312988,
-      "best_loss": 0.8428659409305252,
-      "steps_per_second": 2.7606228393060768,
+      "wall_seconds": 2.513688087463379,
+      "best_loss": 0.9291538565748083,
+      "steps_per_second": 1.5912873279502602,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -757,9 +757,9 @@
           "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
         },
         "per_source_contribution": {
-          "anatomical_prior": 0.02760564903400195,
-          "eegmmidb_real": 0.8119965330921032,
-          "sim_wholebrain": 0.16039781787389476
+          "anatomical_prior": 0.02696273226368943,
+          "eegmmidb_real": 0.7941687558587517,
+          "sim_wholebrain": 0.1788685118775588
         },
         "gradient_permission_audit": {
           "anatomical_prior": {
@@ -926,9 +926,9 @@
     {
       "stage": "V_individual",
       "steps": 3,
-      "wall_seconds": 0.23414945602416992,
-      "best_loss": 0.9999989867210388,
-      "steps_per_second": 12.81232957334023,
+      "wall_seconds": 0.4495551586151123,
+      "best_loss": 0.999998927116394,
+      "steps_per_second": 6.673263430547033,
       "mixture": {
         "mixture_weights": {
           "weights": {
@@ -1136,7 +1136,7 @@
       }
     }
   ],
-  "total_wall_seconds": 9.506221055984497,
+  "total_wall_seconds": 10.8490571975708,
   "global_steps": 19,
   "model_parameters": {
     "log_dt_scale": 454,
@@ -1182,6 +1182,7 @@
       "model_discrepancy": null,
       "validity_overlap": 1.0,
       "hierarchy_depth": 1,
+      "leakage_audited": true,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": true,
@@ -1228,6 +1229,7 @@
       "model_discrepancy": 0.0,
       "validity_overlap": 1.0,
       "hierarchy_depth": 3,
+      "leakage_audited": true,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": true,
@@ -1270,6 +1272,7 @@
       "model_discrepancy": null,
       "validity_overlap": 1.0,
       "hierarchy_depth": 1,
+      "leakage_audited": true,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": true,
@@ -1296,6 +1299,7 @@
       "model_discrepancy": null,
       "validity_overlap": 0.0,
       "hierarchy_depth": 3,
+      "leakage_audited": true,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": true,
@@ -1342,6 +1346,7 @@
       "model_discrepancy": 0.55,
       "validity_overlap": 0.35,
       "hierarchy_depth": 1,
+      "leakage_audited": false,
       "is_simulated": true,
       "is_teacher": false,
       "enabled": true,
@@ -1383,6 +1388,7 @@
       "model_discrepancy": null,
       "validity_overlap": 0.5,
       "hierarchy_depth": 3,
+      "leakage_audited": true,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": false,
@@ -1420,6 +1426,7 @@
       "model_discrepancy": 2.0,
       "validity_overlap": 0.1,
       "hierarchy_depth": 1,
+      "leakage_audited": true,
       "is_simulated": false,
       "is_teacher": true,
       "enabled": false,
@@ -2934,19 +2941,21 @@
     },
     "binding_audit": {
       "unclaimed_parameters": [],
-      "unbound_groups": [
-        "frame_edge:scwbd_anat_RAS->scwbd_eeg_cap:calibration"
-      ],
+      "unbound_groups": [],
       "declared_empty_groups": [
         "operator:assimilation:delay",
         "operator:local_field:delay"
       ],
-      "empty_bindings": [
-        {
-          "group": "operator:long_range:delay",
-          "pattern": "coupling.bin_length_mm"
-        }
-      ]
+      "frozen_groups": {
+        "frame_edge:scwbd_anat_RAS->scwbd_eeg_cap:calibration": [
+          "eeg.L"
+        ],
+        "operator:long_range:delay": [
+          "coupling.bin_length_mm"
+        ]
+      },
+      "empty_bindings": [],
+      "problems": []
     },
     "per_source": {
       "anatomical_prior": {
@@ -2971,7 +2980,6 @@
           "log_dt_scale",
           "context.*",
           "residual.*",
-          "coupling.bin_length_mm",
           "coupling.gain_soft",
           "coupling.gain_proposed",
           "coupling.global_scale",
@@ -3019,7 +3027,6 @@
           "log_dt_scale",
           "context.*",
           "residual.*",
-          "coupling.bin_length_mm",
           "coupling.gain_soft",
           "coupling.gain_proposed",
           "coupling.global_scale",

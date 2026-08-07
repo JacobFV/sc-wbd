@@ -34,11 +34,14 @@ claim that every admitted operator is neurally realized.
 \midrule
 Typed, source-native fusion is preferable to naive resampling &
 Better held-out likelihood, calibration, delay recovery, and intervention
-forecast at matched compute and parameter count &
+forecast at matched compute and parameter count, measured against a tuned
+resampling baseline. Adding a modality is not itself evidence: under (T4) it
+cannot reduce information &
 No reproducible gain over single-modality or carefully tuned resampling
 baselines; increased overconfidence or negative transfer &
 Retain only the provenance/type system; narrow or remove the shared latent
-fusion claim\\
+fusion claim. \emph{Narrowed on measured evidence to a claim about
+source-native clocks; see Section 11.5}\\
 
 Anatomical topology improves inference &
 Data efficiency, out-of-distribution calibration, and causal forecast beyond
@@ -55,10 +58,11 @@ become overconfident outside measured tiles &
 Disable the scale relation or use source-specific views without gluing\\
 
 Perturbation reduces non-identifiability &
-Rank/eigenvalue improvement in Fisher information and prospective recovery of
-direction, delay, gain, dose, and state dependence &
-Intervention fails to distinguish posterior models or adds only field-model
-uncertainty &
+Rank/eigenvalue improvement in Fisher information \emph{at matched input
+energy}, and prospective recovery of direction, delay, gain, dose, and state
+dependence &
+Intervention fails to distinguish posterior models, adds only field-model
+uncertainty, or loses its apparent advantage against an energy-matched control &
 Narrow the identifiable parameter set and redesign the perturbation rather
 than reporting a causal estimate\\
 
@@ -73,7 +77,10 @@ adaptation\\
 \caption{\textbf{Claims with consequences.} Each central commitment has a
 measurement capable of making it smaller. Engineering breadth, parameter
 count, plausible diagrams, and in-sample fit are not substitutes for these
-tests.}
+tests. Rows 1 and 4 have been narrowed since the previous version because the
+measurement was run and returned a smaller result than the claim; the evidence
+columns record the controls that narrowing showed to be mandatory
+(Section 11.5).}
 \label{tab:claim-gates}
 \end{table*}
 
@@ -240,20 +247,80 @@ J_m=\frac{\partial\mu_m}{\partial\eta},
 \tag{T4}
 \]
 
-with \(\eta=(\vartheta,\ell,\rho)\). The benchmark compares EEG alone, fMRI
-alone, joint native-clock inference, joint inference after naive resampling,
-and joint inference plus one calibrated impulse. It reports rank, condition
-number, minimum non-prior eigenvalue, parameter-profile likelihoods, posterior
-correlations, interval coverage, and delay error. Prior contribution is shown
-separately so a full-rank posterior cannot disguise a prior-dominated
-likelihood.
+with \(\eta=(\vartheta,\ell,\rho)\).
+
+Two properties of (T4) must be stated where it is introduced, because a
+benchmark that ignores either of them will report an artifact of its own
+construction as a finding.
+
+\textbf{Modality additivity is an identity, not a hypothesis.} Written as a sum
+of per-modality quadratic forms, (T4) treats the modalities as conditionally
+independent given \(\eta\). Each summand is positive semidefinite, so
+\(\mathcal I_{\rm EEG+BOLD}
+=\mathcal I_{\rm EEG}+\mathcal I_{\rm BOLD}-\mathcal I_{\rm prior}
+\succeq\mathcal I_{\rm EEG}\)
+holds algebraically, for every parameterization, every dataset, and every
+truth. ``Joint is at least as informative as single-modality'' therefore cannot
+fail, and a benchmark reporting it as a validated result reports a tautology.
+The non-trivial part of joint information is the EEG/BOLD cross-covariance
+induced by \emph{shared process noise}, which the block-diagonal form omits;
+obtaining it requires whitening the stacked record rather than each modality
+separately. The benchmark computes both and reports their difference, which is
+exactly the amount by which (T4) over-counts. The discriminating comparisons
+are consequently native versus resampled clocks, the \emph{size} of the second
+modality's contribution to the preregistered subset, impulse versus no impulse
+at matched input energy, and whether any added information becomes calibrated
+recovery.
+
+\textbf{A continuous conduction delay is a precondition for delay
+identifiability.} The Fisher information of \(\tau\) exists only if
+\(\partial\mu/\partial\tau\) exists. If \(\tau\) is quantized to the sample
+grid, that derivative is identically zero and the delay carries \emph{no}
+information under any design---including designs that would otherwise recover
+it well. A benchmark built on a quantized delay would report zero delay
+information for every design and mistake an implementation choice for a
+scientific result. (T1) and (T4) therefore require a fractional-delay
+implementation; here a normalized Gaussian-windowed-sinc interpolation over the
+history taps, so that \(\tau\) is a continuous parameter with a smooth
+derivative. The 1\,s resampled design is retained precisely because it violates
+this condition, and is reported as the illustration of what the violation looks
+like rather than as a measurement of the delay.
+
+The benchmark compares EEG alone, fMRI alone, joint native-clock inference,
+joint inference after naive resampling, joint inference plus one calibrated
+impulse, and---required rather than optional---the same impulse at total input
+energy matched to the impulse-free design by scaling the background drive.
+Without that sixth design, an impulse comparison measures the energy budget and
+not the perturbation. A charitable resampling control, which discards EEG onto
+the 1\,s grid but retains the exact fine-grained forward model, separates
+information lost by decimation from bias introduced by the wrong
+discretization. The benchmark reports rank, condition number, minimum non-prior
+eigenvalue, parameter-profile likelihoods, posterior correlations, interval
+coverage, and delay error. Prior contribution is shown separately so a
+full-rank posterior cannot disguise a prior-dominated likelihood.
+
+\textbf{What this system cannot be asked.} The state is three regions with no
+spatial structure, and \(\vartheta\) is a few coupling gains plus one
+conduction delay. That is an electrophysiological question, and a hemodynamic
+instrument is being scored on it. The strengths such an instrument actually
+has---spatial extent and localization, slow state, and constraining the very
+observation model on which electrical source inversion depends---have nowhere
+to appear in a three-region linear--Gaussian system. A weak fusion result
+obtained here is therefore a correct statement about \emph{this design}. It is
+not a general finding that cross-method integration is unprofitable, and it may
+not be reported as one; reaching that stronger question requires extending the
+system, not rerunning this one.
 
 This is a planned calculation, not a favorable result assumed in advance. The
 central premise is supported only if native-clock fusion or intervention
 increases likelihood information for a preregistered parameter subset and
 improves calibrated recovery across held-out simulation regimes. If it does
 not, the compiler may still be useful as a provenance system, but the claim
-that cross-method integration resolves those dynamics must be narrowed.
+that cross-method integration resolves those dynamics must be narrowed. That
+calculation has now been performed in the linear--Gaussian case; its outcome,
+and the narrowing this paragraph prescribes, are reported in Section 11.5. The
+paragraph is left exactly as written, because it is the commitment against
+which the result is being judged.
 
 The second artifact compiles the same system from a source schema and performs
 end-to-end recovery. It introduces known transform bias, shared session
@@ -262,7 +329,12 @@ misspecified residual. Success requires: no leakage across simulated parent
 subjects; recovery intervals with nominal coverage; lower held-out log loss
 than single-method and naive-resampling baselines; detection of the
 misspecified module; and refusal of at least one invalid schema. This synthetic
-case is the minimum integration test for all later human experiments.
+case is the minimum integration test for all later human experiments. It has
+been built and run: three of the five criteria listed here were met, interval
+coverage was not, the held-out log-loss comparison could not be evaluated
+because none of the fits it compares had converged, and a sixth
+subgroup-calibration criterion added by the implementation was met
+(Section 11.5).
 
 \subsection{0.4 Executable Evidence, Transform, and Gradient Contracts}
 

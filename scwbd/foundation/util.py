@@ -29,7 +29,95 @@ __all__ = [
     "count_parameters",
     "human_bytes",
     "flatten_dict",
+    "logical_param_name",
+    "cap_cuda_reserve",
+    "cuda_reserved_gb",
 ]
+
+
+def cuda_reserved_gb(device: Any = None) -> float:
+    """GB the CUDA caching allocator currently holds (reserved, not live).
+
+    This is the number that matters for whether the machine survives: the
+    allocator keeps freed blocks, so *reserved* is the machine's exposure while
+    *allocated* is merely what the model is using right now.
+    """
+    if not torch.cuda.is_available():
+        return 0.0
+    return torch.cuda.memory_reserved(device) / 1024**3
+
+
+def cap_cuda_reserve(device: Any, limit_gb: float) -> float | None:
+    """Bound the CUDA caching allocator to ``limit_gb``.  Returns the fraction set.
+
+    **This is not redundant with a systemd MemoryMax cgroup, and assuming it was
+    is what killed the machine.**  The GB10 is one unified physical pool, but
+    device allocations are not charged to the cgroup: on 2026-08-06 a training
+    run held 97.9 GB of device memory (``nvidia-smi --query-compute-apps``)
+    while its own cgroup reported ``memory.current = 8.17 GB`` against a 40 GB
+    ``MemoryMax`` that never fired.  The cgroup was measuring host pages and
+    reporting reassuring numbers about a limit it was not enforcing.
+
+    PyTorch's caching allocator has no default ceiling -- it reserves and holds
+    rather than returning -- so on a shared pool it will grow until something
+    dies.  ``set_per_process_memory_fraction`` is the only bound that applies to
+    the thing actually doing the allocating.
+
+    Call before the first allocation.  ``limit_gb <= 0`` disables the cap and
+    says so out loud, because silently unbounded is how this happened.
+    """
+    dev = torch.device(device)
+    if dev.type != "cuda" or not torch.cuda.is_available():
+        return None
+    # ``torch.device("cuda")`` carries no index and set_per_process_memory_fraction
+    # refuses it; resolve to the concrete device the work will land on.
+    index = dev.index if dev.index is not None else torch.cuda.current_device()
+    total = torch.cuda.get_device_properties(index).total_memory
+    if limit_gb <= 0:
+        print(
+            f"[mem] CUDA reserve UNCAPPED on a {total / 1024**3:.0f} GB shared pool; "
+            "the caching allocator may grow until the machine OOMs",
+            flush=True,
+        )
+        return None
+    fraction = min(max(limit_gb * 1024**3 / total, 0.01), 1.0)
+    torch.cuda.set_per_process_memory_fraction(fraction, index)
+    print(
+        f"[mem] CUDA reserve capped at {limit_gb:.1f} GB "
+        f"(fraction={fraction:.3f} of {total / 1024**3:.1f} GB unified pool)",
+        flush=True,
+    )
+    return fraction
+
+#: Name segments ``torch.compile`` inserts into ``named_parameters()``.
+#: ``torch.compile(mod)`` returns an ``OptimizedModule`` holding the original
+#: under ``_orig_mod``, so ``local.embed`` silently becomes
+#: ``local._orig_mod.embed`` the moment a submodule is compiled.
+_COMPILE_WRAPPER_SEGMENTS = frozenset({"_orig_mod", "_orig_module"})
+
+
+def logical_param_name(name: str) -> str:
+    """A parameter's name with ``torch.compile`` wrapper segments removed.
+
+    Every permission in this codebase -- source cards, stage allowlists, the
+    compiler's parameter groups -- is written against the *logical* module tree
+    the architecture describes.  ``torch.compile`` is an execution detail that
+    rewrites that tree's names, and a glob written as ``local.embed`` stops
+    matching when it does.  The failure is silent and asymmetric: prefix globs
+    like ``local.*`` keep matching, exact names do not, so a permission set can
+    half-apply and still look enforced.
+
+    This ran in production on 2026-08-05.  ``cfg.model.compile`` is true on CUDA,
+    which compiled ``model.local`` and ``model.residual``; every per-region
+    binding (``local.embed``, ``residual.embed``, ``local.films.*.region_scale``)
+    then matched nothing, while the coarser operator globs still matched -- so
+    the run trained with per-region permissions that governed no tensor.
+    Normalising here, at the single point where names meet patterns, is what
+    keeps the declaration true of the model that actually runs.
+    """
+    if "_orig_mod" not in name:
+        return name
+    return ".".join(p for p in name.split(".") if p not in _COMPILE_WRAPPER_SEGMENTS)
 
 
 def repo_root() -> Path:

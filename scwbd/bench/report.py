@@ -18,7 +18,11 @@ enforces the reporting discipline of ``body.tex`` §11.2 and
   kind ``"calibration"`` ("aggregate accuracy cannot substitute for
   calibration within the intended deployment population");
 * a metric that claims to be an estimate must carry an interval unless it is
-  explicitly declared exact (counts, ranks, booleans).
+  explicitly declared exact (counts, ranks, booleans);
+* a passing numerical check must record **what it measured** — the subject or
+  the solver provenance. An artifact that does not record how it was produced
+  is how a stale output gets compared against new code and mistaken for a
+  result, which has already happened twice in this repository.
 
 These are raised as :class:`ReportDisciplineError` at construction time, so a
 non-compliant report cannot be written to ``reports/``.
@@ -54,6 +58,8 @@ __all__ = [
     "GATES_DIR",
     "ABLATIONS_DIR",
     "provenance",
+    "source_dirty_entries",
+    "SOURCE_PATHS",
     "write_reports",
 ]
 
@@ -63,6 +69,8 @@ SCHEMA_VERSION = "scwbd-schema/1.0.0"
 MODEL_DESIGNATION = "SC-WBD-001-beta"
 
 Status = Literal["PASS", "FAIL", "COULD_NOT_RUN"]
+ReportKind = Literal["gate", "ablation", "leakage", "numerics", "instrument",
+                     "adjudication"]
 
 _STATUS_ORDER = {"PASS": 0, "FAIL": 1, "COULD_NOT_RUN": 2}
 
@@ -319,11 +327,16 @@ class ClaimManifest:
 # --------------------------------------------------------------------------
 # provenance
 # --------------------------------------------------------------------------
-def _git_rev() -> str:
+#: Paths that hold *source*. A run writing its own logs into ``reports/`` must
+#: not make a provenance field read "modified".
+SOURCE_PATHS: tuple[str, ...] = ("scwbd", "tests", "configs", "benchmarks")
+
+
+def _git_rev(cwd: str | os.PathLike[str] = _REPO_ROOT) -> str:
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            cwd=str(_REPO_ROOT),
+            cwd=str(cwd),
             capture_output=True,
             text=True,
             timeout=5,
@@ -333,6 +346,41 @@ def _git_rev() -> str:
         return "unknown"
 
 
+def source_dirty_entries(
+    paths: Sequence[str] = SOURCE_PATHS,
+    cwd: str | os.PathLike[str] = _REPO_ROOT,
+) -> list[str]:
+    """Porcelain entries **scoped to source paths**, as a list of paths.
+
+    Why scoped, and why a list rather than a boolean:
+
+    A whole-tree dirty flag is structurally incapable of ever reading clean
+    during a run that writes tracked output — every SC-WBD training run writes
+    ``reports/training/*.log`` and ``*.jsonl``, both tracked — so the flag
+    stamps ``-dirty`` on every checkpoint the project has ever produced and
+    cannot distinguish "source was modified" from "the run wrote its own log".
+    A field that cannot vary is not evidence. (Found by agent Turing.)
+
+    Scoping to source fixes that discrimination. It does **not** fix a second
+    one: in a shared multi-agent worktree the scoped flag still cannot tell
+    *whose* edit made it dirty. So this returns the offending paths, letting a
+    reader see that the dirt is another module's in-flight work rather than the
+    source under test.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "status", "--porcelain", "--", *paths],
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except Exception:  # pragma: no cover - environment dependent
+        return ["<git unavailable>"]
+    entries = [ln[3:].strip() for ln in out.stdout.splitlines() if ln.strip()]
+    return sorted(entries)
+
+
 def provenance() -> dict[str, Any]:
     versions: dict[str, str] = {"python": sys.version.split()[0]}
     for mod in ("numpy", "scipy", "torch"):
@@ -340,12 +388,29 @@ def provenance() -> dict[str, Any]:
             versions[mod] = __import__(mod).__version__
         except Exception:  # pragma: no cover
             versions[mod] = "absent"
+    dirty = source_dirty_entries()
     return {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "git_rev": _git_rev(),
         "host": platform.node(),
         "platform": platform.platform(),
         "versions": versions,
+        # scoped to source; the offending paths are listed so a reader can see
+        # whose edit it was, not merely that "something" changed
+        "source_paths_checked": list(SOURCE_PATHS),
+        "source_dirty_paths": dirty,
+        "source_clean": not dirty,
+        # Fields recorded but KNOWN NOT TO DISCRIMINATE. Nothing may gate on
+        # these, and a reader must not infer anything from them.
+        "known_uninformative_fields": {
+            "git_dirty_whole_tree": (
+                "a whole-tree dirty flag always reads dirty during a run, because the run "
+                "writes tracked output (reports/training/*.log, *.jsonl). It cannot "
+                "distinguish modified source from a run writing its own log, so it is not "
+                "recorded here and must not be gated on. Use source_dirty_paths."
+            ),
+        },
+        "not_gated_on": ["source_clean", "source_dirty_paths", "git_rev", "timestamp_utc"],
     }
 
 
@@ -362,7 +427,7 @@ class ClaimReport:
     notes: list[str] = field(default_factory=list)
     #: free-form structured payload (curves, tables) for figures
     artifacts: dict[str, Any] = field(default_factory=dict)
-    kind: Literal["gate", "ablation", "leakage", "numerics"] = "gate"
+    kind: ReportKind = "gate"
     _provenance: dict[str, Any] = field(default_factory=provenance)
 
     # -- status ---------------------------------------------------------
@@ -431,6 +496,15 @@ class ClaimReport:
                 raise ReportDisciplineError(
                     f"{self.manifest.claim_id}: a gate may not PASS without baselines run "
                     "(ARCHITECTURE.md §4: baseline comparisons are part of 'done')"
+                )
+            if self.kind in ("numerics", "instrument", "adjudication") and not (
+                self.artifacts.get("subject") or self.artifacts.get("solver_provenance")
+            ):
+                raise ReportDisciplineError(
+                    f"{self.manifest.claim_id}: a passing numerical check must record what "
+                    "it measured (artifacts['subject'] or artifacts['solver_provenance']). "
+                    "An artifact that does not record how it was produced is how a stale "
+                    "output gets compared against new code and mistaken for a result."
                 )
         if self.status == "COULD_NOT_RUN":
             if not self.blocking_reasons:

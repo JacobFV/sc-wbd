@@ -17,3 +17,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 *.egg-info/
+
+# bench solver cache (content-keyed; safe to delete)
+.cache/

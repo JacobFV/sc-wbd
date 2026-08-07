@@ -78,13 +78,35 @@ SRC: dict[str, dict[str, Any]] = {
     "tian2020": {
         "name": "Tian subcortical parcellation S1-S4",
         "url": "https://github.com/yetianmed/subcortex",
-        "license": "See repository LICENSE (open, academic use)",
+        # CORRECTED 2026-08-06 (Mendel) by reading the vendored licence text at
+        # assets/src/tian_subcortex/license.txt, which the old field only pointed
+        # at. The grant is unrestricted use/copy/modify/merge/publish/distribute
+        # with one condition: cite Tian et al. (2020). It is NOT limited to
+        # academic use, and the previous wording understated the grant while
+        # implying a restriction the licence does not contain.
+        # NOTE: this field states the licence's OWN terms and nothing else. An
+        # earlier draft appended the editorial clause "no non-commercial or
+        # share-alike term" and `is_noncommercial_text` matched the negation and
+        # classified the atlas NC -- the classifier reads phrases, not sentences.
+        # Commentary about what a licence does *not* say belongs in `bias`.
+        "license": (
+            "Melbourne Subcortex Atlas License: permission to use the atlas "
+            "without restriction, including the rights to use, copy, modify, "
+            "merge, publish and distribute, subject to the single condition that "
+            "any publication using the atlas cites Tian Y. et al. (2020) Nat "
+            "Neurosci 23:1421-1432. Attribution required."
+        ),
+        "license_text": "assets/src/tian_subcortex/license.txt",
         "version": "3T Group-Parcellation",
         "citation": "Tian Y. et al. (2020) Nat Neurosci 23:1421-1432.",
         "bias": (
             "Functional-gradient subdivision from 3T rs-fMRI in 1080 HCP adults. "
             "Subdivisions are not cytoarchitectonic nuclei and have no tractography "
-            "coverage in the connectomes shipped here."
+            "coverage in the connectomes shipped here. LICENCE NOTE: the vendored "
+            "licence carries no non-commercial and no share-alike term; it is an "
+            "attribution-only grant. That observation is kept here rather than in "
+            "`license` because the classifier reads phrases and would match the "
+            "negation."
         ),
     },
     "harvardoxford": {
@@ -114,7 +136,19 @@ SRC: dict[str, dict[str, Any]] = {
     "diedrichsen2009": {
         "name": "SUIT probabilistic cerebellar lobular atlas",
         "url": "https://github.com/DiedrichsenLab/cerebellar_atlases",
-        "license": "See repository (open, academic use, citation required)",
+        # CORRECTED 2026-08-06 (Mendel). The old field said "open, academic use"
+        # and the licence classifier therefore read it as carrying NO
+        # non-commercial term. The vendored text says otherwise, in as many
+        # words. This is a real NC source that was recorded as permissive.
+        "license": (
+            "Creative Commons Attribution-NonCommercial 3.0 Unported "
+            "(CC BY-NC 3.0). NON-COMMERCIAL. Verbatim: 'The SUIT template, "
+            "associated files and atlases are distributed under a Creative "
+            "Commons Attribution-NonCommercial 3.0 Unported License, meaning "
+            "that it can be freely used for non-commercial purposes, as long as "
+            "proper attribution ... is given.'"
+        ),
+        "license_text": "assets/src/cerebellar_atlases/tpl-SUIT/LICENSE",
         "version": "Diedrichsen 2009 Anatom",
         "citation": "Diedrichsen J. et al. (2009) NeuroImage 46:39-46.",
         "bias": "Lobular anatomy from 20 brains; maximum-probability labels discard boundary probability.",
@@ -176,6 +210,11 @@ SRC: dict[str, dict[str, Any]] = {
             "false positives that scale with tract length and with the number of "
             "fibre crossings, and false negatives for long, thin, or highly curved "
             "bundles (notably lateral temporal and inferior frontal projections). "
+            "Reconstructed streamline count is not axon count: streamline density "
+            "is a property of the seeding and propagation algorithm as much as of "
+            "the tissue, it is biased by seed placement and by the gyral bias that "
+            "over-terminates streamlines on gyral crowns relative to sulcal banks, "
+            "and SIFT2 rescales but does not remove this. "
             "Group averaging removes exactly the individual variation the model "
             "later claims to individualise. The log transform means weights are "
             "on an arbitrary monotone scale, not in physical units."

@@ -64,9 +64,9 @@
     "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
   },
   "per_source_contribution": {
-    "anatomical_prior": 0.02760564903400195,
-    "eegmmidb_real": 0.8119965330921032,
-    "sim_wholebrain": 0.16039781787389476
+    "anatomical_prior": 0.02696273226368943,
+    "eegmmidb_real": 0.7941687558587517,
+    "sim_wholebrain": 0.1788685118775588
   },
   "gradient_permission_audit": {
     "anatomical_prior": {

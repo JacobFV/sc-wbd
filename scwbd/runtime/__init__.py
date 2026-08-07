@@ -22,8 +22,13 @@ transport, or a controller.  SC-WBD sits strictly upstream of the consumer's
 API-surface test that fails if a command-authority symbol ever appears.
 
 Prospective human TMS/tFUS is out of scope for SC-WBD-001-beta
-(``thesis_contract.tex`` Sec. 0.6, build-order item 6): no ethics approval, no
-consent, no participants, no device.
+(``thesis_contract.tex`` Sec. 0.6, build-order item 6) -- as a matter of
+*capability*, not of anyone's paperwork.  Governance is gated, not assumed:
+:class:`~scwbd.schema.authorization.AuthorizationRecord` records a declared
+approval and a validated one changes ``ModelProvenance.claim_scope``.  Even
+then a targeting claim is refused, because this release serves
+``weights_status="analytic_backend"`` -- there is no trained checkpoint behind
+any prediction here.  See ``reports/governance_authorization.md``.
 """
 
 from __future__ import annotations
@@ -31,9 +36,14 @@ from __future__ import annotations
 from ._compat import SIMULATION_ONLY_NOTICE, Unresolved
 from .backends import (
     AnalyticSphericalEField,
+    ChargeBEMEField,
     CoilSpec,
     DEFAULT_PROPAGATORS,
     DEFAULT_RESPONSE_OPERATORS,
+    FieldResolutionUnresolved,
+    FieldSolve,
+    GatedAnalyticSphereEField,
+    ImpossiblePlacement,
 )
 from .brain_runtime import BrainRuntime, PortSpec, Readout, RuntimeStep
 from .compare import (
@@ -58,6 +68,7 @@ from .serving import (
     CheckpointNotFound,
     CheckpointRecord,
     ServedModel,
+    coil_pose_over_region,
     discover_checkpoint,
 )
 from .targeting import SessionProtocol, TargetingConfig, TargetingService
@@ -109,6 +120,11 @@ __all__ = [
     "spherical_phantom",
     "CoilSpec",
     "AnalyticSphericalEField",
+    "GatedAnalyticSphereEField",
+    "ChargeBEMEField",
+    "FieldSolve",
+    "FieldResolutionUnresolved",
+    "ImpossiblePlacement",
     "DEFAULT_RESPONSE_OPERATORS",
     "DEFAULT_PROPAGATORS",
     # offline comparison
@@ -123,6 +139,7 @@ __all__ = [
     "CheckpointRecord",
     "CheckpointNotFound",
     "discover_checkpoint",
+    "coil_pose_over_region",
     "ModelProvenance",
     "ProvenanceExpectation",
     "ProvenanceMismatch",

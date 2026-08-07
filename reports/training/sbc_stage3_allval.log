@@ -1,0 +1,11 @@
+n_datasets=1888  n_bins=256  ckpt_step=4800
+param                   mean_rank  edge_mass       KS p
+log_G                       0.401      0.127     0.0000
+log_velocity                0.548      0.152     0.0000
+ei_global                   0.433      0.119     0.0000
+ei_gradient                 0.524      0.278     0.0000
+log_sigma                   0.266      0.217     0.0000
+drive                       0.412      0.064     0.0000
+
+min KS p = 1.31e-201   coverage MAE = 0.0309
+uniform reference: mean_rank 0.500, edge_mass 0.100

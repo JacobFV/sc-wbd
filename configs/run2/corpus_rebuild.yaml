@@ -1,0 +1,278 @@
+# SPECIFICATION for regenerating the simulated corpus at 414 parcels.
+# THIS IS NOT THE REBUILD. The rebuild needs the GPU and must wait for run 1.
+#
+#   python -m scwbd.foundation.simulate --tier fast --config configs/run2/scwbd-001.yaml
+#
+# Everything below was regenerated on 2026-08-06 from
+# /data/scwbd/sim_corpus/index_fast.json and from the generating code itself,
+# not copied from any report. Where a number is an extrapolation it says so.
+
+schema: scwbd-run2-corpus/1.0.0
+status: SPECIFIED_NOT_RUN
+blocked_by:
+  - P1_anatomy_fix_not_on_master   # f816f2a is only on wt/turing
+  - P4_gradient_all_zeros          # would bake an inert theta dimension into 37,888 labels
+  - GPU_busy_until_run1_completes
+
+out_dir: /data/scwbd/sim_corpus_414
+tier: fast
+
+# ---------------------------------------------------------------------------
+# WHAT MUST BE REGENERATED
+# ---------------------------------------------------------------------------
+# Everything. Not a subset: every shard's `activity` dataset is (n_traj, 1500,
+# N) with N baked into the array shape, and the SC-WBD model's region axis is
+# taken from `anat.n_regions`. A 454-wide shard cannot be fed to a 414-region
+# model at all, so there is no partial-reuse path and no mixed corpus.
+#
+# The 37 existing shards are NOT deleted. They are the only surviving record of
+# what run 1 trained on -- each carries `anatomy_provenance = synthetic_fallback`
+# in its HDF5 attrs, which is the evidence for the whole synthetic-anatomy
+# finding. Regenerating into the same directory would destroy it.
+must_regenerate: ALL_SHARDS
+must_preserve: /data/scwbd/sim_corpus   # run 1's corpus, read-only from now on
+
+# ---------------------------------------------------------------------------
+# SPEC -- byte-for-byte run 1's CorpusSpec except where noted
+# ---------------------------------------------------------------------------
+spec:
+  backends:           [wilson_cowan, jansen_rit, wong_wang, stuart_landau, linear_gaussian]
+  backend_weights:    [0.30, 0.22, 0.22, 0.16, 0.10]
+  control_graphs:     [randomized, distance_matched, dense, local_only]
+  control_graph_fraction: 0.06
+  batch:              1024
+  dt:                 0.001
+  duration_s:         12.0
+  warmup_s:           3.0
+  store_every:        8
+  n_delay_bins:       16
+  fs_hz:              125.0
+  n_stored:           1500
+  seed:               20260805
+  device:             cuda
+  # CHANGED, and this is the only deliberate change to the spec.
+  # Run 1 asked for 800,000 trajectory-seconds and stopped at 454,656 in
+  # 2,762.9 s of a 5,400 s budget. Neither the target nor the wall limit bound,
+  # so the generator was interrupted -- the shortfall is not a design decision
+  # anybody made. Run 2 targets what run 1 ACHIEVED so the two corpora are the
+  # same size and stage T4's 5.93 epochs over ~35,994 train trajectories are
+  # preserved. Asking for 800,000 again would silently change the curriculum.
+  target_traj_seconds: 454656.0
+  max_wall_seconds:    5400
+
+# ---------------------------------------------------------------------------
+# EXPECTED OUTPUT
+# ---------------------------------------------------------------------------
+expected:
+  shards: 37
+  trajectories: 37888
+  trajectory_seconds: 454656.0
+  regions: 414
+  # 1024 x 1500 x 414 x 2 B (fp16) = 1,271,808,000 B/shard
+  bytes_per_shard: 1271808000
+  total_bytes_gb: 47.1        # measured at 454: 51.64 GB over 37 shards
+  disk_free_gb_at_spec_time: 1200
+  backend_mix_expected:       # run 1's realised draw, from index_fast.json
+    wilson_cowan:    {shards: 15, share: 0.4054}
+    wong_wang:       {shards: 12, share: 0.3243}
+    stuart_landau:   {shards:  5, share: 0.1351}
+    jansen_rit:      {shards:  3, share: 0.0811}
+    linear_gaussian: {shards:  2, share: 0.0541}
+  backend_mix_note: >-
+    The draw is multinomial on `backend_weights` with a fixed seed, so the same
+    seed on the same numpy version reproduces the same sequence. It is NOT
+    guaranteed if the number of shards changes, and the realised shares above
+    are not the declared weights (jansen_rit drew 0.081 against a weight of
+    0.22). Check the realised mix in the new index rather than assuming it.
+
+# ---------------------------------------------------------------------------
+# WALL-CLOCK -- an extrapolation, stated as a range, with its window named
+# ---------------------------------------------------------------------------
+wall_clock:
+  run1_measured:
+    integration_s: 2644.7       # sum of per-shard sim_wall_s over 37 shards
+    write_and_index_s: 118.2    # 4 % of total
+    total_s: 2762.9
+    per_backend_mean_s: {jansen_rit: 218.8, wilson_cowan: 67.4,
+                         wong_wang: 56.6, stuart_landau: 49.8, linear_gaussian: 24.7}
+  scaling_argument: >-
+    The delayed-coupling term is O(N^2) (an (N,N) weight matrix against an
+    (N,message) history); local drift/diffusion and the observables are O(N).
+    414^2 / 454^2 = 0.831 and 414 / 454 = 0.912, so the true factor lies between
+    them. Applying the bounds to run 1's 2,762.9 s gives 2,296 s and 2,520 s.
+  estimate_s: [2300, 2800]
+  estimate_note: >-
+    ~40-47 minutes of exclusive GPU time. This is an EXTRAPOLATION from run 1's
+    per-shard timings by region count -- not a measurement of anything at 414 --
+    and it assumes the same machine, the same contention and a similar backend
+    draw. The upper bound is deliberately above the linear-scaling bound because
+    per-backend cost varies 8.9x (jansen_rit 218.8 s vs linear_gaussian 24.7 s)
+    and a draw with one more jansen_rit shard moves the total by more than the
+    entire region-count saving. Budget an hour.
+  measured_window: "37 shards, the whole of run 1's fast-tier generation"
+
+# ---------------------------------------------------------------------------
+# WHAT THE REBUILD FIXES
+# ---------------------------------------------------------------------------
+fixes:
+  - defect: synthetic anatomy
+    evidence: >-
+      index_fast.json `anatomy` block reports provenance synthetic_fallback,
+      frame synthetic_ellipsoid_RAS, is_biological false, n_regions 454, and
+      every shard's HDF5 attrs agree. The trajectories were integrated on a
+      Fibonacci-sphere ellipsoid with an exponential distance-decay connectome
+      at density 0.10 and mean tract length 48.49 mm.
+    after: >-
+      Real Schaefer2018 x 7-network parcel geometry, the ENIGMA/HCP
+      group-average structural connectome at density 0.0718, real tract lengths
+      (mean 38.75 mm), receptor-derived E/I over 396 distinct parcel values and
+      a gradient-derived intrinsic-timescale prior spanning 0.0227-0.2833 s.
+    scope: >-
+      This is the only defect the rebuild fixes, and it is enough on its own to
+      require it: no G2 connectome claim, no anatomical-heterogeneity claim and
+      no receptor-E/I claim is supportable from run 1's corpus at all.
+
+# ---------------------------------------------------------------------------
+# WHAT THE REBUILD DOES NOT FIX  -- and one thing it makes worse
+# ---------------------------------------------------------------------------
+# The brief asked whether the adapter fix repairs the two timescale mechanisms.
+# It does not, and the reason is upstream of both: the published mechanisms were
+# measured on a function the corpus generator does not call.
+not_fixed:
+  - defect: "the published mechanisms A and B are measured on the wrong function"
+    finding: >-
+      reports/training/corpus_composition.md attributes the 19.07 % clamped /
+      21.62 % never-arriving split to DynamicsBackend.theta_from_prior
+      (scwbd/dynamics/base.py). `grep -rn theta_from_prior scwbd/` returns
+      docstrings and tests/dynamics/test_from_prior.py and NOTHING ELSE: the
+      function has no production caller. Corpus generation runs
+      scwbd.foundation.simulate.generate_corpus -> simulate_batch ->
+      _regional_theta, a different mapping with its own clamps.
+    consequence: >-
+      The 40.69 % figure, and Hodgkin's fix b77d361 which reduced mechanism B to
+      13.51 %, both describe a code path no corpus has ever been generated
+      through. This is the register's "verifying through a different path than
+      production uses", one level up: the DIAGNOSIS exercised the wrong path.
+      b77d361 will not change any corpus produced by scwbd.foundation.simulate.
+
+  - defect: "regional timescale, measured through the generating path"
+    method: >-
+      Perturbation, not name-reading: call _regional_theta twice per backend,
+      once with anat.timescale_prior replaced by a monotone remap, and record
+      which output tensors move. A backend that spells its timescale differently
+      cannot hide from this, and the reading differs between the two worlds --
+      if the prior arrives, at least one key changes; if it does not, every key
+      is bit-identical.
+    measured:
+      backends_receiving_timescale: [linear_gaussian]
+      corpus_share_receiving_it: 0.0541
+      corpus_share_receiving_none: 0.9459
+      unchanged_by_the_anatomy_fix: true
+    detail: >-
+      wilson_cowan, jansen_rit, wong_wang and stuart_landau have NO tau key in
+      _regional_theta at all -- their mappings never read anat.timescale_prior.
+      Only linear_gaussian does: tau = (tau_prior * (0.5 + drive)).clamp(0.004,
+      0.15). So 94.59 % of trajectories by count carry no anatomy-derived
+      regional timescale, before and after the rebuild alike. The true gap is
+      more than twice the published one.
+    consequence: >-
+      Run 2 must not be described as having fixed the timescale gap. No claim
+      about learned regional-timescale heterogeneity is supportable from the
+      simulated corpus of either run. Fixing it is a change to _regional_theta
+      (give the four remaining backends a timescale mapping, with the direction
+      verified against the prior's ranking by Spearman, not by parameter name),
+      and it is a SEPARATE fix that must land before the rebuild if it is to
+      land at all -- afterwards costs another full regeneration.
+
+  - defect: "E/I coverage was published as worse than it is"
+    measured:
+      backends_receiving_ei: [wilson_cowan, jansen_rit, wong_wang, stuart_landau, linear_gaussian]
+      corpus_share_receiving_it: 1.00
+    detail: >-
+      corpus_composition.md Limitation 2 reports 27.03 % of the corpus carrying
+      no E/I prior (stuart_landau, jansen_rit, linear_gaussian). That is again
+      theta_from_prior's behaviour. Through _regional_theta the E/I prior
+      reaches every backend -- wilson_cowan `ei_ratio`, jansen_rit `c4_f`,
+      wong_wang `w_plus`+`ei_ratio`, stuart_landau `f`, linear_gaussian
+      `self_gain`. Recorded because a published limitation that is wrong in the
+      artifact's FAVOUR still has to be corrected: it is evidence the measuring
+      instrument was pointed at the wrong function, which is what casts doubt on
+      the timescale figure from the same source.
+
+made_worse:
+  - defect: "clamp saturation rises where the real prior is wider than the synthetic one"
+    measured_at: "batch 256, seed 20260805, fraction of entries resting on a clamp bound"
+    table:
+      linear_gaussian.tau:   {synthetic_454: 0.0246, real_414: 0.4268, bound: 0.15, note: "all at the UPPER bound"}
+      wong_wang.w_plus:      {synthetic_454: 0.1906, real_414: 0.2652}
+      wilson_cowan.ei_ratio: {synthetic_454: 0.0321, real_414: 0.0395}
+      jansen_rit.c4_f:       {synthetic_454: 0.0423, real_414: 0.0455}
+      stuart_landau.f:       {synthetic_454: 0.0000, real_414: 0.0395, note: "a clamp that did not previously bind"}
+    cause: >-
+      The clamps in _regional_theta were tuned against the synthetic prior's
+      ranges -- timescale 0.0120-0.0797 s, E/I 0.598-1.402. The real prior spans
+      timescale 0.0227-0.2833 s and E/I 0.372-3.038, so its upper tail falls
+      outside bounds that previously enclosed it. The one backend that receives
+      the timescale prior now has 42.68 % of its per-parcel tau pinned at 0.15 s.
+    consequence: >-
+      On the only backend that receives the anatomical timescale, nearly half
+      the regional structure is flattened onto a boundary. Adopting real anatomy
+      without retuning _regional_theta's clamps replaces "the prior never
+      arrived" with "the prior arrived and was truncated", which is a different
+      defect, not a repair.
+
+  - defect: "ei_gradient becomes an inert theta dimension"     # blocker P4
+    measured: >-
+      Flip theta[:, 3] (`ei_gradient`, one of six THETA_NAMES) and re-run
+      _regional_theta. On the SYNTHETIC prior every backend's output moves
+      (wilson_cowan ei_ratio, jansen_rit c4_f, wong_wang w_plus+ei_ratio,
+      stuart_landau f, linear_gaussian self_gain). On the REAL prior NOTHING
+      moves, for any backend.
+    cause: >-
+      _regional_theta computes ei = theta_ei_global * ei_prior * (1 +
+      theta_ei_gradient * anat.gradient), and on the real prior anat.gradient is
+      all zeros. The adapter reads `gradient`/`gradient_prior`/
+      `principal_gradient` off BrainPrior, which exposes none of them, and falls
+      back to torch.zeros(n) -- the same silent-constant substitution f816f2a
+      removed for the E/I and timescale priors one line above, left in place for
+      the gradient.
+    consequence: >-
+      RUN-BLOCKING. simulate.py's own ParameterMappingError docstring names this
+      exact failure: "the corpus would carry a label the simulator ignored, and
+      the posterior would happily learn to 'recover' a parameter that did
+      nothing. We refuse instead." The existing check only catches keys a
+      backend does not read; it cannot see a theta component whose effect is
+      multiplied by zero. Generating 37,888 trajectories in this state trains
+      the amortised posterior on an unidentifiable parameter and would show up
+      later as a spuriously wide (or spuriously confident) ei_gradient
+      posterior, with nothing in any log saying why.
+    fix: >-
+      In scwbd/foundation/anatomy.py::_from_agent_c, take the principal gradient
+      from BrainPrior.maps -- `fc_gradient1` (400 cortical parcels, z-scored,
+      range -1.302..1.737) or `sa_axis` (-1.759..1.815) -- and state the policy
+      for the 14 subcortical parcels that have no coverage (0.0 = cortical mean
+      is what the synthetic prior effectively did). Then RAISE on absence, as
+      the adapter already does for ei and timescale. That file belongs to
+      Turing; this is a specification, not a patch.
+    guard: >-
+      Add to the pre-generation checks: for each theta dimension, perturb it and
+      assert at least one backend parameter moves. That is a mechanism rather
+      than an instruction, and it would have caught this before a single shard
+      was written.
+
+# ---------------------------------------------------------------------------
+# PRE-GENERATION CHECKLIST -- run these, in this order, before the first shard
+# ---------------------------------------------------------------------------
+preflight:
+  - "f816f2a (or its successor) is on master and load_anatomy() returns
+     is_biological True with 414 regions -- call it, do not read the log."
+  - "BrainPrior.load().maps.unavailable == {} -- otherwise E/I is the constant
+     ignorance prior and the corpus is worthless (see configs/run2/licence.yaml)."
+  - "anat.gradient.std() > 0 -- blocker P4."
+  - "every theta dimension moves at least one backend parameter (the guard above)."
+  - "for each backend that receives the timescale prior, Spearman(parameter,
+     prior ranking) has the sign the physics requires -- a rate must be
+     negative. A sign error in a hierarchy does not show up in a loss curve."
+  - "out_dir is /data/scwbd/sim_corpus_414 and does NOT exist yet;
+     /data/scwbd/sim_corpus is untouched."
+  - "the GPU is free -- run 1 has written its final checkpoint."

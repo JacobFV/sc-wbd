@@ -63,6 +63,14 @@ class LinearGaussian(DynamicsBackend):
         "sigma": Prior("sigma", 0.1, 0.05, "uniform", "dimensionless", low=0.01, high=0.3),
     }
     regional_params: ClassVar[tuple[str, ...]] = ("tau",)
+    #: Single linear population per region: there is no inhibitory sub-population
+    #: and hence no inhibitory gain.  ``tau`` *does* receive the timescale prior
+    #: -- it is the relaxation time of the only state -- which is why this is the
+    #: one non-E/I backend that still carries anatomical heterogeneity.
+    ei_not_mapped_reason: ClassVar[str] = (
+        "Linear-Gaussian reference has one population per region and no separate inhibitory "
+        "state, so no parameter means 'inhibitory gain'."
+    )
 
     def __init__(self, state_dim: int = 1):
         super().__init__()

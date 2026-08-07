@@ -1,0 +1,711 @@
+{
+ "criteria": {
+  "refusal_of_invalid_schema": {
+   "pass": true,
+   "n_refused": 4,
+   "n_tested": 4,
+   "valid_schema_accepted": true,
+   "detail": {
+    "R01_unknown_clock": {
+     "refused": true,
+     "code": "R01",
+     "message": "[R01] eeg_head_without_clock: clock is unknown. Remedy: Supply a calibrated manifest with a declared clock, or keep the source disconnected.",
+     "remedy": "Supply a calibrated manifest with a declared clock, or keep the source disconnected."
+    },
+    "R08_bias_point_estimate": {
+     "refused": true,
+     "code": "R08",
+     "message": "[R08] bold_head_with_unsupported_bias: bias declared design-estimable without an estimator. Remedy: Classify the term as design-estimable with a named estimator, externally bounded, or prior-specified sensitivity propagated as a range.",
+     "remedy": "Classify the term as design-estimable with a named estimator, externally bounded, or prior-specified sensitivity propagated as a range."
+    },
+    "R09_pseudo_as_likelihood": {
+     "refused": true,
+     "code": "R09",
+     "message": "[R09] compatibility_penalty_as_likelihood: a non-generative agreement penalty is used as a likelihood while claiming a calibrated posterior. Remedy: Report a generalized/pseudo-posterior and calibrate it empirically, or validate and promote the factor to a generative likelihood.",
+     "remedy": "Report a generalized/pseudo-posterior and calibrate it empirically, or validate and promote the factor to a generative likelihood."
+    },
+    "R10_split_below_parent": {
+     "refused": true,
+     "code": "R10",
+     "message": "[R10] session_level_split: split grouping ['session_id'] does not reach the immutable parent level. Remedy: Group by immutable lineage identifiers before splitting and fail the run when parentage is unresolved.",
+     "remedy": "Group by immutable lineage identifiers before splitting and fail the run when parentage is unresolved."
+    }
+   }
+  },
+  "no_leakage_across_parents": {
+   "pass": true,
+   "grouped_split": {
+    "n_train": 32,
+    "n_test": 16,
+    "n_train_parents": 8,
+    "n_test_parents": 4,
+    "shared_parents": [],
+    "shared_raw_records": [],
+    "leakage_free": true,
+    "refusal": null
+   },
+   "ungrouped_control_detected_as_leaking": true,
+   "note": "an ungrouped split is included as a positive control: a leakage audit that never fires is not evidence"
+  },
+  "recovery_intervals_nominal_coverage": {
+   "pass": false,
+   "evaluable": false,
+   "median_newton_decrement": 222462.08775088238,
+   "per_parameter": {
+    "a21": {
+     "name": "a21",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 4,
+     "empirical": 0.125,
+     "standard_error": 0.05846339666834283,
+     "wilson95_lo": 0.04970134387480073,
+     "wilson95_hi": 0.2806830548165022,
+     "nominal_inside_wilson95": false
+    },
+    "a32": {
+     "name": "a32",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 4,
+     "empirical": 0.125,
+     "standard_error": 0.05846339666834283,
+     "wilson95_lo": 0.04970134387480073,
+     "wilson95_hi": 0.2806830548165022,
+     "nominal_inside_wilson95": false
+    },
+    "a13": {
+     "name": "a13",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 8,
+     "empirical": 0.25,
+     "standard_error": 0.07654655446197431,
+     "wilson95_lo": 0.1325240091850904,
+     "wilson95_hi": 0.4210655899424448,
+     "nominal_inside_wilson95": false
+    },
+    "tau": {
+     "name": "tau",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 8,
+     "empirical": 0.25,
+     "standard_error": 0.07654655446197431,
+     "wilson95_lo": 0.1325240091850904,
+     "wilson95_hi": 0.4210655899424448,
+     "nominal_inside_wilson95": false
+    }
+   },
+   "n_records": 32,
+   "note": "coverage is over simulated subjects drawn from the prior (hierarchical/Bayesian coverage), with Wilson error bars"
+  },
+  "subgroup_calibration": {
+   "pass": true,
+   "detail": {
+    "nominal": 0.95,
+    "overall": {
+     "name": "overall",
+     "nominal": 0.95,
+     "n_replicates": 32,
+     "n_covered": 8,
+     "empirical": 0.25,
+     "standard_error": 0.07654655446197431,
+     "wilson95_lo": 0.1325240091850904,
+     "wilson95_hi": 0.4210655899424448,
+     "nominal_inside_wilson95": false
+    },
+    "per_group": {
+     "0": {
+      "coverage": {
+       "name": "0",
+       "nominal": 0.95,
+       "n_replicates": 16,
+       "n_covered": 4,
+       "empirical": 0.25,
+       "standard_error": 0.10825317547305482,
+       "wilson95_lo": 0.10182067491213048,
+       "wilson95_hi": 0.49498316535508774,
+       "nominal_inside_wilson95": false
+      },
+      "pit": {
+       "n": 16,
+       "n_bins": 10,
+       "counts": [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        8
+       ],
+       "bin_edges": [
+        0.0,
+        0.1,
+        0.2,
+        0.30000000000000004,
+        0.4,
+        0.5,
+        0.6000000000000001,
+        0.7000000000000001,
+        0.8,
+        0.9,
+        1.0
+       ],
+       "expected_per_bin": 1.6,
+       "chi2_statistic": 49.000000000000014,
+       "chi2_pvalue": 1.6598164740779252e-07,
+       "ks_statistic": 0.48311322862257067,
+       "ks_pvalue": 0.0005842822329293895,
+       "mean": 0.6083062681895908,
+       "uniform_at_005": false
+      },
+      "log_score": {
+       "log_score": 7.4970159906402305,
+       "se": 2.67790623996787,
+       "n": 16
+      },
+      "crps": {
+       "crps": 0.0750633424097201,
+       "se": 0.012473417717020976,
+       "n": 16
+      },
+      "n": 16
+     },
+     "1": {
+      "coverage": {
+       "name": "1",
+       "nominal": 0.95,
+       "n_replicates": 16,
+       "n_covered": 4,
+       "empirical": 0.25,
+       "standard_error": 0.10825317547305482,
+       "wilson95_lo": 0.10182067491213048,
+       "wilson95_hi": 0.49498316535508774,
+       "nominal_inside_wilson95": false
+      },
+      "pit": {
+       "n": 16,
+       "n_bins": 10,
+       "counts": [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        8
+       ],
+       "bin_edges": [
+        0.0,
+        0.1,
+        0.2,
+        0.30000000000000004,
+        0.4,
+        0.5,
+        0.6000000000000001,
+        0.7000000000000001,
+        0.8,
+        0.9,
+        1.0
+       ],
+       "expected_per_bin": 1.6,
+       "chi2_statistic": 49.000000000000014,
+       "chi2_pvalue": 1.6598164740779252e-07,
+       "ks_statistic": 0.48311322862257067,
+       "ks_pvalue": 0.0005842822329293895,
+       "mean": 0.6083062681895908,
+       "uniform_at_005": false
+      },
+      "log_score": {
+       "log_score": 7.4970159906402305,
+       "se": 2.67790623996787,
+       "n": 16
+      },
+      "crps": {
+       "crps": 0.0750633424097201,
+       "se": 0.012473417717020976,
+       "n": 16
+      },
+      "n": 16
+     }
+    },
+    "worst_coverage_group": "0",
+    "worst_coverage": 0.25,
+    "worst_log_score_group": "0",
+    "coverage_spread": 0.0
+   },
+   "note": "grouped by session index: shared session calibration error is the stratum most likely to break aggregate calibration"
+  },
+  "heldout_log_loss_beats_baselines": {
+   "pass": false,
+   "evaluable": false,
+   "convergence": {
+    "joint_native_median_newton_decrement": 222462.08775088238,
+    "eeg_only_median_newton_decrement": 1446.1627192874892,
+    "gate_posterior_sd": 2.0,
+    "note": "a held-out comparison between two fits measures the designs only if both fits reached their optima; otherwise it measures the optimiser"
+   },
+   "decisive_test": {
+    "question": "restricted to the SAME observations, does adding the second modality make the shared inference better or worse?",
+    "eeg_observations_only": {
+     "joint_native": 58.95653967693237,
+     "eeg_only": 19.055367119063515,
+     "n_observations": 10813440.0
+    },
+    "joint_minus_eeg_only_nats_per_observation": 39.90117255786886,
+    "bold_observations_only": {
+     "joint_native": 21205.95727230513,
+     "fmri_only": 19051.115574682644,
+     "n_observations": 7680.0
+    },
+    "joint_minus_fmri_only_nats_per_observation": 2154.841697622487,
+    "interpretation": "negative => fusion improves prediction of the shared rows; positive => fusion degrades them (negative transfer)"
+   },
+   "all_observation_pooling_artefact": {
+    "joint_native_all_obs": 73.96505687539099,
+    "eeg_only_all_obs": 19.055367119063515,
+    "apparent_degradation": 54.90968975632747,
+    "predicted_if_fusion_inert": 13.507494824388633,
+    "residual_after_removing_pooling": 41.40219493193884,
+    "warning": "these all-observation means are NOT comparable across designs: they average over different observation populations. Reported only to show the pooling artefact explicitly; the criterion uses the common-population test."
+   },
+   "per_observation_negative_log_likelihood_all_observations": {
+    "joint_native": 73.96505687539099,
+    "eeg_only": 19.055367119063515,
+    "fmri_only": 19051.115574682644,
+    "joint_resampled": 4407.887524592233
+   },
+   "detail": {
+    "joint_native": {
+     "total_negative_log_likelihood": 800384756.2554309,
+     "per_observation": 73.96505687539099,
+     "se_per_observation": 0.017318670832598453,
+     "n_observations": 10821120.0,
+     "per_channel": {
+      "eeg": {
+       "total_negative_log_likelihood": 637523004.4041276,
+       "n_observations": 10813440.0,
+       "per_observation": 58.95653967693237
+      },
+      "bold": {
+       "total_negative_log_likelihood": 162861751.8513034,
+       "n_observations": 7680.0,
+       "per_observation": 21205.95727230513
+      }
+     }
+    },
+    "eeg_only": {
+     "total_negative_log_likelihood": 206054069.01996619,
+     "per_observation": 19.055367119063515,
+     "se_per_observation": 0.00107585421815052,
+     "n_observations": 10813440.0,
+     "per_channel": {
+      "eeg": {
+       "total_negative_log_likelihood": 206054069.01996619,
+       "n_observations": 10813440.0,
+       "per_observation": 19.055367119063515
+      }
+     }
+    },
+    "fmri_only": {
+     "total_negative_log_likelihood": 146312567.6135627,
+     "per_observation": 19051.115574682644,
+     "se_per_observation": 25.89798551961003,
+     "n_observations": 7680.0,
+     "per_channel": {
+      "bold": {
+       "total_negative_log_likelihood": 146312567.6135627,
+       "n_observations": 7680.0,
+       "per_observation": 19051.115574682644
+      }
+     }
+    },
+    "joint_resampled": {
+     "total_negative_log_likelihood": 82938811.66272745,
+     "per_observation": 4407.887524592233,
+     "se_per_observation": 7.380667875966486,
+     "n_observations": 18816.0,
+     "per_channel": {
+      "eeg": {
+       "total_negative_log_likelihood": 432458.121322516,
+       "n_observations": 11136.0,
+       "per_observation": 38.83424221646157
+      },
+      "bold": {
+       "total_negative_log_likelihood": 82506353.54140493,
+       "n_observations": 7680.0,
+       "per_observation": 10743.014784037101
+      }
+     }
+    }
+   },
+   "note": "criterion evaluated on the common EEG observation population; lower is better"
+  },
+  "misspecified_module_detected": {
+   "pass": true,
+   "flagged_modules": [
+    "bold[0]",
+    "bold[1]",
+    "bold[2]",
+    "eeg[0]",
+    "eeg[1]",
+    "eeg[2]",
+    "eeg[3]"
+   ],
+   "truth": "bold[2] carries an AR(1) coloured residual absent from the model",
+   "false_positive_modules": [
+    "bold[0]",
+    "bold[1]",
+    "eeg[0]",
+    "eeg[1]",
+    "eeg[2]",
+    "eeg[3]"
+   ],
+   "detail": {
+    "alpha": 0.05,
+    "n_tests": 14,
+    "tests": [
+     {
+      "module": "eeg[0]",
+      "statistic": "variance",
+      "z": 189918.17532028595,
+      "value": 116.50867106556689,
+      "n": 5406720,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[0]",
+      "statistic": "lag1_autocorrelation",
+      "z": -316.67694726064235,
+      "value": -0.1362171465302031,
+      "n": 5406720,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[1]",
+      "statistic": "variance",
+      "z": 190959.97489951726,
+      "value": 117.14229596592587,
+      "n": 5406720,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[1]",
+      "statistic": "lag1_autocorrelation",
+      "z": -318.5365483815972,
+      "value": -0.13701704548265933,
+      "n": 5406720,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[2]",
+      "statistic": "variance",
+      "z": 190481.785342335,
+      "value": 116.8514599773513,
+      "n": 5406720,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[2]",
+      "statistic": "lag1_autocorrelation",
+      "z": -323.721637257342,
+      "value": -0.13924738784660204,
+      "n": 5406720,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[3]",
+      "statistic": "variance",
+      "z": 217400.98442636675,
+      "value": 133.22377877781423,
+      "n": 5406720,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "eeg[3]",
+      "statistic": "lag1_autocorrelation",
+      "z": -79.12516241753599,
+      "value": -0.0340353282311534,
+      "n": 5406720,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[0]",
+      "statistic": "variance",
+      "z": 1805393.1001516983,
+      "value": 35683.214177699054,
+      "n": 5120,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[0]",
+      "statistic": "lag1_autocorrelation",
+      "z": -14.678023361517448,
+      "value": -0.25818552996643857,
+      "n": 5120,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[1]",
+      "statistic": "variance",
+      "z": 1900541.0245743785,
+      "value": 37563.74015153175,
+      "n": 5120,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[1]",
+      "statistic": "lag1_autocorrelation",
+      "z": -12.625365809011704,
+      "value": -0.22207940961356026,
+      "n": 5120,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[2]",
+      "statistic": "variance",
+      "z": 2520518.05396673,
+      "value": 49817.11208818792,
+      "n": 5120,
+      "p_value": 0.0,
+      "holm_reject": true
+     },
+     {
+      "module": "bold[2]",
+      "statistic": "lag1_autocorrelation",
+      "z": -5.089599118502466,
+      "value": -0.08952573608599483,
+      "n": 5120,
+      "p_value": 3.5882126603326014e-07,
+      "holm_reject": true
+     }
+    ],
+    "flagged_modules": [
+     "bold[0]",
+     "bold[1]",
+     "bold[2]",
+     "eeg[0]",
+     "eeg[1]",
+     "eeg[2]",
+     "eeg[3]"
+    ],
+    "any_flagged": true
+   }
+  }
+ },
+ "all_pass": false,
+ "detail": {
+  "instrument": {
+   "epoch_seconds": 6.0,
+   "n_epochs": 32,
+   "dt_base_s": 0.001,
+   "n_delay_taps": 26,
+   "state_dimension": 105,
+   "dtype": "float64",
+   "device": "cuda",
+   "seed": 20260805,
+   "n_newton": 5
+  },
+  "schema_source": "scwbd.schema.examples.three_region.build_three_region_schema",
+  "n_parents": 12,
+  "n_sessions": 2,
+  "n_derivatives_per_session": 2,
+  "nuisances": {
+   "known_transform_bias_tilt": 0.1,
+   "shared_session_calibration_sd_log_gain": 0.15,
+   "missing_fraction_per_channel": 0.12,
+   "misspecified_bold_parcel": 2,
+   "misspecified_ar1_coefficient": 0.75,
+   "unequal_supports": "4 EEG sensors @ 1 ms vs 3 BOLD parcels @ 1 s"
+  },
+  "fits": {
+   "joint_native": {
+    "estimate_mean": [
+     30.0,
+     25.0,
+     -18.0,
+     -4.422848629194136,
+     0.0,
+     0.0,
+     0.47000362924573524,
+     0.0,
+     0.0
+    ],
+    "posterior_sd_mean": [
+     0.47500338880626847,
+     0.8887968507827962,
+     1.6824148079464438,
+     0.021859711180553857,
+     0.006007147347322272,
+     0.007181419757020642,
+     0.07229810383520012,
+     0.5991657527695261,
+     0.1122542604518855
+    ],
+    "median_newton_decrement": 222462.08775088238,
+    "max_newton_decrement": 267466.13207244355,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 0.0,
+    "drift_by_parameter_prior_sd": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "positive_definite_hessian_fraction": 0.0
+   },
+   "eeg_only": {
+    "estimate_mean": [
+     -39.82887289607592,
+     57.94827902987764,
+     44.5610232488249,
+     -9.013809401159516,
+     3.1530034904538926,
+     -4.715828369309135,
+     0.47000362924573524,
+     0.0,
+     0.0
+    ],
+    "posterior_sd_mean": [
+     0.47877053269938596,
+     0.9006568448121078,
+     1.6836574656458076,
+     0.021860481860037088,
+     0.006007159579601465,
+     0.007183972295459371,
+     0.1999999999959999,
+     0.599999999892,
+     0.29999999998650023
+    ],
+    "median_newton_decrement": 1446.1627192874892,
+    "max_newton_decrement": 2479.119460365197,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 24.294460569618312,
+    "drift_by_parameter_prior_sd": [
+     7.195505376202784,
+     3.7409889696703202,
+     7.515950843230217,
+     19.897306043847514,
+     13.796265418563234,
+     24.294460569618312,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "positive_definite_hessian_fraction": 0.0
+   },
+   "fmri_only": {
+    "estimate_mean": [
+     30.0,
+     25.0,
+     -18.0,
+     -4.422848629194136,
+     0.0,
+     0.0,
+     0.47000362924573524,
+     0.0,
+     0.0
+    ],
+    "posterior_sd_mean": [
+     3.5706110756003575,
+     4.86092145649448,
+     9.749733397729242,
+     0.24998897431750078,
+     0.29999999998650023,
+     0.1999999999959999,
+     0.07245306395046701,
+     0.5991870467254968,
+     0.12894736820665906
+    ],
+    "median_newton_decrement": 204255.51041298005,
+    "max_newton_decrement": 250406.5952676723,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 0.0,
+    "drift_by_parameter_prior_sd": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "positive_definite_hessian_fraction": 0.0
+   },
+   "joint_resampled": {
+    "estimate_mean": [
+     30.0,
+     25.0,
+     -18.0,
+     -4.422848629194136,
+     0.0,
+     0.0,
+     0.47000362924573524,
+     0.0,
+     0.0
+    ],
+    "posterior_sd_mean": [
+     7.984882506444306,
+     8.96394660910047,
+     9.709227697125122,
+     0.24999999999218755,
+     0.1813732960042855,
+     0.18067243973737931,
+     0.1584659091469173,
+     0.599999999892,
+     0.2844446517503076
+    ],
+    "median_newton_decrement": 945860.8352003332,
+    "max_newton_decrement": 1194438.8314742693,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 0.0,
+    "drift_by_parameter_prior_sd": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "positive_definite_hessian_fraction": 0.0
+   }
+  },
+  "parameter_names": [
+   "a21",
+   "a32",
+   "a13",
+   "tau",
+   "gain_eeg",
+   "tilt_eeg",
+   "beta_hrf",
+   "c_under",
+   "gain_bold"
+  ]
+ }
+}

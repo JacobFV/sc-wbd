@@ -1,0 +1,18 @@
+# NO TIER (tier 0) -- a negative control contributes an audit, never a gradient,
+# so it takes no place in an ordering of gradient authority. Recorded here so
+# that "unranked" and "absent" do not look alike.
+id: negative_control_shuffled
+role: negative_control
+is_simulated: false
+losses: []
+gradient_permission: []
+frozen: ["*"]
+n_eff: 109.0
+n_rows: 1526.0
+hierarchy_depth: 3
+measurement_variance: 0.35
+bias_halfwidth: 0.2
+bias_status: prior_specified_sensitivity
+validity_overlap: 0.0
+notes: Amplitude-matched, phase-randomised surrogates of the real EEG windows.
+compiler_permission: []

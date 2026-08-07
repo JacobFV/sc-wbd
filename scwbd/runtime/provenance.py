@@ -55,7 +55,9 @@ WeightsStatus = Literal[
     "absent",  # nothing was loaded; the service refuses to evaluate
 ]
 
-BackendClass = Literal["analytic", "numerical_fem", "learned", "unknown"]
+BackendClass = Literal[
+    "analytic", "numerical_bem", "numerical_fem", "learned", "unknown"
+]
 
 
 class ProvenanceMismatch(RuntimeError):
@@ -104,6 +106,11 @@ class ModelProvenance:
 
     efield_backend: str = "analytic_spherical_primary"
     efield_backend_class: BackendClass = "analytic"
+    #: Numerical gates the field solve has passed, by name.  Empty means the
+    #: field computation carries no independent numerical validation, which is
+    #: a different statement from "the field is wrong" and from "the head model
+    #: is right".
+    efield_gate_evidence: tuple[str, ...] = ()
     response_models: tuple[str, ...] = ()
     dynamics_model_classes: tuple[str, ...] = ()
     a_safe_source: str = ""
@@ -113,6 +120,19 @@ class ModelProvenance:
     torch_version: str = ""
     notes: Mapping[str, Any] = field(default_factory=dict)
 
+    # -- governance --------------------------------------------------------
+    #: ``"simulation_only"`` or ``"protocol:<id>@<version>"``.  An evaluation
+    #: served under a validated ``AuthorizationRecord`` is a different artifact
+    #: from one that was not, and this is where a consumer sees which.
+    claim_scope: str = "simulation_only"
+    #: ``AuthorizationVerdict.as_provenance()`` for the record this service was
+    #: constructed with, or ``None``.  Pins the record's content hash.
+    authorization: Mapping[str, Any] | None = None
+
+    #: Whether *this software* authorises human use.  Permanently ``False``,
+    #: and unrelated to ``claim_scope``: SC-WBD records a declaration made by
+    #: the people responsible for a protocol; it never issues one, and a
+    #: recorded protocol scope is not this repository granting permission.
     human_use_authorized: bool = False
     notice: str = SIMULATION_ONLY_NOTICE
 
@@ -120,8 +140,11 @@ class ModelProvenance:
         if self.human_use_authorized:  # pragma: no cover - guard
             raise ValueError(
                 "ModelProvenance cannot be marked authorized for human use; "
-                "SC-WBD-001-beta has no ethics approval, no consent, no "
-                "participants and no device (thesis_contract.tex Sec. 0.6)"
+                "this software does not issue authorization. Governance is "
+                "carried by an AuthorizationRecord declared by the people "
+                "responsible for a protocol and recorded in `claim_scope` and "
+                "`authorization` (scwbd.schema.authorization); a recorded "
+                "protocol scope is not this repository granting permission"
             )
         if self.prospective_human:  # pragma: no cover - guard
             raise ValueError(
@@ -136,15 +159,30 @@ class ModelProvenance:
         return self.weights_status == "trained"
 
     @property
+    def is_protocol_bound(self) -> bool:
+        """True when this service carries a validated authorization record."""
+        return self.claim_scope != "simulation_only"
+
+    @property
+    def authorization_hash(self) -> str:
+        if not self.authorization:
+            return ""
+        return str(self.authorization.get("record_hash", ""))
+
+    @property
     def label(self) -> str:
+        scope = "" if not self.is_protocol_bound else f" under {self.claim_scope}"
         return (
             f"{self.model_designation}[{self.weights_status}] "
-            f"{self.schema_version} {self.runtime_api_version}"
+            f"{self.schema_version} {self.runtime_api_version}{scope}"
         )
 
     def canonical(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["notes"] = dict(self.notes)
+        payload["authorization"] = (
+            dict(self.authorization) if self.authorization else None
+        )
         payload.pop("notice", None)
         return payload
 
@@ -170,12 +208,21 @@ class ProvenanceExpectation:
     #: passes ``("trained",)`` and gets a hard failure on a fallback.
     accept_weights_status: tuple[WeightsStatus, ...] | None = None
     accept_efield_backend_class: tuple[BackendClass, ...] | None = None
+    #: Gate names the consumer requires the field solve to have passed, e.g.
+    #: ``("N8_induced_efield_contact",)`` for a lane that positions a coil
+    #: against the scalp.
+    require_efield_gates: tuple[str, ...] | None = None
     checkpoint_sha256: str | None = None
     #: Minimum number of distinct candidate response models required before the
     #: consumer will look at an engagement distribution at all.
     min_response_models: int | None = None
     min_dynamics_model_classes: int | None = None
     require_a_safe_citations: bool = False
+    #: Assert the governance scope of what is being served.  A consumer that
+    #: must never touch a protocol-bound artifact passes
+    #: ``"simulation_only"``; one that requires a named protocol passes
+    #: ``"protocol:<id>@<version>"``.
+    require_claim_scope: str | None = None
 
     def mismatches(self, served: ModelProvenance) -> tuple[str, ...]:
         out: list[str] = []
@@ -208,6 +255,16 @@ class ProvenanceExpectation:
                 f"{list(self.accept_efield_backend_class)}, served "
                 f"{served.efield_backend_class!r} ({served.efield_backend})"
             )
+        if self.require_efield_gates is not None:
+            missing = [
+                g for g in self.require_efield_gates if g not in served.efield_gate_evidence
+            ]
+            if missing:
+                out.append(
+                    f"efield_gate_evidence: expected {missing} to have passed, "
+                    f"served {list(served.efield_gate_evidence)} -- the field "
+                    "computation carries no such numerical validation"
+                )
         if (
             self.min_response_models is not None
             and len(served.response_models) < self.min_response_models
@@ -224,6 +281,15 @@ class ProvenanceExpectation:
                 f"dynamics_model_classes: expected at least "
                 f"{self.min_dynamics_model_classes}, served "
                 f"{len(served.dynamics_model_classes)}"
+            )
+        if (
+            self.require_claim_scope is not None
+            and self.require_claim_scope != served.claim_scope
+        ):
+            out.append(
+                f"claim_scope: expected {self.require_claim_scope!r}, served "
+                f"{served.claim_scope!r} -- an artifact produced under a named "
+                "protocol is not the same artifact as one that was not"
             )
         if self.require_a_safe_citations and not served.a_safe_citations:
             out.append(

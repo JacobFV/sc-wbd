@@ -42,10 +42,12 @@
   ],
   "baselines_run": [],
   "notes": [],
-  "artifacts": {},
+  "artifacts": {
+    "subject": "fine observable n=0, coarse observable n=0, declared tolerance 0.05"
+  },
   "provenance": {
-    "timestamp_utc": "2026-08-06T06:22:53+00:00",
-    "git_rev": "a8221f6",
+    "timestamp_utc": "2026-08-06T09:52:25+00:00",
+    "git_rev": "c0e5833",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -53,6 +55,37 @@
       "numpy": "2.5.1",
       "scipy": "1.18.0",
       "torch": "2.13.0+cu130"
-    }
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/bench/adjudication.py",
+      "scwbd/bench/corpus.py",
+      "scwbd/bench/instruments.py",
+      "scwbd/bench/numerics.py",
+      "scwbd/bench/report.py",
+      "scwbd/bench/runner.py",
+      "scwbd/runtime/_compat.py",
+      "scwbd/runtime/backends.py",
+      "scwbd/runtime/targeting.py",
+      "tests/bench/test_adjudication.py",
+      "tests/bench/test_instruments.py",
+      "tests/bench/test_runner.py",
+      "tests/runtime/test_field_backends.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
   }
 }

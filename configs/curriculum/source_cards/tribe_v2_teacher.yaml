@@ -1,0 +1,29 @@
+# TIER 5 -- distillation. OFF, and no run may turn it on without a preregistered
+# branch beating every matched control (body.tex 6.3, "Quarantined exploratory
+# teacher prior"; ARCHITECTURE.md 7 rule 5).
+#
+# Not on disk: `find / -iname "*tribe*"` returns nothing belonging to this repo.
+# So this card is a declaration of a policy, not of an available source, and the
+# tier-5 stage of the corrected curriculum runs zero steps and says why.
+id: tribe_v2_teacher
+role: distillation
+enabled: false
+is_teacher: true
+is_simulated: false
+losses: [distill]
+gradient_permission: ["readout.*"]
+frozen: ["local.*", "coupling.*", "residual.*", "eeg.*", "bold.*", "individualizer.*", "assimilate.*", "context.*", "msg_*", "posterior.*", "behaviour.*", "log_dt_scale"]
+n_eff: 1.0
+n_rows: 1.0
+hierarchy_depth: 1
+measurement_variance: 1.0
+bias_halfwidth: 2.0
+bias_status: prior_specified_sensitivity
+model_discrepancy: 2.0
+validity_overlap: 0.1
+notes: >
+  Discrepancy-inflated interface regulariser only. Enabling it requires Ramon's
+  teacher-vs-measured discrepancy measurement first; no such measurement exists
+  in reports/ as of 2026-08-06.
+compiler_permission:
+  - "observation:tribe_v2_teacher:nuisance"

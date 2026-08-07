@@ -55,6 +55,12 @@ class AnatomyPrior:
     timescale_prior: Tensor  # (N,) seconds
     gradient: Tensor  # (N,) principal functional gradient, z-scored
     evidence_class: Tensor  # (N,N) int index into EVIDENCE_CLASSES, -1 = absent
+    #: (N,) bool -- True where `gradient` came from a measured map. The real
+    #: `fc_gradient1` covers Schaefer-400 cortex only, so the 14 subcortical
+    #: parcels carry 0 (the z-scored cortical mean) and are marked False here.
+    #: This is agent C's own discipline applied to the gradient: an unknown
+    #: value is made VISIBLE rather than hidden as a filled-in number.
+    gradient_covered: Tensor | None = None
     frame: str = "MNI152NLin2009cAsym_RAS"
     units_position: str = "mm"
     provenance: str = "synthetic_fallback"
@@ -169,6 +175,16 @@ class AnatomyPrior:
                 c: int((self.evidence_class == i).sum().item()) for i, c in enumerate(EVIDENCE_CLASSES)
             },
             "frame": self.frame,
+            "n_gradient_covered": (
+                int(self.gradient_covered.sum().item())
+                if self.gradient_covered is not None
+                else int(self.n_regions)
+            ),
+            "gradient_uncovered_are_zero": (
+                None
+                if self.gradient_covered is None
+                else bool((~self.gradient_covered).any().item())
+            ),
             "provenance": self.provenance,
             "is_biological": self.is_biological(),
             "source_note": self.source_note,
@@ -188,33 +204,162 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
                 return torch.as_tensor(v, device=device, dtype=torch.float32)
         return None
 
-    W = T("weights", "connectome", "sc", "structural_connectivity")
+    # Verified against the real ``scwbd.anatomy.BrainPrior`` (414 parcels):
+    #   p.structural.weights        (N,N) ndarray -- the connectome
+    #   p.structural.distance_mm    (N,N) ndarray -- tract lengths, mm
+    #   p.centroids_mni             (N,3)
+    #   p.ei_ratio_prior()          list[PriorBase], len N   <- METHOD, list
+    #   p.timescale_prior()         list[PriorBase], len N   <- METHOD, list
+    #   p.coupling_mask(min_class)  (N,N) ndarray            <- METHOD
+    #
+    # The previous adapter looked for bare ``weights``/``ei_prior`` attributes,
+    # found neither, and its AttributeError was swallowed (see load_anatomy).
+    # Note this is **not** a rename: the priors are methods returning *lists of
+    # distribution objects*, so aligning names alone would hand
+    # ``torch.as_tensor`` a list of pydantic models and raise.
+    def sub(owner: Any, name: str, *alts: str) -> Tensor | None:
+        for nm in (name, *alts):
+            v = getattr(owner, nm, None)
+            if v is not None:
+                return torch.as_tensor(v, device=device, dtype=torch.float32)
+        return None
+
+    def prior_values(name: str) -> Tensor | None:
+        """A per-parcel prior exposed as a callable returning distributions."""
+        f = getattr(obj, name, None)
+        if f is None:
+            return None
+        seq = f() if callable(f) else f
+        vals: list[float] = []
+        for p in seq:
+            m = getattr(p, "mean", None)
+            if m is None:
+                m = getattr(p, "median", None)
+            if callable(m):  # ``mean`` is a method on PriorBase, not a property
+                m = m()
+            if m is None:
+                m = p
+            try:
+                vals.append(float(m))
+            except (TypeError, ValueError):
+                return None
+        return torch.as_tensor(vals, device=device, dtype=torch.float32) if vals else None
+
+    structural = getattr(obj, "structural", None)
+    W = sub(structural, "weights") if structural is not None else None
     if W is None:
-        raise AttributeError("BrainPrior exposes no weights/connectome")
+        W = T("weights", "connectome", "sc", "structural_connectivity")
+    if W is None:
+        raise AttributeError(
+            "BrainPrior exposes no connectome: tried structural.weights and "
+            "weights/connectome/sc/structural_connectivity"
+        )
     n = int(W.shape[-1])
-    L = T("tract_length", "distances", "lengths", "tract_lengths")
+    L = sub(structural, "distance_mm", "euclidean_mm") if structural is not None else None
     if L is None:
-        raise AttributeError("BrainPrior exposes no tract lengths / distances")
-    pos = T("positions", "centroids", "coords")
+        L = T("tract_length", "distances", "lengths", "tract_lengths")
+    if L is None:
+        raise AttributeError(
+            "BrainPrior exposes no tract lengths: tried structural.distance_mm/"
+            "euclidean_mm and tract_length/distances/lengths/tract_lengths"
+        )
+    pos = T("centroids_mni", "positions", "centroids", "coords")
     if pos is None:
         pos = torch.zeros(n, 3, device=device)
-    ei = T("ei_prior", "ei_ratio", "excitation_inhibition")
-    ts = T("timescale_prior", "timescales", "tau_prior")
+    # Explicit None checks: ``or`` on a multi-element tensor raises "Boolean
+    # value of Tensor with more than one element is ambiguous".
+    ei = prior_values("ei_ratio_prior")
+    if ei is None:
+        ei = T("ei_prior", "ei_ratio", "excitation_inhibition")
+    ts = prior_values("timescale_prior")
+    if ts is None:
+        ts = T("timescales", "tau_prior")
+    # A prior that is absent must not silently become a constant: that is how the
+    # connectome defect would have survived a rename-only fix, yielding a real
+    # ENIGMA connectome with no receptor E/I and no way to tell.
+    if ei is None:
+        raise AttributeError(
+            "BrainPrior exposes no E/I prior: tried ei_ratio_prior() and "
+            "ei_prior/ei_ratio/excitation_inhibition"
+        )
+    if ts is None:
+        raise AttributeError(
+            "BrainPrior exposes no timescale prior: tried timescale_prior() and "
+            "timescales/tau_prior"
+        )
     grad = T("gradient", "gradient_prior", "principal_gradient")
-    labels = tuple(getattr(obj, "labels", None) or [f"region_{i:04d}" for i in range(n)])
-    division = tuple(getattr(obj, "division", None) or ["cortex"] * n)
+    if grad is None:
+        # The real BrainPrior carries the principal gradient in a MapSet, not as
+        # an attribute: scwbd/anatomy/maps.py registers it as "fc_gradient1".
+        # The attribute lookup above therefore always missed.
+        maps = getattr(obj, "maps", None)
+        if maps is not None:
+            for key in ("fc_gradient1", "gradient1", "principal_gradient"):
+                try:
+                    mp = maps[key]
+                except (KeyError, TypeError, IndexError):
+                    continue
+                vals = getattr(mp, "values", mp)
+                grad = torch.as_tensor(vals, device=device, dtype=torch.float32)
+                break
+    if grad is None:
+        # Third silent-constant substitution in this adapter, one line below the
+        # two already fixed. A zeros gradient makes theta[:,3] (ei_gradient)
+        # unidentifiable BY CONSTRUCTION: simulate.py computes
+        # ei = theta2 * ei_prior * (1 + theta3 * grad), so grad == 0 cancels
+        # theta3 algebraically on every backend. Refuse rather than substitute.
+        raise AttributeError(
+            "BrainPrior exposes no principal gradient: tried attributes "
+            "gradient/gradient_prior/principal_gradient and "
+            "maps['fc_gradient1'|'gradient1'|'principal_gradient']. A gradient of "
+            "zeros would make ei_gradient unidentifiable by construction."
+        )
+    # `fc_gradient1` covers Schaefer-400 cortex; the prior has N = 400 cortex +
+    # 14 subcortex. Pad the uncovered parcels with 0 -- the z-scored cortical
+    # mean -- and record WHICH parcels that is. This is not the defect fixed
+    # above: there every parcel was 0 and theta3 cancelled algebraically, whereas
+    # here 400 of 414 vary, so ei_gradient stays identifiable and only the
+    # parcels we have no gradient value for fail to respond to it.
+    grad = grad.reshape(-1).to(device=device, dtype=torch.float32)
+    k = int(min(grad.numel(), n))
+    grad_full = torch.zeros(n, device=device, dtype=torch.float32)
+    grad_full[:k] = grad[:k]
+    grad_cov = torch.zeros(n, dtype=torch.bool, device=device)
+    grad_cov[:k] = True
+
+    # NB: `x or default` is unusable here -- these are numpy arrays, and
+    # `array or list` raises "truth value of an array ... is ambiguous".
+    # The same idiom appears three times in this adapter and was unreachable
+    # while the connectome lookup failed first.
+    _labels = getattr(obj, "labels", None)
+    labels = tuple(str(x) for x in _labels) if _labels is not None else tuple(
+        f"region_{i:04d}" for i in range(n)
+    )
+    _division = getattr(obj, "division", None)
+    if _division is None:
+        _division = getattr(obj, "structure", None)
+    division = tuple(str(x) for x in _division) if _division is not None else ("cortex",) * n
     hemi = getattr(obj, "hemisphere", None)
     hemi_t = (
         torch.as_tensor(hemi, device=device, dtype=torch.long)
         if hemi is not None
         else torch.zeros(n, dtype=torch.long, device=device)
     )
-    sysid = getattr(obj, "system", None) or getattr(obj, "network", None)
-    sys_t = (
-        torch.as_tensor(sysid, device=device, dtype=torch.long)
-        if sysid is not None
-        else torch.zeros(n, dtype=torch.long, device=device)
-    )
+    sysid = getattr(obj, "system", None)
+    if sysid is None:
+        sysid = getattr(obj, "network", None)
+    if sysid is None:
+        sys_t = torch.zeros(n, dtype=torch.long, device=device)
+    else:
+        try:
+            sys_t = torch.as_tensor(sysid, device=device, dtype=torch.long)
+        except TypeError:
+            # `network` is an array of system NAMES (strings). Factorise to
+            # stable integer codes rather than dropping the grouping.
+            order = {k: i for i, k in enumerate(sorted({str(x) for x in sysid}))}
+            sys_t = torch.as_tensor(
+                [order[str(x)] for x in sysid], device=device, dtype=torch.long
+            )
     ec = getattr(obj, "evidence_class", None)
     if ec is None:
         ec = _classify_edges(W, L)
@@ -231,7 +376,8 @@ def _from_agent_c(obj: Any, device: torch.device) -> AnatomyPrior:
         tract_length=L,
         ei_prior=ei if ei is not None else torch.ones(n, device=device),
         timescale_prior=ts if ts is not None else torch.full((n,), 0.05, device=device),
-        gradient=grad if grad is not None else torch.zeros(n, device=device),
+        gradient=grad_full,
+        gradient_covered=grad_cov,
         evidence_class=ec,
         frame=str(getattr(obj, "frame", "MNI152NLin2009cAsym_RAS")),
         provenance=str(getattr(obj, "provenance", "scwbd.anatomy.BrainPrior")),
@@ -290,9 +436,32 @@ def load_anatomy(
                     continue
                 obj = fn() if not isinstance(fn, type) else fn.load()  # type: ignore[attr-defined]
                 return _from_agent_c(obj, dev)
-        except Exception:  # noqa: BLE001 - agent C not landed yet, or API differs
+        except ModuleNotFoundError:
+            # scwbd.anatomy genuinely absent -> the fallback is legitimate.
             if not allow_fallback:
                 raise
+        except Exception as exc:  # noqa: BLE001
+            # The package IS present and something else went wrong -- an API
+            # mismatch, a missing prior, a corrupt asset.  REFUSE.
+            #
+            # This was previously a bare ``except Exception`` that substituted
+            # the synthetic prior silently.  It cost SC-WBD-001-beta its entire
+            # anatomical content: the adapter looked for ``weights`` where
+            # BrainPrior exposes ``structural.weights``, the AttributeError was
+            # swallowed, and the model, the corpus and every downstream claim
+            # were built on a synthetic ellipsoid.  Every provenance record said
+            # so correctly and nothing read them.
+            #
+            # A degraded path is only honest if reaching it requires a decision.
+            raise RuntimeError(
+                "scwbd.anatomy is installed but its prior could not be adapted: "
+                f"{type(exc).__name__}: {exc}\n"
+                "Refusing to substitute the synthetic prior silently -- that would "
+                "produce a model with no biological content and a checkpoint that "
+                "says so only in a field nobody reads.\n"
+                "Fix the adapter, or pass force_fallback=True to state explicitly "
+                "that this run is not intended to carry anatomy."
+            ) from exc
     if not allow_fallback:
         raise RuntimeError("scwbd.anatomy unavailable and allow_fallback=False")
     return _synthetic_prior(

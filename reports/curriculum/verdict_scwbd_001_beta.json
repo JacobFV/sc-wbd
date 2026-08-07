@@ -1,0 +1,660 @@
+{
+  "config": "configs/scwbd_001_beta.yaml",
+  "verdict": "REFUSED",
+  "refusal_codes": [
+    "X01_inverted_admission",
+    "X02_founding_stage_not_pure",
+    "X03_unfounded_parameter",
+    "X04_permission_widens_with_tier",
+    "X07_undeclared_provenance"
+  ],
+  "refusals": [
+    {
+      "code": "X07_undeclared_provenance",
+      "stage": null,
+      "message": "source 'anatomical_prior': role=prior with no declared provenance: tier 3 (population prior) and tier 4 (simulator-conditioned) share this role, and the field that separates them defaults to False. An omitted declaration would silently promote a simulated source one tier.",
+      "evidence": {
+        "card": "configs/source_cards/anatomical_prior.yaml",
+        "role": "prior",
+        "declared_keys": [
+          "bias_halfwidth",
+          "bias_status",
+          "compiler_permission",
+          "frozen",
+          "gradient_permission",
+          "hierarchy_depth",
+          "id",
+          "losses",
+          "measurement_variance",
+          "n_eff",
+          "n_rows",
+          "notes",
+          "role",
+          "validity_overlap"
+        ]
+      }
+    },
+    {
+      "code": "X01_inverted_admission",
+      "stage": "I_regional",
+      "message": "tier 4 (simulator_conditioned) is first admitted at stage 'I_regional' (order 0), which is not after tier 1 (likelihood_measured) at stage 'III_sliced' (order 2). A lower-integrity source may extend a representation measured evidence founded; it may not arrive first or alongside. Appendix B: the roles are 'deliberately non-equivalent'.",
+      "evidence": {
+        "lower_integrity_tier": 4,
+        "first_admitted_stage": "I_regional",
+        "first_admitted_order": 0,
+        "higher_integrity_tier": 1,
+        "higher_stage": "III_sliced",
+        "higher_order": 2,
+        "sources_in_lower_tier": [
+          "sim_wholebrain"
+        ],
+        "sources_in_higher_tier": [
+          "eegmmidb_real"
+        ]
+      }
+    },
+    {
+      "code": "X02_founding_stage_not_pure",
+      "stage": "I_regional",
+      "message": "the first stage that trains admits tier(s) [4] alongside tier 1. The curriculum must start from ground truth alone: whatever founds the representation becomes the prior every later source has to argue against.",
+      "evidence": {
+        "admits": [
+          4
+        ],
+        "founding_tier": 1
+      }
+    },
+    {
+      "code": "X03_unfounded_parameter",
+      "stage": "I_regional",
+      "message": "tier 4 (simulator_conditioned) may update 49 tensor(s) that no higher-integrity tier has been permitted to update in this or an earlier stage: ['assimilate.conv.0.bias', 'assimilate.conv.0.weight', 'assimilate.conv.2.bias', 'assimilate.conv.2.weight', 'assimilate.conv.4.bias', 'assimilate.conv.4.weight', 'assimilate.embed', 'assimilate.head.0.bias'] \u2026. A lower-integrity source that is the sole author of a parameter has founded it. Declare a founding exemption in configs/curriculum/tiers.yaml or withdraw the permission.",
+      "evidence": {
+        "tier": 4,
+        "n_unfounded": 49,
+        "unfounded": [
+          "assimilate.conv.0.bias",
+          "assimilate.conv.0.weight",
+          "assimilate.conv.2.bias",
+          "assimilate.conv.2.weight",
+          "assimilate.conv.4.bias",
+          "assimilate.conv.4.weight",
+          "assimilate.embed",
+          "assimilate.head.0.bias",
+          "assimilate.head.0.weight",
+          "assimilate.head.2.bias",
+          "assimilate.head.2.weight",
+          "context.0.bias",
+          "context.0.weight",
+          "context.2.bias",
+          "context.2.weight",
+          "local.embed",
+          "local.films.0.ctx.bias",
+          "local.films.0.ctx.weight",
+          "local.films.0.region_scale",
+          "local.films.0.region_shift",
+          "local.films.1.ctx.bias",
+          "local.films.1.ctx.weight",
+          "local.films.1.region_scale",
+          "local.films.1.region_shift",
+          "local.films.2.ctx.bias",
+          "local.films.2.ctx.weight",
+          "local.films.2.region_scale",
+          "local.films.2.region_shift",
+          "local.inp.bias",
+          "local.inp.weight",
+          "local.layers.0.bias",
+          "local.layers.0.weight",
+          "local.layers.1.bias",
+          "local.layers.1.weight",
+          "local.out.bias",
+          "local.out.weight",
+          "log_dt_scale",
+          "readout.0.bias",
+          "readout.0.weight",
+          "readout.2.bias",
+          "readout.2.weight",
+          "residual.embed",
+          "residual.log_scale",
+          "residual.net.0.bias",
+          "residual.net.0.weight",
+          "residual.net.2.bias",
+          "residual.net.2.weight",
+          "residual.net.4.bias",
+          "residual.net.4.weight"
+        ],
+        "founded_by_higher_tiers": 0
+      }
+    },
+    {
+      "code": "X04_permission_widens_with_tier",
+      "stage": "I_regional",
+      "message": "in this stage tier 4 (simulator_conditioned) may update 49 tensor(s) that no higher-integrity tier admitted to the SAME stage may update: ['assimilate.conv.0.bias', 'assimilate.conv.0.weight', 'assimilate.conv.2.bias', 'assimilate.conv.2.weight', 'assimilate.conv.4.bias', 'assimilate.conv.4.weight', 'assimilate.embed', 'assimilate.head.0.bias'] \u2026. Each successive tier must enter with a mask contained in the concurrently-admitted higher tiers, not one that widens beyond them.",
+      "evidence": {
+        "tier": 4,
+        "higher_tiers_in_stage": [],
+        "n_widened": 49,
+        "widened": [
+          "assimilate.conv.0.bias",
+          "assimilate.conv.0.weight",
+          "assimilate.conv.2.bias",
+          "assimilate.conv.2.weight",
+          "assimilate.conv.4.bias",
+          "assimilate.conv.4.weight",
+          "assimilate.embed",
+          "assimilate.head.0.bias",
+          "assimilate.head.0.weight",
+          "assimilate.head.2.bias",
+          "assimilate.head.2.weight",
+          "context.0.bias",
+          "context.0.weight",
+          "context.2.bias",
+          "context.2.weight",
+          "local.embed",
+          "local.films.0.ctx.bias",
+          "local.films.0.ctx.weight",
+          "local.films.0.region_scale",
+          "local.films.0.region_shift",
+          "local.films.1.ctx.bias",
+          "local.films.1.ctx.weight",
+          "local.films.1.region_scale",
+          "local.films.1.region_shift",
+          "local.films.2.ctx.bias",
+          "local.films.2.ctx.weight",
+          "local.films.2.region_scale",
+          "local.films.2.region_shift",
+          "local.inp.bias",
+          "local.inp.weight",
+          "local.layers.0.bias",
+          "local.layers.0.weight",
+          "local.layers.1.bias",
+          "local.layers.1.weight",
+          "local.out.bias",
+          "local.out.weight",
+          "log_dt_scale",
+          "readout.0.bias",
+          "readout.0.weight",
+          "readout.2.bias",
+          "readout.2.weight",
+          "residual.embed",
+          "residual.log_scale",
+          "residual.net.0.bias",
+          "residual.net.0.weight",
+          "residual.net.2.bias",
+          "residual.net.2.weight",
+          "residual.net.4.bias",
+          "residual.net.4.weight"
+        ],
+        "n_reach_higher_in_stage": 0,
+        "n_reach_this_tier": 49
+      }
+    },
+    {
+      "code": "X03_unfounded_parameter",
+      "stage": "II_interface",
+      "message": "tier 4 (simulator_conditioned) may update 11 tensor(s) that no higher-integrity tier has been permitted to update in this or an earlier stage: ['coupling.gain_proposed', 'coupling.gain_soft', 'coupling.global_scale', 'msg_proj.bias', 'msg_proj.weight', 'msg_readin.0.bias', 'msg_readin.0.weight', 'readout.0.bias'] \u2026. A lower-integrity source that is the sole author of a parameter has founded it. Declare a founding exemption in configs/curriculum/tiers.yaml or withdraw the permission.",
+      "evidence": {
+        "tier": 4,
+        "n_unfounded": 11,
+        "unfounded": [
+          "coupling.gain_proposed",
+          "coupling.gain_soft",
+          "coupling.global_scale",
+          "msg_proj.bias",
+          "msg_proj.weight",
+          "msg_readin.0.bias",
+          "msg_readin.0.weight",
+          "readout.0.bias",
+          "readout.0.weight",
+          "readout.2.bias",
+          "readout.2.weight"
+        ],
+        "founded_by_higher_tiers": 0
+      }
+    },
+    {
+      "code": "X04_permission_widens_with_tier",
+      "stage": "II_interface",
+      "message": "in this stage tier 4 (simulator_conditioned) may update 11 tensor(s) that no higher-integrity tier admitted to the SAME stage may update: ['coupling.gain_proposed', 'coupling.gain_soft', 'coupling.global_scale', 'msg_proj.bias', 'msg_proj.weight', 'msg_readin.0.bias', 'msg_readin.0.weight', 'readout.0.bias'] \u2026. Each successive tier must enter with a mask contained in the concurrently-admitted higher tiers, not one that widens beyond them.",
+      "evidence": {
+        "tier": 4,
+        "higher_tiers_in_stage": [],
+        "n_widened": 11,
+        "widened": [
+          "coupling.gain_proposed",
+          "coupling.gain_soft",
+          "coupling.global_scale",
+          "msg_proj.bias",
+          "msg_proj.weight",
+          "msg_readin.0.bias",
+          "msg_readin.0.weight",
+          "readout.0.bias",
+          "readout.0.weight",
+          "readout.2.bias",
+          "readout.2.weight"
+        ],
+        "n_reach_higher_in_stage": 0,
+        "n_reach_this_tier": 11
+      }
+    },
+    {
+      "code": "X03_unfounded_parameter",
+      "stage": "III_sliced",
+      "message": "tier 4 (simulator_conditioned) may update 7 tensor(s) that no higher-integrity tier has been permitted to update in this or an earlier stage: ['bold.alpha', 'bold.log_gamma', 'bold.log_kappa', 'bold.log_noise', 'bold.log_tau', 'bold.neural_gain', 'bold.rho']. A lower-integrity source that is the sole author of a parameter has founded it. Declare a founding exemption in configs/curriculum/tiers.yaml or withdraw the permission.",
+      "evidence": {
+        "tier": 4,
+        "n_unfounded": 7,
+        "unfounded": [
+          "bold.alpha",
+          "bold.log_gamma",
+          "bold.log_kappa",
+          "bold.log_noise",
+          "bold.log_tau",
+          "bold.neural_gain",
+          "bold.rho"
+        ],
+        "founded_by_higher_tiers": 72
+      }
+    },
+    {
+      "code": "X04_permission_widens_with_tier",
+      "stage": "III_sliced",
+      "message": "in this stage tier 4 (simulator_conditioned) may update 7 tensor(s) that no higher-integrity tier admitted to the SAME stage may update: ['bold.alpha', 'bold.log_gamma', 'bold.log_kappa', 'bold.log_noise', 'bold.log_tau', 'bold.neural_gain', 'bold.rho']. Each successive tier must enter with a mask contained in the concurrently-admitted higher tiers, not one that widens beyond them.",
+      "evidence": {
+        "tier": 4,
+        "higher_tiers_in_stage": [
+          1
+        ],
+        "n_widened": 7,
+        "widened": [
+          "bold.alpha",
+          "bold.log_gamma",
+          "bold.log_kappa",
+          "bold.log_noise",
+          "bold.log_tau",
+          "bold.neural_gain",
+          "bold.rho"
+        ],
+        "n_reach_higher_in_stage": 72,
+        "n_reach_this_tier": 131
+      }
+    },
+    {
+      "code": "X03_unfounded_parameter",
+      "stage": "IV_assembly",
+      "message": "tier 4 (simulator_conditioned) may update 7 tensor(s) that no higher-integrity tier has been permitted to update in this or an earlier stage: ['bold.alpha', 'bold.log_gamma', 'bold.log_kappa', 'bold.log_noise', 'bold.log_tau', 'bold.neural_gain', 'bold.rho']. A lower-integrity source that is the sole author of a parameter has founded it. Declare a founding exemption in configs/curriculum/tiers.yaml or withdraw the permission.",
+      "evidence": {
+        "tier": 4,
+        "n_unfounded": 7,
+        "unfounded": [
+          "bold.alpha",
+          "bold.log_gamma",
+          "bold.log_kappa",
+          "bold.log_noise",
+          "bold.log_tau",
+          "bold.neural_gain",
+          "bold.rho"
+        ],
+        "founded_by_higher_tiers": 72
+      }
+    },
+    {
+      "code": "X04_permission_widens_with_tier",
+      "stage": "IV_assembly",
+      "message": "in this stage tier 4 (simulator_conditioned) may update 7 tensor(s) that no higher-integrity tier admitted to the SAME stage may update: ['bold.alpha', 'bold.log_gamma', 'bold.log_kappa', 'bold.log_noise', 'bold.log_tau', 'bold.neural_gain', 'bold.rho']. Each successive tier must enter with a mask contained in the concurrently-admitted higher tiers, not one that widens beyond them.",
+      "evidence": {
+        "tier": 4,
+        "higher_tiers_in_stage": [
+          1
+        ],
+        "n_widened": 7,
+        "widened": [
+          "bold.alpha",
+          "bold.log_gamma",
+          "bold.log_kappa",
+          "bold.log_noise",
+          "bold.log_tau",
+          "bold.neural_gain",
+          "bold.rho"
+        ],
+        "n_reach_higher_in_stage": 72,
+        "n_reach_this_tier": 131
+      }
+    }
+  ],
+  "not_evaluable": [
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_evaluable",
+      "source": "anatomical_prior",
+      "reason": "the card declares no `observes:` field, so the modalities whose measured information would license or refuse its gradients are unknown. Not a pass."
+    },
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_evaluable",
+      "source": "eegmmidb_real",
+      "reason": "the card declares no `observes:` field, so the modalities whose measured information would license or refuse its gradients are unknown. Not a pass."
+    },
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_evaluable",
+      "source": "montage_calibration",
+      "reason": "the card declares no `observes:` field, so the modalities whose measured information would license or refuse its gradients are unknown. Not a pass."
+    },
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_evaluable",
+      "source": "negative_control_shuffled",
+      "reason": "the card declares no `observes:` field, so the modalities whose measured information would license or refuse its gradients are unknown. Not a pass."
+    },
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_evaluable",
+      "source": "sim_wholebrain",
+      "reason": "the card declares no `observes:` field, so the modalities whose measured information would license or refuse its gradients are unknown. Not a pass."
+    },
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_evaluable",
+      "source": "sleepedf_real",
+      "reason": "the card declares no `observes:` field, so the modalities whose measured information would license or refuse its gradients are unknown. Not a pass."
+    },
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_evaluable",
+      "source": "tribe_v2_teacher",
+      "reason": "the card declares no `observes:` field, so the modalities whose measured information would license or refuse its gradients are unknown. Not a pass."
+    },
+    {
+      "check": "X05_information_blind_update",
+      "status": "not_evaluable",
+      "source": "*",
+      "reason": "5 binding information rule(s) were derived and no card in this mixture declares an observable modality the laboratory models, so none of them could be applied."
+    }
+  ],
+  "tiers": {
+    "anatomical_prior": {
+      "tier": null,
+      "reason": "role=prior with no declared provenance: tier 3 (population prior) and tier 4 (simulator-conditioned) share this role, and the field that separates them defaults to False. An omitted declaration would silently promote a simulated source one tier.",
+      "refusal": "X07_undeclared_provenance"
+    },
+    "eegmmidb_real": {
+      "tier": 1,
+      "reason": "role=likelihood on measured data",
+      "refusal": null
+    },
+    "montage_calibration": {
+      "tier": 2,
+      "reason": "role=calibration",
+      "refusal": null
+    },
+    "negative_control_shuffled": {
+      "tier": 0,
+      "reason": "role=negative_control contributes an audit, never a gradient; it takes no place in the integrity ordering",
+      "refusal": null
+    },
+    "sim_wholebrain": {
+      "tier": 4,
+      "reason": "declares is_simulated: true",
+      "refusal": null
+    },
+    "sleepedf_real": {
+      "tier": 1,
+      "reason": "role=likelihood on measured data",
+      "refusal": null
+    },
+    "tribe_v2_teacher": {
+      "tier": 5,
+      "reason": "teacher-derived",
+      "refusal": null
+    }
+  },
+  "parameter_universe": {
+    "n_tensors": 152,
+    "provenance": "SCWBD(454 regions, anatomy provenance='synthetic_fallback', is_biological=False) + AmortizedPosterior + Individualizer, named through scwbd.foundation.train._CombinedModule"
+  },
+  "information_rules": [
+    {
+      "modality": "bold",
+      "lab_parameter": "tau",
+      "globs": [],
+      "kind": "negligible",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 4.007876421454734e-07,
+        "reference": 9.144143324789386e-07,
+        "weak_coupling_long_delay": 1.0069729897351577e-06
+      },
+      "binds_a_trainable_tensor": false,
+      "note": "network conduction delay -- a frozen buffer cut from tract length (FOUNDATION_BINDING['operator:long_range:delay'] == ()); not trainable in this model. No trainable tensor corresponds to this parameter in SC-WBD-001-beta, so the refusal is recorded and binds nothing."
+    },
+    {
+      "modality": "bold",
+      "lab_parameter": "gain_eeg",
+      "globs": [
+        "eeg.log_gain",
+        "eeg.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "EEG lead-field global gain. bold may not update ['eeg.log_gain', 'eeg.*']."
+    },
+    {
+      "modality": "bold",
+      "lab_parameter": "tilt_eeg",
+      "globs": [
+        "eeg.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "EEG electrode-placement tilt. bold may not update ['eeg.*']."
+    },
+    {
+      "modality": "eeg",
+      "lab_parameter": "beta_hrf",
+      "globs": [
+        "bold.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "haemodynamic cascade time constant. eeg may not update ['bold.*']."
+    },
+    {
+      "modality": "eeg",
+      "lab_parameter": "c_under",
+      "globs": [
+        "bold.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "HRF undershoot weight. eeg may not update ['bold.*']."
+    },
+    {
+      "modality": "eeg",
+      "lab_parameter": "gain_bold",
+      "globs": [
+        "bold.*"
+      ],
+      "kind": "structural_zero",
+      "ratio_by_regime": {
+        "low_snr_short_delay": 0.0,
+        "reference": 0.0,
+        "weak_coupling_long_delay": 0.0
+      },
+      "binds_a_trainable_tensor": true,
+      "note": "BOLD global gain. eeg may not update ['bold.*']."
+    }
+  ],
+  "information_provenance": {
+    "results": "reports/identifiability/results.json",
+    "manifest": "reports/identifiability/manifest.json",
+    "design": "joint_native",
+    "artifact": "SC-WBD linear identifiability laboratory",
+    "status": "preregistered_before_run",
+    "seed": 20260805,
+    "written_at": "2026-08-06T03:12:56-0700",
+    "n_regimes": 3,
+    "epoch_seconds": 3.0,
+    "n_epochs": 30,
+    "monte_carlo_disabled": true,
+    "non_goals": [
+      "no whole-brain training",
+      "no real datasets",
+      "no field solvers",
+      "no human stimulation protocol"
+    ],
+    "statistic": "diagonal of the per-modality expected Fisher block, prior-standardised basis"
+  },
+  "curriculum": {
+    "run_name": "scwbd-001-beta",
+    "config": "configs/scwbd_001_beta.yaml",
+    "mixture_cards": "configs/source_cards",
+    "fully_declared": false,
+    "total_steps": 8700,
+    "stages": [
+      {
+        "name": "I_regional",
+        "order": 0,
+        "steps": 900,
+        "scope": "I_regional",
+        "admits": [
+          4
+        ],
+        "tier_permissions": {
+          "4": [
+            "local.*",
+            "log_dt_scale",
+            "readout.*",
+            "assimilate.*",
+            "context.*",
+            "residual.*"
+          ]
+        },
+        "objective": [
+          "composite: see StageConfig lambda_* weights"
+        ],
+        "absence": [],
+        "declared": false,
+        "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+        "enabled": true
+      },
+      {
+        "name": "II_interface",
+        "order": 1,
+        "steps": 700,
+        "scope": "II_interface",
+        "admits": [
+          4
+        ],
+        "tier_permissions": {
+          "4": [
+            "coupling.*",
+            "msg_proj.*",
+            "msg_readin.*",
+            "readout.*"
+          ]
+        },
+        "objective": [
+          "composite: see StageConfig lambda_* weights"
+        ],
+        "absence": [],
+        "declared": false,
+        "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+        "enabled": true
+      },
+      {
+        "name": "III_sliced",
+        "order": 2,
+        "steps": 2600,
+        "scope": "III_sliced",
+        "admits": [
+          1,
+          4
+        ],
+        "tier_permissions": {
+          "1": [
+            "*"
+          ],
+          "4": [
+            "*"
+          ]
+        },
+        "objective": [
+          "composite: see StageConfig lambda_* weights"
+        ],
+        "absence": [],
+        "declared": false,
+        "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+        "enabled": true
+      },
+      {
+        "name": "IV_assembly",
+        "order": 3,
+        "steps": 3600,
+        "scope": "IV_assembly",
+        "admits": [
+          1,
+          4
+        ],
+        "tier_permissions": {
+          "1": [
+            "*"
+          ],
+          "4": [
+            "*"
+          ]
+        },
+        "objective": [
+          "composite: see StageConfig lambda_* weights"
+        ],
+        "absence": [],
+        "declared": false,
+        "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+        "enabled": true
+      },
+      {
+        "name": "V_individual",
+        "order": 4,
+        "steps": 900,
+        "scope": "V_individual",
+        "admits": [
+          1
+        ],
+        "tier_permissions": {
+          "1": [
+            "individualizer.*",
+            "eeg.log_gain",
+            "eeg.offset",
+            "eeg.log_noise",
+            "eeg.nuisance*"
+          ]
+        },
+        "objective": [
+          "composite: see StageConfig lambda_* weights"
+        ],
+        "absence": [],
+        "declared": false,
+        "provenance": "reconstructed from inspect.getsource(FoundationTrainer.run_stage) + STAGE_PERMISSIONS",
+        "enabled": true
+      }
+    ]
+  }
+}

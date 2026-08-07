@@ -2,12 +2,12 @@
   "bench_schema_version": "scwbd-bench-report/1.0.0",
   "kind": "numerics",
   "claim_id": "N3_em_solver",
-  "status": "COULD_NOT_RUN",
+  "status": "PASS",
   "manifest": {
     "claim_id": "N3_em_solver",
-    "claim_text": "The electromagnetic solver reproduces a closed-form quasi-static reference, validated independently of any neural-response model.",
+    "claim_text": "The quasi-static CONDUCTION solver reproduces the closed-form potential of a current dipole in an unbounded homogeneous conductor, validated independently of any neural-response model. This is the EEG/lead-field forward problem; it is NOT the magnetically induced TMS field, which has a different source term and boundary condition and needs its own gate (N6).",
     "falsified_by": "relative error above tolerance against the analytic dipole solution",
-    "consequence_if_failed": "The EM solver may not be used for lead fields, E-field prediction or targeting; every downstream field-dependent claim is suspended.",
+    "consequence_if_failed": "The conduction solver may not be used for lead fields or source modelling; every downstream conduction-dependent claim is suspended.",
     "thesis_version": "V6",
     "schema_version": "scwbd-schema/1.0.0",
     "bench_schema_version": "scwbd-bench-report/1.0.0",
@@ -27,26 +27,64 @@
     "preregistered": true
   },
   "consequence_applied": null,
-  "blocking_reasons": [
-    "em_solver: could not run \u2014 no EM solver supplied (agent G scwbd.intervene / agent F lead fields); the field model is unvalidated and no E-field claim may be made"
-  ],
+  "blocking_reasons": [],
   "subchecks": [
     {
       "name": "em_solver",
-      "description": "EM solver versus the analytic dipole potential.",
-      "status": "COULD_NOT_RUN",
+      "description": "Relative error against a closed-form solution, with no neural model in the loop.",
+      "status": "PASS",
       "mandatory": true,
-      "reason": "no EM solver supplied (agent G scwbd.intervene / agent F lead fields); the field model is unvalidated and no E-field claim may be made",
-      "falsified_by": "relative error above tolerance against the analytic dipole solution",
-      "metrics": []
+      "reason": "",
+      "falsified_by": "relative error above tolerance against the analytic solution",
+      "metrics": [
+        {
+          "name": "em_solver.mean_relative_error",
+          "value": 0.0069564029367643505,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": {
+            "lo": 0.005889840592900806,
+            "hi": 0.008280700624969866,
+            "level": 0.95,
+            "method": "bootstrap-percentile"
+          },
+          "threshold": 0.05,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": true,
+          "exact": false,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "em_solver.max_relative_error",
+          "value": 0.1452111916163755,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": null,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": null
+        }
+      ]
     }
   ],
   "baselines_run": [],
-  "notes": [],
-  "artifacts": {},
+  "notes": [
+    "SCOPE: conduction, not induction. A PASS licenses the quasi-static conduction discretisation used for EEG lead fields. It does NOT license the magnetically induced TMS field: different source term, different boundary condition, separate gate (N6_induced_efield).",
+    "A verification gate is destroyed if the reference leaks into the solver. Check that the boundary data is homogeneous, not the analytic value, before reading this PASS as evidence.",
+    "Field accuracy, target engagement, network effect and clinical utility remain separate quantities (thesis \u00a70.5)."
+  ],
+  "artifacts": {
+    "subject": "scwbd.intervene.numerics.quasistatic_dipole_potential_fd",
+    "reference": "current dipole in an unbounded homogeneous conductor (conduction / volume-current problem)",
+    "does_not_cover": "magnetically induced E-field of a TMS coil (induction); see gate N6"
+  },
   "provenance": {
-    "timestamp_utc": "2026-08-06T06:22:53+00:00",
-    "git_rev": "a8221f6",
+    "timestamp_utc": "2026-08-06T09:52:41+00:00",
+    "git_rev": "c0e5833",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -54,6 +92,37 @@
       "numpy": "2.5.1",
       "scipy": "1.18.0",
       "torch": "2.13.0+cu130"
-    }
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/bench/adjudication.py",
+      "scwbd/bench/corpus.py",
+      "scwbd/bench/instruments.py",
+      "scwbd/bench/numerics.py",
+      "scwbd/bench/report.py",
+      "scwbd/bench/runner.py",
+      "scwbd/runtime/_compat.py",
+      "scwbd/runtime/backends.py",
+      "scwbd/runtime/targeting.py",
+      "tests/bench/test_adjudication.py",
+      "tests/bench/test_instruments.py",
+      "tests/bench/test_runner.py",
+      "tests/runtime/test_field_backends.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
   }
 }

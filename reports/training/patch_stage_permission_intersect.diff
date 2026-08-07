@@ -1,0 +1,34 @@
+Fix for STAGE_PERMISSIONS not restricting. Apply before any rerun of Stage V and
+before run 2.
+
+stage_sources() claims to "intersect each card's A_k with the stage allowlist
+(restrict only)" but filters whole card patterns by top-level-module overlap and
+keeps them at the card's breadth. A card pattern broader than the allowlist entry
+survives intact: eeg.* survives against eeg.log_gain, which let Stage V train
+eeg.source_proj.* (1,281 params, verified to have moved) undeclared.
+
+--- a/scwbd/foundation/train.py
++++ b/scwbd/foundation/train.py
+@@ stage_sources
+             else:
+-                perm = tuple(p for p in s.gradient_permission if p == "*" or any(_glob_overlap(p, a) for a in allow))
++                # Restrict-only means the RESULT must be no broader than either
++                # side. Where a card pattern and an allowlist entry overlap, keep
++                # the narrower. Keeping the card's pattern (the previous
++                # behaviour) silently widens the stage.
++                narrowed: list[str] = []
++                for p in s.gradient_permission:
++                    if p == "*":
++                        continue  # handled by the "*" branch below
++                    for a in allow:
++                        if not _glob_overlap(p, a):
++                            continue
++                        if fnmatch.fnmatch(a, p):
++                            narrowed.append(a)   # allowlist entry is narrower
++                        elif fnmatch.fnmatch(p, a):
++                            narrowed.append(p)   # card pattern is narrower
++                        else:
++                            narrowed.append(a)   # incomparable: prefer the stage
++                perm = tuple(dict.fromkeys(narrowed))
+                 if "*" in s.gradient_permission:
+                     perm = allow

@@ -1,0 +1,174 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N3_em_solver",
+  "status": "PASS",
+  "manifest": {
+    "claim_id": "N3_em_solver",
+    "claim_text": "The quasi-static CONDUCTION solver reproduces the closed-form potential of a current dipole in an unbounded homogeneous conductor, validated independently of any neural-response model. This is the EEG/lead-field forward problem; it is NOT the magnetically induced TMS field, which has a different source term and boundary condition and needs its own gate (N6).",
+    "falsified_by": "relative error above tolerance against the analytic dipole solution",
+    "consequence_if_failed": "The conduction solver may not be used for lead fields or source modelling; every downstream conduction-dependent claim is suspended.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "relative_tol": 0.05,
+      "sigma_S_per_m": 0.33
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [],
+  "subchecks": [
+    {
+      "name": "em_solver",
+      "description": "Relative error against a closed-form solution, with no neural model in the loop.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "relative error above tolerance against the analytic solution",
+      "metrics": [
+        {
+          "name": "em_solver.mean_relative_error",
+          "value": 0.0069564029367643505,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": {
+            "lo": 0.005889840592900806,
+            "hi": 0.008280700624969866,
+            "level": 0.95,
+            "method": "bootstrap-percentile"
+          },
+          "threshold": 0.05,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": true,
+          "exact": false,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "em_solver.max_relative_error",
+          "value": 0.1452111916163755,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": null,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": null
+        }
+      ]
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "SCOPE: conduction, not induction. A PASS licenses the quasi-static conduction discretisation used for EEG lead fields. It does NOT license the magnetically induced TMS field: different source term, different boundary condition, separate gate (N6_induced_efield).",
+    "A verification gate is destroyed if the reference leaks into the solver. Check that the boundary data is homogeneous, not the analytic value, before reading this PASS as evidence.",
+    "Field accuracy, target engagement, network effect and clinical utility remain separate quantities (thesis \u00a70.5).",
+    "Solver: scwbd.intervene.numerics.quasistatic_dipole_potential_fd -- a second-order 7-point finite-difference Poisson solve on a 256^3 grid, diagonalised exactly by the type-I DST. The truncation boundary carries HOMOGENEOUS DIRICHLET data (zero), not the analytic potential, so no value from the reference enters the solve; the boundary is placed at 1.9x the farthest field point and the residual truncation error is part of the reported number rather than removed by it.",
+    "The reference here is a CURRENT dipole in an unbounded homogeneous conductor -- the EEG/lead-field forward problem, not the magnetically induced TMS field of scwbd.intervene.tms.efield. Passing N3 licenses the quasi-static conduction discretisation; the induced-field operator is separately convergence-tested against the Sarvas / Heller-van Hulsteyn closed form in tests/intervene/test_tms_efield.py.",
+    "Refinement study (mean relative error vs h): n=128 h=0.00935 m err=0.0213; n=192 h=0.00623 m err=0.0097 order=1.94; n=256 h=0.00467 m err=0.0070 order=1.16",
+    "The observed order falls off at the finest grid because the h-refinement holds the truncation box fixed, so the zero-Dirichlet truncation error is an h-independent floor. Enlarging the box at CONSTANT h separates the two: margin=1.90 n=256 h=0.00467 m err=0.0070; margin=2.38 n=320 h=0.00467 m err=0.0053; margin=2.85 n=384 h=0.00467 m err=0.0046. The discretisation error is the limit of that sequence; the difference from the reported number is what the finite domain costs, and it is a budget item, not a fitted correction."
+  ],
+  "artifacts": {
+    "subject": "__main__.run_n3.<locals>.solver",
+    "reference": "current dipole in an unbounded homogeneous conductor (conduction / volume-current problem)",
+    "does_not_cover": "magnetically induced E-field of a TMS coil (induction); see gate N6",
+    "grid_convergence": [
+      {
+        "n_per_axis": 128.0,
+        "spacing_m": 0.00934556203396373,
+        "mean_relative_error": 0.021341080916621815,
+        "max_relative_error": 1.7228262269646448,
+        "observed_order": NaN
+      },
+      {
+        "n_per_axis": 192.0,
+        "spacing_m": 0.006230374689309153,
+        "mean_relative_error": 0.009707455784066229,
+        "max_relative_error": 0.2597877813943264,
+        "observed_order": 1.9428050729513069
+      },
+      {
+        "n_per_axis": 256.0,
+        "spacing_m": 0.004672781016981865,
+        "mean_relative_error": 0.0069564029367643505,
+        "max_relative_error": 0.1452111916163755,
+        "observed_order": 1.158333237913263
+      }
+    ],
+    "truncation_study_note": "box enlarged at constant h",
+    "truncation_study": [
+      {
+        "margin": 1.9,
+        "n_per_axis": 256.0,
+        "spacing_m": 0.004672781016981865,
+        "half_width_m": 0.5981159701736787,
+        "mean_relative_error": 0.0069564029367643505
+      },
+      {
+        "margin": 2.375,
+        "n_per_axis": 320.0,
+        "spacing_m": 0.004672781016981865,
+        "half_width_m": 0.7476449627170983,
+        "mean_relative_error": 0.0053164264333806135
+      },
+      {
+        "margin": 2.85,
+        "n_per_axis": 384.0,
+        "spacing_m": 0.004672781016981865,
+        "half_width_m": 0.897173955260518,
+        "mean_relative_error": 0.0046392111180694725
+      }
+    ],
+    "geometry_provenance": {
+      "geometry_source": "analytic phantom constructed in-process (scwbd.intervene.tms.efield.SphericalHeadModel, or an unbounded homogeneous medium for N3/N4)",
+      "uses_subject_anatomy": false,
+      "uses_scwbd_anatomy_load_anatomy": false,
+      "uses_connectome": false,
+      "note": "These solvers take head GEOMETRY (a radius, a triangulated surface) and never the connectome, so the anatomical-prior defect does not touch these verdicts. Every geometry here is a sphere declared in the artifact; none is derived from a subject, a template or scwbd.anatomy."
+    }
+  },
+  "provenance": {
+    "timestamp_utc": "2026-08-06T13:26:19+00:00",
+    "git_rev": "0575861",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/intervene/run_field_gates.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
+  }
+}

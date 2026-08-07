@@ -162,6 +162,7 @@ def test_candidate_poses_are_compared_and_the_comparison_defers_under_disagreeme
         assert "SIMULATION ONLY" in out.notice
 
 
+@pytest.mark.slow
 def test_transform_uncertainty_alone_can_withhold_a_recommendation(head):
     """Sec. 0.5 step 6, driven by a measured pose-to-field uncertainty."""
     coil, pulse = FigureEightCoil(), biphasic()
@@ -202,7 +203,7 @@ def test_transform_uncertainty_alone_can_withhold_a_recommendation(head):
 
 def test_a_field_optimizer_that_leaves_a_safe_is_blocked(head):
     """The optimizer wants a stronger field; A_safe stops it before scoring."""
-    coil, pulse = FigureEightCoil(), biphasic(peak_didt=1e8)
+    coil = FigureEightCoil()
     fs = FeasibleSet()
     pts, _ = head.cortical_shell(162)
     scale = {"k": 1.0}
@@ -224,6 +225,7 @@ def test_a_field_optimizer_that_leaves_a_safe_is_blocked(head):
     assert "tms.peak_efield_v_per_m" in str(e.value)
 
 
+@pytest.mark.slow
 def test_reported_pose_sensitivity_numbers(head, capsys):
     """Emit the measured pose-to-field sensitivity for the record."""
     coil, pulse = FigureEightCoil(), biphasic()

@@ -23,7 +23,7 @@ from scwbd.infer.filters import (
 )
 from scwbd.infer.linear_gaussian import structured_left_mul
 
-torch.set_default_dtype(torch.float64)
+DEFAULT_DTYPE = torch.float64   # consumed by the conftest autouse fixture
 
 
 def _random_multirate(seed=0, n=3, T=9):

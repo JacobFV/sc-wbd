@@ -27,6 +27,7 @@ Layout::
     base.py       Sec. 2.4 controlled SDE; impulse limit behind a tested flag
     safety.py     A_safe, CompilerRefusal(R11), Defer, NoRecommendation
     sensory.py    sensory/cognitive/neurofeedback via declared perceptual ports
+    numerics.py   independent FD/FDTD solvers for the Sec. 11.1 N3/N4 gates
     tms/          coil -> E-field -> candidate response; pose chain; EEG artifact
     tfus/         transducer -> acoustics -> exposure -> candidate response
     limits/       declarative, citable A_safe limits (never learned)

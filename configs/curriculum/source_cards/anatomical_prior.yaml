@@ -1,0 +1,36 @@
+# TIER 3 -- population prior, not subject. Group-average anatomy: an ENIGMA/HCP
+# structural connectome over 207 unrelated healthy young adults, receptor maps
+# from PET cohorts of 3-204 people, 69-brain template surfaces
+# (reports/anatomy_prior.md). None of it is any particular person's brain.
+#
+# `is_simulated: false` is a CLAIM ABOUT THE OBJECT, and the object is checked:
+# `runtime_provenance_check: anatomy` makes the validator call
+# scwbd.foundation.anatomy.load_anatomy() -- the same call the trainer makes --
+# and refuse (X09) if what comes back is the labelled synthetic stand-in. As of
+# 2026-08-06 it IS the stand-in, so this card is refused and the corrected run
+# cannot launch until that is fixed. That refusal is the point of the field.
+id: anatomical_prior
+role: prior
+is_simulated: false
+losses: [prior]
+# bold.* was withdrawn relative to configs/source_cards/anatomical_prior.yaml.
+# Nothing measured in this corpus carries any information about the haemodynamic
+# parameters (EEG's Fisher block for them is exactly zero in every regime), the
+# simulated slow/BOLD tier was never built (index_slow.json does not exist), and
+# the 663 MB of real BOLD on disk has no loader. Training bold.* would have made
+# a prior penalty its sole author.
+gradient_permission: ["coupling.gain_*", "coupling.global_scale"]
+frozen: ["eeg.*", "bold.*", "individualizer.*", "local.*", "residual.*", "assimilate.*", "context.*", "msg_*", "readout.*", "posterior.*", "behaviour.*", "log_dt_scale"]
+n_eff: 1.0
+n_rows: 1.0
+hierarchy_depth: 1
+measurement_variance: 0.4
+bias_halfwidth: 0.5
+bias_status: prior_specified_sensitivity
+validity_overlap: 1.0
+notes: >
+  Topology regulariser only. Hard anatomical constraints stay compiled; soft
+  constraints update only within their priors (body.tex 6.4). n_eff = 1: one
+  group-average object, not 207 subjects -- the subjects were averaged away.
+compiler_permission:
+  - "operator:long_range:params"

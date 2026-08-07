@@ -4,7 +4,7 @@
 
 **Falsified by (thesis).** The mandatory control (Leave-site/device/protocol-out evaluation; nuisance-only classifier and label permutation within site) shows the result survives only without it.
 
-*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git a8221f6 · 2026-08-06T06:22:53+00:00*
+*thesis V6 · schema scwbd-schema/1.0.0 · bench scwbd-bench-report/1.0.0 · SC-WBD-001-beta · seed 0 · git c0e5833 · 2026-08-06T09:52:25+00:00*
 
 ## Could not run
 

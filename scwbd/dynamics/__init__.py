@@ -22,6 +22,21 @@ A batched, GPU-first, differentiable simulator whose mechanistic backends are
   receptor-typed neuromodulatory fields.
 
 Every stochastic entry point takes an explicit ``seed``; solvers stay fp32.
+
+**Consuming the anatomy prior.**  The adapter onto :class:`scwbd.anatomy.BrainPrior`
+is a pair of methods on every backend rather than a free function, so it is easy
+to miss when grepping:
+
+* ``Backend.from_prior(brain_prior)`` — bind a backend to the prior;
+* ``backend.theta_from_prior(brain_prior, batch, seed=...)`` — draw a batch of
+  parameter sets carrying the prior's regional structure.
+
+The result's ``theta.provenance`` records, per parameter, whether the prior was
+``applied`` and — when it was not — *why*.  Read it: a backend can legitimately
+have no parameter the prior maps onto (Stuart-Landau and Kuramoto have no
+relaxation timescale), and in that case its regional values are backend defaults,
+not anatomy.  Helper functions: :func:`resolve_prior_field`,
+:func:`sample_prior_list`, :func:`map_fragility`.
 """
 
 from .backends import (
@@ -37,7 +52,10 @@ from .backends import (
     assert_equal_capacity,
     get_backend,
     list_backends,
+    map_fragility,
     match_capacity,
+    resolve_prior_field,
+    sample_prior_list,
     tune_fic,
 )
 from .coupling import (
@@ -110,6 +128,7 @@ from .types import (
 
 __all__ = [
     # backends
+    "resolve_prior_field", "sample_prior_list", "map_fragility",
     "DynamicsBackend", "WilsonCowan", "JansenRit", "ReducedWongWang", "ReducedWongWangSingle",
     "StuartLandau", "Kuramoto", "LinearGaussian", "LearnedNeuralOperator",
     "get_backend", "list_backends", "match_capacity", "assert_equal_capacity", "tune_fic",

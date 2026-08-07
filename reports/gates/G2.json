@@ -45,22 +45,12 @@
   },
   "consequence_applied": null,
   "blocking_reasons": [
-    "graph_controls: could not run \u2014 scwbd.anatomy.graph_controls unavailable (owner: agent C (anatomy)) \u2014 agent C has not landed the randomized / distance-matched / dense graph controls; agent J will not fabricate them, because the control is the experiment",
     "inputs[0]: could not run \u2014 missing: model_for_graph(adjacency) factory (agent E / agent I)",
     "inputs[1]: could not run \u2014 missing: anatomical adjacency (agent C)",
     "inputs[2]: could not run \u2014 missing: graph controls (agent C): dense, randomized, distance_matched",
     "inputs[3]: could not run \u2014 missing: train/test datasets"
   ],
   "subchecks": [
-    {
-      "name": "graph_controls",
-      "description": "Dense / randomized / distance-matched controls.",
-      "status": "COULD_NOT_RUN",
-      "mandatory": true,
-      "reason": "scwbd.anatomy.graph_controls unavailable (owner: agent C (anatomy)) \u2014 agent C has not landed the randomized / distance-matched / dense graph controls; agent J will not fabricate them, because the control is the experiment",
-      "falsified_by": "Equal-capacity controls match or exceed performance, or topology errors are absorbed by residuals.",
-      "metrics": []
-    },
     {
       "name": "inputs[0]",
       "description": "Required gate input",
@@ -99,11 +89,15 @@
     }
   ],
   "baselines_run": [],
-  "notes": [],
+  "notes": [
+    "Sparsity or plausibility alone is not evidence for the declared topology (Appendix D, 'Connectome prior value').",
+    "Controls are agent C's; this gate refuses to synthesise them, because the control IS the experiment. A gate that invents its own null has measured nothing.",
+    "If the topology or any derived prior is route-fragile (agent C's ledgers carry route_agreement_r / route_fragile) or carries a forbidden_inference, that must be disclosed alongside the verdict: a topology claim inherits the fragility of the maps it was built from."
+  ],
   "artifacts": {},
   "provenance": {
-    "timestamp_utc": "2026-08-06T06:22:53+00:00",
-    "git_rev": "a8221f6",
+    "timestamp_utc": "2026-08-06T09:52:24+00:00",
+    "git_rev": "c0e5833",
     "host": "Dell-gb10-1",
     "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
     "versions": {
@@ -111,6 +105,37 @@
       "numpy": "2.5.1",
       "scipy": "1.18.0",
       "torch": "2.13.0+cu130"
-    }
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/bench/adjudication.py",
+      "scwbd/bench/corpus.py",
+      "scwbd/bench/instruments.py",
+      "scwbd/bench/numerics.py",
+      "scwbd/bench/report.py",
+      "scwbd/bench/runner.py",
+      "scwbd/runtime/_compat.py",
+      "scwbd/runtime/backends.py",
+      "scwbd/runtime/targeting.py",
+      "tests/bench/test_adjudication.py",
+      "tests/bench/test_instruments.py",
+      "tests/bench/test_runner.py",
+      "tests/runtime/test_field_backends.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
   }
 }

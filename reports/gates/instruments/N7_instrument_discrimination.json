@@ -1,0 +1,361 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "instrument",
+  "claim_id": "N7_instrument_discrimination",
+  "status": "PASS",
+  "manifest": {
+    "claim_id": "N7_instrument_discrimination",
+    "claim_text": "Every guard and provenance field this bench relies on has an input under which it reads differently, so a green reading is evidence rather than decoration.",
+    "falsified_by": "an instrument that returns the same reading on every input it was given \u2014 it is structurally incapable of reporting the discrimination it is consulted for",
+    "consequence_if_failed": "Stop reporting the affected field, and stop gating on it. Replace it with a measurement that varies with the thing it claims to measure, or label it explicitly as decoration in the report where it appears.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "generalises ARCHITECTURE.md \u00a74 ('a gate that fails is a result') and this bench's negative-control discipline from gates to their instruments",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "min_distinct_reads": 2
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "This audit does not check that an instrument is CORRECT, only that it is capable of varying. A field that varies can still be wrong."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [],
+  "subchecks": [
+    {
+      "name": "source_dirty_flag",
+      "description": "Scoped source-dirty provenance: must read clean when the run writes its own tracked output, and dirty when source is modified. The whole-tree flag it replaces could not tell those apart.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "identical reading on every input: provenance cannot distinguish a modified source tree from a run writing its own log; no reader may infer anything from it",
+      "metrics": [
+        {
+          "name": "source_dirty_flag.distinct_reads",
+          "value": 2.0,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": 1.5,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "clean -> []; run_wrote_its_own_log -> []; source_modified -> ['scwbd/mod.py']",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "capacity_matching",
+      "description": "Matched-capacity guard must reject an over-budget candidate.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "identical reading on every input: an unmatched comparison would be reported as a win",
+      "metrics": [
+        {
+          "name": "capacity_matching.distinct_reads",
+          "value": 2.0,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": 1.5,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "equal -> True; candidate_3x_larger -> False; candidate_smaller -> True",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "interval_strict_threshold",
+      "description": "Interval-strict metrics must reject a win whose interval straddles the threshold and accept one that clears it.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "identical reading on every input: a noisy difference would be reported as a reproducible gain",
+      "metrics": [
+        {
+          "name": "interval_strict_threshold.distinct_reads",
+          "value": 2.0,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": 1.5,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "noisy -> False; clean -> True",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "smoothing_check",
+      "description": "The \u00a711.4 smoothing guard must fire on a flat predictor and not on an honest one.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "identical reading on every input: a model that won by destroying the effect would be preferred",
+      "metrics": [
+        {
+          "name": "smoothing_check.distinct_reads",
+          "value": 2.0,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": 1.5,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "flat_predictor -> True; honest_predictor -> False",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "report_provenance_rule",
+      "description": "finalize() must refuse a passing numerical report that does not record what it measured, and accept one that does.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "identical reading on every input: a stale artifact could pass without recording how it was produced",
+      "metrics": [
+        {
+          "name": "report_provenance_rule.distinct_reads",
+          "value": 2.0,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": 1.5,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "without_subject -> 'refused'; with_subject -> 'accepted'",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "A green reading from an instrument that cannot vary is not evidence. Four such instruments have already been found in this project; the fourth was inside the mechanism built to catch stale artifacts.",
+    "This audit checks capability to vary, not correctness. An instrument that varies can still be measuring the wrong thing."
+  ],
+  "artifacts": {
+    "subject": "the guards and provenance fields of scwbd.bench",
+    "instrument_reads": {
+      "source_dirty_flag": {
+        "reads": {
+          "clean": "[]",
+          "run_wrote_its_own_log": "[]",
+          "source_modified": "['scwbd/mod.py']"
+        },
+        "distinct": 2,
+        "consequence_if_constant": "provenance cannot distinguish a modified source tree from a run writing its own log; no reader may infer anything from it"
+      },
+      "capacity_matching": {
+        "reads": {
+          "equal": "True",
+          "candidate_3x_larger": "False",
+          "candidate_smaller": "True"
+        },
+        "distinct": 2,
+        "consequence_if_constant": "an unmatched comparison would be reported as a win"
+      },
+      "interval_strict_threshold": {
+        "reads": {
+          "noisy": "False",
+          "clean": "True"
+        },
+        "distinct": 2,
+        "consequence_if_constant": "a noisy difference would be reported as a reproducible gain"
+      },
+      "smoothing_check": {
+        "reads": {
+          "flat_predictor": "True",
+          "honest_predictor": "False"
+        },
+        "distinct": 2,
+        "consequence_if_constant": "a model that won by destroying the effect would be preferred"
+      },
+      "report_provenance_rule": {
+        "reads": {
+          "without_subject": "'refused'",
+          "with_subject": "'accepted'"
+        },
+        "distinct": 2,
+        "consequence_if_constant": "a stale artifact could pass without recording how it was produced"
+      }
+    },
+    "known_uninformative_fields": [
+      {
+        "name": "git_sha() -dirty suffix (whole-tree scope)",
+        "reads": "always '-dirty' during any run",
+        "why_it_cannot_discriminate": "the run writes tracked output (reports/training/train_main.log, reports/training/scwbd-001-beta_train.jsonl), so git status --porcelain is never empty while a run is in flight; the flag therefore cannot separate 'source was modified' from 'the run wrote its own log', and every checkpoint the project has produced carries it",
+        "remedy": "scope the check to source paths and record the offending PATHS rather than a boolean: scwbd.bench.report.source_dirty_entries(SOURCE_PATHS)",
+        "found_by": "agent Turing",
+        "owner": "training (agent I)",
+        "still_reported": false
+      },
+      {
+        "name": "run_g4 parameter_partition COULD_NOT_RUN reason (agent J's own bug)",
+        "reads": "'theta_index / nuisance_index not supplied' whenever fisher was passed bound",
+        "why_it_cannot_discriminate": "the partition probe was gated on auto_probed, which is only set when fisher is None; a caller passing a BOUND fisher map -- the only usable form, since bare expected_fisher needs u/cfg/proto -- skipped the probe entirely, so the gate reported a reason that was not the actual reason and never reached fisher_information at all",
+        "remedy": "drop the auto_probed guard: the probe returns a Dependency that reports its own unavailability, so nothing is lost. Regression-tested by test_g4_resolves_the_partition_from_agent_h_even_for_a_bound_fisher",
+        "found_by": "agent Fisher (running the gate end to end)",
+        "owner": "bench (agent J)",
+        "still_reported": false
+      },
+      {
+        "name": "exact-name gradient permission matching under torch.compile",
+        "reads": "'permission matched' on CPU, silently matches nothing on CUDA",
+        "why_it_cannot_discriminate": "torch.compile renames parameters, so a permission keyed on an exact parameter name matches an empty set and the source appears authorised while updating nothing",
+        "remedy": "N1's gradient.unmatched_permission_patterns metric fails when a permission pattern matches nothing; run it against the compiled module, not only the eager one",
+        "found_by": "agent Turing",
+        "owner": "foundation (agent I) / compiler (agent A)",
+        "still_reported": true
+      },
+      {
+        "name": "composite training loss used to judge a learning-rate change",
+        "reads": "whichever direction the most recent action needs, at short series lengths",
+        "why_it_cannot_discriminate": "this is the MEASUREMENT-CHOICE variant: not an instrument incapable of varying, but the wrong instrument selected from among available ones. Composite loss during warmup mixes objectives whose weights are still moving, so it moved twice in the direction that made a just-taken decision look correct where sim_forecast_nll did not move at all. Both readings were withdrawn. Selecting the metric AFTER seeing the curves is the failure; the metric itself is fine for what it is for",
+        "remedy": "pre-commit the judging metric while it does not favour you, and have a different party return the verdict: scwbd.bench.adjudication, where secondary metrics are recorded and structurally cannot change the outcome",
+        "found_by": "agent Turing (self-reported, unprompted)",
+        "owner": "training (agent I) / bench (agent J) adjudicates",
+        "still_reported": true
+      },
+      {
+        "name": "uniform-mesh error as a convergence indicator at contact geometry",
+        "reads": "falling, then rising, then falling again under refinement",
+        "why_it_cannot_discriminate": "on uniform meshes at contact, 80 -> 320 -> 1280 -> 5120 panels give errors 1.061 / 1.506 / 0.171 / 0.042: refining from 80 to 320 makes the answer WORSE. A user watching the error fall between two of those points cannot distinguish convergence from a non-monotone excursion, so the metric cannot serve as the convergence indicator it is being read as. A NEW variant: not an instrument that cannot vary, and not the wrong instrument chosen -- an instrument whose variation is not monotone in the thing it is taken to track",
+        "remedy": "refine where the error actually lives (graded_icosphere refines only panels under the source) and REFUSE outside the validated envelope at the solver (ChargeBEM.assert_resolves_sources) rather than leaving the judgement to a caller watching a number",
+        "found_by": "agent Faraday",
+        "owner": "intervene (agent Faraday)",
+        "still_reported": true
+      },
+      {
+        "name": "a capability probe that branches on failure instead of asserting on success",
+        "reads": "'connected' -- indistinguishably from 'silently fell back'",
+        "why_it_cannot_discriminate": "THE SILENT-ADAPTER VARIANT, and it has THREE independent instances in this project, all in probe/adapter layers, all found only when somebody exercised the path end to end: (1) torch.compile renamed parameters so exact-name gradient permissions matched nothing; (2) agent Cajal's graph_controls probe; (3) the runtime probed for a solve_efield symbol THAT NEVER EXISTED UNDER THAT NAME, so it ran its own internal physics while presenting as though it consumed the gated solver -- every earlier runtime field number came from unvalidated physics. A working fallback and a working connection produce the same observable, so the probe's negative result carries no signal",
+        "remedy": "a capability probe must ASSERT ON SUCCESS, not merely branch on failure, and something must exercise the wired path. Agent Asimov's CoilFrameBinding test is the pattern: drive the bridge with an identity binding and prove the upstream R06 guard FIRES, which makes the binding known load-bearing rather than decorative",
+        "found_by": "agents Turing, Cajal and Asimov independently",
+        "owner": "every module boundary",
+        "still_reported": true
+      },
+      {
+        "name": "a metric that scores 1.00 because it measures its own definition",
+        "reads": "a perfect score, at every percentile",
+        "why_it_cannot_discriminate": "a normaliser candidate scored 1.00 at EVERY percentile because for that estimator std(z) = std(x)/rms(sd) == 1 identically, by construction. The metric was not measuring the candidate; it was restating the candidate's definition. It nearly selected the shipped normaliser",
+        "remedy": "STANDING RECOMMENDATION: a perfect score is a reason to check whether the metric COULD have failed, not a reason to adopt the candidate. Ask what input would have produced a different number",
+        "found_by": "agent Turing",
+        "owner": "training (agent I)",
+        "still_reported": true
+      },
+      {
+        "name": "a preregistration calibrated against a defective instrument",
+        "reads": "as a commitment, while silently changing difficulty",
+        "why_it_cannot_discriminate": "condition 2 ('running-min sim_forecast_nll < 1.0 by step 900') was chosen by looking at pre-fix numbers. A normaliser defect inflated ~5.9% of windows by 10-767x; fixing it moved the metric's scale by two orders of magnitude. The threshold's VALUE never moved -- pre-fix it demanded a 99.5% descent from 184.3, post-fix a ~41% improvement from 1.692. The bar is the same number and a different test. A PREREGISTRATION INHERITS THE DEFECTS OF THE INSTRUMENT IT WAS CALIBRATED AGAINST, and freezing it in advance makes that inheritance HARDER to see, not easier -- a genuine limitation of the technique, discovered by using it properly",
+        "remedy": "when the instrument a preregistration was written against is found defective, the preregistration does not become WRONG, it becomes UNINTERPRETABLE. Report it as uninterpretable rather than re-setting it; re-setting substitutes the experimenter's later judgement for their earlier commitment, which is what preregistration exists to prevent -- and that holds REGARDLESS OF DIRECTION. A harder bar is not a cleaner one",
+        "found_by": "agent Turing (caught that the fix left the bar contaminated)",
+        "owner": "training (agent I); bench adjudicates",
+        "still_reported": true
+      },
+      {
+        "name": "a caveat that does not change the claim",
+        "reads": "as rigour, from every angle",
+        "why_it_cannot_discriminate": "THE INERT-QUALIFICATION VARIANT. Nothing is broken and nothing is unmeasurable: the qualification is present, correct, and does no work. A periodicity finding was relayed WITH the aliasing caveat attached ('log_every=20, so only periods that are multiples of 20 are detectable') and the period was reported anyway. The caveat was true, was stated, and changed nothing about what was claimed -- so it could not have prevented the error it appeared to guard against",
+        "remedy": "OPERATIONAL TEST: if the caveat were true, would the claim change? If not, the caveat is ornament and the claim is unearned. Apply it before relaying, not after",
+        "found_by": "agent Turing (self-reported, on its own withdrawn finding)",
+        "owner": "everyone",
+        "still_reported": true
+      },
+      {
+        "name": "a threshold test whose noise exceeds the effect it must detect",
+        "reads": "pass or fail depending on which random stream it drew",
+        "why_it_cannot_discriminate": "THE VARIANCE VARIANT, and it is distinct from every row above: this instrument DOES vary and DOES measure the right quantity. Its variance simply exceeds its effect size, so its output is dominated by the seed and a green reading is indistinguishable from a coin flip. test_cerebellum_learns_a_forward_model asserted errs[-1] < 0.5*errs[0] on two single 16-sample batches with errs[0] taken AFTER learning had begun -- a noisy self-comparison against a moving baseline. Across 8 seeds the single-sample ratio ran 0.27-0.79 and passed 4/8, while the robust window-mean ratio ran 0.53-0.71 and failed the bar in ALL 8. CONSEQUENCE: any prior green run of that test on CUDA was ~50/50 noise and must NOT be counted as historical evidence that the cerebellar forward model met that bar",
+        "remedy": "run the verdict across seeds and check it is STABLE (scwbd.bench.instruments.seed_stability); then replace the self-comparison with matched controls rather than relaxing the bar -- lr=0 and shuffled targets gave learned error at 14-24% of either control across all 8 seeds, a 4-7x reduction with 2x margin instead of a boundary. Agent Hodgkin drew the line that matters: 'I did not move a tolerance to fit an observation... Had the only available fix been relax 0.5 to 0.75 so the measured 0.71 passes, the right answer would have been to report the test as unsupported and leave it red.' That is the criterion between REPAIRING an instrument and ACCOMMODATING a failure",
+        "found_by": "agent Hodgkin (self-reported, with the prior evidence retracted)",
+        "owner": "dynamics (agent Hodgkin)",
+        "still_reported": true
+      },
+      {
+        "name": "an author's own reading of their own result (both directions)",
+        "reads": "whichever direction makes the most recent action look correct",
+        "why_it_cannot_discriminate": "THE HUMAN VARIANT. Direction one: the author reaches for the flattering reading -- agent Turing overclaimed a justification twice within an hour, both times toward the just-taken action, and caught it itself. Direction two, which is the more dangerous: the REVIEWER under-audits evidence because it arrives well-argued. That converts one party's error into everyone's, and it STRENGTHENS as collaboration improves, because the better the colleague the less one checks",
+        "remedy": "separate the party that measures from the party that returns the verdict (scwbd.bench.adjudication), pre-commit the metric while it does not favour you, and regenerate the numbers from raw series instead of reading anyone's table. Turing's principle: a conclusion nobody is trying to break is not a finding, it is a consensus",
+        "found_by": "agent Turing (direction one, self-reported); the coordinator (direction two)",
+        "owner": "everyone; bench adjudicates",
+        "still_reported": true
+      },
+      {
+        "name": "systemd-run MemoryMax against CUDA unified memory",
+        "reads": "memory.current ~8 GB against a 40 GB cap",
+        "why_it_cannot_discriminate": "CUDA allocations on unified memory are not charged to the cgroup, so the cap is not binding and the reassuring number is measuring the wrong pool",
+        "remedy": "measure the allocator's own accounting, and prove the cap binds by exceeding it",
+        "found_by": "agent Turing",
+        "owner": "training (agent I)",
+        "still_reported": false
+      },
+      {
+        "name": "'allocated by PyTorch' at OOM",
+        "reads": "always equal to the ceiling",
+        "why_it_cannot_discriminate": "at the moment of OOM the allocated figure is pinned to the limit by construction, so it cannot distinguish batch-linear from batch-independent growth \u2014 the question the number was consulted to answer",
+        "remedy": "sweep batch size and fit the growth curve; a single reading at OOM cannot",
+        "found_by": "agent Turing",
+        "owner": "training (agent I)",
+        "still_reported": false
+      }
+    ]
+  },
+  "provenance": {
+    "timestamp_utc": "2026-08-06T09:54:47+00:00",
+    "git_rev": "c0e5833",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/bench/adjudication.py",
+      "scwbd/bench/corpus.py",
+      "scwbd/bench/instruments.py",
+      "scwbd/bench/numerics.py",
+      "scwbd/bench/report.py",
+      "scwbd/bench/runner.py",
+      "scwbd/runtime/_compat.py",
+      "scwbd/runtime/backends.py",
+      "scwbd/runtime/targeting.py",
+      "tests/bench/test_adjudication.py",
+      "tests/bench/test_instruments.py",
+      "tests/bench/test_runner.py",
+      "tests/runtime/test_field_backends.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
+  }
+}

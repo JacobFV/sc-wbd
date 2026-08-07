@@ -1,0 +1,129 @@
+{
+ "config": {
+  "epoch_seconds": 3.0,
+  "n_epochs": 8,
+  "newton": 3
+ },
+ "patients": [
+  {
+   "patient": "P01-mri-only",
+   "modalities": [
+    "structural_mri",
+    "dmri"
+   ],
+   "design": "prior",
+   "individualized": [
+    "head_geometry",
+    "structural_connectivity_prior"
+   ],
+   "population_prior": [
+    "coupling",
+    "conduction_delay",
+    "eeg_lead_field",
+    "hemodynamic"
+   ],
+   "coupling_lambda_min": 0.0,
+   "query_outcome": "Defer",
+   "consistency_passed": null,
+   "seconds": 2.612135171890259
+  },
+  {
+   "patient": "P02-eeg-only",
+   "modalities": [
+    "structural_mri",
+    "eeg"
+   ],
+   "design": "eeg_only",
+   "individualized": [
+    "coupling",
+    "conduction_delay",
+    "eeg_lead_field",
+    "head_geometry"
+   ],
+   "population_prior": [
+    "hemodynamic",
+    "structural_connectivity_prior"
+   ],
+   "coupling_lambda_min": 4.230294497107132,
+   "query_outcome": "QueryAnswer",
+   "consistency_passed": true,
+   "seconds": 100.08566498756409
+  },
+  {
+   "patient": "P03-fmri-only",
+   "modalities": [
+    "structural_mri",
+    "fmri"
+   ],
+   "design": "fmri_only",
+   "individualized": [
+    "head_geometry"
+   ],
+   "population_prior": [
+    "coupling",
+    "conduction_delay",
+    "eeg_lead_field",
+    "hemodynamic",
+    "structural_connectivity_prior"
+   ],
+   "coupling_lambda_min": 6.627775690006981e-07,
+   "query_outcome": "Defer",
+   "consistency_passed": null,
+   "seconds": 0.7907335758209229
+  },
+  {
+   "patient": "P04-joint",
+   "modalities": [
+    "structural_mri",
+    "eeg",
+    "fmri"
+   ],
+   "design": "joint_native",
+   "individualized": [
+    "coupling",
+    "conduction_delay",
+    "eeg_lead_field",
+    "head_geometry"
+   ],
+   "population_prior": [
+    "hemodynamic",
+    "structural_connectivity_prior"
+   ],
+   "coupling_lambda_min": 4.230302218149023,
+   "query_outcome": "QueryAnswer",
+   "consistency_passed": true,
+   "seconds": 63.921895265579224
+  },
+  {
+   "patient": "P05-noise-control",
+   "modalities": [
+    "structural_mri",
+    "eeg"
+   ],
+   "design": "eeg_only",
+   "individualized": [
+    "head_geometry"
+   ],
+   "population_prior": [
+    "coupling",
+    "conduction_delay",
+    "eeg_lead_field",
+    "hemodynamic",
+    "structural_connectivity_prior"
+   ],
+   "coupling_lambda_min": 4.230294497107132,
+   "query_outcome": "Defer",
+   "consistency_passed": false,
+   "seconds": 62.02949571609497
+  }
+ ],
+ "environment": {
+  "git_revision": "44ee01c403772c0c36b65cd0f1a515781299d414",
+  "python": "3.12.13",
+  "numpy": "2.5.1",
+  "torch": "2.13.0+cu130",
+  "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+  "device": "cpu",
+  "cuda_visible_devices": ""
+ }
+}

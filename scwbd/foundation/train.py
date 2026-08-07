@@ -21,6 +21,7 @@ TRIBE v2 distillation is **off by default** and is never a subject likelihood.
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import math
 import os
@@ -43,9 +44,29 @@ from .mixture import MixtureTrainer, SourceSpec
 from .model import SCWBD
 from .posterior import AmortizedPosterior
 from .simulate import THETA_NAMES, CorpusSpec, SimCorpus, ThetaPrior, generate_corpus
-from .util import JsonlLogger, Timer, count_parameters, env_fingerprint, git_sha, set_determinism
+from .util import (
+    JsonlLogger,
+    Timer,
+    cap_cuda_reserve,
+    count_parameters,
+    cuda_reserved_gb,
+    env_fingerprint,
+    git_sha,
+    set_determinism,
+)
 
-__all__ = ["FoundationTrainer", "STAGE_PERMISSIONS", "main"]
+__all__ = ["FoundationTrainer", "BindingDriftError", "STAGE_PERMISSIONS", "main"]
+
+
+class BindingDriftError(RuntimeError):
+    """The compiler compiled, but its groups no longer name tensors we have.
+
+    Distinct from :class:`~scwbd.foundation.compiler_bridge.CompilerUnavailable`
+    on purpose: an absent compiler is a degraded-but-honest mode the source cards
+    can cover, whereas a *present* compiler whose bindings miss means the
+    permission system is reporting enforcement it is not performing.  Only the
+    first is recoverable, so only the first falls back.
+    """
 
 #: What each stage is allowed to touch.  Intersected with (never added to) the
 #: source card's own ``A_k``.
@@ -121,14 +142,59 @@ class FoundationTrainer:
         self.cfg = cfg
         self.quick = quick
         self.device = torch.device(device or cfg.train.device)
+        cap_cuda_reserve(self.device, cfg.train.cuda_reserve_gb)
         set_determinism(cfg.train.seed)
         torch.backends.cuda.matmul.allow_tf32 = False  # solvers stay fp32 (ARCH §3)
+        if cfg.model.compile:
+            # torch.compile's donated-buffer optimisation frees backward
+            # intermediates it believes are dead, which requires
+            # retain_graph=False on every backward.  The mixture takes one
+            # backward **per source** (`mixture.step` -> `gate.grads`, with
+            # `retain_graph=(more sources) or measure_conflict`) so that each
+            # source's gradient is restricted to the parameters its card permits,
+            # and so that per-source gradient conflict can be measured at all
+            # (Appendix D: "gradient conflict is measured by module and source").
+            #
+            # Those are requirements, so the allocator optimisation gives way --
+            # not the other way round.  Summing the losses into a single backward
+            # would fix the crash and silently delete both the per-source
+            # permission enforcement and the conflict measurement.
+            #
+            # It surfaced only at Stage III because that is the first stage with
+            # two sources live at once (simulated + measured); Stages I and II
+            # take a single backward, so the incompatibility could not appear.
+            # NB: import the submodule explicitly. ``torch._functorch.config``
+            # is not reachable by attribute access from a bare ``import torch``,
+            # and I verified the knob's existence through a different import
+            # form than the one the code used -- so the check passed and the
+            # code raised AttributeError on the next launch.
+            import torch._functorch.config as _functorch_config
+
+            _functorch_config.donated_buffer = False
         self.out_dir = Path(cfg.train.out_dir)
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self.report_dir = Path(cfg.train.report_dir)
         self.report_dir.mkdir(parents=True, exist_ok=True)
 
-        self.anat = (anat or load_anatomy(device=self.device, n_cortex=400)).to(self.device)
+        self.anat = (
+            anat
+            or load_anatomy(
+                device=self.device,
+                n_cortex=400,
+                force_fallback=cfg.train.anatomy_force_fallback,
+            )
+        ).to(self.device)
+        if not self.anat.is_biological():
+            # Loud, every run, in the log the operator actually reads -- the
+            # provenance field said this correctly all along and nobody looked.
+            print(
+                "[anatomy] WARNING: prior is SYNTHETIC "
+                f"(provenance={self.anat.provenance!r}, n_regions={self.anat.n_regions}). "
+                "This model carries NO biological content: G2 is void, and no claim "
+                "about connectome-masked coupling, receptor-derived E/I or anatomical "
+                "regional heterogeneity is supportable from it.",
+                flush=True,
+            )
         self.theta_prior = ThetaPrior()
         self.model = SCWBD(cfg.model, self.anat).to(self.device)
         self.posterior = AmortizedPosterior(
@@ -196,6 +262,23 @@ class FoundationTrainer:
             compiled = cb.compile_foundation(self.anat.to("cpu"), list(probe.values()))
             binds = cb.bind_masks(self.model, compiled)
             audit = cb.audit_binding(self.model, compiled)
+            if audit["problems"]:
+                # Fail closed.  "The compiler is unavailable" and "the compiler
+                # is available and says our binding table no longer describes
+                # this model" are opposite situations, and only the first is a
+                # reason to fall back to the cards' own globs.  Training through
+                # the second produces a checkpoint whose gradient masks are
+                # decorative -- which is what happened on 2026-08-05 -- so it is
+                # raised past the fallback handler below rather than warned
+                # about in a log nobody reads until the postmortem.
+                raise BindingDriftError(
+                    "compiler->torch binding is incomplete; refusing to train a model whose "
+                    "gradient masks would not govern the tensors they name:\n  "
+                    + "\n  ".join(audit["problems"])
+                    + "\n\nFix scwbd/foundation/compiler_bridge.py:FOUNDATION_BINDING / "
+                    "FOUNDATION_FROZEN_BINDING so every declared group names tensors that "
+                    "exist.  tests/foundation/test_compiler_binding.py covers this."
+                )
             # Modules the compiled schema does not model at all (the Stage-V
             # individualizer lives outside the operator graph) keep the card's
             # own declaration; the compiler cannot restrict what it never saw,
@@ -221,11 +304,13 @@ class FoundationTrainer:
                 "n_groups": len(compiled.gradient_masks.group_names),
                 "schedule": cb.schedule_plan(compiled),
                 "binding_audit": {
-                    k: v for k, v in audit.items() if k in ("unclaimed_parameters", "empty_bindings", "unbound_groups", "declared_empty_groups")
+                    k: v for k, v in audit.items() if k in ("unclaimed_parameters", "empty_bindings", "unbound_groups", "declared_empty_groups", "frozen_groups", "problems")
                 },
                 "per_source": changed,
                 "outside_compiler_schema": outside,
             }
+        except BindingDriftError:
+            raise
         except Exception as exc:  # noqa: BLE001 - the compiler is authoritative but not yet mandatory
             rep = {"used": False, "reason": f"{type(exc).__name__}: {exc}"}
             print(f"[warn] compiler bridge unavailable ({rep['reason']}); using the source cards' own "
@@ -242,11 +327,95 @@ class FoundationTrainer:
             if allow == ("*",):
                 perm = s.gradient_permission
             else:
-                perm = tuple(p for p in s.gradient_permission if p == "*" or any(_glob_overlap(p, a) for a in allow))
+                # "Restrict only" means the RESULT must be no broader than either
+                # side. Where a card pattern and an allowlist entry overlap, keep
+                # the NARROWER of the two. Keeping the card's pattern -- the
+                # previous behaviour -- silently widened the stage: `eeg.*`
+                # survived against an allowlist naming only `eeg.log_gain`,
+                # `eeg.offset`, `eeg.log_noise`, `eeg.nuisance*`, which let
+                # Stage V train `eeg.source_proj.*` (1,281 params) undeclared.
+                narrowed: list[str] = []
+                for p in s.gradient_permission:
+                    if p == "*":
+                        continue  # handled by the "*" branch below
+                    for a in allow:
+                        if not _glob_overlap(p, a):
+                            continue
+                        if fnmatch.fnmatch(a, p):
+                            narrowed.append(a)  # allowlist entry is the narrower
+                        elif fnmatch.fnmatch(p, a):
+                            narrowed.append(p)  # card pattern is the narrower
+                        else:
+                            narrowed.append(a)  # incomparable: prefer the stage
+                perm = tuple(dict.fromkeys(narrowed))
                 if "*" in s.gradient_permission:
                     perm = allow
             out[sid] = SourceSpec(**{**s.as_dict(), "gradient_permission": perm})
         return out
+
+    # ------------------------------------------------------------------
+    # leakage barrier
+    # ------------------------------------------------------------------
+    def _audit_real_split(self, split: Mapping[str, Any], dataset: Any) -> dict[str, Any]:
+        """Refuse to train on measured data whose split has not been audited.
+
+        Measured human recordings are the only source in this run that can
+        support a claim about brains, and a participant appearing on both sides
+        of the split turns memorisation of that person into a reported
+        generalisation (refusal **R10**).  Unlike the corpus limitations, this
+        one cannot be caveated afterwards -- it invalidates every held-out number
+        the model could produce.
+
+        So this is a **gate, not a report**: it runs before the first measured
+        window reaches a loss, and raises rather than warning.  It also records
+        the verdict on the source specs, which is what makes
+        ``leakage_checked`` in the compiled schema mean something.
+        """
+        from .realdata import leakage_check
+
+        audit = leakage_check(split, dataset)
+        self.leakage_audit = audit
+        backend = audit.get("split_backend", "unknown")
+
+        if not audit["ok"]:
+            raise RuntimeError(
+                "participant-level leakage audit FAILED (R10); refusing to train on "
+                "measured data. Violations: "
+                + json.dumps(audit["violations"][:5], default=str)
+            )
+        if backend != "grouped_splitter":
+            raise RuntimeError(
+                f"leakage audit passed but the split backend is {backend!r}, not "
+                "'grouped_splitter'. R10 requires grouping by immutable lineage before "
+                "splitting; a split that is merely disjoint was not constructed to be. "
+                f"reason={audit.get('split_fallback_reason', '')!r}"
+            )
+
+        # The audit ran and passed -> the schema may now say so.  Only measured
+        # sources are covered: a simulated source has no participants, and
+        # asserting a leakage check over one would be the same empty claim in a
+        # different place.
+        for sid, spec in list(self.sources.items()):
+            if not spec.is_simulated:
+                self.sources[sid] = SourceSpec(**{**spec.as_dict(), "leakage_audited": True})
+
+        print(
+            f"[leakage] R10 audit PASSED  backend={backend}  "
+            f"participants train/val/test="
+            f"{audit['n_subjects_per_fold'].get('train')}/"
+            f"{audit['n_subjects_per_fold'].get('val')}/"
+            f"{audit['n_subjects_per_fold'].get('test')}"
+            f" of {audit['n_subjects_total']}",
+            flush=True,
+        )
+        for w in audit.get("warnings", []):
+            print(f"[leakage] warning: {w}", flush=True)
+        gs = audit.get("grouped_splitter_audit") or {}
+        if gs:
+            print(f"[leakage] GroupedSplitter cross-check ok={gs.get('ok')}", flush=True)
+            for w in gs.get("warnings", []):
+                print(f"[leakage] cross-check warning: {w}", flush=True)
+        return audit
 
     # ------------------------------------------------------------------
     # data
@@ -272,7 +441,7 @@ class FoundationTrainer:
                 num_workers=d.num_workers,
                 drop_last=True,
                 persistent_workers=d.num_workers > 0,
-                pin_memory=True,
+                pin_memory=d.pin_memory,
             )
         )
         self.sim_val_loader = torch.utils.data.DataLoader(
@@ -293,6 +462,10 @@ class FoundationTrainer:
             ds = EEGMMIDBDataset(rc)
             if len(ds) > 0:
                 split = participant_split(ds, test_fraction=d.real_test_fraction, val_fraction=0.1, seed=d.seed)
+                # HARD GATE, before a single measured window can reach a loss.
+                # The routine existed and simply was not called; Stage III was
+                # gated by a coordinator remembering to ask, which worked once.
+                self._audit_real_split(split, ds)
                 self.real_dataset = ds
                 self.real_split = split
                 self.real_train = torch.utils.data.Subset(ds, split["train"])
@@ -511,6 +684,10 @@ class FoundationTrainer:
                         / max(time.time() - t0, 1e-9),
                         1,
                     ),
+                    # Reserved, not allocated: the caching allocator's footprint
+                    # is the machine's actual exposure, and it is the number the
+                    # cgroup cannot see (reports/training/platform_memory_limits.md).
+                    "gpu_reserved_gb": round(cuda_reserved_gb(self.device), 2),
                     **{k: v for k, v in diag.items() if isinstance(v, (int, float))},
                 }
                 self.logger.log(**rec)
@@ -518,13 +695,23 @@ class FoundationTrainer:
             if step % stage.ckpt_every == 0:
                 self._save("last.pt", stage.name, step, metrics={"loss": total})
         wall = time.time() - t0
+        # Record completion BEFORE writing the checkpoints, so the artifacts say
+        # the stage is done.  Appending afterwards (as this did) means every
+        # stage-end checkpoint records the stage as *incomplete*, and any resume
+        # replays a stage that had already run to its final step -- with a fresh
+        # OneCycle schedule, silently re-training it.  Observed: Stage II ran
+        # 700/700, wrote stage_II_interface.pt, and the resume still reported
+        # ``completed stages: ['I_regional']``.
+        #
+        # The mid-stage saves inside the loop above correctly exclude the current
+        # stage: at that point it genuinely is incomplete.
+        self.completed_stages.append(stage.name)
         self._save("last.pt", stage.name, step, metrics={"loss": best})
         self._save(f"stage_{stage.name}.pt", stage.name, step, metrics={"loss": best})
         rep = mixture.report()
         rep["stage"] = stage.name
         self._mixture_reports.append(rep)
         (self.report_dir / f"mixture_{stage.name}.json").write_text(json.dumps(rep, indent=2, default=float))
-        self.completed_stages.append(stage.name)
         return {
             "stage": stage.name,
             "steps": step,
@@ -548,6 +735,27 @@ class FoundationTrainer:
         except Exception:  # noqa: BLE001 - fall back to sampling the items
             step = max(1, len(ds) // 500)
             return sorted({str(ds[i]["subject"]) for i in range(0, len(ds), step)})
+
+    def real_split_fingerprint(self) -> dict[str, Any] | None:
+        """Participant **ids** per fold plus a sha256, recorded in every checkpoint.
+
+        Ids rather than indices: indices are meaningless if the corpus is rebuilt,
+        so an index-based fingerprint would pass silently on a different dataset.
+        Evaluation recomputes this and refuses to score on a mismatch.
+        """
+        ds = getattr(self, "real_dataset", None)
+        split = getattr(self, "real_split", None)
+        if ds is None or not split:
+            return None
+        import hashlib
+
+        def _sub(i: int) -> str:
+            rec_idx, _ = ds.window_index[int(i)]
+            return str(ds.recordings[rec_idx]["subject"])
+
+        folds = {k: sorted({_sub(i) for i in v}) for k, v in split.items()}
+        blob = json.dumps(folds, sort_keys=True).encode()
+        return {"participants_per_fold": folds, "sha256": hashlib.sha256(blob).hexdigest()}
 
     def participant_index(self, subjects: Sequence[str]) -> Tensor:
         """Map subject ids to Individualizer rows; unknown ids map to row 0.
@@ -582,6 +790,7 @@ class FoundationTrainer:
                 "anatomy": self.anat.summary(),
                 "lead_field": self.model.eeg.lead_field_meta,
                 "sensor_to_parcel": self.sensor_to_parcel.summary(),
+                "real_split": self.real_split_fingerprint(),
                 "theta_names": list(THETA_NAMES),
                 "theta_prior": self.theta_prior.as_dict(),
                 "parameter_report": self.model.parameter_report(),

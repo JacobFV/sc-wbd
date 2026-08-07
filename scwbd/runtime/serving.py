@@ -52,6 +52,7 @@ __all__ = [
     "CheckpointNotFound",
     "CheckpointRecord",
     "discover_checkpoint",
+    "coil_pose_over_region",
     "ServedModel",
     "ProvenanceExpectation",
     "ProvenanceMismatch",
@@ -339,11 +340,26 @@ class ServedModel:
         return tuple(out)
 
 
-def _default_warmup_pose(head: HeadModel) -> PoseRequest:
-    """A pose over the declared target region, in the head model's own frame."""
-    from ._compat import PoseUncertainty
+def coil_pose_over_region(
+    head: HeadModel,
+    region: str | None = None,
+    *,
+    standoff_m: float = 0.004,
+    label: str = "over_region",
+    method: str = "radial_placement_fixture",
+) -> Pose:
+    """A coil pose over ``region``, in the coil frame convention agent G declares.
 
-    region = next(iter(head.target_regions), None)
+    The coil frame's origin is the **head-facing face** and its ``+z`` points
+    **away** from the head, because ``CoilGeometry.winding_height`` is measured
+    "above the head-facing face".  Building the pose with ``+z`` pointing
+    *into* the head -- which reads naturally as "the coil is aimed at the
+    cortex" -- buries every winding ``winding_height`` deep in the scalp.  The
+    gated solver refuses that as an impossible placement rather than returning
+    the pole of a rational function, which is how the mismatch surfaced.
+    """
+    if region is None:
+        region = next(iter(head.target_regions), None)
     if region is None:  # pragma: no cover - phantom always declares one
         direction = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float64)
     else:
@@ -351,7 +367,7 @@ def _default_warmup_pose(head: HeadModel) -> PoseRequest:
         direction = (head.cortex_vertices[mask] - head.centre).mean(dim=0)
         direction = direction / torch.linalg.norm(direction)
 
-    z = -direction  # coil axis points into the head
+    z = direction  # away from the head: windings sit above the face
     up = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float64)
     if float(torch.abs(z @ up)) > 0.95:
         up = torch.tensor([0.0, 1.0, 0.0], dtype=torch.float64)
@@ -359,10 +375,17 @@ def _default_warmup_pose(head: HeadModel) -> PoseRequest:
     x = x / torch.linalg.norm(x)
     y = torch.linalg.cross(z, x)
     R = torch.stack([x, y, z], dim=1)
-    t = head.centre + direction * (head.scalp_radius + 0.004)
-    pose = Pose.from_Rt(
-        R, t, head.frame, "coil", provenance={"method": "warm_up_fixture"}
+    t = head.centre + direction * (head.scalp_radius + float(standoff_m))
+    return Pose.from_Rt(
+        R, t, head.frame, "coil", provenance={"method": method, "label": label}
     )
+
+
+def _default_warmup_pose(head: HeadModel) -> PoseRequest:
+    """A pose over the declared target region, in the head model's own frame."""
+    from ._compat import PoseUncertainty
+
+    pose = coil_pose_over_region(head, method="warm_up_fixture")
     return PoseRequest(
         pose=pose,
         frame=head.frame,

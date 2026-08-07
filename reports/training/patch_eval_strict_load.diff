@@ -1,0 +1,33 @@
+Fix for the final evaluation -- DO NOT APPLY WHILE TRAINING IS LIVE (checkpoint
+git_sha would stop describing the running source). Apply once Stage V completes,
+BEFORE running evaluate.py, because it guards the numbers evaluate.py produces.
+
+Problem: evaluate.main loads with strict=False and discards the load_report that
+load_checkpoint populates. 29 of 85 model keys carry a `_orig_mod.` prefix from
+torch.compile (e.g. `local._orig_mod.embed`). FoundationTrainer only compiles when
+`cfg.model.compile and device.type == "cuda"`, so evaluating on CPU -- or with
+compile off -- produces a model whose keys lack that prefix. All 29 keys are then
+silently dropped and the entire `local` operator is evaluated at RANDOM INIT,
+while the process prints "loaded {ckpt}".
+
+--- a/scwbd/foundation/evaluate.py
++++ b/scwbd/foundation/evaluate.py
+@@
+-        load_checkpoint(ckpt, model=tr.model, posterior=tr.posterior, map_location=str(tr.device), strict=False)
+-        print(f"loaded {ckpt}", flush=True)
++        payload = load_checkpoint(
++            ckpt, model=tr.model, posterior=tr.posterior, map_location=str(tr.device), strict=False
++        )
++        lr_ = payload.get("load_report", {})
++        missing, unexpected = lr_.get("missing", []), lr_.get("unexpected", [])
++        if missing or unexpected:
++            raise CheckpointError(
++                f"{ckpt} did not load cleanly: {len(missing)} missing, "
++                f"{len(unexpected)} unexpected keys. First missing: {missing[:3]}. "
++                f"First unexpected: {unexpected[:3]}. This is usually a torch.compile "
++                f"'_orig_mod.' prefix mismatch -- the checkpoint was written by a "
++                f"compiled model and this process did not compile (compile is only "
++                f"applied when cfg.model.compile and device.type == 'cuda'). "
++                f"Evaluating anyway would score RANDOM WEIGHTS for those modules."
++            )
++        print(f"loaded {ckpt} ({len(payload['model'])} model tensors, no key mismatch)", flush=True)

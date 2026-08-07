@@ -44,6 +44,8 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 import torch
 from torch import Tensor, nn
 
+from .util import logical_param_name
+
 __all__ = [
     "SourceSpec",
     "SourceRole",
@@ -147,6 +149,17 @@ class SourceSpec:
     validity_overlap: float = 1.0  # overlap with the target validity domain
     hierarchy_depth: int = 1  # participants nested in sites nested in studies
     # --- bookkeeping ---
+    #: Has a **participant-level leakage audit actually run and passed** for this
+    #: source?  Default ``False`` meaning *not established* -- which is the only
+    #: safe default, because an audit that never ran and one that passed are
+    #: otherwise indistinguishable downstream.
+    #:
+    #: This exists because ``compiler_bridge`` previously hard-coded
+    #: ``leakage_checked=True`` on every observation card, asserting to every
+    #: gate that consumes source cards a property nothing had established.  Only
+    #: set this from the result of a real audit -- see
+    #: ``FoundationTrainer._audit_real_split``.
+    leakage_audited: bool = False
     is_simulated: bool = False
     is_teacher: bool = False
     enabled: bool = True
@@ -213,6 +226,12 @@ class SourceSpec:
 
     # -- gradient permission ---------------------------------------------
     def permits(self, param_name: str) -> bool:
+        # Match against the *logical* name: a card's ``A_k`` is written against
+        # the module tree the architecture describes, and torch.compile renames
+        # tensors underneath it.  See util.logical_param_name -- without this a
+        # compiled run silently loses every exact-name permission while keeping
+        # the prefix globs, which is worse than losing all of them.
+        param_name = logical_param_name(param_name)
         if any(fnmatch.fnmatch(param_name, pat) for pat in self.frozen):
             return False
         return any(fnmatch.fnmatch(param_name, pat) for pat in self.gradient_permission)

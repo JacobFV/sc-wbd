@@ -1,0 +1,211 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N6_induced_efield",
+  "status": "PASS",
+  "manifest": {
+    "claim_id": "N6_induced_efield",
+    "claim_text": "The magnetically induced E-field solver reproduces the closed-form (Sarvas / Heller-van Hulsteyn) solution for a spherically symmetric conductor, validated independently of any neural-response model.",
+    "falsified_by": "relative error above tolerance against the closed form, or a mesh-refinement study that does not converge at the advertised order",
+    "consequence_if_failed": "The induced-field solver may not be used for TMS E-field prediction, target engagement or pose ranking; every downstream induction-dependent claim is suspended (N3 does not cover this: it validates conduction, not induction).",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "relative_tol": 0.05,
+      "expected_order": 1.5
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [],
+  "subchecks": [
+    {
+      "name": "induced_efield",
+      "description": "Relative error against a closed-form solution, with no neural model in the loop.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "relative error above tolerance against the analytic solution",
+      "metrics": [
+        {
+          "name": "induced_efield.mean_relative_error",
+          "value": 0.0021488122575394337,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": {
+            "lo": 0.0019072521524113454,
+            "hi": 0.0024228459154883642,
+            "level": 0.95,
+            "method": "bootstrap-percentile"
+          },
+          "threshold": 0.05,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": true,
+          "exact": false,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "induced_efield.max_relative_error",
+          "value": 0.07921446472171476,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": null,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "reference_provenance",
+      "description": "Does the closed-form reference come from the same module as the solver?",
+      "status": "PASS",
+      "mandatory": false,
+      "reason": "",
+      "falsified_by": "",
+      "metrics": [
+        {
+          "name": "induced_efield.reference_shares_module_with_solver",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "solver=scwbd.intervene.tms.efield, reference=scwbd.intervene.spectral_reference; shared provenance is not disqualifying, but it is a weaker test than an independent implementation and must not be described as independent validation",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "reference_validity_domain",
+      "description": "The multipole/series reference converges like ratio**degree. Its a-priori error bound at this geometry must sit well below the solver error being measured, or the gate is measuring the reference.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the reference is no more accurate than the solver it measures",
+      "metrics": [
+        {
+          "name": "reference.convergence_ratio",
+          "value": 0.7727272727272728,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.9,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a/R_c at the validated geometry; the series converges like ratio**degree, so a ratio approaching 1 is not fixable by raising the degree",
+          "passed": true
+        },
+        {
+          "name": "reference.a_priori_bound",
+          "value": 4.2194859653233165e-06,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "ratio**degree with degree=48",
+          "passed": null
+        },
+        {
+          "name": "reference.bound_over_measured_error",
+          "value": 0.0019636363998383807,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.1,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "a-priori reference bound 4.22e-06 / measured solver error 0.00215; the reference must be the more accurate of the two by a clear margin",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "Induction, not conduction: this gate is what N3 does NOT cover.",
+    "STANDOFF ONLY. The reference series converges like (a/R_c)**degree. At a contact geometry (a/R_c ~ 0.955 for a coil element 4 mm off an 85 mm scalp) no feasible degree brings its bound below the solver error, so this gate validates the discretisation against a STANDOFF equivalent dipole, not against a contact coil. tms-robotics positions a coil in contact; that regime is gate N8_induced_efield_contact and it has not run.",
+    "The validity domain is a metric in this report, not a footnote: a reader who checks only the headline error still sees reference.convergence_ratio."
+  ],
+  "artifacts": {
+    "subject": "scwbd.intervene.tms.efield.charge_bem_induced_efield",
+    "reference": "scwbd.intervene.spectral_reference.spectral_induced_efield",
+    "reference_validity_domain": {
+      "convergence_ratio": 0.7727272727272728,
+      "reference_degree": 48,
+      "a_priori_bound": 4.2194859653233165e-06,
+      "measured_solver_error": 0.0021488122575394337,
+      "bound_over_measured_error": 0.0019636363998383807,
+      "does_not_cover": "contact geometry. A coil element in contact with the scalp has a/R_c ~ 0.955, where no feasible degree brings the series bound below the solver error. This gate validates a STANDOFF equivalent dipole; the contact regime is gate N8_induced_efield_contact and has not run."
+    },
+    "geometry": {
+      "sphere_radius_m": 0.085,
+      "a_over_Rc": 0.7727272727272728
+    }
+  },
+  "provenance": {
+    "timestamp_utc": "2026-08-06T09:54:47+00:00",
+    "git_rev": "c0e5833",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/bench/adjudication.py",
+      "scwbd/bench/corpus.py",
+      "scwbd/bench/instruments.py",
+      "scwbd/bench/numerics.py",
+      "scwbd/bench/report.py",
+      "scwbd/bench/runner.py",
+      "scwbd/runtime/_compat.py",
+      "scwbd/runtime/backends.py",
+      "scwbd/runtime/targeting.py",
+      "tests/bench/test_adjudication.py",
+      "tests/bench/test_instruments.py",
+      "tests/bench/test_runner.py",
+      "tests/runtime/test_field_backends.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
+  }
+}

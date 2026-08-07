@@ -1,0 +1,25 @@
+{
+ "algorithm": "sha256",
+ "dataset_id": "tribe-v2",
+ "files": {
+  "LICENSE": {
+   "bytes": 19342,
+   "sha256": "0afca3145596cd005f6f6ed977313ea31928094fc5b4aaabc21bb765ea369d09"
+  },
+  "best.ckpt": {
+   "bytes": 708856138,
+   "sha256": "9c79ffff6b642b7b0c71d558c935fb3fa33f2788bfb509feead94fafbba2f321"
+  },
+  "config.yaml": {
+   "bytes": 18041,
+   "sha256": "a17212a257dfd91424e20a5fa8640d107fbbf79e842b6b2d72d17d24399dc9ef"
+  }
+ },
+ "generated_utc": "2026-08-06T12:44:00+00:00",
+ "manifest_sha256": "ed8e92ae3ca04cb9582e2e0543ef902860401cbb769d447d7a670d299a773912",
+ "n_files": 3,
+ "note": "Hashes of the bytes actually fetched from the commit-pinned HuggingFace resolve endpoint. The bytes are NOT retained on the data root; this manifest exists so a re-fetch can be verified byte-for-byte against what was assessed. Feature-extractor weights are NOT included: they were not fetched.",
+ "root": "huggingface.co/facebook/tribev2@f894e783020944dcd96e5568550afe2aa9743f9f",
+ "total_bytes": 708893521,
+ "version": "hf:f894e783020944dcd96e5568550afe2aa9743f9f"
+}

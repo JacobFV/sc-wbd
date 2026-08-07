@@ -6,9 +6,13 @@ coupling, immediate population response, network propagation, and
 plasticity."*
 
 * :class:`EFieldBackend` -- coil pose to induced E-field.  Agent G owns the
-  real solver; until it lands the runtime uses
-  :class:`AnalyticSphericalEField`, which is a closed-form model and is
-  *labelled* as one everywhere it appears.
+  real solvers and they have landed:
+  :class:`GatedAnalyticSphereEField` (gate ``N6_induced_efield``) is the
+  default, and :class:`ChargeBEMEField` (``N6`` + ``N8_induced_efield_contact``)
+  is selectable for non-spherical geometry.
+  :class:`AnalyticSphericalEField` remains only as a fallback for when
+  ``scwbd.intervene.tms.efield`` is not importable; it is an *approximation*,
+  measurably so, and is labelled as one everywhere it appears.
 * :class:`ResponseOperator` -- E-field to drive on a named target population.
   There are several, they disagree, and the disagreement is the output.
 * :class:`NetworkPropagator` -- drive to distributed change.  Several model
@@ -17,30 +21,41 @@ plasticity."*
 
 Claim limits
 ------------
-None of these operators is claimed to be neurally realized.  The analytic field
-backend is an *effective* model of a spherically symmetric conductor; the
-response operators are *effective*/*functional*; the network propagators are
-*surrogates*.  Nothing here has been validated against a measured cortical
-field or a measured evoked response.
+None of these operators is claimed to be neurally realized.  The field backends
+model a spherically symmetric conductor and are validated *numerically* -- the
+gates compare a computation against an independent reference, which lifts a
+precondition and licenses nothing downstream.  The response operators are
+*effective*/*functional*; the network propagators are *surrogates*.  Nothing
+here has been validated against a measured cortical field or a measured evoked
+response, and a numerical gate does not make a sphere a head.
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
-from typing import Any, Callable, Literal, Mapping, Protocol
+from dataclasses import dataclass, field, replace
+from typing import Any, Literal, Mapping, Protocol
 
 import torch
 from torch import Tensor
 
-from ._compat import Pose, efield_solver, figure_eight_coil
+from . import _compat
+from ._compat import Pose, figure_eight_coil
 from .head import HeadModel
 
 __all__ = [
     "MU0_OVER_4PI",
     "CoilSpec",
+    "FieldSolve",
     "EFieldBackend",
     "AnalyticSphericalEField",
+    "GatedAnalyticSphereEField",
+    "ChargeBEMEField",
+    "FieldResolutionUnresolved",
+    "ImpossiblePlacement",
+    "DiscrepancyBoundNotEstablished",
+    "GEOMETRY_DISCREPANCY_FRACTION",
+    "combine_discrepancy",
     "resolve_efield_backend",
     "ResponseOperator",
     "MagnitudeThresholdResponse",
@@ -75,6 +90,21 @@ class CoilSpec:
     ``didt_relative_sd`` is the device-gain prior.  Stimulator output is not
     known exactly and the field scales linearly in it, so this is the one
     genuinely non-geometric variance term the analytic backend carries.
+
+    **Frame convention, and it is load-bearing.**  The coil frame's origin is
+    the *head-facing face* and its ``+z`` axis points **away** from the head;
+    windings sit at ``+winding_height`` above the face.  That is agent G's
+    declared convention (``CoilGeometry.winding_height``, "above the head-facing
+    face"), and getting it backwards buries the windings inside the scalp.  The
+    gated solver refuses that outright
+    (:class:`~scwbd.intervene.tms.efield.ImpossibleGeometry`) rather than
+    returning the pole of a rational function, which is how the convention
+    mismatch was found.
+
+    ``geometry`` and ``pulse`` carry agent G's own ``CoilGeometry`` and
+    ``TMSPulse`` when they are available, so the gated field solver can be
+    driven with the objects it was validated against rather than a
+    re-derivation of them.
     """
 
     device_id: str
@@ -83,6 +113,8 @@ class CoilSpec:
     didt_a_per_s: float = 4.0e7
     didt_relative_sd: float = 0.05
     frame: str = "coil"
+    geometry: Any = None
+    pulse: Any = None
     notes: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -118,12 +150,17 @@ class CoilSpec:
         if figure_eight_coil is not None:
             geom = figure_eight_coil(n_azimuth=n_azimuth, n_radial=n_radial)
             pos, mom = geom.dipole_elements()
+            pulse = None
+            if _compat.tms_pulse_biphasic is not None:
+                pulse = _compat.tms_pulse_biphasic(peak_didt=didt_a_per_s)
             return cls(
                 device_id=device_id,
                 dipole_positions=pos.to(_DT),
                 dipole_moment_per_amp=mom.to(_DT),
                 didt_a_per_s=didt_a_per_s,
                 didt_relative_sd=didt_relative_sd,
+                geometry=geom,
+                pulse=pulse,
                 notes={"source": "scwbd.intervene.tms.coil.FigureEightCoil"},
             )
         pos, mom = _fallback_figure_eight(n_azimuth=n_azimuth, n_radial=n_radial)
@@ -137,7 +174,32 @@ class CoilSpec:
         )
 
     def coarsened(self, stride: int = 2) -> "CoilSpec":
-        """A deliberately coarser discretisation, for a refinement check."""
+        """A deliberately coarser discretisation, for a refinement check.
+
+        When the spec carries agent G's ``CoilGeometry`` the coarsening happens
+        *there*, by re-tiling the equivalent sheet at a lower azimuthal and
+        radial count, and the dipoles are re-derived from it.  Subsampling the
+        dipole array instead would leave the geometry and the sheet describing
+        different coils, and the gated solver is driven by the geometry -- so
+        the refinement check would silently compare a coil against itself.
+        """
+        if self.geometry is not None:
+            coarse_geom = replace(
+                self.geometry,
+                n_azimuth=max(4, int(self.geometry.n_azimuth) // stride),
+                n_radial=max(1, int(self.geometry.n_radial) // stride),
+            )
+            pos, mom = coarse_geom.dipole_elements()
+            return CoilSpec(
+                device_id=self.device_id + f"@stride{stride}",
+                dipole_positions=pos.to(_DT),
+                dipole_moment_per_amp=mom.to(_DT),
+                didt_a_per_s=self.didt_a_per_s,
+                didt_relative_sd=self.didt_relative_sd,
+                geometry=coarse_geom,
+                pulse=self.pulse,
+                notes={**dict(self.notes), "coarsened_stride": stride},
+            )
         return CoilSpec(
             device_id=self.device_id + f"@stride{stride}",
             dipole_positions=self.dipole_positions[::stride],
@@ -184,50 +246,228 @@ def _fallback_figure_eight(
 
 
 # ---------------------------------------------------------------------------
-# E-field
+# E-field: two discrepancy terms, never one
 # ---------------------------------------------------------------------------
+
+#: Sphere-vs-real-head model discrepancy, as a fraction of the field.
+#:
+#: This is a **declared prior**, not a measurement: nobody here has compared a
+#: spherical solve against a subject-specific mesh.  It applies identically to
+#: every backend in this module, because they all model a sphere -- an exact
+#: solution of the wrong geometry is still the wrong geometry.
+GEOMETRY_DISCREPANCY_FRACTION: tuple[float, float] = (-0.4, 0.4)
+
+#: Smallest head radius over which the fallback approximation's own error has
+#: been measured, metres.  Not a biological claim -- adult head radii are more
+#: like 80-100 mm -- but the bound has to cover what the *code* admits, and
+#: nothing in :class:`~scwbd.runtime.head.HeadModel` enforces an adult radius.
+FALLBACK_MIN_HEAD_RADIUS_M = 0.060
+
+#: Largest coil standoff over which it has been measured, metres.  This is not
+#: chosen: it is ``A_safe``'s own ``tms.coil_scalp_distance_mm`` maximum, so the
+#: envelope ends exactly where admissible geometry does.
+FALLBACK_MAX_STANDOFF_M = 0.040
+
+#: How the fallback's ``solution_discrepancy_fraction`` was arrived at.  Quoted
+#: into the ledger so the number travels with its derivation.
+FALLBACK_SOLUTION_DISCREPANCY_BASIS = (
+    "Measured against scwbd.intervene.spectral_reference.AxialInductionReference "
+    "(degree 250) on a figure-eight coil over head radii 60-100 mm and standoffs "
+    "0-40 mm, the latter being A_safe's tms.coil_scalp_distance_mm maximum. The "
+    "peak ratio is monotone in both variables and worst at the small-head, "
+    "large-standoff corner: 1.3204 at 60 mm / 40 mm. It reproduces gate N9's "
+    "1.06289 at that gate's own 70 mm corner. The declared 1.35 adds ~2% over "
+    "the measured worst case for grid coarseness. "
+    "The lower bound is exactly 0 and is attained, not assumed: for an "
+    "axisymmetric coil the primary vector potential is purely azimuthal, the "
+    "Neumann data vanishes identically, there is no secondary field, and the "
+    "approximation is exact -- measured 0.0 and 3.6e-15. The error is therefore "
+    "a function of source SYMMETRY, not of any resolution parameter, so no "
+    "refinement reveals it and a validation suite built on a circular coil "
+    "would have certified the approximation as perfect."
+)
+
+
+def combine_discrepancy(
+    solution: tuple[float, float], geometry: tuple[float, float]
+) -> tuple[float, float]:
+    """Compose two *relative* discrepancies. Multiplicative, not additive.
+
+    Writing ``E_backend = E_exact_sphere (1 + a)`` and
+    ``E_exact_sphere = E_real_head (1 + g)``, the backend's error against the
+    real head is ``(1 + a)(1 + g) - 1 = a + g + ag``.  The cross term is not
+    negligible when either is large: at ``a = 1.06`` and ``g = 0.4`` it is 0.42,
+    which is most of the geometry prior over again.
+
+    This exists as a function rather than a typed constant because a typed
+    constant is exactly how the two terms got conflated in the first place.  The
+    combination is derived on every read, so widening either input cannot leave
+    a stale total behind.
+    """
+    for name, (lo, hi) in (("solution", solution), ("geometry", geometry)):
+        if hi < lo:
+            raise ValueError(f"{name} discrepancy interval is inverted: ({lo}, {hi})")
+        if lo <= -1.0:
+            raise ValueError(
+                f"{name} discrepancy lower bound {lo} implies the field can vanish "
+                "or change sign, which is not a discrepancy but a different model"
+            )
+    # a + g + a*g, algebraically identical to (1+a)(1+g)-1 but *exact* when
+    # either term is zero -- and one of them usually is. The product form leaves
+    # 0.3999999999999999 where the declared prior says 0.4, and a declared bound
+    # that does not compare equal to the number somebody wrote is its own small
+    # trap.
+    corners = [a + g + a * g for a in solution for g in geometry]
+    return (min(corners), max(corners))
+
+
+class FieldResolutionUnresolved(RuntimeError):
+    """The solver refused because its discretisation does not resolve the source.
+
+    Wraps ``ChargeBEM.assert_resolves_sources``' refusal (``R06``).  This is a
+    *modelling* gap, not a placement error: the geometry is physical, the mesh
+    is too coarse to attach an error bound to it, and gate N8_induced_efield_contact measured
+    non-monotonic refinement beyond the envelope, so a coarser mesh can score
+    better and a user would have no way to tell that from convergence.  The
+    runtime turns this into ``Defer``, never into a number.
+    """
+
+    def __init__(self, message: str, *, remedy: str = "", resolution: Any = None) -> None:
+        super().__init__(message)
+        self.remedy = remedy
+        self.resolution = dict(resolution or {})
+
+
+class DiscrepancyBoundNotEstablished(RuntimeError):
+    """The backend has no measured error bound for *this* geometry.
+
+    Distinct from both other refusals: the geometry is physical and the
+    discretisation is fine, but it sits outside the envelope over which this
+    backend's own discrepancy was measured, so the interval it would attach is
+    not one anybody established.  Reporting a number with a bound that does not
+    cover it is precisely what gate ``N9_fallback_field_approximation`` caught,
+    and a declared envelope that nothing checks would be the same defect one
+    level up.  The runtime answers ``Defer``.
+    """
+
+    def __init__(self, message: str, *, remedy: str = "", detail: Any = None) -> None:
+        super().__init__(message)
+        self.remedy = remedy
+        self.detail = dict(detail or {})
+
+
+class ImpossiblePlacement(RuntimeError):
+    """The coil is not outside the head, so there is no field to compute.
+
+    Wraps the other half of ``ImpossibleGeometry`` (``R06``): a source element
+    inside the conductor, or a field point outside it.  This is not an
+    inaccuracy to be bounded; the interior solution's denominator passes through
+    zero and returns a large, smooth, entirely fictitious number.  The runtime
+    turns this into ``Refuse(code="R06")``.
+    """
+
+    def __init__(self, message: str, *, remedy: str = "", detail: Any = None) -> None:
+        super().__init__(message)
+        self.remedy = remedy
+        self.detail = dict(detail or {})
+
+
+@dataclass(frozen=True)
+class FieldSolve:
+    """A field plus everything the solver measured about its own accuracy.
+
+    ``numerical_variance`` and ``relative_error_bound`` come **from the solver**,
+    not from this module.  For the charge BEM they are
+    ``bem_error_envelope(panel_to_standoff)`` evaluated on the measured
+    near-source resolution -- a step function over gate N8_induced_efield_contact's refinement
+    table -- so the ledger cites a study rather than a constant somebody typed.
+    """
+
+    e: Tensor
+    numerical_variance: float = 0.0
+    relative_error_bound: float | None = None
+    resolution: Mapping[str, float] | None = None
+    validity_domain: Mapping[str, Any] = field(default_factory=dict)
 
 
 class EFieldBackend(Protocol):
     """Coil pose -> induced E-field on the cortical sample points."""
 
     name: str
-    backend_class: Literal["analytic", "numerical_fem", "learned", "unknown"]
+    backend_class: Literal[
+        "analytic", "numerical_bem", "numerical_fem", "learned", "unknown"
+    ]
     is_trained_artifact: bool
 
     def solve(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> Tensor:
         """Return ``[N, 3]`` V/m in ``head.frame``. ``pose`` is ``head<-coil``."""
         ...
 
+    def solve_field(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> FieldSolve:
+        """Same solve, plus the solver's own accuracy report."""
+        ...
+
+
+def _check_frames(head: HeadModel, pose: Pose, coil: CoilSpec) -> None:
+    if pose.child != coil.frame:
+        raise ValueError(
+            f"pose {pose.label} does not end at the coil frame "
+            f"{coil.frame!r}; the field solve will not guess"
+        )
+    if pose.parent != head.frame:
+        raise ValueError(
+            f"pose {pose.label} is not expressed in the head model frame "
+            f"{head.frame!r}; resolve the declared chain first"
+        )
+
+
+def _dipoles_in_head_frame(pose: Pose, coil: CoilSpec) -> tuple[Tensor, Tensor]:
+    """``(positions, moment rates)`` of the coil elements, in the head frame."""
+    R, t = pose.R, pose.t
+    p = (R @ coil.dipole_positions.T).T + t
+    mdot = (R @ coil.dipole_moment_per_amp.T).T * float(coil.didt_a_per_s)
+    return p, mdot
+
 
 @dataclass(frozen=True)
 class AnalyticSphericalEField:
-    """Closed-form induced field for a spherically symmetric conductor.
+    """Tangential projection of the primary field. **An approximation.**
 
     The primary (source) field of a magnetic dipole ``m`` at ``p`` is
 
     .. math:: E_p(r) = -\\frac{\\mu_0}{4\\pi}\\,
               \\frac{\\dot m \\times (r-p)}{|r-p|^3},
 
-    and for a *spherically symmetric* conductor the secondary field from
-    surface charge exactly cancels the radial component of the total field, so
+    and this backend returns its tangential part,
+    ``E_p - (E_p . n) n``.
 
-    .. math:: E(r) = E_p(r) - \\bigl(E_p(r)\\cdot\\hat n\\bigr)\\hat n,
-              \\qquad \\hat n = (r-c)/|r-c|.
+    That is **not** the Sarvas / Heller--van Hulsteyn interior solution.  The
+    total field in a spherically symmetric conductor does have zero radial
+    component, but the secondary field is not merely minus the radial part of
+    the primary -- it carries a tangential component too, and dropping it
+    overestimates the answer.  Measured against the gated solver on the shipped
+    phantom, this backend is high by a factor of ~1.54 at the peak, with the
+    direction essentially unchanged
+    (``tests/runtime/test_field_backends.py`` records it).
 
-    (Heller & van Hulsteyn 1992; the standard sphere result also used by the
-    EEG/MEG forward literature.)  Two consequences are load-bearing and are
-    stated rather than hidden:
+    It exists solely as a fallback for when
+    ``scwbd.intervene.tms.efield`` is not importable, so that the runtime's
+    *structure* -- ledgers, covariance propagation, refusals -- can be
+    exercised without agent G.  :func:`resolve_efield_backend` prefers
+    :class:`GatedAnalyticSphereEField` whenever it exists, and the provenance
+    records which one ran.
+
+    Two further consequences, stated rather than hidden:
 
     * the answer is **independent of conductivity**, so this backend cannot
       report a tissue-parameter variance term and must not be read as if it
       could;
-    * a real head is not a sphere, so the model discrepancy against a
-      finite-element solve on a subject mesh is **unbounded here** -- it is
-      carried as a prior-specified sensitivity range, never as zero.
+    * a real head is not a sphere, so the model discrepancy against a solve on
+      a subject mesh is carried as a prior-specified sensitivity range, never
+      as zero.
     """
 
-    name: str = "analytic_spherical_primary"
+    name: str = "runtime_fallback_primary_tangential_projection"
     backend_class: str = "analytic"
     is_trained_artifact: bool = False
     #: Where this backend actually computes.  ``ARCHITECTURE.md`` Sec. 3 keeps
@@ -235,30 +475,87 @@ class AnalyticSphericalEField:
     #: cheap enough that CPU float64 is the right answer, and reporting "cuda"
     #: because CUDA happened to be available would be a false provenance.
     device: str = "cpu"
-    #: Fractional model-discrepancy range vs an FEM solve on a real head.
-    #: Deliberately wide; it is a declared prior, not a measurement.
-    discrepancy_fraction: tuple[float, float] = (-0.4, 0.4)
+
+    #: This approximation against the **exact solution of the same geometry**.
+    #: Measured, and *one-sided*: dropping the secondary field's tangential part
+    #: can only inflate the answer, so the lower bound is exactly zero and is
+    #: attained.  See :data:`FALLBACK_SOLUTION_DISCREPANCY_BASIS` for how the
+    #: upper bound was measured and over what envelope.
+    solution_discrepancy_fraction: tuple[float, float] = (0.0, 1.35)
+    #: The envelope that bound was measured over.  Declared as data, and
+    #: *checked*: a declared-but-unchecked domain is the same defect gate N9
+    #: caught one level up -- a number that looks like a bound and is not one.
+    min_head_radius_m: float = FALLBACK_MIN_HEAD_RADIUS_M
+    max_standoff_m: float = FALLBACK_MAX_STANDOFF_M
+    #: Sphere against a real head.  A declared prior, identical to every other
+    #: backend here, and untouched by any numerical gate.
+    geometry_discrepancy_fraction: tuple[float, float] = GEOMETRY_DISCREPANCY_FRACTION
+    #: The error is almost purely in *magnitude*: gate N9 measures a peak
+    #: direction cosine >= 0.999988 over the whole envelope, i.e. 0.28 degrees.
+    #: A consumer that uses only field direction inherits this instead of the
+    #: magnitude interval, which would overstate its uncertainty by two orders
+    #: of magnitude.
+    direction_discrepancy_rad: float = 0.005
+    gate_evidence: tuple[str, ...] = ("N9_fallback_field_approximation",)
     citation: str = (
-        "Heller & van Hulsteyn 1992, Biophys J 63:129-138; "
-        "Deng, Lisanby & Peterchev 2013, Brain Stimul 6:1-13"
+        "approximation; the reference solution is Heller & van Hulsteyn 1992, "
+        "Biophys J 63:129-138, implemented in scwbd.intervene.tms.efield. "
+        "Bounded by reports/intervene/N9_fallback_field_approximation.md"
     )
 
+    @property
+    def discrepancy_fraction(self) -> tuple[float, float]:
+        """Derived, never typed: the two terms composed multiplicatively.
+
+        Reading this is what most callers want; declaring it is what produced
+        the defect gate N9 caught, because a single interval said to carry two
+        things can be consumed entirely by one of them without anybody noticing.
+        """
+        return combine_discrepancy(
+            self.solution_discrepancy_fraction, self.geometry_discrepancy_fraction
+        )
+
     def solve(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> Tensor:
-        if pose.child != coil.frame:
-            raise ValueError(
-                f"pose {pose.label} does not end at the coil frame "
-                f"{coil.frame!r}; the field solve will not guess"
+        return self.solve_field(head, pose, coil).e
+
+    def assert_bound_covers(self, head: HeadModel, pose: Pose) -> dict[str, float]:
+        """Refuse a geometry this backend has no measured error bound for."""
+        standoff = head.scalp_distance(pose.t)
+        measured = {
+            "head_radius_m": float(head.scalp_radius),
+            "standoff_m": float(standoff),
+        }
+        if head.scalp_radius < self.min_head_radius_m - 1e-9:
+            raise DiscrepancyBoundNotEstablished(
+                f"{self.name}: head radius {head.scalp_radius * 1e3:.1f} mm is below "
+                f"{self.min_head_radius_m * 1e3:.0f} mm, the smallest radius this "
+                "approximation's error has been measured at. The error grows "
+                "monotonically as the head shrinks (1.32 at 60 mm against 0.74 at "
+                "92 mm), so the declared interval is not known to cover it here.",
+                remedy=(
+                    "use the gated solver (scwbd.intervene.tms.efield is the "
+                    "default when importable), or extend gate "
+                    "N9_fallback_field_approximation's envelope and widen the "
+                    "declared bound to match"
+                ),
+                detail=measured,
             )
-        if pose.parent != head.frame:
-            raise ValueError(
-                f"pose {pose.label} is not expressed in the head model frame "
-                f"{head.frame!r}; resolve the declared chain first"
+        if standoff > self.max_standoff_m + 1e-9:
+            raise DiscrepancyBoundNotEstablished(
+                f"{self.name}: coil standoff {standoff * 1e3:.1f} mm exceeds "
+                f"{self.max_standoff_m * 1e3:.0f} mm, the largest this "
+                "approximation's error has been measured at -- which is also "
+                "A_safe's tms.coil_scalp_distance_mm maximum, so a pose out here "
+                "leaves the feasible set as well.",
+                remedy="bring the coil inside A_safe, or use the gated solver",
+                detail=measured,
             )
-        R = pose.R
-        t = pose.t
-        # dipole positions and moment rates in the head frame
-        p = (R @ coil.dipole_positions.T).T + t  # [D,3]
-        mdot = (R @ coil.dipole_moment_per_amp.T).T * float(coil.didt_a_per_s)  # [D,3]
+        return measured
+
+    def solve_field(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> FieldSolve:
+        _check_frames(head, pose, coil)
+        domain = self.assert_bound_covers(head, pose)
+        p, mdot = _dipoles_in_head_frame(pose, coil)
 
         r = head.cortex_vertices  # [N,3]
         diff = r.unsqueeze(1) - p.unsqueeze(0)  # [N,D,3]
@@ -269,31 +566,342 @@ class AnalyticSphericalEField:
         n_hat = r - head.centre
         n_hat = n_hat / torch.linalg.norm(n_hat, dim=-1, keepdim=True).clamp_min(1e-30)
         radial = (primary * n_hat).sum(dim=-1, keepdim=True)
-        return primary - radial * n_hat
+        return FieldSolve(
+            e=primary - radial * n_hat,
+            # closed form: no discretisation of the conductor, so no
+            # discretisation error. The coil's own discretisation is measured
+            # separately by the runtime's refinement check.
+            numerical_variance=0.0,
+            relative_error_bound=0.0,
+            validity_domain={
+                "solver": self.name,
+                "geometry": "spherically_symmetric",
+                "gate_evidence": list(self.gate_evidence),
+                "solution_discrepancy_basis": FALLBACK_SOLUTION_DISCREPANCY_BASIS,
+                "solution_discrepancy_domain": {
+                    **domain,
+                    "min_head_radius_m": self.min_head_radius_m,
+                    "max_standoff_m": self.max_standoff_m,
+                },
+            },
+        )
 
 
-def resolve_efield_backend(explicit: Any = None) -> EFieldBackend:
-    """Prefer agent G's solver; fall back to the analytic sphere and say so."""
-    if explicit is not None:
-        return explicit
-    if efield_solver is not None:  # pragma: no cover - depends on agent G
-        return _AgentGAdapter(efield_solver)
-    return AnalyticSphericalEField()
+# ---------------------------------------------------------------------------
+# the gated solvers (agent G / Faraday)
+# ---------------------------------------------------------------------------
+
+
+def _spherical_head_for(head: HeadModel) -> Any:
+    """Build agent G's ``SphericalHeadModel`` for a spherical ``HeadModel``.
+
+    Refuses a head model whose cortical samples are not on a sphere about its
+    declared centre.  The analytic interior solution is a theorem about a
+    spherically symmetric conductor; applying it to something else is not an
+    approximation with a bound, it is a different problem.
+    """
+    if _compat.spherical_head_model is None:  # pragma: no cover - agent G absent
+        raise ImpossiblePlacement("scwbd.intervene.tms.efield is not available")
+    radii = torch.linalg.norm(head.cortex_vertices - head.centre, dim=-1)
+    cortex_r = float(radii.mean())
+    spread = float((radii - cortex_r).abs().max())
+    if spread > 1e-4:
+        raise ImpossiblePlacement(
+            f"head model {head.subject_id!r} is not spherically symmetric about "
+            f"its declared centre (cortical radii vary by {spread * 1e3:.2f} mm); "
+            "the closed-form interior solution is a theorem about a spherically "
+            "symmetric conductor and does not describe this geometry",
+            remedy=(
+                "supply a ChargeBEM mesh for the real surface, or declare a "
+                "spherical head model"
+            ),
+            detail={"cortex_radius_spread_m": spread},
+        )
+    return _compat.spherical_head_model(
+        radius=float(head.scalp_radius),
+        radii=(float(head.scalp_radius),),
+        conductivities=(float(head.conductivity_prior.get("brain_S_per_m", 0.33)),),
+        cortex_radius=cortex_r,
+    )
+
+
+def _translate_refusal(exc: BaseException, *, context: str) -> RuntimeError:
+    """Map agent G's ``ImpossibleGeometry`` onto the runtime's two answers."""
+    remedy = str(getattr(exc, "remedy", ""))
+    obj = getattr(exc, "offending_object", None)
+    if _compat.is_resolution_refusal(exc):
+        return FieldResolutionUnresolved(
+            f"{context}: {exc}", remedy=remedy, resolution=obj
+        )
+    return ImpossiblePlacement(
+        f"{context}: {exc}",
+        remedy=remedy,
+        detail=obj if isinstance(obj, Mapping) else {"offending": str(obj)},
+    )
 
 
 @dataclass(frozen=True)
-class _AgentGAdapter:  # pragma: no cover - depends on agent G landing
-    """Thin adapter around ``scwbd.intervene.tms`` once its solver exists."""
+class GatedAnalyticSphereEField:
+    """``scwbd.intervene.tms.efield.analytic_sphere_efield``, gated by N6/N8.
 
-    fn: Callable[..., Tensor]
-    name: str = "scwbd.intervene.tms.solve_efield"
-    backend_class: str = "numerical_fem"
+    Preferred over :class:`AnalyticSphericalEField` because it is the
+    implementation the field-physics gates were run against, and because it
+    performs agent G's geometry preconditions -- a coil element inside the
+    scalp is refused rather than evaluated at the pole of a rational function.
+
+    What the gates do and do not license: N6/N8 validate the *induced-field
+    computation*.  They say nothing about whether a sphere is a good model of a
+    head, which is why :attr:`discrepancy_fraction` stays wide and separate.
+    """
+
+    name: str = "scwbd.intervene.tms.efield.analytic_sphere_efield"
+    backend_class: str = "analytic"
     is_trained_artifact: bool = False
-    discrepancy_fraction: tuple[float, float] = (-0.2, 0.2)
-    citation: str = "scwbd.intervene.tms (agent G)"
+    device: str = "cpu"
+    #: Zero, and that is the point: this *is* the exact interior solution for
+    #: the geometry it models. Its residual against N6's independent reference
+    #: is a numerical term, not a bias, and belongs in variance.
+    solution_discrepancy_fraction: tuple[float, float] = (0.0, 0.0)
+    #: Sphere against a real head. The same declared prior every backend here
+    #: carries, and untouched by a numerical gate: N6 validates the computation,
+    #: not the choice of a sphere.
+    geometry_discrepancy_fraction: tuple[float, float] = GEOMETRY_DISCREPANCY_FRACTION
+    direction_discrepancy_rad: float = 0.0
+    gate_evidence: tuple[str, ...] = ("N6_induced_efield",)
+    citation: str = (
+        "Heller & van Hulsteyn 1992, Biophys J 63:129-138; "
+        "reports/intervene/N6_induced_efield.md"
+    )
+
+    @property
+    def discrepancy_fraction(self) -> tuple[float, float]:
+        """Derived from the two terms; here it reduces to the geometry prior."""
+        return combine_discrepancy(
+            self.solution_discrepancy_fraction, self.geometry_discrepancy_fraction
+        )
 
     def solve(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> Tensor:
-        return torch.as_tensor(self.fn(head=head, pose=pose, coil=coil), dtype=_DT)
+        return self.solve_field(head, pose, coil).e
+
+    def solve_field(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> FieldSolve:
+        _check_frames(head, pose, coil)
+        sphere = _spherical_head_for(head)
+        p, mdot = _dipoles_in_head_frame(pose, coil)
+        centre = head.centre
+        try:
+            e = _compat.analytic_sphere_efield(
+                head.cortex_vertices - centre, p - centre, mdot, head=sphere
+            )
+        except Exception as exc:  # agent G's ImpossibleGeometry, or worse
+            if _compat.impossible_geometry is not None and isinstance(
+                exc, _compat.impossible_geometry
+            ):
+                raise _translate_refusal(exc, context=self.name) from exc
+            raise
+        return FieldSolve(
+            e=torch.as_tensor(e, dtype=_DT),
+            numerical_variance=0.0,
+            relative_error_bound=0.0,
+            validity_domain={
+                "solver": self.name,
+                "geometry": "spherically_symmetric",
+                "gate_evidence": list(self.gate_evidence),
+                "conductivity_enters_solution": False,
+            },
+        )
+
+
+class ChargeBEMEField:
+    """``scwbd.intervene.tms.efield.ChargeBEM``, with N8's contact-regime gate.
+
+    Two things this backend exists to carry, and they are different:
+
+    * the **calibrated numerical bound**.  ``efield_from_coil(solver="bem")``
+      measures the near-source resolution of the mesh it actually used and
+      looks the relative-error bound up in gate
+      ``N8_induced_efield_contact``'s refinement table.  The runtime consumes
+      that number.  There is no fixed percentage anywhere on this path.
+    * the **refusal**.  ``ChargeBEM.assert_resolves_sources`` refuses outside
+      the validated envelope (``panel_to_standoff <= 1.0``), so the runtime
+      cannot receive an unvalidated field by accident.  That refusal becomes
+      ``Defer``, not an exception escaping to the consumer.
+
+    The mesh is graded toward the coil, because contact geometry needs
+    millimetre panels under the source and does not need them anywhere else --
+    uniform refinement to that size is ~80 000 unknowns and a 53 GB dense
+    matrix.  Sizing the refined patch is
+    ``graded_icosphere_for_sources``' job, not this module's: it measures the
+    source distribution's own angular extent, which for a figure-eight is ~41
+    degrees of scalp because the wings carry the current and sit far off axis.
+    The runtime passes source positions and lets the solver mesh for them.
+
+    One mesh is built per nominal pose and reused across the pose Jacobian's
+    perturbations, which move the source by 0.1 mm; the resolution guard is
+    nevertheless re-evaluated on every perturbed pose, so a perturbation that
+    leaves the envelope still refuses.
+
+    Claim limit: N8 validates the *discretisation* of the induced-field
+    computation at contact geometry to 0.73 % against an independent reference.
+    It does not validate the head model, the response operators, or anything
+    downstream of the field.
+    """
+
+    name = "scwbd.intervene.tms.efield.charge_bem"
+    backend_class = "numerical_bem"
+    is_trained_artifact = False
+    device = "cpu"
+    #: Zero as a *bias*: this backend's own error is a discretisation error,
+    #: which is random-ish in sign across the surface and is already carried as
+    #: ``variance["numerical"]`` from the solver's calibrated envelope. Writing
+    #: it here as well would double-count it, and in the wrong column.
+    solution_discrepancy_fraction: tuple[float, float] = (0.0, 0.0)
+    #: The sphere-vs-real-head geometry prior. A numerical gate does not move it.
+    geometry_discrepancy_fraction: tuple[float, float] = GEOMETRY_DISCREPANCY_FRACTION
+    direction_discrepancy_rad: float = 0.0
+    gate_evidence: tuple[str, ...] = (
+        "N6_induced_efield",
+        "N8_induced_efield_contact",
+    )
+    citation: str = (
+        "Makarov et al. 2018 (surface-charge BEM); "
+        "reports/intervene/N8_induced_efield_contact.md"
+    )
+
+    @property
+    def discrepancy_fraction(self) -> tuple[float, float]:
+        """Derived from the two terms; here it reduces to the geometry prior."""
+        return combine_discrepancy(
+            self.solution_discrepancy_fraction, self.geometry_discrepancy_fraction
+        )
+
+    def __init__(
+        self,
+        *,
+        base_subdiv: int = 2,
+        grading_levels: int = 2,
+        margin_rad: float = 0.12,
+        uniform_subdiv: int | None = None,
+    ) -> None:
+        if _compat.efield_from_coil is None:  # pragma: no cover - agent G absent
+            raise RuntimeError(
+                "scwbd.intervene.tms.efield is not importable; the charge-BEM "
+                "backend has nothing to wrap and the runtime will not "
+                "re-implement it"
+            )
+        self.base_subdiv = int(base_subdiv)
+        self.grading_levels = int(grading_levels)
+        #: Passed through to ``graded_icosphere_for_sources``.  There is
+        #: deliberately no half-angle knob here: sizing the refined patch is the
+        #: solver's job and it does it from the sources, and a fixed cap that is
+        #: too small produces a mesh that *looks* refined -- tiny on-axis
+        #: panels, a third of the element count -- while measuring no better
+        #: than no grading at all.
+        self.margin_rad = float(margin_rad)
+        #: Force a *uniform* mesh instead of a graded one. Used by the tests to
+        #: construct a mesh deliberately too coarse for the source, which is
+        #: how the ``Defer`` path is proved rather than asserted.
+        self.uniform_subdiv = uniform_subdiv
+        self._cache: dict[Any, Any] = {}
+
+    # -- mesh ---------------------------------------------------------------
+    def _bem_for(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> Any:
+        direction = pose.t - head.centre
+        direction = direction / torch.linalg.norm(direction).clamp_min(1e-30)
+        key = (
+            head.subject_id,
+            float(head.scalp_radius),
+            self.uniform_subdiv,
+            round(self.margin_rad, 4),
+            tuple(round(float(v), 3) for v in direction),
+        )
+        if key in self._cache:
+            return self._cache[key]
+        if self.uniform_subdiv is not None:
+            v, f = _compat.icosphere(self.uniform_subdiv)
+            mesh = _compat.tri_mesh(v * float(head.scalp_radius), f)
+        else:
+            # the solver meshes for its own sources; the runtime supplies them
+            # and does not decide how large a patch they need
+            positions, _ = _dipoles_in_head_frame(pose, coil)
+            mesh = _compat.graded_icosphere_for_sources(
+                float(head.scalp_radius),
+                self.base_subdiv,
+                positions - head.centre,
+                self.grading_levels,
+                margin_rad=self.margin_rad,
+            )
+        sigma = float(head.conductivity_prior.get("brain_S_per_m", 0.33))
+        bem = _compat.charge_bem([mesh], [sigma], [0.0])
+        self._cache[key] = bem
+        return bem
+
+    # -- solve --------------------------------------------------------------
+    def solve(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> Tensor:
+        return self.solve_field(head, pose, coil).e
+
+    def solve_field(self, head: HeadModel, pose: Pose, coil: CoilSpec) -> FieldSolve:
+        _check_frames(head, pose, coil)
+        if coil.geometry is None or coil.pulse is None:
+            raise RuntimeError(
+                "the charge-BEM backend drives agent G's efield_from_coil, which "
+                "needs the CoilGeometry and TMSPulse it was validated against; "
+                "this CoilSpec carries neither"
+            )
+        sphere = _spherical_head_for(head)
+        centre = head.centre
+        # agent G's solvers put the conductor at the origin
+        shifted = pose.matrix.clone()
+        shifted[:3, 3] = shifted[:3, 3] - centre
+        bem = self._bem_for(head, pose, coil)
+        try:
+            dose = _compat.efield_from_coil(
+                coil.geometry,
+                coil.pulse,
+                shifted,
+                head.cortex_vertices - centre,
+                head=sphere,
+                solver="bem",
+                bem=bem,
+            )
+        except Exception as exc:
+            if _compat.impossible_geometry is not None and isinstance(
+                exc, _compat.impossible_geometry
+            ):
+                raise _translate_refusal(exc, context=self.name) from exc
+            raise
+        validity = dict(dose.ledger.validity_domain)
+        resolution = dict(validity.get("near_source_resolution", {}))
+        return FieldSolve(
+            e=torch.as_tensor(dose.value, dtype=_DT),
+            # straight from the solver's ledger; nothing on this path is typed
+            numerical_variance=float(dose.ledger.variance.get("numerical", 0.0)),
+            relative_error_bound=resolution.get("relative_error_bound"),
+            resolution=resolution,
+            validity_domain={
+                **validity,
+                "gate_evidence": list(self.gate_evidence),
+                "conductivity_enters_solution": True,
+                "n_faces": int(bem.n_faces),
+            },
+        )
+
+
+def resolve_efield_backend(explicit: Any = None) -> EFieldBackend:
+    """Prefer the gated solver; fall back to the local closed form and say so.
+
+    The charge BEM is **not** the default.  For a spherically symmetric head the
+    closed form is exact and the BEM is a discretisation of it, so making the
+    BEM the default would buy discretisation error and a dense solve for
+    nothing.  The BEM's value is that it accepts an arbitrary surface, and the
+    head model this release ships is a sphere.  Pass one explicitly
+    (``TargetingService(efield_backend=ChargeBEMEField())``) when the geometry
+    justifies it.
+    """
+    if explicit is not None:
+        return explicit
+    if _compat.analytic_sphere_efield is not None:
+        return GatedAnalyticSphereEField()
+    return AnalyticSphericalEField()
 
 
 # ---------------------------------------------------------------------------

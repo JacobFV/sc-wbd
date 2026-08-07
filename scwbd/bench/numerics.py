@@ -23,6 +23,7 @@ checked through a neural read-out has not been validated.
 
 from __future__ import annotations
 
+import functools
 import math
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Mapping, Sequence
@@ -30,6 +31,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 import numpy as np
 
 from . import adapters
+from .solver_cache import CachedSolver, cached_solver
 from .report import (
     ClaimManifest,
     ClaimReport,
@@ -55,6 +57,8 @@ __all__ = [
     "helmholtz_residual",
     "validate_em_solver",
     "validate_acoustic_solver",
+    "validate_induced_efield_solver",
+    "validate_induced_efield_contact",
     "run_numerics_suite",
 ]
 
@@ -728,7 +732,15 @@ def permit_adaptive_resolution(fine_observable: np.ndarray | None = None,
         seed=seed,
         thresholds={"boundary_rel_tol": tol},
     )
-    rep = ClaimReport(manifest=man, subchecks=[sub], kind="numerics").finalize()
+    rep = ClaimReport(
+        manifest=man, subchecks=[sub], kind="numerics",
+        artifacts={"subject": (
+            "fine observable n="
+            f"{np.asarray(fine_observable).size if fine_observable is not None else 0}"
+            ", coarse observable n="
+            f"{np.asarray(coarse_observable).size if coarse_observable is not None else 0}"
+            f", declared tolerance {tol}")},
+    ).finalize()
     observed = next((m.value for m in sub.metrics
                      if m.name == "boundary.mean_relative_disagreement"), None)
     granted = rep.status == "PASS"
@@ -767,7 +779,24 @@ def analytic_free_field_pressure(points: np.ndarray, source_pos: np.ndarray,
 
 
 def helmholtz_residual(field: np.ndarray, *, dx: float, k: float) -> float:
-    """Relative residual of ``lap(p) + k^2 p = 0`` on a uniform 3-D grid."""
+    """Relative residual of ``lap(p) + k^2 p = 0`` on a uniform 3-D grid.
+
+    **Refinement warning (this bit is load-bearing).**  Evaluated with the
+    scheme's *own* second-difference Laplacian, the spatial truncation error
+    cancels: a discrete steady state satisfies the discrete Helmholtz equation
+    to round-off.  What remains is *temporal* dispersion, which for a leapfrog
+    march is
+
+    ``|k^2 - kappa^2| / k^2 = (omega*dt)^2 / 12 + O(dt^4)``,
+    ``kappa = (2/(c*dt)) * sin(omega*dt/2)``.
+
+    So this residual falls when **dt** is refined, and sits flat when ``h`` is
+    refined at fixed ``dt``.  A convergence study that refines only ``h`` will
+    show no improvement and can be misread as "the residual does not vanish
+    under refinement" — a false falsification.  Refine ``dt`` with ``h`` at
+    fixed CFL.  (Caught by agent Faraday on the first N4 sweep; the criterion
+    in this module's N4 manifest was reworded because of it.)
+    """
     p = np.asarray(field)
     lap = np.zeros_like(p)
     for ax in range(p.ndim):
@@ -775,6 +804,48 @@ def helmholtz_residual(field: np.ndarray, *, dx: float, k: float) -> float:
     core = tuple(slice(1, -1) for _ in range(p.ndim))
     res = lap[core] + (k**2) * p[core]
     return float(np.linalg.norm(res) / (np.linalg.norm((k**2) * p[core]) + 1e-30))
+
+
+def _record_cache(report: ClaimReport, *solvers: Any) -> ClaimReport:
+    """Put cache hits/misses into the report. An invisible hit is a stale verdict.
+
+    A reader must be able to tell whether this run recomputed the physics or
+    trusted a stored answer, and that cannot be inferred from the numbers --
+    they are identical by construction, which is the point of the cache and
+    also exactly why the fact has to be recorded rather than deduced.
+    """
+    entries = [s.stats.as_dict() for s in solvers if isinstance(s, CachedSolver)]
+    if not entries:
+        return report
+    report.artifacts["solver_cache"] = entries
+    if any(e["served_from_cache"] for e in entries):
+        report.notes.append(
+            "SERVED FROM CACHE (in part): at least one solver call re-used a stored result "
+            "rather than re-solving. The stored value was produced by a solver whose module "
+            "source hashes identically, so the physics is the same physics -- but this run "
+            "did not recompute it, and that is recorded here rather than left to be inferred "
+            "from numbers that are identical either way. Clear "
+            "scwbd.bench.solver_cache.CACHE_DIR to force a full re-solve."
+        )
+    return report
+
+
+def _maybe_call(obj: Any) -> Any:
+    """Read a value that may be an attribute or a zero-arg method."""
+    if obj is None:
+        return None
+    if callable(obj):
+        try:
+            return obj()
+        except Exception:
+            return None
+    return obj
+
+
+def _subject_of(fn: Any) -> str:
+    """Which callable produced these numbers (recorded on every report)."""
+    return (f"{getattr(fn, '__module__', '?')}."
+            f"{getattr(fn, '__qualname__', getattr(fn, '__name__', repr(fn)))}")
 
 
 def _validate_against_analytic(numeric: np.ndarray, analytic: np.ndarray, *, tol: float,
@@ -814,11 +885,14 @@ def validate_em_solver(solver: Callable[..., np.ndarray] | None = None, *,
     """Validate an electromagnetic solver *independently of neural-response models*."""
     man = _manifest(
         "N3_em_solver",
-        "The electromagnetic solver reproduces a closed-form quasi-static reference, "
-        "validated independently of any neural-response model.",
+        "The quasi-static CONDUCTION solver reproduces the closed-form potential of a "
+        "current dipole in an unbounded homogeneous conductor, validated independently of "
+        "any neural-response model. This is the EEG/lead-field forward problem; it is NOT "
+        "the magnetically induced TMS field, which has a different source term and boundary "
+        "condition and needs its own gate (N6).",
         "relative error above tolerance against the analytic dipole solution",
-        "The EM solver may not be used for lead fields, E-field prediction or targeting; "
-        "every downstream field-dependent claim is suspended.",
+        "The conduction solver may not be used for lead fields or source modelling; every "
+        "downstream conduction-dependent claim is suspended.",
         seed=seed,
         thresholds={"relative_tol": tol, "sigma_S_per_m": sigma},
     )
@@ -860,9 +934,25 @@ def validate_em_solver(solver: Callable[..., np.ndarray] | None = None, *,
                                      falsified_by=man.falsified_by)],
             kind="numerics").finalize()
     sub = _validate_against_analytic(num, ref, tol=tol, label="em_solver", seed=seed)
-    return ClaimReport(manifest=man, subchecks=[sub], kind="numerics",
-                       notes=["Field accuracy, target engagement, network effect and clinical "
-                              "utility remain separate quantities (thesis §0.5)."]).finalize()
+    return ClaimReport(
+        manifest=man, subchecks=[sub], kind="numerics",
+        artifacts={"subject": _subject_of(solver),
+                   "reference": "current dipole in an unbounded homogeneous conductor "
+                                "(conduction / volume-current problem)",
+                   "does_not_cover": "magnetically induced E-field of a TMS coil "
+                                     "(induction); see gate N6"},
+        notes=[
+            "SCOPE: conduction, not induction. A PASS licenses the quasi-static conduction "
+            "discretisation used for EEG lead fields. It does NOT license the magnetically "
+            "induced TMS field: different source term, different boundary condition, "
+            "separate gate (N6_induced_efield).",
+            "A verification gate is destroyed if the reference leaks into the solver. Check "
+            "that the boundary data is homogeneous, not the analytic value, before reading "
+            "this PASS as evidence.",
+            "Field accuracy, target engagement, network effect and clinical utility remain "
+            "separate quantities (thesis §0.5).",
+        ],
+    ).finalize()
 
 
 def validate_acoustic_solver(solver: Callable[..., np.ndarray] | None = None, *,
@@ -876,8 +966,10 @@ def validate_acoustic_solver(solver: Callable[..., np.ndarray] | None = None, *,
         "N4_acoustic_solver",
         "The acoustic solver reproduces free-field spreading and satisfies the Helmholtz "
         "equation, validated independently of any neural-response model.",
-        "relative error above tolerance, or a Helmholtz residual that does not vanish under "
-        "grid refinement",
+        "relative error above tolerance, or a Helmholtz residual that does not fall as the "
+        "TIME step is refined at fixed CFL (see the refinement note: refining h alone leaves "
+        "the residual flat for reasons unrelated to solver quality, so 'flat under h "
+        "refinement' is NOT a falsification of this gate)",
         "The acoustic solver may not be used for tFUS exposure or targeting; every downstream "
         "acoustic claim is suspended.",
         seed=seed,
@@ -929,7 +1021,407 @@ def validate_acoustic_solver(solver: Callable[..., np.ndarray] | None = None, *,
                      metrics=[], mandatory=False, forced_status="COULD_NOT_RUN",
                      reason="no solver grid/dx supplied; only the free-field comparison was run")
         )
-    return ClaimReport(manifest=man, subchecks=subs, kind="numerics").finalize()
+    return ClaimReport(
+        manifest=man, subchecks=subs, kind="numerics",
+        artifacts={"subject": _subject_of(solver)},
+        notes=[
+            "REFINEMENT RULE: the Helmholtz residual here is set by TEMPORAL dispersion, "
+            "not by h. Measured with the scheme's own Laplacian the spatial error cancels, "
+            "leaving (omega*dt)^2/12. Refining h at fixed dt leaves the residual flat, which "
+            "reads like a failure and is not one. Refine dt with h at fixed CFL.",
+            "Amplitude calibration is part of what is under test when the source strength is "
+            "fixed a priori rather than fitted to the reference; a residual amplitude bias "
+            "must be reported, not divided out.",
+        ],
+    ).finalize()
+
+
+def validate_induced_efield_solver(
+    solver: Callable[..., np.ndarray] | None = None,
+    *,
+    analytic: Callable[..., np.ndarray] | None = None,
+    points: np.ndarray | None = None,
+    solver_kwargs: Mapping[str, Any] | None = None,
+    tol: float = 0.05,
+    convergence: Sequence[Mapping[str, float]] | None = None,
+    expected_order: float = 1.5,
+    convergence_ratio: float | None = None,
+    reference_degree: int | None = None,
+    max_convergence_ratio: float = 0.90,
+    max_bound_over_error: float = 0.10,
+    geometry: Mapping[str, Any] | None = None,
+    seed: int = 0,
+) -> ClaimReport:
+    """Validate the **magnetically induced** E-field solver (N6).
+
+    N3 validates *conduction*: a current dipole in an unbounded homogeneous
+    conductor, which is the EEG/lead-field forward problem.  A TMS coil's
+    induced field is a different problem — different source term (``-dA/dt``
+    plus the secondary charge field), different boundary condition — and a
+    conduction PASS licenses nothing about it.  This gate exists so that gap is
+    visible on the scoreboard rather than implicit in a caveat.
+
+    The analytic reference (Sarvas / Heller--van Hulsteyn closed form for a
+    spherically symmetric conductor) must be **supplied**, not assumed: agent J
+    does not implement induction physics.  When the reference and the solver
+    come from the same module the report says so, because a solver checked
+    against its own module's closed form is a weaker test than one checked
+    against an independent implementation.
+    """
+    man = _manifest(
+        "N6_induced_efield",
+        "The magnetically induced E-field solver reproduces the closed-form "
+        "(Sarvas / Heller-van Hulsteyn) solution for a spherically symmetric conductor, "
+        "validated independently of any neural-response model.",
+        "relative error above tolerance against the closed form, or a mesh-refinement study "
+        "that does not converge at the advertised order",
+        "The induced-field solver may not be used for TMS E-field prediction, target "
+        "engagement or pose ranking; every downstream induction-dependent claim is "
+        "suspended (N3 does not cover this: it validates conduction, not induction).",
+        seed=seed,
+        thresholds={"relative_tol": tol, "expected_order": expected_order},
+    )
+    missing: list[str] = []
+    if solver is None:
+        missing.append("induced-field solver (agent Faraday: scwbd.intervene.tms.efield)")
+    if analytic is None:
+        missing.append(
+            "closed-form reference (Sarvas / Heller-van Hulsteyn); agent J does not "
+            "implement induction physics and will not substitute the conduction reference "
+            "from N3, which is a different problem"
+        )
+    if missing:
+        return ClaimReport(
+            manifest=man,
+            subchecks=[could_not_run(
+                "induced_efield", "Induced E-field versus the closed form.",
+                "missing: " + "; ".join(missing),
+                falsified_by=man.falsified_by)],
+            kind="numerics",
+            notes=["Opened because N3 passed for CONDUCTION only. Any claim that depends on "
+                   "the induced TMS field remains suspended until this gate runs."],
+        ).finalize()
+
+    kw = dict(solver_kwargs or {})
+    if points is None:
+        rng = np.random.default_rng(seed)
+        pts = rng.normal(0, 0.05, size=(512, 3))
+        points = pts[np.linalg.norm(pts, axis=1) > 0.02]
+    try:
+        num = np.asarray(solver(points=points, **kw), dtype=float)
+        ref = np.asarray(analytic(points=points, **kw), dtype=float)
+    except TypeError:
+        try:
+            num = np.asarray(solver(points), dtype=float)
+            ref = np.asarray(analytic(points), dtype=float)
+        except Exception as exc:
+            return ClaimReport(
+                manifest=man,
+                subchecks=[could_not_run(
+                    "induced_efield", "Induced E-field versus the closed form.",
+                    f"solver or reference raised {type(exc).__name__}: {exc}",
+                    falsified_by=man.falsified_by)],
+                kind="numerics").finalize()
+    except Exception as exc:
+        return ClaimReport(
+            manifest=man,
+            subchecks=[could_not_run(
+                "induced_efield", "Induced E-field versus the closed form.",
+                f"solver or reference raised {type(exc).__name__}: {exc}",
+                falsified_by=man.falsified_by)],
+            kind="numerics").finalize()
+
+    subs = [_validate_against_analytic(num, ref, tol=tol, label="induced_efield", seed=seed)]
+    artifacts: dict[str, Any] = {"subject": _subject_of(solver),
+                                 "reference": _subject_of(analytic)}
+
+    shared = getattr(solver, "__module__", "?") == getattr(analytic, "__module__", "?")
+    subs.append(SubCheck(
+        name="reference_provenance",
+        description="Does the closed-form reference come from the same module as the solver?",
+        metrics=[Metric(
+            name="induced_efield.reference_shares_module_with_solver",
+            value=float(shared), kind="audit", exact=True,
+            threshold=0.5, direction="less_is_better",
+            note=(f"solver={getattr(solver, '__module__', '?')}, "
+                  f"reference={getattr(analytic, '__module__', '?')}; shared provenance is "
+                  "not disqualifying, but it is a weaker test than an independent "
+                  "implementation and must not be described as independent validation"),
+        )],
+        mandatory=False,
+    ))
+
+    # -- the reference's own validity domain, self-declaring ---------------
+    measured = next((m.value for m in subs[0].metrics
+                     if m.name.endswith("mean_relative_error")), float("nan"))
+    if convergence_ratio is None:
+        convergence_ratio = _maybe_call(getattr(analytic, "convergence_ratio", None))
+    if convergence_ratio is None or reference_degree is None:
+        subs.append(could_not_run(
+            "reference_validity_domain",
+            "Is the reference more accurate than the solver, at THIS geometry?",
+            "the reference's convergence ratio and/or expansion degree were not declared. A "
+            "reference whose own accuracy at the geometry under test is unknown is not a "
+            "reference, and the gate cannot say whether it measured the solver or the "
+            "reference. Pass convergence_ratio= and reference_degree=.",
+            falsified_by="the reference is no more accurate than the solver it measures",
+        ))
+    else:
+        ratio = float(convergence_ratio)
+        bound = ratio ** float(reference_degree)
+        rel = bound / measured if measured and math.isfinite(measured) and measured > 0 \
+            else float("inf")
+        if math.isfinite(measured) and measured <= bound:
+            # At or below the reference's own error bound the comparison is at
+            # the reference's noise floor: it cannot separate solver error from
+            # reference error. That is "cannot conclude", not "fail".
+            subs.append(could_not_run(
+                "reference_validity_domain",
+                "Is the reference more accurate than the solver, at THIS geometry?",
+                f"the measured solver error ({measured:.3g}) is at or below the reference's "
+                f"own a-priori bound ({bound:.3g} = {ratio:.4g}**{reference_degree}); this "
+                "comparison is at the reference's noise floor and cannot separate solver "
+                "error from reference error. Refine the reference or state a weaker claim.",
+                falsified_by="the reference is no more accurate than the solver it measures",
+            ))
+            artifacts["reference_validity_domain"] = {
+                "convergence_ratio": ratio, "reference_degree": reference_degree,
+                "a_priori_bound": bound, "measured_solver_error": measured,
+                "at_reference_noise_floor": True,
+            }
+        else:
+          subs.append(SubCheck(
+            name="reference_validity_domain",
+            description=(
+                "The multipole/series reference converges like ratio**degree. Its a-priori "
+                "error bound at this geometry must sit well below the solver error being "
+                "measured, or the gate is measuring the reference."
+            ),
+            metrics=[
+                Metric(name="reference.convergence_ratio", value=ratio,
+                       kind="numerical", exact=True, threshold=max_convergence_ratio,
+                       direction="less_is_better",
+                       note=("a/R_c at the validated geometry; the series converges like "
+                             "ratio**degree, so a ratio approaching 1 is not fixable by "
+                             "raising the degree")),
+                Metric(name="reference.a_priori_bound", value=float(bound),
+                       kind="numerical", exact=True,
+                       note=f"ratio**degree with degree={reference_degree}"),
+                Metric(name="reference.bound_over_measured_error", value=float(rel),
+                       kind="numerical", exact=True, threshold=max_bound_over_error,
+                       direction="less_is_better",
+                       note=(f"a-priori reference bound {bound:.3g} / measured solver error "
+                             f"{measured:.3g}; the reference must be the more accurate of "
+                             "the two by a clear margin")),
+            ],
+            mandatory=True,
+            falsified_by="the reference is no more accurate than the solver it measures",
+        ))
+        artifacts["reference_validity_domain"] = {
+            "convergence_ratio": ratio, "reference_degree": reference_degree,
+            "a_priori_bound": bound, "measured_solver_error": measured,
+            "bound_over_measured_error": rel,
+            "does_not_cover": (
+                "contact geometry. A coil element in contact with the scalp has a/R_c ~ 0.955, "
+                "where no feasible degree brings the series bound below the solver error. "
+                "This gate validates a STANDOFF equivalent dipole; the contact regime is "
+                "gate N8_induced_efield_contact and has not run."
+            ),
+        }
+    if geometry:
+        artifacts["geometry"] = dict(geometry)
+
+    if convergence:
+        errs = [float(r["error"]) for r in convergence]
+        sizes = [float(r.get("h", r.get("n_elements", i + 1)))
+                 for i, r in enumerate(convergence)]
+        p = convergence_order(errs, sizes)
+        subs.append(SubCheck(
+            name="mesh_convergence",
+            description="Observed order of the induced-field discretisation.",
+            metrics=[Metric(
+                name="induced_efield.observed_order", value=p, kind="numerical", exact=True,
+                threshold=expected_order, direction="greater_is_better",
+                note=f"errors {['%.3g' % e for e in errs]}")],
+            mandatory=True,
+            falsified_by="refinement does not converge at the advertised order",
+        ))
+    return ClaimReport(
+        manifest=man, subchecks=subs, artifacts=artifacts, kind="numerics",
+        notes=[
+            "Induction, not conduction: this gate is what N3 does NOT cover.",
+            "STANDOFF ONLY. The reference series converges like (a/R_c)**degree. At a "
+            "contact geometry (a/R_c ~ 0.955 for a coil element 4 mm off an 85 mm scalp) no "
+            "feasible degree brings its bound below the solver error, so this gate validates "
+            "the discretisation against a STANDOFF equivalent dipole, not against a contact "
+            "coil. tms-robotics positions a coil in contact; that regime is gate "
+            "N8_induced_efield_contact and it has not run.",
+            "The validity domain is a metric in this report, not a footnote: a reader who "
+            "checks only the headline error still sees reference.convergence_ratio.",
+        ],
+    ).finalize()
+
+
+def validate_induced_efield_contact(
+    solver: Callable[..., np.ndarray] | None = None,
+    *,
+    reference: Callable[..., np.ndarray] | None = None,
+    self_convergence: Sequence[Mapping[str, float]] | None = None,
+    points: np.ndarray | None = None,
+    solver_kwargs: Mapping[str, Any] | None = None,
+    convergence_ratio: float | None = None,
+    min_contact_ratio: float = 0.95,
+    tol: float | None = None,
+    expected_order: float = 1.5,
+    seed: int = 0,
+) -> ClaimReport:
+    """N8 — the induced field in the **contact** regime, which N6 does not cover.
+
+    N6 validates the induced-field discretisation against a spectral reference
+    whose series converges like ``(a/R_c)**degree``.  At the standoff geometry
+    N6 uses (``a/R_c = 0.7727``) that reference is orders of magnitude more
+    accurate than the solver, which is what makes it a reference.  A coil in
+    **contact** has ``a/R_c ~ 0.955``, where no feasible degree brings the
+    bound below the solver error.  N6 therefore validates a standoff equivalent
+    dipole, not a contact coil.
+
+    This gap is load-bearing rather than academic: ``tms-robotics`` positions a
+    coil against a registered scalp target, i.e. contact geometry, and
+    near-surface accuracy is precisely what the BEM exists for.  So it gets its
+    own row rather than a caveat inside N6's.
+
+    **The contract this gate requires** (report shape, for whoever builds it):
+
+    * ``solver`` and ``points`` at a contact geometry, with
+      ``convergence_ratio >= min_contact_ratio`` — a gate handed standoff
+      geometry is not this gate and will refuse;
+    * **either** an independent contact-regime ``reference`` (a boundary-integral
+      reference with graded panels, say) **or** ``self_convergence``: a
+      Richardson study of the solver against itself under refinement, which
+      does not need an external reference but proves only self-consistency and
+      is reported as such;
+    * a declared ``tol``.  The tolerance is preregistered here, not chosen after
+      seeing the error.
+
+    If the contact regime turns out not to be validatable to a defensible
+    tolerance, this gate FAILs, and that is a result: the runtime must then
+    surface targeting in the contact regime as unvalidated rather than
+    returning a confident number.
+    """
+    man = _manifest(
+        "N8_induced_efield_contact",
+        "The induced-field solver is validated in the CONTACT regime (a coil element at "
+        "clinical standoff from the scalp, a/R_c >= 0.95) to a preregistered tolerance — "
+        "the geometry the downstream targeting consumer actually uses.",
+        "no reference or self-convergence study achieves a defensible tolerance at contact "
+        "geometry, or the solver's error there exceeds the preregistered tolerance",
+        "IF THIS GATE FAILS: targeting in the contact regime is UNVALIDATED, and "
+        "scwbd.runtime must surface that as Unresolved/Defer rather than returning a "
+        "confident E-field, with no pose ranking reported as validated at contact "
+        "geometry. IF IT PASSES: the runtime may proceed INSIDE the declared resolution "
+        "envelope carrying the calibrated error bound, and must Defer outside it -- which "
+        "is enforced at the solver rather than left to the caller. A passing gate licenses "
+        "the envelope, never the whole regime.",
+        seed=seed,
+        thresholds={"min_contact_ratio": min_contact_ratio, "relative_tol": tol,
+                    "expected_order": expected_order},
+    )
+    missing: list[str] = []
+    if solver is None:
+        missing.append("induced-field solver at contact geometry (agent Faraday)")
+    if reference is None and not self_convergence:
+        missing.append(
+            "either an independent contact-regime reference (e.g. boundary-integral with "
+            "graded panels) or a Richardson self-convergence study of the solver under "
+            "refinement; the N6 spectral reference does NOT extend here, since its series "
+            "bound at a/R_c ~ 0.955 exceeds the solver error it would be measuring"
+        )
+    if convergence_ratio is None:
+        missing.append(
+            "the geometry ratio a/R_c, so the gate can confirm it was handed CONTACT "
+            "geometry rather than a standoff case relabelled"
+        )
+    if tol is None:
+        missing.append("a preregistered tolerance (chosen before seeing the error)")
+    if missing:
+        return ClaimReport(
+            manifest=man,
+            subchecks=[could_not_run(
+                "contact_regime", "Induced field validated where the coil actually sits.",
+                "missing: " + "; ".join(missing),
+                falsified_by=man.falsified_by)],
+            kind="numerics",
+            artifacts={"subject": "not yet run — contract stated in the docstring",
+                       "why_this_row_exists": (
+                           "N6's reference is accurate only for standoff geometry "
+                           "(a/R_c = 0.7727). The consumer uses contact geometry "
+                           "(a/R_c ~ 0.955). Folding this into N6 would let a standoff "
+                           "PASS be read as covering contact.")},
+            notes=["Opened at agent J's request after agent Faraday disclosed the validity "
+                   "domain of the N6 reference. Visible and unrun beats implicit."],
+        ).finalize()
+
+    ratio = float(convergence_ratio)
+    subs: list[SubCheck] = [SubCheck(
+        name="is_contact_geometry",  # harder-than-consumer geometry is acceptable
+        description="Confirm the gate was handed contact geometry, not standoff relabelled.",
+        metrics=[Metric(name="contact.a_over_Rc", value=ratio, kind="numerical", exact=True,
+                        threshold=min_contact_ratio, direction="greater_is_better",
+                        note=("a standoff geometry belongs in N6, not here. Validating at a "
+                              "HARDER ratio than the downstream consumer uses is acceptable "
+                              "and is recorded: a clinical figure-eight at 4 mm scalp "
+                              "standoff sits at a/R_c ~ 0.902 because the coil is flat and "
+                              "the head curved, so its nearest winding is ~9.2 mm off. The "
+                              "harder case bounds the easier one; the reverse would not."))],
+        mandatory=True,
+        falsified_by="the geometry is not in the contact regime this gate exists for",
+    )]
+    kw = dict(solver_kwargs or {})
+    if points is None:
+        missing_pts = True
+    else:
+        missing_pts = False
+    if reference is not None and not missing_pts:
+        try:
+            num = np.asarray(solver(points=points, **kw), dtype=float)
+            ref = np.asarray(reference(points=points, **kw), dtype=float)
+            subs.append(_validate_against_analytic(num, ref, tol=float(tol),
+                                                   label="contact_efield", seed=seed))
+        except Exception as exc:
+            subs.append(could_not_run(
+                "contact_efield", "Contact-regime error against an independent reference.",
+                f"solver or reference raised {type(exc).__name__}: {exc}",
+                falsified_by=man.falsified_by))
+    elif reference is None:
+        subs.append(SubCheck(
+            name="contact_efield",
+            description="No independent contact reference supplied; self-convergence only.",
+            metrics=[], mandatory=False, forced_status="COULD_NOT_RUN",
+            reason=("self-convergence proves the discretisation converges to SOMETHING, not "
+                    "that it converges to the right answer; an independent contact reference "
+                    "is still owed"),
+        ))
+    if self_convergence:
+        errs = [float(r["error"]) for r in self_convergence]
+        hs = [float(r.get("h", r.get("n_elements", i + 1)))
+              for i, r in enumerate(self_convergence)]
+        subs.append(SubCheck(
+            name="self_convergence",
+            description="Richardson refinement of the solver against itself at contact.",
+            metrics=[Metric(name="contact.self_convergence_order",
+                            value=convergence_order(errs, hs), kind="numerical", exact=True,
+                            threshold=expected_order, direction="greater_is_better",
+                            note="self-consistency only: converging is not converging to the "
+                                 "right answer")],
+            mandatory=True,
+            falsified_by="the solver does not converge under refinement at contact geometry",
+        ))
+    return ClaimReport(
+        manifest=man, subchecks=subs, kind="numerics",
+        artifacts={"subject": _subject_of(solver), "a_over_Rc": ratio},
+        notes=["Contact geometry is what tms-robotics uses. A PASS here still licenses no "
+               "claim about target engagement, network effect or clinical utility."],
+    ).finalize()
 
 
 # ==========================================================================
@@ -948,6 +1440,11 @@ def run_numerics_suite(
     boundary_tol: float = 0.05,
     em_solver: Callable[..., np.ndarray] | None = None,
     acoustic_solver: Callable[..., np.ndarray] | None = None,
+    acoustic_grid: np.ndarray | None = None,
+    acoustic_dx: float | None = None,
+    induced_efield_solver: Callable[..., np.ndarray] | None = None,
+    induced_efield_analytic: Callable[..., np.ndarray] | None = None,
+    cache: bool = True,
     seed: int = 0,
 ) -> list[ClaimReport]:
     """Run §11.1 end to end; every absent input yields a loud COULD_NOT_RUN."""
@@ -973,6 +1470,8 @@ def run_numerics_suite(
                 check_conservation(trajectory, invariant),
                 check_seed_reproducibility(stochastic_entry_point, seed=seed),
             ],
+            artifacts={"subject": _subject_of(solver) if solver is not None
+                       else "no solver supplied"},
             kind="numerics",
         ).finalize()
     )
@@ -980,6 +1479,87 @@ def run_numerics_suite(
     _, permit_report = permit_adaptive_resolution(fine_observable, coarse_observable,
                                                   tol=boundary_tol, seed=seed)
     reports.append(permit_report)
-    reports.append(validate_em_solver(em_solver, seed=seed))
-    reports.append(validate_acoustic_solver(acoustic_solver, seed=seed))
+    use_cache = bool(cache)
+    _suite_notes: list[str] = []
+    if em_solver is None or acoustic_solver is None:
+        # agent Faraday's reference-problem solvers, once they are importable
+        dep = adapters.field_solvers()
+        if dep.available:
+            em_fn, ac_run = dep.obj
+            em_solver = em_solver or em_fn
+            if acoustic_solver is None:
+                # functools.wraps is load-bearing, not cosmetic: without it the
+                # closure's own qualname lands in artifacts["subject"] and the
+                # report names THIS WRAPPER instead of the solver it measured.
+                # That is the provenance failure finalize() exists to prevent,
+                # and it shipped inside a PASS. The same identity bug was fixed
+                # once in CachedSolver and reintroduced here by the closure.
+                @functools.wraps(ac_run)
+                def acoustic_solver(points, source_pos=(0.0, 0.0, 0.0), k=100.0, **kw):
+                    return ac_run(points, source_pos, k, **kw).pressure
+                if acoustic_grid is None:
+                    # A gate that cannot run must REPORT could-not-run, never
+                    # abort the suite. The accelerator is shared with training,
+                    # so an FDTD march can fail for reasons that have nothing to
+                    # do with the physics -- and an exception here would take
+                    # every other numerical check down with it, which is a
+                    # louder failure than the one it is reporting.
+                    try:
+                        probe = ac_run(np.full((1, 3), 0.02), (0.0, 0.0, 0.0), 100.0)
+                        acoustic_grid, acoustic_dx = probe.grid_block, probe.spacing_m
+                    except Exception as exc:
+                        acoustic_solver = None
+                        acoustic_grid = acoustic_dx = None
+                        _suite_notes.append(
+                            f"acoustic solver unavailable this run: "
+                            f"{type(exc).__name__}: {exc}. The accelerator is shared with "
+                            "training; this is an environment condition, not a physics "
+                            "result, and N4 reports COULD_NOT_RUN rather than a verdict."
+                        )
+    em_c = cached_solver(em_solver, seed=seed, enabled=use_cache)
+    ac_c = cached_solver(acoustic_solver, seed=seed, enabled=use_cache)
+    for _n in _suite_notes:
+        reports[-1].notes.append(_n) if reports else None
+    reports.append(_record_cache(validate_em_solver(em_c, seed=seed), em_c))
+    reports.append(_record_cache(
+        validate_acoustic_solver(ac_c, grid=acoustic_grid, dx=acoustic_dx, seed=seed), ac_c))
+    # agent Faraday's induced-field solver and its INDEPENDENT reference, plus the
+    # geometry those gates were validated at. Auto-wired so `python -m scwbd.bench`
+    # reproduces N6/N8 rather than silently reverting them to COULD_NOT_RUN.
+    n6_kw: dict[str, Any] = {}
+    n8_rep: ClaimReport | None = None
+    if induced_efield_solver is None or induced_efield_analytic is None:
+        dep = adapters.induced_field_solver()
+        rfg = adapters.probe("scwbd.intervene.run_field_gates")
+        if dep.available and rfg.available:
+            s, r = dep.obj
+            induced_efield_solver = induced_efield_solver or s
+            induced_efield_analytic = induced_efield_analytic or r
+            g = rfg.obj
+            try:
+                a = float(g.N6_SPHERE_RADIUS)
+                rc = float(np.linalg.norm(np.asarray(g.N6_DIPOLE_POS, dtype=float)))
+                n6_kw = dict(
+                    points=g.n6_points(),
+                    solver_kwargs=dict(dipole_pos=g.N6_DIPOLE_POS,
+                                       dipole_mdot=g.N6_DIPOLE_MDOT,
+                                       sphere_radius=g.N6_SPHERE_RADIUS),
+                    convergence_ratio=a / rc, reference_degree=48,
+                    geometry={"sphere_radius_m": a, "a_over_Rc": a / rc},
+                )
+            except Exception:
+                n6_kw = {}
+            try:
+                n8_rep = g.run_n8()
+            except Exception as exc:
+                n8_rep = None
+                _suite_notes.append(
+                    f"N8 could not run this run: {type(exc).__name__}: {exc}")
+    ind_c = cached_solver(induced_efield_solver, seed=seed, enabled=use_cache)
+    ref_c = cached_solver(induced_efield_analytic, seed=seed, enabled=use_cache)
+    reports.append(_record_cache(
+        validate_induced_efield_solver(ind_c, analytic=ref_c, seed=seed, **n6_kw),
+        ind_c, ref_c))
+    reports.append(n8_rep if isinstance(n8_rep, ClaimReport)
+                   else validate_induced_efield_contact(seed=seed))
     return reports

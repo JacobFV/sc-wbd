@@ -297,3 +297,92 @@ def test_g4_falsifiable_comparison_is_the_design_contrast_not_the_modality_sum()
     assert decl.status == "PASS"      # the identity still holds...
     fisher_sub = next(s for s in rep.subchecks if s.name == "fisher_rank_and_eigenvalue")
     assert fisher_sub.status == "FAIL"   # ...and the gate still fails
+
+
+# --------------------------------------------------------------------------
+# G4 recovery slots: absent is recorded, never fabricated
+# --------------------------------------------------------------------------
+_RECOVERY_HONEST = {
+    "direction": {"true": 1.0, "estimate": 1.02, "lo": 0.9, "hi": 1.15},
+    "gain": {"true": 1.0, "estimate": 1.01, "lo": 0.9, "hi": 1.1},
+    "delay": {"true": 1.0, "estimate": 1.02, "lo": 0.95, "hi": 1.05,
+              "recovery_kind": "simulation_recovery"},
+    "dose": {"unavailable_by_construction":
+             "a linear-Gaussian benchmark has no dose axis"},
+    "state_dependence": {"unavailable_by_construction":
+                         "no state-dependent term exists in T1-T3"},
+}
+
+
+def test_g4_records_absent_recovery_slots_rather_than_fabricating_them():
+    f = SyntheticFisher()
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=_RECOVERY_HONEST, model_evidence=EVIDENCE_OK, seed=0)
+    art = rep.artifacts["recovery"]
+    assert art["unavailable_by_construction"] == ["dose", "state_dependence"]
+    assert art["simulation_recovery_only"] == ["delay"]
+    assert art["prospective_perturbation"] == ["direction", "gain"]
+
+
+def test_g4_does_not_count_simulation_recovery_as_perturbational_validation():
+    """Recovered from simulated records at the true parameter is not §11.3."""
+    f = SyntheticFisher()
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=_RECOVERY_HONEST, model_evidence=EVIDENCE_OK, seed=0)
+    sub = next(s for s in rep.subchecks if s.name == "prospective_recovery")
+    assert sub.status == "COULD_NOT_RUN"
+    assert "SIMULATION RECOVERY" in sub.reason
+    assert "not a held-out perturbation in the sense of thesis §11.3" in sub.reason
+    # the numbers are still reported, just not as validation
+    assert any(s.name == "recovery_measurements_reported" and not s.mandatory
+               for s in rep.subchecks)
+
+
+def test_g4_cannot_pass_in_this_release_even_with_two_subchecks_passing():
+    """Two real subchecks passing must not add up to a validated claim."""
+    f = SyntheticFisher()
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=_RECOVERY_HONEST, model_evidence=EVIDENCE_OK, seed=0)
+    passing = {s.name for s in rep.subchecks if s.status == "PASS"}
+    assert {"fisher_rank_and_eigenvalue", "modality_additivity_declaration"} <= passing
+    assert rep.status == "COULD_NOT_RUN"
+
+
+def test_g4_against_the_checkpoint_is_blocked_by_the_corpus_not_the_model():
+    """35/37 shards carry control_graph: none — that is a corpus fact, not a failure."""
+    f = SyntheticFisher()
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=RECOVERY_OK, model_evidence=EVIDENCE_OK,
+                 artifact="scwbd-001-beta", seed=0)
+    assert rep.status == "COULD_NOT_RUN", "a corpus gap must never read as a model FAIL"
+    reason = " ".join(rep.blocking_reasons)
+    assert "control_graph: none" in reason
+    assert "not a model FAIL" in reason
+
+
+def test_g4_fails_when_the_impulse_gain_is_entirely_input_energy():
+    """Agent Fisher's finding as a negative control.
+
+    Unmatched, the impulse looks decisive (9.3x / 28x / 6.9x on theta-profile
+    lambda-min). Energy-matched: 0.839 / 0.839 / 1.059 -- worse in two regimes.
+    The unmatched number is measuring the energy, not the perturbation.
+    """
+    f = SyntheticFisher(energy_explains_gain=True)
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=RECOVERY_OK, model_evidence=EVIDENCE_OK, seed=0)
+    unmatched = next(s for s in rep.subchecks if s.name == "fisher_rank_and_eigenvalue")
+    matched = next(s for s in rep.subchecks if s.name == "input_energy_matched")
+    assert unmatched.status == "PASS"      # the unmatched comparison still looks good...
+    assert matched.status == "FAIL"        # ...and the matched one is the real test
+    assert rep.status == "FAIL"
+    assert rep.artifacts["energy_matched"]["matched_gain_ratio"] <= 1.0
+
+
+def test_g4_will_not_report_an_unmatched_impulse_ratio_alone():
+    f = SyntheticFisher()
+    rep = run_g4(fisher=f, theta_index=f.theta_index, nuisance_index=f.nuisance_index,
+                 recovery=RECOVERY_OK, model_evidence=EVIDENCE_OK,
+                 energy_matched_design=None, seed=0)
+    assert rep.status == "COULD_NOT_RUN"
+    assert any("measures input energy, not perturbation" in r
+               for r in rep.blocking_reasons)

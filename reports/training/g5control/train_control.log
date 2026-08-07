@@ -1,0 +1,77 @@
+[mem] CUDA reserve capped at 40.0 GB (fraction=0.329 of 121.6 GB unified pool)
+[anatomy] WARNING: prior is SYNTHETIC (provenance='synthetic_fallback', n_regions=454). This model carries NO biological content: G2 is void, and no claim about connectome-masked coupling, receptor-derived E/I or anatomical regional heterogeneity is supportable from it.
+{
+  "parameters": {
+    "log_dt_scale": 454,
+    "coupling": 3,
+    "msg_proj": 228,
+    "msg_readin": 1872,
+    "context": 17792,
+    "local": 1303036,
+    "residual": 107261,
+    "assimilate": 229468,
+    "readout": 3026,
+    "eeg": 2137,
+    "bold": 3178,
+    "behaviour": 89158,
+    "TOTAL": 1757613
+  },
+  "posterior": 1694976
+}
+resumed from checkpoints/scwbd-001-beta-g5control/last.pt at step 8400; completed stages: ['I_regional', 'II_interface', 'III_sliced', 'IV_assembly']
+skipping completed stage I_regional
+skipping completed stage II_interface
+skipping completed stage III_sliced
+skipping completed stage IV_assembly
+
+=== Stage V_individual: 900 steps, lr=5.77e-05 ===
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=71/11/27 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 290673 windows, train/val/test = 189765/29238/71670
+stage=V_individual  step=1  global_step=8401  loss=1  lr=2.322e-06  wall_s=2.2  traj_s_per_s=11.1  gpu_reserved_gb=3.01  real_eeg_nll=2.655
+stage=V_individual  step=20  global_step=8420  loss=1.104  lr=7.701e-06  wall_s=5.4  traj_s_per_s=91  gpu_reserved_gb=5.72  real_eeg_nll=2.11
+stage=V_individual  step=40  global_step=8440  loss=0.7696  lr=2.178e-05  wall_s=8.3  traj_s_per_s=117.7  gpu_reserved_gb=5.73  real_eeg_nll=1.539
+stage=V_individual  step=60  global_step=8460  loss=1.44  lr=3.906e-05  wall_s=11.3  traj_s_per_s=130.5  gpu_reserved_gb=5.73  real_eeg_nll=3.051
+stage=V_individual  step=80  global_step=8480  loss=0.9071  lr=5.282e-05  wall_s=14.2  traj_s_per_s=138.3  gpu_reserved_gb=5.73  real_eeg_nll=1.948
+stage=V_individual  step=100  global_step=8500  loss=0.9515  lr=5.77e-05  wall_s=17.2  traj_s_per_s=143.3  gpu_reserved_gb=5.73  real_eeg_nll=1.971
+stage=V_individual  step=120  global_step=8520  loss=1.16  lr=5.76e-05  wall_s=20.1  traj_s_per_s=146.9  gpu_reserved_gb=5.73  real_eeg_nll=2.349
+stage=V_individual  step=140  global_step=8540  loss=1.066  lr=5.733e-05  wall_s=23  traj_s_per_s=149.5  gpu_reserved_gb=5.73  real_eeg_nll=2.085
+stage=V_individual  step=160  global_step=8560  loss=0.9528  lr=5.688e-05  wall_s=26.2  traj_s_per_s=150  gpu_reserved_gb=5.73  real_eeg_nll=1.893
+stage=V_individual  step=180  global_step=8580  loss=1.162  lr=5.625e-05  wall_s=29.1  traj_s_per_s=151.9  gpu_reserved_gb=5.73  real_eeg_nll=2.383
+stage=V_individual  step=200  global_step=8600  loss=1.353  lr=5.546e-05  wall_s=32  traj_s_per_s=153.4  gpu_reserved_gb=5.73  real_eeg_nll=2.717
+stage=V_individual  step=220  global_step=8620  loss=0.8655  lr=5.45e-05  wall_s=35  traj_s_per_s=154.6  gpu_reserved_gb=5.73  real_eeg_nll=1.73
+stage=V_individual  step=240  global_step=8640  loss=0.9019  lr=5.339e-05  wall_s=37.9  traj_s_per_s=155.6  gpu_reserved_gb=5.73  real_eeg_nll=1.863
+stage=V_individual  step=260  global_step=8660  loss=0.942  lr=5.212e-05  wall_s=41  traj_s_per_s=155.9  gpu_reserved_gb=5.73  real_eeg_nll=2.05
+stage=V_individual  step=280  global_step=8680  loss=1.048  lr=5.071e-05  wall_s=43.9  traj_s_per_s=156.6  gpu_reserved_gb=5.73  real_eeg_nll=2.146
+stage=V_individual  step=300  global_step=8700  loss=0.8389  lr=4.917e-05  wall_s=46.9  traj_s_per_s=157.1  gpu_reserved_gb=5.73  real_eeg_nll=1.831
+stage=V_individual  step=320  global_step=8720  loss=0.8173  lr=4.75e-05  wall_s=50  traj_s_per_s=157.4  gpu_reserved_gb=5.73  real_eeg_nll=1.733
+stage=V_individual  step=340  global_step=8740  loss=1.198  lr=4.572e-05  wall_s=52.9  traj_s_per_s=157.9  gpu_reserved_gb=5.73  real_eeg_nll=2.543
+stage=V_individual  step=360  global_step=8760  loss=0.8839  lr=4.383e-05  wall_s=55.9  traj_s_per_s=158.4  gpu_reserved_gb=5.73  real_eeg_nll=1.764
+stage=V_individual  step=380  global_step=8780  loss=0.8554  lr=4.185e-05  wall_s=58.8  traj_s_per_s=158.8  gpu_reserved_gb=5.73  real_eeg_nll=1.64
+stage=V_individual  step=400  global_step=8800  loss=0.8191  lr=3.979e-05  wall_s=61.8  traj_s_per_s=159.2  gpu_reserved_gb=5.73  real_eeg_nll=1.584
+stage=V_individual  step=420  global_step=8820  loss=1.056  lr=3.766e-05  wall_s=64.7  traj_s_per_s=159.5  gpu_reserved_gb=5.73  real_eeg_nll=2.015
+stage=V_individual  step=440  global_step=8840  loss=1.06  lr=3.547e-05  wall_s=67.6  traj_s_per_s=159.9  gpu_reserved_gb=5.73  real_eeg_nll=2.081
+stage=V_individual  step=460  global_step=8860  loss=0.9228  lr=3.325e-05  wall_s=70.7  traj_s_per_s=159.9  gpu_reserved_gb=5.73  real_eeg_nll=1.871
+stage=V_individual  step=480  global_step=8880  loss=0.8725  lr=3.1e-05  wall_s=73.8  traj_s_per_s=159.9  gpu_reserved_gb=5.73  real_eeg_nll=1.721
+stage=V_individual  step=500  global_step=8900  loss=1.263  lr=2.874e-05  wall_s=76.7  traj_s_per_s=160.2  gpu_reserved_gb=5.73  real_eeg_nll=2.487
+stage=V_individual  step=520  global_step=8920  loss=0.8489  lr=2.647e-05  wall_s=79.6  traj_s_per_s=160.5  gpu_reserved_gb=5.73  real_eeg_nll=1.77
+stage=V_individual  step=540  global_step=8940  loss=0.8463  lr=2.423e-05  wall_s=82.6  traj_s_per_s=160.7  gpu_reserved_gb=5.73  real_eeg_nll=1.77
+stage=V_individual  step=560  global_step=8960  loss=0.734  lr=2.201e-05  wall_s=85.5  traj_s_per_s=160.9  gpu_reserved_gb=5.73  real_eeg_nll=1.539
+stage=V_individual  step=580  global_step=8980  loss=0.8361  lr=1.983e-05  wall_s=88.5  traj_s_per_s=161.1  gpu_reserved_gb=5.73  real_eeg_nll=1.75
+stage=V_individual  step=600  global_step=9000  loss=1.213  lr=1.771e-05  wall_s=91.4  traj_s_per_s=161.2  gpu_reserved_gb=5.73  real_eeg_nll=2.721
+stage=V_individual  step=620  global_step=9020  loss=0.8582  lr=1.565e-05  wall_s=94.6  traj_s_per_s=161  gpu_reserved_gb=5.73  real_eeg_nll=1.868
+stage=V_individual  step=640  global_step=9040  loss=0.9251  lr=1.368e-05  wall_s=97.6  traj_s_per_s=161.2  gpu_reserved_gb=5.73  real_eeg_nll=1.981
+stage=V_individual  step=660  global_step=9060  loss=0.8918  lr=1.18e-05  wall_s=100.6  traj_s_per_s=161.3  gpu_reserved_gb=5.73  real_eeg_nll=1.907
+stage=V_individual  step=680  global_step=9080  loss=1.153  lr=1.003e-05  wall_s=103.5  traj_s_per_s=161.4  gpu_reserved_gb=5.73  real_eeg_nll=2.407
+stage=V_individual  step=700  global_step=9100  loss=1.203  lr=8.37e-06  wall_s=106.6  traj_s_per_s=161.4  gpu_reserved_gb=5.73  real_eeg_nll=2.613
+stage=V_individual  step=720  global_step=9120  loss=0.9742  lr=6.839e-06  wall_s=109.6  traj_s_per_s=161.5  gpu_reserved_gb=5.73  real_eeg_nll=2.098
+stage=V_individual  step=740  global_step=9140  loss=0.9648  lr=5.444e-06  wall_s=112.6  traj_s_per_s=161.6  gpu_reserved_gb=5.73  real_eeg_nll=2.077
+stage=V_individual  step=760  global_step=9160  loss=1.053  lr=4.193e-06  wall_s=115.6  traj_s_per_s=161.6  gpu_reserved_gb=5.73  real_eeg_nll=2.118
+stage=V_individual  step=780  global_step=9180  loss=1.011  lr=3.093e-06  wall_s=118.6  traj_s_per_s=161.7  gpu_reserved_gb=5.73  real_eeg_nll=2.052
+stage=V_individual  step=800  global_step=9200  loss=0.8004  lr=2.153e-06  wall_s=121.5  traj_s_per_s=161.8  gpu_reserved_gb=5.73  real_eeg_nll=1.648
+stage=V_individual  step=820  global_step=9220  loss=0.8011  lr=1.377e-06  wall_s=124.5  traj_s_per_s=161.9  gpu_reserved_gb=5.73  real_eeg_nll=1.63
+stage=V_individual  step=840  global_step=9240  loss=1.356  lr=7.711e-07  wall_s=127.5  traj_s_per_s=162  gpu_reserved_gb=5.73  real_eeg_nll=2.799
+stage=V_individual  step=860  global_step=9260  loss=1.235  lr=3.379e-07  wall_s=130.4  traj_s_per_s=162  gpu_reserved_gb=5.73  real_eeg_nll=2.506
+stage=V_individual  step=880  global_step=9280  loss=0.9338  lr=8.05e-08  wall_s=133.4  traj_s_per_s=162.1  gpu_reserved_gb=5.73  real_eeg_nll=1.914
+stage=V_individual  step=900  global_step=9300  loss=1.157  lr=4.533e-10  wall_s=136.3  traj_s_per_s=162.3  gpu_reserved_gb=5.73  real_eeg_nll=2.385

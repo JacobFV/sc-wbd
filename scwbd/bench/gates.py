@@ -30,6 +30,7 @@ from typing import Any, Callable, Mapping, Sequence
 import numpy as np
 
 from . import adapters
+from .corpus import blocking_limitation, limitations_for
 from .harness import Arm, Dataset, EvalResult, as_factory, evaluate
 from .matching import budget_of, check_matched, matched_subcheck
 from .report import (
@@ -180,6 +181,379 @@ CLAIMS: dict[str, dict[str, str]] = {
         "reference": "thesis_contract.tex tab:claim-gates row 5; ARCHITECTURE.md §4 G5",
     },
 }
+
+#: BENCH'S RULING on the second §0.3 artifact's headline result. Recorded in
+#: code so it cannot be written around.
+#:
+#: RELAYED AS: "fusing a misspecified channel degrades held-out log loss, 26.04
+#: against 16.82 for EEG alone -- negative transfer, the tab:claim-gates
+#: falsifier for typed fusion, measured."
+#:
+#: BENCH RE-DERIVED IT FROM reports/identifiability/synthetic_slice.json AND
+#: RULES: **NOT ESTABLISHED.** The two figures are per-observation averages over
+#: DIFFERENT OBSERVATION POPULATIONS. joint_native averages over 845,280
+#: observations; eeg_only over 844,800. The extra 480 are the fMRI observations,
+#: whose own per-observation loss is 20,221.67. Averaging 480 such terms into
+#: 844,800 good ones raises the mean ARITHMETICALLY, with no negative transfer
+#: required:
+#:
+#:     apparent degradation vs eeg_only        +9.224
+#:     predicted by pure pooling, fusion inert +11.474
+#:     residual once pooling is removed        -2.250
+#:
+#: The residual is NEGATIVE: the joint fit is 2.25 nats/observation BETTER than
+#: naively pooling the two separate fits. Every bit of the apparent degradation
+#: is explained by which observations entered the average, and the fusion then
+#: partly offset it. Fisher's per-observation normalisation was correct and its
+#: note is right that designs consuming different NUMBERS of samples stay
+#: comparable -- but that holds for designs over the SAME population, and these
+#: are over different ones. Comparability of counts is not comparability of
+#: populations.
+#:
+#: THE DECISIVE TEST, which bench requests rather than asserts: joint_native's
+#: log loss RESTRICTED TO THE EEG OBSERVATIONS versus eeg_only's, on the same
+#: 844,800 rows. If the EEG-restricted loss is worse, negative transfer is real
+#: and the falsifier has fired. If it is unchanged or better, what was measured
+#: is the misspecified channel's own bad fit being averaged in, which is a
+#: finding about the fMRI observation model and not about fusion.
+#:
+#: G1 MAY NOT RECORD A FIRED FALSIFIER ON THIS EVIDENCE. A falsifier that fires
+#: on an artifact of pooling would be as damaging to this project as a claim that
+#: passes on one -- more so, because a wrongly-recorded falsification is the one
+#: error this bench cannot argue it was built to prevent.
+#: SUPERSEDED by the decisive test. Agent Fisher ran the EEG-restricted
+#: comparison and the answer is NEITHER candidate: NONE OF THE FOUR FITS
+#: CONVERGED (median Newton decrement, posterior SDs: joint_native 12,237.6;
+#: eeg_only 409.3; fmri_only 100,477.9; joint_resampled 53,675.2), and
+#: fmri_only NEVER LEFT THE PRIOR MEAN (drift 0.0). The comparison measures the
+#: optimiser, not the designs. FALSIFIER NOT FIRED; OBSERVATION WITHDRAWN;
+#: CRITERION UNMEASURED RATHER THAN FAILED. Re-running with a converged
+#: optimiser is real work nobody has done.
+#:
+#: BENCH RULES ON ITS OWN NUMBER, since one of the inputs was mine to check:
+#: my pooling decomposition used fmri_only's 20,221.67 nats/observation as
+#: "the misspecified channel's own loss". It is not that. It is the loss of a
+#: model sitting at its prior mean, having never started. So:
+#:   * the CONCLUSION survives and is strengthened -- I said "not established",
+#:     the truth is "not measurable from this data";
+#:   * the DECOMPOSITION IS WITHDRAWN as a quantitative claim. +11.4735 and the
+#:     -2.2499 residual are arithmetic on an input that is not a measurement of
+#:     what its label says, and the residual's inference -- "the joint fit is
+#:     better than pooling" -- compared two unconverged fits.
+#: I verified that the COMPARISON was valid (same population?) and never asked
+#: whether the INPUTS were measurements. A correct conclusion drawn from an
+#: uninterrogated input is not a correct analysis; it is a lucky one. Had the
+#: pooling explanation been false, the arithmetic would have looked equally
+#: clean.
+G1_NEGATIVE_TRANSFER_RULING = (
+    "FALSIFIER_NOT_FIRED; OBSERVATION_WITHDRAWN; CRITERION_UNMEASURED_NOT_FAILED; "
+    "BENCH_POOLING_DECOMPOSITION_WITHDRAWN_AS_QUANTITATIVE_CLAIM_CONCLUSION_UPHELD"
+)
+
+#: What the two §0.3 artifacts DO support for G1, stated narrowly so the
+#: resampling result cannot carry the fusion claim:
+#:   * native-clock handling beats naive resampling -- structurally, not
+#:     marginally (rank 3/9, theta lambda-min exactly 0 since dmu/dtau == 0 on a
+#:     1 s lattice, coverage 0.33-0.71, per-observation loss 369.03 vs 16.82);
+#:   * adding a modality is NOT automatically beneficial: fMRI contributes
+#:     essentially nothing about coupling and delay (gain 1.000001);
+#:   * whether a misspecified channel actively HARMS the shared inference is
+#:     UNMEASURED -- the EEG-restricted comparison was run and is void for
+#:     non-convergence. Not unresolved-pending-a-test; the test ran and
+#:     returned "the optimiser, not the designs".
+G1_SUPPORTED_CLAIM = "native clocks beat resampling; a modality's value is not automatic"
+
+#: G5 ADJUDICATION: the Stage V over-permission, and bench's ruling on it.
+#:
+#: FACT (agent Turing, reports/gates/stage5_over_permission.md @ 723380c):
+#: train.py:stage_sources() documented "intersect each card's A_k with the stage
+#: allowlist (restrict only)" and did not intersect -- it filtered whole card
+#: patterns by top-level-module overlap and kept them at the CARD's breadth.
+#: Declared 6 tensors / 856 params; actually permitted 10 / 2,137; undeclared
+#: eeg.source_proj.* = 1,281 params, which is 37.6% of the individualizer's
+#: 3,411. Confirmed to have MOVED, not merely been permitted
+#: (eeg.source_proj.0.weight max|delta| 3.567e-03).
+#:
+#: BENCH'S RULING: NOT a G5 failure, and a G5 PASS IS NOT CLEAN HERE. The reason
+#: is the one this bench enforces everywhere else: it is a MATCHED-CAPACITY
+#: confound. G5's claim is that INDIVIDUALIZATION improves future prediction. If
+#: an undeclared source->sensor projection carrying 37.6% of the individualizer's
+#: capacity adapted on the same real EEG, a pass cannot separate "individualization
+#: helped" from "1,281 extra adapting parameters helped". That is the same defect
+#: as an unmatched parameter count, arriving through a permission bug rather than
+#: through a baseline choice.
+#:
+#: CONTROL REQUESTED, and preregistered BEFORE it runs: freeze eeg.source_proj.*
+#: and rerun Stage V from stage_IV_assembly.pt, all else identical. Then score G5
+#: on the preregistered metric against the same baselines.
+#:   * advantage SURVIVES the freeze -> individualization claim is clean at the
+#:     supported level; the over-permission was real and did not carry the result.
+#:   * advantage DISAPPEARS or shrinks inside the equivalence margin -> the
+#:     measured effect was undeclared capacity, and G5 must be reported as
+#:     confounded rather than failed.
+#:   * control not run -> G5 cannot be reported as clean, whatever it scores.
+#: Fixing the interpretation of each outcome now is what stops it being chosen
+#: after the number is seen.
+#:
+#: SEQUENCING: the control produces a checkpoint and may run immediately, but it
+#: CANNOT BE SCORED until the evaluation path is clean. Agent Neyman found 10 of
+#: 12 comparisons defective -- max_batches=40 drew 640 windows from
+#: participant-ordered folds, so every baseline was fit on ONE participant (S001)
+#: and every model scored on ONE different participant (S008), with every reported
+#: interval [nan, nan]. NO REAL-EEG HOLDOUT NUMBER MAY BE QUOTED until that path
+#: is cleared, and that includes the control's.
+G5_STAGE_V_OVER_PERMISSION = (
+    "NOT_A_FAILURE; PASS_NOT_CLEAN; CONTROL_RUN_freeze_eeg.source_proj_VERIFIED_BY_DELTA; "
+    "CONFOUND_190.6pct_OF_EFFECTIVE_CAPACITY; SCORING_BLOCKED_ON_EVALUATION_PATH"
+)
+
+#: CONTROL DELIVERED AND VERIFIED BY CHANGE, NOT BY PERMISSION. All four
+#: eeg.source_proj.* tensors show max|delta| exactly 0.000e+00 from
+#: stage_IV_assembly.pt, against 3.567e-03 / 1.276e-03 / 2.189e-03 / 2.748e-04 in
+#: production (g5_control_checkpoint.md lines 36-39, verified by bench). Permitted
+#: count 16 -> 12; the six declared nuisance tensors still train; zero non-EEG
+#: tensors changed; config differs in three bookkeeping lines only.
+#:
+#: THE CONFOUND IS ~5x WORSE THAN THE FIGURE I RULED AGAINST, and the correction
+#: came from the party it damages. 79.6% of the individualizer NEVER MOVED:
+#: z_session (2,616 params) and _alpha_raw (12) are bit-identical to a freshly
+#: initialised Individualizer. Trainable 3,300; moved 672. So the undeclared
+#: eeg.source_proj.* at 1,281 params is 38.8% of NOMINAL capacity and
+#: **190.6% OF EFFECTIVE CAPACITY** -- the undeclared projection carried nearly
+#: TWICE the adapting capacity of the individualization mechanism itself.
+#: My preregistered three-outcome table is unaffected: it partitions the same way
+#: and was fixed before any of this. The objection is simply much stronger than
+#: the number I was given.
+G5_CONFOUND_EFFECTIVE_CAPACITY_PCT = 190.6
+
+#: SEPARATE AND LARGER FINDING, bearing on G5's CLAIM TEXT rather than on the
+#: confound: **THE SESSION LEVEL OF THE HIERARCHY IS INERT.** z_session is 2,616
+#: of 3,300 trainable parameters -- 79% of the mechanism -- and is bit-identical
+#: to initialisation in BOTH the production run and the control.
+#:
+#: ARCHITECTURE.md describes Stage V as "individualization with centered
+#: population effects and hierarchical session effects". The session level of
+#: that hierarchy did nothing. So whatever G5 measures, IT IS NOT SESSION-LEVEL
+#: ADAPTATION: at most person-level (z_person, 654 params) plus four scalars.
+#:
+#: CONSEQUENCE FOR THE CLAIM, which bench sets: G5's licensed claim narrows from
+#: "individualization" to "PERSON-LEVEL adaptation, within this recording setup"
+#: -- the second narrowing this gate has taken on evidence, after the single-site
+#: constraint. And note the interaction with G5's own baseline set: the gate
+#: scores the candidate against a SESSION-ADAPTED baseline. A candidate whose own
+#: session mechanism never trained is not a hierarchical model being compared to a
+#: session baseline; it is a person-level model being compared to one. That does
+#: not invalidate the comparison, but it changes what a win would mean, and the
+#: report must say so rather than let "individualization" carry the older sense.
+#:
+#: RESOLVED -- MECHANISM, NOT HYPOTHESIS (g5_individualizer_inert.md @ 42e4fb7,
+#: gradient table verified by bench at lines 20-22). Agent Neyman supplied the
+#: discriminator: "one frozen tensor is a gradient path; two on different paths is
+#: a wiring question." It is a wiring question, with TWO DISTINCT FAULTS:
+#:
+#:   FAULT 1 -- train.py:600 calls individualizer(participant=pid, base=th) and
+#:   NEVER PASSES `session`. The session term is never indexed, so z_session gets
+#:   exactly zero gradient (0.000e+00) through the prior penalty and none from
+#:   data. Supplying `session` restores a real gradient (3.706e-01). The session
+#:   id is available at realdata.py:420,577 and simply not passed.
+#:
+#:   FAULT 2 -- _alpha_raw's gradient is None EVEN WITH session and group
+#:   supplied: the parameter does not participate in the reachable graph. A
+#:   different fault needing a different fix.
+#:
+#: WHAT MAKES IT A RESOLUTION RATHER THAN A FIT: every row matches checkpoint
+#: evidence that existed BEFORE the hypothesis was formed, including the one
+#: anomaly the hypothesis was not built to explain -- log_sd_session MOVED despite
+#: being a session parameter, because it draws gradient from prior_penalty()
+#: rather than the data path. A mechanism that also accounts for the observation
+#: that would otherwise contradict it is a different object from one that merely
+#: fits its own evidence.
+#:
+#: THE SESSION LEVEL OF THE HIERARCHY WAS NEVER WIRED. That is an ESTABLISHED
+#: DEFECT, not an open question, and 79% of the mechanism's parameters are in it.
+G5_SESSION_LEVEL_INERT = True
+G5_LICENSED_CLAIM = "person-level adaptation, within this recording setup"
+
+#: BENCH'S RULING ON A FIXED-WIRING RERUN: **DO NOT RUN IT YET**, and agent
+#: Turing was right to ask rather than produce it. Their reasoning is the same as
+#: the source_proj control's: a third artifact produced after the confound is
+#: known, by the party being graded, is what that control existed to avoid.
+#:
+#: THE DECIDING REASON IS ORDERING, NOT PROPRIETY. G5 is unmeasurable on this
+#: artifact for THREE ESTABLISHED reasons found by three parties on three
+#: different artifacts, and a wiring rerun fixes exactly ONE of them:
+#:   P5 (agent Neyman) -- evaluate.py never loads or applies the individualizer;
+#:   source_proj (agent Turing) -- an undeclared projection with 190.6% of the
+#:     individualizer's EFFECTIVE capacity adapting alongside it;
+#:   session wiring (this) -- 79% of the mechanism never received a gradient.
+#: A possible FOURTH is being checked rather than asserted: the holdout is
+#: participant-disjoint, so a test participant's z_person was never fit and sits
+#: at initialisation, which would make individualization A NO-OP AT EVALUATION BY
+#: CONSTRUCTION -- and NO TRAINING RERUN FIXES THAT. It is an evaluation-design
+#: problem wearing a training problem's clothes.
+#:
+#: So a rerun now would produce a better artifact whose G5 still cannot be
+#: scored, and would spend the one clean shot at a fixed-wiring candidate before
+#: knowing whether the target is measurable at all. SEQUENCE: (a) Neyman clears
+#: the evaluation path including P5; (b) agent Turing reports the
+#: participant-disjoint measurement; (c) IF G5 is measurable in principle, bench
+#: then specifies the fixed-wiring run and its control, as it specified the
+#: source_proj control.
+#:
+#: FOR SC-WBD-001-beta THE VERDICT IS SETTLED AND IS NOT PENDING A RERUN: G5 is
+#: COULD_NOT_RUN with three established reasons. Reporting it as "awaiting a
+#: rerun" would imply the rerun could deliver a pass, and on this evaluation path
+#: it cannot.
+#: FOURTH BLOCKER, PROVEN NOT INFERRED (agent Turing, 9847fd2): exactly the 71
+#: TRAINING participants' z_person rows moved off init (median max|d| 2.285e-03);
+#: 0 of 27 TEST participants moved (median 0.000e+00). Fresh z_person is all
+#: zeros and an untrained row returns `base` exactly. SO INDIVIDUALIZATION ON
+#: THIS HOLDOUT IS THE IDENTITY FUNCTION, PROVABLY, FOR EVERY TEST PARTICIPANT --
+#: and fixing Neyman's P5 does not move it, because there is nothing to apply.
+#:
+#: BENCH ACCEPTS THE RECOMMENDATION: G5 is COULD_NOT_RUN on this artifact, not
+#: FAIL. Four independent reasons, each sufficient, from three parties across
+#: four kinds of evidence. Recording a failure would overstate what we know
+#: exactly as much as recording a pass: the experiment was never in a position to
+#: produce evidence in either direction.
+#:
+#: AND THE FOURTH IS A SPECIFICATION DEFECT, WHICH MAKES IT MINE. The
+#: participant-disjoint split is the CORRECT instrument for R10 and for any
+#: generalisation claim, and the WRONG instrument for G5 -- a participant held
+#: out entirely offers no opportunity to individualise them. My own run_g5
+#: disables the group-overlap refusal precisely because "the holdout is a new
+#: session, not a new person", so the gate was specified correctly and was handed
+#: a split that cannot serve it. Nobody noticed because the split is right for
+#: everything else it is used for. That is its own register shape: an instrument
+#: that is correct for one purpose, reused for another, where it is silently
+#: inert rather than wrong.
+G5_HOLDOUT_IS_IDENTITY_FOR_TEST_PARTICIPANTS = True
+
+#: THE RESPECIFIED G5 EXPERIMENT. Agent Turing correctly declined to design this
+#: -- producing a split after the confound is known, by the party being graded, is
+#: what the source_proj control discipline exists to prevent -- so bench specifies
+#: it, now, before any candidate exists.
+#:
+#:   SPLIT: nested, and both levels are load-bearing.
+#:     OUTER  participant-disjoint, unchanged: 27 held-out participants. R10 is
+#:            preserved and no generalisation claim is weakened.
+#:     INNER  within EACH held-out participant, a TEMPORAL split: calibrate on
+#:            that participant's earliest windows, score on their later ones,
+#:            with a gap between the two large enough to clear the autocorrelation
+#:            length of the signal. "Future prediction" must mean later in time,
+#:            not merely a different row.
+#:
+#:   CALIBRATION BUDGET, declared per arm and matched -- the lesson source_proj
+#:   taught, applied in advance rather than discovered afterwards:
+#:     * only the held-out participant's own z_person and z_session may adapt
+#:       during calibration; EVERYTHING ELSE FROZEN, verified BY DELTA and not by
+#:       permission (all other tensors max|delta| == 0.000e+00), because the
+#:       control that caught source_proj is the one that would catch its successor;
+#:     * every baseline receives the SAME calibration windows and the SAME
+#:       optimiser budget. A baseline denied the calibration data is not a
+#:       baseline, it is a handicap.
+#:
+#:   BASELINES, unchanged from G5's manifest: population, anatomy-only,
+#:   session-adapted. Note that session-adapted only becomes a meaningful
+#:   comparator once the session wiring fault is fixed; until then the candidate
+#:   and that baseline differ in a mechanism neither of them runs.
+#:
+#:   METRIC: the preregistered one -- incremental calibrated log score, paired
+#:   PER PARTICIPANT, with the paired bootstrap over participants rather than over
+#:   windows, since windows within a participant are not independent.
+#:
+#:   PRECONDITIONS, all three, before this is worth building: Neyman clears the
+#:   evaluation path including P5; the session wiring faults are fixed; and the
+#:   fixed-wiring Stage V run happens ONCE, to this spec, rather than being
+#:   iterated toward a number.
+G5_RESPECIFICATION = (
+    "nested split: participant-disjoint OUTER preserving R10, temporal INNER "
+    "within each held-out participant with a gap; per-participant calibration "
+    "budget matched across arms and verified by delta; paired bootstrap over "
+    "participants"
+)
+
+G5_RERUN_RULING = (
+    "DO_NOT_RERUN_YET; THREE_ESTABLISHED_BLOCKERS_ONE_FIXED_BY_RERUN; "
+    "SEQUENCE_EVALUATION_PATH_THEN_PARTICIPANT_DISJOINT_THEN_SPECIFY; "
+    "G5_IS_COULD_NOT_RUN_NOT_PENDING"
+)
+
+#: What agent Turing's first reading got wrong, recorded because it PROTECTS a
+#: result rather than damaging one: they initially read 31,193 params
+#: over-permitted INCLUDING eeg.L, the lead field -- which would have meant the
+#: biophysical forward model was fit freely and would have contradicted the BEM
+#: validation behind N6/N8. It is false. eeg.L is a registered BUFFER, not a
+#: Parameter; it holds 29,056 of those numbers; its Stage IV->V delta is exactly
+#: 0.000e+00. They ran the checkpoint diff instead of asserting the consequence.
+#: The lead field did not move, and N6/N8 are unaffected.
+STAGE_V_LEAD_FIELD_UNCHANGED = True
+
+#: ============================================================================
+#: THE §11.2 BASELINE COMPARISON: MEASURED, CLEAN, AND FAILED.
+#: ============================================================================
+#: body.tex §11.2 requires that "performance must be compared with simple
+#: autoregressive, dense neural, population, and subject-specific statistical
+#: baselines." That comparison has now run on a path agent Neyman audited and
+#: cleared. Verified by bench directly from reports/training/evaluation.json
+#: (f04d87f): scwbd_beaten_by = [persistence, ar16, var4, population_gaussian,
+#: subject_specific_ar]; inconclusive_vs_scwbd = []. 1,080 test windows / 27
+#: participants, paired participant-clustered 95% intervals on the per-window NLL
+#: difference, every one excluding zero.
+#:
+#: VERDICT: **FAIL**, and it is a FAIL rather than a COULD_NOT_RUN. The path is
+#: clean, the comparison ran, nothing is inconclusive. SC-WBD-001-beta at
+#: 1,757,613 parameters scores NLL 2.5552 against ar16's 2.0132 at 4,160
+#: parameters, and is beaten by PERSISTENCE -- copying the last observed sample
+#: forward -- by +0.2765 [+0.1441, +0.4336]. The only model it beats is
+#: dense_neural, its own equal-capacity control.
+#:
+#: THREE BOUNDS ON WHAT THIS MEANS, none of which soften it and all of which
+#: constrain what may be inferred FROM it:
+#:
+#: 1. anatomy.is_biological = FALSE. provenance = synthetic_fallback, n_regions
+#:    454, lead field analytic_sphere_fallback. THE ARTIFACT TESTED IS NOT THE
+#:    ARTIFACT THE THESIS DESCRIBES: it contains no real human anatomy. So this
+#:    result does NOT falsify G2 ("anatomical topology improves inference") --
+#:    that gate was never exercised, because the model never had anatomy. It is
+#:    a measured fact about THIS artifact, not about the architecture.
+#: 2. subject_specific_ar is BIT-IDENTICAL to ar16 -- same NLL, same CI, same
+#:    paired delta to four decimals (agent Neyman's C1-M3). The thesis's hardest
+#:    baseline is still not running and its 77,248 parameters are decoration. So
+#:    there are FOUR distinct baselines here, not five. It does not change the
+#:    verdict: four still beat it decisively.
+#: 3. real_split.verified = FALSE. stage_V_individual.pt predates the fingerprint
+#:    field, so the evaluation split CANNOT BE PROVEN identical to the one that
+#:    trained the model. Not a mismatch -- an unproven assumption, recorded in the
+#:    artifact rather than in a log.
+#:
+#: WHAT IT LICENSES: "this artifact, trained on this corpus with a synthetic
+#: connectome, does not beat trivial baselines on held-out real EEG." That is a
+#: real negative result and bench will not soften it.
+#: WHAT IT DOES NOT LICENSE: "the architecture does not work", "structured state
+#: does not help", or any statement about anatomy, fusion, or multiresolution.
+#: Those gates were not run, and a model without anatomy cannot falsify a claim
+#: about anatomy.
+#:
+#: AGENT NEYMAN'S FRAMING, ADOPTED AS THE RULE FOR READING IT: the path is clean
+#: and the artifact is limited, and THOSE ARE DIFFERENT FINDINGS. A clean
+#: measurement of a limited thing is a valid number about a limited thing.
+#: Merging the two would let a clean-code verdict launder a claim the data cannot
+#: support -- in either direction.
+BASELINE_COMPARISON_VERDICT = (
+    "FAIL: beaten by persistence, ar16, var4, population_gaussian and "
+    "subject_specific_ar; all paired participant-clustered intervals exclude 0; "
+    "nothing inconclusive. Bounded by anatomy.is_biological=False, a "
+    "non-functional subject_specific_ar, and an unverified split."
+)
+BASELINE_COMPARISON_LICENSES = (
+    "this artifact on this corpus with a SYNTHETIC connectome does not beat "
+    "trivial baselines on held-out real EEG"
+)
+BASELINE_COMPARISON_DOES_NOT_LICENSE = (
+    "any claim about the architecture, about anatomy (G2 unexercised: the model "
+    "had none), about fusion (G1), or about multiresolution (G3)"
+)
 
 _NON_GOALS = [
     "This gate does not claim a validated digital twin of any specific person.",
@@ -422,6 +796,7 @@ def run_g1(
     delay_true: float | None = None,
     delay_estimates: Mapping[str, Sequence[float] | float] | None = None,
     intervention: Mapping[str, Dataset] | None = None,
+    artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     source_cards: Sequence[str] = (),
@@ -443,6 +818,7 @@ def run_g1(
     subs: list[SubCheck] = []
     rows: list[BaselineResult] = []
     artifacts: dict[str, Any] = {}
+    subs.extend(_corpus_subchecks("G1", artifact, artifacts))
 
     missing: list[str] = []
     if candidate is None:
@@ -622,6 +998,107 @@ def run_g1(
 # ==========================================================================
 # G2 -- anatomy improves inference
 # ==========================================================================
+def _corpus_subchecks(claim_id: str, artifact: str | None,
+                      artifacts: dict[str, Any]) -> list[SubCheck]:
+    """Precondition: can this artifact's TRAINING SIGNAL support this claim?
+
+    A model cannot demonstrate what its corpus never contained. When it cannot,
+    the honest verdict is COULD_NOT_RUN with the corpus named — not a FAIL of
+    the model, and never a pass.
+    """
+    if artifact is None:
+        return []
+    blocking, disclose = limitations_for(claim_id, artifact)
+    out: list[SubCheck] = []
+    for lim in blocking:
+        out.append(could_not_run(
+            f"training_signal[{lim.id}]",
+            "Does the training corpus contain the structure this claim requires?",
+            f"corpus limitation of artifact {artifact!r}: {lim.measured}. {lim.consequence} "
+            f"(measured by {lim.found_by}, {lim.source})",
+            mandatory=True,
+            falsified_by="the corpus contains no signal of the kind the claim is about",
+        ))
+    for lim in disclose:
+        out.append(SubCheck(
+            name=f"corpus_disclosure[{lim.id}]",
+            description="Measured corpus limitation that bounds how this result may be read.",
+            metrics=[Metric(name=f"corpus.{lim.id}", value=1.0, kind="diagnostic",
+                            exact=True, note=f"{lim.measured} -> {lim.consequence}")],
+            mandatory=False,
+            reason=lim.mitigating_fact or "disclosure only",
+        ))
+    if blocking or disclose:
+        artifacts["corpus_limitations"] = {
+            "artifact": artifact,
+            "blocking": [l.as_dict() for l in blocking],
+            "disclosed": [l.as_dict() for l in disclose],
+        }
+    return out
+
+
+def _prior_fragility_subcheck(prior: Any, artifacts: dict[str, Any]) -> SubCheck:
+    """Disclose route-fragile inputs and forbidden inferences of the anatomy prior.
+
+    A topology claim inherits the fragility of the maps it was built from.  Agent
+    C's ledgers carry ``route_agreement_r`` / ``route_fragile`` (maps whose value
+    depends on the sampling route) and ``forbidden_inference`` (combinations the
+    prior explicitly does not support).  G2 reports them next to its verdict
+    rather than leaving them in another module's documentation.
+    """
+    fragile = getattr(prior, "route_fragile", None)
+    forbidden = getattr(prior, "forbidden_inference", None)
+    ledger = getattr(prior, "ledger", None)
+    if fragile is None and ledger is not None:
+        fragile = getattr(ledger, "route_fragile", None)
+    if forbidden is None and ledger is not None:
+        forbidden = getattr(ledger, "forbidden_inference", None)
+    if fragile is None and forbidden is None:
+        return SubCheck(
+            name="prior_fragility_disclosure",
+            description="Route-fragile inputs and forbidden inferences of the anatomy prior.",
+            metrics=[], mandatory=False, forced_status="COULD_NOT_RUN",
+            reason=(
+                "the supplied topology object exposes no route_fragile / "
+                "forbidden_inference ledger, so this gate cannot state which of its inputs "
+                "are route-dependent; pass prior_ledger= to disclose them"
+            ),
+        )
+    frag = list(fragile or [])
+    forb = list(forbidden or [])
+    artifacts["prior_fragility"] = {"route_fragile": frag, "forbidden_inference": forb}
+    return SubCheck(
+        name="prior_fragility_disclosure",
+        description="Route-fragile inputs and forbidden inferences of the anatomy prior.",
+        metrics=[
+            Metric(name="prior.route_fragile_inputs", value=float(len(frag)),
+                   kind="diagnostic", exact=True,
+                   note=("maps whose value depends on the sampling route: "
+                         + (", ".join(map(str, frag)) if frag else "none"))),
+            Metric(name="prior.forbidden_inferences", value=float(len(forb)),
+                   kind="diagnostic", exact=True,
+                   note=("combinations this prior does not support: "
+                         + (", ".join(map(str, forb)) if forb else "none"))),
+        ],
+        mandatory=False,
+        reason=("disclosure only; a fragile input does not invalidate the gate, but a "
+                "verdict that leans on one must say so"),
+    )
+
+
+#: Standing notes on every G2 report, on every path — including the refusals.
+_G2_NOTES: tuple[str, ...] = (
+    "Sparsity or plausibility alone is not evidence for the declared topology "
+    "(Appendix D, 'Connectome prior value').",
+    "Controls are agent C's; this gate refuses to synthesise them, because the control "
+    "IS the experiment. A gate that invents its own null has measured nothing.",
+    "If the topology or any derived prior is route-fragile (agent C's ledgers carry "
+    "route_agreement_r / route_fragile) or carries a forbidden_inference, that must be "
+    "disclosed alongside the verdict: a topology claim inherits the fragility of the maps "
+    "it was built from.",
+)
+
+
 def run_g2(
     *,
     train: Dataset | None = None,
@@ -631,9 +1108,11 @@ def run_g2(
     anatomy: np.ndarray | None = None,
     controls: Mapping[str, np.ndarray] | None = None,
     causal_holdout: Mapping[str, Dataset] | None = None,
+    prior_ledger: Any = None,
     data_efficiency_sizes: Sequence[int] | None = None,
     n_efficiency_seeds: int = 3,
     corrupt_fraction: float = 0.5,
+    artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     source_cards: Sequence[str] = (),
@@ -655,6 +1134,7 @@ def run_g2(
     )
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {}
+    subs.extend(_corpus_subchecks("G2", artifact, artifacts))
 
     if controls is None:
         dep = adapters.anatomy_controls()
@@ -683,7 +1163,8 @@ def run_g2(
         for i, m in enumerate(missing):
             subs.append(could_not_run(f"inputs[{i}]", "Required gate input", f"missing: {m}",
                                       falsified_by=CLAIMS["G2"]["falsified_by"]))
-        return ClaimReport(manifest=man, subchecks=subs, kind="gate").finalize()
+        return ClaimReport(manifest=man, subchecks=subs, kind="gate",
+                           notes=list(_G2_NOTES)).finalize()
 
     assert model_for_graph is not None and anatomy is not None and controls is not None
     assert train is not None and test is not None
@@ -931,14 +1412,14 @@ def run_g2(
             "ci": [d.interval.lo, d.interval.hi],
         }
 
+    # -- prior fragility disclosure (agent C's ledgers) -------------------
+    subs.append(_prior_fragility_subcheck(prior_ledger if prior_ledger is not None else anatomy,
+                                          artifacts))
+
     rows = _baseline_rows(base, {k: "topology control" for k in base}, seed=seed)
     return ClaimReport(
         manifest=man, subchecks=subs, baselines_run=rows, artifacts=artifacts, kind="gate",
-        notes=[
-            "Sparsity or plausibility alone is not evidence for the declared topology "
-            "(Appendix D, 'Connectome prior value').",
-            "Controls are agent C's; this gate refuses to synthesise them.",
-        ],
+        notes=list(_G2_NOTES),
     ).finalize()
 
 
@@ -974,6 +1455,7 @@ def run_g3(
     fine_evidence_block: str = "fine_evidence",
     compute_full_fine: float | None = None,
     compute_adaptive: float | None = None,
+    artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     source_cards: Sequence[str] = (),
@@ -995,6 +1477,7 @@ def run_g3(
     )
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {}
+    subs.extend(_corpus_subchecks("G3", artifact, artifacts))
 
     missing: list[str] = []
     if multires_model is None:
@@ -1306,6 +1789,8 @@ def run_g4(
     model_evidence: Mapping[str, Mapping[str, float]] | None = None,
     fisher_whitened: Callable[[str], Any] | None = None,
     single_modality_designs: Sequence[str] = ("eeg", "fmri"),
+    energy_matched_design: str | None = "joint_native_impulse_matched",
+    artifact: str | None = None,
     basis: str = "prior_standardised",
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
@@ -1346,8 +1831,15 @@ def run_g4(
     man.acceptance_thresholds["basis"] = basis
     man.acceptance_thresholds["baseline_design"] = baseline_design
     man.acceptance_thresholds["intervention_design"] = intervention_design
+    man.acceptance_thresholds["artifact"] = artifact
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {}
+
+    # A model cannot demonstrate what its corpus never contained. Checked before
+    # anything is measured, so a trained artifact cannot pass this gate on the
+    # strength of Fisher inputs its training signal never exercised.
+    corpus_subs = _corpus_subchecks("G4", artifact, artifacts)
+    subs.extend(corpus_subs)
 
     auto_probed = False
     probed_name = ""
@@ -1367,8 +1859,14 @@ def run_g4(
                     falsified_by=CLAIMS["G4"]["falsified_by"],
                 )
             )
-    if (theta_index is None or nuisance_index is None) and auto_probed:
-        # agent H may declare the partition itself; consume it rather than guess
+    if theta_index is None or nuisance_index is None:
+        # Agent H declares the partition; consume it rather than guess.
+        # NOTE: this must NOT be gated on auto_probed. A caller passing a BOUND
+        # fisher map (the only usable form, since bare expected_fisher needs
+        # u/cfg/proto) would otherwise skip the probe and get a COULD_NOT_RUN
+        # whose stated reason is not the actual reason -- a check reporting the
+        # wrong cause is the same failure family as a guard that cannot fire.
+        # Found by agent Fisher running this gate end to end.
         dep = adapters.theta_partition()
         if dep.available:
             theta_names, all_names = dep.obj
@@ -1634,6 +2132,74 @@ def run_g4(
                 )
             )
 
+    # ------------------------------------------------------------------
+    # INPUT-ENERGY MATCHING. Mandatory, and it is the same discipline as
+    # matched parameter count applied to an input budget: an intervention that
+    # wins only because it injected more energy has demonstrated the energy,
+    # not the perturbation. Agent Fisher measured the gap -- unmatched
+    # theta-profile lambda-min ratios 9.3x / 28x / 6.9x, energy-matched 0.839 /
+    # 0.839 / 1.059 -- so the unmatched number may never stand alone here.
+    # ------------------------------------------------------------------
+    if fisher is not None and theta_index is not None and nuisance_index is not None:
+        if energy_matched_design is None:
+            subs.append(could_not_run(
+                "input_energy_matched",
+                "Intervention versus baseline AT MATCHED INPUT ENERGY.",
+                "no energy-matched design was named. An unmatched impulse comparison "
+                "measures input energy, not perturbation, and this gate will not report one "
+                "alone -- the same rule as 'an unmatched win is not a win' for parameters.",
+                falsified_by="the intervention's advantage disappears at matched input energy",
+            ))
+        else:
+            try:
+                ti3 = np.asarray(list(theta_index), dtype=int)
+                ni3 = np.asarray(list(nuisance_index), dtype=int)
+                m_mat, m_prior = _fisher_pair(fisher(energy_matched_design))
+                b_mat = _fisher_pair(fisher(baseline_design))[0]
+                if m_prior is None:
+                    pr = (_fisher_pair(fisher(prior_design))[0]
+                          if prior_design is not None else 0.0)
+                    m_mat, b_mat = m_mat - pr, b_mat - pr
+                ev_m = float(max(np.min(np.linalg.eigvalsh(
+                    _schur_theta(m_mat, ti3, ni3))), 0.0))
+                ev_b = float(max(np.min(np.linalg.eigvalsh(
+                    _schur_theta(b_mat, ti3, ni3))), 0.0))
+                ratio = (ev_m / ev_b) if ev_b > 1e-12 else (
+                    float("inf") if ev_m > 1e-12 else 1.0)
+                artifacts["energy_matched"] = {
+                    "design": energy_matched_design,
+                    "theta_min_eig_matched": ev_m,
+                    "theta_min_eig_baseline": ev_b,
+                    "matched_gain_ratio": ratio,
+                }
+                subs.append(SubCheck(
+                    name="input_energy_matched",
+                    description=(
+                        f"{energy_matched_design} versus {baseline_design} on the theta "
+                        "Schur complement, at MATCHED INPUT ENERGY. This is the comparison "
+                        "that can fail; the unmatched one measures the energy."
+                    ),
+                    metrics=[Metric(
+                        name="fisher.theta_min_eigenvalue_gain_energy_matched",
+                        value=float(ratio), kind="identifiability", exact=True,
+                        threshold=thr.min_fisher_eig_gain, direction="greater_is_better",
+                        note=(f"basis={basis}; matched {ev_b:.4g} -> {ev_m:.4g}. A ratio at "
+                              "or below 1 means the same input energy spent on the "
+                              "background drive buys MORE theta information than "
+                              "concentrating it in one impulse."))],
+                    mandatory=True,
+                    falsified_by=("the intervention's advantage disappears once input "
+                                  "energy is held equal"),
+                ))
+            except Exception as exc:
+                subs.append(could_not_run(
+                    "input_energy_matched",
+                    "Intervention versus baseline AT MATCHED INPUT ENERGY.",
+                    f"the energy-matched design {energy_matched_design!r} could not be "
+                    f"evaluated ({type(exc).__name__}: {exc}); the unmatched ratio may not "
+                    "be reported alone",
+                    falsified_by="the advantage disappears at matched input energy"))
+
     # prospective recovery of direction / delay / gain / dose / state dependence
     needed = ("direction", "delay", "gain", "dose", "state_dependence")
     if not recovery or any(k not in recovery for k in needed):
@@ -1651,8 +2217,27 @@ def run_g4(
         )
     else:
         metrics: list[Metric] = []
+        absent: list[str] = []
+        simulation_only: list[str] = []
+        populated: list[str] = []
         for k in needed:
             r = recovery[k]
+            # A slot the benchmark cannot express must be recorded as ABSENT,
+            # never fabricated. Three populated slots and two named as
+            # unavailable-by-construction is a more informative result than five
+            # filled slots of which two are fiction.
+            if r.get("unavailable_by_construction"):
+                absent.append(k)
+                metrics.append(Metric(
+                    name=f"recovery.{k}.unavailable_by_construction", value=1.0,
+                    kind="diagnostic", exact=True,
+                    note=str(r["unavailable_by_construction"])))
+                continue
+            kind = str(r.get("recovery_kind", "prospective_perturbation"))
+            if kind != "prospective_perturbation":
+                simulation_only.append(k)
+            else:
+                populated.append(k)
             true = float(r["true"])
             est = float(r["estimate"])
             lo, hi = float(r.get("lo", est)), float(r.get("hi", est))
@@ -1675,17 +2260,53 @@ def run_g4(
                     name=f"recovery.{k}.interval_covers_truth",
                     value=float(covered), kind="calibration", exact=True,
                     threshold=0.5, direction="greater_is_better",
+                    note=f"recovery_kind={kind}",
                 )
             )
-        subs.append(
-            SubCheck(
-                name="prospective_recovery",
-                description="Held-out perturbation recovery of all five named quantities.",
-                metrics=metrics,
-                mandatory=True,
+        artifacts["recovery"] = {
+            "prospective_perturbation": populated,
+            "simulation_recovery_only": simulation_only,
+            "unavailable_by_construction": absent,
+        }
+        if absent or simulation_only or len(populated) < len(needed):
+            bits = []
+            if absent:
+                bits.append(
+                    f"{sorted(absent)} are unavailable by construction in this benchmark "
+                    "(recorded as absent, not fabricated)")
+            if simulation_only:
+                bits.append(
+                    f"{sorted(simulation_only)} are SIMULATION RECOVERY — recovered from "
+                    "held-out simulated records at the true parameter, which is not a "
+                    "held-out perturbation in the sense of thesis §11.3")
+            subs.append(could_not_run(
+                "prospective_recovery",
+                "Held-out perturbation recovery of all five named quantities.",
+                "the recovery table is not a prospective perturbational result: "
+                + "; ".join(bits) + ". Only "
+                f"{len(populated)}/{len(needed)} slots carry prospective perturbational "
+                "recovery, so this component of the claim is unexercised.",
                 falsified_by="parameters not recovered prospectively, or intervals miss truth",
+            ))
+            subs.append(SubCheck(
+                name="recovery_measurements_reported",
+                description=(
+                    "The recovery numbers that DO exist, reported without being counted as "
+                    "prospective perturbational validation."
+                ),
+                metrics=metrics, mandatory=False,
+            ))
+        else:
+            subs.append(
+                SubCheck(
+                    name="prospective_recovery",
+                    description="Held-out perturbation recovery of all five named quantities.",
+                    metrics=metrics,
+                    mandatory=True,
+                    falsified_by=("parameters not recovered prospectively, or intervals "
+                                  "miss truth"),
+                )
             )
-        )
 
     # model discrimination under intervention
     if not model_evidence or baseline_design not in model_evidence or \
@@ -1763,6 +2384,7 @@ def run_g5(
     candidate: Any = None,
     baselines: Mapping[str, Any] | None = None,
     utility: Mapping[str, Any] | None = None,
+    artifact: str | None = None,
     thresholds: Thresholds = Thresholds(),
     seed: int = 0,
     source_cards: Sequence[str] = (),
@@ -1789,6 +2411,7 @@ def run_g5(
     )
     subs: list[SubCheck] = []
     artifacts: dict[str, Any] = {}
+    subs.extend(_corpus_subchecks("G5", artifact, artifacts))
 
     missing: list[str] = []
     if candidate is None:

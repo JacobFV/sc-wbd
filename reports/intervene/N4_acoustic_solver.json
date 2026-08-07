@@ -1,0 +1,196 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N4_acoustic_solver",
+  "status": "PASS",
+  "manifest": {
+    "claim_id": "N4_acoustic_solver",
+    "claim_text": "The acoustic solver reproduces free-field spreading and satisfies the Helmholtz equation, validated independently of any neural-response model.",
+    "falsified_by": "relative error above tolerance, or a Helmholtz residual that does not fall as the TIME step is refined at fixed CFL (see the refinement note: refining h alone leaves the residual flat for reasons unrelated to solver quality, so 'flat under h refinement' is NOT a falsification of this gate)",
+    "consequence_if_failed": "The acoustic solver may not be used for tFUS exposure or targeting; every downstream acoustic claim is suspended.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "relative_tol": 0.05,
+      "wavenumber_per_m": 100.0
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "These checks establish code correctness only. Numerical correctness is necessary, never sufficient: agreement with recorded signals is stronger, held-out perturbation stronger still (thesis \u00a70.2)."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [],
+  "subchecks": [
+    {
+      "name": "acoustic_solver",
+      "description": "Relative error against a closed-form solution, with no neural model in the loop.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "relative error above tolerance against the analytic solution",
+      "metrics": [
+        {
+          "name": "acoustic_solver.mean_relative_error",
+          "value": 0.012556425877959692,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": {
+            "lo": 0.01174842476089093,
+            "hi": 0.013344869640806799,
+            "level": 0.95,
+            "method": "bootstrap-percentile"
+          },
+          "threshold": 0.05,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": true,
+          "exact": false,
+          "note": "",
+          "passed": true
+        },
+        {
+          "name": "acoustic_solver.max_relative_error",
+          "value": 0.06304878245712699,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": null,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "helmholtz_residual",
+      "description": "Relative residual of lap(p) + k^2 p on the solver's own grid.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the discrete field does not satisfy its own governing equation",
+      "metrics": [
+        {
+          "name": "acoustic.helmholtz_relative_residual",
+          "value": 0.0009178484246932203,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.05,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "REFINEMENT RULE: the Helmholtz residual here is set by TEMPORAL dispersion, not by h. Measured with the scheme's own Laplacian the spatial error cancels, leaving (omega*dt)^2/12. Refining h at fixed dt leaves the residual flat, which reads like a failure and is not one. Refine dt with h at fixed CFL.",
+    "Amplitude calibration is part of what is under test when the source strength is fixed a priori rather than fitted to the reference; a residual amplitude bias must be reported, not divided out.",
+    "Solver: scwbd.intervene.numerics.free_field_monopole_fdtd -- a second-order leapfrog FDTD march to steady state at 20 points per wavelength on a 231^3 grid (1800 steps), with a quadratic damping sponge. The radiation condition is imposed by the march, not by analytic boundary data, and the lattice-delta source strength is fixed a priori at Q = 4*pi*A rather than fitted, so the amplitude calibration is itself under test.",
+    "The Helmholtz residual is evaluated on a source-free, sponge-free cube of the solver's own grid. Measuring it with the scheme's own Laplacian cancels the spatial truncation error exactly -- the discrete steady state satisfies the discrete Helmholtz equation -- so what is left is the TEMPORAL dispersion: |k^2 - kappa^2|/k^2 = (omega dt)^2/12 with kappa = (2/c dt) sin(omega dt/2). At 60 steps per period that predicts 9.139e-4 and 9.178e-4 is measured. It therefore falls only when dt is refined, which is what the refinement study below does (CFL held fixed); holding dt fixed while refining h would leave it flat for a reason that has nothing to do with solver quality.",
+    "Refinement study: ppw=10 h=0.00628 m dt=1.396e-06 s err=0.0407 amp_ratio=1.0398 helmholtz=0.0036; ppw=14 h=0.00449 m dt=9.973e-07 s err=0.0236 amp_ratio=1.0235 helmholtz=0.0019 order=1.62; ppw=20 h=0.00314 m dt=6.981e-07 s err=0.0126 amp_ratio=1.0121 helmholtz=0.0009 order=1.77"
+  ],
+  "artifacts": {
+    "subject": "__main__.run_n4.<locals>.solver",
+    "grid_convergence": [
+      {
+        "points_per_wavelength": 10.0,
+        "spacing_m": 0.006283185307179587,
+        "time_step_s": 1.3962634015954637e-06,
+        "n_per_axis": 119.0,
+        "mean_relative_error": 0.040714590735443666,
+        "max_relative_error": 0.16048951409280726,
+        "mean_amplitude_ratio": 1.0397836220336623,
+        "helmholtz_relative_residual": 0.003647509252609876,
+        "observed_order": NaN
+      },
+      {
+        "points_per_wavelength": 14.0,
+        "spacing_m": 0.004487989505128276,
+        "time_step_s": 9.97331001139617e-07,
+        "n_per_axis": 163.0,
+        "mean_relative_error": 0.023605328199949746,
+        "max_relative_error": 0.11330921395551548,
+        "mean_amplitude_ratio": 1.0234851458410328,
+        "helmholtz_relative_residual": 0.0018715976496129323,
+        "observed_order": 1.6200863128368124
+      },
+      {
+        "points_per_wavelength": 20.0,
+        "spacing_m": 0.0031415926535897933,
+        "time_step_s": 6.981317007977319e-07,
+        "n_per_axis": 231.0,
+        "mean_relative_error": 0.012556425877959689,
+        "max_relative_error": 0.06304878245712699,
+        "mean_amplitude_ratio": 1.0120949574687108,
+        "helmholtz_relative_residual": 0.0009178484246932203,
+        "observed_order": 1.769790426193955
+      }
+    ],
+    "geometry_provenance": {
+      "geometry_source": "analytic phantom constructed in-process (scwbd.intervene.tms.efield.SphericalHeadModel, or an unbounded homogeneous medium for N3/N4)",
+      "uses_subject_anatomy": false,
+      "uses_scwbd_anatomy_load_anatomy": false,
+      "uses_connectome": false,
+      "note": "These solvers take head GEOMETRY (a radius, a triangulated surface) and never the connectome, so the anatomical-prior defect does not touch these verdicts. Every geometry here is a sphere declared in the artifact; none is derived from a subject, a template or scwbd.anatomy."
+    },
+    "fdtd_meta": {
+      "wavenumber_per_m": 100.0,
+      "sound_speed_m_per_s": 1500.0,
+      "time_step_s": 6.981317007977319e-07,
+      "cfl": 0.5773502691896257,
+      "half_width_m": 0.3612831551628262,
+      "sponge_m": 0.15707963267948966,
+      "device": "cuda",
+      "scheme": "second-order leapfrog FDTD, quadratic damping sponge",
+      "analytic_data_used": false,
+      "amplitude_fitted": false,
+      "n_per_axis": 231,
+      "spacing_m": 0.0031415926535897933,
+      "n_steps": 1800
+    }
+  },
+  "provenance": {
+    "timestamp_utc": "2026-08-06T13:27:38+00:00",
+    "git_rev": "0575861",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/intervene/run_field_gates.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
+  }
+}

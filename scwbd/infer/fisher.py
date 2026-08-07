@@ -50,6 +50,7 @@ from . import linear_gaussian as lg
 from .filters import LinearGaussianSSM, multiepoch_kalman_filter
 from .linear_gaussian import (
     N_PARAM,
+    assert_delay_line_adequate,
     PARAM_NAMES,
     THETA_NAMES,
     Protocol,
@@ -209,8 +210,11 @@ def _jacobian_forward_sensitivity(
             out[nm][:, :, j, :] = (t1 + t2).permute(0, 2, 1)
         if k + 1 < cfg.n_steps:
             drive = torch.einsum("inm,me->ine", dF, Z)
-            cols = torch.cat([Z, S.reshape(P * n, E).reshape(P, n, E).permute(1, 0, 2)
-                              .reshape(n, P * E)], dim=1).unsqueeze(0)
+            # one structured transition for the state and all P sensitivities:
+            # columns are [E state columns | P*E sensitivity columns]
+            cols = torch.cat(
+                [Z, S.permute(1, 0, 2).reshape(n, P * E)], dim=1
+            ).unsqueeze(0)
             newcols = fmul(cols)[0]
             Z = newcols[:, :E] + b[:, k, :].transpose(0, 1)
             S = newcols[:, E:].reshape(n, P, E).permute(1, 0, 2) + drive
@@ -414,6 +418,7 @@ def expected_fisher(
         rep.metrics = fisher_metrics(rep, theta_names=theta_names)
         return rep
 
+    assert_delay_line_adequate(cfg, u)
     mdl = make_model(u, cfg, proto, include_impulse=include_impulse, device=device)
     if eeg_steps is not None:
         eeg_steps = eeg_steps.to(mdl.F.device)
@@ -497,6 +502,42 @@ def schur_information(I: np.ndarray, keep: Sequence[int]) -> np.ndarray:
     return Ikk - Ikn @ sol
 
 
+#: Relative reproducibility of a *well-conditioned* eigenvalue of these Gram
+#: matrices, measured directly by recomputing the whole pipeline under three
+#: BLAS thread counts (1 / 8 / 20), which changes summation order:
+#: eeg_only and joint_native theta-profile lambda_min reproduced to 1.32e-12
+#: relative (~12 significant figures).  A near-cancelling eigenvalue inherits
+#: this amplified by lambda_max/lambda_min: fmri_only reproduced to only
+#: 9.27e-08 (~7 figures), which the ratio predicts.  Printing 15 digits of a
+#: number reproducible to 7 is not a rounding preference, it is a claim about
+#: the measurement that the measurement does not support.
+_EIG_REL_REPRODUCIBILITY = 1.32e-12
+
+
+def _eig_uncertainty(ev: np.ndarray) -> dict[str, Any]:
+    """Estimated reproducibility of ``min(ev)`` and whether it is a real value."""
+    if ev.size == 0:
+        return {"relative_uncertainty": float("nan"), "significant_figures": 0,
+                "numerically_zero": True}
+    lo, hi = float(ev.min()), float(np.abs(ev).max())
+    absu = _EIG_REL_REPRODUCIBILITY * hi
+    rel = absu / abs(lo) if lo != 0 else float("inf")
+    return {
+        "absolute_uncertainty": absu,
+        "relative_uncertainty": rel,
+        "significant_figures": (
+            0 if not np.isfinite(rel) or rel >= 1 else max(0, int(-math.log10(rel)))
+        ),
+        "numerically_zero": bool(abs(lo) <= absu),
+    }
+
+
+def _report_eig(ev: np.ndarray) -> float:
+    """``min(ev)`` reported as exactly 0 when it is inside its own noise floor."""
+    u = _eig_uncertainty(ev)
+    return 0.0 if u["numerically_zero"] else float(ev.min())
+
+
 def fisher_metrics(
     rep: FisherReport, *, theta_names: Sequence[str] = THETA_NAMES
 ) -> dict[str, Any]:
@@ -522,7 +563,9 @@ def fisher_metrics(
         "n_parameters": len(names),
         "condition_number_likelihood": _cond(I_like),
         "condition_number_total": _cond(I_tot),
-        "min_eigenvalue_nonprior": float(ev_like.min()),
+        "min_eigenvalue_nonprior": _report_eig(ev_like),
+        "min_eigenvalue_nonprior_raw": float(ev_like.min()),
+        "min_eigenvalue_nonprior_numerics": _eig_uncertainty(ev_like),
         "max_eigenvalue_nonprior": float(ev_like.max()),
         "eigenvalues_likelihood": ev_like.tolist(),
         "eigenvalues_total": ev_tot.tolist(),
@@ -537,7 +580,9 @@ def fisher_metrics(
         "prior_variance_fraction": prior_frac,
         "theta_subset": list(theta_names),
         "theta_profile_information_likelihood": Sl.tolist(),
-        "theta_profile_min_eigenvalue_nonprior": float(_sym_eig(Sl).min()),
+        "theta_profile_min_eigenvalue_nonprior": _report_eig(_sym_eig(Sl)),
+        "theta_profile_min_eigenvalue_nonprior_raw": float(_sym_eig(Sl).min()),
+        "theta_profile_min_eigenvalue_numerics": _eig_uncertainty(_sym_eig(Sl)),
         "theta_profile_log10_det_likelihood": float(
             np.sum(np.log10(np.clip(np.abs(_sym_eig(Sl)), 1e-300, None)))
         ),
@@ -567,26 +612,14 @@ def _loglik_per_replicate(
     mdl = make_model(u_row, cfg, proto, include_impulse=include_impulse, device=device)
     ssm = mdl.ssm(channels, epoch=0, eeg_steps=eeg_steps)
     E = cfg.n_epochs
-    # Replicates are folded into the epoch axis so the Riccati recursion is
-    # shared, but the per-epoch drive must then be tiled once per replicate.
-    # Chunk that tile, otherwise it alone is tens of GB at benchmark scale.
-    from .filters import replicate_chunks
-
-    out = []
-    for ch in replicate_chunks(n_replicates, E, cfg.n_steps, mdl.n):
-        c = len(ch)
-        inp = mdl.inputs[0].unsqueeze(0).expand(c, E, cfg.n_steps, mdl.n)
-        ssm.inputs = inp.reshape(1, c * E, cfg.n_steps, mdl.n)
-        res = multiepoch_kalman_filter(
-            ssm,
-            {k: v[ch.start:ch.stop].reshape(1, c * E, *v.shape[2:])
-             for k, v in data.items()},
-            n_epochs=c * E,
-        )
-        out.append(res["log_likelihood"].reshape(c, E).sum(1))
-        del res, inp
-        ssm.inputs = None
-    return out[0] if len(out) == 1 else torch.cat(out, dim=0)
+    # tiled lazily by the filter: E distinct rows, not n_replicates*E copies
+    ssm.inputs = mdl.inputs
+    res = multiepoch_kalman_filter(
+        ssm,
+        {k: v.reshape(1, n_replicates * E, *v.shape[2:]) for k, v in data.items()},
+        n_epochs=n_replicates * E,
+    )
+    return res["log_likelihood"].reshape(n_replicates, E).sum(1)
 
 
 def monte_carlo_fisher(
@@ -611,24 +644,18 @@ def monte_carlo_fisher(
     log-likelihood over ``n_replicates`` simulated records; the Monte-Carlo
     standard error of each entry is returned alongside.
     """
-    from .filters import replicate_chunks, simulate_epoched
+    from .filters import simulate_lgssm
 
     mdl = make_model(u, cfg, proto, include_impulse=include_impulse, device=device)
     E = cfg.n_epochs
     ssm = mdl.ssm(channels, epoch=0, eeg_steps=eeg_steps)
-    lm = structured_left_mul(mdl.F, cfg)
-
-    def make_ssm(c: int) -> LinearGaussianSSM:
-        inp = mdl.inputs[0].unsqueeze(0).expand(c, E, cfg.n_steps, mdl.n)
-        return LinearGaussianSSM(
-            mdl.F, mdl.Q, mdl.m0, mdl.P0, ssm.channels, cfg.n_steps,
-            inp.reshape(c * E, cfg.n_steps, mdl.n), lm,
-        )
-
-    chunks = replicate_chunks(n_replicates, E, cfg.n_steps, mdl.n)
-    data = simulate_epoched(
-        make_ssm, n_replicates=n_replicates, n_epochs=E, seed=seed, chunks=chunks,
+    sim = LinearGaussianSSM(
+        mdl.F, mdl.Q, mdl.m0, mdl.P0, ssm.channels, cfg.n_steps,
+        mdl.inputs[0],          # [E, T, n]; tiled per step by the simulator
+        structured_left_mul(mdl.F, cfg),
     )
+    data, _ = simulate_lgssm(sim, seed=seed, batch=n_replicates * E)
+    data = {k: v.reshape(n_replicates, E, *v.shape[1:]) for k, v in data.items()}
 
     sd = prior_sd_u()
     g = np.zeros((n_replicates, N_PARAM))

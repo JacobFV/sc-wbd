@@ -1,0 +1,973 @@
+{
+  "bench_schema_version": "scwbd-bench-report/1.0.0",
+  "kind": "numerics",
+  "claim_id": "N9_fallback_field_approximation",
+  "status": "PASS",
+  "manifest": {
+    "claim_id": "N9_fallback_field_approximation",
+    "claim_text": "The runtime's fallback field model (tangential projection of the primary field) has a measured error over its declared geometry envelope, and the discrepancy interval it declares covers that error.",
+    "falsified_by": "the declared discrepancy interval does not cover the approximation's own measured error over the declared envelope",
+    "consequence_if_failed": "The fallback backend's ledger understates its own model discrepancy. Any dose, engagement or ranking obtained through it carries an uncertainty interval narrower than the physics justifies, and scwbd.runtime must widen the declared interval or refuse to use the backend for claim-bearing output.",
+    "thesis_version": "V6",
+    "schema_version": "scwbd-schema/1.0.0",
+    "bench_schema_version": "scwbd-bench-report/1.0.0",
+    "model_designation": "SC-WBD-001-beta",
+    "thesis_reference": "body.tex \u00a711.1",
+    "permitted_source_cards": [],
+    "baselines": [],
+    "acceptance_thresholds": {
+      "solution_discrepancy_fraction": [
+        0.0,
+        1.35
+      ],
+      "composite_discrepancy_fraction": [
+        -0.4,
+        2.29
+      ],
+      "envelope_head_radii_m": [
+        0.06,
+        0.065,
+        0.07,
+        0.075,
+        0.085,
+        0.092,
+        0.1
+      ],
+      "envelope_standoffs_m": [
+        0.0,
+        0.005,
+        0.01,
+        0.02,
+        0.03,
+        0.04
+      ]
+    },
+    "refusal_fixtures": [],
+    "non_goals": [
+      "This gate bounds an approximation. It does not make it a field solver, and a PASS would license no claim about target engagement or clinical utility."
+    ],
+    "seed": 0,
+    "preregistered": true
+  },
+  "consequence_applied": null,
+  "blocking_reasons": [],
+  "subchecks": [
+    {
+      "name": "solution_bound_covers_error",
+      "description": "solution_discrepancy_fraction is the backend's claim about its error against the exact solution of the SAME geometry. That is exactly what this gate measures, so it is the interval to test against.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the declared solution-discrepancy interval does not cover the approximation's own measured error over its declared envelope",
+      "metrics": [
+        {
+          "name": "fallback.max_relative_overestimate",
+          "value": 1.320394264107943,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 1.35,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "worst over the envelope, at head radius 60 mm and standoff 40 mm; declared solution interval (0.0, 1.35)",
+          "passed": true
+        },
+        {
+          "name": "fallback.composite_bound_would_have_been",
+          "value": 2.29,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "the composite discrepancy_fraction, recorded to show what this check would have been graded against had it kept pointing at the wrong term -- a threshold twice as loose, passing trivially",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "approximation_never_underestimates",
+      "description": "The declared interval is one-sided (lower bound 0.0). That is a claim about the physics, not a convenience, so it gets tested: the tangential projection drops a term and must therefore never come out low.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the approximation underestimates somewhere in the envelope, so a one-sided interval is the wrong shape for it",
+      "metrics": [
+        {
+          "name": "fallback.min_relative_overestimate",
+          "value": 0.45918204868621615,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.0,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "minimum over the envelope, at head radius 100 mm and standoff 0 mm",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "bound_provenance",
+      "description": "Has the threshold moved since it was last justified? The bound is read from the judged party at run time, which is what stops this gate going stale -- and that is exactly what would let it be loosened silently. So it is also pinned here, and any movement fails until the pin is updated: a commit, hence dated and attributable by construction. A tightening fails too; the question is 'did this move without anyone saying why', not 'did this get worse'.",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the judged party's declared bound changed without a dated justification",
+      "metrics": [
+        {
+          "name": "fallback.bound_moved_since_justified",
+          "value": 0.0,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.5,
+          "direction": "less_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "runtime declares (0.0, 1.35), matching the value pinned and justified on 2026-08-06 by agent Asimov (scwbd.runtime), reviewed by agent Popper (scwbd.bench)",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "error_is_characterised",
+      "description": "Is the error bounded and orderly over the envelope, or wild?",
+      "status": "PASS",
+      "mandatory": true,
+      "reason": "",
+      "falsified_by": "the approximation's error is not characterised over its envelope",
+      "metrics": [
+        {
+          "name": "fallback.peak_direction_cosine_min",
+          "value": 0.999987008541619,
+          "units": "dimensionless",
+          "kind": "numerical",
+          "interval": null,
+          "threshold": 0.99,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "the approximation gets the direction right and the magnitude wrong; that is worth stating precisely, because a direction-only consumer is affected differently from a magnitude consumer",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "not_the_induced_field",
+      "description": "Recorded so nobody reads a bounded approximation as a solver.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": false,
+      "reason": "",
+      "falsified_by": "",
+      "metrics": [
+        {
+          "name": "fallback.max_mean_relative_error",
+          "value": 1.7763913891732275,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "elementwise error against the closed form, of order 100 % of the mean field magnitude. This is an approximation with a bound, not a field solver, and no gate here makes it one.",
+          "passed": null
+        }
+      ]
+    },
+    {
+      "name": "exact_for_axisymmetric_sources",
+      "description": "A circular coil coaxial with the head radius has a purely azimuthal primary vector potential, so r.E_p vanishes, the Neumann data is zero, and there is no secondary field: the approximation is EXACT.",
+      "status": "COULD_NOT_RUN",
+      "mandatory": false,
+      "reason": "",
+      "falsified_by": "",
+      "metrics": [
+        {
+          "name": "fallback.axisymmetric_max_relative_error",
+          "value": 6.659795023147303e-12,
+          "units": "dimensionless",
+          "kind": "audit",
+          "interval": null,
+          "threshold": null,
+          "direction": "greater_is_better",
+          "require_interval_beats_threshold": false,
+          "exact": true,
+          "note": "round-off. This is the trap: validated on a circular coil the approximation looks perfect. The error is a function of source SYMMETRY, not of any resolution parameter, so refining nothing finds it -- only changing the coil does.",
+          "passed": null
+        }
+      ]
+    }
+  ],
+  "baselines_run": [],
+  "notes": [
+    "The approximation is EXACT for a coil whose windings are circular loops coaxial with the head radius: the primary vector potential is then purely azimuthal, so r.E_p = 0, the Neumann data vanishes and there is no secondary field. Measured error for a circular coil is round-off. A gate that tested only that case would report a perfect PASS and be worthless.",
+    "For a figure-eight the wings are opposed and sit off the radial axis, the Neumann data does not vanish, and the approximation is high by 1.46x to 2.32x at the peak across the envelope. The overestimate grows monotonically as the head gets smaller and the standoff larger.",
+    "Direction is essentially unaffected (peak cosine >= 1.0000); the error is almost purely in magnitude. A consumer that uses only the field DIRECTION is affected far less than one that uses its magnitude, and the two should not inherit the same bound.",
+    "The declared interval is read from scwbd.runtime at run time rather than copied into this gate, so it tracks the real value instead of a snapshot that silently goes stale. It is read from solution_discrepancy_fraction, the term that claims to cover THIS error, not from the composite discrepancy_fraction which also carries the geometry prior -- grading against the composite would repeat, one level up, the conflation the gate was built to catch.",
+    "The envelope reaches down to a 60 mm head radius. That is not an adult head; adult radii are ~80-100 mm, where the overestimate is 0.74-0.89. It is here because nothing in the runtime's HeadModel enforces an adult radius, and a bound has to cover what the code admits rather than what biology suggests.",
+    "The threshold is read at run time AND pinned here with a dated justification. The run-time read stops the gate going stale against a snapshot; the pin stops the bound moving without anyone saying why. Agent Popper raised the second problem as the cost of my solution to the first, and both properties are obtainable together -- a hardcoded snapshot has neither."
+  ],
+  "artifacts": {
+    "subject": "scwbd.intervene.tms.efield.primary_tangential_projection",
+    "reference": "scwbd.intervene.spectral_reference.AxialInductionReference (degree 250)",
+    "solver_provenance": {
+      "consumer": "scwbd.runtime.backends.AnalyticSphericalEField",
+      "solution_discrepancy_fraction": [
+        0.0,
+        1.35
+      ],
+      "composite_discrepancy_fraction": [
+        -0.4,
+        2.29
+      ],
+      "equivalence_pinned_by": "tests/intervene/test_fallback_approximation.py -- asserts the runtime backend computes this same expression, so the gate's subject is the object actually in the runtime path"
+    },
+    "geometry_provenance": {
+      "geometry_source": "analytic phantom constructed in-process (scwbd.intervene.tms.efield.SphericalHeadModel, or an unbounded homogeneous medium for N3/N4)",
+      "uses_subject_anatomy": false,
+      "uses_scwbd_anatomy_load_anatomy": false,
+      "uses_connectome": false,
+      "note": "These solvers take head GEOMETRY (a radius, a triangulated surface) and never the connectome, so the anatomical-prior defect does not touch these verdicts. Every geometry here is a sphere declared in the artifact; none is derived from a subject, a template or scwbd.anatomy."
+    },
+    "grading_history": {
+      "current": {
+        "graded_against": "solution_discrepancy_fraction",
+        "upper_bound": 1.35,
+        "envelope_min_head_radius_m": 0.06
+      },
+      "superseded": {
+        "graded_against": "discrepancy_fraction (composite: this approximation's error PLUS the sphere-vs-head geometry prior)",
+        "upper_bound": 2.29,
+        "envelope_min_head_radius_m": 0.07,
+        "why_superseded": "grading an approximation's own error against an interval that also carries someone else's uncertainty is the conflation this gate exists to catch, one level up. It also passed trivially (1.0629 vs 2.29). Both the subject and the envelope changed, so any artifact showing upper_bound 2.29 or a 70 mm minimum radius predates the adjudicated grading and should not be cited."
+      },
+      "claim_id_resolution": "Settled 2026-08-06 by agent Popper on N9_fallback_field_approximation, as the accurate name once the subject became the approximation's own error rather than a composite bound. The superseded scoreboard row N9_fallback_field_bound was DELETED rather than kept alongside this one: two files for one gate, both reading PASS, is itself the defect. reports/intervene/ is the authoritative artifact."
+    },
+    "bound_provenance": {
+      "pinned": [
+        0.0,
+        1.35
+      ],
+      "observed": [
+        0.0,
+        1.35
+      ],
+      "justified_on": "2026-08-06",
+      "justified_by": "agent Asimov (scwbd.runtime), reviewed by agent Popper (scwbd.bench)",
+      "justification": "Split from the former composite discrepancy_fraction=(-0.8,+0.8), which declared one interval for two physically distinct things: this approximation's error against the exact solution of the same geometry, and that geometry's error against a real head. Upper bound 1.35 covers the measured worst case 1.3204 at a 60 mm head radius with 40 mm standoff. 60 mm is not an adult head -- it is the smallest radius the runtime's HeadModel admits, and a bound must cover what the code admits. Lower bound 0.0 is attained (circular coil, where the approximation is exact) and the approximation never underestimates."
+    },
+    "figure_eight_sweep": [
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.9356720009452064,
+        "relative_overestimate": 0.9356720009452064,
+        "mean_relative_error": 1.2963076534436493,
+        "peak_direction_cosine": 0.999993662727111
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.9822241091887867,
+        "relative_overestimate": 0.9822241091887867,
+        "mean_relative_error": 1.352268552398533,
+        "peak_direction_cosine": 0.9999940060128969
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.01,
+        "peak_ratio": 2.028362540358066,
+        "relative_overestimate": 1.0283625403580658,
+        "mean_relative_error": 1.4095250499262986,
+        "peak_direction_cosine": 0.9999942589828278
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.02,
+        "peak_ratio": 2.1217543942966492,
+        "relative_overestimate": 1.1217543942966492,
+        "mean_relative_error": 1.5277087900141928,
+        "peak_direction_cosine": 0.9999946297805359
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.03,
+        "peak_ratio": 2.2187375996744136,
+        "relative_overestimate": 1.2187375996744136,
+        "mean_relative_error": 1.6502283767920245,
+        "peak_direction_cosine": 0.9999949196365714
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.04,
+        "peak_ratio": 2.320394264107943,
+        "relative_overestimate": 1.320394264107943,
+        "mean_relative_error": 1.7763913891732275,
+        "peak_direction_cosine": 0.9999951777689049
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.8326099145509933,
+        "relative_overestimate": 0.8326099145509933,
+        "mean_relative_error": 1.1791218491269335,
+        "peak_direction_cosine": 0.9999929228660996
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.8742818395918643,
+        "relative_overestimate": 0.8742818395918643,
+        "mean_relative_error": 1.2309113722136475,
+        "peak_direction_cosine": 0.9999933131196134
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.9156737021341717,
+        "relative_overestimate": 0.9156737021341717,
+        "mean_relative_error": 1.2837227349412372,
+        "peak_direction_cosine": 0.999993600026198
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.999628560297765,
+        "relative_overestimate": 0.999628560297765,
+        "mean_relative_error": 1.3925631079363365,
+        "peak_direction_cosine": 0.9999940202659051
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.03,
+        "peak_ratio": 2.086933361048447,
+        "relative_overestimate": 1.0869333610484468,
+        "mean_relative_error": 1.5054641459971643,
+        "peak_direction_cosine": 0.9999943500369508
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.04,
+        "peak_ratio": 2.178489846596026,
+        "relative_overestimate": 1.178489846596026,
+        "mean_relative_error": 1.6216688874945095,
+        "peak_direction_cosine": 0.9999946453613713
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.7488407682802827,
+        "relative_overestimate": 0.7488407682802827,
+        "mean_relative_error": 1.0824771373285857,
+        "peak_direction_cosine": 0.9999921553246145
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.7865329907924572,
+        "relative_overestimate": 0.7865329907924572,
+        "mean_relative_error": 1.1307393080732182,
+        "peak_direction_cosine": 0.9999925933654193
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.824044573595646,
+        "relative_overestimate": 0.8240445735956461,
+        "mean_relative_error": 1.1801091348347479,
+        "peak_direction_cosine": 0.9999929147330124
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.9002663537153024,
+        "relative_overestimate": 0.9002663537153024,
+        "mean_relative_error": 1.281744547250708,
+        "peak_direction_cosine": 0.9999933852822289
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.9796274938862708,
+        "relative_overestimate": 0.9796274938862708,
+        "mean_relative_error": 1.3865329203629624,
+        "peak_direction_cosine": 0.9999937560281646
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.04,
+        "peak_ratio": 2.0628904000254993,
+        "relative_overestimate": 1.0628904000254993,
+        "mean_relative_error": 1.4942768301273517,
+        "peak_direction_cosine": 0.999994089893525
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.6794991106962598,
+        "relative_overestimate": 0.6794991106962598,
+        "mean_relative_error": 1.002035669442401,
+        "peak_direction_cosine": 0.999991360881448
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.7138847765346714,
+        "relative_overestimate": 0.7138847765346714,
+        "mean_relative_error": 1.047114650444762,
+        "peak_direction_cosine": 0.9999918473789065
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.7481650554208576,
+        "relative_overestimate": 0.7481650554208576,
+        "mean_relative_error": 1.0933137207225678,
+        "peak_direction_cosine": 0.9999922036406665
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.8179329226845895,
+        "relative_overestimate": 0.8179329226845895,
+        "mean_relative_error": 1.1885963149664625,
+        "peak_direction_cosine": 0.9999927252646602
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.8906545822720118,
+        "relative_overestimate": 0.8906545822720118,
+        "mean_relative_error": 1.2870191178660044,
+        "peak_direction_cosine": 0.9999931379845589
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.04,
+        "peak_ratio": 1.9669826292089472,
+        "relative_overestimate": 0.9669826292089472,
+        "mean_relative_error": 1.3877023441832002,
+        "peak_direction_cosine": 0.9999935116927979
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.5715983986816646,
+        "relative_overestimate": 0.5715983986816646,
+        "mean_relative_error": 0.8760116038185005,
+        "peak_direction_cosine": 0.9999896940666718
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.6008085646336274,
+        "relative_overestimate": 0.6008085646336274,
+        "mean_relative_error": 0.9161739920212775,
+        "peak_direction_cosine": 0.9999902789238363
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.6300159002855155,
+        "relative_overestimate": 0.6300159002855155,
+        "mean_relative_error": 0.9572321168847808,
+        "peak_direction_cosine": 0.9999907059396631
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.6896220452667725,
+        "relative_overestimate": 0.6896220452667725,
+        "mean_relative_error": 1.0417641186207158,
+        "peak_direction_cosine": 0.9999913316467631
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.7518692607173005,
+        "relative_overestimate": 0.7518692607173005,
+        "mean_relative_error": 1.1291228739714119,
+        "peak_direction_cosine": 0.9999918311059618
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.04,
+        "peak_ratio": 1.8172505180722518,
+        "relative_overestimate": 0.8172505180722518,
+        "mean_relative_error": 1.218639575410774,
+        "peak_direction_cosine": 0.9999922882498286
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.5134157433885609,
+        "relative_overestimate": 0.5134157433885609,
+        "mean_relative_error": 0.8066495071717683,
+        "peak_direction_cosine": 0.9999884677118396
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.5398154067292926,
+        "relative_overestimate": 0.5398154067292926,
+        "mean_relative_error": 0.8443857487329541,
+        "peak_direction_cosine": 0.9999891220856163
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.5662591496066993,
+        "relative_overestimate": 0.5662591496066993,
+        "mean_relative_error": 0.8829472615937232,
+        "peak_direction_cosine": 0.9999895991126664
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.6203123672433541,
+        "relative_overestimate": 0.6203123672433541,
+        "mean_relative_error": 0.9618319910077415,
+        "peak_direction_cosine": 0.9999902989132322
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.6768236485531047,
+        "relative_overestimate": 0.6768236485531047,
+        "mean_relative_error": 1.0428257201157982,
+        "peak_direction_cosine": 0.9999908611436161
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.04,
+        "peak_ratio": 1.7362062665354567,
+        "relative_overestimate": 0.7362062665354567,
+        "mean_relative_error": 1.1257704077762885,
+        "peak_direction_cosine": 0.9999913795500066
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.4591820486862161,
+        "relative_overestimate": 0.45918204868621615,
+        "mean_relative_error": 0.7413645501743971,
+        "peak_direction_cosine": 0.999987008541619
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.4829466607863846,
+        "relative_overestimate": 0.4829466607863846,
+        "mean_relative_error": 0.7763121343120459,
+        "peak_direction_cosine": 0.9999877424629054
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.5067930045079543,
+        "relative_overestimate": 0.5067930045079543,
+        "mean_relative_error": 0.812147996963035,
+        "peak_direction_cosine": 0.9999882768005093
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.5556147489676493,
+        "relative_overestimate": 0.5556147489676493,
+        "mean_relative_error": 0.8859542481799499,
+        "peak_direction_cosine": 0.9999890621798436
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.6067130556779494,
+        "relative_overestimate": 0.6067130556779494,
+        "mean_relative_error": 0.961599213695965,
+        "peak_direction_cosine": 0.9999896980432523
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.04,
+        "peak_ratio": 1.6604314109204616,
+        "relative_overestimate": 0.6604314109204616,
+        "mean_relative_error": 1.038240742551527,
+        "peak_direction_cosine": 0.9999902892237653
+      }
+    ],
+    "axisymmetric_sweep": [
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.0,
+        "peak_ratio": 0.9999999999998794,
+        "relative_overestimate": -1.20570220474292e-13,
+        "mean_relative_error": 5.6773274997422045e-14,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.000000000000001,
+        "relative_overestimate": 1.1102230246251565e-15,
+        "mean_relative_error": 1.3005203359241466e-15,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.01,
+        "peak_ratio": 0.9999999999999999,
+        "relative_overestimate": -1.1102230246251565e-16,
+        "mean_relative_error": 3.7123043379352376e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.02,
+        "peak_ratio": 0.9999999999999994,
+        "relative_overestimate": -5.551115123125783e-16,
+        "mean_relative_error": 3.231483145102771e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.03,
+        "peak_ratio": 0.9999999999999997,
+        "relative_overestimate": -3.3306690738754696e-16,
+        "mean_relative_error": 3.1954299609653985e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.06,
+        "standoff_m": 0.04,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 3.334060849094256e-16,
+        "peak_direction_cosine": 0.9999999999999998
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.0000000000001787,
+        "relative_overestimate": 1.787459069646502e-13,
+        "mean_relative_error": 1.5075570878693007e-13,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.0000000000000027,
+        "relative_overestimate": 2.6645352591003757e-15,
+        "mean_relative_error": 3.1431930752068077e-15,
+        "peak_direction_cosine": 0.9999999999999998
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.01,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 3.432842747499165e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 3.4168157755893834e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.03,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 3.418804233191863e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.065,
+        "standoff_m": 0.04,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 3.267521588582638e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.0000000000001785,
+        "relative_overestimate": 1.7852386235972517e-13,
+        "mean_relative_error": 3.3780511107313375e-13,
+        "peak_direction_cosine": 0.9999999999999999
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.0000000000000158,
+        "relative_overestimate": 1.5765166949677223e-14,
+        "mean_relative_error": 6.932925310452394e-15,
+        "peak_direction_cosine": 0.9999999999999998
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 4.106933218842847e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.0000000000000002,
+        "relative_overestimate": 2.220446049250313e-16,
+        "mean_relative_error": 3.1470277257840115e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.0000000000000002,
+        "relative_overestimate": 2.220446049250313e-16,
+        "mean_relative_error": 3.2515338824312753e-16,
+        "peak_direction_cosine": 0.9999999999999999
+      },
+      {
+        "head_radius_m": 0.07,
+        "standoff_m": 0.04,
+        "peak_ratio": 0.9999999999999994,
+        "relative_overestimate": -5.551115123125783e-16,
+        "mean_relative_error": 3.091802539314029e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.0000000000017872,
+        "relative_overestimate": 1.787237025041577e-12,
+        "mean_relative_error": 6.68508869639181e-13,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.0000000000000275,
+        "relative_overestimate": 2.7533531010703882e-14,
+        "mean_relative_error": 1.3870101177079852e-14,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.01,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 5.57547456233407e-16,
+        "peak_direction_cosine": 0.9999999999999999
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.0000000000000004,
+        "relative_overestimate": 4.440892098500626e-16,
+        "mean_relative_error": 3.404799381681063e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.03,
+        "peak_ratio": 0.9999999999999999,
+        "relative_overestimate": -1.1102230246251565e-16,
+        "mean_relative_error": 2.8946448403313855e-16,
+        "peak_direction_cosine": 0.9999999999999999
+      },
+      {
+        "head_radius_m": 0.075,
+        "standoff_m": 0.04,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 3.0926293048984026e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.0,
+        "peak_ratio": 0.999999999998939,
+        "relative_overestimate": -1.0610401446342621e-12,
+        "mean_relative_error": 2.029919447109287e-12,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.005,
+        "peak_ratio": 1.0000000000000937,
+        "relative_overestimate": 9.370282327836321e-14,
+        "mean_relative_error": 4.30731686691882e-14,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.000000000000001,
+        "relative_overestimate": 1.1102230246251565e-15,
+        "mean_relative_error": 1.2893767396970562e-15,
+        "peak_direction_cosine": 0.9999999999999999
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 3.17621851801028e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.03,
+        "peak_ratio": 0.9999999999999998,
+        "relative_overestimate": -2.220446049250313e-16,
+        "mean_relative_error": 3.097755723723317e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.085,
+        "standoff_m": 0.04,
+        "peak_ratio": 1.0000000000000002,
+        "relative_overestimate": 2.220446049250313e-16,
+        "mean_relative_error": 2.938638283669449e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.000000000007181,
+        "relative_overestimate": 7.1809225232755125e-12,
+        "mean_relative_error": 3.768352434358618e-12,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.005,
+        "peak_ratio": 0.9999999999998054,
+        "relative_overestimate": -1.9462209621678994e-13,
+        "mean_relative_error": 8.165289937931703e-14,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.01,
+        "peak_ratio": 1.0000000000000036,
+        "relative_overestimate": 3.552713678800501e-15,
+        "mean_relative_error": 2.259119627125814e-15,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.0000000000000002,
+        "relative_overestimate": 2.220446049250313e-16,
+        "mean_relative_error": 3.2961796810048643e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 2.954311425086668e-16,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.092,
+        "standoff_m": 0.04,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 3.106254350514236e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.0,
+        "peak_ratio": 1.0000000000016778,
+        "relative_overestimate": 1.6777690348135366e-12,
+        "mean_relative_error": 6.659795023147303e-12,
+        "peak_direction_cosine": 1.0
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.005,
+        "peak_ratio": 0.9999999999995999,
+        "relative_overestimate": -4.001243780749064e-13,
+        "mean_relative_error": 1.485468146071781e-13,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.01,
+        "peak_ratio": 0.9999999999999911,
+        "relative_overestimate": -8.881784197001252e-15,
+        "mean_relative_error": 4.048798118120705e-15,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.02,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 3.1813994680335027e-16,
+        "peak_direction_cosine": 0.9999999999999999
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.03,
+        "peak_ratio": 1.0,
+        "relative_overestimate": 0.0,
+        "mean_relative_error": 3.307409715753637e-16,
+        "peak_direction_cosine": 1.0000000000000002
+      },
+      {
+        "head_radius_m": 0.1,
+        "standoff_m": 0.04,
+        "peak_ratio": 0.9999999999999996,
+        "relative_overestimate": -4.440892098500626e-16,
+        "mean_relative_error": 3.3461864329195e-16,
+        "peak_direction_cosine": 1.0
+      }
+    ]
+  },
+  "provenance": {
+    "timestamp_utc": "2026-08-06T13:48:38+00:00",
+    "git_rev": "0575861",
+    "host": "Dell-gb10-1",
+    "platform": "Linux-6.17.0-1026-nvidia-aarch64-with-glibc2.39",
+    "versions": {
+      "python": "3.12.13",
+      "numpy": "2.5.1",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cu130"
+    },
+    "source_paths_checked": [
+      "scwbd",
+      "tests",
+      "configs",
+      "benchmarks"
+    ],
+    "source_dirty_paths": [
+      "scwbd/intervene/run_field_gates.py"
+    ],
+    "source_clean": false,
+    "known_uninformative_fields": {
+      "git_dirty_whole_tree": "a whole-tree dirty flag always reads dirty during a run, because the run writes tracked output (reports/training/*.log, *.jsonl). It cannot distinguish modified source from a run writing its own log, so it is not recorded here and must not be gated on. Use source_dirty_paths."
+    },
+    "not_gated_on": [
+      "source_clean",
+      "source_dirty_paths",
+      "git_rev",
+      "timestamp_utc"
+    ]
+  }
+}

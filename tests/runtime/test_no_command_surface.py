@@ -107,7 +107,19 @@ class TestThePublicSurfaceHasNoCommandEntryPoint:
         from scwbd.runtime import TargetingService
 
         public = {n for n in vars(TargetingService) if not n.startswith("_")}
-        assert public == {"load", "evaluate_pose", "with_config", "read"}
+        # ``is_protocol_bound`` is a read-only governance accessor: it reports
+        # whether a validated AuthorizationRecord was supplied, so a consumer
+        # can branch on the claim scope it is being served.  It takes no
+        # arguments, sets nothing and reaches nothing downstream of the
+        # registered external scalp target.
+        assert public == {
+            "load",
+            "evaluate_pose",
+            "with_config",
+            "read",
+            "is_protocol_bound",
+        }
+        assert isinstance(vars(TargetingService)["is_protocol_bound"], property)
 
     def test_the_served_model_surface_is_exactly_load_handshake_and_evaluate(self):
         from scwbd.runtime import ServedModel

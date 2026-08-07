@@ -1,0 +1,28 @@
+[gpu cap] {'applied': True, 'device': 'NVIDIA GB10', 'total_gib': 121.6270751953125, 'cap_gib': 18.0, 'fraction': 0.14799336390433665, 'mechanism': 'torch.cuda.set_per_process_memory_fraction (allocator-enforced)', 'note': 'host cgroup MemoryMax does not bound CUDA allocations on unified memory; verify with nvidia-smi --query-compute-apps'}
+[preregistered] reports/identifiability/manifest.json
+[regime reference]
+  eeg_only                         rank=6 cond=1.17e+03 lmin_nonprior=0 (156s)
+  fmri_only                        rank=7 cond=12.3 lmin_nonprior=0 (73s)
+  joint_native                     rank=8 cond=1.17e+03 lmin_nonprior=2.598e-08 (173s)
+  joint_resampled                  rank=9 cond=12.4 lmin_nonprior=2.55e-08 (21s)
+  joint_native_impulse             rank=8 cond=8.92e+03 lmin_nonprior=6.188e-08 (210s)
+  joint_resampled_exactmodel       rank=9 cond=12.4 lmin_nonprior=2.55e-08 (21s)
+  joint_native_impulse_matched     rank=8 cond=9.64e+03 lmin_nonprior=0 (40s)
+[regime weak_coupling_long_delay]
+  eeg_only                         rank=6 cond=1.43e+03 lmin_nonprior=0 (169s)
+  fmri_only                        rank=7 cond=13.3 lmin_nonprior=0 (102s)
+  joint_native                     rank=8 cond=1.43e+03 lmin_nonprior=2.545e-08 (217s)
+  joint_resampled                  rank=9 cond=13.4 lmin_nonprior=2.52e-08 (11s)
+  joint_native_impulse             rank=8 cond=1.11e+04 lmin_nonprior=6.755e-08 (139s)
+  joint_resampled_exactmodel       rank=9 cond=13.4 lmin_nonprior=2.52e-08 (2s)
+  joint_native_impulse_matched     rank=8 cond=1.2e+04 lmin_nonprior=0 (4s)
+[regime low_snr_short_delay]
+  eeg_only                         rank=6 cond=471 lmin_nonprior=0 (143s)
+  fmri_only                        rank=7 cond=3.29 lmin_nonprior=0 (66s)
+  joint_native                     rank=8 cond=471 lmin_nonprior=3.671e-09 (168s)
+  joint_resampled                  rank=9 cond=3.7 lmin_nonprior=3.614e-09 (12s)
+  joint_native_impulse             rank=8 cond=2.67e+03 lmin_nonprior=8.026e-09 (131s)
+  joint_resampled_exactmodel       rank=9 cond=3.7 lmin_nonprior=3.614e-09 (2s)
+  joint_native_impulse_matched     rank=8 cond=2.81e+03 lmin_nonprior=0 (5s)
+[verdict] INCOMPLETE
+[written] reports/identifiability/results.json  reports/identifiability/summary.md

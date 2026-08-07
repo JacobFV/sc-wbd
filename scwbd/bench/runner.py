@@ -26,6 +26,9 @@ from typing import Any, Iterable, Mapping, Sequence
 from . import adapters
 from .ablations import ABLATIONS, run_all_ablations
 from .gates import CLAIMS, run_all_gates
+from .adjudication import adjudicate
+from .corpus import CORPUS_LIMITATIONS
+from .instruments import KNOWN_UNINFORMATIVE, audit_instruments
 from .leakage import APPENDIX_D_ROWS, run_all_audits
 from .numerics import run_numerics_suite
 from .report import (
@@ -105,9 +108,11 @@ def build_summary(
     ablations: Sequence[ClaimReport],
     audits: Sequence[ClaimReport],
     numerics: Sequence[ClaimReport],
+    instruments: Sequence[ClaimReport] = (),
 ) -> str:
     prov = provenance()
-    all_reports = list(gates) + list(ablations) + list(audits) + list(numerics)
+    all_reports = (list(gates) + list(ablations) + list(audits) + list(numerics)
+                   + list(instruments))
     n_pass = sum(1 for r in all_reports if r.status == "PASS")
     n_fail = sum(1 for r in all_reports if r.status == "FAIL")
     n_cnr = sum(1 for r in all_reports if r.status == "COULD_NOT_RUN")
@@ -149,6 +154,15 @@ def build_summary(
         "Positive controls (worlds where the effect is present, and the gate must `PASS`) "
         "live in `tests/bench/test_gates_can_pass.py`; a gate that can never pass is not a "
         "measurement either."
+    )
+    L.append("")
+    L.append(
+        "**Provenance is part of the discipline.** Twice now this repository has come close "
+        "to comparing new code against a stale artifact: gates written before a solver "
+        "existed, and cached `.npz` maps built by a route the module no longer used. Neither "
+        "artifact recorded how it was produced. A passing numerical check here is therefore "
+        "refused unless it records its subject or its solver provenance, and every report "
+        "carries the git revision and the timestamp of the run that produced it."
     )
     L.append("")
 
@@ -199,6 +213,46 @@ def build_summary(
     )
     L.append("")
 
+    L.append("### What the training corpus can and cannot support")
+    L.append("")
+    L.append(
+        "A gate measures a model; a model can only carry what its training signal "
+        "contained. Agent Turing's audit of the SC-WBD-001-beta corpus "
+        "(`reports/training/corpus_composition.md`) bounds what any gate can conclude from "
+        "that artifact:"
+    )
+    L.append("")
+    L.append("| measured | consequence for the claims |")
+    L.append("|---|---|")
+    for lim in CORPUS_LIMITATIONS:
+        blocks = ", ".join(f"`{b}`" for b in lim.blocks) or "—"
+        L.append(
+            f"| {lim.measured.replace('|', '/')} | {lim.consequence.replace('|', '/')} "
+            f"(blocks: {blocks}) |"
+        )
+    L.append("")
+    L.append(
+        "**G4 cannot reach an overall PASS in this release, and a reader must not infer "
+        "otherwise from partial progress.** Two of its sub-checks now pass against agent "
+        "Fisher's binding — `fisher_rank_and_eigenvalue` and "
+        "`modality_additivity_declaration` — which is the first movement on a scientific "
+        "claim gate in this project and is worth reporting as such. But `dose` and "
+        "`state_dependence` are unavailable by construction in a linear-Gaussian benchmark "
+        "and are recorded as **absent rather than fabricated**; `delay` is **simulation "
+        "recovery** (recovered from held-out simulated records at the true parameter), which "
+        "is not a held-out perturbation in the sense of §11.3; and 35 of 37 corpus shards "
+        "carry `control_graph: none`. The gate's actual claim — that perturbation reduces "
+        "non-identifiability — remains **unexercised**. A trained whole-brain model sitting "
+        "beside a passing N3/N4/N6 field stack looks like an end-to-end intervention path. "
+        "It is not one."
+    )
+    L.append("")
+    L.append(
+        "This is what the thesis's build order predicts for a release that stops at item 5. "
+        "It is a statement about scope, not about the model."
+    )
+    L.append("")
+
     L += _table(list(ablations), title="2. Required ablations (`body.tex` §11.4)",
                 describe={k: v.thesis_clause for k, v in ABLATIONS.items()})
     L += _table(list(audits), title="3. Leakage and evaluation audits (Appendix D, "
@@ -207,6 +261,58 @@ def build_summary(
     L += _table(list(numerics), title="4. Numerical, representational and physical tests "
                                      "(§11.1)",
                 describe={})
+
+    # -- the instrument section ------------------------------------------
+    L.append("## 4b. Instruments that cannot discriminate")
+    L.append("")
+    L.append(
+        "A green reading from an instrument that is structurally incapable of reading any "
+        "other way is not evidence. This has now happened **six** times in this project. "
+        "The fourth was inside the mechanism built to catch stale artifacts; the fifth was "
+        "in this bench's own G4, which reported a reason that was not the actual reason — a "
+        "discrimination failure about causes rather than values. The sixth is different "
+        "again: composite training loss is a perfectly good instrument that was *selected "
+        "after the curves were seen*, twice, in the direction that flattered a just-taken "
+        "decision. The bias was in the choosing:"
+    )
+    L.append("")
+    L.append("| field | what it reads | why it cannot discriminate | remedy | found by |")
+    L.append("|---|---|---|---|---|")
+    for u in KNOWN_UNINFORMATIVE:
+        L.append(
+            f"| `{u.name}` | {u.reads} | {u.why_it_cannot_discriminate.replace('|', '/')} "
+            f"| {u.remedy.replace('|', '/')} | {u.found_by} |"
+        )
+    L.append("")
+    L.append(
+        "**Standing rule, now executable.** For every guard or provenance field a claim "
+        "relies on, there must exist an input under which it reads differently. If there is "
+        "not, it is decoration and must be labelled as such rather than reported. "
+        "`N7_instrument_discrimination` runs each guard this bench relies on over at least "
+        "two inputs and fails any whose readings are all identical; the audit has its own "
+        "negative control, so it can fail."
+    )
+    L.append("")
+    if instruments:
+        L += _table(list(instruments), title="4c. Instrument discrimination audit, and "
+                                            "pending procedural adjudications",
+                    describe={})
+        L.append(
+            "An adjudication row is a decision under review, not a property of the model. "
+            "The party that produces the numbers does not return the verdict: a neutral or "
+            "negative outcome there is recorded against the decision and its owner, and "
+            "never against SC-WBD-001-beta."
+        )
+        L.append("")
+    L.append(
+        "The whole-tree `-dirty` flag is **not** recorded in this bench's provenance and "
+        "nothing gates on it. What is recorded is `source_dirty_paths`: the porcelain "
+        "entries scoped to source directories, as a list of paths rather than a boolean, so "
+        "a reader can see that dirt belongs to another agent's in-flight work rather than "
+        "to the source under test. In a shared multi-agent worktree even the scoped flag "
+        "cannot say *whose* edit it was; the path list can."
+    )
+    L.append("")
 
     # dependency state
     L.append("## 5. Dependency state (who is blocking what)")
@@ -239,7 +345,9 @@ def build_summary(
             if subject:
                 L.append(f"  - subject: {subject}")
             for n in r.notes:
-                if "not evidence" in n or "not a statement" in n:
+                if any(k in n for k in ("not evidence", "not a statement", "SCOPE:",
+                                        "does NOT license", "does not cover",
+                                        "STANDOFF ONLY", "REFINEMENT RULE:")):
                     L.append(f"  - scope limit: {n}")
     L.append("")
 
@@ -263,6 +371,25 @@ def build_summary(
             else:
                 for reason in r.blocking_reasons[:2]:
                     L.append(f"  - blocked by: {reason}")
+    L.append("")
+    L.append("### What a passing numerical gate does and does not unblock")
+    L.append("")
+    L.append(
+        "A numerical PASS lifts a *precondition*; it licenses no claim on its own. It means "
+        "the solver may now be used in a claim-bearing run, not that any run has been made. "
+        "Numerical correctness is necessary and never sufficient: agreement with recorded "
+        "signals is stronger, held-out perturbation stronger still (thesis §0.2), and field "
+        "accuracy, target engagement, network effect and clinical utility remain four "
+        "separate quantities (§0.5)."
+    )
+    L.append("")
+    L.append(
+        "In particular `N3` validates **conduction** — a current dipole in an unbounded "
+        "homogeneous conductor, the EEG/lead-field forward problem. It does **not** cover "
+        "the magnetically induced TMS field, which has a different source term and boundary "
+        "condition. That is gate `N6`, and it has not run. Any claim that depends on the "
+        "induced field remains suspended."
+    )
     L.append("")
     L.append("### Standing exclusions (independent of any result)")
     L.append("")
@@ -303,6 +430,8 @@ def run_everything(config: Mapping[str, Any] | None = None, *, seed: int = 0,
     ablations = run_all_ablations(cfg.get("ablations"), seed=seed)
     audits = run_all_audits(cfg.get("leakage"), seed=seed)
     numerics = run_numerics_suite(seed=seed, **dict(cfg.get("numerics", {})))
+    instruments = [audit_instruments(seed=seed, **dict(cfg.get("instruments", {})))]
+    instruments.append(adjudicate(seed=seed, **dict(cfg.get("adjudication", {}))))
 
     if write:
         GATES_DIR.mkdir(parents=True, exist_ok=True)
@@ -315,10 +444,13 @@ def run_everything(config: Mapping[str, Any] | None = None, *, seed: int = 0,
             r.write(GATES_DIR / "leakage")
         for r in numerics:
             r.write(GATES_DIR / "numerics")
+        for r in instruments:
+            r.write(GATES_DIR / "instruments")
         (GATES_DIR / "SUMMARY.md").write_text(
-            build_summary(gates, ablations, audits, numerics), encoding="utf-8"
+            build_summary(gates, ablations, audits, numerics, instruments), encoding="utf-8"
         )
-    return {"gates": gates, "ablations": ablations, "leakage": audits, "numerics": numerics}
+    return {"gates": gates, "ablations": ablations, "leakage": audits,
+            "numerics": numerics, "instruments": instruments}
 
 
 def main(argv: Sequence[str] | None = None) -> int:

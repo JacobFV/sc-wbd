@@ -1,0 +1,33 @@
+# TIER 1 -- likelihood, measured. DISABLED, and the reason is recorded rather
+# than the source silently omitted.
+#
+# Two bipolar derivations (Fpz-Cz, Pz-Oz) cannot constrain a 64-channel
+# observation head. Enabling it without a source-specific montage adapter is the
+# forced consensus Appendix D warns against. It is the ONLY corpus here with a
+# genuine future-session holdout (night 1 -> night 2), so it is also the only
+# source that could ever support a G5 individualisation claim -- which is why it
+# stays in the mixture as a declared, disabled tier-1 source rather than being
+# dropped from the file.
+id: sleepedf_real
+role: likelihood
+enabled: false
+is_simulated: false
+losses: [likelihood, forecast]
+gradient_permission: ["local.*", "residual.*", "assimilate.*", "readout.*"]
+frozen: ["eeg.*", "bold.*", "coupling.*"]
+n_eff: 78.0
+n_rows: 197.0
+n_participants: 78
+hierarchy_depth: 3
+measurement_variance: 0.5
+bias_halfwidth: 0.4
+bias_status: prior_specified_sensitivity
+validity_overlap: 0.5
+notes: >
+  Blocked on a montage adapter, not on data: 7.60 GB and 78 participants are on
+  disk. Until the adapter exists, no G5 individualisation claim is evaluable on
+  any source in this mixture (eegmmidb has one session per participant).
+compiler_permission:
+  - "operator:local_field:params"
+  - "operator:assimilation:*"
+  - "region:*:state:*"

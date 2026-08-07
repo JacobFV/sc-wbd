@@ -8,7 +8,6 @@ the limits cannot be learned, and that the controller can answer ``Defer`` or
 
 from __future__ import annotations
 
-import math
 
 import pytest
 import torch
@@ -79,10 +78,17 @@ def test_an_undeclared_exposure_axis_is_refused():
 
 
 def test_a_limits_file_claiming_human_authorisation_is_refused(tmp_path):
+    """A bounds file is not where authorization lives, and never was.
+
+    The refusal survives the governance gate unchanged: authorization is
+    carried by an ``AuthorizationRecord`` validated against a specific request
+    and recorded in provenance, never asserted by the file that declares the
+    bounds A_safe is made of.
+    """
     src = DEFAULT_LIMITS_PATH.read_text()
     bad = tmp_path / "bad.toml"
     bad.write_text(src.replace("human_use_authorized = false", "human_use_authorized = true"))
-    with pytest.raises(CompilerRefusal, match="no ethics approval"):
+    with pytest.raises(CompilerRefusal, match="cannot authorise anything"):
         SafetyLimits.load(bad)
 
 

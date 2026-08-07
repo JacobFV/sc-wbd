@@ -25,6 +25,7 @@ from scwbd.bench.numerics import (
     run_numerics_suite,
     validate_acoustic_solver,
     validate_em_solver,
+    validate_induced_efield_solver,
 )
 
 
@@ -323,7 +324,8 @@ def test_absent_physical_solvers_suspend_the_field_claims():
     ac = validate_acoustic_solver(None)
     assert em.status == ac.status == "COULD_NOT_RUN"
     assert "agent G" in " ".join(em.blocking_reasons)
-    assert em.manifest.consequence_if_failed.startswith("The EM solver may not be used")
+    assert em.manifest.consequence_if_failed.startswith(
+        "The conduction solver may not be used")
 
 
 def test_helmholtz_residual_is_small_for_a_plane_wave():
@@ -339,11 +341,243 @@ def test_numerics_suite_reports_every_absent_input():
     reports = {r.manifest.claim_id: r for r in run_numerics_suite()}
     assert set(reports) == {
         "N1_compiler_correctness", "N5_solver_suite", "N2_boundary_consistency",
-        "N3_em_solver", "N4_acoustic_solver",
+        "N3_em_solver", "N4_acoustic_solver", "N6_induced_efield",
+        "N8_induced_efield_contact",
     }
-    # N1 has a subject (agent A landed); everything else is still blocked and
-    # says so rather than passing by default.
+    # checks whose subject has landed produce a verdict; the rest stay blocked
+    # and say so rather than passing by default.
     assert reports["N1_compiler_correctness"].status in ("PASS", "FAIL")
+    # field gates auto-wire to agent Faraday's solvers once those are importable,
+    # so they produce a verdict rather than silently reverting to COULD_NOT_RUN
+    for k in ("N3_em_solver", "N4_acoustic_solver", "N6_induced_efield",
+              "N8_induced_efield_contact"):
+        assert reports[k].status in ("PASS", "FAIL", "COULD_NOT_RUN")
+    # these have no subject at all and must stay blocked
     assert {reports[k].status for k in
-            ("N5_solver_suite", "N2_boundary_consistency", "N3_em_solver",
-             "N4_acoustic_solver")} == {"COULD_NOT_RUN"}
+            ("N5_solver_suite", "N2_boundary_consistency")} == {"COULD_NOT_RUN"}
+
+
+def test_field_gates_do_not_silently_revert_once_their_solvers_exist():
+    """A default run must reproduce a verdict, not overwrite it with COULD_NOT_RUN."""
+    from scwbd.bench.adapters import induced_field_solver
+
+    if not induced_field_solver().available:
+        pytest.skip("agent Faraday's induced-field solver is not importable here")
+    reports = {r.manifest.claim_id: r for r in run_numerics_suite()}
+    assert reports["N6_induced_efield"].status != "COULD_NOT_RUN"
+    assert reports["N8_induced_efield_contact"].status != "COULD_NOT_RUN"
+
+
+def test_n8_contact_gate_exists_as_its_own_row_and_states_its_contract():
+    from scwbd.bench.numerics import validate_induced_efield_contact
+
+    rep = validate_induced_efield_contact()
+    assert rep.status == "COULD_NOT_RUN"
+    reason = " ".join(rep.blocking_reasons)
+    assert "contact geometry" in reason
+    assert "spectral reference does NOT extend here" in reason
+    assert "preregistered tolerance" in reason
+    # the consequence names the downstream consumer obligation
+    assert "Unresolved/Defer" in rep.manifest.consequence_if_failed
+    assert "0.955" in rep.artifacts["why_this_row_exists"]
+
+
+def test_a_passing_numerical_check_must_record_what_it_measured():
+    """Cajal's lesson: an artifact with no provenance is how stale outputs pass."""
+    from scwbd.bench.report import ClaimReport, Metric, ReportDisciplineError, SubCheck
+    from scwbd.bench.numerics import _manifest
+
+    rep = ClaimReport(
+        manifest=_manifest("N_TEST", "a claim", "a falsifier", "a consequence"),
+        subchecks=[SubCheck(name="ok", description="d", metrics=[
+            Metric(name="x", value=1.0, kind="numerical", exact=True, threshold=0.5)])],
+        kind="numerics",
+    )
+    with pytest.raises(ReportDisciplineError, match="how it was produced"):
+        rep.finalize()
+    rep.artifacts["subject"] = "some.module.solver"
+    assert rep.finalize().status == "PASS"
+
+
+def test_field_gate_reports_name_the_callable_that_produced_them():
+    exact = lambda points, **kw: analytic_dipole_potential(
+        points, kw.get("dipole_pos", (0, 0, 0)), kw.get("dipole_moment", (0, 0, 1e-8)),
+        sigma=kw.get("sigma", 0.33))
+    rng = np.random.default_rng(6)
+    pts = rng.normal(0, 0.08, size=(200, 3))
+    pts = pts[np.linalg.norm(pts, axis=1) > 0.02]
+    rep = validate_em_solver(exact, points=pts)
+    assert rep.artifacts["subject"].endswith("<lambda>")
+
+
+# --------------------------------------------------------------------------
+# N3/N4 scope and refinement wording (both caught by agent Faraday)
+# --------------------------------------------------------------------------
+def test_n3_claim_is_conduction_and_says_it_does_not_cover_induction():
+    """A conduction PASS must not be readable as licensing the induced TMS field."""
+    rep = validate_em_solver(None)
+    claim = rep.manifest.claim_text
+    assert "CONDUCTION" in claim
+    assert "NOT the magnetically induced TMS field" in claim
+    assert "N6" in claim
+
+
+def test_n3_pass_carries_the_scope_caveat_in_its_notes():
+    exact = lambda points, **kw: analytic_dipole_potential(
+        points, kw.get("dipole_pos", (0, 0, 0)), kw.get("dipole_moment", (0, 0, 1e-8)),
+        sigma=kw.get("sigma", 0.33))
+    rng = np.random.default_rng(1)
+    pts = rng.normal(0, 0.08, size=(300, 3))
+    pts = pts[np.linalg.norm(pts, axis=1) > 0.02]
+    rep = validate_em_solver(exact, points=pts)
+    assert rep.status == "PASS"
+    notes = " ".join(rep.notes)
+    assert "conduction, not induction" in notes
+    assert "N6_induced_efield" in notes
+    assert rep.artifacts["does_not_cover"].startswith("magnetically induced")
+
+
+def test_n4_falsification_criterion_names_time_refinement_not_h():
+    """Refining h alone leaves the residual flat; the criterion must not misfire."""
+    rep = validate_acoustic_solver(None)
+    crit = rep.manifest.falsified_by
+    assert "TIME step" in crit
+    assert "fixed CFL" in crit
+    assert "is NOT a falsification" in crit
+
+
+def test_n4_report_carries_the_refinement_rule():
+    exact = lambda points, **kw: analytic_free_field_pressure(
+        points, kw.get("source_pos", (0, 0, 0)), k=kw.get("k", 100.0))
+    rng = np.random.default_rng(2)
+    pts = rng.normal(0, 0.05, size=(300, 3))
+    pts = pts[np.linalg.norm(pts, axis=1) > 0.01]
+    rep = validate_acoustic_solver(exact, points=pts)
+    notes = " ".join(rep.notes)
+    assert "TEMPORAL dispersion" in notes
+    assert "Refine dt with h at fixed CFL" in notes
+
+
+def test_temporal_dispersion_predicts_the_measured_helmholtz_residual():
+    """Pins the reasoning so nobody 'fixes' the residual by refining h.
+
+    Inputs are agent Faraday's reported N4 configuration (k=100 /m, c=1500 m/s,
+    60 steps per period at ppw=20); the measured residual was 9.178e-4.
+    """
+    k, c, steps_per_period = 100.0, 1500.0, 60
+    omega = k * c
+    dt = (2.0 * math.pi / omega) / steps_per_period
+    predicted = (omega * dt) ** 2 / 12.0
+    assert predicted == pytest.approx(9.139e-4, rel=0.01)
+    assert predicted == pytest.approx(9.178e-4, rel=0.01)   # measured
+    # and it is a dt effect: halving dt quarters it, halving h does nothing
+    assert (omega * (dt / 2)) ** 2 / 12.0 == pytest.approx(predicted / 4.0, rel=1e-9)
+
+
+# --------------------------------------------------------------------------
+# N6: the induced-field gate that N3 does not cover
+# --------------------------------------------------------------------------
+def test_n6_without_a_solver_or_reference_cannot_run():
+    rep = validate_induced_efield_solver()
+    assert rep.status == "COULD_NOT_RUN"
+    reason = " ".join(rep.blocking_reasons)
+    assert "Faraday" in reason
+    assert "will not substitute the conduction reference" in reason
+    assert "suspended" in rep.manifest.consequence_if_failed
+
+
+def test_n6_refuses_to_reuse_the_conduction_reference():
+    """Supplying only a solver is not enough: induction needs its own closed form."""
+    rep = validate_induced_efield_solver(lambda points, **kw: np.zeros(len(points)))
+    assert rep.status == "COULD_NOT_RUN"
+    assert "closed-form reference" in " ".join(rep.blocking_reasons)
+
+
+def test_n6_passes_an_exact_solver_and_fails_a_wrong_one():
+    def reference(points, **kw):
+        p = np.asarray(points, dtype=float)
+        return np.cross(p, np.array([0.0, 0.0, 1.0]))[:, 0]
+
+    rng = np.random.default_rng(3)
+    pts = rng.normal(0, 0.05, size=(300, 3))
+    pts = pts[np.linalg.norm(pts, axis=1) > 0.02]
+    # a solver with a small but real error, well above the reference's own bound
+    ok = validate_induced_efield_solver(
+        lambda points, **kw: reference(points) * 1.002, analytic=reference, points=pts,
+        convergence_ratio=0.77, reference_degree=48)
+    assert ok.status == "PASS", ok.blocking_reasons
+    bad = validate_induced_efield_solver(lambda points, **kw: 1.4 * reference(points),
+                                         analytic=reference, points=pts,
+                                         convergence_ratio=0.77, reference_degree=48)
+    assert bad.status == "FAIL"
+
+
+def test_n6_discloses_when_solver_and_reference_share_a_module():
+    def reference(points, **kw):
+        return np.asarray(points, dtype=float)[:, 2]
+
+    rng = np.random.default_rng(4)
+    pts = rng.normal(0, 0.05, size=(200, 3))
+    rep = validate_induced_efield_solver(
+        lambda points, **kw: reference(points) * 1.002, analytic=reference, points=pts,
+        convergence_ratio=0.77, reference_degree=48)
+    m = next(mm for s in rep.subchecks for mm in s.metrics
+             if mm.name == "induced_efield.reference_shares_module_with_solver")
+    assert m.value == 0.0 or m.value == 1.0
+    assert "must not be described as independent validation" in m.note
+    # disclosure must not, by itself, block the verdict
+    assert rep.status == "PASS"
+    sub = next(s for s in rep.subchecks if s.name == "reference_provenance")
+    assert sub.status == "FAIL" and sub.mandatory is False
+
+
+def test_n6_mesh_convergence_can_fail():
+    def reference(points, **kw):
+        return np.asarray(points, dtype=float)[:, 2]
+
+    rng = np.random.default_rng(5)
+    pts = rng.normal(0, 0.05, size=(200, 3))
+    good = validate_induced_efield_solver(
+        lambda points, **kw: reference(points) * 1.002, analytic=reference, points=pts,
+        convergence_ratio=0.77, reference_degree=48,
+        convergence=[{"h": 0.04, "error": 0.0386}, {"h": 0.02, "error": 0.0102},
+                     {"h": 0.01, "error": 0.00266}])
+    assert good.status == "PASS"
+    flat = validate_induced_efield_solver(
+        lambda points, **kw: reference(points) * 1.002, analytic=reference, points=pts,
+        convergence_ratio=0.77, reference_degree=48,
+        convergence=[{"h": 0.04, "error": 0.03}, {"h": 0.02, "error": 0.03},
+                     {"h": 0.01, "error": 0.03}])
+    assert flat.status == "FAIL"
+
+
+def test_n6_refuses_when_the_reference_validity_domain_is_undeclared():
+    """A reference whose own accuracy at this geometry is unknown is not a reference."""
+    def reference(points, **kw):
+        return np.asarray(points, dtype=float)[:, 2]
+
+    rng = np.random.default_rng(7)
+    pts = rng.normal(0, 0.05, size=(200, 3))
+    rep = validate_induced_efield_solver(reference, analytic=reference, points=pts)
+    assert rep.status == "COULD_NOT_RUN"
+    assert any("convergence ratio" in r for r in rep.blocking_reasons)
+
+
+def test_n6_cannot_conclude_at_the_references_own_noise_floor():
+    """At contact ratio the series bound swamps the solver error: cannot conclude.
+
+    This is the exact reason N6 does not extend to contact geometry, expressed
+    as a gate outcome rather than a footnote.
+    """
+    def reference(points, **kw):
+        return np.asarray(points, dtype=float)[:, 2]
+
+    rng = np.random.default_rng(8)
+    pts = rng.normal(0, 0.05, size=(200, 3))
+    rep = validate_induced_efield_solver(
+        lambda points, **kw: reference(points) * 1.001, analytic=reference, points=pts,
+        convergence_ratio=0.955, reference_degree=48)   # contact-like ratio
+    sub = next(s for s in rep.subchecks if s.name == "reference_validity_domain")
+    assert sub.status == "COULD_NOT_RUN"
+    assert rep.status == "COULD_NOT_RUN"
+    assert "noise floor" in " ".join(rep.blocking_reasons)

@@ -30,6 +30,22 @@ bottleneck after skull transmission, and which additional measurement would
 most reduce decision uncertainty. These are conditional predictions, not
 claims that one modality recovers the hidden ground truth of another.
 
+The first measured version of this argument is narrower than the argument
+itself, and the narrower version is the one this paper now asserts. In the
+linear--Gaussian laboratory of Section 0.3, what survives measurement is the
+handling of \emph{clocks}, not the addition of \emph{modalities}. Resampling a
+millisecond record onto a one-second lattice destroys delay information that
+remains present in the data, whereas a native-clock estimator retains it. The
+second modality's own contribution, in that small system, is about one percent
+of the electrical channel's information about the coupling gains and---because a
+millisecond delay does not survive a multi-second hemodynamic convolution---
+essentially none about the conduction delay; and a calibrated impulse's apparent
+advantage is accounted for by its input energy (Section 11.5). Adding a modality
+is not automatically beneficial, and nothing below assumes that it is. Nor does
+that measurement license the converse: the benchmark asks a question shaped to
+one of its two modalities, and says nothing about the strengths the other one
+has no room to exhibit there.
+
 Whole-brain network models have shown that empirical anatomy can constrain
 large-scale dynamics and generate subject-specific observables
 \citep{sanz2013,sanz2015,jirsa2017}. Work on integrative and
@@ -1712,6 +1728,25 @@ device, acquisition site, anatomy, demographic strata, and task context.
 Aggregate accuracy cannot substitute for calibration within the intended
 deployment population.
 
+Comparability of counts is not comparability of populations. Normalizing a log
+loss per observation makes designs that consume different numbers of
+observations arithmetically comparable; it does not make them scientifically
+comparable, because the mean is then taken over different observation sets. A
+design that additionally consumes a small set of poorly fit rows will show a
+large apparent degradation that is pooling arithmetic and not negative
+transfer, and the pooled figure will move in whichever direction the extra rows
+happen to push it. Designs consuming different observation sets must therefore
+be compared on their common set, with the design-specific rows reported
+separately and never averaged into the shared comparison. This is a measured
+near-miss in our own first-gate artifact rather than a hypothetical
+(Section 11.5), and it carries a second lesson that became visible only once the
+first was repaired: restricting the comparison to the common population removed
+the pooling defect and revealed that none of the fits being compared had
+converged. A held-out comparison is evidence about the designs only when it is
+taken over a common population \emph{and} between fits that reached their
+optima. Either condition alone is insufficient, and a comparison that fails the
+second one is reporting the optimizer.
+
 \subsection{11.3 Perturbational and Decision Tests}
 
 The strongest causal tests hold out interventions and ask for direction,
@@ -1751,6 +1786,305 @@ replacing it worsens a prediction uniquely associated with its mechanism.
 Every ablation reports both variance and plausible systematic error; a lower
 variance model is not preferred when it achieves stability by smoothing away
 the effect of interest.
+
+\subsection{11.5 First-Gate Results: the Section 0.3 Artifacts}
+
+Both Section 0.3 artifacts have been built and run. What follows are results
+about a \emph{design}, obtained in a synthetic linear--Gaussian system whose
+truth is known by construction. They are methodological findings, not empirical
+neuroscience: no claim about any brain, any participant, or any recorded
+dataset is asserted here or anywhere else in this document. The distinction is
+the point of the exercise, and it is preserved deliberately.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\textwidth}{@{}X
+>{\centering\arraybackslash}p{.10\textwidth}
+>{\centering\arraybackslash}p{.12\textwidth}
+>{\centering\arraybackslash}p{.11\textwidth}
+>{\centering\arraybackslash}p{.14\textwidth}
+>{\centering\arraybackslash}p{.16\textwidth}@{}}
+\toprule
+\textbf{Held-out regime} & \textbf{best single modality} &
+\textbf{joint / best single} & \textbf{impulse, unmatched} &
+\textbf{impulse, energy-matched} &
+\textbf{naive resampling, (T4) / estimator}\\
+\midrule
+reference: 12\,ms delay, prior-mean coupling & 16.01 (EEG) & \(1.0000015\) &
+\(9.31\times\) & \(0.839\times\) & \(0.1218\) / \(0\)\\
+weak coupling, 17\,ms delay & 1.840 (EEG) & \(1.0000004\) &
+\(27.91\times\) & \(0.839\times\) & \(0.01569\) / \(0\)\\
+low SNR, 8.5\,ms delay & 13.74 (EEG) & \(1.0000858\) &
+\(6.94\times\) & \(1.059\times\) & \(0.03941\) / \(0\)\\
+\bottomrule
+\end{tabularx}
+\caption{\textbf{Section 0.3 benchmark, three held-out regimes.} The statistic
+is the minimum eigenvalue of the likelihood-only expected Fisher information
+over the preregistered subset \((a_{21},a_{32},a_{13},\tau)\) after profiling
+out the observation nuisances, in the prior-standardized basis; the prior
+contribution is excluded. Columns 3--5 are ratios to the joint native-clock
+design. The last column gives the resampled design's value under (T4) and under
+the coarse model the resampling estimator actually uses: information present in
+the data, and information the estimator can use. Twenty-four replicates per
+regime.}
+\label{tab:first-gate}
+\end{table*}
+
+\textbf{Verdict.} The benchmark reports \texttt{INCOMPLETE} under the decision
+rule fixed in its manifest before the run. Three criteria were fully evaluated
+and failed: fusion information, native-beats-resampled, and energy-matched
+intervention information. Two recovery criteria---nominal interval coverage and
+recovery improvement---were withheld as \emph{not evaluated} rather than
+recorded as failures, under a convergence gate described below. The gate is
+disclosed as post hoc: the manifest fixed the five criteria before the run and
+did not contain it.
+
+\textbf{The fusion claim narrows to a claim about clocks---and the summary
+statistic conceals a decomposition that matters.} Across all three regimes the
+joint native-clock design and EEG alone agree on the preregistered information
+statistic to six significant figures; the ratios are
+\(1.0000004\)--\(1.0000858\) (Table~\ref{tab:first-gate}). Read carelessly that
+says ``the hemodynamic modality is uninformative,'' which is not what was
+measured. Two separate things are true, and the headline number is the product
+of both.
+
+First, the reported quantity is a \emph{minimum} eigenvalue, so it reports the
+worst-identified direction, and in every regime that direction is the
+conduction delay. Per parameter, the hemodynamic channel carries \(0.1\%\) to
+\(1.0\%\) of the electrical channel's Fisher information about the three
+coupling gains---small, real, and non-zero---and between \(4\times10^{-7}\) and
+\(1\times10^{-6}\) of it about the delay. In the reference regime the diagonal
+terms are \(212.2\), \(57.2\) and \(16.0\) against \(0.85\), \(0.35\) and
+\(0.14\) for the couplings, and \(65.4\) against \(6.0\times10^{-5}\) for
+\(\tau\). The delay result is structural rather than a matter of degree: a
+12\,ms conduction delay does not survive a multi-second hemodynamic convolution
+sampled once per second. The defensible statement is therefore that
+\textbf{the hemodynamic modality cannot improve the parameter that is hardest
+to identify}---not that it is uninformative, and a reader must not be permitted
+to make that substitution.
+
+Second, the small coupling contribution that does exist is consumed by the
+hemodynamic observation model. Before profiling, the joint design's
+\(\vartheta\)-block minimum eigenvalue exceeds EEG alone's by \(0.3\%\) to
+\(0.9\%\) (\(16.170\) against \(16.027\) in the reference regime). Profiling out
+only the electrical nuisances leaves that gain intact (\(16.151\) against
+\(16.008\)); profiling out the three hemodynamic nuisances---the response shape,
+the undershoot, and the BOLD gain---removes it entirely, returning exactly EEG
+alone's value. The second modality spends its information estimating its own
+observation model from the same record. That diagnosis identifies a fixable
+half, and this program already names the remedy: the calibration-source register
+in the implementation supplement lists breath-hold/hypercapnia
+cerebrovascular-reactivity, arterial-spin-labeling and calibrated-fMRI
+acquisitions as supplying subject and session hemodynamic parameters, with
+uncertainty, for neural-to-BOLD observation models. Constraining those
+externally would stop the second modality paying for them out of the same data.
+The ceiling on that repair is the pre-profiling gain: about \(0.9\%\) on this
+statistic. Real, worth acquiring, not transformative---and it does nothing
+whatever for the delay.
+
+Neither result is an artifact of the block-diagonal form of (T4): the exact
+joint information, obtained by whitening the stacked record, differs from the
+(T4) value by at most \(0.2\%\) here, so the near-identity survives the
+correction.
+
+Naive resampling, by contrast, is structurally broken, and it is broken in a
+way that has to be stated precisely. On the one-second lattice
+\(\partial\mu/\partial\tau\equiv0\); the coarse model has no delay line, so the
+delay is not merely poorly estimated but unrepresentable. Under the estimator's
+own model the likelihood rank is 3 of 9, the profile rank over the preregistered
+subset is 1 of 4, and the profile minimum eigenvalue is exactly zero in every
+regime. Under (T4) the \emph{same design} has likelihood rank 9 of 9 and profile
+rank 4 of 4. Both statements are true and they are about different objects: the
+information is present in the data, and the resampling estimator discards it.
+Collapsing the two views inverts the finding. The consequence is visible in
+recovery: in the reference regime the resampled design's empirical interval
+coverage for the three coupling gains is \(0.33\), \(0.46\) and \(0.71\) against
+a nominal \(0.95\).
+
+The supported claim is therefore that \textbf{source-native clock handling beats
+resampling}, and that \textbf{adding a modality is not automatically
+beneficial}. These are different claims and only the first has support here.
+Table~\ref{tab:claim-gates}, row 1, is narrowed accordingly.
+
+\textbf{A calibrated impulse's apparent gain is its input energy.} Compared
+without an energy control the impulse looks decisive: \(6.9\times\) to
+\(27.9\times\) the joint native-clock profile information, for an increase in
+total input energy of about \(11\%\). With the background drive scaled so that
+total input energy matches the impulse-free design exactly, the ratios fall to
+\(1.06\), \(0.84\) and \(0.84\)---below one in two of the three regimes. In
+those two regimes, spending the same energy on background drive buys \emph{more}
+information about the preregistered subset than spending it on the impulse. An
+unmatched impulse comparison measures the energy budget, not the perturbation,
+which is why the energy-matched design is required rather than supplementary and
+why the criterion was preregistered against the matched design.
+
+\textbf{Two design faults, self-identified and reported rather than absorbed.}
+First, the reference regime places the true conduction delay at 12\,ms, which is
+the prior mean. A design that learns \emph{nothing} about the delay leaves it at
+the prior mean and so scores a perfect delay error: the resampled design, whose
+delay information is exactly zero, records a delay RMSE of \(0\,\)ms in that
+regime. Delay evidence from the reference regime is not discriminating, is
+flagged as degenerate in the artifact rather than averaged in, and the two
+held-out regimes place the delay away from the prior mean for precisely this
+reason. Second, the recovery estimator---a fixed-budget damped Newton run from
+the prior mean---did not converge in two of the three regimes, with median
+Newton decrements of \(20.9\) and \(9.2\)--\(22.7\) posterior standard
+deviations against a gate of \(2.0\). Coverage and recovery are properties of
+that estimator, so the two recovery criteria are withheld rather than reported
+as negative results; an unconverged sweep must not be allowed to masquerade as a
+falsification.
+
+\textbf{The second artifact.} The end-to-end synthetic slice compiles the same
+system from a source schema under known transform bias, shared session
+calibration error, missing windows, unequal supports, and a deliberately
+misspecified residual. It refused four of four invalid schemas while accepting
+the valid one; produced a leakage-free grouped split \emph{and} fired on an
+ungrouped positive control, which is what distinguishes a leakage audit from a
+leakage assertion; passed subgroup calibration; and detected the misspecified
+module, an AR(1) colored residual on one hemodynamic parcel. Detection was
+sensitive rather than specific: seven of fourteen module tests were flagged at
+\(\alpha=0.05\), of which six were false positives. One criterion failed and one
+could not be evaluated. Recovery interval coverage was \(0.16\), \(0.19\),
+\(0.53\) and \(0.50\) against a nominal \(0.95\) over 32 simulated subjects;
+coverage is a property of the estimator as run, so that is a measurement. The
+held-out log-loss criterion is not. Its first form is the near-miss described in
+Section 11.2: the joint and single-modality designs were compared over different
+observation populations---845{,}280 rows against 844{,}800, the difference being
+480 hemodynamic rows---so the pooled per-observation means were never comparable
+to begin with. Recomputing on the common 844{,}800 rows removes that defect and
+exposes a second, independent one. A comparison between two fits measures the
+\emph{designs} only if both fits reached their optima, and none of the four did:
+the median Newton decrements are \(12{,}238\) (joint native-clock), \(409\) (EEG
+alone), \(100{,}478\) (fMRI alone) and \(53{,}675\) (naive resampling) posterior
+standard deviations, against the same gate of \(2.0\) used above, and the
+fMRI-alone fit never left the prior mean at all---zero drift in every parameter.
+The criterion is therefore reported as \emph{not evaluated}: not passed, not
+failed, and no direction of effect asserted in either sense. No per-observation
+loss from these fits is quoted here, because each of them is a property of an
+optimizer that had not arrived.
+
+That is two criteria now withheld for non-convergence, across both artifacts and
+in the same run. Together they state something sharper than either alone:
+\textbf{the current limit on what this benchmark can conclude is the estimator,
+not the design.} Until the optimizer reaches its optima the recovery and
+held-out prediction questions are simply unavailable, and no amount of further
+modeling reaches them.
+
+\textbf{What this licenses.} It licenses the narrowing above, and nothing about
+brains. The synthetic system is linear, Gaussian, three-region, and its truth is
+known; dose and state dependence are unavailable in it by construction, and its
+delay result is simulation recovery rather than held-out perturbation. It also
+asks the hemodynamic modality an electrophysiological question, for the reason
+given in Section 0.3: a system with no spatial structure and a parameter set of
+coupling gains plus one delay has nowhere for that modality's actual strengths
+to appear. ``Cross-method integration is not worthwhile'' does not follow from
+these numbers and is not asserted. Section
+0.3 stated in advance that if the calculation did not go the claim's way, ``the
+compiler may still be useful as a provenance system, but the claim that
+cross-method integration resolves those dynamics must be narrowed.'' That
+condition obtained, and that is the sentence now in force.
+
+\subsection{11.6 Decorative Guards, and Thresholds Without a Reference Class}
+
+The most transferable result of building the above was not a number. It was a
+class of defect that a validation program of this kind produces continuously and
+by construction, and which no amount of care alone removes.
+
+\textbf{A guard is decorative when its reading is constant with respect to the
+question it is asked.} It still emits output, the output still looks like
+evidence, and it cannot come out any other way---which makes it worse than no
+instrument, because confident reasoning follows from it. A register kept during
+this build accumulated more than twenty such instruments in a single
+development period. Representative cases: gradient-permission patterns that were
+matched against parameter names a graph compiler rewrites, so the permission
+check was vacuous on the accelerator while every host-side test passed; a memory
+cap that accounted for host pages while the allocation was on the device,
+reporting 8.17\,GB against 97.9\,GB actually held; a leakage audit that existed,
+raised correctly when called, and was never called by the trainer, while a
+schema field asserted that it had passed; a stop threshold that read identically
+whether its hypothesis was true or false; and a normalizer-selection metric on
+which one candidate scored exactly \(1.00\) at every percentile because the
+statistic equals one by algebra for that candidate.
+
+The general test costs nothing and should be applied to every guard, gate, and
+acceptance criterion in this program:
+
+\begin{quote}
+For each guard, name a state of the world in which it reads differently. If
+there is none, it is decoration.
+\end{quote}
+
+Two corollaries were expensive enough to be worth stating separately. First, an
+\emph{absent} record is indistinguishable from a clean one: a field written only
+on success is not a record, so the null case must write something explicit
+rather than nothing. Several of the cases above have that shape. Second, a
+verification is evidence only about the path it exercises; a check that reaches
+its subject by a different route than production does can pass while production
+fails. The remedy is to make the guard fail on purpose---break the thing
+deliberately and confirm the alarm sounds---rather than to observe that it is
+green.
+
+That four of the recorded instances were found \emph{inside} machinery built to
+catch exactly this failure is not an embarrassment to report reluctantly. A
+falsification apparatus that detects its own defects at that rate is the best
+available evidence that it is measuring rather than performing, and the register
+is retained for that reason.
+
+\textbf{A summary statistic can strip the qualifier that made it true.} This is
+the same pattern applied to reporting rather than to instruments, and it
+occurred while preparing Section 11.5. The statistic there is a \emph{minimum}
+eigenvalue; carried one step away from its definition it becomes ``the second
+modality adds nothing,'' which is a different and false proposition, because
+what was measured is that the second modality cannot improve the
+worst-identified direction while it does inform the others. Nothing in the
+number is wrong and no instrument misread; the compression is what fails, and it
+fails quietly because the compressed form is shorter, more quotable, and still
+numerically supported by the figure it came from. That is the warning of Section
+13 about redescription, operating on this project's own results rather than on a
+theory. The test is not whether a summary is defensible but whether it
+establishes the proposition it will be read as establishing---so where a single
+number aggregates directions that behave differently, the decomposition must
+travel with it.
+
+\textbf{A preregistered threshold with no reference class is a guess with a
+timestamp.} This is the sharpest instance, and it is a limit of preregistration
+as a technique rather than a lapse in applying it. A training acceptance
+condition---running-minimum simulated forecast negative log likelihood below
+\(1.0\) by step 900---was fixed in the repository before the data existed, never
+moved, honored to the letter when it resolved at \(1.1200\), escalated the
+moment a sibling clause fired, and adjudicated by a party who neither set it nor
+trained the model. Every procedural safeguard the project has was applied,
+correctly, in order. The result is still uninterpretable, because no
+capacity-matched baseline and no prior measurement existed that could say
+whether \(<1.0\) was ever achievable for a 1.76\,M-parameter model on 37
+simulated shards with roughly \(40\%\) of its regional-timescale prior either
+never delivered to the backend or clamped to the support boundary. Without a
+reference class the threshold cannot distinguish a model that underperformed
+from a number that was never achievable: the two produce an identical reading.
+
+Two consequences follow for the acceptance criteria in Sections 11.1--11.4.
+First, \textbf{process discipline cannot manufacture a reference class};
+preregistration fixes \emph{when} a commitment is made and does nothing about
+\emph{what} is committed to, so a threshold must additionally be shown capable
+of reading differently in the world where its hypothesis is false. Second, a
+preregistration inherits the defects of the instrument it was calibrated
+against, and freezing it makes that inheritance harder to see rather than
+easier; when the instrument is later found defective the commitment becomes
+\emph{uninterpretable} rather than wrong, and the honest response is to report
+it as uninterpretable, in separate layers---the literal fact, the interpretation,
+and an adjudication made by someone who is not its author---rather than to
+re-set it once the trajectory is visible.
+
+The remedy in force is therefore \textbf{matched controls rather than absolute
+thresholds}. A control encodes no assumption about what is achievable, and both
+sides of the comparison move together under an instrument rescale, so the
+comparison survives a correction that would render an absolute bar meaningless.
+Where this program states an acceptance criterion as an absolute number, that
+number must be accompanied by the reference class it was set from, or replaced
+by a control.
 
 \section{12. Confidence-Calibrated Development Horizons}
 
@@ -1838,6 +2172,24 @@ recurrent loops, state-dependent routing, multirate adaptation, and slow
 structural change. Operator dispatch supplies a controlled model comparison,
 not an exemption from measuring which dynamics are actually useful.
 
+One of these commitments has already been made smaller by measurement rather
+than by argument. The Section 0.3 laboratory was built to ask whether
+native-clock fusion or a calibrated intervention increases likelihood
+information for a preregistered parameter subset. What it vindicates is the
+treatment of clocks, not the addition of modalities: resampling onto a common
+lattice destroys delay information the data still contain, while the second
+modality adds about one percent on the coupling gains---and that percent is
+consumed estimating its own observation model---and nothing measurable on the
+delay, and a calibrated impulse's apparent advantage is accounted for by its
+input energy (Section 11.5). Section 0.3 wrote the consequence down in
+advance---``the
+compiler may still be useful as a provenance system, but the claim that
+cross-method integration resolves those dynamics must be narrowed''---and that
+consequence is now in force. The narrowing is the falsification program working,
+not a repair applied to it after the fact; and it is a result about a synthetic
+design, which leaves every empirical question in this paper exactly where it
+was.
+
 The architecture also narrows the role of symbolism. Declarative schema is
 essential for engineering and interpretability; broad symbolic cognition is
 not assumed to be the brain's operative format. Coarse consciousness-oriented
@@ -1863,7 +2215,12 @@ dynamics. Its first claim-bearing deliverable is deliberately not a whole
 brain: it is a native-clock identifiability and synthetic-recovery laboratory
 that can show whether EEG-like dynamics, fMRI-like hemodynamics, and a bounded
 intervention jointly identify selected coupling and delay parameters. Failure
-narrows the fusion claim before architectural breadth can conceal it.
+narrows the fusion claim before architectural breadth can conceal it. That
+laboratory has now been run in the linear--Gaussian case, and it did narrow the
+claim: to source-native clock handling, with the modality-fusion and
+intervention criteria unsupported at the scope tested (Section 11.5). This
+remains a result about a design. No empirical claim about brains is asserted
+anywhere in this document.
 
 The intended whole-brain model's regions contain structured
 fields, tensors, graphs, event processes, or associative states; its edges are

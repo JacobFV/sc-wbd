@@ -924,9 +924,27 @@ def participant_split(
         groups = [group_of_subject[s] for s in win_subjects]
         backend = "grouped_splitter"
         fallback_reason = ""
-    except Exception as exc:  # noqa: BLE001 - any failure means: use the fallback
-        LOGGER.info("GroupedSplitter unavailable (%s); using hash fallback", exc)
-        fallback_reason = f"{type(exc).__name__}: {exc}"
+    except Exception as exc:  # noqa: BLE001
+        # REFUSE, do not degrade.  This previously fell back to a deterministic
+        # hash split and recorded the fact in an attribute nobody read, which is
+        # functionally silent: a degraded path that logs its degradation at INFO
+        # into a field no caller inspects is indistinguishable from the intended
+        # path.
+        #
+        # A hash split may happen to be participant-disjoint.  That is not the
+        # same as being *constructed* to be: refusal R10 requires grouping by
+        # immutable lineage **before** splitting, and a hash of a subject string
+        # is not lineage-aware -- it cannot see that two recordings share a
+        # participant through a lineage the id does not spell out.  Substituting
+        # one for the other silently is never acceptable here.
+        LOGGER.error("GroupedSplitter unavailable: %s", exc)
+        raise RuntimeError(
+            "participant_split requires scwbd.sources.splits.GroupedSplitter and it "
+            f"could not be applied ({type(exc).__name__}: {exc}). Refusing to fall back "
+            "to a hash split: refusal R10 requires grouping by immutable lineage before "
+            "splitting, and a hash of a subject id is not lineage-aware. Fix the "
+            "grouping or pass a split built by GroupedSplitter explicitly."
+        ) from exc
 
     if backend == "grouped_splitter":
         assignment = _assign_groups(

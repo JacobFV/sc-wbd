@@ -1464,7 +1464,9 @@ Site/device shortcuts &
 Leave-site/device/protocol-out evaluation; nuisance-only classifier and label
 permutation within site &
 Domain calibration, worst-site error and residual site predictability &
-High pooled accuracy with poor new-device calibration is failure\\
+High pooled accuracy with poor new-device calibration is failure. On a
+single-site corpus none of the three controls is constructible: the row is
+\emph{not runnable}, which is a different report from \emph{not yet run}\\
 
 Derived-data duplication &
 Keep raw scan and every tractogram, parcellation, preprocessing derivative or
@@ -1535,5 +1537,23 @@ therefore an executable evaluation plan, not an assertion that more sources
 automatically produce a better whole-brain model.}
 \label{tab:mixture-evaluation}
 \end{table*}
+
+\textbf{``Not yet run'' and ``not runnable on this corpus'' are different
+reports with different remedies.} Several controls in
+Table~\ref{tab:mixture-evaluation} are constructible only on corpora that
+contain the variation they test against, and a report that records both cases
+as ``not passed'' conceals which is an engineering backlog item and which is an
+acquisition requirement. The site/device row is the clearest case. It prescribes
+three controls, and on a single-site, single-device corpus none of them exists:
+leave-site-out requires a second site; a nuisance-only classifier requires site
+labels that vary; and within-site permutation alone cannot falsify a site
+shortcut, because the quantity it would have to permute is constant. No
+splitting strategy repairs this, and no modeling change reaches it---the remedy
+is a second site, and nothing else suffices. The same distinction applies to the
+perturbation row of the claim-gate table in Section 0 when a corpus carries no
+interventional structure: that is a data requirement, not a modeling one. Where
+a control is unrunnable, the report must say so explicitly, name what would make
+it runnable, and refrain from narrowing the associated claim on the strength of
+a test that was never capable of running.
 
 \twocolumn

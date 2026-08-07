@@ -128,18 +128,61 @@ def test_basal_ganglia_consumes_no_reward_signal(device):
 # ---------------------------------------------------------------------------
 
 
-def test_cerebellum_learns_a_forward_model(device):
-    torch.manual_seed(0)
-    cb = Cerebellum(4, 2, n_granule=256, lr=0.05, error_delay=2, device=device)
+def _cerebellar_run(device, *, seed: int = 0, lr: float = 0.05, shuffle: bool = False) -> float:
+    """Train a cerebellum for 300 steps; return the mean error over the last 20.
+
+    A window mean, not a single batch: each step draws 16 fresh samples, so a
+    one-batch error estimate is dominated by sampling noise.
+    """
+    torch.manual_seed(seed)
+    cb = Cerebellum(4, 2, n_granule=256, lr=lr, error_delay=2, device=device)
     W = torch.randn(4, 2, device=device)
     errs = []
     for step in range(300):
         x = torch.randn(16, 4, device=device)
         target = torch.tanh(x @ W)
+        if shuffle:
+            # same updates, input-output pairing destroyed
+            target = target[torch.randperm(target.shape[0], device=device)]
         e = cb.learn(x, target)
         if step > 5:
             errs.append(float(e.abs().mean()))
-    assert errs[-1] < 0.5 * errs[0], f"cerebellar forward model did not learn: {errs[0]:.4f} -> {errs[-1]:.4f}"
+    return sum(errs[-20:]) / 20
+
+
+def test_cerebellum_learns_a_forward_model(device):
+    """Judged against matched controls, not against its own initial error.
+
+    The previous form asserted ``errs[-1] < 0.5 * errs[0]``.  That compared two
+    *single* 16-sample batches, and ``errs[0]`` is itself taken after learning
+    has already begun, so it was a noisy self-comparison against a moving
+    baseline: measured across 8 seeds the ratio ranged 0.27-0.79 and only 4/8
+    passed.  It passed on CUDA and failed on CPU because of which random stream
+    it drew, not because of anything about the model.  The learning is real and
+    large; the statistic was not measuring it.
+
+    Both controls are matched on architecture, step count and data:
+
+    * ``lr = 0`` -- identical network, no weight update;
+    * shuffled targets -- identical updates, input-output pairing destroyed.
+
+    Learned error is 14-24% of either control across seeds, so the 0.5 threshold
+    below carries roughly a two-fold margin rather than sitting on the boundary.
+    """
+    learned = _cerebellar_run(device, seed=0)
+    no_update = _cerebellar_run(device, seed=0, lr=0.0)
+    shuffled = _cerebellar_run(device, seed=0, shuffle=True)
+
+    assert learned < 0.5 * no_update, (
+        f"cerebellar forward model did not beat the no-learning control: "
+        f"{learned:.4f} vs {no_update:.4f}"
+    )
+    assert learned < 0.5 * shuffled, (
+        f"cerebellar error is not specific to the input-output pairing: "
+        f"{learned:.4f} vs shuffled {shuffled:.4f}"
+    )
+
+    cb = Cerebellum(4, 2, n_granule=256, lr=0.05, error_delay=2, device=device)
     x = torch.randn(8, 4, device=device)
     pred = cb.predict(x)
     assert pred.shape == (8, 2) and torch.isfinite(pred).all()

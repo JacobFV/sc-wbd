@@ -1,0 +1,93 @@
+{
+  "generated": "2026-08-06",
+  "prior": {
+    "class": "BrainPrior",
+    "n_parcels": 414
+  },
+  "measurement": "batch=256 per seed, seeds 0-4, CPU; fraction_clamped is over the (B,N) tensor",
+  "what_this_is": "Per-backend record of whether the anatomy prior actually reached each backend. A 0% clamp rate means one of two very different things and this table separates them: timescale_applied=true with 0% means the prior fitted inside the backend's calibrated support; timescale_applied=false means the prior never arrived and the backend's regional values are its defaults.",
+  "backends": {
+    "wilson_cowan": {
+      "corpus_fraction": 0.405,
+      "timescale_applied": true,
+      "timescale_param": "tau_e",
+      "inverse_timescale": false,
+      "support": [
+        0.002,
+        0.05
+      ],
+      "fraction_clamped_seed0": 0.0624,
+      "fraction_clamped_mean5": 0.0629,
+      "spearman_vs_prior_rank": 0.9956,
+      "ei_applied": true
+    },
+    "wong_wang": {
+      "corpus_fraction": 0.324,
+      "timescale_applied": true,
+      "timescale_param": "tau_E",
+      "inverse_timescale": false,
+      "support": [
+        0.05,
+        0.2
+      ],
+      "fraction_clamped_seed0": 0.4816,
+      "fraction_clamped_mean5": 0.4789,
+      "spearman_vs_prior_rank": 0.9684,
+      "ei_applied": true
+    },
+    "stuart_landau": {
+      "corpus_fraction": 0.135,
+      "timescale_applied": false,
+      "timescale_param": null,
+      "fraction_clamped_seed0": 0.0,
+      "fraction_clamped_mean5": 0.0,
+      "reason": "Stuart-Landau exposes no relaxation-time parameter the prior can modulate. 'a' is the Hopf bifurcation parameter and changes sign, so a multiplicative timescale modulation would move parcels across the bifurcation rather than rescale their dynamics; 'f' is an oscillation frequency, not an autocorrelation decay rate. Mapping either would be a different scientific claim, not a unit conversion.",
+      "ei_applied": false,
+      "ei_reason": "Hopf normal form has no separate inhibitory population, so no parameter means 'inhibitory gain'."
+    },
+    "jansen_rit": {
+      "corpus_fraction": 0.081,
+      "timescale_applied": true,
+      "timescale_param": "a",
+      "inverse_timescale": true,
+      "support": [
+        40.0,
+        200.0
+      ],
+      "fraction_clamped_seed0": 0.4152,
+      "fraction_clamped_mean5": 0.4134,
+      "spearman_vs_prior_rank": -0.9834,
+      "ei_applied": false,
+      "ei_reason": "Jansen-Rit has no scalar inhibitory-gain parameter. The candidate is B (inhibitory PSP amplitude, mV), deliberately not mapped: B co-determines the alpha peak with A and the C-ratios, so scaling it alone would confound an E/I change with a spectral one, and the receptor-derived E/I contrast is route-fragile in per-parcel sign."
+    },
+    "linear_gaussian": {
+      "corpus_fraction": 0.054,
+      "timescale_applied": true,
+      "timescale_param": "tau",
+      "inverse_timescale": false,
+      "support": [
+        0.005,
+        0.06
+      ],
+      "fraction_clamped_seed0": 0.1677,
+      "fraction_clamped_mean5": 0.1672,
+      "spearman_vs_prior_rank": 0.9956,
+      "ei_applied": false,
+      "ei_reason": "Linear-Gaussian reference has one population per region and no separate inhibitory state, so no parameter means 'inhibitory gain'."
+    },
+    "kuramoto": {
+      "corpus_fraction": null,
+      "timescale_applied": false,
+      "timescale_param": null,
+      "fraction_clamped_seed0": 0.0,
+      "fraction_clamped_mean5": 0.0,
+      "reason": "Kuramoto is phase-only: it has no amplitude and therefore no relaxation timescale to modulate. Its single time parameter 'f' is an oscillation frequency, not an autocorrelation decay rate.",
+      "ei_applied": false,
+      "ei_reason": "Phase-only model with no separate inhibitory population."
+    }
+  },
+  "corpus_weighted_clamp_fraction": 0.2232,
+  "corpus_fraction_without_timescale_prior": 0.135,
+  "corpus_fraction_without_ei_prior": 0.27,
+  "corpus_mix_source": "reports/training/corpus_composition.md (agent Turing)"
+}
