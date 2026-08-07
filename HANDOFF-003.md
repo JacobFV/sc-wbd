@@ -97,6 +97,36 @@ Data supports 25M easily: 93GB of simulation corpus, and simulation is generable
 The measured side is thinner (109 EEG subjects, 10 concurrent EEG-fMRI), so
 measured-only heads saturate earlier than the simulator-trained trunk.
 
+WHY THIS RATIO IS THE POINT, NOT A SIDE EFFECT
+
+002 spent 1,679,840 params on the posterior against 2,516,530 on the model — 67%
+of the capacity inferring SIX SCALARS (log_G, log_velocity, ei_global,
+ei_gradient, log_sigma, drive) and the remaining third being the brain. That is a
+system identification tool with a small dynamics model bolted on.
+
+At 25M the split becomes ~6.7%, which is what a foundation model with an
+inference head attached should look like. The posterior does not need to grow:
+its target is six numbers and stays six numbers no matter how wide the dynamics
+get. Leave `cfg.posterior` alone unless its summary encoder turns out to be the
+bottleneck — that is a separate config block from `model.encoder_channels`, and
+worth reading together in the first smoke checkpoint rather than assuming 1.7M is
+well spent.
+
+This is the direction the whole project should move. SC-WBD has been built like a
+physiology-and-epistemics effort with a neural network inside it: refusal
+machinery, claim manifests, integrity tiers, six-arm ablation protocols — and a
+2.5M model that trained on one dataset. It is a high-dimensional dynamical
+systems problem. Treat it as a deep learning problem: get the data loaders
+working, make the model big enough to matter, train it on everything, and measure
+what it can predict. The rigor infrastructure already exists and is good; it does
+not need more attention, and it is not the deliverable.
+
+One asymmetry worth carrying: the posterior is the ONLY component of 002 with any
+evidence behind its current size, because it is the only major component that
+actually trained. family_local's 1.8M is an untested guess. Everything about
+capacity in this document is therefore a starting point to measure from, not a
+result to defend.
+
 === THE ONE GUARD THAT MATTERS ===
 
 tests/foundation/test_card_patterns_reach_the_model.py
