@@ -179,7 +179,27 @@ def build(out_dir: Path) -> int:
     if pdf.exists():
         (out_dir / "paper").mkdir(parents=True, exist_ok=True)
         shutil.copy2(pdf, out_dir / "paper" / "sc-wbd.pdf")
-        print(f"  paper: {pdf.stat().st_size // 1024} KB")
+        # This step COPIES; it does not compile.  The old message read
+        # "paper: 269 KB", which is a report about a copy phrased like a report
+        # about a build -- and a day of edits to body.tex went out unpublished
+        # behind it, because the number never changed and nothing said why.
+        srcs = list((REPO / "paper").glob("*.tex")) + [REPO / "paper" / "references.bib"]
+        newest = max((s.stat().st_mtime for s in srcs if s.exists()), default=0.0)
+        stale = newest > pdf.stat().st_mtime
+        kb = pdf.stat().st_size // 1024
+        if stale:
+            import datetime as _dt
+
+            def _t(ts: float) -> str:
+                return _dt.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
+
+            print(
+                f"  WARNING: paper PDF is STALE — copied {kb} KB built {_t(pdf.stat().st_mtime)}, "
+                f"but a source changed at {_t(newest)}. This step copies, it does not "
+                f"compile. Run `make paper` or the site ships the previous text."
+            )
+        else:
+            print(f"  paper: copied {kb} KB (PDF is newer than every .tex source)")
     else:
         print(f"  WARNING: {pdf} missing — run `make paper` first; "
               f"the download link on the landing page will 404")

@@ -2206,6 +2206,38 @@ is incomplete at the time of writing and any number would be an interim read.
 What is reportable, and is the point of this subsection, is a class of defect
 that only a \emph{second} artifact can expose.
 
+\paragraph{What the artifact actually is, and how we found out.}
+The run trained on \emph{simulated} trajectories alone. Its configuration
+renamed all six curriculum stages; six gates inside the trainer select
+behaviour by matching the \emph{previous} run's stage names, and five of the six
+therefore returned the wrong answer---no gradient was ever taken on measured
+recordings, the per-stage gradient allowlist fell back to a wildcard,
+boundary randomisation and haemodynamic state were disabled in the rollout, and
+no individualiser was constructed, so the stage named for individualisation ran
+ordinary simulator training. The sixth gate, the only reason the run trained at
+all, is correct by accident: it is the single gate written as an inequality, and
+an unrecognised name happens to satisfy it. Nothing raised an error, the
+objective decreased throughout, and every monitored quantity stayed nominal for
+nine hours. We therefore describe the checkpoint as a
+\textbf{simulation-trained model over a measured anatomical prior, evaluated on
+recordings it never saw}---a transfer result rather than a held-out one.
+
+The mechanism generalises past this codebase. Each gate is a lookup keyed on a
+name, with a default that grants rather than refuses:
+\texttt{PERMISSIONS.get(name, ("*",))} and \texttt{name in (\ldots)} are
+\emph{unfalsifiable by construction}, in that no name exists which they reject.
+An unwired stage and a fully-permitted stage produce identical readings.
+
+Two features of the episode bear on how such defects are found at all. First, it
+surfaced while reading a code path \emph{adjacent} to the one under
+investigation---a branch in the evaluation code that had never executed---rather
+than from any monitor. Second, and more uncomfortably, a complete and tested
+remedy already existed in the repository, written eleven hours before the run
+began, together with six failing tests naming the defect precisely; the patch
+was never applied and the failures were never read. A red test that nobody reads
+is worse than no test, because it converts \emph{``there is no check for this''},
+which prompts action, into \emph{``the suite is somewhat red''}, which does not.
+
 \paragraph{Six defects, one geometry.}
 Seven distinct faults stood between a configured run and its first prediction.
 Six of them shared a single shape: \textbf{a code path declared for two model
