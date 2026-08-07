@@ -47,13 +47,14 @@ REPO_URL = os.environ.get("SITE_REPO_URL", "").rstrip("/")
 # broken player.  See reports/site.md.
 MEDIA_URL = os.environ.get("SITE_MEDIA_URL", "").rstrip("/")
 
-# Only what is actually in the bucket. `scwbd-variance-channel.mp4` was listed
-# here and never uploaded -- the r2.dev URL returns 401 for it while the overview
-# returns 200 -- so listing it produced a broken player rather than a missing
-# one. Re-render it (`make video`), upload (`make video-upload`), then add it
-# back; do not add it back first.
+# Both are in the bucket and serve 200 at their exact rendered byte lengths
+# (2,723,304 and 2,890,798). `scwbd-variance-channel.mp4` was missing for a while
+# because it had been rendered in a worktree -- scwbd-wt/tufte/video/out -- and
+# `make video-upload` ran from the main checkout, where video/out did not exist.
+# The renders now live here too.
 VIDEOS = [
     ("scwbd-overview.mp4", "What SC-WBD is", "22 seconds"),
+    ("scwbd-variance-channel.mp4", "Isolating the variance channel", "26 seconds"),
 ]
 
 
