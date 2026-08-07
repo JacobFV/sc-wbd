@@ -61,6 +61,7 @@ classes.
 - [The `-rf` capture bug — fifth instance](#the--rf-capture-bug-fifth-instance) — selecting a report class that excludes the report
 - [The empty-permission class — 88.7% of a model that could not train](#the-empty-permission-class-887-of-a-model-that-could-not-train) — a glob that matches nothing is a legal permission set
 - [`--out` moves the checkpoints and not the record](#--out-moves-the-checkpoints-and-not-the-record) — an isolation flag that isolates some of the outputs
+- [The design-rationale class — a test that asserts *why*, not *what*](#the-design-rationale-class-a-test-that-asserts-why-not-what) — when a correct test becomes the last defender of a rejected decision
 
 ### The single most transferable sentence in this file
 
@@ -2971,3 +2972,71 @@ regenerate and not for the one that is the historical record.
 The lesson generalises past this flag. Every scratch run in this session wrote
 into `reports/`, and the only reason it is a footnote rather than a data-loss
 incident is that the repository tracks those files.
+
+---
+
+## The design-rationale class — a test that asserts *why*, not *what*
+
+Closing O-5b broke four tests. One was a real defect the change exposed; three
+were assertions of the design the change deliberately replaced. Separating those
+two piles is the whole job, and the piles look identical from the failure output.
+
+### The real one
+
+`test_predict_binds_theta_for_a_family_checkpoint` failed loading the published
+checkpoint into `LoadedModel.from_checkpoint` — the **serving path**, what
+someone who downloads the weights runs. It built the model at today's layout and
+then loaded `strict=False`, so without the fix the failure mode is not an
+exception but *a partially-restored model that predicts*. That test earned its
+keep.
+
+### The three that encoded the rationale
+
+The sharpest is this, which had been passing since it was written:
+
+```python
+def test_only_cortical_families_declare_a_dipole(layout):
+    for f in layout:
+        assert ("dipole" in f.layout) == f.name.startswith("cortex_")
+```
+
+It is a correct, well-named test of a true property. **The property it asserts
+is the defect.** A component declared per-family lives in the `private` block,
+and `SCWBD.build_layout` forbids an observation head from addressing that — so
+this test was pinning in place the exact arrangement that made
+`EEGHead.source_moment()` return `None` for the whole of run 2.
+
+Nothing about it looks wrong. It does not overreach, it is not vacuous, it has a
+clear name and a real invariant. It simply encodes *the reason the code was
+arranged that way*, and when the reason was re-examined the test became a guard
+against the fix.
+
+Similarly, `assert narrow == 2` carried the comment *"the interface view is
+expected to be narrow; that is why heads must not use it"* — the number was
+evidence for a design argument, and O-5b changed the number (to 5) without
+touching the argument (5 against 18 is still narrow).
+
+### What distinguishes them
+
+> A test asserting **what the system does** survives a deliberate change by
+> failing usefully — it tells you the change reached production. A test
+> asserting **why the system is arranged as it is** fails identically and means
+> the opposite: that the rationale has been revisited, and the test is now the
+> last thing defending a decision nobody is defending any more.
+
+Both print red. The only way to sort them is to read what the assertion is
+*for*, which is why the docstring is load-bearing and why "make it pass" is the
+wrong first move in either case.
+
+### The handling
+
+The inverted test is **stronger** than the one it replaces, not weaker. The old
+one checked where a component was declared. The new one checks that every family
+declares it *and* that subcortical `normal` stays `NaN` — because the argument
+that a zero moment is legitimate depends entirely on there being no orientation
+to have. The physical claim did not disappear; it moved to the field that
+actually carries it.
+
+That is the test to apply when a design-rationale guard fails: **what was it
+really protecting, and where does that claim live now?** If the answer is
+"nowhere", the change is not ready.
