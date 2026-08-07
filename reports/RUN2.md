@@ -184,6 +184,33 @@ A "survived" verdict here means focal input propagates pose-dependently. It
 does not mean it propagates *correctly*, and no held-out TEP exists to check
 that against.
 
+### The secondary test: orientation carries the contrast
+
+Permuting cortical normals across parcels destroys the `E·n̂` projection while
+keeping field magnitude and parcel identity intact. K=200, seed 20260806,
+one-sided, α=0.05 — all fixed in advance.
+
+```
+CRR real       1.4097
+null mean      0.7647
+null std       0.1868
+null max       1.3627      <- the real value exceeds EVERY permutation
+percentile     100.0
+p one-sided    0.00498
+
+orientation_carries_the_contrast = True
+```
+
+**The real contrast beats all 200 permutations.** Orientation is what carries
+the pose difference — not field magnitude, not parcel identity.
+
+This is 🧭 Gauss's η result confirmed operationally on a different quantity by
+a test written before any checkpoint existed, and ⚡ Faraday pre-committed to
+reporting the opposite outcome just as prominently. It also raises the stakes
+on the remaining half of O-5: the model's *state* still cannot carry that
+orientation to an observation, so this is the forward model's structure paying
+off, not the model's.
+
 **The guard held before the result did.** Pointed at a stale 454-region
 checkpoint the harness returned `status: checkpoint_unreadable` with an empty
 `crr` and fabricated nothing — despite `torch.load` "succeeding" with size

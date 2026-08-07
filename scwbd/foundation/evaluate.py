@@ -86,6 +86,7 @@ def _bind_mechanistic(model, theta) -> None:
     bind(theta, anat)
 
 
+@torch.no_grad()
 def _scwbd_scores(
     trainer,
     loader,
