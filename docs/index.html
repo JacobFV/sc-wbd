@@ -50,6 +50,11 @@
 <p class="brainmark-cap">414 parcels in <code>fsLR_32k</code> surface RAS, coloured by
 the 9-family partition &mdash; the model's actual state space. Drag to orbit.</p>
 
+<figure class="videofig">
+  <video controls preload="metadata" playsinline src="https://pub-045364f0fab44827afa95b1e44b6e18d.r2.dev/scwbd-overview.mp4"></video>
+  <figcaption><strong>What SC-WBD is</strong> &middot; 22 seconds</figcaption>
+</figure>
+
 <p class="lede">SC-WBD models a single brain as a 414-parcel dynamical system and
 learns it from whatever was measured. EEG constrains the fast electrical state
 through a lead field built on that subject's head geometry; fMRI constrains a
@@ -100,7 +105,33 @@ it observes and nothing else.</p>
   <div><span class="n fail">0</span><span class="l">validated claims about brains<br>all five claim gates <span class="chip unknown">could_not_run</span></span></div>
 </div>
 
-<h2>What exists today</h2>
+<h2>What you can do with it</h2>
+
+<p>Every row is a command or an API call in this repository, not a roadmap
+entry.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Task</th><th>How</th></tr></thead>
+<tbody>
+<tr><td>Roll a brain state forward and read EEG, activity and their predictive variances</td>
+    <td><code>LoadedModel.from_checkpoint(...).predict(ctx, n_steps=8)</code> &mdash;
+    see <code>scripts/demo_predict.py</code>, which runs on measured eegmmidb</td></tr>
+<tr><td>Put a subject's fMRI into the model's 414-parcel space, with per-run coverage</td>
+    <td><code>scwbd.sources.parcellate_bold.parcellate_run(bold, t1w)</code></td></tr>
+<tr><td>Build a lead field on a subject's own head geometry</td>
+    <td><code>scwbd.observe.leadfield.build_lead_field(...)</code>, validated against BEM surfaces</td></tr>
+<tr><td>Compare TMS or tFUS targets under an E-field model</td>
+    <td><code>scwbd.intervene</code> &mdash; Faraday E-field, coil pose response, dose/effect separation</td></tr>
+<tr><td>Ask what a design can identify before running it</td>
+    <td><code>scwbd.infer.identifiability</code> &mdash; profile information per parameter, per modality</td></tr>
+<tr><td>Check that a claim is supported by what actually trained</td>
+    <td>the compiler refuses malformed claims; <code>make test</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>What is in the box</h2>
 
 <p>Stated at the granularity someone could check. Every row below is a thing you
 could run.</p>
@@ -310,26 +341,6 @@ rendered as a plain path rather than a dead hyperlink.</p>
 <p>Set <code>SITE_REPO_URL</code> in <code>site/build.py</code> (or export it
 before <code>make site</code>) once the public repository exists, and the
 provenance chips throughout the engineering essays become links.</p>
-</div>
-
-<h2>Video</h2>
-
-<p>Two short pieces, rendered from code so that every figure in them comes from
-the same source as the figures on this site.<span class="note"><input type="checkbox" id="index-n10" class="note-toggle"><label for="index-n10" class="note-ref">10</label><span class="note-body"><span class="note-n">10</span>Built with
-<a href="https://www.remotion.dev/">Remotion</a> under <code>video/</code>,
-rendered locally with <code>make video</code>, and uploaded to object storage
-with <code>make video-upload</code>. Media is never committed to the repository —
-the compositions are the source, and the MP4s are build products.</span></span></p>
-
-<div class="videos">
-<figure>
-  <video controls preload="metadata" playsinline src="https://pub-045364f0fab44827afa95b1e44b6e18d.r2.dev/scwbd-overview.mp4"></video>
-  <figcaption><strong>What SC-WBD is</strong> · 22 seconds</figcaption>
-</figure>
-<figure>
-  <video controls preload="metadata" playsinline src="https://pub-045364f0fab44827afa95b1e44b6e18d.r2.dev/scwbd-variance-channel.mp4"></video>
-  <figcaption><strong>Isolating the variance channel</strong> · 26 seconds</figcaption>
-</figure>
 </div>
 
 </div>

@@ -664,3 +664,19 @@ figcaption {
   margin: 0 0 1.6rem;
 }
 @media (prefers-reduced-motion: reduce) { .brainmark { cursor: grab; } }
+
+/* A single embedded player, placed by the article that discusses it. */
+.videofig { margin: 1.6rem 0 2rem; }
+.videofig video {
+  width: 100%;
+  max-width: var(--measure);
+  display: block;
+  border-radius: 3px;
+  background: #000;
+}
+.videofig figcaption {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  margin-top: 0.5rem;
+}

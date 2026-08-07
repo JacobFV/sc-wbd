@@ -58,37 +58,36 @@ VIDEOS = [
 ]
 
 
-def video_section() -> str:
-    """Embed the rendered videos, or say plainly why they are not embedded."""
+def video_embed(name: str) -> str:
+    """One player, placed by the page that discusses it.
+
+    Was `video_section()`: every video, all on the landing page, in a "Video"
+    heading. A film about the variance channel belongs in the variance-channel
+    article, next to the argument it illustrates -- not in a gallery on the front
+    page, where it is a list of assets rather than an explanation of anything.
+
+    Pages ask for one by `{{video:scwbd-overview}}`.
+    """
+    entry = next((v for v in VIDEOS if v[0].startswith(name)), None)
+    if entry is None:
+        return ""
+    filename, title, length = entry
     if not MEDIA_URL:
         return (
             '<div class="todo">\n'
-            '<span class="todo-label">Jacob — video hosting</span>\n'
-            "<p><strong>The video is in R2 but no media URL was passed to this "
-            "build, so there is nothing to embed here.</strong> "
-            "Making a bucket world-readable is a hosting posture decision, so it "
-            "was left to a human rather than taken on your account.</p>\n"
-            "<p>To publish them:</p>\n"
-            "<p><code>npx wrangler r2 bucket dev-url enable scwbd-media</code><br>"
-            "then rebuild with <code>SITE_MEDIA_URL=&lt;the r2.dev URL&gt; make site</code> "
-            "and this block is replaced by the players.</p>\n"
-            "<p>Alternatively attach a custom domain to the bucket, which is the "
-            "better option for anything long-lived — <code>r2.dev</code> URLs are "
-            "rate-limited and not intended for production traffic.</p>\n"
+            '<span class="todo-label">video hosting</span>\n'
+            f"<p>{html.escape(title)} is rendered and in R2, but this build got no "
+            "<code>SITE_MEDIA_URL</code>, so there is nothing to embed. Rebuild with "
+            "<code>make site</code>, which now exports it.</p>\n"
             "</div>"
         )
-
-    parts = ['<div class="videos">']
-    for filename, title, length in VIDEOS:
-        parts.append(
-            f'<figure>\n'
-            f'  <video controls preload="metadata" playsinline '
-            f'src="{MEDIA_URL}/{filename}"></video>\n'
-            f"  <figcaption><strong>{html.escape(title)}</strong> · {length}</figcaption>\n"
-            f"</figure>"
-        )
-    parts.append("</div>")
-    return "\n".join(parts)
+    return (
+        '<figure class="videofig">\n'
+        f'  <video controls preload="metadata" playsinline '
+        f'src="{MEDIA_URL}/{filename}"></video>\n'
+        f"  <figcaption><strong>{html.escape(title)}</strong> &middot; {length}</figcaption>\n"
+        "</figure>"
+    )
 
 
 def parse_front_matter(text: str) -> tuple[dict[str, str], str]:
@@ -234,11 +233,19 @@ def build(out_dir: Path) -> int:
             "{{nav}}": nav_html(meta.get("nav", ""), depth),
             "{{root}}": up,
             "{{body}}": body,
-            "{{video_section}}": video_section(),
+            
             "{{bodyclass}}": meta.get("bodyclass", ""),
         }
         for k, v in replacements.items():
             html_out = html_out.replace(k, v)
+
+        # {{video:<name>}} -- resolved after the table so a page can place a
+        # player exactly where its argument needs one.
+        html_out = re.sub(
+            r"\{\{video:([a-z0-9-]+)\}\}",
+            lambda m: video_embed(m.group(1)),
+            html_out,
+        )
 
         # An unresolved placeholder is a build error, not a cosmetic issue.
         leftover = re.findall(r"\{\{(\w+)\}\}", html_out)
