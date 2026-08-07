@@ -821,7 +821,7 @@ def evaluate_model(
     t = Timer()
     trainer.build_data()
     rep: dict[str, Any] = {
-        "model_id": _designation(cfg),
+        "model_id": _designation(trainer.cfg),
         "git_sha": git_sha(),
         "evaluated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "config": trainer.cfg.as_dict(),
