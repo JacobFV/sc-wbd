@@ -128,11 +128,22 @@ f. Publish. The card must state which sources actually contributed gradient,
 
 Measured post-merge on an idle machine: 38 failures in 10 files, 1238 s.
 
-  evaluation_audit                       33  across 9 files. 6 of 9 exercise a
-                                             smoke path (max_batches=6); 3 are an
-                                             anatomy mismatch, a 454-region
-                                             checkpoint loaded into a 414-region
-                                             model.
+  evaluation_audit                       32  across 9 files. 6 of 9 exercise a
+                                             smoke path (max_batches=6). The rest
+                                             are real audit findings now that the
+                                             fixture can build a model at all:
+                                             torch.compile's `_orig_mod.` prefix
+                                             is not reconciled at load time (38 of
+                                             94 tensors left at random init);
+                                             _scwbd_scores marginalises over the
+                                             posterior while baselines are scored
+                                             plug-in; load_checkpoint does not
+                                             restore the posterior.
+                                             NOTE: tests/evaluation_audit/
+                                             conftest.py hard-codes an absolute
+                                             path into scwbd-wt/turing. Removing
+                                             the worktrees changes what this suite
+                                             tests.
   foundation/test_family_state.py         5  R12 is implemented twice, in
                                              unrelated exception hierarchies
                                              (R12Violation, an OverclaimError, vs
