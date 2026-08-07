@@ -481,6 +481,19 @@ that a shared unified pool makes throughput a property of the whole machine
 rather than of one job, and that this run has no isolation from anything else on
 it.
 
+**A second instance of the same carelessness, an hour later.** A full-suite run
+was launched in the background; its output file read empty, so it was assumed
+dead and a second full-suite run was launched. Both were alive, each at ~500%
+CPU, for several minutes — against a live training job whose throughput this
+same section already records as sensitive to exactly that.
+
+The tell was available and not looked at: an empty output file means *nothing
+has been written*, which is what a running process and a dead one both look
+like. That is the silent-instrument shape again — an empty read is not evidence
+of absence — arriving for the third time today and, this time, costing the
+thing the whole session exists to protect. `pgrep`, not the output file, is what
+answers "is it still running".
+
 The general point survives intact and is the one worth keeping: "read-only
 analysis" is not the same as "free", and the cost was invisible until someone
 compared `wall_s` across stages. The trade was still right — a publish path that
