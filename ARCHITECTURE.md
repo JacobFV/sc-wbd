@@ -469,7 +469,52 @@ Two things it is **not** yet, stated so the entry is not read as finished:
   placeholder: today the one-off is visible as a refusal instead of hidden as a
   hand-written map.
 
-### O-3. One region identity; everything else is a typed annotation
+### O-3. One region identity; everything else is a typed annotation — *audited*
+
+**Measured 2026-08-06.** There are **two** `RegionFamily` classes and **two**
+`FamilyPartition` classes in the package, plus `schema.Region`. The two
+`RegionFamily`s share exactly **one field name** — `division` — out of 17 and 9:
+
+| | fields | what it carries |
+|---|---:|---|
+| `anatomy.RegionFamily` | 17 | the **epistemic** half: `evidence_tier`, `training_status`, `membership_licence`, `membership_source`, `provenance`, `separating_evidence`, `receptor_profile`, `cytoarchitecture`, `laminar_differentiation`, `intrinsic_timescale_s`, `ei_prior` |
+| `foundation.RegionFamily` | 9 | the **computational** half: `backend`, `backend_components`, `ports`, `layout`, `discriminator`, `rationale` |
+
+They are **not duplicates**. They are two halves of one concept that were
+allowed to grow apart, and the giveaway is that they name the shared parts
+differently:
+
+| the same thing | anatomy calls it | foundation calls it |
+|---|---|---|
+| the family's identity | `family_id` | `name` |
+| its member regions | `parcels` | `regions` |
+
+So there is **no shared identity field at all**. Nothing in the type system
+relates a family to itself across the two modules; the only bridge is a private
+`_from_anatomy_partition`, one-way and unchecked. That is the mechanism behind
+the bug this register records three times in one day — a `FamilyPartition` read
+as per-parcel labels — and it is not a coding slip. Two structures with no
+common key will be joined by hand, and a hand-written join is wrong eventually.
+
+`schema.Region` is a third vocabulary again (`id`, `label`, `system`, `parent`,
+`ports`, `state`, `resolution`, `authority`, `atlas_refs`), overlapping neither.
+
+**What the measurement changes about the proposal.** The instinct is to merge
+the two classes. That is wrong: the split between *what we know about a family*
+and *what the model does with it* is real and worth keeping — the epistemic half
+must be citable and licence-bearing, the computational half must be a module.
+What is missing is not unification but a **shared identity**:
+
+- one `RegionId`/`FamilyId` type, produced in one place, that both sides carry;
+- membership expressed once, not as `parcels` here and `regions` there;
+- everything else — receptor profile, timescale, backend assignment — an
+  `Annotation` keyed by that id, carrying its own provenance, licence, coverage
+  and admissibility, exactly as proposed below.
+
+Then the two structures become two *annotation sets over one identity* rather
+than two objects that happen to describe the same thing, and the private
+one-way converter becomes unnecessary rather than merely better tested.
+
 
 `RegionFamily` carries 17 fields across four concerns that have leaked into
 each other, and `schema.Region` is a second region vocabulary with no enforced
