@@ -855,6 +855,24 @@ pairs had already failed loudly. A defect register populated by incidents will
 always underestimate a defect of this shape, because the members that have not
 yet collided are invisible to it.
 
+**Fourth collision, 2026-08-07**, exactly as predicted above. Assembling
+whole-brain haemodynamic state meant reading each layout family's identity;
+`getattr(fam, "family_id", fam)` — the *anatomy* vocabulary's field — fell
+through to the object itself on the *layout* vocabulary, which spells it `name`.
+The `KeyError` then interpolated an entire `RegionFamily`, receptor panel and
+provenance included, into its own message. Loud, and spending all of its
+loudness on the wrong thing.
+
+**Partially enforced pending the rewrite.**
+`tests/foundation/test_one_region_ontology.py` asserts what is checkable without
+unifying the types: the two partitions must name the same families, agree on
+membership region-by-region, and each be total and disjoint over `0..413`. They
+do — 9 families, identical membership, 414 parcels each — and until O-3 lands
+there is no mechanism by which they must, so that agreement is a coincidence
+maintained by hand. The file also carries an expiry condition: when both
+vocabularies grow a common identity field, O-7 is closed and the test should be
+replaced rather than relaxed.
+
 ### What this is not
 
 **It is a rewrite of the state and its ontology, and it should be.** This is
