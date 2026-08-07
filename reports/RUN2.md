@@ -397,6 +397,49 @@ What remains untested before the real run is the evaluation itself — it needs
 the GPU the trainer is using, takes about an hour, and last ran end to end six
 commits ago.
 
+### What this evaluation can and cannot settle — fixed before the numbers
+
+`reports/ablations/PREREG_A1_run2.md` pre-registers ablation **A1**, and A1 has
+**six arms**:
+
+| arm | role | exists? |
+|---|---|---|
+| `structured_state` | candidate | **yes — this is 002** |
+| `pooled_vector_per_region@param_matched` | capacity control | no |
+| `pooled_vector_per_region@state_matched` | capacity control | no |
+| `scalar_per_region` | floor | no |
+| `theta_conditioned_pooled` | conditioning control | no |
+| `permuted_family_state` | attribution control | no |
+
+Run 2 trains **one** of them. The other five are separate training runs that
+have not been done.
+
+So `make evaluate-002` does not, and cannot, answer A1. What it produces is 002
+against generic forecasting baselines — persistence, `ar16`, `var4`,
+`population_gaussian`, `subject_specific_ar`, `dense_neural` — which is a
+different and much weaker question. Beating persistence would not show that
+heterogeneous regional state helps; losing to it would not show that it does
+not. Neither outcome attributes anything to the structure, because nothing in
+that comparison holds the structure fixed while varying it.
+
+This is stated here, ahead of the result, because it is the exact place a report
+drifts. The tempting sentence after a good number is *"the structured-state
+model beats every baseline"*, and the tempting sentence after a bad one is
+*"heterogeneous state did not help"*. **Both are unavailable from this run**, in
+the same way and for the same reason.
+
+What run 2 *does* settle, and run 1 could not:
+
+- the candidate arm **exists and trains** — run 1's artifact was structurally
+  the control of its own ablation, which is why its result was uninterpretable
+  as a test of anything;
+- the pipeline that would run A1 has a real treatment arm to put in it;
+- the defect classes in §1 and §4, which only a second artifact can expose.
+
+The pre-registration remains unconsumed. It is not weakened by being unused —
+filing it before the arms existed is what stops the endpoint being chosen after
+the fact, and A1 stays available for whichever run trains the controls.
+
 ### Final numbers
 
 **PENDING**, against the pre-registration in

@@ -904,11 +904,18 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
             "model losing to persistence is not what the control arm was predicted "
             "to do either."
             if not is_treatment
-            else "**1. It is the treatment arm.** Regional state is family-indexed "
-            "and heterogeneous, so unlike run 1 this result *is* a test of the "
-            "thesis and is reported as one. Whatever the numbers above say, they "
-            "say it about the architecture the thesis argues for -- which is the "
-            "whole reason the second artifact was built."
+            else "**1. It is the treatment arm, and that is still not the "
+            "ablation.** Regional state here is family-indexed and heterogeneous, "
+            "so unlike run 1 these numbers describe the architecture the thesis "
+            "argues for rather than its control. But the thesis claim is "
+            "*comparative* -- structured regional state against pooled state at "
+            "matched capacity -- and the pre-registered ablation needs five "
+            "further arms that do not exist: two capacity-matched pooled "
+            "controls, a scalar floor, a theta-conditioned control, and a "
+            "permuted-family attribution control. Against generic forecasting "
+            "baselines this artifact can lose or win without either outcome "
+            "attributing anything to the structure. Read it as the candidate arm "
+            "measured, not as the hypothesis tested."
         ),
         "",
         "**2. The whole loss is in the variance channel.** On the conditional "
