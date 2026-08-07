@@ -28,7 +28,8 @@ cataloguing.
 | regional state | scalar per parcel, uniform width — no families, so no padding | per-family heterogeneous, **padded** to `D = 59`, 47.34% pad |
 | predictive variance | one constant per channel | state-dependent, closed-form init |
 | posterior | unnormalised conditioning, 8-dim over a point mass | LayerNorm'd, 6-dim, bounded translation |
-| corpus | 454-region synthetic | 43 GB on real anatomy, 5 backends, 147 shards |
+| corpus | 454-region synthetic | 43 GB **simulated** on real anatomy, 5 backends, 147 shards |
+| measured data in training | none | **none** — see §2b; the real-EEG loader is built and never contributes a gradient |
 | designation guard | none | R12 |
 
 > **Correction, 2026-08-06.** That row previously read *"scalar, dense, 52.26%
@@ -202,6 +203,98 @@ rather than here.
 
 Recorded now because the *first* reading — no collapse — does not depend on the
 caveat at all. Degenerate spread would have shown up under any input whatsoever.
+
+---
+
+## 2b. The stage names do not match the trainer, and three mechanisms are silently inert
+
+**Found at `global_step` 6166, while the run was still going.** This is the
+largest finding of run 2 and it changes what the artifact is.
+
+Run 2's config renamed every training stage. Three separate mechanisms in
+`train.py` are keyed to the **run-1** names, and none of them was updated:
+
+```
+run-2 stage names : T1_measured_founding, T2_boundary_calibration,
+                    T3_population_prior, T4_simulator_extension,
+                    T5_distillation, T1_individualisation
+STAGE_PERMISSIONS : I_regional, II_interface, III_sliced, IV_assembly, V_individual
+
+stages with a permission entry     : NONE  -> all fall back to ("*",)
+stages that compute a REAL-data loss: NONE
+stages that build an individualizer : NONE
+```
+
+The three consequences, in order of how much they matter:
+
+**1. Run 2 has never trained on measured data.** `real_losses` is called only
+for `stage.name in ("III_sliced", "IV_assembly", "V_individual")`. No run-2
+stage is in that tuple, so the real-EEG loader is built, the split is
+fingerprinted, and the gradient is never taken. The log confirms it directly and
+has for nine hours: the only NLL field emitted at any step of any stage is
+`sim_forecast_nll`. There is no real-data term anywhere in the run.
+
+So the stage named **`T1_measured_founding` is not founded on measurements.**
+002 is trained **entirely on simulated trajectories** — over a real anatomical
+prior, which is a different claim and a much weaker one.
+
+**2. The stage permission system is inert.** `STAGE_PERMISSIONS.get(stage.name,
+("*",))` returns the wildcard for every run-2 stage, so each stage trains with
+*full* gradient permission. The per-stage restrictions — the mechanism that
+exists to stop a later stage quietly training parameters an earlier one owns —
+never applied. The `("*",)` default is what makes this silent: an unknown stage
+name reads as "unrestricted" rather than as "unknown".
+
+**3. There is no individualizer.** `T1_individualisation` runs 900 steps of
+ordinary simulator training under a name that says otherwise. The final
+checkpoint will carry `individualizer: None`, and the evaluation will honestly
+report `individualization: {applied: false}` — which is the one place the defect
+surfaces on its own, and only as a quiet field in a JSON file.
+
+### Why nothing caught it
+
+Nothing crashed. Loss fell. `npe_rejected` stayed at 0. Every dashboard this run
+has was green for nine hours, because **all three mechanisms fail toward
+"permissive" rather than toward "error"**: an unmatched name means no real loss,
+no restriction, and no individualizer — never an exception.
+
+This is the project's own catalogued failure mode arriving at full scale. From
+`reports/decorative_guards.md` on the arm-asymmetry class: *"These do not produce
+a wrong number. They produce a right-looking number from a model that quietly
+lost the mechanism the experiment exists to test."*
+
+> A dictionary lookup keyed on a name, with a permissive default, is a
+> configuration system that cannot report a typo. `STAGE_PERMISSIONS.get(name,
+> ("*",))` and `name in (...)` are both **unfalsifiable by construction** — there
+> is no stage name they reject.
+
+### What is being done about it, and what is not
+
+The run was **not** killed. It had roughly an hour left when this was found, and
+the reasoning is the same one recorded in §2 about untestable fixes: a change to
+the stage gates cannot be validated except by a full run, and discarding a
+nearly-complete artifact for an unvalidated fix risks spending another nine
+hours to arrive somewhere equally unknown. `train.py` was also left untouched
+while the process was live, because a crash-and-resume would then continue under
+different rules than it started with — one run, two regimes, and no way to say
+which weights came from which.
+
+What 002 therefore is, stated plainly and carried into the model card:
+
+> **A simulation-trained model over a real anatomical prior, evaluated on real
+> EEG it never saw during training.** Its holdout numbers are a
+> *simulation-to-measurement transfer* result, not a held-out-performance result.
+
+That is a legitimate and interesting thing to measure. It is not the thing the
+stage names claim, and it is not what "43 GB corpus" suggests to a reader.
+
+**The fix, for run 3 — and it should not be a longer tuple.** Adding the run-2
+names to both collections would work and would leave the same trap for run 4.
+The mechanisms should key on a stage *property* the config declares —
+`stage.uses_real_data`, `stage.trainable`, `stage.individualises` — so a stage
+that fails to declare one is a **refusal at config load**, not a silent
+wildcard. Every one of the three defects above is the same defect: behaviour
+attached to a string literal that nothing checks against the config.
 
 ---
 
