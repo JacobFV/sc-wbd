@@ -1483,9 +1483,36 @@ Add it to the list of things run 3 can measure and run 2 cannot.
 
 ### Run 3, concretely
 
-The gate defect (§2b) has to be fixed before any further arm is trained, because
-an arm trained through the same gates measures the same wrong thing. The
-sequence, in order, with both prerequisites already verified:
+**Step 0, added 2026-08-07 and larger than everything below it: the source cards
+must name the modules the model actually has.** §4 records the measurement —
+88.7% of run 2's parameters were reachable by no card, because the regional
+modules were renamed `local` → `family_local` (and `residual`, `readout`
+likewise) and the cards still granted the old names. Fixing the curriculum gates
+without fixing this would produce a run that admits the right sources and still
+cannot train the model they are meant to train.
+
+Done, and guarded:
+
+```
+configs/{curriculum/,}source_cards/*.yaml
+    grant BOTH namings -- both arms are live and name these modules differently
+    grant observation.*  -- 2,073 scalars on the forward path, unreachable in run 2
+    do NOT grant behaviour.* -- no boundary_output source exists; unreachable is honest
+
+tests/foundation/test_card_patterns_reach_the_model.py
+    forward guard : no module unreachable by every enabled card
+    mirror guard  : no grant pattern that names nothing in ANY architecture
+    frozen record : run 2's defect pinned against run-2 patterns, not live cards
+```
+
+The mirror guard is the one that matters going forward. It is the check that
+would have caught the rename on the day it happened, and it is mutation-tested:
+a typo'd pattern fails naming the offending card and glob.
+
+The gate defect (§2b) also has to be fixed before any further arm is trained,
+because an arm trained through the same gates measures the same wrong thing. The
+sequence, in order — steps 1–3 verified complete on 2026-08-07, 26 tests passing
+with no XPASS remaining:
 
 ```
 1. git apply configs/run2/patches/0001-run_stage-config-driven-admission.patch
