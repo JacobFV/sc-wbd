@@ -1081,7 +1081,15 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
             if not is_treatment
             else "- A **treatment-arm artifact**: family-indexed heterogeneous "
             "regional state with published weights and a published loss, for "
-            "anyone running the same ablation against their own control."
+            "anyone running the same ablation against their own control"
+            + (
+                " — provided that control is trained the same way. These weights "
+                "saw simulation only (see above), so a control fitted to "
+                "recordings is not a comparison of *state structure*; it is a "
+                "comparison of what each model was shown."
+                if sim_only
+                else "."
+            )
         ),
         "- A **worked example of a variance-channel failure**, with the mean/"
         "variance decomposition available in the repository.",
