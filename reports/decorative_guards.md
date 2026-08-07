@@ -2526,3 +2526,57 @@ The compounding detail worth keeping: the failure was **silent in the direction
 that mattered**. A dead sweep and a sweep that has not yet written its first line
 produce the same empty file, so the next check read "no directories complete
 yet" as patience rather than as death.
+
+## A comment claiming a verification that never ran
+
+`scwbd/curriculum/legacy.py` is one of the better-designed things in this
+repository. Its whole purpose is to avoid a hardcoded copy of the trainer's
+admission gates: it reads them out of `run_stage` with `inspect.getsource`, and
+**refuses** rather than defaulting if they are not there. Its docstring explains
+why, and the reasoning is right:
+
+> A hard-coded copy of the gates would be exactly that: correct on the day it
+> was written and silently stale afterwards.
+
+The stage-admission patch removed those gates by design — behaviour now comes
+from each stage's declared config (RL-14) — and replaced run 1's behaviour with
+`_LEGACY_FLAGS`: a hardcoded copy of the gates. The exact object `legacy.py`
+exists to prevent, introduced by the fix, with the thing it could have been
+checked against deleted in the same change.
+
+That much is a defensible trade. What is not is the comment that shipped on it:
+
+> *"This is a transcription of the six gates in `NAME_GATES`, and
+> `tests/foundation/test_curriculum_admission.py` **checks it against
+> `inspect.getsource`** rather than trusting the transcription."*
+
+**No such check exists.** The only test touching the inventory asserts
+`len(NAME_GATES) == 6` and the presence of one string, and it describes itself,
+accurately, as *"Not a discriminator — it passes pre-patch too."*
+
+So the transcription was never verified against the source, and after the patch
+there is no source left to verify it against. The table is an assertion about a
+deleted code path that nothing in the repository can falsify.
+
+### Why this is its own class
+
+Every other entry here is a **check** that fails to discriminate. This is a
+**claim about a check** — prose asserting that verification happens, in a
+codebase whose readers reasonably treat such prose as load-bearing.
+
+> A comment claiming a verification that does not exist is worse than no
+> comment. Absent documentation prompts someone to look; false documentation
+> stops them.
+
+It is also the cheapest possible defect to introduce and the hardest to notice,
+because nothing executes it. A decorative guard at least runs and returns
+something; a decorative *claim* is inert text that reads as evidence.
+
+**Repair.** The comment is replaced, not annotated — leaving the false sentence
+beside a correction preserves the thing that misleads a skimming reader. And the
+refusal in `legacy.py` now states the cost in full: the gates were removed
+deliberately, the behaviour lives in a table, and nothing can falsify that table.
+Accepted only because run 1 is finished and its configs are frozen.
+
+> A live curriculum must declare its admission. Only a dead one may inherit it
+> from a table.
