@@ -480,7 +480,26 @@ once in run 2. The forecast NLL does not fall monotonically within a stage
 rate to ~1e-09 by the end, so late-stage steps are nearly frozen and the
 step-to-step spread is sampling noise across simulated batches, not drift.
 
-### T4 simulator extension — running
+### T4 simulator extension — complete, 3334 steps
+
+Ran its full 3334 steps and handed over at `global_step` 7801. Throughput held
+at 11–14 trajectory-seconds per second throughout, GPU reservation flat at
+37.42 GB against the 72 GB cap, `npe_rejected` at 0 for the entire stage.
+`npe_seen_max` moved once, 29.19 → 31.62, still three orders of magnitude below
+the 1e4 rejection bound — which has now not fired once in the whole run.
+
+### T5 distillation — skipped
+
+`enabled: False`, 0 steps. No log lines beyond the stage announcement, no
+checkpoint. See the correction above: I had predicted it would write one.
+
+### T1 individualisation — running, and it does not individualise
+
+The final stage, 900 steps. Per §2b it builds no individualizer — the trainer
+gates that on a stage name this run does not use — so it is 900 further steps of
+ordinary simulator training under a name that says otherwise. Recorded here
+rather than only in §2b because this is the section a reader consults for *what
+the stages did*, and the name is the thing that misleads.
 
 Third clean transition of the run. Throughput rose from ~10 to ~14 trajectory-
 seconds per second when the stage changed, which is expected: T4 trains against
