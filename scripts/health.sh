@@ -28,14 +28,34 @@ fail() { echo "UNHEALTHY($1): ${*:2}"; exit "$1"; }
 age=$(( $(date +%s) - $(stat -c %Y "$LOG") ))
 [ "$age" -lt "$STALE_S" ] || fail 1 "log stale: no write for ${age}s (limit ${STALE_S}s)"
 
-# 2. The job.
-procs=$(pgrep -cf 'scwbd\.foundation\.train' || true)
-[ "${procs:-0}" -gt 0 ] || fail 2 "no training process matches scwbd.foundation.train"
+# 2. Did it FINISH?  Checked before liveness, because "no process" is the same
+# observation for a completed run and a dead one -- and the caller's response to
+# those is opposite: one advances the pipeline, the other relaunches training.
+# This check did not exist, and the first thing it would have done on a
+# successful run was tell a 10-minute watchdog to relaunch a finished job on top
+# of its own evaluation.
+TARGET="${TARGET:-8700}"
+last=$(grep -oE 'global_step=[0-9]+' "$LOG" | tail -1 | cut -d= -f2)
+# Count only the real python invocation.  `pgrep -f` matches ANY command line
+# containing the pattern -- including the shell running this very check, because
+# make echoes the recipe and the recipe names the module.  That self-match made
+# a finished run report procs=1 and skip the completion branch below.  Sixth
+# pgrep misfire on this project; match the interpreter, and drop shell wrappers.
+procs=$(pgrep -af 'scwbd\.foundation\.train' 2>/dev/null \
+        | grep -E '(^|/)[0-9]+ .*(python[0-9.]*) ' \
+        | grep -vE 'bash -c|sh -c|make ' | wc -l)
+if [ "${procs:-0}" -eq 0 ] && [ -n "${last:-}" ] && [ "$last" -ge "$TARGET" ]; then
+    echo "COMPLETE global_step=$last (target $TARGET), no process — training is DONE, do not relaunch"
+    exit 0
+fi
+
+# 3. The job is supposed to be running, so absence now means death.
+[ "${procs:-0}" -gt 0 ] || fail 2 "no training process, and global_step=${last:-none} < target $TARGET — this is a death, not a completion"
 
 tb=$(grep -c 'Traceback' "$LOG" || true)
 [ "${tb:-0}" -eq 0 ] || fail 2 "$tb traceback(s) in $LOG"
 
-# 3. Progress.  A step number that does not move is a hang, not a slow step.
+# 4. Progress.  A step number that does not move is a hang, not a slow step.
 last=$(grep -oE 'global_step=[0-9]+' "$LOG" | tail -1 | cut -d= -f2)
 [ -n "${last:-}" ] || fail 1 "no global_step line in $LOG -- wrong log, or the format changed"
 
