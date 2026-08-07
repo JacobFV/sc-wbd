@@ -16,7 +16,19 @@ This document grew while the run did, and the headline is not in §0. It is:
 > off, and no individualizer was ever built. Nothing raised. Loss fell for nine
 > hours. **§2b.**
 
-Three further things a reader should have before the numbers:
+**And it lost, on both columns.** NLL 3.1789 against 2.0454 for the best
+baseline; MSE 36.27 against 4.53. Five baselines beat it on NLL, six on MSE,
+every paired participant-clustered interval excluding zero. Run 1 at least won
+the conditional mean; run 2 wins nothing. §4.
+
+**The published comparison flatters it, and correcting it makes the loss
+larger.** SC-WBD is scored on `target/s`; the baselines on the raw target.
+`NLL_scaled = NLL_raw − log s`, and `mean(log s) = 0.5694` on this fold — about
+17× the spread across the three non-trivial baselines. In their units 002's NLL
+is ≈ 3.75 and the gap ≈ 1.70 nats. No verdict changes; every interval moves
+further from 002. §4.
+
+Four further things a reader should have before the numbers:
 
 - **The fix already existed.** A complete, tested patch for the gate defect was
   written at 07:04 on the day the run started at 18:32, and was never applied.
