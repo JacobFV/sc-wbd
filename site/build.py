@@ -53,7 +53,7 @@ MEDIA_URL = os.environ.get("SITE_MEDIA_URL", "").rstrip("/")
 # `make video-upload` ran from the main checkout, where video/out did not exist.
 # The renders now live here too.
 VIDEOS = [
-    ("scwbd-overview.mp4", "What SC-WBD is", "22 seconds"),
+    ("scwbd-overview.mp4", "What SC-WBD is", "29 seconds"),
     ("scwbd-variance-channel.mp4", "Isolating the variance channel", "26 seconds"),
 ]
 
