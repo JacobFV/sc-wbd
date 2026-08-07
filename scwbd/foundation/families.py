@@ -228,6 +228,67 @@ class RegionFamily:
 # ======================================================================
 # component vocabularies
 # ======================================================================
+#: Whether ``dipole`` is part of the shared interface (O-5b).
+#:
+#: A module-level switch rather than a config field, because it must be settable
+#: from a CHECKPOINT: run 2's weights were trained against the pre-O-5b layout
+#: (D=59) and cannot be loaded into the post-O-5b one (D=62). The published
+#: artifact has to stay evaluable from this tree, so `layout_for_checkpoint()`
+#: reads the layout the checkpoint recorded and restores it.
+#:
+#: Default True: new runs get the dipole. Only a loader reading an old
+#: checkpoint should ever set it False, and it says so when it does.
+SHARED_DIPOLE: bool = True
+
+
+from contextlib import contextmanager as _contextmanager
+
+
+@_contextmanager
+def layout_of_checkpoint(path):
+    """Build models in the state layout a checkpoint was TRAINED in.
+
+    O-5b widened the shared interface from D=59 to D=62. That is exactly the
+    breakage ``ARCHITECTURE.md`` predicted when it deferred the change, and the
+    prediction came true the moment it landed: ``scwbd-002-pilot``'s weights
+    stopped loading, so the published artifact could no longer be evaluated from
+    the tree that describes it.
+
+    The checkpoint carries its own ``state_layout``, so it does not have to be
+    guessed. This reads it and restores the matching interface for the duration
+    of the block:
+
+        with layout_of_checkpoint("checkpoints/scwbd-002-pilot/last.pt"):
+            model = SCWBD(cfg.model, anat)
+            model.load_state_dict(ck["model"])   # strict, and it passes
+
+    Scoped rather than global so a process can hold both eras at once, and
+    silent about nothing: it prints when it selects the legacy layout, because a
+    model quietly built in an old interface is worse than one that fails to load.
+    """
+    import torch
+
+    global SHARED_DIPOLE
+    previous = SHARED_DIPOLE
+    try:
+        rec = torch.load(path, map_location="cpu", weights_only=False).get("state_layout") or {}
+        names = [c.get("name") for c in (rec.get("components") or [])]
+    except Exception:
+        names = []
+    if names and "dipole" not in names:
+        # Pre-O-5b: dipole lived inside `private`, cortex-only.
+        SHARED_DIPOLE = False
+        print(
+            f"[layout] {path} records components {names} (dim {rec.get('dim')}); "
+            "rebuilding the pre-O-5b interface so these weights load",
+            flush=True,
+        )
+    try:
+        yield SHARED_DIPOLE
+    finally:
+        SHARED_DIPOLE = previous
+
+
 def shared_components(*, n_uncertainty: int = 4) -> tuple[ComponentSpec, ...]:
     """The interface prefix every family carries, at **identical offsets**.
 
@@ -272,7 +333,10 @@ def shared_components(*, n_uncertainty: int = 4) -> tuple[ComponentSpec, ...]:
         # direction of zero length is a lie -- while an absent *moment* genuinely
         # is the zero vector. `AnatomyPrior.normal` keeps its NaN for those 14
         # regions; only the moment is zeroed.
-        ComponentSpec("dipole", 3, "Hz*m", "fast", True, True, "net current-dipole moment, anatomical frame"),
+    ) + (
+        (ComponentSpec("dipole", 3, "Hz*m", "fast", True, True, "net current-dipole moment, anatomical frame"),)
+        if SHARED_DIPOLE
+        else ()
     )
 
 
@@ -310,10 +374,22 @@ def _cortical(*, n_spectral_modes: int, n_adaptation: int, n_uncertainty: int) -
         # resolution buys, and every design decision before this one spent on
         # resolution.
         #
-        # `dipole` used to be declared here, cortex-only. It is now part of
-        # `shared_components()` at a fixed offset so the observation heads can
-        # address it; see the note there. Declaring it again would give the
-        # cortical families two dipole spans.
+    ) + (
+        # `dipole` is normally part of `shared_components()` now, at a fixed
+        # offset the observation heads can address (O-5b). It is re-declared
+        # here ONLY when the shared switch is off, which happens when a loader is
+        # rebuilding the pre-O-5b layout to read run 2's checkpoint -- there it
+        # was cortex-only and inside `private`. Declaring it in both places at
+        # once would give the cortical families two dipole spans, which is worse
+        # than either arrangement because the head would read one and the
+        # dynamics write the other.
+        ()
+        if SHARED_DIPOLE
+        else (
+            ComponentSpec(
+                "dipole", 3, "Hz*m", "fast", True, True, "net current-dipole moment, anatomical frame"
+            ),
+        )
     )
     ports = _SHARED_PORTS + (
         Port("oscillatory", ("spectral",), "dimensionless", "out", "quadrature modes carried by long-range edges"),

@@ -33,6 +33,9 @@ from scwbd.foundation.config import load_config
 from scwbd.foundation.families import shared_components
 from scwbd.foundation.model import SCWBD
 
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[2]
 CONFIG = "configs/run2/pilot-families.yaml"
 
 
@@ -140,3 +143,42 @@ def test_the_padding_cost_is_recorded_rather_than_absorbed(model: SCWBD) -> None
         "shared prefix and 0.4973 after. A large move means the family widths "
         "changed for some other reason -- find it rather than widening this bound."
     )
+
+
+def test_the_published_checkpoint_still_loads_in_its_own_layout() -> None:
+    """O-5b widened D from 59 to 62, and run 2's weights are 59 wide.
+
+    ``ARCHITECTURE.md`` deferred this change precisely because it "invalidates
+    the checkpoints of the run currently training". The run finished, so the
+    deferral expired — but the breakage did not. The first strict load after the
+    change failed on thirteen tensors, which means the *published* artifact could
+    no longer be evaluated from the tree that documents it.
+
+    A published model that its own repository cannot load is a broken artifact,
+    not a completed migration. The checkpoint records its own ``state_layout``,
+    so the era does not have to be guessed.
+    """
+    import torch
+
+    from scwbd.foundation.families import layout_of_checkpoint
+
+    ckpt = REPO / "checkpoints/scwbd-002-pilot/last.pt"
+    if not ckpt.is_file():
+        pytest.skip("run-2 checkpoint not on disk")
+
+    an = load_anatomy()
+    cfg = load_config(CONFIG)
+    state = torch.load(ckpt, map_location="cpu", weights_only=False)["model"]
+
+    with layout_of_checkpoint(ckpt):
+        old = SCWBD(cfg.model, an)
+        assert sum(c.dim for c in old.layout.components) == 59
+        old.load_state_dict(state)  # strict: raises on any mismatch
+
+    # And the switch is scoped, not global -- a process must be able to hold both
+    # eras, or evaluating run 2 would silently downgrade every model built after
+    # it in the same session.
+    new = SCWBD(cfg.model, an)
+    assert sum(c.dim for c in new.layout.components) == 62
+    with pytest.raises(RuntimeError):
+        new.load_state_dict(state)

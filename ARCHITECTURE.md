@@ -804,6 +804,18 @@ D=62 because the hippocampal family sets the width, so padding rises **47.34% �
 414×3 cells to store 400×3 real ones is the ragged layout, not a narrower
 interface.
 
+**And it broke the published artifact, which the deferral had predicted.** The
+first strict load after the change failed on thirteen tensors: run 2's weights
+are D=59 and the model is now D=62, so `scwbd-002-pilot` could no longer be
+loaded from the tree that documents it. A published model its own repository
+cannot open is a broken artifact, not a completed migration.
+
+Closed by `families.layout_of_checkpoint(path)`, which reads the `state_layout`
+the checkpoint already records and rebuilds the matching interface for the
+duration of a `with` block — scoped, not global, so one process can hold both
+eras, and it prints when it selects the legacy layout rather than quietly
+building an old model. Run 2's checkpoint then loads **strictly**.
+
 Guarded by `tests/foundation/test_dipole_reaches_the_head.py`: the component is
 shared and not private, every family declares it exactly once at the same
 offset, `source_moment()` returns a 3-vector, the subcortical *orientation* stays
