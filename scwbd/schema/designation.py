@@ -209,15 +209,49 @@ class ArmDeclaration(SchemaModel):
         return base
 
 
-def read_arm(config: Mapping[str, Any] | None) -> ArmDeclaration:
-    """The run's arm declaration; the default is ``role='model'``."""
-    if not config:
+def read_arm(config: "Mapping[str, Any] | Any | None") -> ArmDeclaration:
+    """The run's arm declaration; the default is ``role='model'``.
+
+    Accepts a mapping **or** a config object. The annotation said ``Mapping`` and
+    the body called ``config.get(ARM_KEY)``, so passing a ``FoundationConfig`` --
+    which is what the checkpoint-emission path passes -- raised
+    ``AttributeError: 'FoundationConfig' object has no attribute 'get'``.
+
+    That is worse than a missing feature: the arm could not be read from a config
+    object at all, so a run had no way to declare itself a control through the
+    object that describes it. R12 then refuses for want of a declaration the
+    caller had no means to make -- the same unactionable-remedy shape recorded in
+    ARCHITECTURE.md O-7 on the manifest side.
+
+    Duck-typed rather than converted, because a config that is neither a mapping
+    nor carries an ``arm`` attribute must still yield the ``role='model'``
+    default rather than raising: an absent declaration is a real state.
+    """
+    if config is None:
         return ArmDeclaration()
-    raw = config.get(ARM_KEY)
+    if isinstance(config, Mapping):
+        if not config:
+            return ArmDeclaration()
+        raw = config.get(ARM_KEY)
+    else:
+        raw = getattr(config, ARM_KEY, None)
     if raw is None:
         return ArmDeclaration()
     if isinstance(raw, ArmDeclaration):
         return raw
+    # `FoundationConfig.arm` is an `ArmConfig` dataclass carrying exactly
+    # role/controls_for/justification -- the same three fields as
+    # `ArmDeclaration`, under a fourth name for one concept (O-7 again). Read it
+    # structurally rather than by type, so the config layer does not have to
+    # import the schema layer to be legible to it.
+    if not isinstance(raw, Mapping) and all(
+        hasattr(raw, f) for f in ("role", "controls_for", "justification")
+    ):
+        raw = {
+            "role": getattr(raw, "role", "model"),
+            "controls_for": getattr(raw, "controls_for", ""),
+            "justification": getattr(raw, "justification", ""),
+        }
     if not isinstance(raw, Mapping):
         raise DeclarationError(
             f"config.{ARM_KEY} must be a mapping with role/controls_for/"
