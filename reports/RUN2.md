@@ -1503,7 +1503,7 @@ With that fixed, 38 files became 10.
 
 | file | n |
 |---|---|
-| `foundation/test_family_state.py` | 17 |
+| `foundation/test_family_state.py` | 6 (was 17) |
 | `evaluation_audit/test_simulated_sample_coverage.py` | 8 |
 | `evaluation_audit/test_sampling_representativeness.py` | 7 |
 | `evaluation_audit/test_split_and_verdict_integrity.py` | 4 |
@@ -1518,9 +1518,42 @@ Every other directory is green: `anatomy` `bench` `compiler` `curriculum`
 `dynamics` `individualize` `infer` `intervene` `observe` `release` `runtime`
 `schema` `sources` `transforms`.
 
-**`foundation/test_family_state.py` — 17.** R12 designation refusal against
-*synthetic* manifests. R12 admits the real checkpoint, which is the case that
-governs the published artifact.
+**`foundation/test_family_state.py` — 17 → 6**, closed on 2026-08-07. None was
+closed by relaxing an assertion; each was a real defect or a fixture that
+declared its partition twice.
+
+Three defects in `scwbd/foundation/families.py`, all the same shape — one
+declaration channel silently overriding another while the result still reported
+`source="anatomy_declared"`, so a caller supplying a partition got somebody
+else's and was told it was theirs:
+
+* `families` against the per-parcel labels (`family` / `family_id`);
+* `families` against `family_partition`, joined by an `or`;
+* and the one that matters most — **`allow_derived` was decorative.** It
+  appeared once, in a signature, and nothing read it.
+  `ModelConfig.family_allow_derived_partition` defaults to `False` and
+  `model.py` threads it here faithfully, into a parameter that was discarded.
+  The config option, the docstring, and a test asserting *"the default must
+  refuse"* all described a refusal that did not exist. What ran instead was the
+  Yeo-7 cortical split, which separates **6 of 21 pairs** under a Vasa spin
+  null — rejected on the evidence, used silently whenever an anatomy declared
+  nothing. The refusal now exists, the default is `False`, and opting in records
+  `REJECTS: …` in the partition's notes so the artifact carries the evidence
+  status.
+
+Flipping that default looked risky until the import was read: `anatomy.py`'s
+bare `derive_families(obj)` is a *different function of the same name* from
+`scwbd.anatomy.families`. O-7 nearly deterred a correct fix.
+
+Also found: `subcortex_amyg` maps to backend kind `amygdala`, which
+`DEFAULT_FAMILY_CORES` does not define, so it falls through to the generic
+learned core in silence — the exact failure that test's docstring says it exists
+to catch. Pinned as a known set so closing it is what changes the line.
+
+The remaining **6** are the R12 group against *synthetic* manifests. Confirmed
+directly, and it is the fact that governs the published model: **R12 admits a
+real treatment report** — `read_operator_assignment` returns the full backend
+map from `SCWBD.family_report()`.
 
 **`evaluation_audit` — 33.** Red, **and 002 was published past it**, which §4
 states rather than buries. Six of the nine files exercise a smoke path
