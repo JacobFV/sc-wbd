@@ -64,6 +64,7 @@ classes.
 - [The design-rationale class — a test that asserts *why*, not *what*](#the-design-rationale-class-a-test-that-asserts-why-not-what) — when a correct test becomes the last defender of a rejected decision
 - [The collection-time class — global state set before any test runs](#the-collection-time-class-global-state-set-before-any-test-runs) — a fix applied where a defect was observed, not where it is caused
 - [The recency class — attributing a failure to the last thing you changed](#the-recency-class-attributing-a-failure-to-the-last-thing-you-changed) — the error contained the number that disproved the hypothesis
+- [The sixth capture bug, and the one-line difference that makes it](#the-sixth-capture-bug-and-the-one-line-difference-that-makes-it) — a capture bug never yields a missing value, it yields 0
 
 ### The single most transferable sentence in this file
 
@@ -3184,3 +3185,70 @@ Read the **numbers** in the error before deciding what caused it. `454` is not
 `62`. `id=432 axis_dim=414` is not a layout width. A shape mismatch names the two
 things that disagree, and if neither of them is the thing you changed, you have
 the wrong suspect regardless of how recently you touched the file.
+
+---
+
+## The sixth capture bug, and the one-line difference that makes it
+
+A sweep script recorded, for a `pytest` run that had just been killed by
+`timeout`:
+
+```
+### test_recovery.py exit=0 secs=5400
+```
+
+`exit=0`. The run had been SIGTERM'd at exactly its cap, mid-progress-line, with
+two visible `F`s and no summary written.
+
+### The construction
+
+```bash
+# broken
+echo "### $(basename $f) exit=$? secs=$(( $(date +%s) - s ))" >> "$O"
+```
+
+`$(basename $f)` is expanded **before** `exit=$?` in the same string. `basename`
+succeeds, `$?` becomes `0`, and the value that gets recorded is *basename's*
+exit status. Every line in the file reads `exit=0` regardless of what happened.
+
+Twenty minutes earlier, the same author wrote the same thing correctly:
+
+```bash
+# correct -- from an earlier sweep in the same session
+timeout 300 .venv/bin/python -m pytest "$f" ... > /dev/null 2>&1
+rc=$?
+echo "$(basename $f) exit=$rc secs=$(( $(date +%s) - s ))" >> "$O"
+```
+
+`rc=$?` on its own line, before anything else runs. That version reported
+`exit=124` correctly, which is how the earlier timeouts were known at all.
+
+The regression was *tidying*: collapsing three lines into one, in a script whose
+whole purpose was to record exit codes.
+
+### Why it belongs in this register rather than a bug list
+
+It did not produce an error, a crash, or an empty field. It produced **`0`** —
+the value that means "fine". A sweep whose every line reads `exit=0` looks like a
+clean run, and would have been reported as one.
+
+> The failure mode of a capture bug is never a missing value. It is a plausible
+> value, and `0` is the most plausible value there is.
+
+### The tell
+
+Internal contradiction, not suspicion:
+
+* `exit=0` beside two `F` characters — pytest exits `1` when anything fails;
+* no newline before the `###` marker — the process died mid-write.
+
+Neither is visible if you read only the field you came for. This is the sixth
+capture bug of the session and the third one caught by reading the *whole* line
+instead of the number.
+
+### The rule
+
+> Read `$?` on its own line, immediately. Any command substitution between the
+> command and the `$?` that reads it — including the one that formats the message
+> — overwrites it. If a script's job is to record exit status, that assignment is
+> the one line in it that may not be folded into anything else.
