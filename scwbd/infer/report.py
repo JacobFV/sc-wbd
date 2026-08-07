@@ -224,6 +224,256 @@ def _theta_lmin(entry: Mapping[str, Any], key: str = "fisher_T4") -> float:
     return float(entry[key]["metrics"]["theta_profile_min_eigenvalue_nonprior"])
 
 
+#: Below this prior-standardised likelihood information a parameter's posterior
+#: is >90% prior, and the ``sd_post/sd_emp`` diagnostic stops being a
+#: calibration signal (see :func:`nuisance_identifiability`).
+PRIOR_DOMINATED_THRESHOLD = 0.1
+
+
+#: A regime whose truth is closer than this to the prior mean (in prior sds)
+#: cannot discriminate estimators by bias/RMSE/coverage: shrinking to the prior
+#: is already the right answer there.
+DEGENERATE_OFFSET_PRIOR_SD = 0.25
+
+
+def regime_prior_offset(results: Mapping[str, Any]) -> dict[str, Any]:
+    """How far each regime's truth sits from the prior mean, in prior sds.
+
+    Recovery metrics are only informative when the truth is *away* from the
+    prior mean.  If it coincides, an estimator that ignores the data entirely
+    and returns the prior mean scores zero bias, zero RMSE and 100% coverage,
+    so bias/RMSE/coverage stop measuring information and start measuring
+    shrinkage.  Any regime that degenerate is flagged here and its recovery
+    numbers must not be read as evidence that a design works.
+    """
+    from .linear_gaussian import PARAM_INDEX, prior_mean_u, prior_sd_u
+
+    pm, ps = prior_mean_u(), prior_sd_u()
+    out: dict[str, Any] = {}
+    for rname, rr in results["regimes"].items():
+        u = np.asarray(rr["eta_true_unconstrained"], float)
+        z = {n: float((u[PARAM_INDEX[n]] - pm[PARAM_INDEX[n]]) / ps[PARAM_INDEX[n]])
+             for n in PREREGISTERED_SUBSET}
+        worst = max(abs(v) for v in z.values())
+        out[rname] = {
+            "offset_in_prior_sd": z,
+            "max_abs_offset_prior_sd": worst,
+            "recovery_metrics_degenerate": bool(worst < DEGENERATE_OFFSET_PRIOR_SD),
+        }
+    return out
+
+
+def _num(x: Any, default: float = 0.0) -> float:
+    """Coerce a possibly-null / non-finite JSON value to a plottable float.
+
+    ``as_builtin`` serialises NaN as ``null``, so a single degenerate statistic
+    -- e.g. the standard error of a delay RMSE that is exactly zero because the
+    design carries no delay information -- must not be able to abort figure
+    generation for a sweep that took hours to compute.
+    """
+    if x is None:
+        return default
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return default
+    return v if math.isfinite(v) else default
+
+
+def modality_decomposition(results: Mapping[str, Any]) -> dict[str, Any]:
+    """Where each modality's theta information actually goes.
+
+    Gate G4 refuses to treat ``I_{EEG+BOLD} = I_EEG + I_BOLD`` as evidence,
+    because under the modality-block-diagonal form of T4 it is an algebraic
+    identity rather than a finding.  This function *measures* the residual of
+    that identity (it should be at round-off) and then reports the quantity the
+    identity does not settle: how much information each modality contributes to
+    each preregistered parameter, and in particular to the conduction delay.
+
+    A fusion gain on the worst-determined direction can be 1.000x while the
+    information *volume* still grows, so both are reported.
+    """
+    from .fisher import schur_information
+
+    idx = [PARAM_NAMES.index(n) for n in THETA_NAMES]
+    out: dict[str, Any] = {}
+    for rname, rr in results["regimes"].items():
+        d = rr["designs"]
+        if not {"eeg_only", "fmri_only", "joint_native"} <= set(d):
+            continue
+
+        def I(name: str) -> np.ndarray:
+            return np.asarray(d[name]["fisher_T4"]["I_likelihood"], float)
+
+        residual = float(
+            np.abs(I("joint_native") - I("eeg_only") - I("fmri_only")).max()
+        )
+        prof = {k: schur_information(I(k), idx)
+                for k in ("eeg_only", "fmri_only", "joint_native")}
+        per_param = {
+            nm: {k: float(m[i, i]) for k, m in prof.items()}
+            for i, nm in enumerate(THETA_NAMES)
+        }
+        lmin = {k: float(np.linalg.eigvalsh(m)[0]) for k, m in prof.items()}
+        logdet = {k: float(np.linalg.slogdet(m)[1]) for k, m in prof.items()}
+        out[rname] = {
+            "additivity_residual_max_abs": residual,
+            "additivity_holds_to_roundoff": bool(residual < 1e-8),
+            "theta_profile_information_by_parameter": per_param,
+            "theta_profile_min_eigenvalue": lmin,
+            "theta_profile_logdet": logdet,
+            "fusion_lmin_ratio": (
+                lmin["joint_native"] / lmin["eeg_only"] if lmin["eeg_only"] else None
+            ),
+            "fusion_logdet_gain_nats": logdet["joint_native"] - logdet["eeg_only"],
+            "fusion_volume_ratio": float(
+                np.exp(logdet["joint_native"] - logdet["eeg_only"])
+            ),
+        }
+    return out
+
+
+def nuisance_identifiability(results: Mapping[str, Any]) -> dict[str, Any]:
+    """Diagnose which parameters are informed by data and which are prior echoes.
+
+    For a parameter with prior-standardised likelihood information ``I`` the MAP
+    estimator shrinks toward the prior mean, and in the Gaussian/Laplace limit
+
+        sd_post / sd_emp = sqrt(1 + 1/I)
+
+    exactly.  A ratio near 1 means the data dominate; a large ratio means the
+    posterior width is essentially the prior width while the point estimates
+    barely move off the prior mean.  That is **not** miscalibration -- the
+    interval is honest and over-covers -- but it does mean the parameter is a
+    prior echo, so the ratio is reported next to the information that implies
+    it, and next to the analytic T4 information as an independent check.
+    """
+    out: dict[str, Any] = {}
+    for rname, rr in results["regimes"].items():
+        per_design: dict[str, Any] = {}
+        for dname, entry in rr["designs"].items():
+            rec = entry.get("recovery")
+            if not rec:
+                continue
+            names = rec["parameter_names"]
+            sd_post = np.asarray(rec["posterior_sd_mean"], float)
+            sd_emp = np.asarray(rec["estimate_sd"], float)
+            I_diag = np.diag(np.asarray(
+                entry["fisher_T4"]["I_likelihood"], float
+            ))
+            rows = {}
+            for i, nm in enumerate(names):
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    ratio = float(sd_post[i] / sd_emp[i]) if sd_emp[i] > 0 else np.inf
+                    implied = float(1.0 / (ratio**2 - 1.0)) if ratio > 1.0 else np.inf
+                fisher_i = float(I_diag[i]) if i < len(I_diag) else float("nan")
+                # A parameter no channel in this design can see (e.g. the BOLD
+                # nuisances under eeg_only) is *structurally* absent, not
+                # weakly informed; conflating the two buries the real finding.
+                absent = bool(np.isfinite(fisher_i) and fisher_i <= 0.0)
+                rows[nm] = {
+                    "sd_post_over_sd_emp": ratio,
+                    "implied_standardised_information": implied,
+                    "t4_standardised_information_diagonal": fisher_i,
+                    "prior_fraction_of_posterior_precision": (
+                        float(1.0 / (1.0 + implied)) if np.isfinite(implied) else 0.0
+                    ),
+                    "structurally_absent_from_design": absent,
+                    "prior_dominated": bool(
+                        not absent
+                        and np.isfinite(fisher_i)
+                        and fisher_i < PRIOR_DOMINATED_THRESHOLD
+                    ),
+                    # ratio < 1 means the estimates scatter *wider* than the
+                    # stated posterior: the opposite failure, and a coverage risk.
+                    "estimates_overdispersed": bool(ratio < 0.9),
+                }
+            per_design[dname] = rows
+        if per_design:
+            out[rname] = per_design
+    return out
+
+
+#: Run-size fields compared against the preregistration.  The *criteria* must
+#: never move; only how much compute was spent evaluating them may.
+_RUN_SIZE_FIELDS = (
+    ("n_recovery_replicates", "recovery replicates"),
+    ("n_monte_carlo_fisher_replicates", "Monte-Carlo Fisher replicates"),
+)
+
+
+def preregistration_delta(outdir: str | Path) -> str:
+    """Markdown diff of run size against ``manifest.preregistered.json``.
+
+    A reduced run is legitimate; a *silently* reduced run is not.  This renders
+    the difference into the report so the reader sees the achieved sample sizes
+    next to the ones that were promised, and can check that the decision
+    criteria themselves are byte-identical.
+    """
+    outdir = Path(outdir)
+    pre_p = outdir / "manifest.preregistered.json"
+    now_p = outdir / "manifest.json"
+    if not (pre_p.exists() and now_p.exists()):
+        return ""
+    pre = json.loads(pre_p.read_text())
+    now = json.loads(now_p.read_text())
+    rows = []
+    for key, label in _RUN_SIZE_FIELDS:
+        a, b = pre.get(key), now.get(key)
+        if a != b:
+            rows.append((label, a, b))
+    for key, label in (("epoch_seconds", "epoch length (s)"),
+                       ("n_epochs", "epochs per record")):
+        a = pre.get("instrument", {}).get(key)
+        b = now.get("instrument", {}).get(key)
+        if a != b:
+            rows.append((label, a, b))
+    same_rule = pre.get("decision_rule") == now.get("decision_rule")
+    L = ["\n## Deviations from the pre-registration\n"]
+    L.append(
+        "The pre-registration written before any results existed is kept "
+        "verbatim at `manifest.preregistered.json` "
+        f"(status `{pre.get('status')}`, written `{pre.get('written_at')}`).\n"
+    )
+    L.append(
+        f"**Decision criteria unchanged: {'yes' if same_rule else 'NO — SEE BELOW'}.** "
+        "Only the compute budget was reduced.\n"
+    )
+    arms = now.get("extra", {}).get("arms_computed")
+    if arms:
+        off = [k for k, v in arms.items() if not v]
+        L.append(
+            "\nArms computed: " + ", ".join(f"`{k}`" for k, v in arms.items() if v)
+            + (("; **not computed:** " + ", ".join(f"`{k}`" for k in off))
+               if off else "")
+            + ". A zero below means the arm was switched off, not that it ran "
+              "with no replicates.\n"
+        )
+    rd = now.get("extra", {}).get("recovery_designs")
+    pre_rd = pre.get("extra", {}).get("recovery_designs")
+    if rd is not None and pre_rd is not None and set(rd) != set(pre_rd):
+        L.append(
+            "\nRecovery arm restricted to " + ", ".join(f"`{d}`" for d in rd)
+            + " (preregistered: " + ", ".join(f"`{d}`" for d in pre_rd)
+            + "). The dropped designs are not used by any criterion.\n"
+        )
+    if rows:
+        L.append("\n| quantity | preregistered | achieved |")
+        L.append("|---|---|---|")
+        for label, a, b in rows:
+            L.append(f"| {label} | {a} | {b} |")
+        L.append(
+            "\nThese reductions widen every interval and raise every RMSE "
+            "uniformly across designs. The preregistered criteria are all "
+            "*comparisons between designs* measured under one common budget, "
+            "so they remain evaluable; the absolute information values are "
+            "proportionally smaller than a full-length run would give.\n"
+        )
+    else:
+        L.append("\nRun size matches the pre-registration exactly.\n")
+    return "\n".join(L)
+
+
 def _theta_logdet(entry: Mapping[str, Any], key: str = "fisher_T4") -> float:
     return float(entry[key]["metrics"]["theta_profile_log10_det_likelihood"])
 
@@ -523,13 +773,9 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
         vals, errs = [], []
         for d in design_names:
             rec = rr["designs"][d].get("recovery")
-            if rec:
-                vals.append(float(rec["delay_error"]["rmse_seconds"] or 0.0) * 1e3)
-                se = rec["delay_error"].get("rmse_seconds_se")
-                errs.append(abs(float(se)) * 1e3 if se is not None else 0.0)
-            else:
-                vals.append(np.nan)
-                errs.append(0.0)
+            vals.append(_num(rec["delay_error"]["rmse_seconds"]) * 1e3 if rec else np.nan)
+            errs.append(abs(_num(rec["delay_error"].get("rmse_seconds_se"))) * 1e3
+                        if rec else 0.0)
         ax.bar(np.arange(len(design_names)) + i * width, vals, width, yerr=errs,
                capsize=2, label=rn)
     ax.set_xticks(np.arange(len(design_names)) + 0.4 - width / 2)
@@ -541,10 +787,17 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
     p = outdir / "delay_error.png"
     fig.savefig(p, dpi=150); plt.close(fig); made.append(str(p))
 
-    # 5. profile likelihoods (reference regime)
-    rn0 = list(regimes)[0]
-    d0 = regimes[rn0]["designs"]
-    if any("profile_likelihood" in v for v in d0.values()):
+    # 5. profile likelihoods.  Profiles are computed for one regime only, but
+    # which one must be discovered rather than assumed to be first: the regime
+    # mapping is plain JSON and any consumer that rewrites it (sorted keys, a
+    # merge) can reorder it, silently dropping this figure.
+    rn0 = next(
+        (rn for rn, rr in regimes.items()
+         if any("profile_likelihood" in v for v in rr["designs"].values())),
+        None,
+    )
+    if rn0 is not None:
+        d0 = regimes[rn0]["designs"]
         fig, axes = plt.subplots(1, len(PREREGISTERED_SUBSET),
                                  figsize=(3.0 * len(PREREGISTERED_SUBSET), 3.0),
                                  squeeze=False)
@@ -564,13 +817,14 @@ def make_figures(results: Mapping[str, Any], outdir: str | Path) -> list[str]:
         p = outdir / "profile_likelihoods.png"
         fig.savefig(p, dpi=150); plt.close(fig); made.append(str(p))
 
-    # 6. posterior correlation heatmaps
+    # 6. posterior correlation heatmaps (first regime; independent of profiles)
+    dcorr = regimes[list(regimes)[0]]["designs"]
     fig, axes = plt.subplots(1, min(len(design_names), 5),
                              figsize=(3.1 * min(len(design_names), 5), 3.2),
                              squeeze=False)
     for j, d in enumerate(design_names[:5]):
         ax = axes[0][j]
-        C = np.array(d0[d]["fisher_T4"]["metrics"]["posterior_correlation"])
+        C = np.array(dcorr[d]["fisher_T4"]["metrics"]["posterior_correlation"])
         im = ax.imshow(C, vmin=-1, vmax=1, cmap="coolwarm")
         ax.set_title(d, fontsize=7)
         ax.set_xticks(range(len(PARAM_NAMES)))
@@ -613,6 +867,73 @@ def _fmt(x: Any, n: int = 4) -> str:
     return f"{v:.{n}g}"
 
 
+#: Lineage of this artifact.  Kept in the generator, not hand-edited into the
+#: markdown, so it cannot drift away from the code that emits it.
+ARTIFACT_LINEAGE = """
+## Lineage: what these numbers supersede, and why
+
+**The `results.json` previously filed on `wt/fisher` (through `9088581`) is not
+reproducible under the estimator that produced this report, and has been
+superseded rather than reconciled.**
+
+The reason is methodological, not clerical. That artifact was produced by a
+benchmark whose simulator drew each replicate *chunk* from its own generator
+seed, because the deterministic per-epoch drive had to be tiled once per
+replicate and the full tile did not fit in memory. Merging `master` replaced
+that with a single unchunked draw in which the drive is tiled one step at a
+time (`filters._tile_rows`), so the tile is never materialised at all. The
+newer path is exactly equivalent in expectation and strictly better in memory,
+but it consumes the random stream in a different order, so **every simulated
+observation differs**. No amount of re-derivation can make the old recovery,
+coverage or delay-error numbers agree with this code; they are orphaned, and an
+orphaned number that still looks authoritative is precisely the hazard this
+project has been burned by before.
+
+Two consequences a reader should carry:
+
+- The superseded run reported `C4_calibrated_recovery` as a **pass**. It was
+  earned at a larger Newton budget on the older estimator. It is not evidence
+  about this run, and it is not being carried forward. Where the present run
+  cannot converge the optimiser, `C4`/`C5` are reported as **NOT EVALUATED** --
+  not as passes, and not as failures.
+- The superseded run printed minimum non-prior eigenvalues at more precision
+  than they carry (e.g. a negative value of order `1e-20` rendered as though it
+  were a measurement). This report prints `0` with an explicit
+  `numerically_zero` flag and the estimated noise floor alongside, per the
+  precision correction adopted from agent 🧩 Rao.
+"""
+
+#: The identifiability laboratory is an exact linear-Gaussian surrogate.  It is
+#: routinely misread as a statement about the *trained* model, which is a
+#: different object with a different -- currently defective -- noise model.
+SCOPE_BOUNDARY_UNCERTAINTY = """
+## Scope boundary: what this report does **not** say about uncertainty
+
+This laboratory measures parameter identifiability in an **exact
+linear-Gaussian state-space surrogate** (`scwbd.infer.linear_gaussian`). It
+imports nothing from `scwbd.foundation` and evaluates no trained checkpoint.
+
+That distinction matters because of the run-1 P0 recorded in
+`reports/scope_gap.md` §6: the trained model's predictive variance
+(`scwbd/foundation/heads.py:238`) is **one learned scalar per channel,
+broadcast** -- it never reads the state. Nothing in this report should be read
+as evidence that the trained model's uncertainty is state-dependent or
+calibrated, because:
+
+- `C1`/`C2`/`C3` are exact Fisher computations at the true parameter. In a
+  linear-Gaussian model the innovation covariance is state-independent *by
+  theorem*, which is why the Riccati recursion can be shared across epochs at
+  all. This is a correct property of the surrogate, not a shortcut, and it is
+  also the reason the surrogate cannot detect the defect the P0 describes.
+- `C4`/`C5` concern **parameter** intervals (Laplace, from the observed
+  information over `eta`). They say nothing about **predictive** intervals over
+  observations, which is the channel where run 1 failed.
+
+If a downstream claim needs the model's uncertainty to vary with brain state,
+that property does not currently exist and this artifact does not supply it.
+"""
+
+
 def write_report(
     results: Mapping[str, Any],
     outdir: str | Path,
@@ -625,6 +946,9 @@ def write_report(
     outdir.mkdir(parents=True, exist_ok=True)
     decision = decision or evaluate_decision_rule(results)
     payload = as_builtin({"results": results, "decision": decision,
+                          "nuisance_identifiability": nuisance_identifiability(results),
+                          "modality_decomposition": modality_decomposition(results),
+                          "regime_prior_offset": regime_prior_offset(results),
                           "environment": _env()})
     jpath = outdir / "results.json"
     jpath.write_text(json.dumps(payload, indent=1, sort_keys=True))
@@ -637,6 +961,8 @@ def write_report(
     A(f"{decision['consequence']}\n")
     A("Preregistered subset: `" + "`, `".join(PREREGISTERED_SUBSET) + "`. "
       "Manifest (written before the run): `manifest.json`.\n")
+    A(ARTIFACT_LINEAGE)
+    A(SCOPE_BOUNDARY_UNCERTAINTY)
     A("\n## Criteria (all held-out regimes must pass)\n")
     A("| criterion | statement | result |")
     A("|---|---|---|")
@@ -644,6 +970,32 @@ def write_report(
         A(f"| `{k}` | {DECISION_RULE['criteria'][k]} | {_fmt(v)} |")
     A("")
     A("> " + DECISION_RULE["known_algebraic_caveat"] + "\n")
+
+    # C4 is a statement about interval calibration.  Intervals built from the
+    # observed information at a point that is not the optimum are not the
+    # intervals C4 claims to test, so a pass earned where the optimiser stopped
+    # short has to be labelled at the top, not left in a column further down.
+    weak_conv = []
+    for rname, rr in results["regimes"].items():
+        rec = rr["designs"].get("joint_native", {}).get("recovery")
+        if not rec:
+            continue
+        frac = float(rec.get("converged_fraction", 1.0))
+        if frac < 0.9:
+            med = rec.get("optimiser", {}).get("median_newton_decrement")
+            weak_conv.append((rname, frac, med))
+    if weak_conv:
+        A("\n> **Convergence caveat on `C4`.** The MAP estimator did not reach "
+          "the convergence tolerance for every replicate in:\n>")
+        for rname, frac, med in weak_conv:
+            A(f"> - `{rname}`: {frac:.0%} of `joint_native` replicates converged"
+              + (f", median remaining Newton decrement {med:.3f} posterior sd"
+                 if med is not None else "") + ".")
+        A(">\n> Coverage there is computed from observed-information intervals "
+          "around estimates that are still short of the optimum, so the `C4` "
+          "pass is **not** a sound calibration test in those regimes. Raising "
+          "the step cap, or refreshing the preconditioner at the current "
+          "iterate instead of holding it at the prior mean, is the fix.\n")
 
     for rname, rr in results["regimes"].items():
         A(f"\n## Regime `{rname}`\n")
@@ -734,6 +1086,91 @@ def write_report(
                 tc = float(np.trace(np.array(mc["I_likelihood"], float)))
                 t4 = float(np.trace(np.array(v["fisher_T4"]["I_likelihood"], float)))
                 A(f"| `{d}` | {_fmt(tc)} | {_fmt(t4)} | {_fmt(tc / t4 if t4 else np.nan)} |")
+    offs = regime_prior_offset(results)
+    if offs:
+        A("\n## Can each regime's recovery numbers discriminate at all?\n")
+        A("Bias, RMSE and coverage only measure *information* when the truth "
+          "sits away from the prior mean. Where it coincides, an estimator that "
+          "ignores the data and returns the prior mean scores zero bias, zero "
+          "RMSE and 100% coverage.\n")
+        A("| regime | " + " | ".join(f"`{p}`" for p in PREREGISTERED_SUBSET)
+          + " | max \\|offset\\| | recovery metrics |")
+        A("|---|" + "---|" * (len(PREREGISTERED_SUBSET) + 2))
+        for rname, v in offs.items():
+            cells = " | ".join(f"{v['offset_in_prior_sd'][p]:+.3f}"
+                               for p in PREREGISTERED_SUBSET)
+            verdict = ("**DEGENERATE — do not read as evidence**"
+                       if v["recovery_metrics_degenerate"] else "discriminating")
+            A(f"| `{rname}` | {cells} | {v['max_abs_offset_prior_sd']:.3f} | {verdict} |")
+        A("\nOffsets are in prior standard deviations. A degenerate regime is "
+          "still valid for the *information* criteria (C1, C2-information, C3), "
+          "which are evaluated from the Fisher information at that operating "
+          "point and do not depend on where the prior sits.\n")
+    modal = modality_decomposition(results)
+    if modal:
+        A("\n## Where each modality's θ information goes\n")
+        A("Under the modality-block-diagonal form of T4, "
+          "`I_EEG+BOLD = I_EEG + I_BOLD` is an algebraic identity, not a "
+          "finding — gate G4 names it and refuses to report it as evidence. "
+          "The residual below measures that identity; what follows it is the "
+          "part the identity does not settle.\n")
+        for rname, m in modal.items():
+            A(f"\n**`{rname}`** — additivity residual "
+              f"`{m['additivity_residual_max_abs']:.2e}` "
+              f"({'round-off, identity confirmed' if m['additivity_holds_to_roundoff'] else 'NOT round-off'})\n")
+            A("| θ parameter | EEG alone | fMRI alone | joint native |")
+            A("|---|---|---|---|")
+            for nm, v in m["theta_profile_information_by_parameter"].items():
+                A(f"| `{nm}` | {_fmt(v['eeg_only'])} | {_fmt(v['fmri_only'])} | "
+                  f"{_fmt(v['joint_native'])} |")
+            A(f"\nFusion gain on the worst-determined direction: "
+              f"**{m['fusion_lmin_ratio']:.4f}x** "
+              f"(criterion C1 requires ≥ 1.05x). "
+              f"Fusion gain in information *volume*: "
+              f"{m['fusion_volume_ratio']:.4f}x "
+              f"({m['fusion_logdet_gain_nats']:+.4f} nats).\n")
+    delta = preregistration_delta(outdir)
+    if delta:
+        A(delta)
+    diag = nuisance_identifiability(results)
+    if diag:
+        A("\n## Which parameters the data actually inform\n")
+        A("`sd_post/sd_emp` is the mean Laplace posterior sd over the empirical "
+          "spread of the MAP estimates. In the Gaussian limit it equals "
+          "`sqrt(1 + 1/I)` for prior-standardised likelihood information `I`, so "
+          "a value near 1 means data-dominated and a large value means the "
+          "posterior is essentially the prior while the estimates sit on the "
+          "prior mean. A large ratio is **not** miscalibration — such intervals "
+          "over-cover — but the parameter is a prior echo and no claim may rest "
+          "on it.\n")
+        for rname, per_design in diag.items():
+            for dname, rows in per_design.items():
+                flagged = {k: v for k, v in rows.items() if v["prior_dominated"]}
+                absent = [k for k, v in rows.items()
+                          if v["structurally_absent_from_design"]]
+                over = [k for k, v in rows.items()
+                        if v["estimates_overdispersed"]
+                        and not v["structurally_absent_from_design"]]
+                if not (flagged or absent or over):
+                    continue
+                A(f"\n**`{rname}` / `{dname}`**\n")
+                if flagged:
+                    A("| parameter | sd_post/sd_emp | implied `I` | T4 `I` diagonal "
+                      "| prior share of posterior precision |")
+                    A("|---|---|---|---|---|")
+                    for nm, v in flagged.items():
+                        A(f"| `{nm}` | {_fmt(v['sd_post_over_sd_emp'])} | "
+                          f"{_fmt(v['implied_standardised_information'])} | "
+                          f"{_fmt(v['t4_standardised_information_diagonal'])} | "
+                          f"{v['prior_fraction_of_posterior_precision']:.1%} |")
+                if absent:
+                    A("\nStructurally absent from this design (no channel "
+                      "observes them; posterior = prior exactly): `"
+                      + "`, `".join(absent) + "`.\n")
+                if over:
+                    A("\nEstimates scatter wider than the stated posterior "
+                      "(`sd_post/sd_emp` < 0.9 — a coverage risk, read with the "
+                      "coverage table): `" + "`, `".join(over) + "`.\n")
     if figures:
         A("\n## Figures\n")
         for f in figures:

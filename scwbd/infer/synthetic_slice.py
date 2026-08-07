@@ -472,6 +472,20 @@ def run_synthetic_slice(
     regime = Regime("synthetic_slice", 1.0, 0.012, 0.5, 0.5, 1.0, "end-to-end slice")
     schema = load_reference_schema()
     detail: dict[str, Any] = {
+        # Instrument provenance.  Without this the artifact cannot be tied to an
+        # invocation: ``cmd_slice`` always overrides this function's own default
+        # config with the top-level ``--epoch-seconds`` / ``--n-epochs``, so two
+        # runs of "the same" command can differ by an order of magnitude in data
+        # volume and there is nothing in the file to say which one produced it.
+        # Found while re-running the slice during the wt/fisher <- master merge:
+        # the committed artifact and a default-argument re-run disagreed by ~22x
+        # in mean negative log posterior and neither recorded why.
+        "instrument": {
+            "epoch_seconds": cfg.epoch_seconds, "n_epochs": cfg.n_epochs,
+            "dt_base_s": cfg.dt, "n_delay_taps": cfg.n_delay_taps,
+            "state_dimension": cfg.n_state, "dtype": cfg.dtype,
+            "device": str(cfg.device), "seed": seed, "n_newton": n_newton,
+        },
         "schema_source": (
             "scwbd.schema.examples.three_region.build_three_region_schema"
             if schema is not None else "local declaration (schema package unavailable)"

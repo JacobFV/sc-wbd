@@ -50,50 +50,50 @@
   "recovery_intervals_nominal_coverage": {
    "pass": false,
    "evaluable": false,
-   "median_newton_decrement": 12237.632839973307,
+   "median_newton_decrement": 222462.08775088238,
    "per_parameter": {
     "a21": {
      "name": "a21",
      "nominal": 0.95,
      "n_replicates": 32,
-     "n_covered": 5,
-     "empirical": 0.15625,
-     "standard_error": 0.06418623720763665,
-     "wilson95_lo": 0.0686442028250571,
-     "wilson95_hi": 0.3175414959753039,
+     "n_covered": 4,
+     "empirical": 0.125,
+     "standard_error": 0.05846339666834283,
+     "wilson95_lo": 0.04970134387480073,
+     "wilson95_hi": 0.2806830548165022,
      "nominal_inside_wilson95": false
     },
     "a32": {
      "name": "a32",
      "nominal": 0.95,
      "n_replicates": 32,
-     "n_covered": 6,
-     "empirical": 0.1875,
-     "standard_error": 0.06899813176818631,
-     "wilson95_lo": 0.08889544689565954,
-     "wilson95_hi": 0.3530915520137596,
+     "n_covered": 4,
+     "empirical": 0.125,
+     "standard_error": 0.05846339666834283,
+     "wilson95_lo": 0.04970134387480073,
+     "wilson95_hi": 0.2806830548165022,
      "nominal_inside_wilson95": false
     },
     "a13": {
      "name": "a13",
      "nominal": 0.95,
      "n_replicates": 32,
-     "n_covered": 17,
-     "empirical": 0.53125,
-     "standard_error": 0.08821554523934542,
-     "wilson95_lo": 0.3644951711897464,
-     "wilson95_hi": 0.6913061289193116,
+     "n_covered": 8,
+     "empirical": 0.25,
+     "standard_error": 0.07654655446197431,
+     "wilson95_lo": 0.1325240091850904,
+     "wilson95_hi": 0.4210655899424448,
      "nominal_inside_wilson95": false
     },
     "tau": {
      "name": "tau",
      "nominal": 0.95,
      "n_replicates": 32,
-     "n_covered": 16,
-     "empirical": 0.5,
-     "standard_error": 0.08838834764831845,
-     "wilson95_lo": 0.33630882869327483,
-     "wilson95_hi": 0.6636911713067252,
+     "n_covered": 8,
+     "empirical": 0.25,
+     "standard_error": 0.07654655446197431,
+     "wilson95_lo": 0.1325240091850904,
+     "wilson95_hi": 0.4210655899424448,
      "nominal_inside_wilson95": false
     }
    },
@@ -108,11 +108,11 @@
      "name": "overall",
      "nominal": 0.95,
      "n_replicates": 32,
-     "n_covered": 16,
-     "empirical": 0.5,
-     "standard_error": 0.08838834764831845,
-     "wilson95_lo": 0.33630882869327483,
-     "wilson95_hi": 0.6636911713067252,
+     "n_covered": 8,
+     "empirical": 0.25,
+     "standard_error": 0.07654655446197431,
+     "wilson95_lo": 0.1325240091850904,
+     "wilson95_hi": 0.4210655899424448,
      "nominal_inside_wilson95": false
     },
     "per_group": {
@@ -121,27 +121,27 @@
        "name": "0",
        "nominal": 0.95,
        "n_replicates": 16,
-       "n_covered": 8,
-       "empirical": 0.5,
-       "standard_error": 0.125,
-       "wilson95_lo": 0.27999563610326017,
-       "wilson95_hi": 0.7200043638967398,
+       "n_covered": 4,
+       "empirical": 0.25,
+       "standard_error": 0.10825317547305482,
+       "wilson95_lo": 0.10182067491213048,
+       "wilson95_hi": 0.49498316535508774,
        "nominal_inside_wilson95": false
       },
       "pit": {
        "n": 16,
        "n_bins": 10,
        "counts": [
-        4,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         0,
         2,
-        0,
-        0,
-        0,
-        2,
-        1,
-        7
+        8
        ],
        "bin_edges": [
         0.0,
@@ -157,21 +157,21 @@
         1.0
        ],
        "expected_per_bin": 1.6,
-       "chi2_statistic": 30.25,
-       "chi2_pvalue": 0.00039774789292670084,
-       "ks_statistic": 0.375,
-       "ks_pvalue": 0.015752547236039915,
-       "mean": 0.6245046009204599,
+       "chi2_statistic": 49.000000000000014,
+       "chi2_pvalue": 1.6598164740779252e-07,
+       "ks_statistic": 0.48311322862257067,
+       "ks_pvalue": 0.0005842822329293895,
+       "mean": 0.6083062681895908,
        "uniform_at_005": false
       },
       "log_score": {
-       "log_score": 371.9879611245022,
-       "se": 236.05670991702198,
+       "log_score": 7.4970159906402305,
+       "se": 2.67790623996787,
        "n": 16
       },
       "crps": {
-       "crps": 0.58924031742982,
-       "se": 0.17257769427352748,
+       "crps": 0.0750633424097201,
+       "se": 0.012473417717020976,
        "n": 16
       },
       "n": 16
@@ -181,27 +181,27 @@
        "name": "1",
        "nominal": 0.95,
        "n_replicates": 16,
-       "n_covered": 8,
-       "empirical": 0.5,
-       "standard_error": 0.125,
-       "wilson95_lo": 0.27999563610326017,
-       "wilson95_hi": 0.7200043638967398,
+       "n_covered": 4,
+       "empirical": 0.25,
+       "standard_error": 0.10825317547305482,
+       "wilson95_lo": 0.10182067491213048,
+       "wilson95_hi": 0.49498316535508774,
        "nominal_inside_wilson95": false
       },
       "pit": {
        "n": 16,
        "n_bins": 10,
        "counts": [
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         2,
-        0,
-        0,
-        2,
-        0,
-        0,
-        2,
-        0,
-        0,
-        10
+        8
        ],
        "bin_edges": [
         0.0,
@@ -217,29 +217,29 @@
         1.0
        ],
        "expected_per_bin": 1.6,
-       "chi2_statistic": 54.0,
-       "chi2_pvalue": 1.8878278659809408e-08,
-       "ks_statistic": 0.5353249642871274,
-       "ks_pvalue": 8.20182961515523e-05,
-       "mean": 0.7371732090908496,
+       "chi2_statistic": 49.000000000000014,
+       "chi2_pvalue": 1.6598164740779252e-07,
+       "ks_statistic": 0.48311322862257067,
+       "ks_pvalue": 0.0005842822329293895,
+       "mean": 0.6083062681895908,
        "uniform_at_005": false
       },
       "log_score": {
-       "log_score": 618.238926329401,
-       "se": 545.5006746308226,
+       "log_score": 7.4970159906402305,
+       "se": 2.67790623996787,
        "n": 16
       },
       "crps": {
-       "crps": 0.5135549150480658,
-       "se": 0.17684189105616954,
+       "crps": 0.0750633424097201,
+       "se": 0.012473417717020976,
        "n": 16
       },
       "n": 16
      }
     },
     "worst_coverage_group": "0",
-    "worst_coverage": 0.5,
-    "worst_log_score_group": "1",
+    "worst_coverage": 0.25,
+    "worst_log_score_group": "0",
     "coverage_spread": 0.0
    },
    "note": "grouped by session index: shared session calibration error is the stratum most likely to break aggregate calibration"
@@ -248,101 +248,101 @@
    "pass": false,
    "evaluable": false,
    "convergence": {
-    "joint_native_median_newton_decrement": 12237.632839973307,
-    "eeg_only_median_newton_decrement": 409.26139110586007,
+    "joint_native_median_newton_decrement": 222462.08775088238,
+    "eeg_only_median_newton_decrement": 1446.1627192874892,
     "gate_posterior_sd": 2.0,
     "note": "a held-out comparison between two fits measures the designs only if both fits reached their optima; otherwise it measures the optimiser"
    },
    "decisive_test": {
     "question": "restricted to the SAME observations, does adding the second modality make the shared inference better or worse?",
     "eeg_observations_only": {
-     "joint_native": 25.966165477285607,
-     "eeg_only": 16.81600399533434,
-     "n_observations": 844800.0
+     "joint_native": 58.95653967693237,
+     "eeg_only": 19.055367119063515,
+     "n_observations": 10813440.0
     },
-    "joint_minus_eeg_only_nats_per_observation": 9.150161481951265,
+    "joint_minus_eeg_only_nats_per_observation": 39.90117255786886,
     "bold_observations_only": {
-     "joint_native": 155.236821299518,
-     "fmri_only": 20221.66952884705,
-     "n_observations": 480.0
+     "joint_native": 21205.95727230513,
+     "fmri_only": 19051.115574682644,
+     "n_observations": 7680.0
     },
-    "joint_minus_fmri_only_nats_per_observation": -20066.432707547534,
+    "joint_minus_fmri_only_nats_per_observation": 2154.841697622487,
     "interpretation": "negative => fusion improves prediction of the shared rows; positive => fusion degrades them (negative transfer)"
    },
    "all_observation_pooling_artefact": {
-    "joint_native_all_obs": 26.039573004725835,
-    "eeg_only_all_obs": 16.81600399533434,
-    "apparent_degradation": 9.223569009391493,
-    "predicted_if_fusion_inert": 11.473511371295693,
-    "residual_after_removing_pooling": -2.2499423619042,
+    "joint_native_all_obs": 73.96505687539099,
+    "eeg_only_all_obs": 19.055367119063515,
+    "apparent_degradation": 54.90968975632747,
+    "predicted_if_fusion_inert": 13.507494824388633,
+    "residual_after_removing_pooling": 41.40219493193884,
     "warning": "these all-observation means are NOT comparable across designs: they average over different observation populations. Reported only to show the pooling artefact explicitly; the criterion uses the common-population test."
    },
    "per_observation_negative_log_likelihood_all_observations": {
-    "joint_native": 26.039573004725835,
-    "eeg_only": 16.81600399533434,
-    "fmri_only": 20221.669528847055,
-    "joint_resampled": 369.0344066672176
+    "joint_native": 73.96505687539099,
+    "eeg_only": 19.055367119063515,
+    "fmri_only": 19051.115574682644,
+    "joint_resampled": 4407.887524592233
    },
    "detail": {
     "joint_native": {
-     "total_negative_log_likelihood": 22010730.269434653,
-     "per_observation": 26.039573004725835,
-     "se_per_observation": 0.0025909396781287246,
-     "n_observations": 845280.0,
+     "total_negative_log_likelihood": 800384756.2554309,
+     "per_observation": 73.96505687539099,
+     "se_per_observation": 0.017318670832598453,
+     "n_observations": 10821120.0,
      "per_channel": {
       "eeg": {
-       "total_negative_log_likelihood": 21936216.59521088,
-       "n_observations": 844800.0,
-       "per_observation": 25.966165477285607
+       "total_negative_log_likelihood": 637523004.4041276,
+       "n_observations": 10813440.0,
+       "per_observation": 58.95653967693237
       },
       "bold": {
-       "total_negative_log_likelihood": 74513.67422376864,
-       "n_observations": 480.0,
-       "per_observation": 155.236821299518
+       "total_negative_log_likelihood": 162861751.8513034,
+       "n_observations": 7680.0,
+       "per_observation": 21205.95727230513
       }
      }
     },
     "eeg_only": {
-     "total_negative_log_likelihood": 14206160.175258452,
-     "per_observation": 16.81600399533434,
-     "se_per_observation": 0.002581854659718464,
-     "n_observations": 844800.0,
+     "total_negative_log_likelihood": 206054069.01996619,
+     "per_observation": 19.055367119063515,
+     "se_per_observation": 0.00107585421815052,
+     "n_observations": 10813440.0,
      "per_channel": {
       "eeg": {
-       "total_negative_log_likelihood": 14206160.175258452,
-       "n_observations": 844800.0,
-       "per_observation": 16.81600399533434
+       "total_negative_log_likelihood": 206054069.01996619,
+       "n_observations": 10813440.0,
+       "per_observation": 19.055367119063515
       }
      }
     },
     "fmri_only": {
-     "total_negative_log_likelihood": 9706401.373846587,
-     "per_observation": 20221.669528847055,
-     "se_per_observation": 138.45266136547386,
-     "n_observations": 480.0,
+     "total_negative_log_likelihood": 146312567.6135627,
+     "per_observation": 19051.115574682644,
+     "se_per_observation": 25.89798551961003,
+     "n_observations": 7680.0,
      "per_channel": {
       "bold": {
-       "total_negative_log_likelihood": 9706401.373846585,
-       "n_observations": 480.0,
-       "per_observation": 20221.66952884705
+       "total_negative_log_likelihood": 146312567.6135627,
+       "n_observations": 7680.0,
+       "per_observation": 19051.115574682644
       }
      }
     },
     "joint_resampled": {
-     "total_negative_log_likelihood": 501886.79306741594,
-     "per_observation": 369.0344066672176,
-     "se_per_observation": 5.3393047780313445,
-     "n_observations": 1360.0,
+     "total_negative_log_likelihood": 82938811.66272745,
+     "per_observation": 4407.887524592233,
+     "se_per_observation": 7.380667875966486,
+     "n_observations": 18816.0,
      "per_channel": {
       "eeg": {
-       "total_negative_log_likelihood": 27085.194340871043,
-       "n_observations": 880.0,
-       "per_observation": 30.778629932808002
+       "total_negative_log_likelihood": 432458.121322516,
+       "n_observations": 11136.0,
+       "per_observation": 38.83424221646157
       },
       "bold": {
-       "total_negative_log_likelihood": 474801.5987265449,
-       "n_observations": 480.0,
-       "per_observation": 989.1699973469684
+       "total_negative_log_likelihood": 82506353.54140493,
+       "n_observations": 7680.0,
+       "per_observation": 10743.014784037101
       }
      }
     }
@@ -376,127 +376,127 @@
      {
       "module": "eeg[0]",
       "statistic": "variance",
-      "z": 24769.329033480848,
-      "value": 54.89733422179696,
-      "n": 422400,
+      "z": 189918.17532028595,
+      "value": 116.50867106556689,
+      "n": 5406720,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "eeg[0]",
       "statistic": "lag1_autocorrelation",
-      "z": -91.9994851929199,
-      "value": -0.1416080721056778,
-      "n": 422400,
+      "z": -316.67694726064235,
+      "value": -0.1362171465302031,
+      "n": 5406720,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "eeg[1]",
       "statistic": "variance",
-      "z": 24410.55587322425,
-      "value": 54.11665433733088,
-      "n": 422400,
+      "z": 190959.97489951726,
+      "value": 117.14229596592587,
+      "n": 5406720,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "eeg[1]",
       "statistic": "lag1_autocorrelation",
-      "z": -93.1087662763266,
-      "value": -0.1433155072648542,
-      "n": 422400,
+      "z": -318.5365483815972,
+      "value": -0.13701704548265933,
+      "n": 5406720,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "eeg[2]",
       "statistic": "variance",
-      "z": 24508.22869805762,
-      "value": 54.32918754230044,
-      "n": 422400,
+      "z": 190481.785342335,
+      "value": 116.8514599773513,
+      "n": 5406720,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "eeg[2]",
       "statistic": "lag1_autocorrelation",
-      "z": -92.39266986424815,
-      "value": -0.1422132724844793,
-      "n": 422400,
+      "z": -323.721637257342,
+      "value": -0.13924738784660204,
+      "n": 5406720,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "eeg[3]",
       "statistic": "variance",
-      "z": 55050.62686911278,
-      "value": 120.78855105333636,
-      "n": 422400,
+      "z": 217400.98442636675,
+      "value": 133.22377877781423,
+      "n": 5406720,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "eeg[3]",
       "statistic": "lag1_autocorrelation",
-      "z": -8.641869724781934,
-      "value": -0.013301797380155038,
-      "n": 422400,
+      "z": -79.12516241753599,
+      "value": -0.0340353282311534,
+      "n": 5406720,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "bold[0]",
       "statistic": "variance",
-      "z": 262939.3919695132,
-      "value": 20788.184130086214,
-      "n": 320,
+      "z": 1805393.1001516983,
+      "value": 35683.214177699054,
+      "n": 5120,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "bold[0]",
       "statistic": "lag1_autocorrelation",
-      "z": -2.170348949779278,
-      "value": -0.30693369198600584,
-      "n": 320,
-      "p_value": 0.029980421012955505,
+      "z": -14.678023361517448,
+      "value": -0.25818552996643857,
+      "n": 5120,
+      "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "bold[1]",
       "statistic": "variance",
-      "z": 223962.18916797786,
-      "value": 17706.765688207524,
-      "n": 320,
+      "z": 1900541.0245743785,
+      "value": 37563.74015153175,
+      "n": 5120,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "bold[1]",
       "statistic": "lag1_autocorrelation",
-      "z": -3.3310886733511067,
-      "value": -0.47108707793205357,
-      "n": 320,
-      "p_value": 0.0008650704117270092,
+      "z": -12.625365809011704,
+      "value": -0.22207940961356026,
+      "n": 5120,
+      "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "bold[2]",
       "statistic": "variance",
-      "z": 374857.00472930906,
-      "value": 29636.04829532816,
-      "n": 320,
+      "z": 2520518.05396673,
+      "value": 49817.11208818792,
+      "n": 5120,
       "p_value": 0.0,
       "holm_reject": true
      },
      {
       "module": "bold[2]",
       "statistic": "lag1_autocorrelation",
-      "z": -3.379189859905235,
-      "value": -0.47788961297116217,
-      "n": 320,
-      "p_value": 0.0007269978259212273,
+      "z": -5.089599118502466,
+      "value": -0.08952573608599483,
+      "n": 5120,
+      "p_value": 3.5882126603326014e-07,
       "holm_reject": true
      }
     ],
@@ -515,6 +515,17 @@
  },
  "all_pass": false,
  "detail": {
+  "instrument": {
+   "epoch_seconds": 6.0,
+   "n_epochs": 32,
+   "dt_base_s": 0.001,
+   "n_delay_taps": 26,
+   "state_dimension": 105,
+   "dtype": "float64",
+   "device": "cuda",
+   "seed": 20260805,
+   "n_newton": 5
+  },
   "schema_source": "scwbd.schema.examples.three_region.build_three_region_schema",
   "n_parents": 12,
   "n_sessions": 2,
@@ -530,76 +541,76 @@
   "fits": {
    "joint_native": {
     "estimate_mean": [
-     10.732116069315836,
-     6.013831524012749,
-     43.43072201982874,
-     -4.827828135106996,
-     1.7162601746994903,
-     -0.5285887854738494,
-     -2.761512410183175,
-     1.1296575226661607,
-     74.34481955877526
-    ],
-    "posterior_sd_mean": [
-     2.1305669949498505,
-     3.8180676158224305,
-     5.719533561806244,
-     0.07138577957389004,
-     0.020162753395567324,
-     0.0228043580837782,
-     0.13910645056583376,
-     0.570929558159104,
-     0.2773608133004163
-    ],
-    "median_newton_decrement": 12237.632839973307,
-    "max_newton_decrement": 139103.71706844735,
-    "max_abs_drift_from_prior_mean_in_prior_sd": 1162.820374877442,
-    "drift_by_parameter_prior_sd": [
-     7.686884200713021,
-     21.143549958457648,
-     53.85811645831454,
-     8.776100299046721,
-     29.793291858227505,
-     12.376707149034084,
-     312.80133510162585,
-     31.947361796495304,
-     1162.820374877442
-    ],
-    "positive_definite_hessian_fraction": 0.1875
-   },
-   "eeg_only": {
-    "estimate_mean": [
-     -22.015359098049615,
-     44.75900663237157,
-     13.170762347829779,
-     -7.482746742070214,
-     3.1520923701770793,
-     -3.6135722672969246,
+     30.0,
+     25.0,
+     -18.0,
+     -4.422848629194136,
+     0.0,
+     0.0,
      0.47000362924573524,
      0.0,
      0.0
     ],
     "posterior_sd_mean": [
-     1.6968314565522677,
-     3.0841812178531045,
-     5.2189872030506,
-     0.07570154465863509,
-     0.02156974277399203,
-     0.02645646574714786,
+     0.47500338880626847,
+     0.8887968507827962,
+     1.6824148079464438,
+     0.021859711180553857,
+     0.006007147347322272,
+     0.007181419757020642,
+     0.07229810383520012,
+     0.5991657527695261,
+     0.1122542604518855
+    ],
+    "median_newton_decrement": 222462.08775088238,
+    "max_newton_decrement": 267466.13207244355,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 0.0,
+    "drift_by_parameter_prior_sd": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "positive_definite_hessian_fraction": 0.0
+   },
+   "eeg_only": {
+    "estimate_mean": [
+     -39.82887289607592,
+     57.94827902987764,
+     44.5610232488249,
+     -9.013809401159516,
+     3.1530034904538926,
+     -4.715828369309135,
+     0.47000362924573524,
+     0.0,
+     0.0
+    ],
+    "posterior_sd_mean": [
+     0.47877053269938596,
+     0.9006568448121078,
+     1.6836574656458076,
+     0.021860481860037088,
+     0.006007159579601465,
+     0.007183972295459371,
      0.1999999999959999,
      0.599999999892,
      0.29999999998650023
     ],
-    "median_newton_decrement": 409.26139110586007,
-    "max_newton_decrement": 467.1872520682815,
-    "max_abs_drift_from_prior_mean_in_prior_sd": 21.41538365123053,
+    "median_newton_decrement": 1446.1627192874892,
+    "max_newton_decrement": 2479.119460365197,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 24.294460569618312,
     "drift_by_parameter_prior_sd": [
-     6.226457095826369,
-     3.086135437698146,
-     10.148312499971691,
-     16.13524168048508,
-     11.96891937090602,
-     21.41538365123053,
+     7.195505376202784,
+     3.7409889696703202,
+     7.515950843230217,
+     19.897306043847514,
+     13.796265418563234,
+     24.294460569618312,
      0.0,
      0.0,
      0.0
@@ -619,18 +630,18 @@
      0.0
     ],
     "posterior_sd_mean": [
-     9.350456074003167,
-     9.684167509836529,
-     9.955048191713992,
-     0.24999875548777675,
+     3.5706110756003575,
+     4.86092145649448,
+     9.749733397729242,
+     0.24998897431750078,
      0.29999999998650023,
      0.1999999999959999,
-     0.1417040140922117,
-     0.5999998348459777,
-     0.27255949082742364
+     0.07245306395046701,
+     0.5991870467254968,
+     0.12894736820665906
     ],
-    "median_newton_decrement": 100477.9199493702,
-    "max_newton_decrement": 146676.88240546282,
+    "median_newton_decrement": 204255.51041298005,
+    "max_newton_decrement": 250406.5952676723,
     "max_abs_drift_from_prior_mean_in_prior_sd": 0.0,
     "drift_by_parameter_prior_sd": [
      0.0,
@@ -647,42 +658,42 @@
    },
    "joint_resampled": {
     "estimate_mean": [
-     29.168367684076035,
-     24.882825035660453,
-     -17.421398025380665,
+     30.0,
+     25.0,
+     -18.0,
      -4.422848629194136,
-     0.08721891562616951,
-     -0.04282727157601501,
-     0.20703315058985605,
-     0.021015572891797115,
-     0.26046388623839767
+     0.0,
+     0.0,
+     0.47000362924573524,
+     0.0,
+     0.0
     ],
     "posterior_sd_mean": [
-     9.693740291555653,
-     9.932743836395797,
-     9.9028042866721,
-     0.2499999999924408,
-     0.27751063428384154,
-     0.19632869547616977,
-     0.1999999999961988,
-     0.5994198656649392,
-     0.2997738854539343
+     7.984882506444306,
+     8.96394660910047,
+     9.709227697125122,
+     0.24999999999218755,
+     0.1813732960042855,
+     0.18067243973737931,
+     0.1584659091469173,
+     0.599999999892,
+     0.2844446517503076
     ],
-    "median_newton_decrement": 53675.19931118483,
-    "max_newton_decrement": 135718.56674404224,
-    "max_abs_drift_from_prior_mean_in_prior_sd": 21.053944540550756,
+    "median_newton_decrement": 945860.8352003332,
+    "max_newton_decrement": 1194438.8314742693,
+    "max_abs_drift_from_prior_mean_in_prior_sd": 0.0,
     "drift_by_parameter_prior_sd": [
-     1.5454725852684326,
-     1.2609159504372243,
-     0.9904303796428877,
      0.0,
-     5.656599958843684,
-     6.214103073625947,
-     21.053944540550756,
-     0.561612219356988,
-     13.901599000191588
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
     ],
-    "positive_definite_hessian_fraction": 0.03125
+    "positive_definite_hessian_fraction": 0.0
    }
   },
   "parameter_names": [

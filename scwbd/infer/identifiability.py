@@ -41,7 +41,7 @@ from __future__ import annotations
 import math
 import time
 from dataclasses import dataclass, field, replace
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 import numpy as np
 import torch
@@ -49,7 +49,7 @@ from torch import Tensor
 
 from .calibration import interval_coverage
 from .fisher import FisherReport, expected_fisher, monte_carlo_fisher, schur_information
-from .filters import multiepoch_kalman_filter, simulate_lgssm
+from .filters import multiepoch_kalman_filter
 from .linear_gaussian import (
     N_PARAM,
     PARAM_INDEX,
@@ -295,7 +295,7 @@ def _simulate(
     mdl = make_model(u_true, bd.cfg, bd.proto, include_impulse=bd.include_impulse)
     ssm = mdl.ssm(("eeg", "bold"), epoch=0)
     E = bd.cfg.n_epochs
-    from .filters import LinearGaussianSSM
+    from .filters import LinearGaussianSSM, simulate_lgssm
 
     sim = LinearGaussianSSM(
         mdl.F, mdl.Q, mdl.m0, mdl.P0, ssm.channels, bd.cfg.n_steps,
@@ -559,15 +559,7 @@ def recover(
         "mean_estimate_seconds": float(tau_hat.mean()),
         "bias_seconds": float(tau_hat.mean() - tau_true),
         "rmse_seconds": float(np.sqrt(((tau_hat - tau_true) ** 2).mean())),
-        "rmse_seconds_se": (
-            float(
-                np.std((tau_hat - tau_true) ** 2, ddof=1)
-                / (2 * np.sqrt(((tau_hat - tau_true) ** 2).mean())
-                   * math.sqrt(n_replicates))
-            )
-            if float(((tau_hat - tau_true) ** 2).mean()) > 0
-            else 0.0
-        ),
+        "rmse_seconds_se": _delay_rmse_se(tau_hat, tau_true, n_replicates),
         "mad_seconds": float(np.abs(tau_hat - tau_true).mean()),
     }
     with np.errstate(invalid="ignore", divide="ignore"):
@@ -746,6 +738,7 @@ def run_benchmark(
     recovery_designs: Sequence[str] | None = None,
     heavy_regimes: Sequence[str] | None = None,
     checkpoint_path: str | None = None,
+    resume: bool = True,
     verbose: bool = True,
 ) -> dict[str, Any]:
     """Run the benchmark.
@@ -755,9 +748,24 @@ def run_benchmark(
     ``heavy_regimes`` restricts profile likelihoods and the Monte-Carlo complete
     information to named regimes.  Both restrictions are recorded in the
     manifest so the report states exactly what was computed where.
+
+    ``resume`` reloads ``checkpoint_path`` and skips any (regime, design) pair
+    already present.  On a shared machine this run *will* be interrupted; every
+    interruption should cost the design in flight, not the whole sweep.
     """
     seed_everything(seed)
-    results: dict[str, Any] = {"regimes": {}}
+    sig = run_signature(
+        base_cfg, seed=seed, n_replicates=n_replicates, n_newton=n_newton,
+        mc_replicates=mc_replicates, with_recovery=with_recovery,
+        newton_tol=newton_tol, with_profiles=with_profiles,
+        with_monte_carlo_fisher=with_monte_carlo_fisher,
+    )
+    results: dict[str, Any] = {"regimes": {}, "run_signature": sig}
+    done = _load_checkpoint(checkpoint_path, sig) if resume else {}
+    if done and verbose:
+        n = sum(len(r.get("designs", {})) for r in done.values())
+        print(f"[resume] reusing {n} completed design(s) from {checkpoint_path}",
+              flush=True)
     for regime in regimes:
         u_true = regime.eta_true()
         rres: dict[str, Any] = {
@@ -772,8 +780,15 @@ def run_benchmark(
             "designs": {},
         }
         if verbose:
-            print(f"[regime {regime.name}]")
+            print(f"[regime {regime.name}]", flush=True)
+        prior = done.get(regime.name, {}).get("designs", {})
         for spec in designs:
+            if spec.name in prior:
+                rres["designs"][spec.name] = prior[spec.name]
+                if verbose:
+                    print(f"  {spec.name:32s} [resumed from checkpoint]", flush=True)
+                results["regimes"][regime.name] = rres
+                continue
             t0 = time.time()
             try:
                 bd = build_design(spec, base_cfg, regime, seed=seed)
@@ -851,20 +866,104 @@ def run_benchmark(
                     f"({entry['seconds']:.0f}s)"
                 )
             rres["designs"][spec.name] = entry
-            if checkpoint_path:   # per design, so nothing is lost to a late crash
-                _checkpoint(results, regime.name, rres, checkpoint_path)
+            # checkpoint after EVERY design, not every regime: an interruption
+            # must cost one design (minutes), never a whole regime (an hour).
+            results["regimes"][regime.name] = rres
+            _checkpoint(checkpoint_path, results)
         results["regimes"][regime.name] = rres
-        if checkpoint_path:
-            _checkpoint(results, regime.name, rres, checkpoint_path)
+        _checkpoint(checkpoint_path, results)
     return results
 
 
-def _checkpoint(results, regime_name, rres, path) -> None:
+def run_signature(
+    cfg: SystemConfig, *, seed: int, n_replicates: int, n_newton: int,
+    mc_replicates: int, with_recovery: bool, with_profiles: bool,
+    with_monte_carlo_fisher: bool, newton_tol: float = 0.05,
+) -> str:
+    """Hash of everything that changes what a design entry *means*.
+
+    Resuming across a settings change would silently splice together results
+    computed under different budgets, which is exactly the kind of quiet
+    inconsistency a claim report must never contain.
+
+    Switching an *optional* arm on or off deliberately does **not** change the
+    signature: profiles and the Monte-Carlo Fisher are additive diagnostics
+    stored under their own keys, and their presence or absence cannot alter any
+    other number in the entry.  Their sizes enter only while they are enabled.
+    """
+    import hashlib
+    import json
+
+    payload = {
+        "epoch_seconds": cfg.epoch_seconds, "n_epochs": cfg.n_epochs,
+        "dtype": cfg.dtype, "dt": cfg.dt, "n_regions": cfg.n_regions,
+        "n_delay_taps": cfg.n_delay_taps, "hrf_stages": cfg.hrf_stages,
+        "seed": seed, "with_recovery": with_recovery,
+    }
+    if with_recovery:
+        payload |= {"n_replicates": n_replicates, "n_newton": n_newton,
+                    "newton_tol": newton_tol}
+    if with_monte_carlo_fisher:
+        payload["mc_replicates"] = mc_replicates
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True).encode()
+    ).hexdigest()[:16]
+
+
+def _delay_rmse_se(tau_hat: np.ndarray, tau_true: float, n: int) -> float:
+    """Delta-method standard error of the delay RMSE.
+
+    A design carrying no delay information leaves every replicate at the prior
+    mean, so the squared error can be identically zero and the delta-method
+    denominator vanishes.  Return 0.0 there rather than a NaN, which JSON
+    serialises to ``null`` and every downstream consumer then trips over.
+    """
+    sq = (np.asarray(tau_hat, float) - float(tau_true)) ** 2
+    root = float(np.sqrt(sq.mean()))
+    if root <= 0.0 or n < 2:
+        return 0.0
+    return float(np.std(sq, ddof=1) / (2.0 * root * math.sqrt(n)))
+
+
+def _load_checkpoint(path: str | None, signature: str) -> dict[str, Any]:
+    """Completed ``{regime: {designs: {...}}}`` from a previous run, or ``{}``.
+
+    A corrupt, unreadable, or differently-configured checkpoint is treated as
+    absent rather than fatal: losing the cache costs time, but refusing to
+    start costs the whole run.
+    """
+    if not path:
+        return {}
     import json
     from pathlib import Path as _P
 
-    snapshot = dict(results)
-    snapshot["regimes"] = dict(results["regimes"])
-    snapshot["regimes"][regime_name] = rres
-    _P(path).parent.mkdir(parents=True, exist_ok=True)
-    _P(path).write_text(json.dumps(as_builtin(snapshot), indent=1))
+    p = _P(path)
+    if not p.exists():
+        return {}
+    try:
+        blob = json.loads(p.read_text())
+    except Exception as exc:                       # noqa: BLE001 - see docstring
+        print(f"[resume] ignoring unreadable checkpoint {p}: {exc}", flush=True)
+        return {}
+    got = blob.get("run_signature")
+    if got != signature:
+        print(
+            f"[resume] ignoring checkpoint {p}: run signature {got} != "
+            f"{signature} (settings changed since it was written)",
+            flush=True,
+        )
+        return {}
+    return blob.get("regimes", {})
+
+
+def _checkpoint(path: str | None, results: Mapping[str, Any]) -> None:
+    if not path:
+        return
+    import json
+    from pathlib import Path as _P
+
+    p = _P(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_suffix(p.suffix + ".tmp")
+    tmp.write_text(json.dumps(as_builtin(results), indent=1))
+    tmp.replace(p)          # atomic: a kill mid-write cannot corrupt the file

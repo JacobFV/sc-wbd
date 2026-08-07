@@ -536,7 +536,9 @@ def simulate_lgssm(
     ``[batch, n_steps, n]``, which at benchmark scale (thousands of epochs x
     thousands of 1 ms steps x a 105-dimensional augmented state) is tens of
     gigabytes, while the observations it produces are three orders of magnitude
-    smaller.  Callers that want the trajectory must ask for it.
+    smaller.  Callers that want the trajectory must ask for it.  Skipping the
+    accumulation does not touch the random draws, so the observations are
+    bit-identical either way.
     """
     b = batch or ssm.batch
     _, n, F, Q, m0, P0 = _prepare(ssm)

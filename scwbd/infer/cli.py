@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 
@@ -22,6 +23,23 @@ from .types import cap_gpu_memory, gpu_memory_report
 DEFAULT_OUT = Path("reports/identifiability")
 
 
+def _default_gpu_gib() -> float:
+    """Default CUDA cap, overridable by ``SCWBD_CUDA_MAX_GB``.
+
+    This box has **one** unified memory pool: ``total_memory`` (~130.6 GB) and
+    ``free -h`` (~121 GiB) describe the same physical RAM in different units.
+    A ``systemd-run -p MemoryMax=`` scope charges host allocations but *not*
+    CUDA allocations -- measured here at 6.8 GB of CUDA against 2.4 GB of
+    cgroup-visible RSS -- so a cgroup cap alone will not stop a runaway kernel
+    from taking the machine down.  The allocator-enforced cap in
+    :func:`scwbd.infer.types.cap_gpu_memory` closes that gap; this function only
+    decides its default, so a run launched under the project's memory discipline
+    inherits the same bound without having to pass ``--gpu-gib``.
+    """
+    gb = os.environ.get("SCWBD_CUDA_MAX_GB")
+    return float(gb) if gb else 20.0
+
+
 def _cfg(args) -> SystemConfig:
     return SystemConfig(
         device=args.device or ("cuda" if torch.cuda.is_available() else "cpu"),
@@ -33,18 +51,31 @@ def _cfg(args) -> SystemConfig:
 
 def cmd_benchmark(args) -> int:
     cap = cap_gpu_memory(args.gpu_gib)
-    print(f'[gpu cap] {cap}')
+    print(f"[gpu cap] {cap}", flush=True)
     cfg = _cfg(args)
     out = Path(args.out)
     regimes = REGIMES if not args.regimes else [
         r for r in REGIMES if r.name in set(args.regimes)
     ]
     designs = DESIGNS if not args.primary_only else [d for d in DESIGNS if d.primary]
+    # The manifest must record what this run will *actually* compute, not the
+    # defaults of the flags it ignored: an arm that is switched off has zero
+    # replicates, and the recovery arm may be restricted to a subset.
+    recovery_designs = (
+        [] if args.no_recovery
+        else list(args.recovery_designs or [d.name for d in designs if d.primary])
+    )
     write_manifest(
         out, cfg=cfg, regimes=regimes, designs=designs, seed=args.seed,
-        n_replicates=args.replicates, mc_replicates=args.mc_replicates,
+        n_replicates=0 if args.no_recovery else args.replicates,
+        mc_replicates=0 if args.no_monte_carlo else args.mc_replicates,
         extra={"command": {k: v for k, v in vars(args).items() if k != "func"},
-               "recovery_designs": [d.name for d in designs if d.primary],
+               "recovery_designs": recovery_designs,
+               "arms_computed": {
+                   "recovery": not args.no_recovery,
+                   "profile_likelihood": not args.no_profiles,
+                   "monte_carlo_fisher": not args.no_monte_carlo,
+               },
                "profile_and_monte_carlo_regime": regimes[0].name,
                "gpu_memory_cap": cap},
     )
@@ -60,9 +91,12 @@ def cmd_benchmark(args) -> int:
         mc_replicates=args.mc_replicates,
         profile_grid=args.profile_grid,
         profile_newton=args.profile_newton,
-        recovery_designs=[d.name for d in designs if d.primary],
+        recovery_designs=(
+            args.recovery_designs or [d.name for d in designs if d.primary]
+        ),
         heavy_regimes=[regimes[0].name],
         checkpoint_path=str(out / 'results_partial.json'),
+        resume=not args.no_resume,
     )
     res["wall_seconds"] = time.time() - t0
     res["gpu_memory"] = gpu_memory_report()
@@ -117,8 +151,9 @@ def main(argv=None) -> int:
     p.add_argument("--seed", type=int, default=20260805)
     p.add_argument("--device", default=None)
     p.add_argument("--dtype", default="float64")
-    p.add_argument("--gpu-gib", type=float, default=20.0,
-                   help="device-side CUDA allocation cap for this process")
+    p.add_argument("--gpu-gib", type=float, default=_default_gpu_gib(),
+                   help="device-side CUDA allocation cap for this process "
+                        "(default: $SCWBD_CUDA_MAX_GB, else 20)")
     p.add_argument("--epoch-seconds", type=float, default=6.0)
     p.add_argument("--n-epochs", type=int, default=32)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -137,6 +172,15 @@ def main(argv=None) -> int:
     b.add_argument("--no-recovery", action="store_true")
     b.add_argument("--no-profiles", action="store_true")
     b.add_argument("--no-monte-carlo", action="store_true")
+    b.add_argument(
+        "--recovery-designs", nargs="*", default=None,
+        help="restrict the expensive MAP-recovery arm to these designs "
+             "(default: every primary design)",
+    )
+    b.add_argument(
+        "--no-resume", action="store_true",
+        help="recompute designs already present in results_partial.json",
+    )
     b.set_defaults(func=cmd_benchmark)
     s = sub.add_parser("slice")
     s.set_defaults(func=cmd_slice)
