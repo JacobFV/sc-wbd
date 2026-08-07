@@ -192,6 +192,32 @@ receive separate source cards &
 Study-specific consent and licenses; snapshots pinned by dataset/version &
 Archive membership is not harmonization; metadata quality, duplicate
 subjects, preprocessing and redistribution vary by study\\
+
+Naturalistic-viewing simultaneous EEG--fMRI, OpenNeuro \texttt{ds003768}
+\citep{telesford2023naturalistic} &
+22 adults with \emph{concurrently} recorded EEG and fMRI during naturalistic
+video and rest, plus eye tracking, ECG and cognitive/behavioral measures &
+The one configuration that constrains the fast and slow observation heads
+against \emph{the same} latent trajectory rather than two cohorts' averages;
+the eye and cardiac channels additionally exercise embodied boundary ports
+without a separate study &
+Public OpenNeuro release &
+Gradient and ballistocardiogram artifact removal is a modeling choice inside
+the EEG, not a preprocessing detail; residual artifact correlates with the
+cardiac channel that is also being fit. Concurrency constrains \emph{timing},
+it does not make BOLD neural ground truth\\
+
+Simultaneous EEG--fMRI with repeated experience sampling
+\citep{eegfmri2026sampling} &
+Multi-session concurrent EEG--fMRI with continuous behavior and repeated
+sampling of spontaneous mental experience &
+Separates \emph{session} from \emph{trait} within person, which is the
+hierarchy the individualization stage assumes and currently cannot test; the
+experience reports give a report-model target that is not a task label &
+Public research release &
+Self-report is a construct with its own measurement model, and sampling
+prompts perturb the state they sample. Absence of a report is not absence of
+the experience\\
 \bottomrule
 \end{tabularx}
 \caption{\textbf{Candidate functional, naturalistic, multimodal, and
@@ -277,6 +303,43 @@ Study discovery, format validation and held-out external tests &
 Dataset-specific licenses, consent and versions &
 Archive-level pooling prohibited; species, preparation, task, coordinate and
 preprocessing semantics must match declared ports\\
+
+LibriBrain \citep{landau2025libribrain} &
+Over 50 hours of \emph{within-subject} 306-channel MEG at 250\,Hz from one
+listener across nearly the full Sherlock Holmes canon; $\sim$50\,GB with fixed
+train/validation/test splits and a held-out competition partition &
+The deep-phenotyping analogue of MyConnectome and the Midnight Scan Club for
+fast electrophysiology: the individualization stage's natural corpus, where
+session-versus-trait separation is estimable within one person rather than
+inferred across people &
+Public research release under CC~BY-NC-4.0 &
+\textbf{Non-commercial term propagates to any checkpoint trained on it}, which
+must be computed per artifact rather than assumed. One participant is one
+anatomy, one head model and one montage: nothing here constrains between-person
+variation, and a within-subject result must not be reported as a population
+one\\
+
+MEG-MASC \citep{gwilliams2023megmasc} &
+27 English speakers $\times$ two sessions of naturalistic story listening
+($\approx$2\,h each), BIDS-formatted, with aligned audio and systematic
+phonetic and word-level annotation &
+Population-level language and auditory ports on the fast clock; the
+between-person counterpart to LibriBrain's within-person depth, and the
+annotation layer that makes a linguistic port testable rather than decorative &
+Public research release &
+Listening is not production and not imagery; annotation alignment error is a
+latency prior, not a fact. Story structure induces long-range temporal
+autocorrelation, so window-level intervals overstate precision unless clustered
+by story and by person\\
+
+MEG-SCANS \citep{megscans2025} &
+MEG with stories, chirps and noisy sentences in one protocol &
+Graded acoustic-to-linguistic complexity within a fixed montage, which
+separates \emph{signal-to-noise} explanations from \emph{linguistic} ones for
+any language-port improvement &
+Public research release &
+The chirp and speech conditions differ in more than complexity; a monotone
+trend across them is not by itself evidence of hierarchical processing\\
 \bottomrule
 \end{tabularx}
 \caption{\textbf{Candidate electrophysiology and BCI sources.} Sensor
@@ -388,6 +451,23 @@ Simulator licenses; human study pending ethics, consent, privacy review and
 actual enrollment &
 Simulation-to-human gap; planned counts are targets, not collected evidence;
 preregister endpoints and retain device/pose/clock calibration\\
+
+Single-trial TMS-evoked potentials across stimulation sites (BA4/BA6/BA7/BA19),
+with the TESA/EEGLAB analysis stack \citep{rogasch2017tesa} &
+Single-trial TEPs at four cortical targets, plus the open pipeline for pulse
+artifact removal and interpolation &
+The only public data that constrains \emph{site-specific} response shape, and
+therefore the only external check on an impulse-response claim that a pose
+change produces a distinguishable predicted field response &
+Repository-specific research terms (Mendeley Data); analysis tooling GPL/open &
+\textbf{The decisive confound is sensory, not electromagnetic.} A TEP carries
+auditory potentials from the coil click and somatosensory potentials from
+scalp flick, and both are pose-dependent -- so a response that varies with coil
+position is \emph{not} thereby evidence of differential cortical engagement.
+Any claim of pose-specific neural response requires a sham or masked-click
+control in the same participants; without one the correct reading is that the
+model reproduces the physics of the field, which is a statement about the
+forward model and not about the brain\\
 \bottomrule
 \end{tabularx}
 \caption{\textbf{Candidate perturbational, embodied, physiological,
