@@ -411,7 +411,41 @@ there is no field for it to project *from* — only a tensor to index.
 
 Everything below follows from naming that object.
 
-### O-1. Separate the **carrier** from its **views**
+### O-1. Separate the **carrier** from its **views** — *audited*
+
+**Measured 2026-08-06.** The model carries **three** observation heads —
+`eeg` (53 977 params), `bold` (3 317), `behaviour` (22 342) — and each owns its
+operator as a buffer registered *inside the module*: `L` and `L_vec` in
+`EEGHead`, `_priors` in `BOLDHead`. There are **nine** source cards on disk, and
+every one of them involves EEG.
+
+So the arithmetic is nine declared sources against **one** EEG view, and the
+view is a buffer on a singleton module. That is the concrete form of the problem
+this entry describes, and it is what makes the montage question unanswerable as
+built:
+
+> Montage A and montage B cannot coexist, because there is exactly one `L`.
+> Adding the second one means either adding a second head or overwriting the
+> first — neither of which is "two views of one carrier".
+
+The number of views is fixed by the model's module list rather than by the
+sources, which is precisely backwards: sources are data and arrive over time,
+modules are code and should not have to change when they do.
+
+**What the audit adds to the proposal.** The heads are not the problem and
+should not be deleted — `EEGHead` holds the physics, and the physics is real.
+What is misplaced is *ownership*: `L` describes a montage, a montage belongs to
+a source, and a source is declared in a `SourceCard`. Moving the operator to the
+card and leaving the head as the thing that *applies* a view gives montage A and
+montage B for free, because they stop being two modules and become two rows.
+
+This is also where [O-2](#o-2-support-must-compose--algebra-landed-not-yet-wired)
+becomes load-bearing rather than decorative: once each source carries its own
+operator and support, relating two of them is exactly the `relate` /
+`common_temporal_refinement` computation, and the refusals there — differing
+frames, differing units, a rank change without an orientation field — are the
+checks that stop two montages being averaged into one another by accident.
+
 
 One `LatentField` — what the model owns, region-indexed and heterogeneous per
 §2.1. Many `View`s — what each source sees. A `View` is `(operator, support,
