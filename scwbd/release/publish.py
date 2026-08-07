@@ -829,6 +829,11 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
         str(s.get("name")) for s in _stages if isinstance(s, dict) and s.get("name")
     }
     trained_on_measured = bool(_stage_names & _REAL_STAGES)
+    # E1: SC-WBD is scored on target/s and the baselines on the raw target, so
+    # the two sides are different random variables. True for every artifact this
+    # evaluate.py has produced; kept as a flag rather than hardcoded so that
+    # fixing evaluate.py removes the disclosure instead of leaving it stale.
+    _units_defect = True
     sim_only = bool(_stage_names) and not trained_on_measured
     arm_word = "treatment" if is_treatment else "control"
     lost = bool(beaten)
@@ -882,6 +887,35 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
             "stage named for measurement is not evidence that measurement "
             "occurred. See `reports/RUN2.md` section 2b."
             if sim_only
+            else ""
+        ),
+        "",
+        (
+            "> **The comparison below flatters this model, and the correction is "
+            "not applied to the numbers.** `evaluate.py` scores SC-WBD on "
+            "`y = target / s`, where `s` is each window's own standard deviation, "
+            "with the Jacobian folded into the log-variance. Every baseline is "
+            "scored on the **raw** target. The algebra is exact and "
+            "model-independent: `NLL_scaled = NLL_raw - log s`, so the two sides "
+            "are different random variables and SC-WBD's figure is the smaller "
+            "one.\n"
+            ">\n"
+            "> Measured on this test fold, `mean(log s) = 0.5694` nats -- against "
+            "a spread of 0.035 nats across the three non-trivial baselines, so the "
+            "offset is roughly **17x the entire spread it is being compared "
+            "against**. In the baselines' units SC-WBD's NLL is approximately "
+            "**3.75** rather than the 3.179 tabulated, and the gap to the best "
+            "baseline is about **1.70 nats** rather than 1.13. MSE is off by "
+            "`1/s^2` and does not cancel.\n"
+            ">\n"
+            "> The rescale is harmless during training -- `s` does not depend on "
+            "the parameters -- and is a pure unearned advantage at evaluation. No "
+            "verdict changes: every paired interval already excluded zero and the "
+            "correction moves all of them further from SC-WBD. The numbers are "
+            "left as measured rather than silently adjusted, because re-scoring "
+            "both sides on the raw target is the fix and arithmetic on published "
+            "figures is not."
+            if _units_defect
             else ""
         ),
         "",
