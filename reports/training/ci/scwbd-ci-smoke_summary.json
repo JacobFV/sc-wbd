@@ -1,12 +1,12 @@
 {
   "run_name": "scwbd-ci-smoke",
-  "git_sha": "3477763545a5123f29dcd53651ed148ef56d453e-dirty",
+  "git_sha": "966b598f91098a039fda9edb4058f402f0cba4a0-dirty",
   "corpus_git_sha": "f472ad16d0277db7bfc7342193ff3d5c82bee269-dirty",
   "environment": {
     "python": "3.12.13",
     "torch": "2.13.0+cu130",
     "cuda_available": true,
-    "git_sha": "3477763545a5123f29dcd53651ed148ef56d453e-dirty",
+    "git_sha": "966b598f91098a039fda9edb4058f402f0cba4a0-dirty",
     "device": "NVIDIA GB10",
     "capability": "12.1",
     "total_memory_gb": 130.6,
@@ -16,62 +16,18 @@
     {
       "stage": "I_regional",
       "steps": 4,
-      "wall_seconds": 1.115832805633545,
-      "best_loss": 0.9783428741862766,
-      "steps_per_second": 3.584766445120682,
+      "wall_seconds": 0.6058604717254639,
+      "best_loss": 0.9750421047210693,
+      "steps_per_second": 6.602180182853284,
       "mixture": {
         "mixture_weights": {
           "weights": {
-            "anatomical_prior": 0.01352091780716504,
-            "eegmmidb_real": 0.38684699339382894,
-            "montage_calibration": 0.5099882830937199,
-            "negative_control_shuffled": 0.0,
-            "sim_wholebrain": 0.08964380570528607
+            "sim_wholebrain": 1.0
           },
           "raw_reliability": {
-            "anatomical_prior": 0.04551724137931035,
-            "eegmmidb_real": 1.3022938402773516,
-            "montage_calibration": 1.7168405365126675,
-            "negative_control_shuffled": 0.0,
             "sim_wholebrain": 0.30177971648383517
           },
           "inputs": {
-            "anatomical_prior": {
-              "role": "prior",
-              "n_eff": 1.0,
-              "n_rows": 1.0,
-              "measurement_variance": 0.4,
-              "bias_halfwidth": 0.5,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
-            "eegmmidb_real": {
-              "role": "likelihood",
-              "n_eff": 109.0,
-              "n_rows": 1526.0,
-              "measurement_variance": 0.35,
-              "bias_halfwidth": 0.2,
-              "model_discrepancy": 0.0,
-              "validity_overlap": 1.0
-            },
-            "montage_calibration": {
-              "role": "calibration",
-              "n_eff": 64.0,
-              "n_rows": 64.0,
-              "measurement_variance": 0.05,
-              "bias_halfwidth": 0.05,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
-            "negative_control_shuffled": {
-              "role": "negative_control",
-              "n_eff": 109.0,
-              "n_rows": 1526.0,
-              "measurement_variance": 0.35,
-              "bias_halfwidth": 0.2,
-              "model_discrepancy": null,
-              "validity_overlap": 0.0
-            },
             "sim_wholebrain": {
               "role": "prior",
               "n_eff": 40000.0,
@@ -85,139 +41,46 @@
           "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
         },
         "per_source_contribution": {
-          "anatomical_prior": 0.13009638710028257,
-          "sim_wholebrain": 0.8699036128997175
+          "sim_wholebrain": 1.0
         },
         "gradient_permission_audit": {
-          "anatomical_prior": {
-            "n_permitted": 0,
-            "n_blocked": 113,
-            "patterns": [],
-            "frozen": [
-              "eeg.*",
-              "individualizer.*",
-              "local.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
-          "eegmmidb_real": {
-            "n_permitted": 37,
-            "n_blocked": 76,
-            "patterns": [
-              "local.*",
-              "residual.*",
-              "assimilate.*",
-              "context.*",
-              "log_dt_scale"
-            ],
-            "frozen": [
-              "bold.*"
-            ],
-            "blocked_sample": [
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "readout.0.weight",
-              "readout.0.bias",
-              "readout.2.weight",
-              "readout.2.bias",
-              "observation.head.w"
-            ]
-          },
-          "montage_calibration": {
-            "n_permitted": 0,
-            "n_blocked": 113,
-            "patterns": [],
-            "frozen": [
-              "local.*",
-              "coupling.*",
-              "residual.*",
-              "assimilate.*",
-              "readout.*",
-              "bold.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
-          "negative_control_shuffled": {
-            "n_permitted": 0,
-            "n_blocked": 113,
-            "patterns": [],
-            "frozen": [
-              "*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
           "sim_wholebrain": {
-            "n_permitted": 41,
-            "n_blocked": 72,
+            "n_permitted": 94,
+            "n_blocked": 21,
             "patterns": [
               "local.*",
               "residual.*",
+              "coupling.*",
+              "msg_proj.*",
+              "msg_readin.*",
               "assimilate.*",
               "context.*",
               "readout.*",
-              "log_dt_scale"
+              "observation.*",
+              "log_dt_scale",
+              "bold.*",
+              "family_local.*",
+              "family_residual.*",
+              "family_readout.*",
+              "posterior.*"
             ],
             "frozen": [
               "eeg.*",
               "individualizer.*"
             ],
             "blocked_sample": [
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "observation.head.w",
-              "observation.head.b",
               "uncertainty_propagator.log_decay",
               "uncertainty_propagator.net.0.weight",
-              "uncertainty_propagator.net.0.bias"
+              "uncertainty_propagator.net.0.bias",
+              "uncertainty_propagator.net.2.weight",
+              "uncertainty_propagator.net.2.bias",
+              "eeg.log_gain",
+              "eeg.offset",
+              "eeg.log_noise",
+              "eeg.logvar_mix",
+              "eeg.nuisance",
+              "eeg.source_proj.0.weight",
+              "eeg.source_proj.0.bias"
             ]
           }
         },
@@ -234,62 +97,18 @@
     {
       "stage": "II_interface",
       "steps": 4,
-      "wall_seconds": 0.764763593673706,
-      "best_loss": 0.964842156821445,
-      "steps_per_second": 5.230374501465403,
+      "wall_seconds": 0.45322537422180176,
+      "best_loss": 0.9595289826393127,
+      "steps_per_second": 8.825631192578506,
       "mixture": {
         "mixture_weights": {
           "weights": {
-            "anatomical_prior": 0.01352091780716504,
-            "eegmmidb_real": 0.38684699339382894,
-            "montage_calibration": 0.5099882830937199,
-            "negative_control_shuffled": 0.0,
-            "sim_wholebrain": 0.08964380570528607
+            "sim_wholebrain": 1.0
           },
           "raw_reliability": {
-            "anatomical_prior": 0.04551724137931035,
-            "eegmmidb_real": 1.3022938402773516,
-            "montage_calibration": 1.7168405365126675,
-            "negative_control_shuffled": 0.0,
             "sim_wholebrain": 0.30177971648383517
           },
           "inputs": {
-            "anatomical_prior": {
-              "role": "prior",
-              "n_eff": 1.0,
-              "n_rows": 1.0,
-              "measurement_variance": 0.4,
-              "bias_halfwidth": 0.5,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
-            "eegmmidb_real": {
-              "role": "likelihood",
-              "n_eff": 109.0,
-              "n_rows": 1526.0,
-              "measurement_variance": 0.35,
-              "bias_halfwidth": 0.2,
-              "model_discrepancy": 0.0,
-              "validity_overlap": 1.0
-            },
-            "montage_calibration": {
-              "role": "calibration",
-              "n_eff": 64.0,
-              "n_rows": 64.0,
-              "measurement_variance": 0.05,
-              "bias_halfwidth": 0.05,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
-            "negative_control_shuffled": {
-              "role": "negative_control",
-              "n_eff": 109.0,
-              "n_rows": 1526.0,
-              "measurement_variance": 0.35,
-              "bias_halfwidth": 0.2,
-              "model_discrepancy": null,
-              "validity_overlap": 0.0
-            },
             "sim_wholebrain": {
               "role": "prior",
               "n_eff": 40000.0,
@@ -303,138 +122,46 @@
           "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
         },
         "per_source_contribution": {
-          "anatomical_prior": 0.1306325123863469,
-          "sim_wholebrain": 0.869367487613653
+          "sim_wholebrain": 1.0
         },
         "gradient_permission_audit": {
-          "anatomical_prior": {
-            "n_permitted": 3,
-            "n_blocked": 110,
-            "patterns": [
-              "coupling.gain_*",
-              "coupling.global_scale"
-            ],
-            "frozen": [
-              "eeg.*",
-              "individualizer.*",
-              "local.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias",
-              "local.embed",
-              "local.inp.weight",
-              "local.inp.bias"
-            ]
-          },
-          "eegmmidb_real": {
-            "n_permitted": 7,
-            "n_blocked": 106,
-            "patterns": [
-              "coupling.*",
-              "msg_proj.*",
-              "msg_readin.*"
-            ],
-            "frozen": [
-              "bold.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias",
-              "local.embed",
-              "local.inp.weight",
-              "local.inp.bias",
-              "local.layers.0.weight",
-              "local.layers.0.bias",
-              "local.films.0.region_scale",
-              "local.films.0.region_shift"
-            ]
-          },
-          "montage_calibration": {
-            "n_permitted": 0,
-            "n_blocked": 113,
-            "patterns": [],
-            "frozen": [
-              "local.*",
-              "coupling.*",
-              "residual.*",
-              "assimilate.*",
-              "readout.*",
-              "bold.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
-          "negative_control_shuffled": {
-            "n_permitted": 0,
-            "n_blocked": 113,
-            "patterns": [],
-            "frozen": [
-              "*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
           "sim_wholebrain": {
-            "n_permitted": 11,
-            "n_blocked": 102,
+            "n_permitted": 94,
+            "n_blocked": 21,
             "patterns": [
+              "local.*",
+              "residual.*",
               "coupling.*",
               "msg_proj.*",
               "msg_readin.*",
-              "readout.*"
+              "assimilate.*",
+              "context.*",
+              "readout.*",
+              "observation.*",
+              "log_dt_scale",
+              "bold.*",
+              "family_local.*",
+              "family_residual.*",
+              "family_readout.*",
+              "posterior.*"
             ],
             "frozen": [
               "eeg.*",
               "individualizer.*"
             ],
             "blocked_sample": [
-              "log_dt_scale",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias",
-              "local.embed",
-              "local.inp.weight",
-              "local.inp.bias",
-              "local.layers.0.weight",
-              "local.layers.0.bias",
-              "local.films.0.region_scale",
-              "local.films.0.region_shift"
+              "uncertainty_propagator.log_decay",
+              "uncertainty_propagator.net.0.weight",
+              "uncertainty_propagator.net.0.bias",
+              "uncertainty_propagator.net.2.weight",
+              "uncertainty_propagator.net.2.bias",
+              "eeg.log_gain",
+              "eeg.offset",
+              "eeg.log_noise",
+              "eeg.logvar_mix",
+              "eeg.nuisance",
+              "eeg.source_proj.0.weight",
+              "eeg.source_proj.0.bias"
             ]
           }
         },
@@ -451,35 +178,20 @@
     {
       "stage": "III_sliced",
       "steps": 4,
-      "wall_seconds": 1.2081222534179688,
-      "best_loss": 0.9875822036976988,
-      "steps_per_second": 3.3109232022532225,
+      "wall_seconds": 0.5393598079681396,
+      "best_loss": 0.9873577674084326,
+      "steps_per_second": 7.416199614629577,
       "mixture": {
         "mixture_weights": {
           "weights": {
-            "anatomical_prior": 0.01352091780716504,
-            "eegmmidb_real": 0.38684699339382894,
-            "montage_calibration": 0.5099882830937199,
-            "negative_control_shuffled": 0.0,
-            "sim_wholebrain": 0.08964380570528607
+            "eegmmidb_real": 0.8118666595981022,
+            "sim_wholebrain": 0.18813334040189772
           },
           "raw_reliability": {
-            "anatomical_prior": 0.04551724137931035,
             "eegmmidb_real": 1.3022938402773516,
-            "montage_calibration": 1.7168405365126675,
-            "negative_control_shuffled": 0.0,
             "sim_wholebrain": 0.30177971648383517
           },
           "inputs": {
-            "anatomical_prior": {
-              "role": "prior",
-              "n_eff": 1.0,
-              "n_rows": 1.0,
-              "measurement_variance": 0.4,
-              "bias_halfwidth": 0.5,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
             "eegmmidb_real": {
               "role": "likelihood",
               "n_eff": 109.0,
@@ -488,24 +200,6 @@
               "bias_halfwidth": 0.2,
               "model_discrepancy": 0.0,
               "validity_overlap": 1.0
-            },
-            "montage_calibration": {
-              "role": "calibration",
-              "n_eff": 64.0,
-              "n_rows": 64.0,
-              "measurement_variance": 0.05,
-              "bias_halfwidth": 0.05,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
-            "negative_control_shuffled": {
-              "role": "negative_control",
-              "n_eff": 109.0,
-              "n_rows": 1526.0,
-              "measurement_variance": 0.35,
-              "bias_halfwidth": 0.2,
-              "model_discrepancy": null,
-              "validity_overlap": 0.0
             },
             "sim_wholebrain": {
               "role": "prior",
@@ -520,42 +214,13 @@
           "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
         },
         "per_source_contribution": {
-          "anatomical_prior": 0.02717568007616599,
-          "eegmmidb_real": 0.7950667279172285,
-          "sim_wholebrain": 0.17775759200660537
+          "eegmmidb_real": 0.8172076524052494,
+          "sim_wholebrain": 0.1827923475947505
         },
         "gradient_permission_audit": {
-          "anatomical_prior": {
-            "n_permitted": 11,
-            "n_blocked": 102,
-            "patterns": [
-              "coupling.gain_*",
-              "coupling.global_scale",
-              "bold.*"
-            ],
-            "frozen": [
-              "eeg.*",
-              "individualizer.*",
-              "local.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias",
-              "local.embed",
-              "local.inp.weight",
-              "local.inp.bias"
-            ]
-          },
           "eegmmidb_real": {
             "n_permitted": 55,
-            "n_blocked": 58,
+            "n_blocked": 60,
             "patterns": [
               "local.*",
               "residual.*",
@@ -566,6 +231,9 @@
               "context.*",
               "eeg.*",
               "log_dt_scale",
+              "family_local.*",
+              "family_residual.*",
+              "family_readout.*",
               "individualizer.*"
             ],
             "frozen": [
@@ -586,63 +254,9 @@
               "bold.log_kappa"
             ]
           },
-          "montage_calibration": {
-            "n_permitted": 6,
-            "n_blocked": 107,
-            "patterns": [
-              "eeg.log_gain",
-              "eeg.offset",
-              "eeg.log_noise",
-              "eeg.nuisance*"
-            ],
-            "frozen": [
-              "local.*",
-              "coupling.*",
-              "residual.*",
-              "assimilate.*",
-              "readout.*",
-              "bold.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
-          "negative_control_shuffled": {
-            "n_permitted": 0,
-            "n_blocked": 113,
-            "patterns": [],
-            "frozen": [
-              "*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
           "sim_wholebrain": {
-            "n_permitted": 90,
-            "n_blocked": 23,
+            "n_permitted": 94,
+            "n_blocked": 21,
             "patterns": [
               "local.*",
               "residual.*",
@@ -652,8 +266,12 @@
               "assimilate.*",
               "context.*",
               "readout.*",
+              "observation.*",
               "log_dt_scale",
               "bold.*",
+              "family_local.*",
+              "family_residual.*",
+              "family_readout.*",
               "posterior.*"
             ],
             "frozen": [
@@ -661,8 +279,6 @@
               "individualizer.*"
             ],
             "blocked_sample": [
-              "observation.head.w",
-              "observation.head.b",
               "uncertainty_propagator.log_decay",
               "uncertainty_propagator.net.0.weight",
               "uncertainty_propagator.net.0.bias",
@@ -672,7 +288,9 @@
               "eeg.offset",
               "eeg.log_noise",
               "eeg.logvar_mix",
-              "eeg.nuisance"
+              "eeg.nuisance",
+              "eeg.source_proj.0.weight",
+              "eeg.source_proj.0.bias"
             ]
           }
         },
@@ -689,35 +307,20 @@
     {
       "stage": "IV_assembly",
       "steps": 4,
-      "wall_seconds": 1.2829089164733887,
-      "best_loss": 0.9376414782352218,
-      "steps_per_second": 3.1179142561388313,
+      "wall_seconds": 0.4829387664794922,
+      "best_loss": 0.9357357469648789,
+      "steps_per_second": 8.28262354906615,
       "mixture": {
         "mixture_weights": {
           "weights": {
-            "anatomical_prior": 0.01352091780716504,
-            "eegmmidb_real": 0.38684699339382894,
-            "montage_calibration": 0.5099882830937199,
-            "negative_control_shuffled": 0.0,
-            "sim_wholebrain": 0.08964380570528607
+            "eegmmidb_real": 0.8118666595981022,
+            "sim_wholebrain": 0.18813334040189772
           },
           "raw_reliability": {
-            "anatomical_prior": 0.04551724137931035,
             "eegmmidb_real": 1.3022938402773516,
-            "montage_calibration": 1.7168405365126675,
-            "negative_control_shuffled": 0.0,
             "sim_wholebrain": 0.30177971648383517
           },
           "inputs": {
-            "anatomical_prior": {
-              "role": "prior",
-              "n_eff": 1.0,
-              "n_rows": 1.0,
-              "measurement_variance": 0.4,
-              "bias_halfwidth": 0.5,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
             "eegmmidb_real": {
               "role": "likelihood",
               "n_eff": 109.0,
@@ -726,24 +329,6 @@
               "bias_halfwidth": 0.2,
               "model_discrepancy": 0.0,
               "validity_overlap": 1.0
-            },
-            "montage_calibration": {
-              "role": "calibration",
-              "n_eff": 64.0,
-              "n_rows": 64.0,
-              "measurement_variance": 0.05,
-              "bias_halfwidth": 0.05,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
-            "negative_control_shuffled": {
-              "role": "negative_control",
-              "n_eff": 109.0,
-              "n_rows": 1526.0,
-              "measurement_variance": 0.35,
-              "bias_halfwidth": 0.2,
-              "model_discrepancy": null,
-              "validity_overlap": 0.0
             },
             "sim_wholebrain": {
               "role": "prior",
@@ -758,42 +343,13 @@
           "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
         },
         "per_source_contribution": {
-          "anatomical_prior": 0.028345208756999307,
-          "eegmmidb_real": 0.7845066003521622,
-          "sim_wholebrain": 0.18714819089083845
+          "eegmmidb_real": 0.807216103952383,
+          "sim_wholebrain": 0.1927838960476171
         },
         "gradient_permission_audit": {
-          "anatomical_prior": {
-            "n_permitted": 11,
-            "n_blocked": 102,
-            "patterns": [
-              "coupling.gain_*",
-              "coupling.global_scale",
-              "bold.*"
-            ],
-            "frozen": [
-              "eeg.*",
-              "individualizer.*",
-              "local.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias",
-              "local.embed",
-              "local.inp.weight",
-              "local.inp.bias"
-            ]
-          },
           "eegmmidb_real": {
             "n_permitted": 55,
-            "n_blocked": 58,
+            "n_blocked": 60,
             "patterns": [
               "local.*",
               "residual.*",
@@ -804,6 +360,9 @@
               "context.*",
               "eeg.*",
               "log_dt_scale",
+              "family_local.*",
+              "family_residual.*",
+              "family_readout.*",
               "individualizer.*"
             ],
             "frozen": [
@@ -824,63 +383,9 @@
               "bold.log_kappa"
             ]
           },
-          "montage_calibration": {
-            "n_permitted": 6,
-            "n_blocked": 107,
-            "patterns": [
-              "eeg.log_gain",
-              "eeg.offset",
-              "eeg.log_noise",
-              "eeg.nuisance*"
-            ],
-            "frozen": [
-              "local.*",
-              "coupling.*",
-              "residual.*",
-              "assimilate.*",
-              "readout.*",
-              "bold.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
-          "negative_control_shuffled": {
-            "n_permitted": 0,
-            "n_blocked": 113,
-            "patterns": [],
-            "frozen": [
-              "*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
           "sim_wholebrain": {
-            "n_permitted": 90,
-            "n_blocked": 23,
+            "n_permitted": 94,
+            "n_blocked": 21,
             "patterns": [
               "local.*",
               "residual.*",
@@ -890,8 +395,12 @@
               "assimilate.*",
               "context.*",
               "readout.*",
+              "observation.*",
               "log_dt_scale",
               "bold.*",
+              "family_local.*",
+              "family_residual.*",
+              "family_readout.*",
               "posterior.*"
             ],
             "frozen": [
@@ -899,8 +408,6 @@
               "individualizer.*"
             ],
             "blocked_sample": [
-              "observation.head.w",
-              "observation.head.b",
               "uncertainty_propagator.log_decay",
               "uncertainty_propagator.net.0.weight",
               "uncertainty_propagator.net.0.bias",
@@ -910,7 +417,9 @@
               "eeg.offset",
               "eeg.log_noise",
               "eeg.logvar_mix",
-              "eeg.nuisance"
+              "eeg.nuisance",
+              "eeg.source_proj.0.weight",
+              "eeg.source_proj.0.bias"
             ]
           }
         },
@@ -927,35 +436,18 @@
     {
       "stage": "V_individual",
       "steps": 3,
-      "wall_seconds": 0.15249395370483398,
+      "wall_seconds": 0.08819794654846191,
       "best_loss": 0.9999989867210388,
-      "steps_per_second": 19.67291113591805,
+      "steps_per_second": 34.01439735733073,
       "mixture": {
         "mixture_weights": {
           "weights": {
-            "anatomical_prior": 0.01352091780716504,
-            "eegmmidb_real": 0.38684699339382894,
-            "montage_calibration": 0.5099882830937199,
-            "negative_control_shuffled": 0.0,
-            "sim_wholebrain": 0.08964380570528607
+            "eegmmidb_real": 1.0
           },
           "raw_reliability": {
-            "anatomical_prior": 0.04551724137931035,
-            "eegmmidb_real": 1.3022938402773516,
-            "montage_calibration": 1.7168405365126675,
-            "negative_control_shuffled": 0.0,
-            "sim_wholebrain": 0.30177971648383517
+            "eegmmidb_real": 1.3022938402773516
           },
           "inputs": {
-            "anatomical_prior": {
-              "role": "prior",
-              "n_eff": 1.0,
-              "n_rows": 1.0,
-              "measurement_variance": 0.4,
-              "bias_halfwidth": 0.5,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
             "eegmmidb_real": {
               "role": "likelihood",
               "n_eff": 109.0,
@@ -964,33 +456,6 @@
               "bias_halfwidth": 0.2,
               "model_discrepancy": 0.0,
               "validity_overlap": 1.0
-            },
-            "montage_calibration": {
-              "role": "calibration",
-              "n_eff": 64.0,
-              "n_rows": 64.0,
-              "measurement_variance": 0.05,
-              "bias_halfwidth": 0.05,
-              "model_discrepancy": null,
-              "validity_overlap": 1.0
-            },
-            "negative_control_shuffled": {
-              "role": "negative_control",
-              "n_eff": 109.0,
-              "n_rows": 1526.0,
-              "measurement_variance": 0.35,
-              "bias_halfwidth": 0.2,
-              "model_discrepancy": null,
-              "validity_overlap": 0.0
-            },
-            "sim_wholebrain": {
-              "role": "prior",
-              "n_eff": 40000.0,
-              "n_rows": 100000000.0,
-              "measurement_variance": 0.02,
-              "bias_halfwidth": 0.45,
-              "model_discrepancy": 0.55,
-              "validity_overlap": 0.35
             }
           },
           "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
@@ -999,133 +464,40 @@
           "eegmmidb_real": 1.0
         },
         "gradient_permission_audit": {
-          "anatomical_prior": {
-            "n_permitted": 0,
-            "n_blocked": 119,
-            "patterns": [],
-            "frozen": [
-              "eeg.*",
-              "individualizer.*",
-              "local.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
           "eegmmidb_real": {
-            "n_permitted": 12,
-            "n_blocked": 107,
+            "n_permitted": 61,
+            "n_blocked": 60,
             "patterns": [
-              "eeg.log_gain",
-              "eeg.offset",
-              "eeg.log_noise",
-              "eeg.nuisance*",
-              "individualizer.*"
-            ],
-            "frozen": [
-              "bold.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
-          "montage_calibration": {
-            "n_permitted": 6,
-            "n_blocked": 113,
-            "patterns": [
-              "eeg.log_gain",
-              "eeg.offset",
-              "eeg.log_noise",
-              "eeg.nuisance*"
-            ],
-            "frozen": [
               "local.*",
-              "coupling.*",
               "residual.*",
+              "coupling.*",
+              "msg_proj.*",
+              "msg_readin.*",
               "assimilate.*",
-              "readout.*",
+              "context.*",
+              "eeg.*",
+              "log_dt_scale",
+              "family_local.*",
+              "family_residual.*",
+              "family_readout.*",
+              "individualizer.*"
+            ],
+            "frozen": [
               "bold.*"
             ],
             "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
-          "negative_control_shuffled": {
-            "n_permitted": 0,
-            "n_blocked": 119,
-            "patterns": [],
-            "frozen": [
-              "*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
-            ]
-          },
-          "sim_wholebrain": {
-            "n_permitted": 0,
-            "n_blocked": 119,
-            "patterns": [],
-            "frozen": [
-              "eeg.*",
-              "individualizer.*"
-            ],
-            "blocked_sample": [
-              "log_dt_scale",
-              "coupling.gain_soft",
-              "coupling.gain_proposed",
-              "coupling.global_scale",
-              "msg_proj.weight",
-              "msg_proj.bias",
-              "msg_readin.0.weight",
-              "msg_readin.0.bias",
-              "context.0.weight",
-              "context.0.bias",
-              "context.2.weight",
-              "context.2.bias"
+              "readout.0.weight",
+              "readout.0.bias",
+              "readout.2.weight",
+              "readout.2.bias",
+              "observation.head.w",
+              "observation.head.b",
+              "uncertainty_propagator.log_decay",
+              "uncertainty_propagator.net.0.weight",
+              "uncertainty_propagator.net.0.bias",
+              "uncertainty_propagator.net.2.weight",
+              "uncertainty_propagator.net.2.bias",
+              "bold.log_kappa"
             ]
           }
         },
@@ -1159,73 +531,73 @@
       "closed_form": "log(mean residual variance) per channel, minus the mean state term",
       "state_term_subtracted": true,
       "log_noise_before_mean": 0.7724589109420776,
-      "log_noise_after_mean": 0.7774678468704224,
+      "log_noise_after_mean": 0.7775007486343384,
       "implied_variance_before": 4.487400054931641,
-      "implied_variance_after": 4.512150764465332,
+      "implied_variance_after": 4.51231575012207,
       "n_windows": 64,
       "applied": true,
       "tag": "after:I_regional",
-      "realised_residual_variance": 6.362300872802734
+      "realised_residual_variance": 6.362311840057373
     },
     {
       "parameter": "eeg.log_noise",
       "closed_form": "log(mean residual variance) per channel, minus the mean state term",
       "state_term_subtracted": true,
-      "log_noise_before_mean": 0.7774678468704224,
-      "log_noise_after_mean": 0.7774717807769775,
-      "implied_variance_before": 4.512150764465332,
-      "implied_variance_after": 4.5121564865112305,
+      "log_noise_before_mean": 0.7775007486343384,
+      "log_noise_after_mean": 0.7787907123565674,
+      "implied_variance_before": 4.51231575012207,
+      "implied_variance_after": 4.5199174880981445,
       "n_windows": 64,
       "applied": true,
       "tag": "after:II_interface",
-      "realised_residual_variance": 6.362307071685791
+      "realised_residual_variance": 6.3620924949646
     },
     {
       "parameter": "eeg.log_noise",
       "closed_form": "log(mean residual variance) per channel, minus the mean state term",
       "state_term_subtracted": true,
-      "log_noise_before_mean": 0.7776981592178345,
-      "log_noise_after_mean": 0.7492461204528809,
-      "implied_variance_before": 4.509899139404297,
-      "implied_variance_after": 4.384782791137695,
+      "log_noise_before_mean": 0.7790179252624512,
+      "log_noise_after_mean": 0.750491201877594,
+      "implied_variance_before": 4.517656326293945,
+      "implied_variance_after": 4.391718864440918,
       "n_windows": 64,
       "applied": true,
       "tag": "after:III_sliced",
-      "realised_residual_variance": 6.351805210113525
+      "realised_residual_variance": 6.351680755615234
     },
     {
       "parameter": "eeg.log_noise",
       "closed_form": "log(mean residual variance) per channel, minus the mean state term",
       "state_term_subtracted": true,
-      "log_noise_before_mean": 0.7493524551391602,
-      "log_noise_after_mean": 0.7321649193763733,
-      "implied_variance_before": 4.382305145263672,
-      "implied_variance_after": 4.306330680847168,
+      "log_noise_before_mean": 0.7505975961685181,
+      "log_noise_after_mean": 0.734552264213562,
+      "implied_variance_before": 4.3892364501953125,
+      "implied_variance_after": 4.3165812492370605,
       "n_windows": 64,
       "applied": true,
       "tag": "after:IV_assembly",
-      "realised_residual_variance": 6.344274997711182
+      "realised_residual_variance": 6.345147609710693
     },
     {
       "parameter": "eeg.log_noise",
       "closed_form": "log(mean residual variance) per channel, minus the mean state term",
       "state_term_subtracted": true,
-      "log_noise_before_mean": 0.7327576875686646,
-      "log_noise_after_mean": 0.7318772673606873,
-      "implied_variance_before": 4.302761077880859,
-      "implied_variance_after": 4.305807113647461,
+      "log_noise_before_mean": 0.7351768612861633,
+      "log_noise_after_mean": 0.733349084854126,
+      "implied_variance_before": 4.313153266906738,
+      "implied_variance_after": 4.316810607910156,
       "n_windows": 64,
       "applied": true,
       "tag": "after:V_individual",
-      "realised_residual_variance": 6.343499660491943
+      "realised_residual_variance": 6.343723297119141
     }
   ],
   "noise_floor_report": {
     "eeg": {
       "parameter": "eeg.log_noise",
       "role": "per-channel instrument floor (electrode impedance, amplifier noise)",
-      "mean": 0.7318772673606873,
-      "sd_across_channels": 0.9230199456214905,
+      "mean": 0.733349084854126,
+      "sd_across_channels": 0.9236430525779724,
       "at_initialisation": false,
       "warning": null,
       "state_dependent_variance": true
@@ -1240,7 +612,7 @@
       "state_dependent_variance": true
     }
   },
-  "total_wall_seconds": 9.595319032669067,
+  "total_wall_seconds": 5.041924715042114,
   "global_steps": 19,
   "model_parameters": {
     "log_dt_scale": 454,
@@ -1259,7 +631,7 @@
     "behaviour": 89158,
     "TOTAL": 303784
   },
-  "posterior_parameters": 36016,
+  "posterior_parameters": 36080,
   "sources": {
     "anatomical_prior": {
       "id": "anatomical_prior",
@@ -1289,6 +661,7 @@
       "validity_overlap": 1.0,
       "hierarchy_depth": 1,
       "leakage_audited": true,
+      "channels": null,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": true,
@@ -1324,6 +697,7 @@
       "validity_overlap": 1.0,
       "hierarchy_depth": 2,
       "leakage_audited": true,
+      "channels": null,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": false,
@@ -1337,7 +711,9 @@
       "id": "ds002336_real",
       "role": "likelihood",
       "gradient_permission": [
-        "bold.*"
+        "bold.*",
+        "family_local.*",
+        "family_readout.*"
       ],
       "frozen": [
         "eeg.*",
@@ -1358,6 +734,7 @@
       "validity_overlap": 1.0,
       "hierarchy_depth": 2,
       "leakage_audited": true,
+      "channels": null,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": false,
@@ -1380,6 +757,9 @@
         "context.*",
         "eeg.*",
         "log_dt_scale",
+        "family_local.*",
+        "family_residual.*",
+        "family_readout.*",
         "individualizer.*"
       ],
       "frozen": [
@@ -1406,6 +786,7 @@
       "validity_overlap": 1.0,
       "hierarchy_depth": 3,
       "leakage_audited": true,
+      "channels": null,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": true,
@@ -1449,6 +830,7 @@
       "validity_overlap": 1.0,
       "hierarchy_depth": 1,
       "leakage_audited": true,
+      "channels": null,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": true,
@@ -1476,6 +858,7 @@
       "validity_overlap": 0.0,
       "hierarchy_depth": 3,
       "leakage_audited": true,
+      "channels": null,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": true,
@@ -1494,8 +877,12 @@
         "assimilate.*",
         "context.*",
         "readout.*",
+        "observation.*",
         "log_dt_scale",
         "bold.*",
+        "family_local.*",
+        "family_residual.*",
+        "family_readout.*",
         "posterior.*"
       ],
       "frozen": [
@@ -1523,6 +910,7 @@
       "validity_overlap": 0.35,
       "hierarchy_depth": 1,
       "leakage_audited": false,
+      "channels": null,
       "is_simulated": true,
       "is_teacher": false,
       "enabled": true,
@@ -1565,6 +953,7 @@
       "validity_overlap": 0.5,
       "hierarchy_depth": 3,
       "leakage_audited": true,
+      "channels": null,
       "is_simulated": false,
       "is_teacher": false,
       "enabled": false,
@@ -1603,6 +992,7 @@
       "validity_overlap": 0.1,
       "hierarchy_depth": 1,
       "leakage_audited": true,
+      "channels": null,
       "is_simulated": false,
       "is_teacher": true,
       "enabled": false,
@@ -3116,36 +2506,7 @@
       "note": "sync points are exact in integer nanoseconds; a runtime that accumulates t += dt in floating point will drift against this plan"
     },
     "binding_audit": {
-      "unclaimed_parameters": [
-        {
-          "name": "observation.head.w",
-          "n_elements": 4
-        },
-        {
-          "name": "observation.head.b",
-          "n_elements": 1
-        },
-        {
-          "name": "uncertainty_propagator.log_decay",
-          "n_elements": 4
-        },
-        {
-          "name": "uncertainty_propagator.net.0.weight",
-          "n_elements": 1920
-        },
-        {
-          "name": "uncertainty_propagator.net.0.bias",
-          "n_elements": 32
-        },
-        {
-          "name": "uncertainty_propagator.net.2.weight",
-          "n_elements": 128
-        },
-        {
-          "name": "uncertainty_propagator.net.2.bias",
-          "n_elements": 4
-        }
-      ],
+      "unclaimed_parameters": [],
       "unbound_groups": [],
       "declared_empty_groups": [
         "operator:assimilation:delay",
@@ -3168,6 +2529,7 @@
       "anatomical_prior": {
         "compiler_globs": [
           "readout.*",
+          "observation.*",
           "coupling.gain_soft",
           "coupling.gain_proposed",
           "coupling.global_scale",
@@ -3182,6 +2544,7 @@
       "ds000113_real": {
         "compiler_globs": [
           "readout.*",
+          "observation.*",
           "bold.*"
         ],
         "effective": [
@@ -3195,7 +2558,9 @@
           "bold.*"
         ],
         "effective": [
-          "bold.*"
+          "bold.*",
+          "family_local.*",
+          "family_readout.*"
         ]
       },
       "eegmmidb_real": {
@@ -3205,6 +2570,7 @@
           "local.*",
           "log_dt_scale",
           "context.*",
+          "uncertainty_propagator.*",
           "residual.*",
           "coupling.gain_soft",
           "coupling.gain_proposed",
@@ -3227,6 +2593,9 @@
           "context.*",
           "eeg.*",
           "log_dt_scale",
+          "family_local.*",
+          "family_residual.*",
+          "family_readout.*",
           "individualizer.*"
         ]
       },
@@ -3248,10 +2617,12 @@
       "sim_wholebrain": {
         "compiler_globs": [
           "readout.*",
+          "observation.*",
           "assimilate.*",
           "local.*",
           "log_dt_scale",
           "context.*",
+          "uncertainty_propagator.*",
           "residual.*",
           "coupling.gain_soft",
           "coupling.gain_proposed",
@@ -3274,18 +2645,24 @@
           "assimilate.*",
           "context.*",
           "readout.*",
+          "observation.*",
           "log_dt_scale",
           "bold.*",
+          "family_local.*",
+          "family_residual.*",
+          "family_readout.*",
           "posterior.*"
         ]
       },
       "sleepedf_real": {
         "compiler_globs": [
           "readout.*",
+          "observation.*",
           "assimilate.*",
           "local.*",
           "log_dt_scale",
           "context.*",
+          "uncertainty_propagator.*",
           "local.embed",
           "local.films.*.region_scale",
           "local.films.*.region_shift",
@@ -3301,7 +2678,8 @@
       },
       "tribe_v2_teacher": {
         "compiler_globs": [
-          "readout.*"
+          "readout.*",
+          "observation.*"
         ],
         "effective": [
           "readout.*"
@@ -3309,10 +2687,20 @@
       }
     },
     "outside_compiler_schema": {
+      "ds002336_real": [
+        "family_local.*",
+        "family_readout.*"
+      ],
       "eegmmidb_real": [
+        "family_local.*",
+        "family_residual.*",
+        "family_readout.*",
         "individualizer.*"
       ],
       "sim_wholebrain": [
+        "family_local.*",
+        "family_residual.*",
+        "family_readout.*",
         "posterior.*"
       ]
     }
