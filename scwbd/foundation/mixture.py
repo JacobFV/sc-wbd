@@ -160,6 +160,19 @@ class SourceSpec:
     #: set this from the result of a real audit -- see
     #: ``FoundationTrainer._audit_real_split``.
     leakage_audited: bool = False
+    #: Per-channel-group attachment: where each group meets the carrier.
+    #: ``{name: {attachment, n_channels, units, clock, operator}}``.
+    #:
+    #: Optional because the sources admitted so far are single-modality, where
+    #: the whole card is one observation. It stops being optional the moment a
+    #: card carries channels that attach differently -- MEG-MASC ships the audio
+    #: that was played alongside the MEG, ds003768 ships eye tracking and ECG
+    #: alongside concurrent EEG-fMRI -- because forcing a stimulus through a
+    #: ``likelihood`` role trains it as a measurement OF THE BRAIN, which is not
+    #: a smaller claim than the truth but a different one. See
+    #: ``scwbd/schema/attachment.py``; attachment is orthogonal to the integrity
+    #: tier and does not default from ``role``.
+    channels: dict[str, Any] | None = None
     is_simulated: bool = False
     is_teacher: bool = False
     enabled: bool = True
@@ -285,6 +298,17 @@ class SourceSpec:
             for k in ("gradient_permission", "frozen", "losses"):
                 if k in d and isinstance(d[k], list):
                     d[k] = tuple(d[k])
+            # Validate channel declarations at load, not at first use. A card
+            # whose channels are malformed should fail where the card is read,
+            # so the traceback names the file rather than a training step.
+            if isinstance(d.get("channels"), dict):
+                from ..schema.attachment import ChannelSpec
+
+                d["channels"] = {
+                    name: (spec if isinstance(spec, ChannelSpec)
+                           else ChannelSpec(name=name, **spec))
+                    for name, spec in d["channels"].items()
+                }
             s = cls(**d)
             out[s.id] = s
         return out

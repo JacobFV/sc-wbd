@@ -68,6 +68,28 @@
 id: ds002336_real
 role: likelihood
 enabled: true
+
+# Channel attachment. ds002336 is simultaneous EEG + fMRI, so one card carries
+# two groups that meet the carrier in the same place but through DIFFERENT
+# operators -- and the parcel-space BOLD is the reason the distinction had to
+# become declarable rather than implied by `role`.
+channels:
+  eeg:
+    attachment: observation
+    n_channels: 64
+    units: V
+    clock: eeg_amp
+    operator: lead_field
+  bold:
+    attachment: observation
+    n_channels: 400
+    units: percent_signal_change
+    clock: scanner
+    operator: balloon_windkessel_parcel
+    note: >-
+      Parcel space, not voxel space. Brought there by
+      scwbd/sources/parcellate_bold.py; uncovered parcels are NaN and excluded
+      by the per-run coverage mask, never imputed.
 is_simulated: false
 is_simulated: false
 losses: [likelihood, forecast]
