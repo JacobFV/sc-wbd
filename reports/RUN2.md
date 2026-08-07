@@ -360,6 +360,28 @@ The transferable part is about the instrument:
 > distinguish *one thing left* from *one thing visible*. The refusal now lists
 > what else is wrong alongside what it hit first.
 
+### The finish rehearsed end to end
+
+Each step was verified alone; this is the three of them composed, run on copied
+checkpoints with a placeholder evaluation under a shell `trap`:
+
+```
+make restamp-002   last.pt                       model_id=scwbd-002-pilot
+                   stage_T1_individualisation.pt model_id=scwbd-002-pilot
+evaluation         model_id=scwbd-002-pilot, verdict names the same
+make publish-002   DRY RUN  3 files  33,584,819 bytes  0 blockers
+                   card title: # scwbd-002-pilot
+```
+
+The byte count differs from the `last.pt`-only rehearsal, which is the check
+that matters: publish preferred the named final-stage file, exactly as intended,
+and that preference is *why* restamping only `last.pt` would have shipped an
+un-restamped artifact.
+
+What remains untested before the real run is the evaluation itself — it needs
+the GPU the trainer is using, takes about an hour, and last ran end to end six
+commits ago.
+
 ### Final numbers
 
 **PENDING**, against the pre-registration in
