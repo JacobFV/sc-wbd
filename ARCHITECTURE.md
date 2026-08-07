@@ -432,6 +432,39 @@ The number of views is fixed by the model's module list rather than by the
 sources, which is precisely backwards: sources are data and arrive over time,
 modules are code and should not have to change when they do.
 
+**Which transforms unlock which sources — measured from the cards, 2026-08-06.**
+The abstract version of O-1 is "views should belong to sources". The concrete
+version is a list of three missing operators, each blocking a *specific* dataset
+that is already on disk:
+
+| source | tier | on disk | blocked by | what it needs |
+|---|---|---|---|---|
+| `eegmmidb_real` | 1 | yes | — | **enabled**; the only measured source that trains |
+| `ds002336_real` | 1 | yes, CC0 | BOLD is in scanner space, model state is Schaefer parcels | a **registration** scanner → parcel |
+| `ds000113_real` | 1 | yes | 116 mm EPI slab; parcels outside it are unmeasured in every subject | a declared **per-parcel coverage mask** (plus a licence resolution) |
+| `sleepedf_real` | 1 | yes | 2 bipolar derivations cannot constrain a 64-channel head | a **montage adapter** |
+
+Three of the four measured sources are disabled, and **not one of them is
+disabled by policy**. Each is waiting on an operator that does not exist. That
+is the whole of O-1's practical content: the tier system already admits any
+measured likelihood source, and what stops four of them being four views of one
+carrier is that three views have not been written.
+
+Two consequences worth stating plainly.
+
+**The blockers are not interchangeable with permission.** A likelihood term over
+parcels outside the acquisition slab is an *imputation*, and a likelihood in
+parcel space computed from scanner-space voxels without a registration is not a
+weaker claim — it is a different quantity. Enabling those cards without the
+transforms would not be a relaxed standard; it would be a wrong number.
+
+**The montage adapter is the one O-2 already answers.** Two EEG derivations and
+sixty-four are exactly *"montage A and montage B are two views of one carrier"*,
+and `relate()` refuses the pairing without a declared correspondence rather than
+resampling one into the other. `sleepedf` is therefore the cheapest of the three
+and the natural first consumer of the support algebra — it turns O-2 from a
+module with no importers into the thing that admits a second measured dataset.
+
 **What the audit adds to the proposal.** The heads are not the problem and
 should not be deleted — `EEGHead` holds the physics, and the physics is real.
 What is misplaced is *ownership*: `L` describes a montage, a montage belongs to
