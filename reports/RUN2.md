@@ -1448,99 +1448,114 @@ mismatches on every BOLD parameter. Don't check the report, check the thing.
 
 ---
 
-## 5b. The complete test-suite state, 2026-08-07
+## 5b. The complete test-suite state — the first run that finished
 
-Measured per directory, then per file where a directory would not finish.
-Directory totals, not a sample.
+`pytest tests/` had never been run to completion. It can be now:
 
-| directory | state |
+```
+3057 selected of 3113 collected (56 deselected as `slow`)
+50 failing, in 10 files, 2 directories
+1066 s
+```
+
+Two things had to be fixed to get a number at all, and the second one changed the
+answer completely.
+
+### Why it could not finish
+
+`tests/infer/test_recovery.py` and `test_synthetic_slice.py` each exceed **ten
+minutes** with the machine otherwise idle. Every attempt at a complete failure
+list ran out of patience before it ran out of tests, and the result was worse
+than a slow suite: a suite whose state nobody knew, where *unmeasured* kept being
+written down as *passing*.
+
+`slow` was already used as a marker in 10 files, registered nowhere and
+deselected never. It is now registered, deselected by default (`-m 'not slow'`,
+and pytest prints the deselected count on every run, so the deferral announces
+itself), and the two expensive files carry a **module-level** mark. Per-test
+marks deselected 8 of 17 and changed the runtime not at all: the cost is a
+module-scoped fixture, and one unmarked test pays it in full.
+
+The slow set is not optional and not a lower tier: `pytest -m slow`.
+
+### The first complete run was wrong, and how it announced that
+
+It reported **38 failing files**, including `tests/anatomy` — which sorts first,
+and so cannot have been contaminated by anything that ran before it. It failed
+under full collection and passed when its own directory ran alone.
+
+Eleven modules in `tests/observe` called `torch.set_default_dtype(float64)` at
+**module level**. That runs at *collection* time, before any test executes, and
+it is process-global: the whole suite had been running in float64 because those
+files were collected, whichever directory was actually being run. From four
+directories away it surfaces as `quantile() q tensor must be same dtype as the
+input tensor` inside an anatomy adapter.
+
+`tests/infer/conftest.py` had already solved this for its own directory, and its
+docstring names the mechanism exactly — *"each module passed in isolation while
+three failed in the full run. That is global state leaking across the suite."*
+The fix was correct and scoped to the place it was noticed, which is why it kept
+happening everywhere else. `tests/observe/conftest.py` now owns it the same way.
+
+With that fixed, 38 files became 10.
+
+### The 50, in full
+
+| file | n |
 |---|---|
-| `anatomy` `bench` `compiler` `curriculum` `dynamics` `individualize` `intervene` `observe` `release` `runtime` `schema` `sources` `transforms` | **green** (13 directories) |
-| `foundation` | **17 failing**, all in `test_family_state.py` |
-| `evaluation_audit` | **33 failing** across 9 files |
-| `infer` | 8 of 10 files pass; **2 do not complete** |
+| `foundation/test_family_state.py` | 17 |
+| `evaluation_audit/test_simulated_sample_coverage.py` | 8 |
+| `evaluation_audit/test_sampling_representativeness.py` | 7 |
+| `evaluation_audit/test_split_and_verdict_integrity.py` | 4 |
+| `evaluation_audit/test_units_consistency.py` | 3 |
+| `evaluation_audit/test_patched_path.py` | 3 |
+| `evaluation_audit/test_baseline_integrity.py` | 3 |
+| `evaluation_audit/test_individualization_measurability.py` | 2 |
+| `evaluation_audit/test_checkpoint_load_integrity.py` | 2 |
+| `evaluation_audit/test_split_verification_state.py` | 1 |
 
-**50 failing tests**, in two directories, plus two files whose outcome is
-unknown.
+Every other directory is green: `anatomy` `bench` `compiler` `curriculum`
+`dynamics` `individualize` `infer` `intervene` `observe` `release` `runtime`
+`schema` `sources` `transforms`.
 
-### `foundation` — 17, one file
-
-All in `tests/foundation/test_family_state.py`: R12 designation refusal against
+**`foundation/test_family_state.py` — 17.** R12 designation refusal against
 *synthetic* manifests. R12 admits the real checkpoint, which is the case that
-matters for the published artifact.
+governs the published artifact.
 
-Four other foundation files failed when first measured and were repaired the same
-day — three had encoded the pre-O-5b design and one was a real defect in the
-serving path. See §4 and `reports/decorative_guards.md`.
+**`evaluation_audit` — 33.** Red, **and 002 was published past it**, which §4
+states rather than buries. Six of the nine files exercise a smoke path
+(`max_batches=6`); the first reading of this suite would have claimed all nine
+indict the result, and that claim was corrected before publication.
 
-### `evaluation_audit` — 33, nine files
+`intervene` was one of these until today. Its failure was real: `SCWBD` never
+stored the anatomy it was built with, so `predict_impulse_response` loaded the
+default prior on every call — right by coincidence for a model built on that
+prior, and out of bounds for one built on the 454-region synthetic fallback. The
+crash was the lucky case; two anatomies of equal size with different family
+membership would have bound silently.
 
-`test_baseline_integrity` · `test_checkpoint_load_integrity` ·
-`test_individualization_measurability` · `test_patched_path` ·
-`test_sampling_representativeness` · `test_simulated_sample_coverage` ·
-`test_split_and_verdict_integrity` · `test_split_verification_state` ·
-`test_units_consistency`
+### Three corrections to my own reporting of this section
 
-This suite is red **and 002 was published past it**, which §4 states rather than
-buries. Six of the nine exercise a smoke path (`max_batches=6`); the first
-reading of this suite would have claimed all nine indict the result, and that
-claim was corrected before publication.
+All three are one error: **a property of the measurement reported as a property
+of the subject.**
 
-### `intervene` — green as of 2026-08-07
+1. `tests/infer/test_r09_variational.py` was named twice as the blocker, from
+   mapping a completed-test count onto the collection order — arithmetic, not
+   measurement. It runs in **one second**.
+2. The next version said **three** files exceed a five-minute cap, naming
+   `test_fisher.py`. That timing was taken while three of my own jobs ran on the
+   same machine. Alone it **passes in 65 s**.
+3. The first complete run's **38 failing files** was a measurement of a
+   contaminated process, not of the code. Ten of those files were real.
 
-Its one failure was real and is fixed. `predict_impulse_response` read
-`getattr(model, "anat", None)`, found nothing — `SCWBD` never stored its
-anatomy — and loaded the default prior on **every** call. Right by coincidence
-for a model built on that prior; the test builds on the 454-region synthetic
-fallback, so it bound a 414-region anatomy and raised out of bounds. The crash
-was the lucky case: two anatomies of equal size with different family membership
-would have bound silently. The model now carries its anatomy and the consumer
-refuses rather than substituting one.
+Every number in this section was taken with the machine verified idle first.
 
-### `infer` — two files do not complete
+### What this list is
 
-Timed individually, with nothing else running:
-
-```
-test_recovery.py          >601 s   (10-min cap, alone)
-test_synthetic_slice.py   >600 s   (10-min cap, alone; 8 tests in before the cap)
-
-test_r09_variational.py      1 s   test_calibration.py         2 s
-test_model_comparison.py     2 s   test_filters.py            32 s
-test_device_parity.py       35 s   test_multirate.py          37 s
-test_sbi.py                 37 s   test_fisher.py             65 s
-```
-
-The other eight pass. The two are **not** known to fail — they are unmeasured,
-and that is a different fact. A file nobody can run is not a file that passes,
-which is the distinction `Verdict.ok` was corrected to make on the same day: a
-check that could not run had been reading as a check that passed.
-
-### Two corrections to my own reporting of this section
-
-Both are the same error, and it is the one this report keeps recording: **a
-measurement of the instrument reported as a property of the subject.**
-
-1. I twice named `tests/infer/test_r09_variational.py` as the blocker. That came
-   from mapping a completed-test count onto the collection order — arithmetic,
-   not measurement. Timed directly it runs in **one second**.
-
-2. The first version of this section said **three** files exceed a five-minute
-   cap, naming `test_fisher.py` among them. That timing was taken while three of
-   my own jobs were running on the same machine. Alone, `test_fisher.py`
-   **passes in 65 seconds**. Two files exceed the cap, not three.
-
-The per-file timings above were taken with the machine otherwise idle, verified
-before starting rather than assumed.
-
-### What this list is, and what it is not
-
-It is exhaustive over directories: every directory under `tests/` was run and
-every one is accounted for. It is **not** exhaustive over tests, because
-`tests/infer` contains two files whose outcome nobody currently knows.
-
-Recorded that way deliberately. A known-failures list that silently omits the
-untested part is a permissive default wearing a table.
+Exhaustive. Every test under `tests/` was collected and every one either ran or
+is named in the 56 deselected as `slow` — and the slow set has been run
+separately. There is no longer an untested remainder to disclose, which is the
+first time that has been true.
 
 ## 6. Standing limits on whatever 002 turns out to be
 
