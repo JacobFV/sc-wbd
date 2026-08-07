@@ -875,6 +875,32 @@ The `KeyError` then interpolated an entire `RegionFamily`, receptor panel and
 provenance included, into its own message. Loud, and spending all of its
 loudness on the wrong thing.
 
+**Fifth and sixth collisions, 2026-08-07 — and the vocabulary is wider than
+"region".** Two more *same-name, different-class* pairs, both found by walking
+into them:
+
+* `derive_families` exists in `scwbd.anatomy.families` **and**
+  `scwbd.foundation.families`. The first is called bare from `anatomy.py`; the
+  second takes `allow_derived`. Reading `anatomy.py`'s bare call as a caller of
+  the second made a correct default-flip look like a breaking change, and it
+  was only cleared by reading the import line.
+* `ClaimManifest` exists in `scwbd.schema.claims` **and**
+  `scwbd.foundation.manifest`. They share no fields. R12's refusal tells the
+  reader to *"declare the run a control (`arm.role='control'` …)"* — and
+  `arm.role` is on `scwbd.schema.designation.ArmDeclaration`, while the manifest
+  that actually reaches R12 is the *foundation* one, which has no `arm`, `role`,
+  `control` or `ablation` field at all.
+
+The second is worse than a naming annoyance: **the remedy is unactionable.** A
+refusal that prescribes a field the object cannot carry is more misleading than
+one with no remedy, because it reads as help. `tests/foundation/test_family_state
+.py::test_r12_lets_an_honest_control_arm_manifest_through` cannot pass as
+written, and the missing capability — not the test — is the defect.
+
+So the count is not three vocabularies for `region`; it is at least six
+same-name pairs across the region, family, and claim vocabularies. Each was
+invisible until it collided, which is precisely what this entry predicted.
+
 **Partially enforced pending the rewrite.**
 `tests/foundation/test_one_region_ontology.py` asserts what is checkable without
 unifying the types: the two partitions must name the same families, agree on
