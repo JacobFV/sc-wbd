@@ -255,16 +255,22 @@ def test_agent_c_family_ids_map_onto_the_engineered_backends():
     """
     from scwbd.foundation.families import DEFAULT_FAMILY_CORES, _kind_from_declared_name
 
+    # `_kind_from_declared_name` returns a BACKEND KIND, not a family id. The
+    # expectations here read `subcortex_put` / `subcortex_hippo` -- family ids --
+    # which is the O-7 vocabulary confusion in a test: the four keys of
+    # DEFAULT_FAMILY_CORES are `basal_ganglia`, `cerebellum`, `hippocampus`,
+    # `thalamus`, and a kind is a mechanism shared by several families rather
+    # than a name for one of them. Corrected to the kind vocabulary.
     expected = {
         "cortex_unimodal": None,
         "cortex_association": None,
-        "subcortex_accumb": "subcortex_put",
+        "subcortex_accumb": "basal_ganglia",
         "subcortex_amyg": "amygdala",
-        "subcortex_caud": "subcortex_put",
-        "subcortex_hippo": "subcortex_hippo",
-        "subcortex_pal": "subcortex_put",
-        "subcortex_put": "subcortex_put",
-        "subcortex_thal": "subcortex_thal",
+        "subcortex_caud": "basal_ganglia",
+        "subcortex_hippo": "hippocampus",
+        "subcortex_pal": "basal_ganglia",
+        "subcortex_put": "basal_ganglia",
+        "subcortex_thal": "thalamus",
     }
     for fid, kind in expected.items():
         assert _kind_from_declared_name(fid) == kind, f"{fid} mapped to {_kind_from_declared_name(fid)!r}"
@@ -272,6 +278,25 @@ def test_agent_c_family_ids_map_onto_the_engineered_backends():
     for fid, kind in expected.items():
         if kind in DEFAULT_FAMILY_CORES:
             assert resolve_backend(DEFAULT_FAMILY_CORES[kind]) is not None
+
+    # A kind with no core is the defect this test was written for -- the
+    # docstring above describes six families falling through to the generic
+    # learned core with nothing raised. One case survives: `subcortex_amyg` is
+    # given the kind `amygdala`, and `amygdala` is not a key of
+    # DEFAULT_FAMILY_CORES, so it resolves to nothing and takes the generic core
+    # silently.
+    #
+    # Asserted as a KNOWN set rather than as "every kind has a core", so that
+    # closing it is what makes this line change, and a NEW kind without a core
+    # fails here immediately.
+    kinds = {k for k in (_kind_from_declared_name(f) for f in expected) if k}
+    coreless = sorted(k for k in kinds if k not in DEFAULT_FAMILY_CORES)
+    assert coreless == ["amygdala"], (
+        f"backend kinds with no engineered core: {coreless}. A family mapped to a "
+        "kind that DEFAULT_FAMILY_CORES does not define falls through to the "
+        "generic learned core and nothing says so -- which is the failure this "
+        "test exists to catch. Add the core, or record the gap here."
+    )
 
 
 def test_hypothalamus_does_not_inherit_the_thalamic_backend():
