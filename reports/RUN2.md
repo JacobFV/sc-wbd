@@ -1562,6 +1562,26 @@ runs"* refusal to R12's real one, which asks for `arm.role='control'` with a
 step and is left untraced rather than guessed at — I misread this function twice
 today.
 
+**And the last two cannot pass as written — R12's remedy names a field that
+does not exist on the manifest R12 validates.**
+
+The refusal ends: *"or declare the run a control (`arm.role='control'` naming
+…)"*. `arm.role` belongs to `scwbd.schema.designation.ArmDeclaration`. The class
+the test builds, and the one that reaches R12, is
+`scwbd.foundation.manifest.ClaimManifest` — a **different class of the same
+name** from `scwbd.schema.claims.ClaimManifest`, and it has `regional_state` but
+no `arm`, `role`, `control` or `ablation` field of any kind.
+
+So there is no honest way to declare a control arm through this manifest. The
+test asserting that an honest control passes is not wrong; the capability it
+assumes is missing. Adding it is a schema change, named here rather than
+attempted at the end of a long session.
+
+A fourth same-name collision, after `derive_families` (`scwbd.anatomy.families`
+vs `scwbd.foundation.families`) and `RegionFamily` (`family_id` vs `name`). O-7's
+count keeps rising because each instance is invisible until something collides —
+which is exactly what O-7 predicted about registers populated by incidents.
+
 The fact that governs the published model was checked directly: **R12 admits a
 real treatment report** — `read_operator_assignment` returns the full backend map
 from `SCWBD.family_report()`.
