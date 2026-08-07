@@ -2371,12 +2371,33 @@ From the trainer, every behaviour is decided and consistent. Only reading them
 *against each other* shows that the two halves never meet — and nothing in
 either file is wrong on its own terms.
 
-**The test that would catch it** is not a test of behaviour. It is: *does any
-code path read this key?* A config schema that permits arbitrary `extra` blocks
-cannot answer that, which is the price of the escape hatch. The cheap version is
-a test asserting that every key under `extra.curriculum` appears somewhere in
-the package's source; the correct version is to stop putting load-bearing
-declarations in a free-form dictionary.
+**The test that would catch it**, and the one I nearly wrote instead. The
+obvious version is: *assert every key under `extra.curriculum` appears somewhere
+in the package's source.* I was about to write it. Measured first:
+
+```
+admits 14 files · tier_permissions 3 · boundary_randomisation 1
+with_hemo 4 · individualize 9 · objective 19 · scope 20
+```
+
+Every key appears. **That test passes while the defect exists** — because
+`with_hemo` is in `train.py` as `with_hemo=stage.name in ("IV_assembly",)`. The
+name is read, the key is not, and a string search cannot tell those apart. It
+would have been a decorative guard written into the register that catalogues
+them, one paragraph after naming the failure it exemplifies.
+
+The correct question is narrower: not *does this key appear* but **does the
+trainer consult the declaration**. That test already exists —
+`test_run_stage_consults_stage_admission`, which asserts `stage_admission(` is
+in `run_stage`'s source — and it is one of the six that has been red throughout.
+
+So the guard was never missing. It was written, correct, precisely named, and
+red. Every layer of this defect has the same shape: the work was done and not
+connected.
+
+The durable repair is to stop putting load-bearing declarations in a free-form
+dictionary at all — a schema that permits arbitrary `extra` blocks cannot report
+that nothing reads them, and that is the price of the escape hatch.
 
 This also resolves what the fix is. Not "add the run-2 names to the tuples", not
 "design a declaration format" — **the declaration exists and is correct.** The
