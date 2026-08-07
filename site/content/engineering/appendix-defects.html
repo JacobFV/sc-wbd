@@ -1,0 +1,133 @@
+title: Appendix: defects found while building — SC-WBD
+description: A condensed register of implementation defects found during development, and the checks that now prevent them.
+nav: engineering
+kicker: Appendix
+heading: Appendix: defects and the checks that now catch them
+standfirst: Nine essays condensed to a register. Each entry is a defect found in our own work, what it cost, and the test that fires if it returns.
+---
+<div class="prose">
+
+<p class="lede">This is an appendix, not the argument. It exists because the
+checks described here are running in the repository and someone maintaining the
+code needs to know why they are there. The full narrative for each entry is in
+<code>reports/decorative_guards.md</code>.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Defect</th><th>What it cost</th><th>What catches it now</th></tr></thead>
+<tbody>
+
+<tr>
+  <td><strong>Card patterns named modules that no longer existed</strong><br>
+  Regional modules were renamed <code>local</code> &rarr; <code>family_local</code>;
+  the source cards still granted the old names. An unmatched glob is an empty
+  permission set, not an error.</td>
+  <td>88.8% of run 2's parameters &mdash; the entire family-indexed regional
+  model &mdash; received no gradient for 8,700 steps. The loss fell anyway,
+  because the 285k reachable parameters were enough to fit something.</td>
+  <td><code>tests/foundation/test_card_patterns_reach_the_model.py</code>:
+  no module unreachable by every card, and no grant pattern that names nothing
+  in any architecture.</td>
+</tr>
+
+<tr>
+  <td><strong>Stage behaviour selected by matching stage names</strong><br>
+  Six gates in the trainer keyed on run-1 stage names. Run 2 renamed every
+  stage, so five returned the wrong answer.</td>
+  <td>Nine hours of training on simulation alone, with every metric healthy.
+  No gradient was ever taken on a recording.</td>
+  <td>Stage admission is declared in config
+  (<code>extra.curriculum</code>) and a stage that declares nothing is refused
+  rather than defaulted.</td>
+</tr>
+
+<tr>
+  <td><strong>A permission flag that nothing read</strong><br>
+  <code>allow_derived</code> appeared once, in a signature. The config option
+  that fed it defaulted to <code>False</code> and was discarded.</td>
+  <td>An evidence-rejected cortical partition (Yeo-7, 6 of 21 pairs separating
+  under a spin null) ran silently whenever an anatomy declared no families.</td>
+  <td>The refusal exists and sits where the fallback is taken; opting in records
+  <code>REJECTS:</code> in the partition's own notes.</td>
+</tr>
+
+<tr>
+  <td><strong>Checks that could not fail</strong><br>
+  Guards whose assertion was true by construction &mdash; a lookup with a
+  permissive default, a count that matched itself, a regex that matched nothing.</td>
+  <td>Several defects passed review while the check written to catch them
+  reported green.</td>
+  <td>Mutation testing is the standing requirement: a guard is not accepted
+  until it has been made to fail on purpose.</td>
+</tr>
+
+<tr>
+  <td><strong>Two directories for one object</strong><br>
+  <code>configs/source_cards/</code> read by release,
+  <code>configs/curriculum/source_cards/</code> read by training.</td>
+  <td>The published licence manifest was computed from a different card set than
+  the one that trained the weights.</td>
+  <td>The release path derives the directory from the checkpoint's recorded
+  config, and a disagreement between checkpoint and config is a blocker.</td>
+</tr>
+
+<tr>
+  <td><strong>Artifact claims recomputed from current configuration</strong><br>
+  The model card's gradient-reach figure was read from today's source cards
+  rather than the run's.</td>
+  <td>A routine republish would have replaced 88.8% with 0.9% &mdash; a number
+  describing a run that never happened.</td>
+  <td><code>tests/release/test_card_is_computed_from_the_run.py</code>: anything
+  said about weights is computed at the checkpoint's recorded commit, and a
+  dirty tree is disclosed.</td>
+</tr>
+
+<tr>
+  <td><strong>Instruments that failed silently</strong><br>
+  A health check reading a log path that did not exist; a sweep whose recorded
+  exit code came from <code>basename</code> rather than the command.</td>
+  <td>A finished run reported as dead; a killed run reported as
+  <code>exit=0</code>.</td>
+  <td><code>scripts/health.sh</code> fails on its own preconditions and reads
+  the checkpoint, not only the log.
+  <code>tests/release/test_shell_exit_capture.py</code> rejects
+  <code>$?</code> read after a command substitution.</td>
+</tr>
+
+<tr>
+  <td><strong>Six same-name class pairs across modules</strong><br>
+  <code>derive_families</code>, <code>ClaimManifest</code>,
+  <code>RegionFamily</code>, and the R12 rule itself, each existing twice in
+  unrelated namespaces.</td>
+  <td>Repeated misdiagnosis; in one case a refusal's remedy named a field the
+  object it validated could not carry.</td>
+  <td>Partition agreement is enforced
+  (<code>tests/foundation/test_one_region_ontology.py</code>); full unification
+  is <code>ARCHITECTURE.md</code> O-3/O-7.</td>
+</tr>
+
+<tr>
+  <td><strong>Global state set at import time</strong><br>
+  Eleven test modules called <code>torch.set_default_dtype(float64)</code> at
+  module level, which runs during collection.</td>
+  <td>The whole suite ran in float64 whenever those files were collected,
+  inflating a failure list from 10 files to 38.</td>
+  <td>An autouse fixture owns the dtype per test and restores it.</td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<h2>The one generalisation worth keeping</h2>
+
+<blockquote>
+<p>A published artifact and the code that generates it are two objects with
+separate histories. Green tests on the generator say nothing about the bytes
+already published, and a healthy artifact says nothing about the generator. Only
+a diff between them is evidence about both.</p>
+</blockquote>
+
+<p>Three of the entries above were found that way and by no other means.</p>
+
+</div>

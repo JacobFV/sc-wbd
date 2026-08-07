@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Engineering — SC-WBD</title>
-<meta name="description" content="Engineering essays on what actually went wrong building SC-WBD, and what each failure was worth.">
+<meta name="description" content="Implementation notes on the SC-WBD state layout, the orientation result, the registration path, and the identifiability work.">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Engineering — SC-WBD">
-<meta property="og:description" content="Engineering essays on what actually went wrong building SC-WBD, and what each failure was worth.">
+<meta property="og:description" content="Implementation notes on the SC-WBD state layout, the orientation result, the registration path, and the identifiability work.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
@@ -44,134 +44,68 @@
     </div>
 <div class="prose">
 
-<p class="lede">These are written for engineers and researchers, and they assume
-you would rather read the failure than the summary. Nothing here is
-retrospective tidying — every claim is traceable to a committed file, including
-the ones that make us look bad.</p>
+<p class="lede">Implementation notes on the parts of SC-WBD that were hard to
+build: what the state carries and why, how fMRI gets into parcel space, and what
+the identifiability work measured. Every number is traceable to a committed
+file.</p>
 
 <ul class="cards">
 
-<li><a href="control-arm.html">
-  <span class="card-num">01</span>
-  <span class="card-title">We built the control arm of our own ablation and shipped it under the model's name</span>
-  <p class="card-desc">Our paper's first required comparison is structured regional
-  state versus a pooled vector. We built the second one, named it after the
-  first, and measured it losing. The controlling defect was not the narrowing —
-  it was that nobody had written the narrowing down.</p>
-</a></li>
-
-<li><a href="variance-channel.html">
-  <span class="card-num">02</span>
-  <span class="card-title">The most expensive 134 seconds</span>
-  <p class="card-desc">A parameter with a closed-form optimum was left to
-  gradient descent for two minutes, got 20% of the way there, and lost the
-  entire run. The model had the best conditional mean of all seven arms and the
-  second-worst score.</p>
-</a></li>
-
-<li><a href="decorative-guards.html">
-  <span class="card-num">03</span>
-  <span class="card-title">Decorative guards: checks that cannot fail</span>
-  <p class="card-desc">A catalogue of instruments whose reading was constant with
-  respect to the question being asked. All were green. All looked like evidence.
-  Plus the inverse category — guards asserting a defect still exists, which fail
-  the moment someone fixes it.</p>
-</a></li>
-
 <li><a href="resolution-pair.html">
-  <span class="card-num">04</span>
-  <span class="card-title">A measured FAIL, kept as the deliverable</span>
-  <p class="card-desc">We built the fine/coarse resolution pair the paper asks
-  for, measured whether it validates at its boundary, and it does not. The
-  failing measurement is the result — and it says something specific about what
-  regional state can carry.</p>
+  <span class="card-num">01</span>
+  <span class="card-title">Orientation buys nine times what resolution buys</span>
+  <p class="card-desc">A per-parcel scalar carries 5.6% of the whitened EEG lead
+  field; a 3-vector current-dipole moment at the same 400 parcels carries 51.7%.
+  Subdividing to 542 parcels reaches only 16.2%, and folding cancellation caps
+  any further subdivision at 1.29&times;. Two independent methods, one
+  conclusion &mdash; and the reason the state carries a moment rather than a
+  rate.</p>
 </a></li>
 
-<li><a href="declared-narrowings.html">
-  <span class="card-num">05</span>
-  <span class="card-title">Declaring where the implementation is narrower than the paper</span>
-  <p class="card-desc">Every divergence between what we wrote and what we built,
-  in a register any contributor may add to and none may delete from. A stated
-  narrowing is a decision you can attack. An unstated one is invisible to a
-  process built entirely out of attacking stated things.</p>
-</a></li>
-
-<li><a href="infrastructure.html">
-  <span class="card-num">06</span>
-  <span class="card-title">The failures that were not science</span>
-  <p class="card-desc">A trailing slash in <code>.gitignore</code> that could not
-  match a symlink and gave seven checkouts <code>ELOOP</code>. An anatomy loader
-  whose exception was swallowed by a bare <code>except</code>. A provenance field
-  that was structurally incapable of ever reading clean.</p>
-</a></li>
-<li><a href="posterior-collapse.html">
-  <span class="card-num">07</span>
-  <span class="card-title">Three ways to break a density</span>
-  <p class="card-desc">A normalizing flow reported &minus;log q of 4.489e9,
-  bit-identical across runs, from the first step. Three separate causes, each
-  invisible to the others' tests. What found them was a counter, not a bound &mdash;
-  and the fourth fix was committed as "the root cause" and then withdrawn.</p>
-</a></li>
-<li><a href="arm-asymmetry.html">
-  <span class="card-num">08</span>
-  <span class="card-title">The simpler arm is never the one that ships</span>
-  <p class="card-desc">Six of seven defects blocking a training run were the
-  same defect wearing six different files. Two of them would not have crashed
-  &mdash; they would have produced a right-looking number from a model that
-  quietly lost the mechanism the experiment exists to test.</p>
-</a></li>
-<li><a href="naming.html">
-  <span class="card-num">09</span>
-  <span class="card-title">A guard on one verb is not a guard on a noun</span>
-  <p class="card-desc">We built a refusal to stop a model shipping under a name
-  it had not earned. Then an evaluation stamped the previous model's name on its
-  own results, in the file the public card reads, and nothing objected &mdash;
-  the guard watches emission, not writing.</p>
-</a></li>
-<li><a href="silent-instruments.html">
-  <span class="card-num">10</span>
-  <span class="card-title">An instrument that fails silently is worse than one that fails</span>
-  <p class="card-desc">A health check read a log path that did not exist. It
-  printed nothing and exited zero &mdash; output shape-identical to a healthy run
-  &mdash; and it was the only thing watching a multi-hour unattended job.</p>
-</a></li>
 <li><a href="support-algebra.html">
-  <span class="card-num">11</span>
+  <span class="card-num">02</span>
   <span class="card-title">Two montages are two views of one carrier</span>
-  <p class="card-desc">Relating two supports meant hand-writing a map. An algebra
-  now derives what the declarations support and refuses the rest &mdash; because
-  a fabricated correspondence is indistinguishable at the type level from a real
-  one. Nine sources, one view, and the lead field is a buffer.</p>
-</a></li>
-<li><a href="permissive-defaults.html">
-  <span class="card-num">12</span>
-  <span class="card-title">Nine hours of training on the wrong data, with every dashboard green</span>
-  <p class="card-desc">We renamed the training stages. Six gates matched on the
-  old names and five gave the wrong answer, so the model trained on simulation
-  alone. A complete fix had been sitting unapplied since that morning, over six
-  red tests that named the defect.</p>
-</a></li>
-<li><a href="empty-permission.html">
-  <span class="card-num">14</span>
-  <span class="card-title">88.7% of the model could not receive a gradient</span>
-  <p class="card-desc">The regional modules were renamed <code>local</code> &rarr;
-  <code>family_local</code>; the source cards still granted the old names. An
-  unmatched glob is not an error &mdash; it is an empty permission set, which is
-  a legal one. The loss fell, the run finished, and the treatment arm's whole
-  thesis was a random initialisation for 8,700 steps.</p>
+  <p class="card-desc">What it takes to compose observations that disagree about
+  sampling, support and units: element types with a rank and a component frame,
+  point-spread composition in quadrature, and relations typed as restriction or
+  prolongation with <em>lossy</em> and <em>invents</em> tracked separately.</p>
 </a></li>
 
 <li><a href="second-modality.html">
-  <span class="card-num">13</span>
-  <span class="card-title">Everything needed to admit fMRI already existed</span>
-  <p class="card-desc">A 513-line registration module, the volumetric atlas it
-  needs, the template it registers to, and the solver &mdash; all present, all
-  unused, and every source card describing the capability as missing. The
-  distance to a second modality was a caller, not a component.</p>
+  <span class="card-num">03</span>
+  <span class="card-title">Getting fMRI into parcel space</span>
+  <p class="card-desc">The EPI &larr; T1w &larr; template registration chain, run
+  per subject and reused across that subject's runs. 55 runs, 10 subjects,
+  coverage 0.89&ndash;1.00 &mdash; genuinely per-run, so a global mask would be
+  wrong for six of ten. Uncovered parcels are <code>NaN</code> and marginalised,
+  never zero.</p>
 </a></li>
 
+<li><a href="posterior-collapse.html">
+  <span class="card-num">04</span>
+  <span class="card-title">Three ways to break a density</span>
+  <p class="card-desc">The amortised posterior is a normalizing flow, and flows
+  fail in ways a point estimator cannot. What each failure looks like in the
+  metrics, and the learning-rate separation that keeps the flow stable while the
+  rest of the model moves.</p>
+</a></li>
 
+<li><a href="variance-channel.html">
+  <span class="card-num">05</span>
+  <span class="card-title">Isolating the variance channel</span>
+  <p class="card-desc">A model can win the conditional mean and still lose the
+  log score if its uncertainty is wrong. Separating the two, and what it showed
+  about where run 1's loss actually came from.</p>
+</a></li>
 
+<li><a href="appendix-defects.html">
+  <span class="card-num">A</span>
+  <span class="card-title">Appendix: defects and the checks that now catch them</span>
+  <p class="card-desc">A condensed register &mdash; the card patterns that named
+  modules which no longer existed, the permission flag nothing read, the
+  instruments that failed silently. Each with the test that fires if it
+  returns.</p>
+</a></li>
 
 </ul>
 
