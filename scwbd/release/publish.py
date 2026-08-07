@@ -758,6 +758,7 @@ def plan_run1_checkpoint(
     card_dir, card_notes = _card_dir(root, ckpt, root / config)
     blockers += card_notes
     warnings += _enabled_but_unconsumed(ckpt, card_dir)
+    warnings += _unreachable_parameters(ckpt, card_dir)
     manifest = build_manifest(
         card_dir=card_dir,
         config=str(root / config),
@@ -1335,6 +1336,119 @@ def _corpus_card(
 # ---------------------------------------------------------------------------
 # planner: the run-2 pilot (path prepared; artifact not yet on disk)
 # ---------------------------------------------------------------------------
+def _unreachable_parameters(ckpt: Path, card_dir: str) -> list[str]:
+    """Parameters no enabled card's grant pattern can name, measured on the weights.
+
+    The largest thing wrong with this artifact, and it is invisible in every
+    number on the card. The regional modules were renamed ``local`` ->
+    ``family_local``, ``residual`` -> ``family_residual``, ``readout`` ->
+    ``family_readout`` when the family-padded architecture landed; the source
+    cards still grant ``local.*``, ``residual.*``, ``readout.*``. An unmatched
+    glob is not an error -- it is an empty permission set -- so the run trained
+    whatever *was* matched, converged, and shipped.
+
+    Derived here rather than asserted, from the checkpoint's own parameter names
+    and the cards the run recorded, so it cannot drift from either.
+    """
+    import fnmatch
+
+    try:
+        import torch
+        import yaml
+    except Exception:
+        return []
+
+    stages = sorted(Path(ckpt).glob("stage_*.pt"))
+    if not stages:
+        return []
+
+    names: set[str] = set()
+    sizes: dict[str, int] = {}
+    for f in stages:
+        try:
+            ck = torch.load(f, map_location="cpu", weights_only=False)
+        except Exception:
+            continue
+        for container, sub in (("", ck.get("model")), ("posterior", ck.get("posterior"))):
+            if not isinstance(sub, dict):
+                continue
+            for k, v in sub.items():
+                full = f"{container}.{k}" if container else k
+                names.add(full)
+                try:
+                    sizes[full] = int(v.numel())
+                except Exception:
+                    sizes.setdefault(full, 0)
+    if not names:
+        return []
+
+    pats: list[str] = []
+    for f in sorted(Path(card_dir).glob("*.yaml")):
+        try:
+            card = yaml.safe_load(f.read_text()) or {}
+        except Exception:
+            continue
+        # A card that grants nothing cannot make anything reachable, and one
+        # carrying a bare "*" would make everything reachable -- neither belongs
+        # in a question about which patterns actually name a parameter.
+        if not card.get("enabled", True):
+            continue
+        for pat in card.get("gradient_permission") or []:
+            pat = str(pat).split("#")[0].strip()
+            if pat and pat != "*":
+                pats.append(pat)
+    if not pats:
+        return []
+
+    dead = [n for n in sorted(names) if not any(fnmatch.fnmatch(n, p) for p in pats)]
+    if not dead:
+        return []
+    mods = sorted({n.split(".")[0] for n in dead})
+
+    # Counted from the checkpoint's own parameter report, not from state-dict
+    # tensor sizes. A state dict carries buffers as well as parameters -- here
+    # the 4.1M-element connectome among them -- and dividing by that total gives
+    # 26.8% where the honest figure is 88.7%. A buffer is not a parameter that
+    # failed to train; it is not a parameter.
+    report = {}
+    for f in stages:
+        try:
+            rep = (torch.load(f, map_location="cpu", weights_only=False).get("extra") or {}).get(
+                "parameter_report"
+            )
+        except Exception:
+            continue
+        if isinstance(rep, dict) and rep:
+            report = rep
+            break
+    if not report:
+        return [
+            f"The modules {mods} are named by no enabled card's "
+            "`gradient_permission`, so they received no gradient during this run. "
+            "The checkpoint carries no parameter report, so the share of the "
+            "model that represents is not stated here rather than being "
+            "estimated from tensor sizes, which count buffers as parameters."
+        ]
+    n_all = int(report.get("TOTAL") or 0) or sum(
+        int(v) for k, v in report.items() if k != "TOTAL"
+    )
+    n_dead = sum(int(v) for k, v in report.items() if k != "TOTAL" and k in set(mods))
+    pct = (100.0 * n_dead / n_all) if n_all else 0.0
+    return [
+        f"**{n_dead:,} of {n_all:,} parameters ({pct:.1f}%) could not receive a "
+        f"gradient from any enabled source card during this run.** The modules "
+        f"{mods} are named by no card's `gradient_permission`, so they sat at "
+        "their initialisation for every step while still taking part in the "
+        "forward pass. This is a string mismatch, not a curriculum decision: the "
+        "regional modules were renamed `local` -> `family_local`, `residual` -> "
+        "`family_residual`, `readout` -> `family_readout`, and the cards still "
+        "grant the old names. An unmatched glob is an empty permission set, not "
+        "an error, so the loss fell and the run finished. Read the result "
+        "accordingly -- it does not show that heterogeneous regional state fails, "
+        "because the heterogeneous regional state never trained."
+    ]
+
+
 def _enabled_but_unconsumed(ckpt: Path, card_dir: str) -> list[str]:
     """Sources the mixture enables that these particular weights never saw.
 
