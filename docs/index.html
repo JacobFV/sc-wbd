@@ -108,6 +108,25 @@ could run.</p>
   <td><span class="chip fail">does not exist</span></td>
   <td>Run 1's artifact lost. Run 2's pilot is training now. Nothing on this site should be read as a claim that we have one.</td>
 </tr>
+<tr>
+  <td><strong>SC-WBD-002</strong></td>
+  <td><span class="chip warn">training</span></td>
+  <td>The first model on real anatomy. 2.5M parameters over 414 parcels with
+  per-family engineered backends, a ragged state layout (52% of the padded
+  plane removed), and state-dependent predictive variance. Distinct from
+  <strong>001-beta</strong> in a way that is not a judgement call: the run-1
+  checkpoints <em>refuse</em> 414-region input, so the two do not share an
+  input space and cannot be compared.</td>
+</tr>
+<tr>
+  <td><strong>Impulse response</strong></td>
+  <td><span class="chip pass">measured</span></td>
+  <td>Two TMS coil poses produce measurably different predicted EEG, and a
+  200-permutation shuffled-normal null puts the real contrast above
+  <em>every</em> permutation (p = 0.005): <strong>orientation</strong> carries
+  the difference, not field magnitude. The criterion was committed while the
+  checkpoint directory was still empty.</td>
+</tr>
 </tbody>
 </table>
 </div>
