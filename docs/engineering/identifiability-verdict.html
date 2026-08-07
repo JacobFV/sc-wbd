@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The identifiability benchmark returned a verdict — SC-WBD</title>
+<meta name="description" content="A pre-registered five-criterion decision on whether joint multirate inference identifies parameters better than single modalities. Run to completion; three criteria failed.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="The identifiability benchmark returned a verdict — SC-WBD">
+<meta property="og:description" content="A pre-registered five-criterion decision on whether joint multirate inference identifies parameters better than single modalities. Run to completion; three criteria failed.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+<script>
+/* Applied before paint so an explicit theme choice does not flash. */
+(function () {
+  try {
+    var t = localStorage.getItem("scwbd-theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body class="">
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="../index.html">SC&#8209;WBD</a>
+    <nav>
+        <a href="../index.html">Overview</a>
+        <a href="../engineering/index.html" class="active">Engineering</a>
+        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../attribution.html">Attribution</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="pagehead">
+      <p class="kicker">Engineering · 06</p>
+      <h1>The identifiability benchmark returned a verdict</h1>
+      <p class="standfirst">Three regions, linear-Gaussian, five designs, a decision rule written before the run. C1 and C2 are the thesis's first differentiator, and as measured they do not hold.</p>
+    </div>
+<div class="prose">
+
+<p class="lede">SC-WBD's first claim is that fusing EEG and fMRI at their native
+sampling rates identifies coupling and delay parameters that neither modality
+resolves alone, and that resampling to a common clock destroys the advantage.
+That is testable on a system small enough to have ground truth, so it was tested
+on one: three regions, linear dynamics, Gaussian noise, a 12 ms conduction delay
+and an explicit haemodynamic lag.</p>
+
+<h2>The rule, written first</h2>
+
+<p>Five criteria, each quantified over the minimum eigenvalue of the profile
+information matrix for the pre-registered parameters, evaluated in every regime.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Criterion</th><th>Rule</th></tr></thead>
+<tbody>
+<tr><td><code>C1_fusion_information</code></td><td>joint-native &ge; 1.05 &times; max(EEG-only, fMRI-only), in every regime</td></tr>
+<tr><td><code>C2_native_beats_resampled</code></td><td>joint-native &gt; the naive-resampling estimator</td></tr>
+<tr><td><code>C3_intervention_information</code></td><td>impulse-matched &ge; 1.05 &times; joint-native</td></tr>
+<tr><td><code>C4_calibrated_recovery</code></td><td>nominal 95% inside the Wilson interval of empirical coverage</td></tr>
+<tr><td><code>C5_recovery_improvement</code></td><td>delay and &theta; RMSE &le; the better single modality</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2>The result</h2>
+
+<pre><code>verdict: INCOMPLETE
+
+C1_fusion_information        FAILED    in every regime
+C2_native_beats_resampled    FAILED    (passes in 1 of 3)
+C3_intervention_information  FAILED    (passes in 1 of 3)
+C4_calibrated_recovery       NOT EVALUATED
+C5_recovery_improvement      NOT EVALUATED</code></pre>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>regime</th><th>C1</th><th>C2</th><th>C3</th></tr></thead>
+<tbody>
+<tr><td><code>reference</code></td><td>fail</td><td>fail</td><td>fail</td></tr>
+<tr><td><code>low_snr_short_delay</code></td><td>fail</td><td><strong>pass</strong></td><td><strong>pass</strong></td></tr>
+<tr><td><code>weak_coupling_long_delay</code></td><td>fail</td><td><strong>pass</strong></td><td>fail</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>C1 never passes.</strong> Joint native-clock inference does not reach
+1.05&times; the better single modality in any regime tested. C2 and C3 pass where
+the problem is hard — low SNR, weak coupling — and fail in the reference regime,
+which is the one where the parameters are easiest to see.</p>
+
+<p>The rule says <em>every regime</em>, so partial passes are failures. That was
+decided before the numbers existed, which is the only time it can be decided
+honestly.</p>
+
+<h2>Why two criteria are unevaluated rather than failed</h2>
+
+<p>The benchmark reports its own reasons, and both are properties of the
+experiment rather than of the model.</p>
+
+<p><strong>Convergence gating.</strong> MAP recovery ran a fixed number of Newton
+steps. The preconditioner is the expected information at the <em>prior mean</em>
+and is never refreshed, so the iteration converges linearly, not quadratically —
+a fixed step count cannot certify convergence. Two regimes were gated out on
+that basis. The loop now stops on the Newton decrement,
+<code>sqrt(g<sup>T</sup>H<sup>-1</sup>g)</code>, the remaining distance to the
+optimum in posterior standard deviations, and records how many steps it actually
+took.</p>
+
+<p><strong>A degenerate reference regime.</strong> Its truth sits exactly on the
+prior mean — <code>0.000</code> prior sd on all four pre-registered parameters.</p>
+
+<blockquote>
+<p>There, an estimator that ignores the data entirely and returns the prior mean
+scores zero bias, zero RMSE and 100% coverage. Recovery metrics cannot
+discriminate anything.</p>
+</blockquote>
+
+<p>It is not hypothetical: <code>fmri_only</code>, whose information about the
+delay is <code>5e-05</code>, posted a delay RMSE of <strong>0.028 ms</strong>
+against EEG's <strong>0.233 ms</strong> — eight times "better" purely by not
+moving. The report now measures each regime's offset from the prior mean in prior
+standard deviations and marks anything under 0.25 as unable to discriminate.</p>
+
+<h2>What this settles, and what it does not</h2>
+
+<p>It is a measured negative on the thesis's first differentiator, from a
+benchmark that ran to completion on a system with ground truth. It is independent
+of anything about the trained model — different code path, different system,
+no neural network involved.</p>
+
+<p>It does not say fusion cannot help. It says that on this three-region
+linear-Gaussian system, with these five designs and this pre-registered rule, the
+information advantage did not appear at the 1.05&times; threshold the rule
+demanded. A larger system, a different parameterisation, or a different threshold
+are all live possibilities — and each would need its own rule written first.</p>
+
+<p>The artifact is <code>reports/identifiability/results.json</code>, with the
+per-design decomposition in
+<code>results_by_design_checkpoint.json</code> and the narrative in
+<code>reports/identifiability/summary.md</code>.</p>
+
+</div>
+
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p><strong>SC-WBD-001 series.</strong> A research programme, not a product.
+    Nothing on this site is a medical device, a clinical claim, or advice.
+    No trained model here has been shown to beat its baselines.</p>
+    <p>Data sources carry their own licences, several of them non-commercial and
+    share-alike. See <a href="../attribution.html">attribution</a>.</p>
+    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+  </div>
+</footer>
+
+<script>
+document.getElementById("theme-toggle").addEventListener("click", function () {
+  var el = document.documentElement;
+  var cur = el.getAttribute("data-theme");
+  if (!cur) {
+    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  var next = cur === "dark" ? "light" : "dark";
+  el.setAttribute("data-theme", next);
+  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
+});
+</script>
+
+</body>
+</html>
