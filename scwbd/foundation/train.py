@@ -43,6 +43,7 @@ from .manifest import Claim, ClaimManifest
 from .mixture import MixtureTrainer, SourceSpec
 from .model import SCWBD
 from .posterior import AmortizedPosterior
+from .curriculum_admission import StageAdmission, assert_region_count, stage_admission
 from .simulate import THETA_NAMES, CorpusSpec, SimCorpus, ThetaPrior, generate_corpus
 from .util import (
     JsonlLogger,
@@ -215,6 +216,11 @@ class FoundationTrainer:
                 "regional heterogeneity is supportable from it.",
                 flush=True,
             )
+        # The config's n_regions is otherwise inert -- SCWBD takes its shape from
+        # the anatomy -- so without this the field can name a parcellation the
+        # model never loaded, which is how 001-beta's "454 = Schaefer-400 + 32 +
+        # 22" survived a whole night unchallenged.
+        assert_region_count(cfg.model.n_regions, self.anat)
         self.theta_prior = ThetaPrior()
         self.model = SCWBD(cfg.model, self.anat).to(self.device)
         self.posterior = AmortizedPosterior(
@@ -243,6 +249,10 @@ class FoundationTrainer:
         self._resume = cfg.train.resume if resume is None else resume
         self._data_ready = False
         self._mixture_reports: list[dict[str, Any]] = []
+        #: per-stage admission, as decided from the config.  Written to the
+        #: report so the artifact records which sources each stage admitted
+        #: rather than leaving it to be inferred from the trainer's source.
+        self._admissions: dict[str, Any] = {}
         self.flop_per_step = 0.0
 
     # ------------------------------------------------------------------
@@ -337,12 +347,28 @@ class FoundationTrainer:
                   "torch-level gradient permissions", flush=True)
         return rep
 
-    def stage_sources(self, stage: StageConfig) -> dict[str, SourceSpec]:
-        """Intersect each card's ``A_k`` with the stage allowlist (restrict only)."""
-        allow = STAGE_PERMISSIONS.get(stage.name, ("*",))
+    def stage_sources(
+        self, stage: StageConfig, admission: StageAdmission | None = None
+    ) -> dict[str, SourceSpec]:
+        """Intersect each card's ``A_k`` with the stage allowlist (restrict only).
+
+        With an ``admission`` both the allowlist and the admitted source set come
+        from the config.  Without one the legacy behaviour is kept for the five
+        stage names 001-beta used -- but note its default,
+        ``STAGE_PERMISSIONS.get(name, ("*",))``, grants **everything** to any
+        other name, so an unrecognised stage silently widened every mask.
+        """
+        if admission is not None:
+            allow = admission.allow_globs()
+            admitted: set[str] | None = set(admission.source_ids)
+        else:
+            allow = STAGE_PERMISSIONS.get(stage.name, ("*",))
+            admitted = None
         out: dict[str, SourceSpec] = {}
         for sid, s in self.sources.items():
             if not s.enabled:
+                continue
+            if admitted is not None and sid not in admitted:
                 continue
             if allow == ("*",):
                 perm = s.gradient_permission
@@ -534,7 +560,9 @@ class FoundationTrainer:
             keep[empty, 0] = 1.0
         return keep
 
-    def sim_losses(self, batch: Mapping[str, Any], stage: StageConfig) -> tuple[dict[str, Tensor], dict[str, Any]]:
+    def sim_losses(
+        self, batch: Mapping[str, Any], stage: StageConfig, admission: StageAdmission | None = None
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
         act = batch["activity"].to(self.device, non_blocking=True)
         theta = batch["theta"].to(self.device, non_blocking=True)
         B, T, N = act.shape
@@ -554,7 +582,10 @@ class FoundationTrainer:
 
         # boundary randomisation / corrupted inputs (Stage I) --------------
         u = None
-        if stage.name == "I_regional":
+        randomise = (
+            admission.boundary_randomisation if admission is not None else stage.name == "I_regional"
+        )
+        if randomise:
             with torch.no_grad():
                 amp = torch.rand(B, 1, 1, 1, device=self.device) * 0.4
             u = amp * torch.randn(B, n_pred, N, self.model.layout.dim, device=self.device)
@@ -575,7 +606,9 @@ class FoundationTrainer:
                 n_steps=n_pred,
                 context_mask=ctx_mask,
                 u=u,
-                with_hemo=stage.name in ("IV_assembly",),
+                with_hemo=(
+                    admission.with_hemo if admission is not None else stage.name in ("IV_assembly",)
+                ),
                 enforce_r05=False,
             )
         pred, lv = roll.activity.float(), roll.activity_logvar.float()
@@ -610,9 +643,25 @@ class FoundationTrainer:
             observed_fraction=float(obs_mask.mean()),
             **{k: v for k, v in roll.diagnostics.items() if isinstance(v, (int, float))},
         )
-        if "anatomical_prior" in self.sources:
-            losses["anatomical_prior"] = self.model.coupling.topology_penalty() + self.model.bold.prior_penalty()
         return losses, diag
+
+    def anat_losses(self, admission: StageAdmission | None = None) -> dict[str, Tensor]:
+        """The tier-3 population-prior term, independent of any data batch.
+
+        This used to be composed inside :meth:`sim_losses`, so the anatomical
+        prior only contributed on a step where the **simulated** loader ran.
+        Under an integrity ordering there is a stage that admits tier 3 and not
+        tier 4, and on the old code that stage would have emitted no tier-3 loss
+        at all -- admitting the population prior in name only.
+        """
+        if "anatomical_prior" not in self.sources:
+            return {}
+        if admission is not None and "anatomical_prior" not in admission.source_ids:
+            return {}
+        return {
+            "anatomical_prior": self.model.coupling.topology_penalty()
+            + self.model.bold.prior_penalty()
+        }
 
     def real_losses(self, batch: Mapping[str, Any], stage: StageConfig) -> tuple[dict[str, Tensor], dict[str, Any]]:
         """Measured EEG: likelihood in **sensor space**, always."""
@@ -658,10 +707,22 @@ class FoundationTrainer:
         if not stage.enabled:
             return {"stage": stage.name, "skipped": True}
         self.build_data()
-        specs = self.stage_sources(stage)
+        # Source admission comes from the config, not from the stage's name.
+        # ``strict=False`` keeps 001-beta's five stage names working unchanged;
+        # any other name must declare `extra.curriculum` or this raises.
+        admission = stage_admission(stage, cards_dir=self.cfg.mixture_cards, strict=False)
+        self._admissions[stage.name] = admission.as_dict()
+        print(
+            f"[curriculum] {stage.name}: tiers {list(admission.admits)} "
+            f"sources {list(admission.source_ids)} "
+            f"absent_tiers {list(admission.absent_tiers)} "
+            f"provenance={admission.provenance}",
+            flush=True,
+        )
+        specs = self.stage_sources(stage, admission)
         params = list(self.model.parameters()) + list(self.posterior.parameters())
         modules: dict[str, nn.Module] = {"model": self.model, "posterior": self.posterior}
-        if stage.name == "V_individual":
+        if admission.individualize:
             if self.individualizer is None:
                 n_p = max(len(self._participant_ids()), 1)
                 self.individualizer = Individualizer(
@@ -717,11 +778,12 @@ class FoundationTrainer:
                 break
             losses: dict[str, Tensor] = {}
             diag: dict[str, Any] = {}
-            if stage.name != "V_individual":
-                sl, sd = self.sim_losses(next(self.sim_loader), stage)
+            if admission.admits_simulated(self.sources):
+                sl, sd = self.sim_losses(next(self.sim_loader), stage, admission)
                 losses.update(sl)
                 diag.update(sd)
-            if self.real_train is not None and stage.name in ("III_sliced", "IV_assembly", "V_individual"):
+            losses.update(self.anat_losses(admission))
+            if self.real_train is not None and admission.admits_measured(self.sources):
                 try:
                     rl, rd = self.real_losses(next(self.real_loader), stage)
                     losses.update(rl)
