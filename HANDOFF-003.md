@@ -42,6 +42,47 @@ the work. ds002336's parcel-space BOLD loader exists and is verified: 485 window
   Loading 002's weights needs families.layout_of_checkpoint(path).
 - pytest deselects `slow` by default; `make test-slow` runs the rest (~75 min).
 
+=== MAKE IT BIGGER. 002 WAS 2.5M PARAMETERS AND USED 3% OF THE MACHINE ===
+
+002 total: 2,516,530 params (+1,679,840 posterior). The training log shows
+gpu_reserved_gb=4.08 on a 121GB unified-memory box. Nine hours at ~3% utilisation.
+
+Where they sit:
+    family_local     1,814,447   72%
+    family_residual    365,639   15%
+    assimilate         234,587    9%
+    everything else    101,857    4%
+
+Current config: hidden=288, n_local_layers=3, encoder_channels=96, region_embed=96.
+These descend from a CI smoke config and were never deliberately sized.
+
+Target 50-80M for 003. Lever order:
+    hidden 288 -> 1024          ~12x on family_local (quadratic)  -> ~23M
+    n_local_layers 3 -> 6       ~2x                               -> ~46M
+    encoder_channels 96 -> 256  the EEG encoder is undersized for 64 channels
+    region_embed 96 -> 256      cheap, 414 rows
+
+Memory is not the constraint — activation cost is dominated by the rollout
+(B,T,414,62) over T steps, not by weights. 500M params is ~6GB with AdamW states.
+Wall-clock grows maybe 3-10x, not proportionally, because much of the step is ODE
+integration. Budget 1-4 days rather than 9 hours.
+
+To exceed ~80M you must break the per-family cap: the model has 9 shared cores
+across 414 regions, so width is the only lever until you add per-region low-rank
+adapters over the family cores. That trades the family thesis for capacity — do
+it deliberately, not by inflating a width until the number looks right.
+
+CAUTION, and it is the reason to stage this: family_local NEVER RECEIVED A
+GRADIENT in 002. There is no evidence about what capacity is useful here, because
+the 1.8M version has never once trained. Do hidden=1024 (~50M) first, confirm the
+regional tensors move and the loss responds, then scale from a known-good point.
+Going straight to 500M makes the first real training run also the largest, and a
+failure would be unattributable between capacity, curriculum, and data.
+
+Data supports it: 93GB of simulation corpus, and simulation is generable. The
+measured side is thinner (109 EEG subjects, 10 concurrent EEG-fMRI), so
+measured-only heads saturate earlier than the simulator-trained trunk.
+
 === THE ONE GUARD THAT MATTERS ===
 
 tests/foundation/test_card_patterns_reach_the_model.py
@@ -116,6 +157,50 @@ f. Publish: make publish-002's path generalises; the card must state which
 
 Do not delete 002 or its report — it is the control this run is measured against.
 
+=== WRITE FOR UTILITY, NOT FOR FALSIFIABILITY ===
+
+READ THIS BEFORE WRITING ANY PROSE, ANYWHERE — site, model card, reports, README.
+
+This project's writing is defensive to the point of self-defeat. Real example
+from the current text:
+
+    "This document is not a report that SC-WBD has already achieved
+     whole-brain prediction."
+
+That sentence tells the reader to ignore the document. It is the FIRST thing
+they see. Delete every sentence of that shape.
+
+The instinct behind them is sound — do not overclaim — but the execution
+inverts it. A page that opens by negating a claim nobody made has spent its
+best paragraph arguing with an imaginary critic instead of telling a researcher
+what the thing does.
+
+RULES:
+
+- Open with the capability, in the indicative. "SC-WBD carries a 3-vector
+  current-dipole moment per parcel and projects it through a lead field
+  validated against real BEM surfaces." NOT "SC-WBD does not yet predict
+  whole-brain dynamics."
+- A caveat goes AFTER the thing it qualifies, once, in one sentence. Never
+  before it, never twice.
+- Never open a page, section, or paragraph with a negation.
+- If a number is real, state it flat. 51.7% is a measurement. "suggests that
+  orientation may carry more information than resolution" throws away the
+  result and the reader's attention with it.
+- `cannot_do` / `is_not` / falsifier fields belong in the schema, where machines
+  read them. They are not a prose style.
+- Do not narrate process. Nobody needs to know a check was run three ways.
+  State what is true and move on.
+
+The reader is a researcher deciding whether this is worth their afternoon. Tell
+them what it does. The epistemics infrastructure (R12, claim manifests, integrity
+tiers, the refusal machinery) exists so the claims can be trusted — it is
+plumbing, not the product, and it should be nearly invisible in the writing.
+
+Apply the same rule to 003 itself: the run's purpose is a model that does
+something useful with every modality on disk. That is the deliverable. Rigor is
+how it gets there, not what gets shipped.
+
 === SITE: LEAD WITH WHAT WORKED ===
 
 The current site is inverted: 14 engineering pages of defect archaeology
@@ -124,8 +209,7 @@ naming, ...) and the actual science buried. Rebuild the spine around results.
 The failure catalogue becomes ONE appendix page with a link to
 reports/decorative_guards.md, not the body of the site.
 
-The real work to lead with — verify each number before featuring it, none of
-these were re-checked at the end of the session:
+The real work to lead with — confirm each number, then state it without hedging:
 
 1. THE ANATOMY PRIOR. 414 parcels (400 Schaefer cortical + 14 Tian subcortical),
    real tract lengths, mean 38.76mm, density 0.0718, edges typed hard/soft/
@@ -163,10 +247,13 @@ these were re-checked at the end of the session:
    (stimulus / observation / boundary_output / context) orthogonal to their
    integrity tier. These are working mechanisms, not aspirations.
 
-FRAMING: the 002 negative result stays on the site — it is honest and it is the
-control 003 is measured against — but as ONE page, stated plainly, not as the
-organising theme. Say what was learned and move on. Nobody needs 14 pages on how
-a glob failed to match.
+FRAMING: 002 stays on the site as ONE page — it is the control 003 is measured
+against, which is a use, not an apology. State what it establishes and move on.
+Nobody needs 14 pages on how a glob failed to match.
+
+The landing page should answer, in its first screen: what can this model do,
+which modalities does it consume, and what would someone use it for. Not what it
+has not yet proven.
 
 Site is at sc-wbd.pages.dev, deployed with `npx wrangler pages deploy docs
 --project-name=sc-wbd`. Source in site/content/, build with site/build.py,
