@@ -127,3 +127,34 @@ def test_every_row_has_all_five_columns():
     for line_no, key, body in _register_rows():
         cells = body.split("|")
         assert len(cells) >= 4, f"L{line_no} {key!r} has {len(cells)} columns, expected 4 after the key"
+
+
+def test_the_decorative_guards_index_links_resolve():
+    """Half the index was broken the moment it was written.
+
+    ``reports/decorative_guards.md`` is the most reused document in this
+    project, and it had grown to 2,300 lines with no way to navigate it. Adding
+    an index meant hand-writing anchors -- and 7 of 14 were wrong, because the
+    headings contain em-dashes and the guessed slug doubled a hyphen where
+    GitHub collapses it.
+
+    Nothing about a broken anchor is visible in the source. It renders as a
+    perfectly ordinary link and silently goes nowhere, which is the
+    silent-instrument shape applied to documentation.
+    """
+    import re
+
+    doc = ROOT / "reports/decorative_guards.md"
+    if not doc.is_file():
+        pytest.skip("register not present")
+    text = doc.read_text()
+
+    def slug(heading: str) -> str:
+        s = re.sub(r"[^\w\s-]", "", heading.lower())
+        return re.sub(r"\s+", "-", s.strip())
+
+    headings = {slug(m.group(1)) for m in re.finditer(r"^#{2,3} (.+)$", text, re.M)}
+    links = set(re.findall(r"\]\(#([a-z0-9-]+)\)", text))
+    assert links, "no internal links found -- this test would pass vacuously"
+    broken = sorted(links - headings)
+    assert not broken, f"internal links resolve to no heading: {broken}"

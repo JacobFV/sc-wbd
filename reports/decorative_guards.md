@@ -31,6 +31,43 @@ A repo-wide review heuristic, extracted from four independent defects found in a
 single night (2026-08-05/06). It started as a section of
 `reports/training/platform_memory_limits.md` and outgrew it.
 
+## Index
+
+Twenty-eight sections, six named **classes**. The classes are the reusable part;
+the individual entries are evidence for them. If you read one thing, read the
+classes.
+
+### The classes — a defect shape seen more than once
+
+| class | the shape | instances |
+|---|---|---|
+| [arm-asymmetry](#the-arm-asymmetry-class-six-instances-in-one-day) | a path declared for two arms, exercised on one | 6 in a day |
+| [naming](#the-naming-class-a-refusal-that-guards-the-wrong-verb) | a guard on one *verb* is not a guard on the *noun* | 5, incl. the model card |
+| [silent-instrument](#the-silent-instrument-class-sixth-instance-and-the-first-one-i-caught-in-my-own-hands) | failure output is a **subset** of success output | 6+ |
+| [drift-toward-intent](#the-drift-toward-intent-class-descriptions-not-guards) | descriptions drift toward the system you meant to build | 3 surfaces, one claim |
+| [permissive-default](#the-permissive-default-class-the-largest-instance-found-at-hour-eight) | a lookup whose default **grants**; no input is ever rejected | 6 gates, 9 wasted hours |
+| [unchecked-enumeration](#the-unchecked-enumeration-class-four-instances-in-one-day) | a list never checked against what it enumerates | 4 in a day |
+
+### The method
+
+- [The pattern](#the-pattern) — what makes a guard decorative
+- [The positive example](#the-positive-example-cajals-mutation-testing-and-a-raised-bar) — mutation testing, and the bar it set
+- [The tell](#the-tell) · [Standing recommendations](#standing-recommendations)
+- [A corollary about fixing things](#a-corollary-about-fixing-things) · [Where this bites hardest](#where-this-bites-hardest)
+- [A defect chain is not a defect list](#a-defect-chain-is-not-a-defect-list)
+- [The inverse category](#the-inverse-category-guards-that-assert-a-defect-still-exists) — guards asserting a defect still exists
+
+### The single most transferable sentence in this file
+
+> An instrument whose failure output is a **subset** of its success output cannot
+> be trusted, because there is no observation that distinguishes them.
+
+Everything else here is a special case of that, or of its converse: a check
+whose *default* is permissive cannot report a typo, and a list nobody compares
+against reality cannot report an omission.
+
+---
+
 ## The pattern
 
 A guard or measurement is **decorative** when its reading is *constant with
