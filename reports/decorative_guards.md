@@ -1844,3 +1844,42 @@ synthetic-anatomy fallback (the path exercised and the path shipped diverged),
 test ever let choose. It is worth naming as a class rather than logging a
 fourth instance: **wherever a codebase has two arms, the tests will drift onto
 the simpler one, and the simpler one is never the one that ships.**
+
+---
+
+## The naming class — a refusal that guards the wrong verb
+
+Architect, 2026-08-06, after three separate naming defects in one evaluation run.
+
+**R12 refuses to emit a checkpoint under the SC-WBD designation when the
+artifact does not earn it.** It works, it is mutation-tested, and it guarded
+nothing that mattered here — because every naming defect found today was in a
+path R12 does not watch.
+
+| site | was | reaches |
+|---|---|---|
+| `evaluate.py` `model_id` | `"SC-WBD-001-beta"` literal | the file the model card reads its scores from |
+| `evaluate.py` arm label | `"scwbd_001_beta"` literal ×4 | the comparison table inside that file |
+| `runtime.serving.discover_checkpoint` | takes the **directory name** as the designation, never reads `model_id` | anything that loads a checkpoint by path |
+
+A run-2 evaluation therefore stamped a **run-1 name** on its own results and
+ranked its own arm under that name, in the artifact that becomes the public
+model card. Nothing refused, because nothing was being *emitted* — it was being
+*written*.
+
+**The generalisation:**
+
+> A guard on one verb is not a guard on a noun. R12 guards **emission**; the
+> defects were in **report writing** and **discovery**. Ask of any refusal:
+> *what else can produce this same wrong state by a different verb?*
+
+The second naming defect survived the fix for the first, because the fix was
+grepped for the capitalised designation `SC-WBD-001-beta` and the arm label was
+lowercase with underscores. **A literal you fix by grepping is a literal you
+fix only in the spelling you thought of.** The repair is to derive the name
+once (`_designation(cfg)`) and let every consumer read it, so there is no
+spelling to miss.
+
+**Fallback chosen deliberately:** `_designation` falls back to
+`"SC-WBD-unnamed"`, never to any real designation. An unnamed artifact is a
+visible defect; a misnamed one is not.
