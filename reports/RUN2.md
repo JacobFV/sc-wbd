@@ -581,6 +581,32 @@ Recorded now, not after the numbers.
   against the sampling before it is read as a property of the backends.
 - **Control graphs are a smoke test, not an ablation** — 7 of 147 shards split
   3/1/2/1 across four types.
+- **The ablation is one arm of six.** Whatever 002 scores, the thesis claim —
+  structured regional state against pooled state at matched capacity — is not
+  addressed. See §4. This is the limit that most changes what the artifact is
+  *for*: it is a candidate arm, not an answer.
+
+### What would actually make A1 answerable
+
+Ordered by information per training run, so the list is usable rather than
+aspirational:
+
+1. **`permuted_family_state`** — byte-identical architecture, region→family map
+   permuted under a fixed seed. It is the cheapest arm (no capacity matching to
+   negotiate, same config with one substitution) and it isolates the single
+   thing most likely to be doing the work: whether the *specific* anatomical
+   partition matters or merely having nine groups of those sizes does. If the
+   permuted arm matches the candidate, every other control becomes much less
+   interesting.
+2. **`pooled_vector_per_region@param_matched`** — the §11.4 comparison proper.
+3. **`scalar_per_region`** — the floor. Cheap, and it bounds the others.
+4. `@state_matched` and `theta_conditioned_pooled` — needed for attribution, but
+   only once 1–3 have said there is something to attribute.
+
+Note the ordering is deliberately *adversarial-first*: the permuted control is
+the arm most likely to show the candidate has no real advantage, and it is
+cheapest. Running the flattering comparison first and the attribution control
+last is how a result survives longer than it should.
 - **The free-orientation lead field now exists, and it is worth 2.64×, not 9×.**
   `build_lead_field` emits `matrix_vec` `(64, 414, 3)` alongside the scalar
   `(64, 414)`, both normalised by the same gain. Measured on **this** forward
