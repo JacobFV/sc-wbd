@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Everything needed to admit fMRI already existed — SC-WBD</title>
+<meta name="description" content="A 513-line registration module, a volumetric atlas, the template, and the solver. All present, all unused, and every source card said the capability was missing.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Everything needed to admit fMRI already existed — SC-WBD">
+<meta property="og:description" content="A 513-line registration module, a volumetric atlas, the template, and the solver. All present, all unused, and every source card said the capability was missing.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+<script>
+/* Applied before paint so an explicit theme choice does not flash. */
+(function () {
+  try {
+    var t = localStorage.getItem("scwbd-theme");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body class="">
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="../index.html">SC&#8209;WBD</a>
+    <nav>
+        <a href="../index.html">Overview</a>
+        <a href="../engineering/index.html" class="active">Engineering</a>
+        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../attribution.html">Attribution</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="pagehead">
+      <p class="kicker">Engineering · 13</p>
+      <h1>Everything needed to admit fMRI already existed</h1>
+      <p class="standfirst">Three measured datasets sat disabled behind blockers that read like missing components. Two of them were missing a caller, not a component — and the module that would have been the caller had been on the main branch the whole time.</p>
+    </div>
+<div class="prose">
+
+<h2>The question</h2>
+
+<p>Why does a whole-brain model train on EEG alone when there is fMRI on
+disk?</p>
+
+<p>The honest answer looked like scope: parcel-space state, scanner-space data,
+no registration between them. Four measured sources are declared, three are
+switched off. That reads as a roadmap.</p>
+
+<h2>What was actually blocking them</h2>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>source</th><th>what it is</th><th>stated blocker</th></tr></thead>
+<tbody>
+<tr><td><code>eegmmidb</code></td><td>64-channel EEG</td><td><span class="chip pass">enabled</span></td></tr>
+<tr><td><code>ds002336</code></td><td>EEG <em>and</em> fMRI, CC0</td><td>"no registration between them has been run"</td></tr>
+<tr><td><code>ds000113</code></td><td>7 T fMRI</td><td>a 116 mm slab; parcels outside it unmeasured</td></tr>
+<tr><td><code>sleepedf</code></td><td>2 EEG derivations</td><td>cannot constrain a 64-channel head</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Not one of them is disabled by policy. Each waits on an operator. So the
+question became: how much of that operator has to be written?</p>
+
+<h2>None of it, for two of the three</h2>
+
+<p><code>anatomy/registration.py</code> is 513 lines titled <em>"BOLD → parcel
+registration: bring the atlas to the subject, never the reverse."</em> It
+contains the EPI ← T1w ← template chain, the label pull onto the EPI grid, and
+<code>ParcelCoverage</code> — <em>"how many EPI voxels each parcel actually got,
+for one subject/run"</em>, which is precisely the coverage mask the slab problem
+calls for.</p>
+
+<p>It was imported by nothing except its own test file.</p>
+
+<p>So was everything else it needed: the volumetric Schaefer-400 atlas in the
+exact template the module requires, the 1 mm MNI reference, the registration
+solver, and 55 BOLD runs with per-subject anatomy.</p>
+
+<blockquote>
+<p>The card said the registration <em>"has not been run."</em> That is literally
+true, and it reads as <em>"none is available."</em> The distance to a second
+modality was a caller, not a component.</p>
+</blockquote>
+
+<h2>Running it</h2>
+
+<p>The missing piece was the consumer that joins registration to the atlas and
+averages within parcels. Written, then run on all ten subjects:</p>
+
+<pre><code>10/10 runs cached · 10 participants · 89 windows · 0 dropped
+~160 s per subject, chain reused across that subject's runs
+
+per-subject coverage
+  xp103 400/400   xp106 400/400   xp108 400/400   xp101 399/400
+  xp107 395/400   xp105 391/400   xp109 384/400   xp102 379/400
+  xp104 378/400   xp110 357/400   &lt;- 43 parcels never in the field of view</code></pre>
+
+<p>Coverage ranges from 0.89 to 1.00. <strong>A global mask would be wrong for
+six of these ten subjects.</strong> That is not a tuning detail — it is why the
+mask has to travel with each run rather than being computed once.</p>
+
+<h2>The invariant that keeps this honest</h2>
+
+<p>A parcel outside the acquisition has no measurement. It is <code>NaN</code> in
+the timeseries and <code>False</code> in the mask, and those have to be the same
+statement.</p>
+
+<blockquote>
+<p>A BOLD value of <code>0.0</code> for a parcel that was never in the field of
+view is a <strong>fabricated observation</strong>, and once it is in an array
+nothing downstream can distinguish it from a real one.</p>
+</blockquote>
+
+<p>So the likelihood <em>requires</em> the mask and raises without it — a caller
+who forgets gets no number rather than a plausible one. And the test asserts
+mask and data agree <strong>parcel by parcel</strong>, not merely in count: a
+count check passes when the same number of parcels drift in both directions,
+which is the easy version of that test and the useless one.</p>
+
+<h2>Then a second axis turned out to be missing</h2>
+
+<p>The datasets worth adding next carry more than brain recordings. MEG-MASC
+ships the audio that was played, with phonetic and word annotation. A
+naturalistic EEG-fMRI set ships eye tracking and ECG. These are not
+lower-quality observations; they are not observations at all.</p>
+
+<p>The source ontology ranks sources by <em>integrity</em> — measured, then
+calibration, then prior, then simulator. That axis is real and it cannot express
+the difference between a stimulus, a measurement, and something the subject
+produced.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>attachment</th><th>what it is</th></tr></thead>
+<tbody>
+<tr><td><code>stimulus</code></td><td>the world driving the subject — audio, video, text</td></tr>
+<tr><td><code>observation</code></td><td>a measurement <em>of</em> the carrier, through a declared operator</td></tr>
+<tr><td><code>boundary_output</code></td><td>produced <em>by</em> the subject, measured outside the skull</td></tr>
+<tr><td><code>context</code></td><td>slow conditioning that neither drives nor is driven</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>It deliberately does not default from the role. A single card may carry EEG,
+the audio that was played, and the participant's gaze — so guessing
+<em>observation</em> because the role is <em>likelihood</em> is exactly how a
+stimulus gets trained as a measurement of the brain.</p>
+
+<h2>And the enable did not take</h2>
+
+<p>With the path built, the card could be switched on. It was — and nothing
+changed, which is only visible if you check rather than assume.</p>
+
+<pre><code>configs/source_cards/             9 cards   read by RELEASE  (licence, manifest, publish)
+configs/curriculum/source_cards/  7 cards   read by TRAINING</code></pre>
+
+<p>Both fMRI cards exist only in the release directory. Enabling one there does
+nothing to training — and in the other direction it <em>would</em> have added
+that dataset's licence terms to a published model card with no checkpoint having
+consumed it.</p>
+
+<blockquote>
+<p>A licence claim ahead of its evidence — the same error as linking a model
+before its scores exist, in the one place this project is most careful about.</p>
+</blockquote>
+
+<p>All seven shared cards differ between the directories. Today the
+licence-bearing fields happen to agree. That is luck, not structure: two
+directories of one object, read by different halves of the system, agree until
+someone edits one — and the halves that disagree are <em>what trained</em> and
+<em>what the artifact claims about what trained</em>.</p>
+
+<h2>The pattern, five times in a day</h2>
+
+<p>A stage-admission module with its own patch and eleven tests, unapplied. A
+config block declaring exactly the right things, read by nobody. A registration
+module with no caller. A volumetric atlas nothing loaded. A card enabled in the
+directory the trainer does not read.</p>
+
+<blockquote>
+<p>The work exists, and the half that would use it is pointed somewhere else.
+Each time, the artifact that would have consumed it describes the capability as
+absent — so the codebase reads its own silence as a limitation.</p>
+</blockquote>
+
+</div>
+
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p><strong>SC-WBD-001 series.</strong> A research programme, not a product.
+    Nothing on this site is a medical device, a clinical claim, or advice.
+    No trained model here has been shown to beat its baselines.</p>
+    <p>Data sources carry their own licences, several of them non-commercial and
+    share-alike. See <a href="../attribution.html">attribution</a>.</p>
+    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+  </div>
+</footer>
+
+<script>
+document.getElementById("theme-toggle").addEventListener("click", function () {
+  var el = document.documentElement;
+  var cur = el.getAttribute("data-theme");
+  if (!cur) {
+    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  var next = cur === "dark" ? "light" : "dark";
+  el.setAttribute("data-theme", next);
+  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
+});
+</script>
+
+</body>
+</html>
