@@ -2192,3 +2192,72 @@ stage property* — `uses_real_data`, `individualises` — so a stage that fails
 declare one is refused at config load. Every one of the three defects is the
 same defect: behaviour attached to a string literal that nothing checks against
 the config.
+
+### Addendum, found ten minutes later: the fix was already written
+
+The entry above is wrong in one important way. It says the defect went
+undetected. It did not.
+
+`scwbd/foundation/curriculum_admission.py` is on master. It contains:
+
+- `NAME_GATES` — **all six** stage-name gates in `run_stage`, recorded as data
+  *"so a test can assert the list is exhaustive rather than trusting that
+  someone read the function carefully"*;
+- `UndeclaredStage`, whose docstring is the diagnosis stated better than this
+  register managed independently ten hours later:
+
+  > *"Raised rather than defaulted. `STAGE_PERMISSIONS.get(name, ("*",))`
+  > answers this question with **everything**, which is the one answer that
+  > cannot be wrong-looking: an unwired stage and a fully-permitted stage produce
+  > the same reading."*
+
+There is a complete 13 KB patch,
+`configs/run2/patches/0001-run_stage-config-driven-admission.patch`, that rewires
+`run_stage` to take admission from the config. It **still applies cleanly** —
+`git apply --check` returns 0.
+
+There are eleven tests in `tests/foundation/test_curriculum_admission.py`. Their
+header records the measurement properly, in both directions: *7 failed, 4 passed*
+before the patch; *11 passed* after it — with the three that could not
+discriminate marked `pass*`, and one marked `FAIL†` because it failed for a
+different reason than predicted, *"and that is worth recording rather than
+counting as a win."*
+
+**The patch was never applied.** Six of those tests are red on master right now,
+and were red for the entire nine-hour run:
+
+```
+FAILED test_run_stage_has_no_stage_name_gates
+FAILED test_run_stage_consults_stage_admission
+FAILED test_stage_sources_takes_an_admission
+FAILED test_stage_sources_excludes_unadmitted_sources
+FAILED test_sim_losses_takes_an_admission
+FAILED test_anatomical_prior_is_not_gated_on_the_sim_batch
+```
+
+### The actual lesson
+
+Every other entry in this register is about an instrument that could not see a
+failure. This one is about an instrument that saw it perfectly, said so in
+plain language, and was not read.
+
+> **A red test nobody reads is worse than no test.** It produces the appearance
+> of coverage and none of the effect, and it converts "we have no check for
+> this" — which prompts action — into "the suite is a bit red" — which does not.
+
+The correct name is not decorative. `test_run_stage_has_no_stage_name_gates` is
+about as undecorative as a test name gets. It failed, in the same repository,
+for the whole run.
+
+### And the failure that let it happen to me
+
+I catalogued *"17 pre-existing failures in `tests/foundation/test_family_state.py`,
+known and deliberately not fixed"* — and never asked what **else** was red. The
+number 17 was measured; treating it as the total was assumed.
+
+> A known-failures list that is not exhaustive is itself a permissive default:
+> anything outside it reads as passing.
+
+The repair is the same one this whole register keeps arriving at from different
+directions — enumerate, then assert the enumeration is complete. `NAME_GATES`
+does exactly that for the gates. Nothing did it for the failing tests.
