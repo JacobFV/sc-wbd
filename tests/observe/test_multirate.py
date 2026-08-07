@@ -31,7 +31,9 @@ from scwbd.observe.bold import BOLDObservationOperator, CanonicalHRF
 from scwbd.observe.eeg import EEGNoiseModel, EEGObservationOperator
 from scwbd.observe.leadfield import ReferenceOperator
 
-torch.set_default_dtype(torch.float64)
+# The module-level `torch.set_default_dtype(float64)` that stood here ran at
+# COLLECTION time and changed the default for the entire process. Owned by the
+# autouse fixture in conftest.py instead; set DEFAULT_DTYPE here to override.
 
 N_SEC = 40.0
 DT_LATENT = 1e-3

@@ -17,7 +17,9 @@ from scwbd.observe.bold import BOLDObservationOperator, CanonicalHRF, HRFParamet
 scipy_signal = pytest.importorskip("scipy.signal")
 scipy_stats = pytest.importorskip("scipy.stats")
 
-torch.set_default_dtype(torch.float64)
+# The module-level `torch.set_default_dtype(float64)` that stood here ran at
+# COLLECTION time and changed the default for the entire process. Owned by the
+# autouse fixture in conftest.py instead; set DEFAULT_DTYPE here to override.
 
 
 def test_canonical_kernel_matches_scipy_gamma_difference():

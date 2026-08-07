@@ -21,7 +21,9 @@ from scwbd.observe.bold import (
 from scwbd.observe.eeg import EEGNoiseModel, EEGObservationOperator
 from scwbd.observe.leadfield import meg_lead_field
 
-torch.set_default_dtype(torch.float64)
+# The module-level `torch.set_default_dtype(float64)` that stood here ran at
+# COLLECTION time and changed the default for the entire process. Owned by the
+# autouse fixture in conftest.py instead; set DEFAULT_DTYPE here to override.
 
 
 def test_unknown_unit_is_refused():

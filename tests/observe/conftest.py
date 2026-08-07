@@ -15,6 +15,36 @@ from scwbd.observe.leadfield import (
     TissueConductivityPriors,
 )
 
+@pytest.fixture(autouse=True)
+def _default_dtype(request):
+    """Own the global default dtype per test, and restore it afterwards.
+
+    Eleven modules in this directory called ``torch.set_default_dtype(float64)``
+    at MODULE level. That runs at *collection* time, before a single test
+    executes, and it is process-global: the whole suite ran in float64 because
+    these files were collected, whichever directory was actually being run.
+
+    It was invisible while the suite could not be run to completion. The first
+    complete run surfaced it as 38 failing files -- including ``tests/anatomy``,
+    which sorts FIRST and so cannot have been contaminated by anything that ran
+    before it. That was the tell: it failed under full collection and passed when
+    its own directory was run alone.
+
+    ``quantile() q tensor must be same dtype as the input tensor`` is what it
+    looks like from the far end -- an anatomy adapter mixing a float32 input with
+    a float64 quantile, four directories away from the file that changed the
+    default.
+
+    ``tests/infer/conftest.py`` already owned this for its own directory, and its
+    docstring names the mechanism exactly. That fix was correct and scoped to the
+    place it was noticed, which is why it kept happening everywhere else.
+    """
+    prev = torch.get_default_dtype()
+    torch.set_default_dtype(getattr(request.module, "DEFAULT_DTYPE", torch.float64))
+    yield
+    torch.set_default_dtype(prev)
+
+
 torch.manual_seed(0)
 
 HEAD_RADIUS = 0.09

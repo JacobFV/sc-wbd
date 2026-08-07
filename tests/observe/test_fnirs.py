@@ -15,7 +15,9 @@ import torch
 from scwbd.observe.base import ObservationRefusal
 from scwbd.observe.fnirs import FNIRSObservationOperator, PhotonPathModel
 
-torch.set_default_dtype(torch.float64)
+# The module-level `torch.set_default_dtype(float64)` that stood here ran at
+# COLLECTION time and changed the default for the entire process. Owned by the
+# autouse fixture in conftest.py instead; set DEFAULT_DTYPE here to override.
 
 
 def test_short_separations_see_no_brain():
