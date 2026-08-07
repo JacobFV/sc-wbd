@@ -15,6 +15,15 @@ This document grew while the run did, and the headline is not in §0. It is:
 > applied, haemodynamic state was off in the rollout, boundary randomisation was
 > off, and no individualizer was ever built. Nothing raised. Loss fell for nine
 > hours. **§2b.**
+>
+> **And 88.7% of the model could not receive a gradient at all.** 2,231,447 of
+> 2,516,530 trainable parameters — the entire family-indexed regional model —
+> are named by no source card, because the modules were renamed `local` →
+> `family_local` (and `residual`, `readout` likewise) while the cards still
+> grant the old names. An unmatched glob is an empty permission set, not an
+> error. So 002's loss is not evidence that heterogeneous regional state fails:
+> that part of the model was a random initialisation for all 8,700 steps.
+> **§4.**
 
 **And it lost, on both columns.** NLL 3.1789 against 2.0454 for the best
 baseline; MSE 36.27 against 4.53. Five baselines beat it on NLL, six on MSE,
@@ -957,6 +966,99 @@ The complete run is the first thing after publishing, and it is in the
 watchdog's step 2 for that reason. Until then the correct summary of this
 project's test status is *"four directories green, three files red, and eight
 directories unexamined"* — not *"a few known failures"*.
+
+### 88.7% of the model could not receive a gradient, and this is why
+
+Found on 2026-08-07, after everything below was written. It does not change a
+single number in this report. It changes what they are evidence *of*.
+
+```
+2,231,447 of 2,516,530 trainable parameters (88.7%)
+were named by no enabled source card's gradient_permission
+```
+
+The modules: `family_local` (1,814,447), `family_residual` (365,639),
+`family_readout` (26,946), `behaviour` (22,342), `observation` (2,073). That is
+the entire family-indexed regional model — the thing the treatment arm exists to
+test — plus the observation head and the boundary-output head.
+
+**It is a string mismatch, not a curriculum decision.** When the family-padded
+architecture landed, the regional modules were renamed:
+
+```
+local     -> family_local
+residual  -> family_residual
+readout   -> family_readout
+```
+
+The source cards still grant `local.*`, `residual.*`, `readout.*`. And
+`fnmatch("family_local.ports.out_proj.weight", "local.*")` is `False`.
+
+Nothing anywhere reported it. An unmatched glob is not an error to `fnmatch`; it
+is an empty set. An empty permission set is a legal permission set. The trainer
+computed gradients with respect to the parameters each source permitted, got a
+smaller set than intended, stepped, and the loss went down — because the 285,083
+parameters that *were* reachable (`assimilate`, `context`, `msg_readin`,
+`coupling`, `eeg`) are enough to fit something. The run finished. The weights
+shipped. Five separate audits in this document passed over it.
+
+**Two independent methods agree**, which is the reason to believe it:
+
+| method | what it shows |
+|---|---|
+| mechanism | the enabled cards' globs, matched against the checkpoint's parameter names, leave exactly those six modules unreachable |
+| measurement | those same modules are **bit-identical** across every consecutive pair of the five stage checkpoints |
+
+Neither was derived from the other. The measurement makes no reference to cards;
+the mechanism makes no reference to weights.
+
+#### What this does to the result
+
+Everything below stands as measurement. The *interpretation* does not.
+
+> 002 loses to every baseline — but it does not show that family-indexed
+> heterogeneous regional state fails to help, because the family-indexed
+> heterogeneous regional state never trained. It was a random initialisation
+> participating in the forward pass for 8,700 steps.
+
+The report's earlier diagnosis — five of six curriculum gates wrong, no gradient
+ever taken on a recording — is true and is the smaller half. A curriculum that
+admits the wrong sources still trains the model. This did not train the model.
+
+#### Scope, stated exactly
+
+The stage checkpoints begin at the *end* of `T1_measured_founding`, so T1's
+interior is not directly observable from the artifacts. The mechanism argument is
+stage-independent — the same patterns are matched against the same names in every
+stage — so T1 is covered by mechanism and T2–T5 by both.
+
+#### Independent confirmation that no individualizer was built
+
+The headline at the top of this report already states it, from the curriculum
+side: `admission.individualize` was false for every stage. The weights say the
+same thing from the other side — `individualizer` is `None` in **every** stage
+checkpoint, including `stage_T1_individualisation.pt`.
+
+Noted not as a new finding but because it settles a question §4 left open. §4
+explains the exactly-zero between-participant θ spread by the participant-disjoint
+split. That is true, and it is the second reason rather than the first: there was
+no individualizer in the artifact to have a spread.
+
+#### The guard
+
+`tests/foundation/test_card_patterns_reach_the_model.py`, in three parts: the
+shipped checkpoint's defect pinned as an immutable record; a forward guard that
+fails when any module is unreachable; and the mirror check — every grant pattern
+must name at least one real parameter — which is the one that would have caught
+the rename on the day it happened.
+
+Two false positives were caught while writing it, both recorded in the file
+because both are the same namespace error the defect itself is:
+
+* reading only `ck["model"]` accuses `posterior.*` of matching nothing — it
+  lives in a sibling state dict that `_CombinedModule` prefixes;
+* checking a single stage accuses `individualizer.*` — which then turned out to
+  match nothing for a real reason, above.
 
 ### Final numbers — 002 loses to every baseline, on both columns
 
