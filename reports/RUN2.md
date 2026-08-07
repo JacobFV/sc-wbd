@@ -25,11 +25,30 @@ cataloguing.
 | | 001-beta | 002 |
 |---|---|---|
 | anatomy | 454 synthetic, `is_biological: false` | 414 real, 9 evidence-derived families |
-| regional state | scalar, dense, 52.26% padding | 3-vector dipole `Hz·m`, ragged |
+| regional state | scalar per parcel, uniform width — no families, so no padding | per-family heterogeneous, **padded** to `D = 59`, 47.34% pad |
 | predictive variance | one constant per channel | state-dependent, closed-form init |
 | posterior | unnormalised conditioning, 8-dim over a point mass | LayerNorm'd, 6-dim, bounded translation |
 | corpus | 454-region synthetic | 43 GB on real anatomy, 5 backends, 147 shards |
 | designation guard | none | R12 |
+
+> **Correction, 2026-08-06.** That row previously read *"scalar, dense, 52.26%
+> padding"* for 001-beta and *"3-vector dipole `Hz·m`, ragged"* for 002. Three
+> things were wrong, and all three flattered run 2:
+>
+> - **002 is padded, not ragged.** `padded-family-state` is a declared narrowing
+>   and is permanent for this run; the ragged layout (O-6) is built and not
+>   shipped. The checkpoint says so itself: `layout: family_padded`.
+> - **002 has no dipole component.** Its state is `rate_e`(1), `rate_i`(1),
+>   `hemo`(4), `uncertainty`(4), `private`(49) — read from the checkpoint's own
+>   `state_layout`. Vector-valued regional state is **O-5, deferred to run 3**.
+>   The table was describing the design we argued for, not the artifact.
+> - **The 52.26% belonged to neither column.** It was the run-2 padded figure
+>   (since regenerated to 47.34%), attributed to run 1 — whose uniform dense
+>   state has no padding at all.
+>
+> Written down rather than quietly amended because of the direction: a summary
+> table drifts toward the thing you meant to build. Every one of these errors
+> made run 2 look more like the thesis than it is.
 
 `SC-WBD-001-beta` stays published as a **negative result** with an honest card.
 It is not superseded quietly; it is superseded explicitly.

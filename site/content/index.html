@@ -75,8 +75,15 @@ could run.</p>
   <td><strong>SC-WBD-002</strong></td>
   <td><span class="chip warn">training</span></td>
   <td>The first model on real anatomy. 2.5M parameters over 414 parcels with
-  per-family engineered backends, a ragged state layout (52% of the padded
-  plane removed), and state-dependent predictive variance. Distinct from
+  per-family engineered backends, heterogeneous per-family state widths, and
+  state-dependent predictive variance.[[note: This entry previously said "a
+  ragged state layout (52% of the padded plane removed)". Both halves were
+  wrong. Run 2 ships the <strong>padded</strong> layout — the checkpoint records
+  <code>layout: family_padded</code> — with <strong>47.34%</strong> of the
+  (414&nbsp;×&nbsp;59) plane being pad, because two hippocampal parcels of width
+  2 set the width for all 414 regions. The ragged layout is built and tested but
+  is not what these weights use, and the 52% figure was computed against an
+  11-family partition that no longer exists.]] Distinct from
   <strong>001-beta</strong> in a way that is not a judgement call: the run-1
   checkpoints <em>refuse</em> 414-region input, so the two do not share an
   input space and cannot be compared.</td>

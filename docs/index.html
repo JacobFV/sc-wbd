@@ -112,8 +112,15 @@ could run.</p>
   <td><strong>SC-WBD-002</strong></td>
   <td><span class="chip warn">training</span></td>
   <td>The first model on real anatomy. 2.5M parameters over 414 parcels with
-  per-family engineered backends, a ragged state layout (52% of the padded
-  plane removed), and state-dependent predictive variance. Distinct from
+  per-family engineered backends, heterogeneous per-family state widths, and
+  state-dependent predictive variance.<span class="note"><input type="checkbox" id="index-n5" class="note-toggle"><label for="index-n5" class="note-ref">5</label><span class="note-body"><span class="note-n">5</span>This entry previously said "a
+  ragged state layout (52% of the padded plane removed)". Both halves were
+  wrong. Run 2 ships the <strong>padded</strong> layout — the checkpoint records
+  <code>layout: family_padded</code> — with <strong>47.34%</strong> of the
+  (414&nbsp;×&nbsp;59) plane being pad, because two hippocampal parcels of width
+  2 set the width for all 414 regions. The ragged layout is built and tested but
+  is not what these weights use, and the 52% figure was computed against an
+  11-family partition that no longer exists.</span></span> Distinct from
   <strong>001-beta</strong> in a way that is not a judgement call: the run-1
   checkpoints <em>refuse</em> 414-region input, so the two do not share an
   input space and cannot be compared.</td>
@@ -180,7 +187,7 @@ part we would most like attacked.</li>
 <li><strong>People designing non-invasive interventions</strong> — TMS, tFUS —
 who need a feasible-set discipline rather than an optimiser that will happily
 recommend something unsafe. The safety gating exists and refuses by
-default.<span class="note"><input type="checkbox" id="index-n5" class="note-toggle"><label for="index-n5" class="note-ref">5</label><span class="note-body"><span class="note-n">5</span>A plan declaring intent to drive real hardware or to be applied
+default.<span class="note"><input type="checkbox" id="index-n6" class="note-toggle"><label for="index-n6" class="note-ref">6</label><span class="note-body"><span class="note-n">6</span>A plan declaring intent to drive real hardware or to be applied
 to a person is refused unless a record exists that a preliminary review
 <em>occurred</em> with an approving outcome. A valid authorisation record is
 necessary and explicitly not sufficient, and the gate does not open when a
@@ -195,7 +202,7 @@ marked as speculation.</li>
 
 <p>The technical thesis, falsification programme and implementation contract are
 one document, built from LaTeX source in this repository rather than shipped as
-a stale PDF.<span class="note"><input type="checkbox" id="index-n6" class="note-toggle"><label for="index-n6" class="note-ref">6</label><span class="note-body"><span class="note-n">6</span>Built with <code>make paper</code>, which runs
+a stale PDF.<span class="note"><input type="checkbox" id="index-n7" class="note-toggle"><label for="index-n7" class="note-ref">7</label><span class="note-body"><span class="note-n">7</span>Built with <code>make paper</code>, which runs
 <a href="https://tectonic-typesetting.github.io/">tectonic</a> over
 <code>paper/sc_wbd_frontiers.tex</code>. 29 pages. The source is the artifact;
 the PDF is a build product.</span></span> It is marked <em>Draft — pending development</em>
@@ -219,7 +226,7 @@ provenance chips throughout the engineering essays become links.</p>
 <h2>Video</h2>
 
 <p>Two short pieces, rendered from code so that every figure in them comes from
-the same source as the figures on this site.<span class="note"><input type="checkbox" id="index-n7" class="note-toggle"><label for="index-n7" class="note-ref">7</label><span class="note-body"><span class="note-n">7</span>Built with
+the same source as the figures on this site.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>Built with
 <a href="https://www.remotion.dev/">Remotion</a> under <code>video/</code>,
 rendered locally with <code>make video</code>, and uploaded to object storage
 with <code>make video-upload</code>. Media is never committed to the repository —
@@ -254,7 +261,7 @@ engineering essays</a> explain how.</p>
 
 <p>Every number on this site is traceable to a file in the repository. Where a
 figure could not be traced, there is a prompt for a human rather than a
-plausible number.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>This is not a stylistic preference. The project has been
+plausible number.<span class="note"><input type="checkbox" id="index-n9" class="note-toggle"><label for="index-n9" class="note-ref">9</label><span class="note-body"><span class="note-n">9</span>This is not a stylistic preference. The project has been
 burned repeatedly by relayed figures — in one case a single dropped qualifier
 inverted a claim's meaning, and in another a reported percentage came from a
 script with a bug in the statistic itself. The standing rule is
