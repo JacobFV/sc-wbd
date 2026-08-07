@@ -1883,3 +1883,78 @@ spelling to miss.
 **Fallback chosen deliberately:** `_designation` falls back to
 `"SC-WBD-unnamed"`, never to any real designation. An unnamed artifact is a
 visible defect; a misnamed one is not.
+
+## The silent-instrument class — sixth instance, and the first one I caught in my own hands
+
+Every prior entry in this register is about a guard that watched the wrong
+thing. This one is about a check that watched **nothing at all** and reported
+the same way it would have reported success.
+
+Checking on the run-2 job, I ran:
+
+```
+tail -3 logs/run2_pilot.log ; echo "procs: $(pgrep -cf 'scwbd.foundation.train')"
+```
+
+`logs/run2_pilot.log` does not exist. The real log is
+`reports/training/run002.log`. `tail` on a missing path inside a compound
+command printed nothing and did not stop the chain; `pgrep` then printed `8`.
+The combined output — no error, no stage line, a healthy process count — is
+**shape-identical to a healthy run between log writes.**
+
+### Why this class is worse than the ones above it
+
+A decorative guard fails when something goes wrong. A silent instrument fails
+**continuously and invisibly**, and its failure is indistinguishable from the
+good case *by construction*. Nothing was going wrong at that moment, so there
+was no symptom to notice the absence of.
+
+The exposure was not hypothetical. A `*/10 * * * *` watchdog was the only thing
+watching a multi-hour unattended run whose end state is a published artifact. A
+watchdog reading a wrong path reports HEALTHY every ten minutes forever, and the
+run's death is discovered only when someone asks for the finished model. (The
+cron was in fact reading the correct path — its output carried real stage lines.
+The typo was mine, ad hoc. That is luck, not design: **both** of us were
+re-deriving the path by hand on every cycle, and one of us got it wrong.)
+
+### The tell
+
+> An instrument whose failure output is a **subset** of its success output
+> cannot be trusted, because there is no observation that distinguishes them.
+
+Absence of an error is not evidence. `tail` reports a missing file by printing
+nothing, and *nothing* is what a quiet log looks like too.
+
+### The fix, and its control
+
+`scripts/health.sh`. The ordering is the whole point: **the instrument is
+validated before the subject.** Missing, unreadable, empty, and stale logs all
+exit `1` naming the path searched and the directory searched from; a dead job or
+a traceback exits `2`. Health and broken-instrument are different exit codes
+because they demand different responses — one relaunches training, the other
+means you do not know anything yet.
+
+A `global_step` that cannot be parsed is also exit `1`, not exit `0`: if the log
+format changes, the checker must say *"wrong log, or the format changed"* rather
+than silently reporting the last step it understood.
+
+Its control is that all three failure paths were run and **watched to fire**,
+including the original typo verbatim:
+
+```
+UNHEALTHY(1): log not found: logs/run2_pilot.log (checked from /home/.../scales-and-dynamics)
+UNHEALTHY(1): log stale: no write for 61s (limit 1s)
+HEALTHY stage=T3_population_prior global_step=3846 nll=0.5045 npe_rejected=0 procs=6 log_age=61s
+```
+
+This is the same discipline the earlier entries earned — *a guard nobody has
+watched fire is a guard nobody knows works* — applied to a checker rather than
+to a refusal.
+
+### Standing recommendation
+
+Any monitoring command must **fail loud on its own preconditions before
+reporting on its subject**, and staleness counts as a precondition: a log
+nobody is writing to is a broken instrument, not a quiet run. Where a path is
+consumed by more than one caller — a human and a cron — derive it in one place.
+Two hand-derivations of the same path is one typo away from this entry.
