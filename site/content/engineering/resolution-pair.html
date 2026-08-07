@@ -142,6 +142,42 @@ eight times as many scalar parcels.</strong></p>
 sensor field, and no amount of spatial refinement buys it back.</p>
 </blockquote>
 
+<h2>How far this carries — and how far it does not</h2>
+
+<p>The table above is measured on a <strong>real BEM lead field</strong>: 7498
+source-space dipoles into 68 parcels. That is the number worth quoting, and it
+is the one this page quotes.</p>
+
+<p>It is not, however, the gain our own forward model sees. Building the
+free-orientation lead field in the model's <em>analytic single-sphere</em>
+fallback — where source orientations are close to radial — the same comparison
+gives:</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>support</th><th>dof</th><th>η</th></tr></thead>
+<tbody>
+<tr><td>scalar per parcel</td><td class="num">414</td><td class="num">0.3795</td></tr>
+<tr><td>3-vector per parcel</td><td class="num">1242</td><td class="num">1.0000</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>A ratio of <strong>2.64×</strong>, not nine. The scalar contraction already
+captures 38% there rather than 5.6%, because near-radial sources are exactly the
+case a scalar handles well.</p>
+
+<blockquote>
+<p>Both numbers are correct. They are measurements of <em>different forward
+models</em>, and quoting the larger one as though it were ours would be the more
+exciting version of a result we did not get.</p>
+</blockquote>
+
+<p>So the direction of the finding survives and its magnitude does not transfer:
+the argument for vector-valued regional state stands at roughly a quarter of the
+headline size until we solve a real BEM with real cortical normals. One of us
+predicted the 9× would not carry to our forward model, and was right.</p>
+
 <p>The medial wall is not the story either: excluding the unassigned sources —
 6.0% of cortical area — changes the answer by 0.0005.</p>
 

@@ -55,18 +55,29 @@ def test_parcel_count_matches_the_anatomy_prior():
 
 
 def test_the_orientation_ratio_is_the_measured_one_not_the_escalated_one():
-    """We published 2.64x after measuring it; ~9x was another forward model.
+    """Both ratios are real; they are different forward models.
 
-    This is the figure most likely to drift back, because 9x is the more
-    exciting number and it appears in the reports as an escalation that was
-    later corrected.
+    ~9x (0.056 -> 0.517) is measured on a **real BEM lead field**, 7498
+    source-space dipoles into 68 parcels.  2.64x (0.3795 -> 1.0) is what our own
+    **analytic single-sphere** forward model gives, where near-radial sources
+    mean the scalar contraction already captures 38%.  Quoting the larger one as
+    ours would be the more exciting version of a result we did not get, so any
+    page citing the 9x figure must also carry the 2.64x.
+
+    **This test skipped silently for weeks.** It searched for "9x" and "9×"; the
+    page says "nine times" and "nine-fold". A guard that only knows the spelling
+    its author thought of is the naming defect wearing a test's clothes -- and
+    the skip made it look like the claim simply was not on the site.
     """
     text = _all_site_text()
-    if "2.64" not in text and "9×" not in text and "9x" not in text:
+    NINE = re.compile(r"\b9(\.0)?\s*[x×]|\bnine[- ](?:fold|times)|\bnine times\b", re.I)
+    if not NINE.search(text) and "2.64" not in text:
         pytest.skip("the site does not cite an orientation ratio")
-    # If the site cites 9x as OUR result it must also carry the correction.
-    if re.search(r"\b9(\.0)?\s*[x×]", text):
-        assert "2.64" in text, "the site cites ~9x without the measured 2.64x"
+    if NINE.search(text):
+        assert "2.64" in text, (
+            "the site cites the ~9x BEM ratio without the 2.64x measured on our "
+            "own forward model"
+        )
 
 
 def test_the_impulse_null_p_value_matches_the_artifact():
