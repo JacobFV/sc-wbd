@@ -112,6 +112,12 @@
     canvas.style.cursor = "grab";
 
     window.addEventListener("resize", function () { resize(); draw(); });
+    // Follow the page theme: the mark sits on the page background, so a theme
+    // flip must repaint it.
+    var mo = new MutationObserver(function () { draw(); });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    var mq2 = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq2 && mq2.addEventListener) mq2.addEventListener("change", draw);
     resize();
 
     // Respect a reduced-motion preference: render once, stay draggable.

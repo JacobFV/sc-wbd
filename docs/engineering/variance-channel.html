@@ -83,7 +83,7 @@ project loses the ability to audit itself.</span></span> The deficit to persiste
 
 <h2>The mechanism, in two lines</h2>
 
-<p>The whole predictive variance for EEG:<span class="src">scwbd/foundation/heads.py:238</span></p>
+<p>The whole predictive variance for EEG:<a class="src" href="https://github.com/JacobFV/sc-wbd/blob/master/scwbd/foundation/heads.py">scwbd/foundation/heads.py:238</a></p>
 
 <pre><code>self.log_noise = nn.Parameter(torch.zeros(n_ch))   # __init__, shape (C,)
 ...
@@ -144,7 +144,7 @@ is uniformly <strong>3.0× overconfident</strong>.</p>
 
 <p>Why? The parameter was made trainable in <strong>stage V only</strong>, and
 stage V ran <strong>900 steps at learning rate 5.77e-5 — 134
-seconds</strong>.<span class="src">scwbd/foundation/train.py:78</span> The stationary point is
+seconds</strong>.<a class="src" href="https://github.com/JacobFV/sc-wbd/blob/master/scwbd/foundation/train.py">scwbd/foundation/train.py:78</a> The stationary point is
 <code>log(3.97) = 1.379</code>. It started at 0 and reached 0.273: about 20% of
 the way there, still drifting when training stopped.</p>
 

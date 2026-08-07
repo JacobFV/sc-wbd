@@ -46,56 +46,56 @@
     </div>
 <div class="prose">
 
-<canvas id="wbd-brain" class="brainmark" data-src="static/brain.json"
-        aria-label="414 brain parcels at their anatomical coordinates, coloured by region family. Drag to orbit."></canvas>
-<p class="brainmark-cap">414 parcels in <code>fsLR_32k</code> surface RAS, coloured by
-the 9-family partition &mdash; the model's actual state space. Drag to orbit.</p>
+<canvas class="arch-canvas archhero" data-case="bci"
+        data-src="static/brain.json" data-edges="static/edges.json"
+        aria-label="414 parcels and their strongest tracts, with body terminals, annotated to the signal categories a cursor-control task uses. Drag to orbit."></canvas>
+<p class="arch-cap">Every dot is a region of one person's brain; the lines are the
+white-matter tracts connecting them. Signals enter and leave through the body at
+the bottom. Drag to turn it.<span class="note"><input type="checkbox" id="index-n1" class="note-toggle"><label for="index-n1" class="note-ref">1</label><span class="note-body"><span class="note-n">1</span>414 regions — 400 cortical, 14 subcortical —
+at their real coordinates in <code>fsLR_32k</code> surface RAS, with the strongest
+900 edges of the measured connectome.</span></span></p>
 
 <figure class="videofig">
   <video controls preload="metadata" playsinline src="https://pub-045364f0fab44827afa95b1e44b6e18d.r2.dev/scwbd-overview.mp4"></video>
   <figcaption><strong>What SC-WBD is</strong> &middot; 29 seconds</figcaption>
 </figure>
 
-<p class="lede">SC-WBD models a single brain as a 414-parcel dynamical system and
-learns it from whatever was measured. EEG constrains the fast electrical state
-through a lead field built on that subject's head geometry; fMRI constrains a
-slow haemodynamic state in the same parcel space; TMS and tFUS enter as an
-E-field on the same grid. One state, one set of dynamics, four instruments
-looking at it.</p>
+<p class="lede">SC-WBD builds a working model of one person's brain, and keeps it
+consistent across every way you can measure that brain — electrical, blood flow,
+stimulation, and what the person actually does.</p>
 
-<p>Those are the instruments that look <em>at</em> the brain. They are not the
-whole input. A recording session also contains the world that drove the subject
-&mdash; the audio played, the images shown, the text read &mdash; and what the
-subject produced: eye position, button presses, speech, heart rate. SC-WBD types
-each channel by <strong>where it attaches</strong> rather than by what device
-recorded it:</p>
+<p>The hard part is that these measurements disagree. Electrodes read the brain a
+thousand times a second; an MRI scanner reads it once every two. Most people are
+only ever measured one way. And what someone looks at, or types, or says is not a
+brain measurement at all — but it is evidence about the brain.</p>
+
+<p>SC-WBD keeps one shared model and lets each kind of signal constrain the part
+it can actually speak to. A subject recorded with electrodes alone still improves
+the shared model; nothing is invented to fill the gaps.</p>
 
 <div class="tablewrap">
 <table>
-<thead><tr><th>attachment</th><th>what it is</th><th>examples</th></tr></thead>
+<thead><tr><th>Kind of signal</th><th>What it is</th><th>Examples</th></tr></thead>
 <tbody>
-<tr><td><code>stimulus</code></td><td>the world driving the subject; known exactly, and evidence about nothing on its own</td><td>audio, video, text, task events</td></tr>
-<tr><td><code>observation</code></td><td>a measurement <em>of</em> the carrier, through a declared forward operator</td><td>EEG via a lead field, BOLD via a haemodynamic model, MEG</td></tr>
-<tr><td><code>boundary_output</code></td><td>produced <em>by</em> the subject and measured outside the skull</td><td>eye tracking, motor, speech, ECG, cognitive-test responses</td></tr>
-<tr><td><code>context</code></td><td>slow conditioning that neither drives nor is driven on the modelled timescale</td><td>time of day, session index, drug state</td></tr>
+<tr><td>Going in</td><td>the world acting on the person</td><td>video, audio, speech, a magnetic pulse</td></tr>
+<tr><td>Reading the brain</td><td>an instrument measuring the brain itself</td><td>EEG, MEG, fMRI</td></tr>
+<tr><td>Coming out</td><td>what the person does, measured outside the head</td><td>eye movements, typing, speech, heart rate, test answers</td></tr>
+<tr><td>Background</td><td>slow conditions that shape everything else</td><td>time of day, session, medication</td></tr>
 </tbody>
 </table>
 </div>
 
-<p>The distinction is load-bearing. An <code>observation</code> without a declared
-operator is refused, because it would assert that the model's state <em>is</em>
-the measurement. A <code>stimulus</code> carrying an operator is refused for the
-mirror reason. Forcing gaze or a button press into the observation slot &mdash;
-the only option before this axis existed &mdash; would train them as measurements
-of neural state rather than as behaviour the brain produced.</p>
+<p>Sorting signals this way is what makes partial data usable.<span class="note"><input type="checkbox" id="index-n2" class="note-toggle"><label for="index-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>In the
+schema these are <code>stimulus</code>, <code>observation</code>,
+<code>boundary_output</code> and <code>context</code>, and the distinction is
+enforced: an <code>observation</code> must declare the forward operator it is
+measured through, or it is refused. Without that axis, eye tracking and button
+presses could only be declared as measurements of neural state, which is a
+different and wrong claim.</span></span> Someone's gaze is real evidence, but it is not a
+reading of their cortex, and a model that confuses the two learns the wrong
+thing.</p>
 
-<p>The engineering problem is that these channels disagree about time, space
-and units. EEG samples at milliseconds and BOLD at seconds. EEG sees a current
-dipole moment in <code>Hz&middot;m</code>; BOLD sees percent signal change. A
-subject scanned with one modality has no measurement of the others. SC-WBD
-carries a state that is explicit about all three &mdash; per-region structure,
-named clocks, typed ports &mdash; so a partial observation supervises the part
-it observes and nothing else.</p>
+
 
 <div class="keyfig">
   <div><span class="n">414</span><span class="l">parcels of structured state<br>400 cortical + 14 subcortical</span></div>
@@ -108,44 +108,45 @@ it observes and nothing else.</p>
 
 <h2>How the graph materialises</h2>
 
-<p>The same state space, wired three different ways. Drag the scene to orbit; the
-annotation lines follow the parcels and terminals they point at.</p>
+<p>One model, three jobs. Each drawing shows which parts of the brain a task
+actually involves, and which signals it reads or sends.</p>
 
-<div class="archwrap">
-  <div class="arch-cases" id="arch-cases"></div>
-  <canvas id="wbd-arch" data-src="static/brain.json"
-          aria-label="Axonometric diagram: 414 parcels and body terminals on the left, signal categories in the middle, the use case on the right. Drag to orbit."></canvas>
-  <p class="arch-cap">Blue is an <code>observation</code> &mdash; a measurement of
-  the carrier through a declared forward operator. Warm is a <code>stimulus</code>
-  entering or a <code>boundary_output</code> leaving. Dimmed parcels are the ones
-  a given use case does not touch.</p>
-</div>
+<h3>Choosing where to stimulate</h3>
+<canvas class="arch-canvas" data-case="tms"
+        data-src="static/brain.json" data-edges="static/edges.json"
+        aria-label="Diagram: parcels and tracts annotated to the signal categories TMS target selection uses."></canvas>
+<p class="arch-cap">Magnetic stimulation is used to treat depression, and where you
+aim it matters. The model predicts what a pulse at a given spot will do, using
+that person's own head shape rather than an average one.</p>
 
-<h2>What you can do with it</h2>
+<h3>Reading what someone responds to</h3>
+<canvas class="arch-canvas" data-case="semantic"
+        data-src="static/brain.json" data-edges="static/edges.json"
+        aria-label="Diagram: parcels and tracts annotated to the signal categories a naturalistic viewing study uses."></canvas>
+<p class="arch-cap">Show someone a film and you know exactly what they saw, where
+they looked, and what they said about it &mdash; alongside what their brain did.
+Four different kinds of evidence about one response.</p>
 
-<p>Every row is a command or an API call in this repository, not a roadmap
-entry.</p>
+<h2>What it does today</h2>
 
-<div class="tablewrap">
-<table>
-<thead><tr><th>Task</th><th>How</th></tr></thead>
-<tbody>
-<tr><td>Roll a brain state forward and read EEG, activity and their predictive variances</td>
-    <td><code>LoadedModel.from_checkpoint(...).predict(ctx, n_steps=8)</code> &mdash;
-    see <code>scripts/demo_predict.py</code>, which runs on measured eegmmidb</td></tr>
-<tr><td>Put a subject's fMRI into the model's 414-parcel space, with per-run coverage</td>
-    <td><code>scwbd.sources.parcellate_bold.parcellate_run(bold, t1w)</code></td></tr>
-<tr><td>Build a lead field on a subject's own head geometry</td>
-    <td><code>scwbd.observe.leadfield.build_lead_field(...)</code>, validated against BEM surfaces</td></tr>
-<tr><td>Compare TMS or tFUS targets under an E-field model</td>
-    <td><code>scwbd.intervene</code> &mdash; Faraday E-field, coil pose response, dose/effect separation</td></tr>
-<tr><td>Ask what a design can identify before running it</td>
-    <td><code>scwbd.infer.identifiability</code> &mdash; profile information per parameter, per modality</td></tr>
-<tr><td>Check that a claim is supported by what actually trained</td>
-    <td>the compiler refuses malformed claims; <code>make test</code></td></tr>
-</tbody>
-</table>
-</div>
+<p>These run now, on this repository, not on a roadmap.<span class="note"><input type="checkbox" id="index-n3" class="note-toggle"><label for="index-n3" class="note-ref">3</label><span class="note-body"><span class="note-n">3</span>In order:
+<code>LoadedModel.from_checkpoint(...).predict()</code>;
+<code>sources.parcellate_bold.parcellate_run()</code>;
+<code>observe.leadfield.build_lead_field()</code>; <code>scwbd.intervene</code>;
+<code>scwbd.infer.identifiability</code>.</span></span></p>
+
+<ul>
+<li><strong>Predicts what the brain does next</strong>, and says how confident it
+is rather than returning a bare number.</li>
+<li><strong>Puts one person's brain scan into a shared map</strong>, marking the
+regions the scanner never covered instead of guessing them.</li>
+<li><strong>Models how a signal travels from cortex to scalp</strong> through
+that individual's own head, not a template.</li>
+<li><strong>Compares stimulation targets</strong>, keeping the dose and the
+expected effect separate.</li>
+<li><strong>Tells you what an experiment can and cannot resolve</strong> before
+anyone is scanned.</li>
+</ul>
 
 <h2>What is in the box</h2>
 
@@ -159,32 +160,32 @@ could run.</p>
 <tr>
   <td><strong>Schema and compiler</strong></td>
   <td><span class="chip pass">built</span></td>
-  <td>Typed contracts for units, clocks, frames and transform lineage, with <strong>eleven refusals</strong> (R01–R11) that fail closed rather than warn.<span class="src">scwbd/schema/refusals.py</span> A twelfth, R12, is local to this repository and fires at checkpoint emission.</td>
+  <td>Typed contracts for units, clocks, frames and transform lineage, with <strong>eleven refusals</strong> (R01–R11) that fail closed rather than warn.<a class="src" href="https://github.com/JacobFV/sc-wbd/blob/master/scwbd/schema/refusals.py">scwbd/schema/refusals.py</a> A twelfth, R12, is local to this repository and fires at checkpoint emission.</td>
 </tr>
 <tr>
   <td><strong>Anatomy prior</strong></td>
   <td><span class="chip pass">built</span></td>
-  <td>414 parcels — 400 Schaefer cortical, 14 Tian subcortical — carrying receptor density, intrinsic timescale, myelin and thickness. Partitioned into <strong>nine families</strong> by a pre-fixed rule under a spin null.<span class="note"><input type="checkbox" id="index-n1" class="note-toggle"><label for="index-n1" class="note-ref">1</label><span class="note-body"><span class="note-n">1</span>The rule was fixed before the test ran: ship the finest candidate partition in which <em>every</em> pair of families separates. Yeo-7 separated 6 of 21 pairs and was rejected. The surviving split is binary over cortex — <code>cortex_unimodal</code> (138 parcels) and <code>cortex_association</code> (262) — plus seven subcortical families of two parcels each.</span></span></td>
+  <td>414 parcels — 400 Schaefer cortical, 14 Tian subcortical — carrying receptor density, intrinsic timescale, myelin and thickness. Partitioned into <strong>nine families</strong> by a pre-fixed rule under a spin null.<span class="note"><input type="checkbox" id="index-n4" class="note-toggle"><label for="index-n4" class="note-ref">4</label><span class="note-body"><span class="note-n">4</span>The rule was fixed before the test ran: ship the finest candidate partition in which <em>every</em> pair of families separates. Yeo-7 separated 6 of 21 pairs and was rejected. The surviving split is binary over cortex — <code>cortex_unimodal</code> (138 parcels) and <code>cortex_association</code> (262) — plus seven subcortical families of two parcels each.</span></span></td>
 </tr>
 <tr>
   <td><strong>Dynamics backends</strong></td>
   <td><span class="chip pass">built</span></td>
-  <td>Six generative backends — Wilson–Cowan, Jansen–Rit, reduced Wong–Wang, Stuart–Landau, Kuramoto, Linear–Gaussian — plus an equal-capacity learned control, interchangeable by one config key.<span class="note"><input type="checkbox" id="index-n2" class="note-toggle"><label for="index-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>Twelve backends are registered in total once the four engineered per-family backends are counted. Only three of the six generative ones are typed <code>mechanistic</code> in the code; Stuart–Landau and Linear–Gaussian are <code>effective</code> and Kuramoto is <code>functional</code>. The distinction is in the source and we keep it.</span></span></td>
+  <td>Six generative backends — Wilson–Cowan, Jansen–Rit, reduced Wong–Wang, Stuart–Landau, Kuramoto, Linear–Gaussian — plus an equal-capacity learned control, interchangeable by one config key.<span class="note"><input type="checkbox" id="index-n5" class="note-toggle"><label for="index-n5" class="note-ref">5</label><span class="note-body"><span class="note-n">5</span>Twelve backends are registered in total once the four engineered per-family backends are counted. Only three of the six generative ones are typed <code>mechanistic</code> in the code; Stuart–Landau and Linear–Gaussian are <code>effective</code> and Kuramoto is <code>functional</code>. The distinction is in the source and we keep it.</span></span></td>
 </tr>
 <tr>
   <td><strong>Simulated corpus</strong></td>
   <td><span class="chip pass">built</span></td>
-  <td>37,888 trajectories over 414 parcels at 125&nbsp;Hz, generated from five of the backends.<span class="src">reports/run2_corpus.md</span></td>
+  <td>37,888 trajectories over 414 parcels at 125&nbsp;Hz, generated from five of the backends.<a class="src" href="https://github.com/JacobFV/sc-wbd/blob/master/reports/run2_corpus.md">reports/run2_corpus.md</a></td>
 </tr>
 <tr>
   <td><strong>Real EEG corpus</strong></td>
   <td><span class="chip pass">built</span></td>
-  <td>109 PhysioNet participants, 64 channels, split <strong>71/11/27</strong> and verified participant-disjoint. This is real human recording and is kept strictly separate from the simulated corpus.<span class="note"><input type="checkbox" id="index-n3" class="note-toggle"><label for="index-n3" class="note-ref">3</label><span class="note-body"><span class="note-n">3</span>The repository is emphatic about this and so are we: a simulated corpus can never be evidence that the model has learned anything about biology. Conflating the two corpora would be the most basic error available to this project.</span></span></td>
+  <td>109 PhysioNet participants, 64 channels, split <strong>71/11/27</strong> and verified participant-disjoint. This is real human recording and is kept strictly separate from the simulated corpus.<span class="note"><input type="checkbox" id="index-n6" class="note-toggle"><label for="index-n6" class="note-ref">6</label><span class="note-body"><span class="note-n">6</span>The repository is emphatic about this and so are we: a simulated corpus can never be evidence that the model has learned anything about biology. Conflating the two corpora would be the most basic error available to this project.</span></span></td>
 </tr>
 <tr>
   <td><strong>TMS impulse-response path</strong></td>
   <td><span class="chip unknown">partial</span></td>
-  <td>A validated E-field solver joined to the latent dynamics as an additive drive. The <em>field</em> computations pass their gates; the mapping from drive to neural response is explicitly flagged unvalidated in code, because no checkpoint has been trained on perturbational data.<span class="src">scwbd/intervene/impulse_response.py</span></td>
+  <td>A validated E-field solver joined to the latent dynamics as an additive drive. The <em>field</em> computations pass their gates; the mapping from drive to neural response is explicitly flagged unvalidated in code, because no checkpoint has been trained on perturbational data.<a class="src" href="https://github.com/JacobFV/sc-wbd/blob/master/scwbd/intervene/impulse_response.py">scwbd/intervene/impulse_response.py</a></td>
 </tr>
 <tr>
   <td><strong>Trained model that beats baselines</strong></td>
@@ -195,7 +196,7 @@ could run.</p>
   <td><strong>SC-WBD-002</strong></td>
   <td><span class="chip warn">training</span></td>
   <td>The first model on real <em>anatomy</em> — and, as it turns out, trained
-  on simulation alone.<span class="note"><input type="checkbox" id="index-n4" class="note-toggle"><label for="index-n4" class="note-ref">4</label><span class="note-body"><span class="note-n">4</span>Found at step 6166 of 8700, while the run was
+  on simulation alone.<span class="note"><input type="checkbox" id="index-n7" class="note-toggle"><label for="index-n7" class="note-ref">7</label><span class="note-body"><span class="note-n">7</span>Found at step 6166 of 8700, while the run was
   still going. Run 2 renamed its training stages; the trainer gates
   measured-data losses on the <strong>previous</strong> run's stage names, so
   the gate never opened. The real-EEG loader was built and its split
@@ -207,7 +208,7 @@ could run.</p>
   ever built, so the stage named <code>T1_individualisation</code> ran 900 steps
   of ordinary simulator training.</span></span> 2.5M parameters over 414 parcels with
   per-family engineered backends, heterogeneous per-family state widths, and
-  state-dependent predictive variance.<span class="note"><input type="checkbox" id="index-n5" class="note-toggle"><label for="index-n5" class="note-ref">5</label><span class="note-body"><span class="note-n">5</span>This entry previously said "a
+  state-dependent predictive variance.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>This entry previously said "a
   ragged state layout (52% of the padded plane removed)". Both halves were
   wrong. Run 2 ships the <strong>padded</strong> layout — the checkpoint records
   <code>layout: family_padded</code> — with <strong>47.34%</strong> of the
@@ -261,7 +262,7 @@ underneath them differs — that is computed per artifact, not asserted once.</p
   <td><a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">scwbd-002-pilot</a></td>
   <td>Run-2 weights — the <strong>treatment</strong> arm, family-indexed
   heterogeneous regional state. Published as a <strong>negative result</strong>:
-  it loses to every baseline on <em>both</em> columns, NLL and MSE.<span class="note"><input type="checkbox" id="index-n6" class="note-toggle"><label for="index-n6" class="note-ref">6</label><span class="note-body"><span class="note-n">6</span>NLL
+  it loses to every baseline on <em>both</em> columns, NLL and MSE.<span class="note"><input type="checkbox" id="index-n9" class="note-toggle"><label for="index-n9" class="note-ref">9</label><span class="note-body"><span class="note-n">9</span>NLL
   3.179 against 2.045 for the best baseline; MSE 36.27 against 4.53. Every
   paired participant-clustered interval excludes zero. Run 1 at least won the
   conditional mean — run 2 does not, so the "the loss is all in the variance
@@ -290,7 +291,7 @@ underneath them differs — that is computed per artifact, not asserted once.</p
   And that is the smaller half. <strong>88.7% of the model could not receive a
   gradient at all</strong> — 2,231,447 of 2,516,530 trainable parameters,
   including the entire family-indexed regional model that is the treatment arm's
-  whole thesis.<span class="note"><input type="checkbox" id="index-n7" class="note-toggle"><label for="index-n7" class="note-ref">7</label><span class="note-body"><span class="note-n">7</span>The regional modules were renamed <code>local</code> →
+  whole thesis.<span class="note"><input type="checkbox" id="index-n10" class="note-toggle"><label for="index-n10" class="note-ref">10</label><span class="note-body"><span class="note-n">10</span>The regional modules were renamed <code>local</code> →
   <code>family_local</code>, <code>residual</code> → <code>family_residual</code>,
   <code>readout</code> → <code>family_readout</code> when the family-padded
   architecture landed. The source cards still grant <code>local.*</code>,
@@ -326,7 +327,7 @@ than filled in.</li>
 
 <li><strong>Choosing where to stimulate.</strong> TMS and tFUS targets compared
 under an E-field model on the subject's own head geometry, with the dose and the
-predicted effect separated rather than collapsed into one score.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>The
+predicted effect separated rather than collapsed into one score.<span class="note"><input type="checkbox" id="index-n11" class="note-toggle"><label for="index-n11" class="note-ref">11</label><span class="note-body"><span class="note-n">11</span>The
 planner refuses by default when a plan declares intent to drive real hardware or
 be applied to a person, and a valid authorisation record is necessary but
 explicitly not sufficient. The gate does not open by a calendar date passing —
@@ -348,25 +349,16 @@ a plausible number.</li>
 <h2>The paper</h2>
 
 <p>The full technical description, built from LaTeX source in this repository rather than shipped as
-a stale PDF.<span class="note"><input type="checkbox" id="index-n9" class="note-toggle"><label for="index-n9" class="note-ref">9</label><span class="note-body"><span class="note-n">9</span>Built with <code>make paper</code>, which runs
+a stale PDF.<span class="note"><input type="checkbox" id="index-n12" class="note-toggle"><label for="index-n12" class="note-ref">12</label><span class="note-body"><span class="note-n">12</span>Built with <code>make paper</code>, which runs
 <a href="https://tectonic-typesetting.github.io/">tectonic</a> over
-<code>paper/sc_wbd_frontiers.tex</code>. 29 pages. The source is the artifact;
-the PDF is a build product.</span></span> </p>
+<code>paper/sc_wbd_frontiers.tex</code>. 46 pages including the implementation
+supplement, which ships inside the same PDF.</span></span> </p>
 
 <div class="dl-row">
   <a class="btn primary" href="paper/sc-wbd.pdf">Download the paper (PDF, 29pp)</a>
 </div>
 
-<div class="todo">
-<span class="todo-label">Jacob — repository link</span>
-<p><strong>This checkout has no git remote configured</strong>
-(<code>git remote -v</code> is empty), so I could not link the repository or
-verify a canonical URL. Every “view source” link on this site is currently
-rendered as a plain path rather than a dead hyperlink.</p>
-<p>Set <code>SITE_REPO_URL</code> in <code>site/build.py</code> (or export it
-before <code>make site</code>) once the public repository exists, and the
-provenance chips throughout the engineering essays become links.</p>
-</div>
+
 
 </div>
 

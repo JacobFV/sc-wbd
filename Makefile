@@ -48,6 +48,9 @@ R2_BUCKET  ?= scwbd-media
 # carries real load.
 SITE_MEDIA_URL ?= https://pub-045364f0fab44827afa95b1e44b6e18d.r2.dev
 export SITE_MEDIA_URL
+# The public repository. Provenance chips in the essays become links when set.
+SITE_REPO_URL ?= https://github.com/JacobFV/sc-wbd
+export SITE_REPO_URL
 VIDEO_OUT  := $(ROOT)/video/out
 
 .PHONY: help

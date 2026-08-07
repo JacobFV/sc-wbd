@@ -20,49 +20,69 @@
 (function () {
   "use strict";
 
-  var INK = "#3d4a5c", LINE = "#8c9bad", FAINT = "#c3ccd6";
-  var WARM = "#c8874a", COOL = "#5b7fa6", GROUND = "#f7f5ef";
+  // Read from the page, not hardcoded, so the drawing follows the device's
+  // light/dark preference and the theme toggle. A canvas cannot inherit CSS, so
+  // the values are resolved at draw time and re-resolved when the theme changes.
+  var INK, LINE, FAINT, WARM, COOL, GROUND;
+  function readTheme() {
+    var cs = getComputedStyle(document.documentElement);
+    function v(name, fallback) {
+      var got = cs.getPropertyValue(name).trim();
+      return got || fallback;
+    }
+    GROUND = v("--bg", "#f7f5ef");
+    INK    = v("--ink", "#27262b");
+    LINE   = v("--ink-3", "#8c9bad");
+    FAINT  = v("--rule", "#c3ccd6");
+    // The two signal hues stay constant across themes: they encode attachment
+    // kind, which does not change with the lighting.
+    COOL = "#5b7fa6";
+    WARM = "#c8874a";
+  }
 
   // Attachment kinds, in the order the schema declares them.
   var USE_CASES = [
     {
       id: "bci",
-      label: "Cursor control from EEG",
+      label: "Controlling a computer",
       right: "computer",
       cats: [
-        { k: "observation", t: "EEG · 64 ch", note: "through a lead field", src: "cortex" },
-        { k: "boundary_output", t: "Cursor / keypress", note: "measured outside the skull", src: "motor" },
-        { k: "context", t: "Session, fatigue", note: "slow conditioning", src: "none" }
+        { k: "observation", t: "Brain activity", note: "electrodes on the scalp", src: "cortex" },
+        { k: "boundary_output", t: "Cursor, keypress", note: "what the person does", src: "motor" },
+        { k: "context", t: "Session, fatigue", note: "slow background state", src: "none" }
       ]
     },
     {
       id: "tms",
-      label: "TMS target selection",
+      label: "Choosing where to stimulate",
       right: "tms",
       cats: [
-        { k: "stimulus", t: "Induced E-field", note: "Hz·m into the cortical sheet", src: "cortex" },
-        { k: "observation", t: "EEG response", note: "evoked potential", src: "cortex" },
-        { k: "observation", t: "fMRI · 414 parcels", note: "haemodynamic, slow clock", src: "all" },
-        { k: "boundary_output", t: "Motor threshold", note: "EMG at the hand", src: "motor" }
+        { k: "stimulus", t: "Magnetic pulse", note: "energy going in", src: "cortex" },
+        { k: "observation", t: "Brain response", note: "electrical, immediate", src: "cortex" },
+        { k: "observation", t: "Blood-flow response", note: "slower, whole brain", src: "all" },
+        { k: "boundary_output", t: "Muscle twitch", note: "measured at the hand", src: "motor" }
       ]
     },
     {
       id: "semantic",
-      label: "Preference from naturalistic viewing",
+      label: "Reading what someone responds to",
       right: "screen",
       cats: [
-        { k: "stimulus", t: "Video, audio, text", note: "known exactly, sample by sample", src: "sensory" },
-        { k: "observation", t: "fMRI · 414 parcels", note: "hemodynamic convergence", src: "all" },
-        { k: "boundary_output", t: "Gaze, dwell", note: "eye tracking", src: "sensory" },
-        { k: "boundary_output", t: "Rating, choice", note: "cognitive-test response", src: "motor" }
+        { k: "stimulus", t: "What they watched", note: "video, audio, text", src: "sensory" },
+        { k: "observation", t: "Blood-flow response", note: "whole brain", src: "all" },
+        { k: "boundary_output", t: "Where they looked", note: "eye tracking", src: "sensory" },
+        { k: "boundary_output", t: "What they chose", note: "rating or answer", src: "motor" }
       ]
     }
   ];
 
-  var KIND_COLOR = {
-    stimulus: WARM, observation: COOL,
-    boundary_output: WARM, context: FAINT
-  };
+  // A function, not a table: WARM/COOL/FAINT are undefined until readTheme()
+  // runs, so a module-scope object would freeze `undefined` into every entry.
+  function kindColor(k) {
+    if (k === "observation") return COOL;
+    if (k === "context") return FAINT;
+    return WARM;                       // stimulus in, boundary_output out
+  }
 
   function init(canvas, data) {
     var ctx = canvas.getContext("2d");
@@ -98,6 +118,7 @@
     function hairline(w) { ctx.lineWidth = Math.max(0.6, w) * dpr; }
 
     function draw() {
+      readTheme();
       var W = canvas.width, H = canvas.height;
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = GROUND;
@@ -126,13 +147,39 @@
       }
       order.sort(function (a, b) { return dep[a] - dep[b]; });
 
-      // Which parcels this use case actually touches.
+      // Which parcels this use case touches, and WHICH ONES belong to which
+      // category. Every category owns a distinct parcel set so its annotation
+      // can land on its own points instead of all of them pointing at the
+      // centre of the skull, which said nothing.
       var srcs = {};
       c.cats.forEach(function (k) { srcs[k.src] = true; });
       var lit = new Uint8Array(N);
       for (var m = 0; m < N; m++) {
         lit[m] = (srcs.all || (srcs.cortex && !isSub[m])) ? 1 : 0;
       }
+
+      // ---- scene: tractography ----
+      // The connectome, drawn as the structure it is. Without it the cord was
+      // the only visible wiring, which implied the brain was a cloud of
+      // unconnected points -- the opposite of what the model is about.
+      // Strongest 900 edges, weight as opacity, depth-faded, under the parcels.
+      var E = (data.edges && data.edges.e) || [], EW = (data.edges && data.edges.w) || [];
+      if (E.length) {
+        ctx.strokeStyle = LINE;
+        hairline(0.6);
+        for (var e = 0; e < E.length; e += 2) {
+          var ea = E[e], eb = E[e + 1];
+          if (!lit[ea] && !lit[eb]) continue;
+          var mid = ((dep[ea] + dep[eb]) / 2 + 1) / 2;
+          ctx.globalAlpha = 0.045 + 0.16 * EW[e / 2] * mid;
+          ctx.beginPath();
+          ctx.moveTo(xs[ea], ys[ea]);
+          ctx.lineTo(xs[eb], ys[eb]);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+
 
       for (var k2 = 0; k2 < N; k2++) {
         var jj = order[k2], t = (dep[jj] + 1) / 2;
@@ -160,18 +207,25 @@
       var sensPts = terminals(SENSORY, !!srcs.sensory);
       var motPts = terminals(MOTOR, !!srcs.motor);
 
-      function centroid(pts) {
-        var x = 0, y = 0;
-        pts.forEach(function (q) { x += q[0]; y += q[1]; });
-        return [x / pts.length, y / pts.length];
+      // The screen points each category actually refers to. A category draws one
+      // fine line to EACH of a small sample of its own points, so the annotation
+      // shows where in the anatomy the signal lives.
+      function parcelSample(pred, want) {
+        var picks = [];
+        // deterministic stride, so the sample does not shimmer while orbiting
+        var step = Math.max(1, Math.floor(N / want));
+        for (var q = 0; q < N && picks.length < want; q += step) {
+          if (pred(q)) picks.push([xs[q], ys[q]]);
+        }
+        return picks;
       }
-      var anchors = {
-        cortex: [ox, oy],
-        all: [ox, oy],
-        sensory: centroid(sensPts),
-        motor: centroid(motPts),
-        none: [ox, oy + s * 1.9]
-      };
+      function targets(src) {
+        if (src === "all") return parcelSample(function () { return true; }, 7);
+        if (src === "cortex") return parcelSample(function (q) { return !isSub[q]; }, 6);
+        if (src === "sensory") return sensPts.map(function (q) { return [q[0], q[1]]; });
+        if (src === "motor") return motPts.map(function (q) { return [q[0], q[1]]; });
+        return [];        // context attaches to no anatomy -- correctly nothing
+      }
 
       // ---- middle: categories, with annotation lines from the scene ----
       var n = c.cats.length;
@@ -180,14 +234,26 @@
 
       c.cats.forEach(function (cat, idx) {
         var y = top + idx * gap;
-        var a = anchors[cat.src] || anchors.cortex;
-        var col = KIND_COLOR[cat.k] || LINE;
+        var col = kindColor(cat.k);
+        var pts = targets(cat.src);
+        var hub = [midX - 26 * dpr, y];
 
-        // annotation line: scene anchor -> a short elbow -> the label
-        ctx.strokeStyle = col; ctx.globalAlpha = 0.55; hairline(0.6);
+        // Fan: one hairline from the elbow to each point this category names.
+        ctx.strokeStyle = col; hairline(0.6);
+        pts.forEach(function (pt) {
+          ctx.globalAlpha = 0.30;
+          ctx.beginPath();
+          ctx.moveTo(pt[0], pt[1]);
+          ctx.lineTo(hub[0], hub[1]);
+          ctx.stroke();
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          ctx.arc(pt[0], pt[1], 1.9 * dpr, 0, 6.2832);
+          ctx.fillStyle = col; ctx.fill();
+        });
+        ctx.globalAlpha = 0.7;
         ctx.beginPath();
-        ctx.moveTo(a[0], a[1]);
-        ctx.lineTo(midX - 26 * dpr, y);
+        ctx.moveTo(hub[0], hub[1]);
         ctx.lineTo(midX - 10 * dpr, y);
         ctx.stroke();
         ctx.globalAlpha = 1;
@@ -261,23 +327,14 @@
     canvas.style.cursor = "grab";
     window.addEventListener("resize", function () { resize(); draw(); });
 
-    // Use-case switcher, built from the data so the two cannot disagree.
-    var bar = document.getElementById("arch-cases");
-    if (bar) {
-      USE_CASES.forEach(function (c, i) {
-        var b = document.createElement("button");
-        b.type = "button";
-        b.textContent = c.label;
-        b.className = "arch-case" + (i === 0 ? " on" : "");
-        b.addEventListener("click", function () {
-          uc = i;
-          Array.prototype.forEach.call(bar.children, function (el, k) {
-            el.className = "arch-case" + (k === i ? " on" : "");
-          });
-          draw();
-        });
-        bar.appendChild(b);
-      });
+    // One canvas per section. Each use case gets its own <section> in the page,
+    // and every canvas carrying data-case renders that case only. Tabs hid two
+    // thirds of the argument behind a click; sections let a reader scroll it.
+    var want = canvas.getAttribute("data-case");
+    if (want) {
+      for (var w2 = 0; w2 < USE_CASES.length; w2++) {
+        if (USE_CASES[w2].id === want) { uc = w2; break; }
+      }
     }
 
     resize();
@@ -286,11 +343,19 @@
   }
 
   function boot() {
-    var canvas = document.getElementById("wbd-arch");
-    if (!canvas) return;
-    fetch(canvas.getAttribute("data-src") || "static/brain.json")
-      .then(function (r) { return r.json(); })
-      .then(function (d) { init(canvas, d); })
+    var all = document.querySelectorAll("canvas.arch-canvas");
+    if (!all.length) return;
+    Array.prototype.forEach.call(all, bootOne);
+  }
+
+  function bootOne(canvas) {
+    Promise.all([
+      fetch(canvas.getAttribute("data-src") || "static/brain.json").then(function (r) { return r.json(); }),
+      fetch(canvas.getAttribute("data-edges") || "static/edges.json")
+        .then(function (r) { return r.json(); })
+        .catch(function () { return { e: [], w: [] }; })   // tracts are optional
+    ])
+      .then(function (both) { both[0].edges = both[1]; init(canvas, both[0]); })
       .catch(function () { canvas.style.display = "none"; });
   }
 
