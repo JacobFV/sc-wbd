@@ -551,6 +551,17 @@ throughput attribution and the padding figure — and in all three the mistake h
 the same shape: a mechanism that *could* produce the observed evidence was
 promoted to the one that *did*.
 
+**And acting on the wrong diagnosis cost the thing I was trying to fix.** The
+workflow triggers only on `paths: ["docs/**", ...]`. The three commits I made
+while "waiting" touched `reports/` and `scripts/`, so none of them could trigger
+a deploy — and the run I cancelled to *clear the queue* was the one carrying the
+site changes. I cancelled the deploy I was waiting for.
+
+That is the failure mode in its complete form: a wrong cause, an intervention
+justified by it, and the intervention destroying the thing the cause was
+supposed to explain. `workflow_dispatch` recovered it, but nothing about the
+sequence was necessary.
+
 > Fitting the evidence is not the same as being the cause. The test is not "does
 > this explain what I see" but "what would I see if this were false" — and here
 > that test was one experiment away: stop pushing.
