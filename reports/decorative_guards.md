@@ -2261,3 +2261,38 @@ number 17 was measured; treating it as the total was assumed.
 The repair is the same one this whole register keeps arriving at from different
 directions — enumerate, then assert the enumeration is complete. `NAME_GATES`
 does exactly that for the gates. Nothing did it for the failing tests.
+
+## The unchecked-enumeration class — four instances in one day
+
+A list that purports to enumerate something, and is never checked against the
+thing it enumerates. Distinct from the permissive-default class above: nothing
+here defaults to "allow". The list is simply *wrong*, and looks complete.
+
+| the list | what it claimed | what was true |
+|---|---|---|
+| "17 pre-existing failures in `test_family_state.py`" | the known-failure set | 6 more in `test_curriculum_admission.py`, naming the defect that ruined the run |
+| §5b narrowings register | one row per narrowing | 59 rows for 22 narrowings, three generations stacked |
+| the engineering section index | the section's pages | 9 listed, 12 on disk |
+| "three stage-name gates" (mine, this morning) | the gates in `run_stage` | six, recorded as data in `NAME_GATES` all along |
+
+Every one renders perfectly while incomplete. A register with duplicate rows is
+still a table; an index missing three entries is still a list; a known-failures
+count is still a number. **Incompleteness has no visual signature.**
+
+> An enumeration is a claim about the world, and it decays like any other. The
+> question is not "is this list right?" — it is **"what would tell me if it
+> weren't?"**
+
+The repair is the same in all four cases and is cheap: derive the list from the
+thing, or assert the two agree. `NAME_GATES` already does this, and says so in
+its own comment — *"recorded as data so a test can assert the list is exhaustive
+rather than trusting that someone read the function carefully."* The engineering
+index now has a test that globs the directory. The narrowings register has a
+uniqueness and body-duplication check. The failing-test list is the one still
+unfixed, and its repair is simply to run the whole suite rather than the part
+already known to be red.
+
+**The one that stings.** I wrote the fourth entry myself, hours after cataloguing
+the first three, in a report *about* incomplete enumerations — and I found it
+only because `NAME_GATES` existed and disagreed with me. Being the person who
+just wrote down the lesson confers no protection whatsoever.
