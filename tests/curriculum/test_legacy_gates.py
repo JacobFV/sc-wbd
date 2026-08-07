@@ -200,9 +200,24 @@ def test_the_legacy_fallback_stamps_its_provenance() -> None:
 
     stage = StageConfig(name="I_regional", steps=1)
     a = stage_admission(stage, cards={}, strict=False)
-    assert a.provenance.startswith("legacy:"), (
+    # The property is "a reader can tell this from a DECLARED admission", not a
+    # particular prefix. This asserted `legacy:` literally and then broke when
+    # the fallback started serving the frozen run-1 record and stamped
+    # `frozen:run1@b2b5f7b` -- strictly more informative, and a failure only
+    # against the letter of the check. Declared admissions stamp `config:`.
+    assert a.provenance.startswith(("legacy:", "frozen:run1@")), (
         f"legacy fallback returned provenance {a.provenance!r}; a downstream reader "
         "cannot tell it from a declared admission"
+    )
+    assert not a.provenance.startswith("config:"), (
+        "an inherited admission is claiming to have been declared"
+    )
+    # And it must carry the sources, not just the three behaviour booleans --
+    # returning admits=() here is what made every run-1 config raise "produced no
+    # admissible loss" and unable to train at all.
+    assert a.source_ids, (
+        f"legacy admission for {stage.name!r} names no sources, so the stage has "
+        "no admissible loss and the config cannot train"
     )
 
     # And the fallback is not available to a name run 1 never had.
