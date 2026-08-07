@@ -49,6 +49,23 @@ __all__ = ["evaluate_model", "real_eeg_holdout", "posterior_calibration", "sourc
 # real EEG held-out likelihood
 # ======================================================================
 @torch.no_grad()
+def _designation(cfg) -> str:
+    """The model's own designation, never a literal.
+
+    ``evaluate.py`` hardcoded ``"SC-WBD-001-beta"`` in two places, so a run-2
+    evaluation stamped a run-1 name onto its own results -- exactly the naming
+    hole R12 exists to close, reached from a direction R12 cannot see (it
+    guards checkpoint emission, not report writing).  A designation that is a
+    string literal is a designation that cannot be wrong out loud.
+    """
+    for obj in (getattr(cfg, "train", None), getattr(cfg, "model", None), cfg):
+        for attr in ("model_id", "designation", "run_name"):
+            v = getattr(obj, attr, None) if obj is not None else None
+            if isinstance(v, str) and v:
+                return v
+    return "SC-WBD-unnamed"
+
+
 def _bind_mechanistic(model, theta) -> None:
     """Bind theta-conditioned ParamPacks before a rollout, if the arm needs them.
 
@@ -462,7 +479,7 @@ def real_eeg_holdout(
         # arm that does not declare its variance calibration cannot be compared
         # on a log score, so it declares it.
         "describe": {
-            "name": "SC-WBD-001-beta",
+            "name": _designation(cfg),
             "structured_state": True,
             "connectome_masked": True,
             "variance_calibration": (
@@ -804,7 +821,7 @@ def evaluate_model(
     t = Timer()
     trainer.build_data()
     rep: dict[str, Any] = {
-        "model_id": "SC-WBD-001-beta",
+        "model_id": _designation(cfg),
         "git_sha": git_sha(),
         "evaluated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "config": trainer.cfg.as_dict(),
