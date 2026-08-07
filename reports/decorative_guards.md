@@ -2471,3 +2471,40 @@ CPU for a hung process and 0.0% CPU for a supervisor waiting on its child are
 the same observation. The fix is not more care with `pgrep`; it is to select on
 a property only the real worker has — the interpreter, the full argv — and to
 distrust any process query that returns exactly one row without saying why.
+
+### Eighth instance, and the most self-referential: `pkill` killed the fix
+
+The sweep that was meant to replace a timing-out test run never produced a line.
+The script it should have written did not exist. The command that would have
+written it had exited 144 — killed by a signal.
+
+It killed itself. The command began:
+
+```bash
+pkill -f "pytest tests/ -q"
+cat > "$SP/bydir.sh" <<'EOS'   # ... the replacement sweep
+```
+
+`pkill -f` matches any process whose **command line contains the pattern** — and
+the shell running that command has the pattern in its own argv, as the argument
+to `pkill`. So the first line terminated the shell before the second line ran.
+
+> A process-matching command is itself a process whose command line contains the
+> pattern it is matching. `pkill -f X` will kill the shell that typed it.
+
+That is now eight instances of one class in a single session: `pgrep` matching
+the make recipe that named the module; `pgrep | head -1` returning the bash
+wrapper instead of the worker; and now `pkill -f` matching its own invocation.
+Every one produced a confident, plausible reading of the wrong process.
+
+**The unifying repair is not care.** It is that a process query must select on
+something only the target has — the interpreter path, the full argv, an explicit
+pid captured at launch — and must never be trusted when it returns exactly one
+row without saying which. For `pkill` specifically, exclude self: `pkill -f X`
+should be `pkill -f X` with `--older` or an explicit pid list, or the work should
+be done through a supervisor that already knows the pid it started.
+
+The compounding detail worth keeping: the failure was **silent in the direction
+that mattered**. A dead sweep and a sweep that has not yet written its first line
+produce the same empty file, so the next check read "no directories complete
+yet" as patience rather than as death.
