@@ -467,7 +467,12 @@ def real_eeg_holdout(
         scw["mse_per_window"], np.asarray(scw["subjects"]), n_boot=n_boot, seed=seed
     )
     _eeg_head = trainer.model.eeg
-    rows["scwbd_001_beta"] = {
+    # The model's own arm name, derived like model_id.  It was the literal
+    # "scwbd_001_beta", so a run-2 evaluation ranked its own arm under a run-1
+    # name -- the same defect as the hardcoded model_id, one layer down, and in
+    # the very table the model card reads.
+    arm = _designation(trainer.cfg)
+    rows[arm] = {
         "nll_per_sample": float(np.mean(scw["nll_per_window"])),
         "nll_ci95": [float(lo), float(hi)],
         "mse": float(np.mean(scw["mse_per_window"])),
@@ -496,12 +501,12 @@ def real_eeg_holdout(
             else {},
         },
     }
-    per_window_mse["scwbd_001_beta"] = np.asarray(scw["mse_per_window"], dtype=float)
+    per_window_mse[arm] = np.asarray(scw["mse_per_window"], dtype=float)
     # B6: the verdict rests on the PAIRED participant-clustered interval of the
     # per-window difference, not on two marginal intervals or two point estimates.
     # `_paired_ci` shares bootstrap draws across models, so the comparison is
     # paired in the draws as well as in the windows.
-    ref = rows["scwbd_001_beta"]["nll_per_sample"]
+    ref = rows[arm]["nll_per_sample"]
     scw_pw = np.asarray(scw["nll_per_window"], dtype=float)
     groups = np.asarray(scw["subjects"])
     paired: dict[str, Any] = {}
@@ -523,13 +528,13 @@ def real_eeg_holdout(
     # NLL and MSE answer different questions and run 1 only reported one of them,
     # which is how a model with the best conditional mean of all seven arms was
     # filed as beaten by five of six.
-    scw_mse_pw = per_window_mse.get("scwbd_001_beta")
+    scw_mse_pw = per_window_mse.get(arm)
     paired_mse: dict[str, Any] = {}
     mse_beaten_by: list[str] = []
     mse_better_than: list[str] = []
     if scw_mse_pw is not None and scw_mse_pw.size:
         for name, per_m in per_window_mse.items():
-            if name == "scwbd_001_beta" or per_m.size != scw_mse_pw.size:
+            if name == arm or per_m.size != scw_mse_pw.size:
                 continue
             d = _paired_ci(scw_mse_pw - per_m, groups, n_boot=n_boot, alpha=0.05, seed=seed)
             paired_mse[name] = d
