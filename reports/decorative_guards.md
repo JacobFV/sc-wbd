@@ -2441,3 +2441,33 @@ This is the fifth structure found this way in a day — after
 `curriculum_admission.py`, the `extra.curriculum` block, `registration.py`, and
 the unapplied patch. Same shape every time: **the work exists, and the half that
 would use it is pointed somewhere else.**
+
+
+### Seventh instance of the same misfire, twenty minutes after fixing the sixth
+
+`make health` had `pgrep -cf 'scwbd\.foundation\.train'` matching its own
+shell, because the make recipe names the module. Fixed by matching the
+interpreter specifically. Twenty minutes later, checking whether the test suite
+had hung:
+
+```
+ps -o etimes,pcpu -p $(pgrep -f "pytest tests/ -q" | head -1)
+  elapsed 1791s at 0.0% cpu        -> "that is a hang"
+```
+
+It was not a hang. `pgrep | head -1` returns the *first* match in pid order,
+which is the **bash wrapper**, permanently at 0% CPU in `do_wait`. The actual
+worker was three pids later at **1063%**.
+
+> `pgrep | head -1` is not "the process", it is "whichever process started
+> first" — and for anything launched through a shell, that is the shell.
+
+The same defect twice in one session, in two directions: once matching a process
+that was not the job, once selecting the wrong one among several that were. Both
+produce a confident number about the wrong thing, and neither looks wrong.
+
+**What makes this class recur is that the reading is always plausible.** 0.0%
+CPU for a hung process and 0.0% CPU for a supervisor waiting on its child are
+the same observation. The fix is not more care with `pgrep`; it is to select on
+a property only the real worker has — the interpreter, the full argv — and to
+distrust any process query that returns exactly one row without saying why.
