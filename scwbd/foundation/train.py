@@ -700,6 +700,93 @@ class FoundationTrainer:
             losses["eegmmidb_real"] = losses["eegmmidb_real"] + 1e-3 * self.individualizer.prior_penalty()
         return losses, {"real_eeg_nll": float(nll.detach())}
 
+    def real_bold_losses(
+        self, batch: Mapping[str, Any], stage: StageConfig, *, source_id: str = "ds002336_real"
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
+        """Measured BOLD: likelihood in **parcel space**, over covered parcels only.
+
+        The counterpart to :meth:`real_losses`, and deliberately not folded into
+        it. EEG is compared in *sensor* space -- the model projects its parcel
+        state forward through the lead field and the likelihood lives on
+        channels. BOLD is compared in *parcel* space, because ``BOLDHead.signal``
+        already emits per-region percent-signal-change and the data has been
+        brought to parcels by ``scwbd.sources.parcellate_bold``. Two modalities,
+        two supports, one carrier -- which is the whole point of O-1.
+
+        **``mask`` is required and is not a convenience.** A parcel outside the
+        acquisition's field of view has no observation, and the difference
+        between excluding it and scoring it against 0.0 is the difference
+        between a likelihood and an imputation (``ARCHITECTURE.md`` §7 rule 1).
+        ``parcellate_run`` emits ``NaN`` for exactly those parcels, so a caller
+        that forgets the mask gets ``NaN`` loss rather than a plausible number --
+        the failure is loud by construction.
+        """
+        bold = batch["bold"].to(self.device, non_blocking=True)  # (B, T_slow, N)
+        mask = batch.get("bold_mask")
+        if mask is None:
+            raise ValueError(
+                "real_bold_losses requires batch['bold_mask']: parcels outside the "
+                "acquisition are unobserved, and scoring them against any value at "
+                "all is an imputation. parcellate_run() returns the coverage mask "
+                "alongside the timeseries so this cannot be skipped by accident."
+            )
+        mask = mask.to(self.device, non_blocking=True).bool()  # (B, N) or (N,)
+        if mask.ndim == 1:
+            mask = mask.unsqueeze(0).expand(bold.shape[0], -1)
+        if not bool(mask.any()):
+            raise ValueError(
+                f"{source_id}: no parcel is covered in this batch. A run whose "
+                "field of view intersects no parcel is a registration failure, not "
+                "an empty likelihood."
+            )
+
+        c = self.cfg.data.context
+        ctx_b, tgt_b = bold[:, :c], bold[:, c:]
+        n_pred = tgt_b.shape[1]
+
+        # Context enters the carrier the same way EEG's does: normalised, and
+        # over covered parcels only. Uncovered entries are NaN from the
+        # parcellation, so they are zeroed AFTER normalisation statistics are
+        # taken over the covered set -- zeroing first would drag the mean.
+        with torch.no_grad():
+            src_ctx = torch.nan_to_num(ctx_b, nan=0.0)
+            m3 = mask.unsqueeze(1).expand_as(src_ctx)
+            denom = m3.sum(dim=(1, 2), keepdim=True).clamp_min(1)
+            mean = (src_ctx * m3).sum(dim=(1, 2), keepdim=True) / denom
+            var = (((src_ctx - mean) * m3) ** 2).sum(dim=(1, 2), keepdim=True) / denom
+            src_ctx = torch.where(m3, (src_ctx - mean) / var.sqrt().clamp_min(1e-6), torch.zeros_like(src_ctx))
+
+        # theta from the same amortised posterior the EEG path uses. Its
+        # conditioning was fitted on EEG context, so on BOLD it is out of
+        # distribution -- recorded rather than hidden, because a posterior asked
+        # for theta from an input it never saw is a real caveat and not a
+        # detail. Ordering the posterior separately per modality is the fix and
+        # is not attempted here.
+        th = self.posterior.sample(ctx_b.mean(-1), 1)[:, 0][:, : len(THETA_NAMES)].detach()
+
+        self.model.set_mechanistic_theta(th, self.anat)
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
+            roll = self.model.rollout(y_context=src_ctx, theta=th, n_steps=n_pred, enforce_r05=False)
+            hemo = (
+                self.model.family_layout.component(roll.state, "hemo")
+                if self.model.family_layout is not None
+                else roll.state
+            )
+            mu, lv = self.model.bold.signal(hemo, roll.state)
+        mu, lv = mu.float(), lv.float()
+
+        # The mask is the whole point: gaussian_nll marginalises unobserved
+        # elements out rather than scoring them, so uncovered parcels contribute
+        # nothing and do not enter the denominator either.
+        m3t = mask.unsqueeze(1).expand_as(tgt_b).to(mu.dtype)
+        nll = gaussian_nll(torch.nan_to_num(tgt_b, nan=0.0), mu, lv, mask=m3t)
+
+        return {source_id: nll}, {
+            "real_bold_nll": float(nll.detach()),
+            "bold_parcels_covered": int(mask[0].sum()),
+            "bold_parcels_total": int(mask.shape[1]),
+        }
+
     # ------------------------------------------------------------------
     # stage loop
     # ------------------------------------------------------------------
