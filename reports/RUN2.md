@@ -1448,6 +1448,88 @@ mismatches on every BOLD parameter. Don't check the report, check the thing.
 
 ---
 
+## 5b. The complete test-suite state, 2026-08-07
+
+Measured per directory with a 20-minute cap on each, because a whole-suite run
+cannot finish — see the last row. Directory totals, not a sample.
+
+| directory | state |
+|---|---|
+| `anatomy` `bench` `compiler` `dynamics` `individualize` `observe` `release` `runtime` `schema` `sources` `transforms` | **green** (11 directories) |
+| `curriculum` | **green** |
+| `foundation` | **17 failing**, all in `test_family_state.py` |
+| `evaluation_audit` | **33 failing** across 9 files |
+| `intervene` | **1 failing** |
+| `infer` | **not measurable** — 3 of 10 files exceed a 5-minute cap |
+
+**51 failing tests where the suite can be run at all**, plus one directory that
+cannot be run to completion.
+
+### `foundation` — 17, one file
+
+All in `tests/foundation/test_family_state.py`: R12 designation refusal against
+*synthetic* manifests. R12 admits the real checkpoint, which is the case that
+matters for the published artifact.
+
+Four other foundation files failed when the sweep first measured them and were
+repaired the same day — three had encoded the pre-O-5b design and one was a real
+defect in the serving path. §4 and `reports/decorative_guards.md` carry both.
+
+### `evaluation_audit` — 33, nine files
+
+`test_baseline_integrity` · `test_checkpoint_load_integrity` ·
+`test_individualization_measurability` · `test_patched_path` ·
+`test_sampling_representativeness` · `test_simulated_sample_coverage` ·
+`test_split_and_verdict_integrity` · `test_split_verification_state` ·
+`test_units_consistency`
+
+This suite is red **and 002 was published past it**, which §4 states rather than
+buries. Six of the nine exercise a smoke path (`max_batches=6`); the first
+reading of this suite would have claimed all nine indict the result, and that
+claim was corrected before it was published.
+
+### `intervene` — 1
+
+`test_impulse_response.py::TestTheDriveNeverWritesThePad::test_family_rollout_pad_stays_clean`
+
+The padded-layout invariant: the drive must never write into pad. Open.
+
+### `infer` — the suite cannot be run to completion
+
+Three of ten files do not finish inside five minutes:
+
+```
+test_fisher.py            exit=124  (300 s cap)
+test_recovery.py          exit=124  (300 s cap)
+test_synthetic_slice.py   exit=124  (301 s cap)
+
+test_calibration.py       2 s     test_model_comparison.py   2 s
+test_r09_variational.py   1 s     test_filters.py           32 s
+test_device_parity.py    35 s     test_multirate.py         37 s
+test_sbi.py              37 s
+```
+
+The other seven pass. The three are **not** known to fail — they are unmeasured,
+and that is a different fact. A directory nobody can run is not a directory that
+passes, which is the same distinction `Verdict.ok` was corrected to make today:
+a check that could not run had been reading as a check that passed.
+
+> **A correction to my own reporting.** I twice named
+> `tests/infer/test_r09_variational.py` as the blocker. That came from mapping a
+> completed-test count onto the collection order — arithmetic, not measurement.
+> Timed directly, it runs in **one second**, and the real blockers are three
+> other files. The method that produced the wrong answer produced it with no
+> visible uncertainty, which is why the per-file timing exists.
+
+### What this list is, and what it is not
+
+It is exhaustive over directories: every directory under `tests/` was run and
+every one is accounted for. It is **not** exhaustive over tests, because
+`tests/infer` contains three files whose outcome nobody currently knows.
+
+Recorded that way deliberately. A known-failures list that silently omits the
+untested part is a permissive default wearing a table.
+
 ## 6. Standing limits on whatever 002 turns out to be
 
 Recorded now, not after the numbers.
