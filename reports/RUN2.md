@@ -496,11 +496,19 @@ run 0.631, 0.595, 0.599, 0.583, 0.587 — a 7% spread across four subsequent
 stages and 5,734 further steps. T4's 3,334 simulator-extension steps moved the
 median by about 0.016 nats.
 
-That is a real finding about the curriculum and it is *not* explained by §2b —
-these stages were all training on the same simulated distribution regardless of
-the gate defect, so the flatness says the model saturated on that distribution
-early, not that a stage was misconfigured. It is a reason to question the stage
-budget itself before spending nine hours on it again.
+**Correction: this *is* explained by §2b, and I said the opposite.** The
+original text here claimed the flatness was independent of the gate defect
+because "these stages were all training on the same simulated distribution
+regardless". That is exactly backwards. Without the defect they would *not* have
+been: the curriculum's entire structure is that each stage admits a **new data
+tier** — T1 measured, T2 +calibration, T3 +prior, T4 +simulation. With tier 1
+never admitted and the tier machinery inert, every stage drew from the same
+tier-4 pool, so T2/T3/T4 were re-training on a distribution T1 had already fit.
+
+So the flat curve measures **curriculum collapse, not model saturation**, and it
+carries no information about capacity. Any conclusion of the form "the model is
+big enough" or "more steps do not help" is unavailable from this run. The first
+honest capacity signal will come from a run where the stages differ.
 
 **The NPE loss drifts down slightly and monotonically across stages** — 7.934,
 7.883, 7.832, 7.653, 7.751 — while never approaching the 1e4 rejection bound.
