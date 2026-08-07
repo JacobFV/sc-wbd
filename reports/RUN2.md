@@ -251,6 +251,28 @@ checkpoint will carry `individualizer: None`, and the evaluation will honestly
 report `individualization: {applied: false}` — which is the one place the defect
 surfaces on its own, and only as a quiet field in a JSON file.
 
+### It is six gates, not three — and one worked by accident
+
+`scwbd/foundation/curriculum_admission.py` records the full inventory as data,
+`NAME_GATES`, so it can be asserted exhaustive rather than eyeballed. Run 2's
+names against all six:
+
+| gate | decides | run-2 result |
+|---|---|---|
+| `STAGE_PERMISSIONS.get(name, ("*",))` | gradient allowlist | **wildcard — no restriction** |
+| `name == "I_regional"` | boundary randomisation of sim inputs | **off** |
+| `name in ("IV_assembly",)` | haemodynamic state in the rollout | **off** |
+| `name == "V_individual"` | build the Individualizer | **off** |
+| `name != "V_individual"` | admit the SIMULATED sources | admitted ✓ |
+| `name in ("III_sliced", "IV_assembly", "V_individual")` | admit the MEASURED sources | **refused** |
+
+Five of six gave the wrong answer. The sixth — the only reason the run trained at
+all — was correct **by accident**, because it is the one gate written as `!=`
+rather than `==`, and an unknown name happens to satisfy it.
+
+That is worth sitting with. The run produced a model for nine hours on the
+strength of a negation that nobody wrote for that purpose.
+
 ### Why nothing caught it
 
 Nothing crashed. Loss fell. `npe_rejected` stayed at 0. Every dashboard this run
@@ -267,6 +289,52 @@ lost the mechanism the experiment exists to test."*
 > configuration system that cannot report a typo. `STAGE_PERMISSIONS.get(name,
 > ("*",))` and `name in (...)` are both **unfalsifiable by construction** — there
 > is no stage name they reject.
+
+### The fix was already written, and never applied
+
+This is the part that matters more than the defect.
+
+Someone had already found this. `scwbd/foundation/curriculum_admission.py`
+exists on master and contains the correct diagnosis in its own docstring:
+
+> `UndeclaredStage` — *"Raised rather than defaulted. `STAGE_PERMISSIONS.get(name,
+> ("*",))` answers this question with **everything**, which is the one answer
+> that cannot be wrong-looking: an unwired stage and a fully-permitted stage
+> produce the same reading."*
+
+There is a complete 13 KB patch — `configs/run2/patches/0001-run_stage-config-driven-admission.patch`
+— that rewires `run_stage` to take admission from the config. It still applies
+cleanly to `train.py` (`git apply --check`, exit 0). And there are eleven tests
+in `tests/foundation/test_curriculum_admission.py`, whose header records that
+**7 failed before the patch and 11 passed after it**, with the ones that could
+not discriminate explicitly marked.
+
+The patch was never applied. Six of those tests are red on master **right now**,
+and have been for the whole nine-hour run:
+
+```
+FAILED test_run_stage_has_no_stage_name_gates
+FAILED test_run_stage_consults_stage_admission
+FAILED test_stage_sources_takes_an_admission
+FAILED test_stage_sources_excludes_unadmitted_sources
+FAILED test_sim_losses_takes_an_admission
+FAILED test_anatomical_prior_is_not_gated_on_the_sim_batch
+```
+
+So the honest account is not *"nothing caught it."* It is:
+
+> The defect was diagnosed, the remedy was written, the tests were written and
+> measured against both worlds — and then a nine-hour training run was launched
+> over the top of six red tests naming the exact failure.
+
+**A red test nobody reads is worse than no test**, because it produces the
+appearance of coverage while producing none of the effect. These were not
+obscure: they are named `test_run_stage_has_no_stage_name_gates`.
+
+I did not know about them either. I had catalogued "17 pre-existing failures in
+`test_family_state.py`" as known-and-not-blocking, and never asked what *else*
+was failing. A known-failures list that is not exhaustive is itself a permissive
+default.
 
 ### What is being done about it, and what is not
 
