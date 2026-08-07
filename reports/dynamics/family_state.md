@@ -30,10 +30,15 @@ disagreement is stated rather than smoothed. Nothing here has been trained.
 > and its family is declared, and it is empty.
 >
 > The span guard that justifies narrowing N-1 **is** enforceable and is enforced.
-> But the padded layout it licenses wastes **52.26 %** of the state plane, while
+> But the padded layout it licenses wastes **52.26 %** of the state plane[^pf], while
 > the heterogeneity it was introduced to support costs only **+0.6 %** over the
 > uniform control. N-1 is a narrowing, not a defect — and it is a bad trade at
 > this partition.
+>
+> [^pf]: **47.34 %** against the landed 9-family partition, regenerated
+>   2026-08-06. The 52.26 % here was measured against an 11-family fallback
+>   that no longer exists. The conclusion is unchanged in direction and
+>   slightly weaker in size — see the superseded-table note below.
 
 ---
 

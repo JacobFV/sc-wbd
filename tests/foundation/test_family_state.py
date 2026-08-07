@@ -335,7 +335,7 @@ def test_a_full_width_operator_fires_the_guard(anat):
 
     ``LearnedResidual`` is exactly that — it is the run-1 residual, and it is what
     the family arm replaces.  Applying it to a family-layout state writes into
-    every channel of every region, including the 52% of the plane that is pad.
+    every channel of every region, including the 47% of the plane that is pad.
     If this test stops raising, the padded layout has silently become
     unenforceable and `padded-family-state` must be withdrawn in favour of the ragged layout.
     """
