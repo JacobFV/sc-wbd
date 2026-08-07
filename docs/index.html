@@ -202,7 +202,25 @@ underneath them differs — that is computed per artifact, not asserted once.</p
   property of the split, not a defect of the run.</span></span> The number that explains it: it scores
   <strong>0.565</strong> on simulation and <strong>3.179</strong> on measured
   EEG, because five of six curriculum gates were wrong and no gradient was ever
-  taken on a recording.</td>
+  taken on a recording.
+
+  And that is the smaller half. <strong>88.7% of the model could not receive a
+  gradient at all</strong> — 2,231,447 of 2,516,530 trainable parameters,
+  including the entire family-indexed regional model that is the treatment arm's
+  whole thesis.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>The regional modules were renamed <code>local</code> →
+  <code>family_local</code>, <code>residual</code> → <code>family_residual</code>,
+  <code>readout</code> → <code>family_readout</code> when the family-padded
+  architecture landed. The source cards still grant <code>local.*</code>,
+  <code>residual.*</code>, <code>readout.*</code>, and
+  <code>fnmatch("family_local.ports.out_proj.weight", "local.*")</code> is
+  <code>False</code>. An unmatched glob is not an error — it is an empty
+  permission set, which is a legal permission set. The 285,083 parameters that
+  <em>were</em> reachable are enough to fit something, so the loss fell, the run
+  finished, and five separate audits passed over it. Mechanism and measurement
+  agree independently: those exact modules are bit-identical across every
+  consecutive pair of the five stage checkpoints.</span></span> So the negative result does
+  not say heterogeneous regional state fails to help. That part of the model was
+  a random initialisation participating in the forward pass for 8,700 steps.</td>
   <td>Inherited from the corpora; the anatomy prior's terms apply.</td>
 </tr>
 </tbody>
@@ -225,7 +243,7 @@ part we would most like attacked.</li>
 <li><strong>People designing non-invasive interventions</strong> — TMS, tFUS —
 who need a feasible-set discipline rather than an optimiser that will happily
 recommend something unsafe. The safety gating exists and refuses by
-default.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>A plan declaring intent to drive real hardware or to be applied
+default.<span class="note"><input type="checkbox" id="index-n9" class="note-toggle"><label for="index-n9" class="note-ref">9</label><span class="note-body"><span class="note-n">9</span>A plan declaring intent to drive real hardware or to be applied
 to a person is refused unless a record exists that a preliminary review
 <em>occurred</em> with an approving outcome. A valid authorisation record is
 necessary and explicitly not sufficient, and the gate does not open when a
@@ -240,7 +258,7 @@ marked as speculation.</li>
 
 <p>The technical thesis, falsification programme and implementation contract are
 one document, built from LaTeX source in this repository rather than shipped as
-a stale PDF.<span class="note"><input type="checkbox" id="index-n9" class="note-toggle"><label for="index-n9" class="note-ref">9</label><span class="note-body"><span class="note-n">9</span>Built with <code>make paper</code>, which runs
+a stale PDF.<span class="note"><input type="checkbox" id="index-n10" class="note-toggle"><label for="index-n10" class="note-ref">10</label><span class="note-body"><span class="note-n">10</span>Built with <code>make paper</code>, which runs
 <a href="https://tectonic-typesetting.github.io/">tectonic</a> over
 <code>paper/sc_wbd_frontiers.tex</code>. 29 pages. The source is the artifact;
 the PDF is a build product.</span></span> It is marked <em>Draft — pending development</em>
@@ -264,7 +282,7 @@ provenance chips throughout the engineering essays become links.</p>
 <h2>Video</h2>
 
 <p>Two short pieces, rendered from code so that every figure in them comes from
-the same source as the figures on this site.<span class="note"><input type="checkbox" id="index-n10" class="note-toggle"><label for="index-n10" class="note-ref">10</label><span class="note-body"><span class="note-n">10</span>Built with
+the same source as the figures on this site.<span class="note"><input type="checkbox" id="index-n11" class="note-toggle"><label for="index-n11" class="note-ref">11</label><span class="note-body"><span class="note-n">11</span>Built with
 <a href="https://www.remotion.dev/">Remotion</a> under <code>video/</code>,
 rendered locally with <code>make video</code>, and uploaded to object storage
 with <code>make video-upload</code>. Media is never committed to the repository —
@@ -299,7 +317,7 @@ engineering essays</a> explain how.</p>
 
 <p>Every number on this site is traceable to a file in the repository. Where a
 figure could not be traced, there is a prompt for a human rather than a
-plausible number.<span class="note"><input type="checkbox" id="index-n11" class="note-toggle"><label for="index-n11" class="note-ref">11</label><span class="note-body"><span class="note-n">11</span>This is not a stylistic preference. The project has been
+plausible number.<span class="note"><input type="checkbox" id="index-n12" class="note-toggle"><label for="index-n12" class="note-ref">12</label><span class="note-body"><span class="note-n">12</span>This is not a stylistic preference. The project has been
 burned repeatedly by relayed figures — in one case a single dropped qualifier
 inverted a claim's meaning, and in another a reported percentage came from a
 script with a bug in the statistic itself. The standing rule is
@@ -311,7 +329,7 @@ not claim:</p>
 <li>that the TMS response mapping predicts a real response;</li>
 <li>that heterogeneous regional state beats a pooled vector — that is a
 pre-registered hypothesis, not a result, and <strong>run 2 does not settle it
-either</strong>.<span class="note"><input type="checkbox" id="index-n12" class="note-toggle"><label for="index-n12" class="note-ref">12</label><span class="note-body"><span class="note-n">12</span>The pre-registered ablation has six arms: the candidate,
+either</strong>.<span class="note"><input type="checkbox" id="index-n13" class="note-toggle"><label for="index-n13" class="note-ref">13</label><span class="note-body"><span class="note-n">13</span>The pre-registered ablation has six arms: the candidate,
 two capacity-matched pooled controls, a scalar floor, a θ-conditioned control,
 and a permuted-family attribution control. Run 2 trains <em>one</em> of them —
 the candidate. Its evaluation compares that arm against generic forecasting

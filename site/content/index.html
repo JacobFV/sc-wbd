@@ -165,7 +165,25 @@ underneath them differs — that is computed per artifact, not asserted once.</p
   property of the split, not a defect of the run.]] The number that explains it: it scores
   <strong>0.565</strong> on simulation and <strong>3.179</strong> on measured
   EEG, because five of six curriculum gates were wrong and no gradient was ever
-  taken on a recording.</td>
+  taken on a recording.
+
+  And that is the smaller half. <strong>88.7% of the model could not receive a
+  gradient at all</strong> — 2,231,447 of 2,516,530 trainable parameters,
+  including the entire family-indexed regional model that is the treatment arm's
+  whole thesis.[[note: The regional modules were renamed <code>local</code> →
+  <code>family_local</code>, <code>residual</code> → <code>family_residual</code>,
+  <code>readout</code> → <code>family_readout</code> when the family-padded
+  architecture landed. The source cards still grant <code>local.*</code>,
+  <code>residual.*</code>, <code>readout.*</code>, and
+  <code>fnmatch("family_local.ports.out_proj.weight", "local.*")</code> is
+  <code>False</code>. An unmatched glob is not an error — it is an empty
+  permission set, which is a legal permission set. The 285,083 parameters that
+  <em>were</em> reachable are enough to fit something, so the loss fell, the run
+  finished, and five separate audits passed over it. Mechanism and measurement
+  agree independently: those exact modules are bit-identical across every
+  consecutive pair of the five stage checkpoints.]] So the negative result does
+  not say heterogeneous regional state fails to help. That part of the model was
+  a random initialisation participating in the forward pass for 8,700 steps.</td>
   <td>Inherited from the corpora; the anatomy prior's terms apply.</td>
 </tr>
 </tbody>
