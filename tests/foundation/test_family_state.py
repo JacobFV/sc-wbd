@@ -804,3 +804,48 @@ def test_checkpoint_emission_declares_the_arm(anat, tmp_path):
             stage="test",
             manifest=man2,
         )
+
+
+def test_r12s_remedy_names_a_field_this_manifest_cannot_carry() -> None:
+    """R12 tells the reader to do something the object it validates cannot do.
+
+    The refusal ends: *"or declare the run a control (``arm.role='control'``
+    naming …)"*. ``arm.role`` belongs to
+    ``scwbd.schema.designation.ArmDeclaration``. The manifest that actually
+    reaches R12 is ``scwbd.foundation.manifest.ClaimManifest`` -- a **different
+    class of the same name** from ``scwbd.schema.claims.ClaimManifest``, sharing
+    none of its fields -- and it has no ``arm``, ``role``, ``control`` or
+    ``ablation`` field at all.
+
+    So there is no honest way to declare a control arm through this manifest, and
+    ``test_r12_lets_an_honest_control_arm_manifest_through`` cannot pass as
+    written. The missing capability is the defect, not the test.
+
+    A refusal whose remedy is unactionable is worse than one with no remedy: it
+    reads as help, so the reader spends their time looking for the field rather
+    than discovering it does not exist.
+
+    Asserted as the CURRENT state, so closing the gap is what makes this test
+    fail and forces the assertion -- and the sibling test -- to be revisited
+    together. See ARCHITECTURE.md O-7.
+    """
+    from scwbd.foundation.manifest import ClaimManifest as FoundationManifest
+    from scwbd.schema.claims import ClaimManifest as SchemaManifest
+
+    assert FoundationManifest is not SchemaManifest, (
+        "the two ClaimManifest classes have been unified -- O-7 has moved; "
+        "rewrite this test around whatever the single class now offers"
+    )
+
+    fields = set(FoundationManifest.__dataclass_fields__)
+    arm_like = sorted(f for f in fields if any(w in f for w in ("arm", "role", "control", "ablation")))
+    assert arm_like == [], (
+        f"the foundation manifest gained {arm_like}. If that is the arm "
+        "declaration R12's remedy asks for, wire it into "
+        "read_operator_assignment and re-enable "
+        "test_r12_lets_an_honest_control_arm_manifest_through."
+    )
+    assert "regional_state" in fields, (
+        "regional_state is how this manifest describes its operators; if it is "
+        "gone, R12's input has changed and this whole group needs re-deriving"
+    )
