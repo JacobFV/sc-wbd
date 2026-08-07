@@ -2071,3 +2071,48 @@ emitted rather than discussed. Elsewhere it is prose, and prose stays allowed.
 **Generalisation.** Every instance of this class so far was found by building a
 *second* artifact. The name was never checkable while there was only one thing
 to name — but the defects were all present from the first day, waiting.
+
+## The drift-toward-intent class — descriptions, not guards
+
+Every entry above is a *check* that failed. This one is about **claims**, and it
+has a direction.
+
+Run 2's summary row in `reports/RUN2.md` read:
+
+> regional state: **3-vector dipole `Hz·m`, ragged**
+
+Read against the checkpoint's own `state_layout`, the artifact has components
+`rate_e`(1), `rate_i`(1), `hemo`(4), `uncertainty`(4), `private`(49) — **no
+dipole at all** — and its layout field says `family_padded`. Vector-valued
+regional state is O-5, explicitly **deferred to run 3**. The same row credited
+run 1 with 52.26% padding, which was the run-2 figure (since regenerated to
+47.34%), attributed to a uniform dense state that has no padding whatsoever.
+
+The claim had propagated to all three public surfaces:
+
+| where | what it said |
+|---|---|
+| `reports/RUN2.md` §0 | "3-vector dipole `Hz·m`, ragged" |
+| the site landing page | "a ragged state layout (52% of the padded plane removed)" |
+| `paper/body.tex` §11.8 | "a segment rather than padded layout" |
+
+**Every error ran the same way.** Not one of them understated the artifact.
+Each described the design the project argues for rather than the thing on disk —
+the ragged layout is built and tested, the dipole is designed and deferred, and
+both are things we intend. That is what makes this a class rather than three
+typos:
+
+> A summary drifts toward the system you meant to build. Nobody writes a
+> flattering error about a feature they never wanted.
+
+**The check is not another guard, it is a habit**: read the description against
+the artifact's own self-report, not against the plan. `state_layout`,
+`regional_state`, and `describe()` all existed and all said the right thing. The
+error survived because nobody had asked the checkpoint what it was — the same
+move that settled R12, the padding fraction, and the arm, all on the same day.
+
+Note also which direction the *corrections* went. Regenerating `padding_fraction`
+moved it from 52.26% to 47.34% — **weakening** the argument for retiring the
+narrowing. A correction that happens to favour the position you already held
+deserves more suspicion than one that does not; this one did not, which is mild
+evidence the measurement was real rather than motivated.
