@@ -85,19 +85,46 @@ body {
 
 /* ---------------------------------------------------------------- masthead */
 
+/* Naked header: floating labels, no bar.
+ *
+ * Was a full-width band with a bottom rule and a solid background -- furniture
+ * that occupied the top of every page and framed the content as a document. The
+ * chrome is now fixed, transparent, and pointer-transparent except on the labels
+ * themselves, so the page starts at the content.
+ *
+ * `pointer-events: none` on the container with `auto` on the children is what
+ * keeps the invisible strip from swallowing clicks meant for the page. */
 .masthead {
-  border-bottom: 1px solid var(--rule);
-  background: var(--bg);
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  border: 0;
+  background: none;
+  pointer-events: none;
 }
 
 .masthead-inner {
   max-width: 62rem;
   margin: 0 auto;
-  padding: 0.9rem 1.5rem;
+  padding: 1rem 1.5rem;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.6rem 1.6rem;
+  gap: 0.5rem 1.4rem;
+}
+.masthead a { pointer-events: auto; }
+
+/* The content owns the top of the page now, so it needs room for the labels to
+ * float over. */
+main { padding-top: 3.2rem; }
+
+/* A label sitting directly on the page needs its own legibility, which the bar
+ * used to provide. A soft halo in the page colour, not a box. */
+.masthead .wordmark,
+.masthead nav a {
+  text-shadow:
+    0 0 6px var(--bg), 0 0 6px var(--bg),
+    0 0 12px var(--bg), 0 0 12px var(--bg);
 }
 
 .wordmark {
@@ -680,3 +707,40 @@ figcaption {
   color: var(--ink-3);
   margin-top: 0.5rem;
 }
+
+/* ---- Interactive architecture diagram ---- */
+.archwrap { margin: 2rem 0 2.4rem; }
+.arch-cases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+.arch-case {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--rule);
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-radius: 2px;
+}
+.arch-case.on { color: #3d4a5c; border-color: #8c9bad; background: #f7f5ef; }
+.arch-case:hover { color: var(--ink); }
+#wbd-arch {
+  display: block;
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  border: 1px solid var(--rule);
+  touch-action: none;
+  background: #f7f5ef;
+}
+.arch-cap {
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  color: var(--ink-3);
+  margin: 0.5rem 0 0;
+}
+@media (max-width: 46rem) { #wbd-arch { aspect-ratio: 4 / 3; } }

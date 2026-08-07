@@ -21,6 +21,7 @@
 })();
 </script>
   <script defer src="static/brain.js"></script>
+  <script defer src="static/arch.js"></script>
 </head>
 <body class="">
 
@@ -103,6 +104,21 @@ it observes and nothing else.</p>
 </div>
   <div><span class="n">11</span><span class="l">compiler refusals<br>each with a test that makes it fire</span></div>
   <div><span class="n fail">0</span><span class="l">validated claims about brains<br>all five claim gates <span class="chip unknown">could_not_run</span></span></div>
+</div>
+
+<h2>How the graph materialises</h2>
+
+<p>The same state space, wired three different ways. Drag the scene to orbit; the
+annotation lines follow the parcels and terminals they point at.</p>
+
+<div class="archwrap">
+  <div class="arch-cases" id="arch-cases"></div>
+  <canvas id="wbd-arch" data-src="static/brain.json"
+          aria-label="Axonometric diagram: 414 parcels and body terminals on the left, signal categories in the middle, the use case on the right. Drag to orbit."></canvas>
+  <p class="arch-cap">Blue is an <code>observation</code> &mdash; a measurement of
+  the carrier through a declared forward operator. Warm is a <code>stimulus</code>
+  entering or a <code>boundary_output</code> leaving. Dimmed parcels are the ones
+  a given use case does not touch.</p>
 </div>
 
 <h2>What you can do with it</h2>
