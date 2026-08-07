@@ -24,6 +24,10 @@ Nothing here decides whether a claim gate passes.  The numbers go to agent J.
 
 from __future__ import annotations
 
+from contextlib import nullcontext
+
+from .families import layout_of_checkpoint
+
 import hashlib
 import json
 import math
@@ -881,10 +885,22 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
     p.add_argument("--ablate-sources", action="store_true")
     a = p.parse_args(argv)
     cfg = load_config(a.config)
-    tr = FoundationTrainer(cfg, resume=False, quick=a.quick)
-    # Data first: the individualizer's row count comes from the participant list.
-    tr.build_data()
+
+    # Build the model in the state layout the CHECKPOINT was trained in, not the
+    # one this tree currently defaults to. O-5b widened the shared interface from
+    # D=59 to D=62, which is exactly the incompatibility ARCHITECTURE.md said it
+    # would cause -- and a model constructed before that is consulted cannot load
+    # run 2's weights at all.
+    #
+    # The trainer builds its model in __init__, so the layout has to be selected
+    # BEFORE construction; wrapping the load site instead would be too late. That
+    # is the whole reason this is a context manager around the constructor rather
+    # than an argument to the loader.
     ckpt = a.checkpoint or str(Path(cfg.train.out_dir) / "last.pt")
+    with layout_of_checkpoint(ckpt) if Path(ckpt).exists() else nullcontext():
+        tr = FoundationTrainer(cfg, resume=False, quick=a.quick)
+        # Data first: the individualizer's row count comes from the participant list.
+        tr.build_data()
     if Path(ckpt).exists():
         from .checkpoint import CheckpointError, load_checkpoint
 
