@@ -975,9 +975,39 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
         "",
     ]
     if anat:
+        # Summarise the provenance rather than dumping it.  This printed the
+        # entire assembled dict -- roughly four thousand characters of nested
+        # JSON on one line -- which is not disclosure, it is the appearance of
+        # disclosure. The full object ships in the artifact itself; the card
+        # names the atlas, the space, and the sources, and points at the file.
+        _prov = anat.get("provenance") or {}
+        if isinstance(_prov, str):
+            # It arrives as a Python repr string, not a mapping. The first
+            # version of this summary checked `isinstance(_prov, dict)`, fell
+            # through, and printed the 4 kB dump it was written to prevent --
+            # a guard that silently declines to act looks exactly like no guard.
+            import ast as _ast
+
+            try:
+                _prov = _ast.literal_eval(_prov)
+            except (ValueError, SyntaxError):
+                pass
+        if isinstance(_prov, dict):
+            _atlas = _prov.get("atlas", "?")
+            _space = f"{_prov.get('space', '?')}/{_prov.get('density', '?')}"
+            _srcs = sorted((_prov.get("sources") or {}).keys())
+            _sub = (_prov.get("subcortical_atlas") or {}).get("name", "?")
+            _prov_line = (
+                f"atlas `{_atlas}` in `{_space}`, subcortex `{_sub}`, "
+                f"{len(_srcs)} declared sources ({', '.join(_srcs)})"
+            )
+        else:
+            _prov_line = f"`{_prov}`"
         body += [
-            f"- Anatomy: {anat.get('n_regions')} regions, provenance "
-            f"`{anat.get('provenance')}`, `is_biological = {anat.get('is_biological')}`.",
+            f"- Anatomy: {anat.get('n_regions')} regions — {_prov_line}; "
+            f"`is_biological = {anat.get('is_biological')}`. Full provenance, "
+            "including every licence and citation, is carried inside the "
+            "checkpoint under `extra.anatomy` and in `reports/anatomy_prior.md`.",
         ]
         if anat.get("is_biological") is False:
             body.append(
@@ -994,8 +1024,18 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
             f"`{lf.get('individual_head_model')}`."
         )
     if ho.get("n_train_participants") is not None:
+        # "train" here names the EVALUATION's fitting split for the baselines,
+        # not anything this model was fit to. Under a heading called "what it was
+        # trained on", the unqualified word was the most misleading line on the
+        # card for a sim-only run.
+        _split_what = (
+            "Evaluation split (this model was **not** fit to any of it — see the "
+            "disclosure above; the baselines are fit to the first half)"
+            if sim_only
+            else "Split"
+        )
         body.append(
-            f"- Split: {ho.get('n_train_windows')} train windows / "
+            f"- {_split_what}: {ho.get('n_train_windows')} fitting windows / "
             f"{ho.get('n_train_participants')} participants; "
             f"{ho.get('n_test_windows')} test windows / "
             f"{ho.get('n_test_participants')} participants, participant-disjoint."
@@ -1003,6 +1043,16 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
     body.append("")
 
     body += ["## Known defects", ""]
+    if sim_only:
+        body.append(
+            "- **Five of six training-stage gates gave the wrong answer** (see the "
+            "disclosure at the top). No measured-data gradient, no per-stage "
+            "gradient restriction, no boundary randomisation, no haemodynamic "
+            "state in the rollout, and no individualizer. A complete fix existed "
+            "in the repository before this run started and was not applied; six "
+            "tests naming the defect were failing on the main branch throughout. "
+            "This is the defect that most changes how the scores should be read."
+        )
     for w in plan.warnings:
         body.append(f"- {w}")
     if split.get("verified") is False and split.get("note"):
