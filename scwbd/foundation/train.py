@@ -1968,8 +1968,21 @@ class FoundationTrainer:
         self._save(f"stage_{stage.name}.pt", stage.name, step, metrics={"loss": best})
         rep = mixture.report()
         rep["stage"] = stage.name
+        rep["run_name"] = self.cfg.train.run_name
         self._mixture_reports.append(rep)
-        (self.report_dir / f"mixture_{stage.name}.json").write_text(json.dumps(rep, indent=2, default=float))
+        # Scoped by RUN as well as stage. Keyed on the stage name alone, run 3
+        # silently overwrites run 2: both declare stages called
+        # `T1_measured_founding` and `T3_population_prior`, and run 2's reports
+        # are the published evidence for an artifact that is already cited.
+        # Same class as `--out moves checkpoints, not logs`, one directory over.
+        #
+        # The legacy flat path is still written so nothing that reads it breaks,
+        # but the run-scoped copy is the one that cannot collide.
+        run_dir = self.report_dir / self.cfg.train.run_name
+        run_dir.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps(rep, indent=2, default=float)
+        (run_dir / f"mixture_{stage.name}.json").write_text(payload)
+        (self.report_dir / f"mixture_{stage.name}.json").write_text(payload)
         return {
             "stage": stage.name,
             "steps": step,
