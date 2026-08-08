@@ -439,62 +439,47 @@ code, which is why the remaining risk there is low.
 
 ## Things being watched during the run
 
-**The BOLD term spikes early, then plateaus two orders above where it started.** `real_bold_nll` goes from 21.7 at
-step 1 to ~9.0e4 by step 20, reproducibly across three launches, while
-`bold_log_scale` stays flat at 5.578. It read as a divergence at the time and
-this heading said so; it is not one, and the table below is why. The target is normalised to unit scale, so that magnitude implies
-either a Balloon-Windkessel state that has run away or a predicted log-variance
-pinned at the `gaussian_nll` clamp; the two are not distinguishable from the
-logged fields alone and will be separated by probing a checkpoint offline rather
-than by adding diagnostics mid-run.
+**The BOLD term diverges, monotonically, in every stage.** This is the third and
+final characterisation of it; the first two were wrong, in the same direction,
+and are kept below rather than deleted.
 
-It does not threaten the other sources: `MixtureTrainer.step` normalises each
-source before accumulating, and `mixture_total` sits near 1.0 throughout.
+Per-stage, from the launched run's own log:
 
-**Resolved: it is a transient, not a divergence.** Measured over the first 100
-steps of the launched run:
+| stage | first | last | max |
+| --- | ---: | ---: | ---: |
+| T1 founding | 21.7 | 4.76e4 | 1.24e5 |
+| T2 calibration | 1.09e5 | 4.54e5 | 6.28e5 |
+| T3 population prior | 4.28e5 | 7.02e5 | 9.39e5 |
+| T4 simulator | 5.70e5 | 2.02e6 | 4.37e6 |
 
-| step | `real_bold_nll` | eegmmidb NLL | perturb NLL | behaviour CE |
-| ---: | ---: | ---: | ---: | ---: |
-| 1 | 21.7 | 2.225 | 2.982 | 0.641 |
-| 20 | 9.03e4 | 2.393 | 2.396 | 0.687 |
-| 40 | 3.11e4 | 1.881 | 2.088 | 0.635 |
-| 60 | 5.76e3 | 1.844 | 1.531 | 0.649 |
-| 80 | 1.01e3 | 1.595 | 1.505 | 0.512 |
-| 100 | 5.21e2 | 1.712 | 1.696 | 0.585 |
-| 120 | 7.14e2 | 2.227 | 1.827 | 0.477 |
-| 140 | 2.77e1 | 2.659 | 2.184 | 0.148 |
-| 160 | 5.94e2 | 2.727 | 2.139 | 0.578 |
-| 180 | 4.23e2 | 2.818 | 1.761 | 0.199 |
-| 200 | 2.90e3 | 1.923 | 1.559 | 0.191 |
-| 220 | 3.08e3 | 2.224 | 1.766 | 0.145 |
+From 21.7 to about 2×10⁶ — **five orders of magnitude, rising in every stage**.
+Against a target normalised to unit scale, an NLL that size puts the predicted
+mean on the order of a thousand standard deviations out. The parcel-BOLD head is
+not fitting; it is coming apart.
 
-**Two corrections to earlier readings of this table**, both made as points
-accumulated, and both in the same direction — the first reading was too kind.
+### Why the first two readings were wrong, and what that should teach
 
-*"Monotone"* was a claim about four points and is false at thirty-two: past step
-100 the term oscillates rather than continuing down.
+*"A transient, not a divergence"* (step 60) rested on four points. *"Spikes early,
+then plateaus two orders above where it started"* (step 620) rested on a
+twelve-point median of 3,717. Both were honest readings of the window in front of
+them, and both were windows on the early part of a curve that never stopped
+climbing. At batch 8 there is one BOLD window per step, so any short run of
+points can look like a plateau.
 
-*"Settles"* is right about the shape and was wrong about the level. Measured over
-the last twelve logged points, the plateau is **a median of 3,717, not a return
-to the 21.7 it started at** — roughly 170× its own step-1 value. If the
-predicted log-variance is near zero, an NLL of that size implies the mean is
-about **86 standard deviations** off a target normalised to unit scale. That is
-not a transient settling; it is a term that left one bad regime for a less bad
-one and stopped.
+The general lesson, which cost three corrections to learn: a quantity that spans
+five decades cannot be characterised from a linear window. It needed to be read
+on a log axis over the whole run from the first alarm, and was not.
 
-What survives from the original reading is the part that mattered operationally:
-it left the 1e4–1e5 range within 60 steps and has not returned, and the mixture
-normalises each source before accumulating, so it cannot dominate the others.
-What does not survive is any implication that the BOLD likelihood is fitting.
+### What still holds
 
-Read at batch 8, one BOLD window per step, so single-step values are noisy by
-construction; the range is the signal, not any one number. The reading that
-fits: the Balloon-Windkessel state is
-driven by `rate_e` from a regional model that is at its initialisation on step
-1, and it settles as that model trains. No intervention was made and none was
-needed — which is the reason for measuring the trend before acting on the first
-alarming number.
+`MixtureTrainer.step` normalises each source before accumulating, so this term
+cannot dominate the others: the mixture total has stayed near 1.0 and the six
+other measured sources improved 31–42% over the same span. The damage is
+confined to BOLD.
+
+No intervention was made. The run is 46% through, the term is contained, and a
+restart costs more than it would buy — but that is a judgement about cost, not a
+claim that the term is fine. It is not fine.
 
 Whether this term ends up carrying *information*, as opposed to merely carrying
 a gradient, is not settled by any of the above and is left to the
