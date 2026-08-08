@@ -48,61 +48,74 @@ N_EDGES = 900                  # "the strongest 900 edges", as the site says
 
 MARK = "SC-WBD-003"
 
-# What the model is for, clockwise from the top. Kept in the order the family
-# groups run -- estimation, decoding, mapping, perturbation, control, over time
-# -- so neighbours on the ring are neighbours in subject matter.
-USES = [
-    "neural state estimation",
-    "whole-brain forecasting",
-    "cross-modal prediction",
-    "EEG source inference",
-    "EEG computer control",
-    "neural error detection",
-    "motor-intent decoding",
-    "language decoding",
-    "cognitive-state decoding",
-    "individualized brain mapping",
-    "functional network mapping",
-    "connectivity inference",
-    "perturbation forecasting",
-    "TMS target selection",
-    "TMS response prediction",
-    "tFUS target selection",
-    "tFUS response prediction",
-    "closed-loop neuromodulation",
-    "neurofeedback control",
-    "cognitive intervention design",
-    "longitudinal brain modeling",
-    "personalized digital twins",
-    "behavioral forecasting",
+# What the model is for: two columns flanking the brain, each a few
+# constellations rather than one list. The grouping is the argument -- reading
+# down the left is estimate, then decode, then map; down the right is perturb,
+# then control, then follow over time -- and the gap between clusters is what
+# says so. Each cluster joins the brain through one hub.
+LEFT = [
+    ["neural state estimation",
+     "whole-brain forecasting",
+     "cross-modal prediction",
+     "EEG source inference"],
+    ["EEG computer control",
+     "neural error detection",
+     "motor-intent decoding",
+     "language decoding",
+     "cognitive-state decoding"],
+    ["individualized brain mapping",
+     "functional network mapping",
+     "connectivity inference"],
+]
+RIGHT = [
+    ["perturbation forecasting",
+     "TMS target selection",
+     "TMS response prediction",
+     "tFUS target selection",
+     "tFUS response prediction"],
+    ["closed-loop neuromodulation",
+     "neurofeedback control",
+     "cognitive intervention design"],
+    ["longitudinal brain modeling",
+     "personalized digital twins",
+     "behavioral forecasting"],
 ]
 
-# The ring, in data units. `SCALE` is inches per data unit, so a font size set
-# in points below is that size on the page when the figure is included at its
-# natural width -- the label type is specified where it is read, not guessed
-# backwards through an \includegraphics scale factor.
+# The layout, in data units. `SCALE` is inches per data unit, so a font size
+# set in points below is that size on the page when the figure is included at
+# its natural width -- the label type is specified where it is read, not
+# guessed backwards through an \includegraphics scale factor.
 SCALE = 0.70
-RX, RY = 2.62, 1.42            # where the labels sit
-RX_IN, RY_IN = 1.26, 1.00      # where the leader lines start, just off the brain
-BX, BZ = 1.16, 0.92            # the ellipse the projected brain is fitted into
-XLIM, YLIM = 4.95, 1.68
+COLX = 2.02                    # where a column's labels begin, either side
+HUB = 1.72                     # where its clusters gather
+PITCH = 0.262                  # one label to the next, down a column
+GAP = 0.62                     # extra, between clusters
+BX, BZ = 1.44, 1.16            # the ellipse the projected brain is fitted into
+XLIM, YLIM = 4.90, 1.82
 
 
-def ring_points(n: int) -> np.ndarray:
-    """`n` points spaced by equal ARC LENGTH around the label ellipse.
+def column_rows(groups: list[list[str]]) -> tuple[list[float], list[float]]:
+    """The y of every label in a column, and of each cluster's hub.
 
-    Equal *angle* is the obvious thing and the wrong one: on an ellipse this
-    wide, equal steps in theta crowd the points vertically at the left and
-    right ends, which is exactly where the labels are horizontal lines of text
-    that then collide. Equal arc length spaces them by the distance actually
-    seen between them.
+    Centred on zero: the two columns hold 12 and 11 labels, and hanging both
+    from a common top would leave the shorter one ending half a cluster above
+    the other for no reason a reader could name.
     """
-    th = np.linspace(0.0, 2 * np.pi, 4000)
-    x, y = RX * np.cos(th), RY * np.sin(th)
-    s = np.concatenate([[0.0], np.cumsum(np.hypot(np.diff(x), np.diff(y)))])
-    want = np.linspace(0.0, s[-1], n, endpoint=False)
-    # Clockwise from the top: start at theta = pi/2 and run backwards.
-    return np.pi / 2 - np.interp(want, s, th)
+    slots: list[float] = []
+    s = 0.0
+    for gi, g in enumerate(groups):
+        if gi:
+            s += GAP
+        for _ in g:
+            slots.append(s)
+            s += 1.0
+    span = (s - 1.0) / 2.0
+    ys = [(span - q) * PITCH for q in slots]
+    hubs, at = [], 0
+    for g in groups:
+        hubs.append(float(np.mean(ys[at:at + len(g)])))
+        at += len(g)
+    return ys, hubs
 
 
 def main() -> int:
@@ -199,35 +212,37 @@ def main() -> int:
     # over the connectome.
     ax.text(
         0, 0, MARK, ha="center", va="center", zorder=4,
-        fontsize=13.5, fontweight="bold", color="#1d1c21",
+        fontsize=15, fontweight="bold", color="#1d1c21",
         family="sans-serif",
-        path_effects=[matplotlib.patheffects.withStroke(linewidth=3.4,
+        path_effects=[matplotlib.patheffects.withStroke(linewidth=3.8,
                                                         foreground="white")],
     )
 
-    # ---- the ring: what the model is for ---------------------------------
-    th = ring_points(len(USES))
-    for name, a_ in zip(USES, th):
-        ct, st = float(np.cos(a_)), float(np.sin(a_))
-        x0, y0 = RX_IN * ct, RY_IN * st
-        x, y = RX * ct, RY * st
-        ax.plot([x0, x * 0.985], [y0, y * 0.985],
-                color="#8c9bad", linewidth=0.4, alpha=0.85,
-                solid_capstyle="round", zorder=3)
-        ax.plot([x], [y], marker="o", markersize=1.5, color="#8c9bad",
-                markeredgewidth=0, zorder=3)
-        # Straight up and down at the ends of the ring, the label reads as a
-        # caption over or under it; along the sides it reads outward.
-        if ct > 0.12:
-            ha, dx = "left", 0.09
-        elif ct < -0.12:
-            ha, dx = "right", -0.09
-        else:
-            ha, dx = "center", 0.0
-        va = "center" if abs(ct) > 0.12 else ("bottom" if st > 0 else "top")
-        dy = 0.0 if abs(ct) > 0.12 else (0.07 if st > 0 else -0.07)
-        ax.text(x + dx, y + dy, name, ha=ha, va=va, fontsize=6.6,
-                color="#3d3c43", family="sans-serif", zorder=4)
+    # ---- the two columns: what the model is for --------------------------
+    for side, groups in ((-1, LEFT), (+1, RIGHT)):
+        ys, hubs = column_rows(groups)
+        at = 0
+        for g, hy in zip(groups, hubs):
+            hx = side * HUB
+            # Hub to the brain, stopped on the fitted ellipse so the line meets
+            # the parcels rather than ending somewhere inside them.
+            ang = np.arctan2(hy, hx)
+            ax.plot([hx, np.cos(ang) * BX * 1.03], [hy, np.sin(ang) * BZ * 1.03],
+                    color="#8c9bad", linewidth=0.5, alpha=0.9, zorder=3)
+            ax.plot([hx], [hy], marker="o", markersize=2.0, color="#8c9bad",
+                    markeredgewidth=0, zorder=3)
+            for name in g:
+                y = ys[at]
+                at += 1
+                ax.plot([hx, side * COLX], [hy, y], color="#8c9bad",
+                        linewidth=0.4, alpha=0.75, solid_capstyle="round",
+                        zorder=3)
+                ax.plot([side * COLX], [y], marker="o", markersize=1.4,
+                        color="#8c9bad", markeredgewidth=0, zorder=3)
+                ax.text(side * (COLX + 0.09), y, name,
+                        ha="left" if side > 0 else "right", va="center",
+                        fontsize=6.8, color="#3d3c43", family="sans-serif",
+                        zorder=4)
 
     ax.set_aspect("equal")
     ax.axis("off")

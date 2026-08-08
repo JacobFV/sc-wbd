@@ -52,69 +52,68 @@
     WARM = "#c8874a";
   }
 
-  /* ------------------------------------------------------------- the ring
+  /* --------------------------------------------------- what the model is for
    *
-   * What the model is for, clockwise from the top, on a canvas that carries
-   * `data-ring="uses"`. Same list and same order as `USES` in
-   * scripts/render_mark.py, which draws it around the paper's cover figure:
-   * the page and the cover are one drawing stated in two media.
+   * Two columns flanking the brain on a canvas that carries
+   * `data-uses="on"`, each a few constellations rather than one list. Same
+   * groups, same order, as LEFT and RIGHT in scripts/render_mark.py, which
+   * draws them around the paper's cover figure: the page and the cover are one
+   * drawing stated in two media.
    *
-   * Below RING_MIN_W the ring is not drawn at all. Twenty-three labels around
-   * a 400px canvas is 6px type, which is a texture rather than a list, and the
-   * section under the hero says the same thing in prose. */
+   * Below USES_MIN_W the columns are not drawn at all -- on a phone they are
+   * two stacks of 6px type either side of a thumbnail, which is a texture
+   * rather than a list, and the sections below say the same thing in prose. */
   var MARK = "SC-WBD-003";
-  var RING_MIN_W = 620;                 // CSS px of canvas width
-  var USES = [
-    "neural state estimation",
-    "whole-brain forecasting",
-    "cross-modal prediction",
-    "EEG source inference",
-    "EEG computer control",
-    "neural error detection",
-    "motor-intent decoding",
-    "language decoding",
-    "cognitive-state decoding",
-    "individualized brain mapping",
-    "functional network mapping",
-    "connectivity inference",
-    "perturbation forecasting",
-    "TMS target selection",
-    "TMS response prediction",
-    "tFUS target selection",
-    "tFUS response prediction",
-    "closed-loop neuromodulation",
-    "neurofeedback control",
-    "cognitive intervention design",
-    "longitudinal brain modeling",
-    "personalized digital twins",
-    "behavioral forecasting",
+  var USES_MIN_W = 620;                 // CSS px of canvas width
+  var LEFT = [
+    ["neural state estimation",
+     "whole-brain forecasting",
+     "cross-modal prediction",
+     "EEG source inference"],
+    ["EEG computer control",
+     "neural error detection",
+     "motor-intent decoding",
+     "language decoding",
+     "cognitive-state decoding"],
+    ["individualized brain mapping",
+     "functional network mapping",
+     "connectivity inference"]
   ];
+  var RIGHT = [
+    ["perturbation forecasting",
+     "TMS target selection",
+     "TMS response prediction",
+     "tFUS target selection",
+     "tFUS response prediction"],
+    ["closed-loop neuromodulation",
+     "neurofeedback control",
+     "cognitive intervention design"],
+    ["longitudinal brain modeling",
+     "personalized digital twins",
+     "behavioral forecasting"]
+  ];
+  var GAP = 0.62;                       // extra pitch between clusters
 
-  /* `n` angles spaced by equal ARC LENGTH around the ellipse (rx, ry).
-   *
-   * Equal angle is the obvious thing and the wrong one: on a wide ellipse,
-   * equal steps in theta crowd the points vertically at the left and right
-   * ends -- exactly where each label is a horizontal line of text, which then
-   * collides with its neighbour. */
-  function ringAngles(n, rx, ry) {
-    var STEPS = 1440, th = [], cum = [0], i;
-    for (i = 0; i <= STEPS; i++) th.push((i / STEPS) * Math.PI * 2);
-    for (i = 1; i <= STEPS; i++) {
-      cum.push(cum[i - 1] + Math.hypot(
-        rx * (Math.cos(th[i]) - Math.cos(th[i - 1])),
-        ry * (Math.sin(th[i]) - Math.sin(th[i - 1]))
-      ));
+  /* The y offset of every label in a column, and of each cluster's hub, in
+   * units of `pitch` and centred on zero. The two columns hold 12 labels and
+   * 11; hanging both from a common top would end the shorter one half a
+   * cluster above the other for no reason a reader could name. */
+  function columnRows(groups, pitch) {
+    var slots = [], s = 0, gi, k;
+    for (gi = 0; gi < groups.length; gi++) {
+      if (gi) s += GAP;
+      for (k = 0; k < groups[gi].length; k++) { slots.push(s); s += 1; }
     }
-    var total = cum[STEPS], out = [], j = 0;
-    for (i = 0; i < n; i++) {
-      var want = (i / n) * total;
-      while (j < STEPS && cum[j + 1] < want) j++;
-      var span = cum[j + 1] - cum[j];
-      var f = span > 0 ? (want - cum[j]) / span : 0;
-      // Clockwise from the top.
-      out.push(Math.PI / 2 - (th[j] + f * (th[j + 1] - th[j])));
+    var half = (s - 1) / 2;
+    var ys = slots.map(function (q) { return (q - half) * pitch; });
+    var hubs = [], at = 0;
+    for (gi = 0; gi < groups.length; gi++) {
+      var sum = 0;
+      for (k = 0; k < groups[gi].length; k++) sum += ys[at + k];
+      hubs.push(sum / groups[gi].length);
+      at += groups[gi].length;
     }
-    return out;
+    return { ys: ys, hubs: hubs };
   }
 
   // Attachment kinds, in the order the schema declares them.
@@ -185,7 +184,7 @@
     // `data-panels="scene"` draws the anatomy alone -- no category fan, no
     // pipeline. The hero wants the object, not the annotated diagram.
     var sceneOnly = canvas.getAttribute("data-panels") === "scene";
-    var ringed = sceneOnly && canvas.getAttribute("data-ring") === "uses";
+    var annotated = sceneOnly && canvas.getAttribute("data-uses") === "on";
 
     /* How far the parcels reach, as bounds that do not depend on yaw.
      *
@@ -356,71 +355,96 @@
     }
 
 
-    /* Where the ring sits, for a canvas of this size, or null if it does not
-     * fit. `rx` is what is left after the widest label, measured rather than
+    /* Where the two columns sit on a canvas this size, or null if they do not
+     * fit. `colx` is what is left after the widest label, measured rather than
      * assumed: "cognitive intervention design" is twice the width of "language
-     * decoding" and the ellipse has to clear the longer one.
+     * decoding" and the columns have to clear the longer one.
      *
-     * Cached on the size, because equal-arc spacing costs a 1440-step walk and
-     * the canvas redraws every frame while the brain turns. */
-    var ringCache = null;
-    function ringGeom(W, H) {
-      if (ringCache && ringCache.W === W && ringCache.H === H) return ringCache.g;
+     * Cached on the size: the canvas redraws every frame while the brain turns
+     * and none of this changes between frames. */
+    var usesCache = null;
+    function usesGeom(W, H) {
+      if (usesCache && usesCache.W === W && usesCache.H === H) return usesCache.g;
       var g = null;
-      if (W / dpr >= RING_MIN_W) {
+      if (W / dpr >= USES_MIN_W) {
         var fs = Math.max(10.5, Math.min(13.5, (W / dpr) * 0.0132)) * dpr;
         ctx.font = "500 " + fs + "px ui-sans-serif, system-ui, sans-serif";
-        var widest = 0;
-        for (var i = 0; i < USES.length; i++) {
-          widest = Math.max(widest, ctx.measureText(USES[i]).width);
+        var widest = 0, i, j;
+        for (i = 0; i < LEFT.length; i++) {
+          for (j = 0; j < LEFT[i].length; j++) {
+            widest = Math.max(widest, ctx.measureText(LEFT[i][j]).width);
+          }
         }
-        var rx = W * 0.5 - widest - px(14);
-        var ry = H * 0.5 - fs * 1.5;
-        if (rx > W * 0.15 && ry > H * 0.2) {
-          g = { rx: rx, ry: ry, fs: fs, ang: ringAngles(USES.length, rx, ry) };
+        for (i = 0; i < RIGHT.length; i++) {
+          for (j = 0; j < RIGHT[i].length; j++) {
+            widest = Math.max(widest, ctx.measureText(RIGHT[i][j]).width);
+          }
+        }
+        var colx = W * 0.5 - widest - px(12);
+        // Twelve labels and two cluster gaps have to fit the height, and no
+        // row should be tighter than the type in it.
+        var pitch = Math.min((H - fs * 2) / (11 + 2 * GAP), fs * 2.1);
+        if (colx > W * 0.16 && pitch > fs * 1.25) {
+          g = {
+            colx: colx, hubx: colx * 0.85, fs: fs,
+            left: columnRows(LEFT, pitch), right: columnRows(RIGHT, pitch)
+          };
         }
       }
-      ringCache = { W: W, H: H, g: g };
+      usesCache = { W: W, H: H, g: g };
       return g;
     }
 
-    /* The name, over the middle, and the ring of use cases around it.
+    /* The name over the middle, and the use cases either side of it.
      *
      * Stroked in the page's own ground rather than plated: the canvas is
      * transparent so the section shows through, and a filled rectangle here
      * would read as a card laid over the connectome. */
-    function drawMark(ox, oy, W, H, ring) {
-      if (ring) {
-        var rxi = ring.rx * 0.58, ryi = ring.ry * 0.84;
-        for (var u = 0; u < USES.length; u++) {
-          var a2 = ring.ang[u], cc = Math.cos(a2), ss = Math.sin(a2);
-          var x1r = ox + ring.rx * cc, y1r = oy - ring.ry * ss;
-          ctx.strokeStyle = LINE; hairline(0.6); ctx.globalAlpha = 0.5;
-          ctx.beginPath();
-          ctx.moveTo(ox + rxi * cc, oy - ryi * ss);
-          ctx.lineTo(ox + ring.rx * 0.985 * cc, oy - ring.ry * 0.985 * ss);
-          ctx.stroke();
-          ctx.globalAlpha = 0.7;
-          ctx.fillStyle = LINE;
-          ctx.beginPath(); ctx.arc(x1r, y1r, 1.5 * dpr, 0, 6.2832); ctx.fill();
-          ctx.globalAlpha = 1;
+    function drawMark(ox, oy, W, H, uses, sc) {
+      if (uses) {
+        var sides = [
+          { s: -1, groups: LEFT, rows: uses.left },
+          { s: 1, groups: RIGHT, rows: uses.right }
+        ];
+        for (var si = 0; si < sides.length; si++) {
+          var side = sides[si].s, groups = sides[si].groups, rows = sides[si].rows;
+          var hx = ox + side * uses.hubx;
+          var at = 0;
+          for (var gi = 0; gi < groups.length; gi++) {
+            var hy = oy + rows.hubs[gi];
 
-          // Along the sides the label reads outward; at the two ends of the
-          // ring it reads as a caption over or under it.
-          var dx = 0, dy = 0;
-          if (cc > 0.12) { ctx.textAlign = "left"; dx = px(6); }
-          else if (cc < -0.12) { ctx.textAlign = "right"; dx = -px(6); }
-          else { ctx.textAlign = "center"; }
-          if (Math.abs(cc) > 0.12) {
-            ctx.textBaseline = "middle";
-          } else {
-            ctx.textBaseline = ss > 0 ? "bottom" : "top";
-            dy = ss > 0 ? -px(4) : px(4);
+            // Hub to the brain, stopped on the parcels' own bound so the line
+            // meets the cloud rather than ending somewhere inside it.
+            var ang = Math.atan2(hy - oy, hx - ox);
+            ctx.strokeStyle = LINE; hairline(0.7); ctx.globalAlpha = 0.65;
+            ctx.beginPath();
+            ctx.moveTo(hx, hy);
+            ctx.lineTo(ox + Math.cos(ang) * RMAX * sc * 1.05,
+                       oy + Math.sin(ang) * ZMAX * sc * 1.05);
+            ctx.stroke();
+            ctx.globalAlpha = 0.8;
+            ctx.fillStyle = LINE;
+            ctx.beginPath(); ctx.arc(hx, hy, 2.1 * dpr, 0, 6.2832); ctx.fill();
+
+            for (var li = 0; li < groups[gi].length; li++) {
+              var y = oy + rows.ys[at], x = ox + side * uses.colx;
+              at++;
+              ctx.strokeStyle = LINE; hairline(0.6); ctx.globalAlpha = 0.5;
+              ctx.beginPath();
+              ctx.moveTo(hx, hy); ctx.lineTo(x, y); ctx.stroke();
+              ctx.globalAlpha = 0.7;
+              ctx.fillStyle = LINE;
+              ctx.beginPath(); ctx.arc(x, y, 1.5 * dpr, 0, 6.2832); ctx.fill();
+              ctx.globalAlpha = 1;
+              ctx.textAlign = side > 0 ? "left" : "right";
+              ctx.textBaseline = "middle";
+              ctx.font = "500 " + uses.fs + "px ui-sans-serif, system-ui, sans-serif";
+              ctx.fillStyle = INK2;
+              ctx.fillText(groups[gi][li], x + side * px(6), y);
+            }
           }
-          ctx.font = "500 " + ring.fs + "px ui-sans-serif, system-ui, sans-serif";
-          ctx.fillStyle = INK2;
-          ctx.fillText(USES[u], x1r + dx, y1r + dy);
         }
+        ctx.globalAlpha = 1;
       }
 
       var ms = Math.max(15, Math.min(34, (W / dpr) * 0.037)) * dpr;
@@ -452,11 +476,12 @@
       var sceneW = sceneOnly ? W : W * 0.30;
       var midX = W * 0.335, rightX = W * 0.645;
       var rightW = W - rightX - 8 * dpr;
-      var ring = ringed ? ringGeom(W, H) : null;
-      var sc = ring
-        // Inside the ring: the brain takes the room the labels leave, which is
-        // wide and short, so the two axes are constrained separately.
-        ? Math.min(ring.rx * 0.52 / RMAX, ring.ry * 0.76 / ZMAX)
+      var uses = annotated ? usesGeom(W, H) : null;
+      var sc = uses
+        // Between the columns: the brain takes the room the labels leave,
+        // which is wider than it is tall, so the two axes are constrained
+        // separately.
+        ? Math.min(uses.hubx * 0.80 / RMAX, H * 0.46 / ZMAX)
         : sceneOnly
         ? Math.min(H / 1.3, W / 2.05)
         // Sized from what is actually drawn: the parcels span about 1.2 units
@@ -513,8 +538,8 @@
           // Inside the ring the brain is a third of the frame, where the
           // hero's alpha put the tracts below the threshold of being seen at
           // all -- the same reason the annotated diagrams draw them stronger.
-          var base = (sceneOnly && !ring) ? (0.045 + 0.16 * EW[e / 2] * mid)
-                                          : (0.13 + 0.34 * EW[e / 2] * mid);
+          var base = (sceneOnly && !uses) ? (0.045 + 0.16 * EW[e / 2] * mid)
+                                           : (0.13 + 0.34 * EW[e / 2] * mid);
           ctx.globalAlpha = base * em;
           ctx.beginPath();
           ctx.moveTo(xs[ea], ys[ea]);
@@ -532,7 +557,7 @@
           ctx.globalAlpha = on ? (0.45 + 0.5 * t) : 0.07;
           ctx.fillStyle = on ? accent : FAINT;
         } else {
-          ctx.globalAlpha = lit[jj] ? (ring ? 0.5 : 0.34) + 0.5 * t : 0.10;
+          ctx.globalAlpha = lit[jj] ? (uses ? 0.5 : 0.34) + 0.5 * t : 0.10;
           ctx.fillStyle = lit[jj] ? COOL : FAINT;
         }
         ctx.beginPath();
@@ -542,7 +567,7 @@
       }
       ctx.globalAlpha = 1;
 
-      if (ringed) drawMark(ox, oy, W, H, ring);
+      if (annotated) drawMark(ox, oy, W, H, uses, sc);
 
       // Everything past this point is annotation. The hero has none of it.
       if (sceneOnly) return;

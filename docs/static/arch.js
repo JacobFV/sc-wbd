@@ -32,7 +32,7 @@
   // Read from the page, not hardcoded, so the drawing follows the device's
   // light/dark preference. A canvas cannot inherit CSS, so the values are
   // resolved at draw time.
-  var INK, LINE, FAINT, WARM, COOL;
+  var INK, INK2, LINE, FAINT, WARM, COOL, GROUND;
   function readTheme() {
     var cs = getComputedStyle(document.documentElement);
     function v(name, fallback) {
@@ -40,12 +40,80 @@
       return got || fallback;
     }
     INK   = v("--ink", "#27262b");
+    INK2  = v("--ink-2", "#55575c");
     LINE  = v("--ink-3", "#8c9bad");
     FAINT = v("--rule", "#c3ccd6");
+    // What the canvas sits on. Used only to halo the mark where it crosses the
+    // connectome; a filled plate there would read as a card over the brain.
+    GROUND = v("--bg", "#ffffff");
     // The two signal hues stay constant across themes: they encode attachment
     // kind, which does not change with the lighting.
     COOL = "#5b7fa6";
     WARM = "#c8874a";
+  }
+
+  /* --------------------------------------------------- what the model is for
+   *
+   * Two columns flanking the brain on a canvas that carries
+   * `data-uses="on"`, each a few constellations rather than one list. Same
+   * groups, same order, as LEFT and RIGHT in scripts/render_mark.py, which
+   * draws them around the paper's cover figure: the page and the cover are one
+   * drawing stated in two media.
+   *
+   * Below USES_MIN_W the columns are not drawn at all -- on a phone they are
+   * two stacks of 6px type either side of a thumbnail, which is a texture
+   * rather than a list, and the sections below say the same thing in prose. */
+  var MARK = "SC-WBD-003";
+  var USES_MIN_W = 620;                 // CSS px of canvas width
+  var LEFT = [
+    ["neural state estimation",
+     "whole-brain forecasting",
+     "cross-modal prediction",
+     "EEG source inference"],
+    ["EEG computer control",
+     "neural error detection",
+     "motor-intent decoding",
+     "language decoding",
+     "cognitive-state decoding"],
+    ["individualized brain mapping",
+     "functional network mapping",
+     "connectivity inference"]
+  ];
+  var RIGHT = [
+    ["perturbation forecasting",
+     "TMS target selection",
+     "TMS response prediction",
+     "tFUS target selection",
+     "tFUS response prediction"],
+    ["closed-loop neuromodulation",
+     "neurofeedback control",
+     "cognitive intervention design"],
+    ["longitudinal brain modeling",
+     "personalized digital twins",
+     "behavioral forecasting"]
+  ];
+  var GAP = 0.62;                       // extra pitch between clusters
+
+  /* The y offset of every label in a column, and of each cluster's hub, in
+   * units of `pitch` and centred on zero. The two columns hold 12 labels and
+   * 11; hanging both from a common top would end the shorter one half a
+   * cluster above the other for no reason a reader could name. */
+  function columnRows(groups, pitch) {
+    var slots = [], s = 0, gi, k;
+    for (gi = 0; gi < groups.length; gi++) {
+      if (gi) s += GAP;
+      for (k = 0; k < groups[gi].length; k++) { slots.push(s); s += 1; }
+    }
+    var half = (s - 1) / 2;
+    var ys = slots.map(function (q) { return (q - half) * pitch; });
+    var hubs = [], at = 0;
+    for (gi = 0; gi < groups.length; gi++) {
+      var sum = 0;
+      for (k = 0; k < groups[gi].length; k++) sum += ys[at + k];
+      hubs.push(sum / groups[gi].length);
+      at += groups[gi].length;
+    }
+    return { ys: ys, hubs: hubs };
   }
 
   // Attachment kinds, in the order the schema declares them.
@@ -116,6 +184,24 @@
     // `data-panels="scene"` draws the anatomy alone -- no category fan, no
     // pipeline. The hero wants the object, not the annotated diagram.
     var sceneOnly = canvas.getAttribute("data-panels") === "scene";
+    var annotated = sceneOnly && canvas.getAttribute("data-uses") === "on";
+
+    /* How far the parcels reach, as bounds that do not depend on yaw.
+     *
+     * The ring fits the brain to the space inside it, and the brain turns. Fit
+     * it to the CURRENT projected extent and it would breathe in and out once
+     * per revolution; these two bounds hold for every yaw, so the scale is set
+     * once and the drawing sits still. */
+    var RMAX = 0, ZMAX = 0;
+    (function () {
+      var sp = Math.abs(Math.sin(pitch)), cp = Math.abs(Math.cos(pitch));
+      for (var q = 0; q < N; q++) {
+        var r = Math.hypot(P[q * 3], P[q * 3 + 1]), z = Math.abs(P[q * 3 + 2]);
+        if (r > RMAX) RMAX = r;
+        if (r * sp + z * cp > ZMAX) ZMAX = r * sp + z * cp;
+      }
+      RMAX = RMAX || 1; ZMAX = ZMAX || 1;
+    })();
 
     function resize() {
       var r = canvas.getBoundingClientRect();
@@ -269,6 +355,113 @@
     }
 
 
+    /* Where the two columns sit on a canvas this size, or null if they do not
+     * fit. `colx` is what is left after the widest label, measured rather than
+     * assumed: "cognitive intervention design" is twice the width of "language
+     * decoding" and the columns have to clear the longer one.
+     *
+     * Cached on the size: the canvas redraws every frame while the brain turns
+     * and none of this changes between frames. */
+    var usesCache = null;
+    function usesGeom(W, H) {
+      if (usesCache && usesCache.W === W && usesCache.H === H) return usesCache.g;
+      var g = null;
+      if (W / dpr >= USES_MIN_W) {
+        var fs = Math.max(10.5, Math.min(13.5, (W / dpr) * 0.0132)) * dpr;
+        ctx.font = "500 " + fs + "px ui-sans-serif, system-ui, sans-serif";
+        var widest = 0, i, j;
+        for (i = 0; i < LEFT.length; i++) {
+          for (j = 0; j < LEFT[i].length; j++) {
+            widest = Math.max(widest, ctx.measureText(LEFT[i][j]).width);
+          }
+        }
+        for (i = 0; i < RIGHT.length; i++) {
+          for (j = 0; j < RIGHT[i].length; j++) {
+            widest = Math.max(widest, ctx.measureText(RIGHT[i][j]).width);
+          }
+        }
+        var colx = W * 0.5 - widest - px(12);
+        // Twelve labels and two cluster gaps have to fit the height, and no
+        // row should be tighter than the type in it.
+        var pitch = Math.min((H - fs * 2) / (11 + 2 * GAP), fs * 2.1);
+        if (colx > W * 0.16 && pitch > fs * 1.25) {
+          g = {
+            colx: colx, hubx: colx * 0.85, fs: fs,
+            left: columnRows(LEFT, pitch), right: columnRows(RIGHT, pitch)
+          };
+        }
+      }
+      usesCache = { W: W, H: H, g: g };
+      return g;
+    }
+
+    /* The name over the middle, and the use cases either side of it.
+     *
+     * Stroked in the page's own ground rather than plated: the canvas is
+     * transparent so the section shows through, and a filled rectangle here
+     * would read as a card laid over the connectome. */
+    function drawMark(ox, oy, W, H, uses, sc) {
+      if (uses) {
+        var sides = [
+          { s: -1, groups: LEFT, rows: uses.left },
+          { s: 1, groups: RIGHT, rows: uses.right }
+        ];
+        for (var si = 0; si < sides.length; si++) {
+          var side = sides[si].s, groups = sides[si].groups, rows = sides[si].rows;
+          var hx = ox + side * uses.hubx;
+          var at = 0;
+          for (var gi = 0; gi < groups.length; gi++) {
+            var hy = oy + rows.hubs[gi];
+
+            // Hub to the brain, stopped on the parcels' own bound so the line
+            // meets the cloud rather than ending somewhere inside it.
+            var ang = Math.atan2(hy - oy, hx - ox);
+            ctx.strokeStyle = LINE; hairline(0.7); ctx.globalAlpha = 0.65;
+            ctx.beginPath();
+            ctx.moveTo(hx, hy);
+            ctx.lineTo(ox + Math.cos(ang) * RMAX * sc * 1.05,
+                       oy + Math.sin(ang) * ZMAX * sc * 1.05);
+            ctx.stroke();
+            ctx.globalAlpha = 0.8;
+            ctx.fillStyle = LINE;
+            ctx.beginPath(); ctx.arc(hx, hy, 2.1 * dpr, 0, 6.2832); ctx.fill();
+
+            for (var li = 0; li < groups[gi].length; li++) {
+              var y = oy + rows.ys[at], x = ox + side * uses.colx;
+              at++;
+              ctx.strokeStyle = LINE; hairline(0.6); ctx.globalAlpha = 0.5;
+              ctx.beginPath();
+              ctx.moveTo(hx, hy); ctx.lineTo(x, y); ctx.stroke();
+              ctx.globalAlpha = 0.7;
+              ctx.fillStyle = LINE;
+              ctx.beginPath(); ctx.arc(x, y, 1.5 * dpr, 0, 6.2832); ctx.fill();
+              ctx.globalAlpha = 1;
+              ctx.textAlign = side > 0 ? "left" : "right";
+              ctx.textBaseline = "middle";
+              ctx.font = "500 " + uses.fs + "px ui-sans-serif, system-ui, sans-serif";
+              ctx.fillStyle = INK2;
+              ctx.fillText(groups[gi][li], x + side * px(6), y);
+            }
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      var ms = Math.max(15, Math.min(34, (W / dpr) * 0.037)) * dpr;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "700 " + ms + "px ui-sans-serif, system-ui, sans-serif";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = ms * 0.30;
+      ctx.strokeStyle = GROUND;
+      ctx.globalAlpha = 0.92;
+      ctx.strokeText(MARK, ox, oy);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = INK;
+      ctx.fillText(MARK, ox, oy);
+      ctx.textAlign = "left";
+    }
+
     function draw() {
       readTheme();
       var W = canvas.width, H = canvas.height;
@@ -283,7 +476,13 @@
       var sceneW = sceneOnly ? W : W * 0.30;
       var midX = W * 0.335, rightX = W * 0.645;
       var rightW = W - rightX - 8 * dpr;
-      var sc = sceneOnly
+      var uses = annotated ? usesGeom(W, H) : null;
+      var sc = uses
+        // Between the columns: the brain takes the room the labels leave,
+        // which is wider than it is tall, so the two axes are constrained
+        // separately.
+        ? Math.min(uses.hubx * 0.80 / RMAX, H * 0.46 / ZMAX)
+        : sceneOnly
         ? Math.min(H / 1.3, W / 2.05)
         // Sized from what is actually drawn: the parcels span about 1.2 units
         // across and the cord takes the scene down to -2.7, so 3.6 units of
@@ -336,8 +535,11 @@
           // The annotated diagrams draw the same connectome at a third of the
           // hero's scale, where the hero's alpha put it below the threshold of
           // being visible at all. Stronger where the drawing is smaller.
-          var base = sceneOnly ? (0.045 + 0.16 * EW[e / 2] * mid)
-                               : (0.13 + 0.34 * EW[e / 2] * mid);
+          // Inside the ring the brain is a third of the frame, where the
+          // hero's alpha put the tracts below the threshold of being seen at
+          // all -- the same reason the annotated diagrams draw them stronger.
+          var base = (sceneOnly && !uses) ? (0.045 + 0.16 * EW[e / 2] * mid)
+                                           : (0.13 + 0.34 * EW[e / 2] * mid);
           ctx.globalAlpha = base * em;
           ctx.beginPath();
           ctx.moveTo(xs[ea], ys[ea]);
@@ -355,7 +557,7 @@
           ctx.globalAlpha = on ? (0.45 + 0.5 * t) : 0.07;
           ctx.fillStyle = on ? accent : FAINT;
         } else {
-          ctx.globalAlpha = lit[jj] ? (0.34 + 0.5 * t) : 0.10;
+          ctx.globalAlpha = lit[jj] ? (uses ? 0.5 : 0.34) + 0.5 * t : 0.10;
           ctx.fillStyle = lit[jj] ? COOL : FAINT;
         }
         ctx.beginPath();
@@ -364,6 +566,8 @@
         ctx.fill();
       }
       ctx.globalAlpha = 1;
+
+      if (annotated) drawMark(ox, oy, W, H, uses, sc);
 
       // Everything past this point is annotation. The hero has none of it.
       if (sceneOnly) return;

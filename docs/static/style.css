@@ -1033,6 +1033,31 @@ body.release .pagehead { border-bottom: 0; padding-bottom: 0.5rem; margin-bottom
   }
 }
 
+/* `herowide` un-splits the hero: text across the measure, then the figure
+ * underneath at the full width.
+ *
+ * The hero canvas carries the ring of twenty-three use cases around the mark.
+ * Half the grid is about 450px, and twenty-three labels around a 450px ellipse
+ * are 6px type; arch.js draws no ring below 620px and would fall back to the
+ * bare brain in the split. The ring is the point of the figure, so the figure
+ * gets the width. */
+.herosplit.herowide {
+  display: block;
+  max-width: calc(var(--measure) + var(--margin-col) + 1.6rem);
+}
+.herosplit.herowide .lede { max-width: var(--measure); }
+.herosplit.herowide .archhero {
+  width: 100%;
+  margin: 1.7rem 0 0.3rem;
+  aspect-ratio: 2.6 / 1;
+  max-height: none;
+}
+/* Under the ring's cutoff the canvas is the brain and the mark alone, and a
+ * 2.6:1 letterbox of it is mostly ground. */
+@media (max-width: 46rem) {
+  .herosplit.herowide .archhero { aspect-ratio: 5 / 4; }
+}
+
 /* The three ways in, as glyph-and-label links rather than a button bar, one
  * per line. Inline they read as a toolbar; stacked they read as three doors.
  * The hero carries the title, the object, one paragraph and these; anything
