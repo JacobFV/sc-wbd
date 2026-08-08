@@ -1999,6 +1999,7 @@ class FoundationTrainer:
             stage=stage,
             posterior=self.posterior,
             individualizer=self.individualizer,
+            tms_drive=self.tms_drive,
             metrics={**(metrics or {}), "stage_step": step, "completed_stages": self.completed_stages},
             extra={
                 "anatomy": self.anat.summary(),
@@ -2025,8 +2026,18 @@ class FoundationTrainer:
         p = self.out_dir / "last.pt"
         if not p.exists():
             return
+        # `build_data` constructs `tms_drive`, so resume must happen after it or
+        # the drive is None here and its weights are silently not restored --
+        # the training would resume with a re-initialised pulse and nothing
+        # would say so. `load_checkpoint` records `tms_drive_absent` either way.
+        self.build_data()
         payload = load_checkpoint(
-            p, model=self.model, posterior=self.posterior, map_location=str(self.device), strict=False
+            p,
+            model=self.model,
+            posterior=self.posterior,
+            tms_drive=self.tms_drive,
+            map_location=str(self.device),
+            strict=False,
         )
         self.global_step = int(payload.get("step", 0))
         self.completed_stages = list(payload.get("metrics", {}).get("completed_stages", []))

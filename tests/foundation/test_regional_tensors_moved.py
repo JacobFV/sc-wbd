@@ -57,6 +57,13 @@ def _load(path: Path) -> dict:
 
 
 def _moved(ck: dict) -> dict:
+    # An architecture-only checkpoint is written before any step, purely to give
+    # `test_card_patterns_reach_the_model` a set of parameter names to match the
+    # cards against. Nothing in it has moved and nothing should have; asking
+    # this question of it is a category error, not a finding. It says so in its
+    # own `stage` field rather than being recognised by filename.
+    if ck.get("stage") == "architecture_only":
+        pytest.skip("architecture-only checkpoint: written before any training step")
     rep = (ck.get("extra") or {}).get("moved_since_init")
     if not rep:
         pytest.skip(

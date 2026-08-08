@@ -69,6 +69,7 @@ def save_checkpoint(
     scheduler: Any = None,
     posterior: torch.nn.Module | None = None,
     individualizer: torch.nn.Module | None = None,
+    tms_drive: torch.nn.Module | None = None,
     normalizer_state: Mapping[str, Any] | None = None,
     metrics: Mapping[str, Any] | None = None,
     manifest: ClaimManifest | None = None,
@@ -102,6 +103,12 @@ def save_checkpoint(
         "scheduler": scheduler.state_dict() if scheduler is not None else None,
         "posterior": posterior.state_dict() if posterior is not None else None,
         "individualizer": individualizer.state_dict() if individualizer is not None else None,
+        # The learned TMS drive. It is NOT part of `model`: it is built beside
+        # the perturbation corpus and only when that corpus is on disk, so it
+        # needs its own slot or its weights are trained and then dropped on
+        # save. Its four tensors are the amplitude and the profile over motor
+        # parcels -- the whole learned content of "what a pulse does".
+        "tms_drive": tms_drive.state_dict() if tms_drive is not None else None,
         "normalizer": dict(normalizer_state or {}),
         "metrics": dict(metrics or {}),
         "rng": _rng_state() if save_rng else None,
@@ -147,6 +154,7 @@ def load_checkpoint(
     scheduler: Any = None,
     posterior: torch.nn.Module | None = None,
     individualizer: torch.nn.Module | None = None,
+    tms_drive: torch.nn.Module | None = None,
     map_location: str = "cpu",
     strict: bool = True,
     restore_rng: bool = True,
@@ -171,7 +179,11 @@ def load_checkpoint(
     # distinguish "loaded cleanly" from "was not there". A caller that gates on
     # load_report otherwise reads absence as success -- the silent-load failure,
     # one level up.
-    for name, mod in (("posterior", posterior), ("individualizer", individualizer)):
+    for name, mod in (
+        ("posterior", posterior),
+        ("individualizer", individualizer),
+        ("tms_drive", tms_drive),
+    ):
         if mod is None:
             continue
         if not payload.get(name):

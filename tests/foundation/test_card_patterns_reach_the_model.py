@@ -131,7 +131,7 @@ def _state_keys() -> list[str]:
     for f in sorted(CKPT.parent.glob("stage_*.pt")):
         ck = torch.load(f, map_location="cpu", weights_only=False)
         keys += list((ck.get("model") or {}).keys())
-        for container in ("posterior", "individualizer"):
+        for container in ("posterior", "individualizer", "tms_drive"):
             sub = ck.get(container)
             if isinstance(sub, dict):
                 keys += [f"{container}.{k}" for k in sub]
@@ -154,7 +154,7 @@ def _all_architecture_keys() -> list[str]:
             continue
         ck = torch.load(f, map_location="cpu", weights_only=False)
         keys += list((ck.get("model") or {}).keys())
-        for container in ("posterior", "individualizer"):
+        for container in ("posterior", "individualizer", "tms_drive"):
             sub = ck.get(container)
             if isinstance(sub, dict):
                 keys += [f"{container}.{k}" for k in sub]
