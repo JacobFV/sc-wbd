@@ -67,6 +67,7 @@ def attachment_report(
     *,
     cards_dir: str | Path = "configs/curriculum/source_cards",
     channels_consumed: dict[str, tuple[str, ...]] | None = None,
+    contributed: "set[str] | None" = None,
 ) -> dict[str, Any]:
     """What each attachment kind's status is, derived from cards + checkpoint.
 
@@ -78,7 +79,15 @@ def attachment_report(
     cards = _load_cards(cards_dir)
     consumed = channels_consumed or DEFAULT_CHANNELS_CONSUMED
 
-    contributed: set[str] = set()
+    # `contributed` may be supplied by the caller. The launched run's
+    # checkpoints under-report it -- `_contributed.add` was called only from the
+    # loop added for run 3's sources, so `eegmmidb_real` and `ds002336_real`
+    # reach a loss without appearing in the list. `scripts/publish_003.py`
+    # reconstructs the true set from the training log and passes it here, rather
+    # than letting this report inherit a short list and conclude that the
+    # founding source contributed no observation.
+    contributed: set[str] = set(contributed) if contributed is not None else set()
+    caller_supplied = bool(contributed)
     moved: dict[str, dict[str, int]] = {}
     ckpt_path = None
     ckpt_step = None
@@ -87,7 +96,8 @@ def attachment_report(
 
         ck = torch.load(checkpoint, map_location="cpu", weights_only=False)
         extra = ck.get("extra") or {}
-        contributed = set(extra.get("contributed_sources") or [])
+        if not caller_supplied:
+            contributed = set(extra.get("contributed_sources") or [])
         moved = ((extra.get("moved_since_init") or {}).get("by_module")) or {}
         ckpt_path = str(checkpoint)
         ckpt_step = ck.get("step")

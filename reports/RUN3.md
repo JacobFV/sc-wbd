@@ -67,6 +67,36 @@ third cannot be, because stage 1 admits tier 1 only and no tier-1 loss reads its
 output. It should move in T4, when the simulator is admitted, and the results
 section will say whether it did.
 
+### Three of the four attachment kinds are exercised, measured on real weights
+
+Generated against the step-500 checkpoint by `make release-003-derived`:
+
+| kind | channels declared | feeding a loss | reached the model |
+| --- | ---: | ---: | --- |
+| `observation` | 8 | 7 | **yes** |
+| `stimulus` | 2 | 1 | **yes** |
+| `boundary_output` | 8 | 2 | **yes** |
+| `context` | 0 | 0 | no — **no card declares one** |
+
+This is the claim HANDOFF-003 step (f) asks for, and it is a different claim
+from "every enabled source contributed". Run 2 had every enabled source
+contributing and exercised **one** kind, because its source list was entirely
+observations while the landing page's schematic gave `boundary_output` equal
+billing.
+
+`context` is reported as absent rather than omitted. An attachment kind missing
+from a report reads as not-applicable and means untested; no enabled card
+declares a context channel, and slowly-varying conditioning — time of day,
+session index, drug state — is the one axis of the schema this register still
+has no source for.
+
+The counts that are *not* the headline: 7 of 8 observation channels feed a loss
+(the eighth is ds000113, disabled on licence), and only 2 of 8 boundary-output
+channels do. The other six are declared and unconsumed — ds004024's EMG, ECG and
+EOG, and ds000113's cardiac/respiratory and eye-gaze. The EMG in particular is
+*used*, to recover which M1 was stimulated, but a use is not a likelihood, and
+the report distinguishes `contributed` from `exercised` for exactly that reason.
+
 ### The contributed-source list under-reports, and the log is the corrective
 
 The checkpoint's `contributed_sources` names five of the seven measured sources.

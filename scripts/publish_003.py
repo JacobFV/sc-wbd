@@ -131,7 +131,13 @@ def main(argv: list[str] | None = None) -> int:
                   f"(weight {d.get('peak_weight'):.3f}) over {d.get('n_support_parcels')} parcels")
 
     # -- attachment kinds ------------------------------------------------
-    rep = attachment_report(ck_path, cards_dir=REPO / a.cards)
+    # Pass the reconstructed set, not the checkpoint's own: this run's
+    # checkpoints omit eegmmidb_real and ds002336_real, and letting the report
+    # re-read them would have it conclude that the founding source contributed
+    # no observation.
+    rep = attachment_report(
+        ck_path, cards_dir=REPO / a.cards, contributed=set(contributed)
+    )
     (REPO / "reports/attachment_kinds.json").write_text(
         json.dumps(rep, indent=2) + "\n", encoding="utf-8"
     )
