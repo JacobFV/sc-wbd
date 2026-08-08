@@ -213,7 +213,8 @@ the writing.
 
 Site is 10 pages and already leads with the system. `site/content/` -> build with
 `site/build.py` -> rsync `site/_build/` to `docs/` -> `npx wrangler pages deploy
-docs --project-name=sc-wbd`. `site/check.py` validates links first.
+docs --project-name=sc-wbd`. `site/check.py` validates links first. Those three
+steps are `make site`, `make site-stage`, `make site-deploy`.
 
 Results worth featuring, each already measured:
   - orientation: a per-parcel scalar carries 5.6% of the whitened EEG lead field,

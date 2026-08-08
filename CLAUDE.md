@@ -76,13 +76,20 @@ not because they are interesting.
   `configs/source_cards/` by **release**. They are not the same directory.
 - `site/content/` → `site/build.py` → `site/_build/` → rsync to `docs/` →
   `npx wrangler pages deploy docs --project-name=sc-wbd`. `site/check.py`
-  validates links first.
+  validates links first. Each arrow is a make target: `site`, `site-stage`,
+  `site-deploy`.
 - `paper/` builds with `make paper` (tectonic, at `~/.local/bin`).
 
 ## Commands
+
+`make help` lists every target, grouped. Names are `<area>` or
+`<area>-<action>` — `test-*`, `site-*`, `paper-*`, `video-*`, `release-*` — and
+the bare area name is the default one. The ones used daily:
 
     make health          is training alive / complete
     make test            fast suite (slow deselected)
     make test-slow       the rest; hours
     make paper           rebuild the PDF
     make site            build + link-check
+    make site-stage      copy the checked build into docs/, and diff it
+    make site-deploy     publish docs/ to Cloudflare Pages
