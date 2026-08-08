@@ -414,12 +414,36 @@
      * curves converge rather than meeting at a kink and continuing as one
      * line -- a corner there reads as a mistake, and the cluster is the claim
      * that these things are one kind of use, not that they share a wire. */
-    function cluster(names, xs, ys, align, cx, cy, tx, ty) {
+    function cluster(names, xs, ys, align, cx, cy, dx, dy) {
       var labels = [];
       for (var i = 0; i < names.length; i++) {
         labels.push({ x: xs[i], y: ys[i], t: names[i] });
       }
-      return { labels: labels, align: align, cx: cx, cy: cy, tx: tx, ty: ty };
+      // Direction, not a point: where the bundle lands is the brain's own
+      // outline in that direction, which changes as the brain turns, so it is
+      // found at draw time rather than stored here.
+      return { labels: labels, align: align, cx: cx, cy: cy, dx: dx, dy: dy };
+    }
+
+    /* How far the parcels reach from the centre along (dx, dy): the projected
+     * silhouette, not the bounding ellipse.
+     *
+     * The ellipse is a bound that holds at every yaw, so in most directions it
+     * stands well clear of the dots -- which is why the leader lines used to
+     * stop short of the brain with nothing in between. Only parcels within a
+     * narrow band of the ray count, so this is the outline along that ray and
+     * not the support point of the whole cloud. */
+    function reach(ox, oy, dx, dy, xs, ys) {
+      var band = 11 * dpr, best = 0, far = 0;
+      for (var i = 0; i < N; i++) {
+        var ax = xs[i] - ox, ay = ys[i] - oy;
+        var along = ax * dx + ay * dy;
+        if (along > far) far = along;
+        if (along <= best) continue;
+        if (Math.abs(ax * dy - ay * dx) > band) continue;
+        best = along;
+      }
+      return (best || far) + 3 * dpr;
     }
 
     function beside(W, H, ox, oy, fs, widest) {
@@ -442,9 +466,7 @@
           }
           var ang = Math.atan2(cy - oy, cx - ox);
           out.push(cluster(groups[gi], xs, ys, side > 0 ? "left" : "right",
-                           cx, cy,
-                           ox + Math.cos(ang) * RMAX * sc * 1.05,
-                           oy + Math.sin(ang) * ZMAX * sc * 1.05));
+                           cx, cy, Math.cos(ang), Math.sin(ang)));
         }
       });
       return { fs: fs, sc: sc, ms: mark(W, 0.037, 34), clusters: out };
@@ -456,19 +478,19 @@
       var spanB = columnSpan(RIGHT) * pitch;
       var pad = pitch * 1.6;
       var half = H / 2 - pad - Math.max(spanA, spanB) - fs * 0.9;
-      var blockW = widest + px(10);
-      if (W / dpr < 300 || half < fs * 2.6 || blockW > W * 0.86) return null;
+      var blockHalf = (widest + px(6)) / 2;
+      if (W / dpr < 300 || half < fs * 2.6 || blockHalf * 2 > W * 0.86) return null;
       var sc = Math.min(half / ZMAX, W * 0.46 / RMAX);
       var out = [];
-      [[-1, LEFT, oy - half - pad - spanA / 2],
-       [1, RIGHT, oy + half + pad + spanB / 2]].forEach(function (pair) {
-        var dir = pair[0], groups = pair[1], mid = pair[2];
+      // Above the brain the labels line up on their right edge and every
+      // bundle leaves rightwards; below, they line up on their left and leave
+      // leftwards. One aligned stack per block, one gutter per block.
+      [[-1, 1, LEFT, oy - half - pad - spanA / 2],
+       [1, -1, RIGHT, oy + half + pad + spanB / 2]].forEach(function (spec) {
+        var dir = spec[0], side = spec[1], groups = spec[2], mid = spec[3];
         var rows = columnRows(groups, pitch), at = 0;
+        var ax = ox + side * blockHalf;
         for (var gi = 0; gi < groups.length; gi++) {
-          // Alternating edges: the bundle leaves on the side its labels are
-          // anchored to, so it travels down a gutter and never crosses type.
-          var side = gi % 2 ? 1 : -1;
-          var ax = ox + side * blockW * 0.5;
           var xs = [], ys = [], edge = null;
           for (var li = 0; li < groups[gi].length; li++) {
             var y = mid + rows.ys[at]; at++;
@@ -477,15 +499,13 @@
             // it, not through the middle of the block.
             if (edge === null || (dir < 0 ? y > edge : y < edge)) edge = y;
           }
-          // Where this cluster lands on the brain, as an angle off vertical:
-          // the far cluster comes in wide, the near one nearly straight down,
-          // so three bundles from one side arrive at three places instead of
-          // piling into one.
-          var off = 0.95 - 0.45 * (groups.length > 1 ? gi / (groups.length - 1) : 0);
+          // How far off vertical this cluster comes in: the far one wide, the
+          // near one nearly straight, so three bundles from one block arrive
+          // at three places instead of piling into one.
+          var off = 1.15 - 0.75 * (groups.length > 1 ? gi / (groups.length - 1) : 0);
           out.push(cluster(groups[gi], xs, ys, side > 0 ? "right" : "left",
-                           ax + side * px(15), edge - dir * pitch * 1.4,
-                           ox + side * Math.sin(off) * RMAX * sc * 1.05,
-                           oy + dir * Math.cos(off) * ZMAX * sc * 1.05));
+                           ax + side * px(18), edge - dir * pitch * 1.2,
+                           side * Math.sin(off), dir * Math.cos(off)));
         }
       });
       return { fs: fs, sc: sc, ms: mark(W, 0.055, 30), clusters: out };
@@ -496,18 +516,20 @@
      * Stroked in the page's own ground rather than plated: the canvas is
      * transparent so the section shows through, and a filled rectangle here
      * would read as a card laid over the connectome. */
-    function drawMark(ox, oy, W, H, uses) {
+    function drawMark(ox, oy, W, H, uses, xs, ys) {
       if (uses) {
         ctx.font = "500 " + uses.fs + "px ui-sans-serif, system-ui, sans-serif";
         ctx.textBaseline = "middle";
         for (var ci = 0; ci < uses.clusters.length; ci++) {
           var k = uses.clusters[ci], side = k.align === "left" ? 1 : -1;
+          var r = reach(ox, oy, k.dx, k.dy, xs, ys);
+          var tx = ox + k.dx * r, ty = oy + k.dy * r;
           for (var li = 0; li < k.labels.length; li++) {
             var L = k.labels[li];
             ctx.strokeStyle = LINE; hairline(0.6); ctx.globalAlpha = 0.6;
             ctx.beginPath();
             ctx.moveTo(L.x, L.y);
-            ctx.quadraticCurveTo(k.cx, k.cy, k.tx, k.ty);
+            ctx.quadraticCurveTo(k.cx, k.cy, tx, ty);
             ctx.stroke();
             ctx.globalAlpha = 0.7;
             ctx.fillStyle = LINE;
@@ -639,7 +661,7 @@
       }
       ctx.globalAlpha = 1;
 
-      if (annotated) drawMark(ox, oy, W, H, uses);
+      if (annotated) drawMark(ox, oy, W, H, uses, xs, ys);
 
       // Everything past this point is annotation. The hero has none of it.
       if (sceneOnly) return;

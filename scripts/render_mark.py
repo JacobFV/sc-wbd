@@ -96,6 +96,20 @@ BX, BZ = 1.44, 1.16            # the ellipse the projected brain is fitted into
 XLIM, YLIM = 4.90, 1.82
 
 
+def reach(dx: float, dy: float, x1: np.ndarray, z2: np.ndarray) -> float:
+    """How far the parcels reach from the centre along ``(dx, dy)``.
+
+    The silhouette along that ray, not the fitted ellipse: the ellipse is a
+    bound, so in most directions it stands clear of the dots and a leader line
+    stopped on it ends in white space with the brain still some way off. Only
+    parcels within a narrow band of the ray count.
+    """
+    along = x1 * dx + z2 * dy
+    near = np.abs(x1 * dy - z2 * dx) < 0.11
+    r = float(along[near].max()) if near.any() else float(along.max())
+    return r + 0.03
+
+
 def column_rows(groups: list[list[str]]) -> tuple[list[float], list[float]]:
     """The y of every label in a column, and of each cluster's hub.
 
@@ -232,10 +246,12 @@ def main() -> int:
         at = 0
         for g, hy in zip(groups, hubs):
             hx = side * HUB
-            # Where the bundle lands: on the fitted ellipse, so it meets the
-            # parcels rather than ending somewhere inside them.
+            # Where the bundle lands: just off the brain's own outline in
+            # the direction the cluster comes from.
             ang = np.arctan2(hy, hx)
-            tx, ty = np.cos(ang) * BX * 1.03, np.sin(ang) * BZ * 1.03
+            dx, dy = float(np.cos(ang)), float(np.sin(ang))
+            r = reach(dx, dy, x1, z2)
+            tx, ty = dx * r, dy * r
             for name in g:
                 y = ys[at]
                 at += 1
