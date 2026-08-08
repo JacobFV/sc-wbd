@@ -308,6 +308,42 @@ now **skipped rather than passing**, which is visible rather than silent, and
 needs no repair — only the awareness that a green run of that file is not
 evidence about the `_orig_mod.` defect any more.
 
+## The behavioural head is predicting the majority class
+
+Through step 240 the boundary-output term looks like it is learning and is not.
+`behaviour_choice_ce` falls from 0.641 to 0.145 across the logged steps, which
+reads as a head that has found something. Set the accuracy beside the
+majority-class rate on the same batches:
+
+    accuracy       1.00 0.50 1.00 0.75 1.00 0.75 0.75 1.00 0.75 1.00 1.00 1.00 0.75
+    majority rate  1.00 0.75 1.00 0.75 1.00 0.75 0.75 1.00 0.75 1.00 1.00 1.00 0.75
+
+They are identical in 12 of 13 logged steps, and in the thirteenth the head does
+**worse** than the prior. The cross-entropy is not tracking learning; it is
+tracking how many of that step's four episodes happened to be the majority
+class. Mean CE 0.480 (sd 0.220) sits near the 0.460 a constant majority-class
+predictor scores on this source's 105/22 split, not near the 0.693 of a coin.
+
+`behaviour_majority_rate` is logged beside the accuracy precisely so this could
+not pass unnoticed — the card says "an accuracy read without it looks like
+learning when it is the prior" — and on first reading of the run I made exactly
+that error anyway before the diagnostic caught it.
+
+Two things bound this term by construction, both worth stating before any
+result is read off it:
+
+* **four episodes per step.** The behaviour loader takes `batch // 8`, and
+  `batch` is 8, so each step scores four trials. Single-step values are close to
+  meaningless.
+* **two participants**, with unbalanced buttons. Nothing here can support a
+  population-level behavioural claim, and the card already says so.
+
+Whether this changes over 13,400 steps is an open question and the results
+section will answer it from the final checkpoint. What is settled now is that
+the attachment *reaches* the model and receives gradient — which is what run 3
+set out to establish — and that "reaches the model" is not "predicts the
+behaviour".
+
 ## Test suite state after run 3's changes
 
 `pytest tests/foundation`, measured while training was running — so the timings
