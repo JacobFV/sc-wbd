@@ -368,16 +368,44 @@ class FoundationTrainer:
             for k, v in now.items()
             if k in self.init_fingerprint and self.init_fingerprint[k] != v
         }
+        # Sizes, so the headline can be quoted in PARAMETERS. Counting tensors
+        # answers a different question and answers it misleadingly: run 3's
+        # frozen set is 139 of 382 tensors (36%) and 137,711 of 26,304,808
+        # parameters (0.5%), because the never-trained tensors are small ones --
+        # `source_proj`, which the vector lead-field path bypasses, and the
+        # per-family readout heads. Run 2's published figure is a PARAMETER
+        # count (88.7% unreachable), so a tensor count set beside it is an
+        # apples-to-oranges comparison, and the one it flatters is run 2.
+        sizes: dict[str, int] = {}
+        for prefix, mod in (
+            ("model", self.model),
+            ("posterior", self.posterior),
+            ("tms_drive", getattr(self, "tms_drive", None)),
+        ):
+            if mod is None:
+                continue
+            for name, p in mod.named_parameters():
+                sizes[name if prefix == "model" else f"{prefix}.{name}"] = int(p.numel())
         frozen = sorted(set(now) - moved)
         by_module: dict[str, dict[str, int]] = {}
         for k in now:
             top = k.split(".")[0]
             e = by_module.setdefault(top, {"moved": 0, "frozen": 0})
             e["moved" if k in moved else "frozen"] += 1
+        n_par_total = sum(sizes.get(k, 0) for k in now)
+        n_par_moved = sum(sizes.get(k, 0) for k in moved)
         return {
+            # TENSOR counts. Kept because a wholly-frozen module is a tensor-level
+            # fact, but never the headline -- see `parameters_moved` below.
             "n_parameters": len(now),
             "n_moved": len(moved),
             "n_frozen": len(frozen),
+            # PARAMETER counts. This is the unit run 2's 88.7% is quoted in, and
+            # therefore the only one that may be set beside it.
+            "parameters_total": n_par_total,
+            "parameters_moved": n_par_moved,
+            "parameters_frozen": n_par_total - n_par_moved,
+            "fraction_parameters_moved": (n_par_moved / n_par_total) if n_par_total else 0.0,
             "by_module": by_module,
             "frozen_tensors": frozen[:200],
             # Should always be empty. Non-empty means a module was built after

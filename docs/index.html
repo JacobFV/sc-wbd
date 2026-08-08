@@ -356,18 +356,24 @@ or download.</p>
   boundary_output, context. Every source in run 2 was an observation, so three of
   the four were untested while the schematic above gave them equal billing. Run 3
   exercises three; <code>context</code> still has no source and the run's report
-  says so rather than omitting it.</span></span> Measured mid-run, at step 500 of 13,400:
-  the defect run 2 shipped with is fixed. <strong>243 of its 382 parameter
-  tensors have moved off their initialisation — 63.6%, against run 2's
-  11.2%</strong> — including the entire family-indexed regional model that is
-  the treatment arm's whole thesis, at 137 of 137 and 32 of 32.<span class="note"><input type="checkbox" id="index-n11" class="note-toggle"><label for="index-n11" class="note-ref">11</label><span class="note-body"><span class="note-n">11</span>Measured
+  says so rather than omitting it.</span></span> Measured at the end of its founding stage,
+  step 4,000 of 13,400: the defect run 2 shipped with is fixed.
+  <strong>99.5% of its parameters have moved off their initialisation, against
+  run 2's 11.3%</strong> — including the entire family-indexed regional model
+  that is the treatment arm's whole thesis, every tensor of it.<span class="note"><input type="checkbox" id="index-n11" class="note-toggle"><label for="index-n11" class="note-ref">11</label><span class="note-body"><span class="note-n">11</span>Measured
   by hashing every parameter before the first step and comparing, so the answer
-  is a bit comparison rather than a threshold somebody chose. One module,
-  <code>family_readout</code>, is deliberately still at its initialisation: no
-  measured source can train it, because scoring a per-parcel activity readout
-  needs ground-truth activity at the parcel and neither EEG nor BOLD has any.
-  That is recorded as a founding exemption alongside the amortised posterior,
-  which has the same problem for the same reason.</span></span> No score is claimed yet:
+  is a bit comparison rather than a threshold somebody chose. Quoted in
+  parameters because run 2's figure is: by <em>tensor</em> count run 3 is 243 of
+  382, which sounds far worse and is not comparable, because the tensors that
+  never train are small ones. Two groups make up almost all of the 0.5%. The
+  per-family activity readout cannot be trained by any measured source — scoring
+  it needs ground-truth activity at the parcel and neither EEG nor BOLD has any
+  — so it waits for the simulator stage, recorded as a founding exemption
+  alongside the amortised posterior. And each observation head's
+  <code>source_proj</code> is bypassed entirely: once a parcel carries a
+  3-vector moment it is observed through the vector lead field, which is the
+  whole point of the orientation result above, and the scalar projection it
+  replaces is left unreachable.</span></span> No score is claimed yet:
   this row gets held-out numbers and a leave-one-source-out result when the run
   finishes.<span class="note"><input type="checkbox" id="index-n12" class="note-toggle"><label for="index-n12" class="note-ref">12</label><span class="note-body"><span class="note-n">12</span>The ablation is leave-one-out specifically because it can
   return a null. The identifiability benchmark measured joint multirate
