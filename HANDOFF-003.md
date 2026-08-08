@@ -295,6 +295,40 @@ mechanical failures and the fact that individualisation was unmeasurable on its
 split. 003 gets a row in the same table, in the same terms, whatever it
 measures.
 
+=== WHAT THE HANDOFF-ERA WORKTREE SNAPSHOTS LEFT BEHIND ===
+
+Four agent worktrees were snapshotted as `wip(...)` commits at the 003 handoff
+and have now been merged into master, so there are no branches left to chase.
+Two merged whole. Two had genuine conflicts and were merged with master's side
+kept, which means real work from them did NOT land. It is named here rather
+than left for someone to rediscover:
+
+`wt/curie` -- three functions in `scwbd/foundation/train.py` were dropped:
+
+    bind_mechanistic_theta
+    smoke
+    stage_uses_real
+
+Master's trainer was kept because it carries `real_bold_losses`, `anat_losses`
+and `_whole_brain_hemo`, which curie's snapshot predates and which 003 needs.
+`stage_uses_real` is worth reading before writing `configs/run3/`: it is the
+shape of the check that 002's curriculum gating needed and did not have. Port
+it deliberately, do not merge the file.
+
+`wt/noether2` -- both master and that branch independently ADDED
+`scwbd/schema/support_algebra.py`, as two different implementations of the same
+idea with different public names (master: `relate`, `compose_psf`,
+`common_temporal_refinement`; noether2: `restriction_between`, `_compose_psf`,
+`common_refinement`). Master's is the one `tests/schema/test_support_algebra.py`
+imports, so master's was kept. Everything else from that branch is additive and
+did land: `carrier.py`, `annotations.py`, the `ElementSpec`/`ArityError`/
+`OntologyError` additions to `supports.py`, the two-montage benchmark, and
+`tests/schema/test_carrier_and_views.py`.
+
+To read what was dropped: `git show wt/curie:scwbd/foundation/train.py` and
+`git show wt/noether2:scwbd/schema/support_algebra.py`. The commits stay
+reachable from master through the merges.
+
 === THE ONE THING TO KNOW ABOUT 002 ===
 
 88.8% of its parameters could not receive a gradient — the modules were renamed
