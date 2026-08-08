@@ -34,6 +34,12 @@ not because they are interesting.
   test-slow` runs the rest.
 - **Read the whole error line, not the field you came for.** `exit=0` beside two
   `F` characters is a contradiction. `454` in a shape mismatch is not `62`.
+- **A same-length mutation can leave stale bytecode behind.** Python validates
+  a `.pyc` on `(size, mtime-seconds)`. `SIMULATOR_TIER = 4` → `= 1` → restore,
+  all inside one second, reuses the *mutant's* bytecode: the guard then "failed"
+  after the file was already restored, and the mutation result was not real.
+  Run mutation sweeps under `PYTHONDONTWRITEBYTECODE=1`, and always re-run the
+  restored file — a red on the restore means the sweep, not the guard.
 - **The artifact and the code that generates it are two objects.** Green tests
   on the generator say nothing about bytes already published. Diff published
   output against freshly generated output before republishing — a routine
