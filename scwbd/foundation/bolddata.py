@@ -76,6 +76,34 @@ class _Run:
 
 
 _ENT = re.compile(r"sub-([A-Za-z0-9]+).*?task-([A-Za-z0-9]+)")
+_RUN = re.compile(r"_run-([A-Za-z0-9]+)")
+_SES = re.compile(r"_ses-([A-Za-z0-9]+)")
+
+
+def _subject_root(bold: Path, sub: str) -> Path:
+    """The ``sub-<id>`` directory ``bold`` lives under."""
+    for p in bold.parents:
+        if p.name == f"sub-{sub}":
+            return p
+    return bold.parent.parent
+
+
+def _find_t1w(bold: Path, sub: str) -> Path | None:
+    """This subject's T1w, wherever in their tree it sits.
+
+    ds002336 puts it in an ``anat/`` sibling of ``func/``; ds000113 puts the
+    whole anatomy in a *different session* (``ses-forrestgump``) from the
+    functional runs (``ses-localizer``) and qualifies the filename with the
+    session. Searching the subject's own subtree covers both and cannot stray
+    into another participant, which is the only thing that must not happen here.
+    A sibling ``anat/`` is preferred when one exists so the previously-discovered
+    file stays the one chosen.
+    """
+    sibling = sorted((bold.parent.parent / "anat").glob(f"sub-{sub}*_T1w.nii*"))
+    if sibling:
+        return sibling[0]
+    found = sorted(_subject_root(bold, sub).rglob(f"sub-{sub}*_T1w.nii*"))
+    return found[0] if found else None
 
 
 def discover_bold_runs(cfg: ParcelBOLDConfig) -> list[_Run]:
@@ -92,19 +120,26 @@ def discover_bold_runs(cfg: ParcelBOLDConfig) -> list[_Run]:
         sub, task = m.group(1), m.group(2)
         if cfg.tasks and task not in cfg.tasks:
             continue
-        anat = bold.parent.parent / "anat"
-        t1w = next(iter(sorted(anat.glob(f"sub-{sub}_T1w.nii*"))), None)
+        t1w = _find_t1w(bold, sub)
         if t1w is None:
             # Recorded by omission rather than by imputing a template T1w: a
             # subject without their own anatomy cannot be registered to their
             # own brain, and substituting the template is the classic silent
             # several-mm error this whole path exists to avoid.
             continue
-        stem = f"sub-{sub}_task-{task}"
+        # Session and run enter the stem ONLY when the filename carries them, so
+        # every ds002336 cache entry keeps the name it was built under -- 55 runs
+        # at ~160 s each. They have to enter it for ds000113, where sub-02 has
+        # `task-retmapccw` at both run-1 and run-2 and a task-only stem would
+        # make the second run overwrite the first with no error anywhere.
+        ses = _SES.search(bold.name)
+        run = _RUN.search(bold.name)
+        label = task + (f"_run-{run.group(1)}" if run else "")
+        stem = f"sub-{sub}" + (f"_ses-{ses.group(1)}" if ses else "") + f"_task-{label}"
         out.append(
             _Run(
                 subject=sub,
-                task=task,
+                task=label,
                 bold=bold,
                 t1w=t1w,
                 cache_npy=cache / f"{stem}__{cfg.atlas}.npy",

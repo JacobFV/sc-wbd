@@ -1,0 +1,174 @@
+{
+  "source": "ds000113_real",
+  "atlas": "Schaefer400x7",
+  "n_runs": 20,
+  "n_parcellated": 20,
+  "n_failed": 0,
+  "coverage_min": 0.9875,
+  "coverage_max": 1.0,
+  "coverage_median": 1.0,
+  "total_seconds": 624.2,
+  "note": "7T localizer runs are an axial slab, not a whole brain. Low coverage here is the acquisition's field of view, not a registration failure; an uncovered parcel is NaN in the data and False in the mask.",
+  "runs": [
+    {
+      "subject": "01",
+      "run": "movielocalizer_run-1",
+      "coverage": 1.0,
+      "n_frames": 48,
+      "seconds": 173.2,
+      "cached": "built"
+    },
+    {
+      "subject": "01",
+      "run": "retmapccw_run-1",
+      "coverage": 1.0,
+      "n_frames": 90,
+      "seconds": 0.4,
+      "cached": "built"
+    },
+    {
+      "subject": "01",
+      "run": "retmapclw_run-1",
+      "coverage": 1.0,
+      "n_frames": 90,
+      "seconds": 0.4,
+      "cached": "built"
+    },
+    {
+      "subject": "01",
+      "run": "retmapcon_run-1",
+      "coverage": 1.0,
+      "n_frames": 90,
+      "seconds": 0.4,
+      "cached": "built"
+    },
+    {
+      "subject": "01",
+      "run": "retmapexp_run-1",
+      "coverage": 1.0,
+      "n_frames": 90,
+      "seconds": 0.4,
+      "cached": "built"
+    },
+    {
+      "subject": "02",
+      "run": "movielocalizer_run-1",
+      "coverage": 1.0,
+      "n_frames": 48,
+      "seconds": 121.7,
+      "cached": "built"
+    },
+    {
+      "subject": "02",
+      "run": "retmapccw_run-1",
+      "coverage": 0.9875,
+      "n_frames": 90,
+      "seconds": 0.6,
+      "cached": "built"
+    },
+    {
+      "subject": "02",
+      "run": "retmapccw_run-2",
+      "coverage": 0.9875,
+      "n_frames": 90,
+      "seconds": 0.6,
+      "cached": "built"
+    },
+    {
+      "subject": "02",
+      "run": "retmapclw_run-1",
+      "coverage": 0.9875,
+      "n_frames": 90,
+      "seconds": 0.6,
+      "cached": "built"
+    },
+    {
+      "subject": "02",
+      "run": "retmapclw_run-2",
+      "coverage": 0.9875,
+      "n_frames": 90,
+      "seconds": 0.5,
+      "cached": "built"
+    },
+    {
+      "subject": "02",
+      "run": "retmapcon_run-1",
+      "coverage": 0.9875,
+      "n_frames": 90,
+      "seconds": 0.5,
+      "cached": "built"
+    },
+    {
+      "subject": "02",
+      "run": "retmapcon_run-2",
+      "coverage": 0.9875,
+      "n_frames": 90,
+      "seconds": 0.5,
+      "cached": "built"
+    },
+    {
+      "subject": "02",
+      "run": "retmapexp_run-1",
+      "coverage": 0.9875,
+      "n_frames": 90,
+      "seconds": 0.6,
+      "cached": "built"
+    },
+    {
+      "subject": "02",
+      "run": "retmapexp_run-2",
+      "coverage": 0.9875,
+      "n_frames": 90,
+      "seconds": 0.5,
+      "cached": "built"
+    },
+    {
+      "subject": "03",
+      "run": "movielocalizer_run-1",
+      "coverage": 1.0,
+      "n_frames": 48,
+      "seconds": 174.3,
+      "cached": "built"
+    },
+    {
+      "subject": "03",
+      "run": "retmapccw_run-1",
+      "coverage": 1.0,
+      "n_frames": 90,
+      "seconds": 0.5,
+      "cached": "built"
+    },
+    {
+      "subject": "03",
+      "run": "retmapclw_run-1",
+      "coverage": 1.0,
+      "n_frames": 90,
+      "seconds": 0.6,
+      "cached": "built"
+    },
+    {
+      "subject": "03",
+      "run": "retmapcon_run-1",
+      "coverage": 1.0,
+      "n_frames": 90,
+      "seconds": 0.6,
+      "cached": "built"
+    },
+    {
+      "subject": "03",
+      "run": "retmapexp_run-1",
+      "coverage": 1.0,
+      "n_frames": 90,
+      "seconds": 0.5,
+      "cached": "built"
+    },
+    {
+      "subject": "04",
+      "run": "movielocalizer_run-1",
+      "coverage": 1.0,
+      "n_frames": 48,
+      "seconds": 146.9,
+      "cached": "built"
+    }
+  ]
+}
