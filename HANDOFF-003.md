@@ -10,12 +10,29 @@ It should roll the state forward, predict across modalities, and respond to a
 simulated intervention. That is the deliverable. Build it, train it, show what it
 predicts.
 
+The public site now leads with three capabilities in this order: modelling brain
+activity, simulating intervention responses, and fine-tuning to one person. 003
+answers the first. It answers the second ONLY AGAINST SIMULATION unless a
+perturbational source lands — see the next section — and the site already says
+so in the indicative: the field computations are validated, the map from field
+to neural response is not, "because no model here has been trained on
+stimulation data". Do not let 003 quietly upgrade that sentence.
+
+The third is DEFERRED TO 004 BY DECISION, not by oversight. 002's
+participant-disjoint split made individualisation unmeasurable by construction:
+no held-out person has a fitted person effect, so the between-participant spread
+of the applied theta shift is exactly 0.000e+00, and `subject_specific_ar` came
+out bit-identical to `ar16`. 003 inherits that split and therefore inherits that
+blind spot. When you meet the zero, it is the split, not a bug — do not spend a
+turn on it, and do not publish a claim that individualisation helps.
+
 === DATA ON DISK (do not re-download) ===
 
   eegmmidb  3.4G  64ch EEG, 109 subj, ODC-By        LOADER EXISTS (EEGMMIDBDataset)
   ds002336   18G  EEG+fMRI concurrent, 10 subj, CC0 LOADER EXISTS, parcel-space
   sim_corpus 49G + sim_corpus_414 44G               LOADER EXISTS
   sleep-edfx 7.1G 2 EEG derivations                 LOADER EXISTS (SleepEDFDataset)
+                  ENABLE THIS ONE. Tier 1, not filler -- see below.
   ds000117   11G  MEG+EEG+fMRI faces (Wakeman-Henson)   NO LOADER
   ds004024   28G  inspect it first                      NO LOADER
   ds000113  526M  7T fMRI, 116mm slab                   NO LOADER
@@ -25,6 +42,33 @@ Writing the three missing loaders is the bulk of the work. The fMRI ones reuse
 `scwbd/sources/parcellate_bold.py` plus the registration chain, already verified:
 55 runs, 10 subjects, coverage 0.89-1.00 per run, ~160 s/subject. A parcel outside
 the field of view is `NaN` in the data and `False` in the mask, never 0.0.
+
+TWO THINGS THE DATA LIST DOES NOT YET COVER, both of which the site and the
+paper now commit to in public:
+
+`boundary_output`. Table 3 of the paper gained a row for it and the landing
+page's schematic gives it equal billing with observation -- eye movements,
+typing, speech, heart rate, test answers. Nothing enabled today is one. ds000117
+carries button presses and ds004024 is unknown until inspected. At least one
+behavioural or peripheral stream must reach the model and show up in the
+contributed-gradient report, or the claim stands unexercised in a run that was
+supposed to exercise it. A stimulus stream is easier -- ds000117 is
+stimulus-driven by construction -- but a stimulus is not a boundary output and
+does not substitute for one.
+
+Perturbational data. There is none on disk. "Respond to a simulated
+intervention" therefore means simulation only, and `possibilities/` lists
+"the forward model cannot predict a perturbation it has not seen" as a live
+falsifier that 003 does NOT close. State that in 003's card in those terms.
+If ds004024 turns out to carry stimulation, that changes and is worth the
+detour; decide it during step (a), not after launching.
+
+`sleep-edfx` is load-bearing now, not filler. The landing page uses sleep as the
+worked example for intervention simulation -- slow-wave depth and timing being
+measurable the same night rather than in six weeks -- so the public copy has a
+concrete case with a corpus sitting behind it. Enable it at tier 1 and let it
+contribute gradient, or cut the example from the site. Do not leave the site
+claiming a case the run declined to touch.
 
 === SIZE: ~25M ===
 
@@ -106,6 +150,9 @@ one run across both boxes — nothing in `scwbd/foundation/` is distributed.
 a. Inspect ds004024 and ds000117. Decide what each contributes: modality, and
    attachment (stimulus / observation / boundary_output / context — the axis in
    `scwbd/schema/attachment.py`, which refuses an observation with no operator).
+   Two specific questions, not general ones: does either carry a
+   `boundary_output` stream, and does ds004024 carry perturbational data. Both
+   are commitments the site and paper already make in public.
 b. Write the three loaders.
 c. Source cards for the new datasets with real licence terms. Enable them.
 d. `configs/run3/` admitting every source, tier-ordered (1 measured -> 4 simulator
@@ -114,7 +161,10 @@ d. `configs/run3/` admitting every source, tier-ordered (1 measured -> 4 simulat
 e. Run the two checks above. Then a short smoke run. Then verify the regional
    tensors moved. THEN launch.
 f. Publish. The card must state which sources actually contributed gradient,
-   derived from the checkpoint rather than asserted.
+   derived from the checkpoint rather than asserted — and must state, per
+   attachment kind, whether anything of that kind reached the model at all.
+   "Every source contributes" is not the same claim as "every kind of signal
+   the schema declares was exercised", and only the second answers the page.
 
 === WHAT ALREADY WORKS (don't re-derive) ===
 
@@ -189,6 +239,11 @@ Everything else green, including tests/infer and tests/intervene.
 
 === OPERATIONAL ===
 
+- "Commit to master, push" assumes master is checkoutable here. It may not be:
+  `git worktree list` has shown master held by a scratchpad worktree under
+  /tmp with staged deletions in it. Check first. Committing to a branch in this
+  checkout and fast-forwarding later is fine; deleting somebody else's worktree
+  to free the name is not.
 - `pkill -f <pattern>` matches your own shell and kills the turn. Use explicit
   PIDs from `ps -eo pid,args | grep [p]attern`.
 - Read `rc=$?` on its own line. A command substitution between the command and
@@ -211,10 +266,16 @@ The refusal machinery, claim manifests and integrity tiers exist so the claims c
 be trusted. They are plumbing, not the product, and should be nearly invisible in
 the writing.
 
-Site is 10 pages and already leads with the system. `site/content/` -> build with
+Site is 11 pages and leads with the system. `site/content/` -> build with
 `site/build.py` -> rsync `site/_build/` to `docs/` -> `npx wrangler pages deploy
 docs --project-name=sc-wbd`. `site/check.py` validates links first. Those three
 steps are `make site`, `make site-stage`, `make site-deploy`.
+
+The landing page is organised as three capability sections -- modelling brain
+activity, simulating intervention responses, fine-tuneable for personalized
+neurotechnology -- followed by one `Artifacts` table. The speculative page is
+now `possibilities/`; `/speculative/` 301s to it via `docs/_redirects`. Write
+003 into that shape rather than appending to it.
 
 Results worth featuring, each already measured:
   - orientation: a per-parcel scalar carries 5.6% of the whitened EEG lead field,
@@ -228,7 +289,11 @@ Results worth featuring, each already measured:
   - ports typed by unit, so a port carrying Hz cannot be wired to one carrying
     Hz*m.
 
-002 stays on the site as one page: it is the control 003 is measured against.
+002 stays on the site as a row in the `Artifacts` table, not a page of its own:
+it is the control 003 is measured against, and its note already carries both
+mechanical failures and the fact that individualisation was unmeasurable on its
+split. 003 gets a row in the same table, in the same terms, whatever it
+measures.
 
 === THE ONE THING TO KNOW ABOUT 002 ===
 
