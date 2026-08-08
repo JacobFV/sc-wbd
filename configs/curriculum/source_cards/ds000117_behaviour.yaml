@@ -102,7 +102,16 @@ compiler_permission:
 notes: >-
   The two buttons are far from balanced -- 105 to 22 on the measured run -- so
   the majority-class rate is logged beside the choice accuracy. An accuracy read
-  without it looks like learning when it is the prior. Licence CC0-1.0, stated
+  without it looks like learning when it is the prior. Measured through step 240
+  of run 3, accuracy equals the majority rate in 12 of 13 logged steps.
+  THE CHOICE TERM IS EXPECTED TO SIT AT THE PRIOR AND IS BEST READ AS A LEAKAGE
+  CHECK. The window ends at stimulus onset, so the model is asked which button
+  follows a face it has not been shown, and the button reports a property of
+  that face. Pre-stimulus EEG predicting it ABOVE the prior would mean the
+  window had slipped past onset or trials were ordered so one response predicts
+  the next. The log-RT term is the half that can legitimately move, since
+  pre-stimulus arousal is known to shift response latency; the two are scored
+  separately for that reason. Licence CC0-1.0, stated
   in the snapshot's own dataset_description.json. n = 2 participants: this
   source exercises the boundary_output attachment and supports no
   population-level behavioural claim.

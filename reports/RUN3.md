@@ -338,11 +338,35 @@ result is read off it:
 * **two participants**, with unbalanced buttons. Nothing here can support a
   population-level behavioural claim, and the card already says so.
 
-Whether this changes over 13,400 steps is an open question and the results
-section will answer it from the final checkpoint. What is settled now is that
-the attachment *reaches* the model and receives gradient — which is what run 3
-set out to establish — and that "reaches the model" is not "predicts the
-behaviour".
+### And the choice term probably *should* sit at the prior
+
+The window ends at stimulus onset, so the model is asked which button the
+participant will press **in response to a face it has not yet been shown**. The
+button reports whether that face was famous, unfamiliar or scrambled. That is a
+property of the stimulus, and the stimulus is not in the input.
+
+So a choice accuracy at the class prior is the expected result, not a failure of
+the head, and the useful reading runs the other way: **the choice term is a
+leakage check.** If pre-stimulus EEG started predicting the button above the
+prior, something would be leaking — the window slipping past onset, an epoch
+boundary off by a sample, trials ordered so the previous response predicts the
+next. The head sitting at the prior is that check passing.
+
+The RT term is the half that can legitimately move. Pre-stimulus arousal and
+attention are known to shift response latency, and `log_rt` is scored separately
+with its own predicted variance for exactly that reason — which is also why the
+two terms were kept apart rather than summed into one number.
+
+The alternative design — epoch from stimulus onset to shortly before the
+response — would make the choice predictable and would put the motor potential
+of the press being predicted inside the input. That trade was made deliberately
+in favour of the leakage-free window, and it is recorded here rather than left
+to be inferred from a null result.
+
+Whether either term moves over 13,400 steps is answered from the final
+checkpoint. What is settled now is that the attachment *reaches* the model and
+receives gradient — which is what run 3 set out to establish — and that "reaches
+the model" is not "predicts the behaviour".
 
 ## Test suite state after run 3's changes
 
