@@ -1366,7 +1366,20 @@ class FoundationTrainer:
             )
         eeg = batch["eeg"].to(self.device, non_blocking=True)  # (B,T,C)
         mask = batch["loss_mask"].to(self.device)  # (B,T) bool
-        onset = int(batch["onset_step"][0])
+        onsets = batch["onset_step"]
+        onset = int(onsets[0])
+        # One pulse index for the whole batch, so it must be the same for every
+        # row. It is, because every run shares `tmin` and `fs_target` -- but a
+        # future config that varied either per source would silently roll half
+        # the batch from the wrong sample, and the response would still look
+        # plausible.
+        if int(onsets.min()) != onset or int(onsets.max()) != onset:
+            raise ValueError(
+                f"{source_id}: the batch mixes pulse onsets "
+                f"{int(onsets.min())}..{int(onsets.max())}. The rollout starts at one "
+                "index for the whole batch; refusing to apply it to rows whose pulse "
+                "is elsewhere."
+            )
         hemis = list(batch["hemisphere"])
         B, T, C = eeg.shape
         head = self.model.eeg_head_for("ds004024_rest_real")
