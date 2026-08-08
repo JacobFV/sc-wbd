@@ -356,13 +356,24 @@ or download.</p>
   boundary_output, context. Every source in run 2 was an observation, so three of
   the four were untested while the schematic above gave them equal billing. Run 3
   exercises three; <code>context</code> still has no source and the run's report
-  says so rather than omitting it.</span></span> No score is claimed here: this row will
-  carry held-out numbers, which sources actually contributed gradient, and a
-  leave-one-source-out result when the run finishes.<span class="note"><input type="checkbox" id="index-n11" class="note-toggle"><label for="index-n11" class="note-ref">11</label><span class="note-body"><span class="note-n">11</span>The ablation is
-  leave-one-out specifically because it can return a null. The identifiability
-  benchmark measured joint multirate inference as <em>failing</em> to beat
-  isolated modalities in every regime, and an evaluation unable to reproduce that
-  would be unable to disagree with the premise it is testing.</span></span></td>
+  says so rather than omitting it.</span></span> Measured mid-run, at step 500 of 13,400:
+  the defect run 2 shipped with is fixed. <strong>243 of its 382 parameter
+  tensors have moved off their initialisation — 63.6%, against run 2's
+  11.2%</strong> — including the entire family-indexed regional model that is
+  the treatment arm's whole thesis, at 137 of 137 and 32 of 32.<span class="note"><input type="checkbox" id="index-n11" class="note-toggle"><label for="index-n11" class="note-ref">11</label><span class="note-body"><span class="note-n">11</span>Measured
+  by hashing every parameter before the first step and comparing, so the answer
+  is a bit comparison rather than a threshold somebody chose. One module,
+  <code>family_readout</code>, is deliberately still at its initialisation: no
+  measured source can train it, because scoring a per-parcel activity readout
+  needs ground-truth activity at the parcel and neither EEG nor BOLD has any.
+  That is recorded as a founding exemption alongside the amortised posterior,
+  which has the same problem for the same reason.</span></span> No score is claimed yet:
+  this row gets held-out numbers and a leave-one-source-out result when the run
+  finishes.<span class="note"><input type="checkbox" id="index-n12" class="note-toggle"><label for="index-n12" class="note-ref">12</label><span class="note-body"><span class="note-n">12</span>The ablation is leave-one-out specifically because it can
+  return a null. The identifiability benchmark measured joint multirate
+  inference as <em>failing</em> to beat isolated modalities in every regime, and
+  an evaluation unable to reproduce that would be unable to disagree with the
+  premise it is testing.</span></span></td>
 </tr>
 <tr>
   <td><strong>A model that beats its baselines</strong></td>
