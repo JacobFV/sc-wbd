@@ -660,6 +660,20 @@ class RealEEGDataset(Dataset):
         return [self.recordings[r]["subject"] for r, _ in self.window_index]
 
     @property
+    def window_sessions(self) -> list[str]:
+        """``subject/session`` of every window, in dataset order.
+
+        The grouping unit for :func:`session_split`, and deliberately *not* the
+        one for :func:`participant_split`.  Qualified by subject because session
+        ids are only unique within a participant -- every sleep-edfx subject has
+        a ``night1``, so a bare session id would merge 78 people into two groups.
+        """
+        return [
+            f"{self.recordings[r]['subject']}/{self.recordings[r]['session']}"
+            for r, _ in self.window_index
+        ]
+
+    @property
     def subjects(self) -> list[str]:
         return sorted({rec["subject"] for rec in self.recordings})
 
@@ -1170,6 +1184,17 @@ def _window_subjects(dataset: Any) -> list[str]:
     return [str(dataset[i]["subject"]) for i in range(len(dataset))]
 
 
+def _window_sessions(dataset: Any) -> list[str]:
+    """``subject/session`` per window, duck-typed like :func:`_window_subjects`."""
+    sessions = getattr(dataset, "window_sessions", None)
+    if sessions is not None:
+        return list(sessions)
+    if isinstance(dataset, Subset):
+        base = _window_sessions(dataset.dataset)
+        return [base[i] for i in dataset.indices]
+    return [f"{dataset[i]['subject']}/{dataset[i]['session']}" for i in range(len(dataset))]
+
+
 def _assign_groups(
     groups: Sequence[str], *, test_fraction: float, val_fraction: float, seed: int
 ) -> dict[str, str]:
@@ -1386,6 +1411,21 @@ def leakage_check(split: dict[str, Iterable[int]], dataset: Any) -> dict[str, An
         )
 
     warnings: list[str] = []
+    # A session split fails this audit on every shared participant at once, and
+    # the tempting repair is to relax R10. Name the alternative here so the
+    # reader of the failure meets it before reaching for the assertion.
+    populated = [n for n, i in folds.items() if i]
+    if (
+        any(v["kind"] == "participant_across_folds" for v in violations)
+        and len(populated) > 1
+        and len({frozenset(subjects_per_fold[n]) for n in populated}) == 1
+    ):
+        warnings.append(
+            "every fold has an identical participant set, which is the signature "
+            "of a session split rather than a broken participant split. R10 does "
+            "not apply to it; audit it with `session_leakage_check` and score it "
+            "as individualisation, not generalisation. Do not weaken this check."
+        )
     uncovered = n_total - len(set(all_idx))
     if uncovered:
         warnings.append(f"{uncovered} of {n_total} windows are in no fold")
@@ -1467,6 +1507,218 @@ def _recording_id_of_window(dataset: Any, idx: int) -> str:
         return _recording_id_of_window(dataset.dataset, dataset.indices[idx])
     rec_idx, _ = dataset.window_index[idx]
     return str(dataset.recordings[rec_idx]["recording_id"])
+
+
+def session_split(
+    dataset: Any,
+    *,
+    seed: int | None = None,
+    with_val: bool = True,
+) -> dict[str, list[int]]:
+    """Split window indices by **session**, holding the participants fixed.
+
+    Supports the *individualisation* claim: given some of this person's
+    recordings, does the model predict their **held-out** recording better than
+    it predicts the population?  Every fold therefore contains the same people
+    and disjoint sessions of them.
+
+    **Refuses the generalisation claim.**  A number scored on this split says
+    nothing about an unseen person, because there are no unseen people in it.
+    That is exactly the arrangement refusal ``R10`` forbids, and the correct
+    response to ``leakage_check`` failing on this split is to score the
+    generalisation claim on :func:`participant_split` instead -- never to
+    weaken ``R10``.  The two functions exist separately so that choosing the
+    wrong one is a visible act rather than a parameter.
+
+    Sleep-EDFx is what makes this possible: 75 of its 78 sleep-cassette
+    participants were recorded on two consecutive nights, so the same person
+    exists on both sides of a session boundary.
+
+    Participants with a single session cannot be individualised.  Their windows
+    go to ``train`` -- they are still valid data for fitting -- and they are
+    counted out of ``n_participants_individualisable`` in the audit, so the
+    denominator behind the claim is the number of people it was actually
+    measured on and not the number of people in the corpus.
+
+    ``val`` is populated only for participants with three or more sessions.
+    With two nights there is no third to validate on, and manufacturing one by
+    splitting a night in half would put the same recording on both sides.
+
+    Returns
+    -------
+    dict
+        ``{"train": [...], "val": [...], "test": [...]}`` of integer indices.
+    """
+    if seed is None:
+        seed = int(getattr(getattr(dataset, "cfg", None), "seed", 0))
+
+    win_subjects = _window_subjects(dataset)
+    win_sessions = _window_sessions(dataset)
+    if len(win_subjects) != len(win_sessions):
+        raise RuntimeError(
+            f"dataset reports {len(win_subjects)} window subjects but "
+            f"{len(win_sessions)} window sessions; they index the same windows "
+            "and must agree"
+        )
+    if not win_subjects:
+        setattr(dataset, "session_split_backend", "empty")
+        return {"train": [], "val": [], "test": []}
+
+    sessions_of: dict[str, list[str]] = defaultdict(list)
+    for subj, sess in zip(win_subjects, win_sessions):
+        if sess not in sessions_of[subj]:
+            sessions_of[subj].append(sess)
+
+    multi = {s: sorted(v) for s, v in sessions_of.items() if len(v) >= 2}
+    if not multi:
+        # Refuse rather than return an empty test fold. `max_runs_per_subject: 1`
+        # is the ordinary way to arrive here, and it produces a split that looks
+        # structurally valid and measures nothing.
+        raise RuntimeError(
+            f"session_split needs a participant with two or more sessions and none "
+            f"of the {len(sessions_of)} participants in {getattr(dataset, 'source', 'this dataset')} "
+            "has one. Individualisation cannot be measured on single-session "
+            "participants. If the loader capped them, check `max_runs_per_subject`."
+        )
+
+    # Which session is held out is decided per participant, from the seed and the
+    # participant id, so adding or dropping a participant does not reshuffle
+    # anyone else's nights.
+    assignment: dict[str, str] = {}
+    for subj, sess in sorted(sessions_of.items()):
+        if len(sess) < 2:
+            assignment[sess[0]] = "train"
+            continue
+        order = sorted(sess)
+        random.Random(f"{seed}:{subj}").shuffle(order)
+        assignment[order[0]] = "test"
+        rest = order[1:]
+        if with_val and len(order) >= 3:
+            assignment[rest[0]] = "val"
+            rest = rest[1:]
+        for s in rest:
+            assignment[s] = "train"
+
+    setattr(dataset, "session_split_backend", "session")
+    setattr(dataset, "session_split_group_of_window", win_sessions)
+
+    split: dict[str, list[int]] = {"train": [], "val": [], "test": []}
+    for idx, group in enumerate(win_sessions):
+        split[assignment[group]].append(idx)
+    return split
+
+
+def session_leakage_check(split: dict[str, Iterable[int]], dataset: Any) -> dict[str, Any]:
+    """Audit a session split: sessions disjoint, participants **shared**.
+
+    The mirror of :func:`leakage_check`, and it fails on the opposite things.
+    Two separate violations, because they invalidate different halves of the
+    claim:
+
+    * a session in more than one fold -- the same recording on both sides, which
+      makes the held-out score a memorisation score;
+    * a participant in ``test`` who is absent from ``train`` -- that person's
+      score is a generalisation score wearing an individualisation label, and
+      averaging the two together is how a population result gets published as a
+      personalised one.
+    """
+    win_subjects = _window_subjects(dataset)
+    win_sessions = _window_sessions(dataset)
+    n_total = len(win_sessions)
+
+    folds = {name: [int(i) for i in idxs] for name, idxs in split.items()}
+    sessions_per_fold: dict[str, set[str]] = {}
+    subjects_per_fold: dict[str, set[str]] = {}
+    for name, idxs in folds.items():
+        inr = [i for i in idxs if 0 <= i < n_total]
+        sessions_per_fold[name] = {win_sessions[i] for i in inr}
+        subjects_per_fold[name] = {win_subjects[i] for i in inr}
+
+    violations: list[dict[str, Any]] = []
+
+    for name, idxs in folds.items():
+        bad = [i for i in idxs if not 0 <= i < n_total]
+        if bad:
+            violations.append(
+                {"kind": "index_out_of_range", "fold": name, "offending": bad[:10]}
+            )
+
+    owner: dict[str, str] = {}
+    for name in sorted(folds):
+        for sess in sorted(sessions_per_fold[name]):
+            prev = owner.setdefault(sess, name)
+            if prev != name:
+                violations.append(
+                    {
+                        "kind": "session_across_folds",
+                        "session": sess,
+                        "folds": sorted({prev, name}),
+                        "code": "session-disjoint",
+                    }
+                )
+
+    # A test participant absent from train is being generalised to, not
+    # individualised. Reported per participant, because the mix is the danger:
+    # one such person in a test fold turns the fold's mean into two claims.
+    strangers = sorted(subjects_per_fold.get("test", set()) - subjects_per_fold.get("train", set()))
+    if strangers:
+        violations.append(
+            {
+                "kind": "test_participant_absent_from_train",
+                "subjects": strangers[:10],
+                "n": len(strangers),
+                "code": "individualisation",
+            }
+        )
+
+    all_idx = [i for idxs in folds.values() for i in idxs]
+    dupes = sorted({i for i, c in Counter(all_idx).items() if c > 1})
+    if dupes:
+        violations.append({"kind": "duplicate_window_index", "offending": dupes[:10]})
+
+    sessions_of: dict[str, set[str]] = defaultdict(set)
+    for subj, sess in zip(win_subjects, win_sessions):
+        sessions_of[subj].add(sess)
+    individualisable = sorted(s for s, v in sessions_of.items() if len(v) >= 2)
+
+    warnings: list[str] = []
+    uncovered = n_total - len(set(all_idx))
+    if uncovered:
+        warnings.append(f"{uncovered} of {n_total} windows are in no fold")
+    if not folds.get("val"):
+        warnings.append(
+            "no validation fold: it requires a participant with three or more "
+            "sessions, and two-night corpora have none"
+        )
+    single = sorted(set(sessions_of) - set(individualisable))
+    if single:
+        warnings.append(
+            f"{len(single)} of {len(sessions_of)} participants have one session and "
+            "are train-only; they are excluded from the individualisation denominator"
+        )
+
+    return {
+        "ok": not violations,
+        "claim": "individualisation",
+        "refuses": "generalisation",
+        "source": getattr(dataset, "source", "unknown"),
+        "split_backend": getattr(dataset, "session_split_backend", "unknown"),
+        "n_windows_total": n_total,
+        "n_windows_per_fold": {n: len(i) for n, i in folds.items()},
+        "n_participants_total": len(sessions_of),
+        # The denominator behind the claim. Not the corpus size.
+        "n_participants_individualisable": len(individualisable),
+        "n_sessions_per_fold": {n: len(s) for n, s in sessions_per_fold.items()},
+        "n_subjects_per_fold": {n: len(s) for n, s in subjects_per_fold.items()},
+        "violations": violations,
+        "warnings": warnings,
+        "note": (
+            "Session-disjoint, participant-shared. A score on this split is an "
+            "individualisation result and must not be reported as generalisation; "
+            "`leakage_check` is expected to FAIL on it, and that failure is correct. "
+            "Aggregate per participant before reporting an interval."
+        ),
+    }
 
 
 # ======================================================================
