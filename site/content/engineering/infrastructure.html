@@ -1,0 +1,229 @@
+title: The failures that were not science — SC-WBD
+description: A trailing slash that could not match a symlink, an exception swallowed by a bare except, and a provenance field that could never read clean.
+nav: engineering
+heading: The failures that were not science
+standfirst: None of these are modelling problems. All of them cost more time than the modelling problems did, and each has a general shape worth carrying to another project.
+applies: <strong>no checkpoint</strong>. Tooling and provenance defects found while building 001 and 002; none is a modelling result and all of them recur wherever the same shapes do.
+---
+<div class="prose">
+
+<p class="lede">Research codebases fail at their seams. Every defect below sits
+at a boundary between two systems that each behaved correctly — git and symlinks,
+exception handling and fallbacks, a provenance hash and a log file it writes
+to.</p>
+
+<h2>A trailing slash that could not match a symlink</h2>
+
+<p>Large assets in this repository are git-ignored symlinks into a shared data
+store. The ignore file said:</p>
+
+<pre><code>assets/
+data/</code></pre>
+
+<p><strong>A trailing slash matches a directory only.</strong> It does not match a
+symlink of the same name. So the ignore rule that everyone believed covered
+<code>assets</code> left the <code>assets</code> <em>symlink</em> perfectly
+trackable, and a single <code>git add -A</code> committed it.</p>
+
+<p>What got committed was a blob containing the symlink's target string — and
+that target was a <em>worktree-local</em> path. Checking it out in the main
+repository therefore made <code>assets</code> point at itself. Every worktree
+resolving through it got <code>ELOOP: too many levels of symbolic links</code>.</p>
+
+<p>The fix is one line, and it is in the ignore file with the explanation
+attached, because the next person will otherwise delete the apparently redundant
+half:</p>
+
+<pre><code># Both forms of each name are required. A trailing slash matches a DIRECTORY
+# ONLY -- it does not match a symlink of the same name.
+assets
+assets/
+data
+data/</code></pre>
+
+<h3>The sequel, which is worse because it does not look like a bug</h3>
+
+<p>Those symlinks are git-ignored and untracked. <strong>Merging the main branch
+into a worktree deletes them</strong> — git removes the paths that the untracking
+commits dropped, and nothing puts them back.</p>
+
+<p>The failure presents as <em>a missing dataset</em>, not as a broken link. So
+the next person to hit it goes looking for the data, not for the symlink. It
+misdiagnosed three contributors before anyone wrote it down.</p>
+
+<p>The remedy is a mechanism rather than a note in a wiki: a small idempotent
+script that recreates the links and then <strong>proves the result
+resolves</strong> rather than trusting that the link command succeeded. It also
+handles the failure mode that looks identical — a stale <em>real</em> directory
+left behind by a test run that regenerated the assets tree for real.</p>
+
+<div class="callout">
+<span class="callout-label">Transferable</span>
+<p>When a failure's <em>presentation</em> points somewhere other than its
+<em>cause</em>, no amount of documentation fixes it — everyone reads the
+documentation after they have already gone looking in the wrong place. Convert it
+into a script that is cheap to run and self-verifying, and make the error message
+name the real cause.</p>
+</div>
+
+<h2>An exception swallowed by a bare <code>except</code></h2>
+
+<p>This is the most expensive one on the page, because it made a whole subsystem
+silently optional.</p>
+
+<p>The adapter between the anatomy prior and the foundation model raised on an
+interface mismatch. The exception was caught by a bare
+<code>except Exception</code>, and every run fell back — silently — to a labelled
+synthetic connectome.</p>
+
+<p>The consequences compound in an unpleasant direction. No receptor data reached
+the corpus, the training run, or any checkpoint variant, <em>because the anatomy
+module never loaded at all</em>. Every provenance record was correct: the
+fallback was honestly labelled as synthetic. Nothing lied. It simply meant that
+the anatomy prior — the thing several essays on this site describe building
+carefully — was not in the artifact.</p>
+
+<p>Two things make this hard to catch and both are general:</p>
+
+<ul>
+<li><strong>The fallback worked.</strong> Training ran, losses descended,
+checkpoints were emitted. A silent fallback that produces a working system is
+indistinguishable from success at every level except the one nobody was
+checking.</li>
+<li><strong>The label was honest.</strong> The synthetic prior was marked
+synthetic throughout. The defect was not mislabelling — it was that nobody had
+asked why the label kept saying <em>synthetic</em> on runs that were supposed to
+use the real prior.</li>
+</ul>
+
+<p>A bare <code>except Exception</code> around a subsystem's construction converts
+“this component is broken” into “this component is optional”. If a component is
+genuinely optional, the fallback should be <em>declared and asserted at the call
+site</em>, not implied by a swallowed exception.</p>
+
+<h2>A provenance field that could never read clean</h2>
+
+<p>Artifacts are stamped with a git hash carrying a <code>-dirty</code> suffix
+when the working tree has uncommitted changes. Good practice, and the mechanism
+worked exactly as designed.</p>
+
+<p>The training run <strong>writes its logs to tracked files</strong>. So by the
+time any checkpoint is stamped, the tree is always dirty. <strong>Every
+checkpoint this project has ever produced is stamped
+<code>-dirty</code>.</strong></p>
+
+<p>It was found by asking a question that costs nothing: <em>what would this field
+look like if it were working?</em> The answer — “sometimes clean” — had never
+been observed, and no one had noticed that they had never observed it.</p>
+
+<p>The sharpest part is where it sits. This field is <em>inside the mechanism
+built to catch stale artifacts</em>, and it was about to be handed to a new
+provenance-enforcement gate that would have consumed a signal structurally
+incapable of ever reading clean. A guard built on a decorative input inherits the
+decoration.</p>
+
+<h2>A process check that matched itself</h2>
+
+<p>Three instances in one night, to two different people.</p>
+
+<p><code>pgrep -f &lt;pattern&gt;</code> matches its own command line. The shell
+wrapper running the check contains the pattern, so the guard reliably reports
+finding the process it is checking for.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>#</th><th>Consequence</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>A launch guard aborted its own relaunch with “ALREADY RUNNING”.</td></tr>
+<tr><td>2</td><td>The same guard, written into a brief <em>for someone else</em>, aborted their relaunch too.</td></tr>
+<tr><td>3</td><td>“A live process while the log shows a traceback” — sent someone hunting a zombie that never existed, mid-crash.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Instance 2 was written into a brief for another person <em>after</em> instance
+1 was known. Instance 3 was made by the same party that wrote instance 2.</p>
+
+<blockquote>
+<p>Knowing a failure, and having documented it for others, did not prevent making
+it again.</p>
+</blockquote>
+
+<p>Which is the general lesson stated as strongly as it can be, and it argues for
+mechanisms over knowledge: match on the interpreter and the module together and
+exclude the shell, or write the pattern so that it cannot describe the checking
+process.</p>
+
+<h2>Verifying through a path production does not take</h2>
+
+<p>Three more, same shape: <strong>the check exercised a path the production code
+does not take, so it passed while production failed.</strong></p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>The check</th><th>What production did</th><th>Outcome</th></tr></thead>
+<tbody>
+<tr><td>Import a config module, confirm the knob exists</td><td>Bare attribute access after a plain import</td><td>Check passed; production raised <code>AttributeError</code></td></tr>
+<tr><td>Full test suite green</td><td>The real-data branch may never execute</td><td>Had to verify the fixture actually loads its windows</td></tr>
+<tr><td>A leakage check exists and raises</td><td>Never called by the trainer</td><td>An audit that existed and could not fire</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>A verification is only evidence about the path it exercises. The remedy is
+mechanical: <strong>run the check through the exact call production makes</strong>,
+not an equivalent one. Where that is impractical, verify the observable
+consequence in production output — which is why a line in the training log
+matters more than a passing test.</p>
+
+<h2>An evidentiary claim that only held where it was written</h2>
+
+<p>Someone verified that training source was unmodified during a run, and
+recorded the command:</p>
+
+<pre><code>git diff 7f18528 HEAD -- scwbd configs</code></pre>
+
+<p><code>HEAD</code> is a <strong>moving, worktree-local symbol</strong>. The claim
+was true in the worktree where it was written and false in the next person's,
+where the base commit is not an ancestor of the main branch — so the diff is
+dominated by unmerged work on both sides and reports the opposite conclusion.</p>
+
+<blockquote>
+<p>A claim that only holds where it was written is not evidence. It is a memory.</p>
+</blockquote>
+
+<p>Three rules follow, all learned here the hard way. <strong>No moving symbols in
+an evidentiary claim</strong> — not <code>HEAD</code>, not a branch name, not
+“current”; two immutable hashes or it is not checkable. <strong>Name the branch or
+worktree</strong> when the commits are not on the shared trunk. And
+<strong>assume the reader is elsewhere and later</strong>, which is the entire
+point of handing someone a verification command.</p>
+
+<h2>Seven trainable tensors outside the permission system</h2>
+
+<p>The last one, included because it was caught by a guard doing exactly its
+job — and because it shows what a working version of everything above looks
+like.</p>
+
+<p>A test exists specifically to catch a declared gradient permission that governs
+no tensor. After a merge it started failing, and it was right to: a new typed
+observation boundary had introduced seven trainable tensors with no entry in
+either permission table. They were outside the gradient permission system while
+it continued to look enforced.</p>
+
+<p>That is the exact defect the module's own docstring was written about, caught
+by the module's own test, and traced with <code>git log -S</code> rather than
+guessed at. This is what the rest of this essay is arguing for.</p>
+
+<div class="callout">
+<span class="callout-label">The pattern across all of these</span>
+<p>Every defect here lived at a seam where two correct systems met, and every one
+of them produced <em>a working system with a silent hole in it</em>. None would
+have been found by looking harder at the code that failed, because none of them
+failed. They were found by asking what a given signal would look like if it were
+broken — and noticing that nobody had ever seen it look like anything else.</p>
+</div>
+
+<p class="lede"><a href="index.html">← Back to the engineering essays</a></p>
+
+</div>
