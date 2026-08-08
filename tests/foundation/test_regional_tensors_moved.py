@@ -73,16 +73,74 @@ def _moved(ck: dict) -> dict:
     return rep
 
 
+def _founding_exempt(stage: str) -> set[str]:
+    """Modules a stage is *permitted* to leave frozen, derived not listed.
+
+    Two independent sources, both auditable, neither a hard-coded allowance in
+    this file:
+
+    * ``configs/curriculum/tiers.yaml`` ``founding_exemptions`` — a module the
+      policy says no tier-1 source can found. ``posterior.*`` was always there;
+      ``family_readout.*`` was added when SC-WBD-003 measured it at 0 of 36 in a
+      tier-1-only stage and the reason turned out to be structural: nothing in
+      tier 1 reads ``rollout.activity``, so nothing in tier 1 can score a
+      per-parcel activity readout.
+    * ``configs/run3/scwbd-003.yaml`` — a module the stage's own
+      ``tier_permissions`` do not grant at all. ``tms_drive.*`` is granted in
+      T5 alone, deliberately, so a simulator stage cannot fit the pulse to
+      synthetic dynamics.
+
+    Deriving it keeps the test sharp: ``family_readout`` frozen in T4 or
+    ``tms_drive`` frozen in T5 would still fail, because by then both are
+    reachable.
+    """
+    exempt: set[str] = set()
+    tiers = REPO / "configs/curriculum/tiers.yaml"
+    cfgp = REPO / "configs/run3/scwbd-003.yaml"
+    if not (tiers.is_file() and cfgp.is_file()):
+        return exempt
+    import yaml
+
+    cfg = yaml.safe_load(cfgp.read_text())
+    block = next(
+        (
+            ((s.get("extra") or {}).get("curriculum") or {})
+            for s in cfg["train"]["stages"]
+            if s["name"] == stage
+        ),
+        None,
+    )
+    if block is None:
+        return exempt
+    admits = set(block.get("admits") or [])
+    perms = block.get("tier_permissions") or {}
+    granted = [str(g) for gs in perms.values() for g in gs]
+
+    for entry in (yaml.safe_load(tiers.read_text()).get("policy") or {}).get(
+        "founding_exemptions", []
+    ):
+        if int(entry.get("granted_to_tier", 0)) not in admits:
+            for g in entry.get("globs", []):
+                exempt.add(str(g).split(".")[0])
+
+    for mod in (*REGIONAL, *RUN3_NEW):
+        if not any(g.split(".")[0] == mod for g in granted):
+            exempt.add(mod)
+    return exempt
+
+
 @pytest.mark.parametrize("ckpt", _checkpoints(), ids=lambda p: f"{p.parent.name}/{p.name}")
 def test_the_regional_modules_are_not_at_their_initialisation(ckpt: Path) -> None:
     """The check HANDOFF-003 makes a launch precondition."""
-    rep = _moved(_load(ckpt))
+    ck = _load(ckpt)
+    rep = _moved(ck)
     by = rep["by_module"]
+    exempt = _founding_exempt(str(ck.get("stage") or ""))
     dead = []
     for m in REGIONAL:
         e = by.get(m)
-        if e is None:
-            continue  # the pooled arm names them without the prefix
+        if e is None or m in exempt:
+            continue  # pooled arm, or a documented founding exemption
         if e["moved"] == 0:
             dead.append(f"{m} ({e['frozen']} tensors, all bit-identical to init)")
     assert not dead, (
@@ -101,12 +159,14 @@ def test_the_attachment_kinds_added_in_run3_received_gradient(ckpt: Path) -> Non
     is that each now has one, so "present and frozen" is exactly the regression
     to catch.
     """
-    rep = _moved(_load(ckpt))
+    ck = _load(ckpt)
+    rep = _moved(ck)
     by = rep["by_module"]
+    exempt = _founding_exempt(str(ck.get("stage") or ""))
     dead = [
         f"{m} ({by[m]['frozen']} tensors)"
         for m in RUN3_NEW
-        if m in by and by[m]["moved"] == 0
+        if m in by and by[m]["moved"] == 0 and m not in exempt
     ]
     assert not dead, (
         f"{ckpt.name}: {dead} are on the forward path and bit-identical to their "

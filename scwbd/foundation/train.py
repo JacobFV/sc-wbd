@@ -1920,6 +1920,16 @@ class FoundationTrainer:
                     self._absent_admitted[stage.name] = missing
             if not losses:
                 raise RuntimeError(f"stage {stage.name} produced no admissible loss; check the source cards")
+            # Derive the contributed set from the loss keys themselves, not from
+            # the call sites. `_contributed.add` was called only inside the run-3
+            # loop, so `eegmmidb_real` and `ds002336_real` -- which reach a loss
+            # through the older call sites above -- were absent from
+            # `contributed_sources` on every checkpoint. That field is run 3's
+            # central published claim, and it was missing the founding source.
+            #
+            # Reading the keys covers every path by construction, including any
+            # added later, because a term IS a key.
+            self._contributed.update(losses)
             mdiag = mixture.step(losses, measure_conflict=(step % 10 == 0))
             torch.nn.utils.clip_grad_norm_(params, stage.grad_clip)
             opt.step()

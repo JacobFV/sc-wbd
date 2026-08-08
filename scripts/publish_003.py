@@ -46,6 +46,42 @@ def main(argv: list[str] | None = None) -> int:
     metrics = ck.get("metrics") or {}
 
     contributed = sorted(extra.get("contributed_sources") or [])
+
+    # Cross-check against the training log, which is independent evidence: the
+    # trainer writes a per-source diagnostic for every source that produced a
+    # term. The launched run's checkpoints UNDER-REPORT, because
+    # `_contributed.add` was only called from the run-3 loop and `eegmmidb_real`
+    # and `ds002336_real` reach a loss through older call sites. Fixed in the
+    # trainer, but a process does not re-read its own modules, so this run's
+    # checkpoints carry the short list and the log carries the truth.
+    #
+    # Union, not replacement: the log is a transcript and can be shorter than
+    # the run, so neither source can be trusted alone to be complete.
+    log_seen: set[str] = set()
+    log = REPO / "reports/training/scwbd-003_train.jsonl"
+    if log.is_file():
+        marker_to_source = {
+            "eegmmidb_real_eeg_nll": "eegmmidb_real",
+            "sleepedf_real_eeg_nll": "sleepedf_real",
+            "ds000117_real_eeg_nll": "ds000117_real",
+            "ds004024_rest_real_eeg_nll": "ds004024_rest_real",
+            "real_bold_nll": "ds002336_real",
+            "behaviour_choice_ce": "ds000117_behaviour",
+            "perturb_nll": "ds004024_perturb",
+            "sim_forecast_nll": "sim_wholebrain",
+        }
+        for line in log.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                rec = json.loads(line)
+            except ValueError:
+                continue
+            for marker, sid in marker_to_source.items():
+                if marker in rec:
+                    log_seen.add(sid)
+    only_in_log = sorted(log_seen - set(contributed))
+    contributed = sorted(set(contributed) | log_seen)
     moved = extra.get("moved_since_init") or {}
     absent = extra.get("admitted_but_no_term") or {}
     drive = extra.get("tms_drive")
@@ -60,9 +96,17 @@ def main(argv: list[str] | None = None) -> int:
 
     print("-- contributed gradient (derived, not asserted) --")
     for sid in contributed:
-        print(f"   {sid}")
+        mark = "  [from the training log, absent from the checkpoint]" if sid in only_in_log else ""
+        print(f"   {sid}{mark}")
     if not contributed:
         print("   (none recorded -- this checkpoint predates the tracking)")
+    if only_in_log:
+        print(
+            f"   NOTE: {len(only_in_log)} source(s) produced a loss term according to "
+            "the training log but are absent from the checkpoint's own list. That is "
+            "the under-reporting bug in `_contributed`, not a source that failed to "
+            "contribute."
+        )
     if absent:
         print("\n-- ADMITTED BUT PRODUCED NO TERM --")
         for stage, ids in absent.items():

@@ -46,6 +46,28 @@ policy:
         perturbational design where coupling is manipulated and recorded), or by
         restricting posterior claims to simulator-conditioned statements.
 
+    - globs: ["family_readout.*", "readout.*"]
+      granted_to_tier: 4
+      reason: >-
+        The readout maps regional state onto per-parcel activity and its
+        log-variance. Scoring it needs ground-truth activity AT THE PARCEL, and
+        no measured source in this register has any: EEG is scored in sensor
+        space through the lead field, and BOLD in parcel space through the
+        balloon model -- both read `rollout.state`, neither reads
+        `rollout.activity`. Only `sim_losses` consumes the readout's output, so
+        only the simulator can found it. Same shape as `posterior.*` above and
+        discovered the same way, by measuring: at step 500 of SC-WBD-003's
+        tier-1-only founding stage, `family_readout` was 0 of 36 tensors moved
+        while `family_local` was 137 of 137 and `family_residual` 32 of 32.
+        Consequence to carry into every claim: a per-parcel activity number read
+        off an SC-WBD checkpoint is simulator-founded, whatever the checkpoint
+        was otherwise trained on.
+      dischargeable_by: >-
+        a measured source carrying parcel-resolved ground-truth activity --
+        intracranial coverage dense enough to define it, or a simultaneous
+        recording whose forward model is trusted well enough to invert -- or by
+        scoring the readout only against sources that have one.
+
 notes: >-
   body.tex 6.3 states that simulated data "remain simulator-conditioned evidence
   and cannot establish biological validity", and 6.4 that "soft constraints

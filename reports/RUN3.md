@@ -24,6 +24,66 @@ run — from 11.2% reachable to a set the checkpoint itself reports.
 | attachment kinds exercised | `observation` | `observation`, `boundary_output`, `stimulus` |
 | trained on stimulation data | no | yes |
 
+## Launch check #2 at step 500: the run-2 defect is fixed, with two findings
+
+First real checkpoint, mid-T1. **243 of 382 tensors have moved off their
+initialisation — 63.6%, against run 2's 11.2%** — and `unfingerprinted` is
+empty, so every number here is evidence.
+
+| module | moved | note |
+| --- | ---: | --- |
+| `family_local` | **137/137** | the module run 2 froze entirely |
+| `family_residual` | **32/32** | likewise |
+| `behaviour` | **5/5** | the boundary output is training |
+| `eeg_montages` | 21/33 | three montage heads |
+| `assimilate` | 11/11 | |
+| `observation` | 18/36 | |
+| `family_readout` | **0/36** | see below |
+| `posterior` | 0/58 | correct: T1 sets `lambda_posterior: 0.0` and admits no tier 4 |
+| `tms_drive` | 0/4 | correct: granted in T5 alone, by design |
+
+`admitted_but_no_term` is empty: no stage admitted a source that produced
+nothing.
+
+### `family_readout` cannot be founded by a measured source
+
+It is 0 of 36 and that is not a permission bug — every card and every stage
+grants `family_readout.*`. It is on the forward path of every rollout. Nothing
+in tier 1 **consumes its output**: `rollout.activity` is read only by
+`sim_losses`. The measured likelihoods read `rollout.state` — EEG through the
+lead field into sensor space, BOLD through the balloon model into parcel space —
+and neither touches the activity readout.
+
+Scoring a per-parcel activity readout needs ground-truth activity at the parcel,
+and no measured source in this register has any. So only the simulator can found
+it, in principle rather than as a wiring gap. That is the same structure
+`configs/curriculum/tiers.yaml` already records for `posterior.*`, and it now
+carries an entry for the readout too, with what would discharge it.
+
+**HANDOFF-003's check #2 therefore cannot pass as literally specified.** It asks
+that `family_local`, `family_residual` *and* `family_readout` all be non-identical
+to their initialisation after stage 1. Two of the three are, completely. The
+third cannot be, because stage 1 admits tier 1 only and no tier-1 loss reads its
+output. It should move in T4, when the simulator is admitted, and the results
+section will say whether it did.
+
+### The contributed-source list under-reports, and the log is the corrective
+
+The checkpoint's `contributed_sources` names five of the seven measured sources.
+`eegmmidb_real` and `ds002336_real` are missing — **including the founding
+source** — because `_contributed.add` was called only from the loop added for
+run 3's new sources, and those two reach a loss through older call sites.
+
+The training log is independent evidence and disagrees: it carries a per-source
+diagnostic for all seven at every logged step. `scripts/publish_003.py` now
+takes the union and marks which entries came from the log, and the trainer
+derives the set from the loss keys themselves — a term *is* a key, so every path
+is covered by construction, including any added later.
+
+The running job loaded the old module, so this run's checkpoints keep the short
+list. That is recorded rather than repaired by restarting: the evidence is
+complete, it is just in two places.
+
 ## Results
 
 **PENDING** — filled from the checkpoint after the run completes. Nothing is
