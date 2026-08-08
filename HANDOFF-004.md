@@ -164,10 +164,11 @@ provenance.
     `source_amplitude` is never called. 16 tensors, 1,796 parameters, counted in
     the total and unreachable. Delete it or gate it on the scalar arm.
 
-=== BEFORE LAUNCHING: FIVE CHECKS, ALL OF WHICH MUST PASS ===
+=== BEFORE LAUNCHING: SIX CHECKS, ALL OF WHICH MUST PASS ===
 
 003 shipped with three gates where 002's handoff specified two, and two more
-regression guards. Run all of them; none is optional.
+regression guards. The sixth was written while 003 was still training and is
+already green. Run all of them; none is optional.
 
   pytest tests/foundation/test_card_patterns_reach_the_model.py
       card layer: no module unreachable, no grant pattern naming nothing.
@@ -184,10 +185,29 @@ regression guards. Run all of them; none is optional.
       every consumed channel is declared, every enabled likelihood source is in
       the map, every observation declares an operator and nothing else does.
 
-Add a sixth for the BOLD fix, and make it measure rather than assert: after the
-first measured-BOLD stage, `bold.log_kappa` / `log_gamma` / `log_tau` / `alpha` /
-`neural_gain` must not be bit-identical to their initialisation. Frozen means the
-ODE still is not being called, whatever the loss number says.
+  pytest tests/foundation/test_balloon_parameters_receive_gradient.py
+      gate #6, WRITTEN AND GREEN BEFORE YOU START — read it before touching the
+      BOLD path. It asserts run 3's defect as a fact about bytes: the five
+      Balloon parameters are frozen in T1, T2 and T3. It goes red the moment
+      the measured BOLD path changes, in either direction, and its docstring
+      says what to do then: close ISSUE-008 and INVERT the assertion to
+      `assert not frozen`. That inversion is your acceptance criterion.
+
+Two things about gate #6 that were not obvious and are now measured, so do not
+re-derive them:
+
+  * **Permission was never the blocker.** `bold.*` is granted by all five
+    stages. The reflex reading of a frozen tensor in this repo — run 2's dead
+    glob — is the wrong one here. There was no gradient to withhold.
+  * **"The five moved" is a false pass.** T4_simulator integrates the ODE on
+    synthetic data and unfreezes all five. Scope any check to stages admitting
+    no simulator tier, derived from `admits` rather than from stage names. The
+    T4 → T5 boundary is the sharpest discriminator available: T5 admits tiers
+    1–2, so measured BOLD that reached the physics would change those bytes.
+
+That distinction is 003's own lesson turned on itself, and it is the one thing
+from 003 most worth carrying: its machinery answers "did a gradient arrive",
+never "did it carry information".
 
 === ORDER OF WORK ===
 
@@ -196,7 +216,12 @@ a. Read ISSUE-008 and decide the clock. Write the decision down before writing
    design decision and it is the whole run.
 b. Implement it. Expect `real_bold_losses`, `SCWBD.rollout`, `bolddata` windowing
    and the config's `window`/`hemo_ratio` all to move.
-c. Add `session_split` and its leakage audit. Do not touch `participant_split`.
+c. ~~Add `session_split` and its leakage audit.~~ DONE while 003 trained —
+   `scwbd/foundation/realdata.py`, with `session_leakage_check` as its mirror
+   audit and 12 tests. `participant_split` is untouched and `leakage_check`
+   still refuses a session split; it now names the alternative in its warnings
+   so the failure does not read as a bug in R10. What remains is wiring it into
+   the evaluation and reporting the interval per participant, not per window.
 d. `configs/run4/`, sized against a RE-MEASURED step time and peak reserve. The
    BOLD rollout will dominate both.
 e. Five checks, then a smoke that exercises every loss path, then the sixth

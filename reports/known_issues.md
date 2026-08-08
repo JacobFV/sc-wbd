@@ -491,6 +491,32 @@ Three candidate fixes, in increasing order of honesty and cost:
    says, and it is the project's own stated differentiator, so it belongs in the architecture
    rather than in a loss function.
 
+### Confirmed on the weights, and how it must be measured
+
+The diagnosis above was read off a diverging loss. It has since been checked directly against
+run 3's stage checkpoints, and `bold.log_kappa`, `bold.log_gamma`, `bold.log_tau`, `bold.alpha`
+and `bold.neural_gain` are bit-identical to their initialisation in **T1, T2 and T3** — including
+`T2_calibration`, which admits the measured BOLD source. Guarded by
+`tests/foundation/test_balloon_parameters_receive_gradient.py`.
+
+Two things found while writing that guard change how the fix must be verified.
+
+**Permission was never the blocker.** `bold.*` is granted by the `tier_permissions` of all five
+stages of `configs/run3/scwbd-003.yaml`. The familiar reading of a frozen tensor in this repo —
+"some card's glob does not match it", the run-2 defect — is the wrong one here. Nothing withheld
+the gradient; there was no gradient.
+
+**"The five moved" is a false pass.** `T4_simulator` calls `rollout(with_hemo=True)`, so it
+integrates the ODE on synthetic dynamics and will unfreeze all five. A gate reading
+`moved_since_init` at the end of the run would therefore report them moved and discharge nothing.
+Any check must be scoped to stages admitting no simulator tier. The sharpest available
+discriminator is the **T4 → T5 boundary**: `T5_measured_return` admits tiers 1–2, so if
+`real_bold_losses` integrated the ODE, a whole stage of measured BOLD would change those bytes.
+Identical bytes across that boundary is ISSUE-008 confirmed a second way, independent of the loss.
+
+This is run 3's own central lesson applied to itself: `moved_since_init` answers "did a gradient
+arrive", not "did it carry information".
+
 ### The pattern
 
 A variable named for the physics is not constrained by the physics. `hemo` passed to a Balloon
