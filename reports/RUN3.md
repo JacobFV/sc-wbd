@@ -242,6 +242,32 @@ each source contributes to simulator-conditioned forecasting, not to held-out
 measured prediction. Those are different questions and only the first is
 answered here.
 
+### What 003's headline number will and will not be a number about
+
+`real_eeg_holdout` reads `trainer.real_test` and `trainer.model.eeg`. Both are
+eegmmidb: the founding 64-channel montage, 109 participants, the participant-
+disjoint 71/11/27 split. **The held-out score is therefore a number about
+eegmmidb, not about the seven-source mixture.**
+
+That is the right choice and not an oversight. The six other sources have 78, 10,
+4, 2, 2 and 2 participants; five of them cannot support a held-out-participant
+claim at all, and `sleepedf_real`'s rank-2 operator answers a different question
+from a 64-channel one. Scoring them into one aggregate would produce a single
+figure that no source's split justifies.
+
+What the other six change is the *model* being scored, not the *test set*. So
+the comparison 003 supports is "a model trained on seven measured sources,
+evaluated on eegmmidb's holdout, against baselines on that same holdout" — and
+whether the extra six helped is exactly the leave-one-source-out question above,
+which is why both are run.
+
+Verified before the run finished, against the architecture checkpoint: the
+evaluation completes with zero tracebacks, loads all 334 model tensors with no
+key mismatch, and derives `model_id` as `scwbd-003` rather than a stale literal.
+`--quick` **refuses the holdout by design**, so that one path is unexercised
+until the real run; it is also the path that touches none of run 3's new montage
+code, which is why the remaining risk there is low.
+
 ## Things being watched during the run
 
 **The BOLD term spikes early and settles.** `real_bold_nll` goes from 21.7 at
