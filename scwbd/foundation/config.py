@@ -141,6 +141,17 @@ class ModelConfig:
     dense_coupling_ablation: bool = False
     n_eeg_channels: int = 64
     n_behaviour: int = 4
+    #: Observation montages beyond the founding 64-channel one, keyed by source
+    #: id.  Each value is ``{"kind": "monopolar"|"bipolar", "channels": [...]}``.
+    #:
+    #: A source whose electrodes are not the eegmmidb montage needs its own
+    #: operator, not a padded row in someone else's.  ``sleepedf_real`` carries
+    #: two *bipolar* derivations, and forcing them through the 64-channel head
+    #: is what its card recorded as the block; ``build_bipolar_lead_field``
+    #: derives the correct 2-row operator instead.  Declared here rather than
+    #: inferred from the enabled cards, so the model a checkpoint describes is a
+    #: function of the config alone.
+    montages: dict[str, Any] = field(default_factory=dict)
     use_bf16: bool = True
     compile: bool = False
 

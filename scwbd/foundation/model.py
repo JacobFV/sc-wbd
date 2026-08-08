@@ -41,7 +41,15 @@ from torch import Tensor, nn
 from .anatomy import EVIDENCE_CLASSES, AnatomyPrior
 from .config import ModelConfig
 from .families import FamilyStateLayout, SpanViolation, derive_families, shared_components
-from .heads import BOLDHead, BehaviourHead, EEGHead, LeadField, build_lead_field
+from .heads import (
+    BOLDHead,
+    BehaviourHead,
+    EEGHead,
+    LeadField,
+    build_bipolar_lead_field,
+    build_lead_field,
+    parse_bipolar_derivations,
+)
 from .state import ComponentSpec, StateLayout, default_layout, scalar_layout
 
 __all__ = [
@@ -552,14 +560,69 @@ class SCWBD(nn.Module):
 
         lf = lead_field if lead_field is not None else build_lead_field(anat, device=anat.weights.device)
         self.eeg = EEGHead(L, lf)
+        # One observation head per non-founding montage. A source recorded on
+        # different electrodes measures a different projection of the same state,
+        # and the honest operator for it is its own lead field -- not a padded or
+        # interpolated row in the founding montage's, which would assert measured
+        # channels that were never recorded.
+        self.eeg_montages = nn.ModuleDict()
+        for sid, spec in (cfg.montages or {}).items():
+            self.eeg_montages[str(sid)] = EEGHead(L, self._montage_lead_field(anat, sid, spec))
         self.bold = BOLDHead(L, self.n_regions, dt_slow=cfg.dt_model * cfg.hemo_ratio)
         self.behaviour = BehaviourHead(L, self.n_regions, n_out=cfg.n_behaviour)
         # Hand the heads the typed boundary. `set_observation` stores it WITHOUT
         # nn.Module registration, so `self.observation` stays the single owner and
         # `parameter_report()` does not count it three times.
         self.eeg.set_observation(self.observation)
+        for head in self.eeg_montages.values():
+            head.set_observation(self.observation)
         self.bold.set_observation(self.observation)
         self._rho_ema = 0.0
+
+    # -- montages ---------------------------------------------------------
+    @staticmethod
+    def _montage_lead_field(anat, source_id: str, spec: Any) -> LeadField:
+        """The observation operator declared by one ``cfg.model.montages`` entry.
+
+        ``kind`` is required and has no default.  Guessing ``monopolar`` because
+        that is the common case would silently observe a bipolar derivation
+        through a single-electrode row -- a different operator, giving a
+        plausible likelihood for a channel that does not exist.
+        """
+        if not isinstance(spec, Mapping):
+            raise TypeError(
+                f"montage {source_id!r} must be a mapping with 'kind' and "
+                f"'channels', got {type(spec).__name__}"
+            )
+        kind = spec.get("kind")
+        channels = tuple(spec.get("channels") or ())
+        if not channels:
+            raise ValueError(f"montage {source_id!r} declares no channels")
+        dev = anat.weights.device
+        if kind == "bipolar":
+            return build_bipolar_lead_field(
+                anat, derivations=parse_bipolar_derivations(channels), device=dev
+            )
+        if kind == "monopolar":
+            return build_lead_field(anat, channel_names=channels, device=dev)
+        raise ValueError(
+            f"montage {source_id!r} declares kind={kind!r}; expected 'monopolar' "
+            "or 'bipolar'. There is no default: a bipolar derivation observed "
+            "through a monopolar row is the wrong operator and nothing "
+            "downstream would report it."
+        )
+
+    def eeg_head_for(self, source_id: str) -> EEGHead:
+        """The observation head that owns ``source_id``'s montage.
+
+        Falls back to the founding 64-channel head for any source that declares
+        no montage of its own, which is what a source recorded on the eegmmidb
+        electrodes should use.  The channel count is checked by the caller
+        against the batch, so a mismatch raises rather than broadcasting.
+        """
+        sid = str(source_id)
+        # `nn.ModuleDict` has no `.get`; membership then index.
+        return self.eeg_montages[sid] if sid in self.eeg_montages else self.eeg
 
     # -- construction -----------------------------------------------------
     @staticmethod

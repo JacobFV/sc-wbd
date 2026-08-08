@@ -274,3 +274,71 @@ A watcher then has three distinguishable states: sentinel absent + process alive
 (running), sentinel absent + process gone (died), sentinel present (finished — and
 `rc`/`leftover_tmp` say whether it finished *well*). Verify the sentinel logic before
 relying on it: the cheapest check is to confirm the string can appear at all.
+
+---
+
+## ISSUE-006 — every lead field ever built used a Fibonacci spiral, while its own note said "real 10-10 montage positions"
+
+**Status:** fixed in code 2026-08-07 (`scwbd/foundation/heads.py::_montage_positions`).
+**Not fixed in the published run-2 artifact**, which cannot be: the weights are trained.
+**Severity:** shipped. This is a description of a released checkpoint, not a latent
+contract defect, which is why it is recorded here rather than repaired quietly.
+
+### The defect
+
+`_montage_positions` looked an electrode up like this:
+
+```python
+v = lower.get(n.lower()) or lower.get(n.lower().replace(".", ""))
+```
+
+`lower.get(...)` returns a length-3 `ndarray` of coordinates. `ndarray or ...`
+evaluates the array's truth value, and numpy raises
+
+```
+ValueError: The truth value of an array with more than one element is ambiguous.
+```
+
+The raise happens on the **first electrode that is found**, not on a missing one — so
+the function did not degrade for unusual montages, it failed for every montage,
+always, on the first channel. `build_lead_field` wraps the call in
+
+```python
+except Exception:  # noqa: BLE001 - mne montage unavailable
+```
+
+and falls through to a Fibonacci spiral of points on a sphere. The comment names the
+condition it was written for (mne absent) and caught a different one.
+
+All 64 eegmmidb electrodes are present in `standard_1005`. Not one of them was ever
+used. Measured after the repair, the same 64-channel operator has condition number
+193.8 on real geometry.
+
+### Why nothing reported it
+
+The `LeadField.note` is a literal string, written once at the bottom of the fallback
+branch, and it read:
+
+> ...homogeneous conducting sphere with electrodes at real 10-10 montage positions.
+
+There is only one branch that builds the analytic field, so the note describing the
+real-geometry case was attached to the synthetic-geometry case. `provenance` said
+`analytic_sphere_fallback` truthfully — that names the *sphere*, which was always the
+model, not the *electrode positions*, which were the thing substituted. Every audit
+that read the provenance string got a true answer to a different question.
+
+### Scope
+
+This changes the operator, so it changes the model. It does **not** invalidate the
+orientation result (5.6% scalar vs 51.7% 3-vector): that was measured by 🧲 Gauss on a
+real BEM solution, not on this fallback. It does bound anything read off this
+operator's *spatial* structure in runs 1 and 2 — the note now states which geometry
+was used, and `test_montage_adapter.py` asserts the real path is the one taken.
+
+### The pattern
+
+A fallback whose `except` clause names one cause will silently absorb every other
+cause, and a note written inside the fallback branch will describe whatever the author
+had in mind rather than what ran. Where a substitution is possible, the artifact must
+carry which branch produced it — derived at runtime, not written as a literal. That is
+now what `geometry` in `build_lead_field` does.

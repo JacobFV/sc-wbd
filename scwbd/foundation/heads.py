@@ -33,7 +33,16 @@ import numpy as np
 import torch
 from torch import Tensor, nn
 
-__all__ = ["LeadField", "build_lead_field", "EEGHead", "BOLDHead", "BehaviourHead", "gaussian_nll"]
+__all__ = [
+    "LeadField",
+    "build_lead_field",
+    "build_bipolar_lead_field",
+    "parse_bipolar_derivations",
+    "EEGHead",
+    "BOLDHead",
+    "BehaviourHead",
+    "gaussian_nll",
+]
 
 #: 64-channel montage of the PhysioNet EEG Motor Movement/Imagery database
 #: (Sharbrough / extended 10-10).  Names as they appear in the EDF files.
@@ -119,7 +128,23 @@ class LeadField:
 
 
 def _montage_positions(names: Sequence[str]) -> tuple[np.ndarray, tuple[str, ...]]:
-    """Electrode positions in mm from MNE's standard_1005 montage (real 10-10 geometry)."""
+    """Electrode positions in mm from MNE's standard_1005 montage (real 10-10 geometry).
+
+    The lookup is written as an explicit ``is None`` test rather than ``a or b``.
+    ``lower.get(...)`` returns a length-3 ``ndarray``, and ``ndarray or ...``
+    evaluates its truth value, which raises ``ValueError: The truth value of an
+    array with more than one element is ambiguous`` -- **on the first electrode
+    that is found**, not on a missing one.
+
+    That is how this function raised for every montage this project ever built.
+    :func:`build_lead_field` catches the exception and falls back to a Fibonacci
+    spiral, so every lead field up to and including the one in the published
+    run-2 checkpoint was built on synthetic geometry while the ``note`` on it
+    said "electrodes at real 10-10 montage positions". All 64 eegmmidb
+    electrodes are present in ``standard_1005``; none of them was ever used.
+    Recorded in ``reports/known_issues.md`` because it changes a published
+    artifact's description, not just this code.
+    """
     import mne
 
     m = mne.channels.make_standard_montage("standard_1005")
@@ -127,11 +152,18 @@ def _montage_positions(names: Sequence[str]) -> tuple[np.ndarray, tuple[str, ...
     lower = {k.lower(): v for k, v in pos.items()}
     xyz, keep = [], []
     for n in names:
-        v = lower.get(n.lower()) or lower.get(n.lower().replace(".", ""))
+        v = lower.get(n.lower())
+        if v is None:
+            v = lower.get(n.lower().replace(".", ""))
         if v is None:
             continue
-        xyz.append(np.asarray(v) * 1000.0)  # m -> mm
+        xyz.append(np.asarray(v, dtype=np.float64) * 1000.0)  # m -> mm
         keep.append(n)
+    if not xyz:
+        raise ValueError(
+            f"standard_1005 has no position for any of {list(names)[:8]}; "
+            "refusing to return an empty montage"
+        )
     return np.stack(xyz), tuple(keep)
 
 
@@ -176,9 +208,13 @@ def build_lead_field(
     if not allow_fallback:
         raise RuntimeError("scwbd.observe lead field unavailable and allow_fallback=False")
 
+    geometry = "real 10-10 montage positions (MNE standard_1005)"
+    dropped: tuple[str, ...] = ()
     try:
         elec, kept = _montage_positions(channel_names)
+        dropped = tuple(n for n in channel_names if n not in set(kept))
     except Exception:  # noqa: BLE001 - mne montage unavailable
+        geometry = "a Fibonacci spiral on a sphere -- NOT electrode geometry"
         n_ch = len(channel_names)
         idx = np.arange(n_ch, dtype=np.float64)
         phi = math.pi * (3 - math.sqrt(5)) * idx
@@ -238,10 +274,125 @@ def build_lead_field(
         physical_scale=physical_scale,
         note=(
             "ANALYTIC SINGLE-SPHERE LEAD FIELD, NOT A HEAD MODEL. Radial dipoles in a "
-            "homogeneous conducting sphere with electrodes at real 10-10 montage "
-            "positions. Supports no source-localisation or individual-anatomy claim."
+            f"homogeneous conducting sphere with electrodes at {geometry}. "
+            "Supports no source-localisation or individual-anatomy claim."
+            + (
+                f" {len(dropped)} requested channel(s) have no position in the "
+                f"montage and are ABSENT from this operator: {list(dropped)[:8]}."
+                if dropped
+                else ""
+            )
         ),
         matrix_vec=torch.as_tensor(L_vec, dtype=torch.float32, device=dev),
+    )
+
+
+def parse_bipolar_derivations(names: Sequence[str]) -> tuple[tuple[str, str], ...]:
+    """``("EEG Fpz-Cz", ...)`` -> ``(("Fpz", "Cz"), ...)``.
+
+    Accepts the Sleep-EDF label form (an ``EEG `` prefix, an ASCII hyphen between
+    the two electrodes).  A label that does not name exactly two electrodes is
+    refused rather than passed through as a monopolar channel: a bipolar
+    derivation observed through a monopolar row is a different operator, and the
+    error would be invisible in the loss.
+    """
+    out: list[tuple[str, str]] = []
+    for raw in names:
+        label = str(raw).strip()
+        for prefix in ("EEG ", "eeg "):
+            if label.startswith(prefix):
+                label = label[len(prefix) :]
+                break
+        parts = [p.strip() for p in label.split("-") if p.strip()]
+        if len(parts) != 2:
+            raise ValueError(
+                f"channel {raw!r} is not a bipolar derivation: expected "
+                "'<anode>-<cathode>' naming exactly two electrodes, got "
+                f"{parts}. Refusing to treat it as monopolar -- the lead field "
+                "row for a difference of two electrodes is not the row for "
+                "either of them."
+            )
+        out.append((parts[0], parts[1]))
+    return tuple(out)
+
+
+def build_bipolar_lead_field(
+    anat,
+    *,
+    derivations: Sequence[tuple[str, str]],
+    device="cpu",
+    conductivity: float = 0.33,
+    allow_fallback: bool = True,
+) -> LeadField:
+    """Lead field for bipolar derivations: the difference of two monopolar rows.
+
+    A bipolar channel measures ``V(anode) - V(cathode)``, and the forward
+    operator is linear in the source amplitudes, so the correct gain row is
+    exactly ``L[anode] - L[cathode]``.  Nothing is fitted, interpolated or
+    padded here; the derivation is carried out on the same monopolar field every
+    other montage is built from, so a bipolar source and a monopolar source
+    observe *the same* physics through different operators.
+
+    This is what ``sleepedf_real`` was blocked on.  The card recorded the block
+    as "two bipolar derivations cannot constrain a 64-channel observation head",
+    which was true of forcing Sleep-EDF through the eegmmidb head and is not a
+    property of the data: a 2-channel montage constrains a 2-dimensional
+    projection of the state, and the honest way to say so is a 2-row operator,
+    not two padded rows in a 64-row one.  What it still cannot do is
+    disambiguate within that projection -- the rank is 2, and the card says so.
+
+    The alternative that was NOT taken: zero-padding Fpz-Cz and Pz-Oz into the
+    64-channel montage. That asserts 62 measured-and-silent electrodes, which is
+    fabricated data, and the model would learn that most of the scalp is quiet.
+    """
+    pairs = tuple((str(a), str(b)) for a, b in derivations)
+    if not pairs:
+        raise ValueError("no derivations given")
+    # One monopolar solve over the union of electrodes, so both rows of a
+    # derivation come from the same forward solution.
+    electrodes: list[str] = []
+    for a, b in pairs:
+        for e in (a, b):
+            if e not in electrodes:
+                electrodes.append(e)
+    mono = build_lead_field(
+        anat,
+        channel_names=electrodes,
+        device=device,
+        conductivity=conductivity,
+        allow_fallback=allow_fallback,
+    )
+    idx = {n.lower(): i for i, n in enumerate(mono.channel_names)}
+    missing = [e for e in electrodes if e.lower() not in idx]
+    if missing:
+        raise ValueError(
+            f"the forward solution has no row for electrode(s) {missing}; a "
+            "bipolar derivation cannot be formed from a missing electrode. "
+            f"Solved rows: {list(mono.channel_names)}."
+        )
+    rows = [mono.matrix[idx[a.lower()]] - mono.matrix[idx[b.lower()]] for a, b in pairs]
+    matrix = torch.stack(rows, dim=0)
+    matrix_vec = None
+    if mono.matrix_vec is not None:
+        matrix_vec = torch.stack(
+            [mono.matrix_vec[idx[a.lower()]] - mono.matrix_vec[idx[b.lower()]] for a, b in pairs],
+            dim=0,
+        )
+    return LeadField(
+        matrix,
+        tuple(f"{a}-{b}" for a, b in pairs),
+        units=mono.units,
+        frame=mono.frame,
+        provenance=f"bipolar_of({mono.provenance})",
+        physical_scale=mono.physical_scale,
+        note=(
+            "Bipolar derivations, each row the difference of two monopolar rows of "
+            f"the same {mono.provenance} forward solution. Rank is at most "
+            f"{len(pairs)}: this operator constrains a {len(pairs)}-dimensional "
+            "projection of the source space and supports no claim finer than that. "
+            + mono.note
+        ),
+        matrix_vec=matrix_vec,
     )
 
 
