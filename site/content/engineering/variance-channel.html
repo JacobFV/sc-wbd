@@ -1,9 +1,9 @@
 title: The most expensive 134 seconds — SC-WBD
 description: A predictive-variance parameter with a closed-form optimum was left to SGD for two minutes. It cost the whole training run.
 nav: engineering
-kicker: Engineering · 02
 heading: Isolating the variance channel
 standfirst: Our model had the best conditional mean of all seven arms and the second-worst score. The entire deficit was one scalar that had a closed-form optimum and was handed to gradient descent for two minutes.
+applies: <strong>SC-WBD-001-beta</strong> (run 1). The single-scalar variance head was replaced for run 2, so the specific defect is closed; the diagnostic habit it produced is not run-specific.
 ---
 <div class="prose">
 
