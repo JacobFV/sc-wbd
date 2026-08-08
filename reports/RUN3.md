@@ -475,6 +475,40 @@ For scale, a term of 2.07 in these units is worse than predicting the target's
 own marginal (0.5·(log 2π + 1) = 1.42), which is the number to beat before any
 comparison to a baseline is interesting.
 
+### Resolved at step 380: every term is falling
+
+Eighty steps later the same split-half reads:
+
+| term | first half | second half | delta |
+| --- | ---: | ---: | ---: |
+| `eegmmidb_real_eeg_nll` | 2.208 | 1.718 | **−0.490** |
+| `sleepedf_real_eeg_nll` | 2.569 | 2.024 | −0.545 |
+| `ds000117_real_eeg_nll` | 2.023 | 1.696 | −0.327 |
+| `ds004024_rest_real_eeg_nll` | 2.094 | 1.670 | −0.424 |
+| `perturb_nll` | 2.011 | 1.578 | −0.433 |
+| mixture total | 1.249 | 1.093 | −0.155 |
+
+The eegmmidb series settles visibly: `2.22 2.39 1.88 1.84 1.60 1.71 2.23 2.66
+2.73 2.82 1.92 2.22 1.62 1.69 2.01 1.51 1.52 1.57 1.54 1.56`. The high
+excursion at 2.23–2.82 is steps 120–180, which is exactly where OneCycle held
+peak learning rate; the last five points sit in 1.51–1.57.
+
+**Why the step-300 read was flat, and the methodological point.** Split-half
+over a OneCycle run mixes the ramp into the second half. At step 300 the second
+half *was* the LR peak, so a real improvement in the first half was cancelled by
+the excursion that followed it. The instrument was not measuring the thing its
+name suggests, and the reading was ambiguous for a reason that had nothing to do
+with the model.
+
+The step-2,000 threshold above stands unchanged. It has not been moved because
+the numbers improved — that is the point of having written it down at 2.2% — but
+on this evidence it is unlikely to fire.
+
+One thing not yet true: at ~1.55, eegmmidb is still slightly worse than
+predicting the target's own marginal (1.42). Falling toward it is not the same
+as beating it, and beating the marginal is not the same as beating persistence,
+which is what run 2 lost to.
+
 ## When the run finishes
 
 In order. Each step's output is the input to the next, and none of them invents
