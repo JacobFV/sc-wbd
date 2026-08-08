@@ -46,6 +46,7 @@ SITE_DOCS  ?= $(ROOT)/docs
 PAPER_PDF  := $(ROOT)/paper/output/sc_wbd_frontiers.pdf
 HF_NAMESPACE ?= jacob-valdez
 CKPT_002 ?= checkpoints/scwbd-002-pilot
+CKPT_003 ?= checkpoints/scwbd-003
 
 # R2 bucket for rendered media. Media is NEVER committed to this repository.
 R2_BUCKET  ?= scwbd-media
@@ -305,6 +306,22 @@ release-002-evaluate: ## Score the 002 checkpoint on the real-EEG holdout
 	  --config configs/run2/pilot-families.yaml \
 	  --checkpoint $(CKPT_002)/last.pt \
 	  --out reports/training/evaluation_run2.json
+
+.PHONY: release-003-evaluate
+release-003-evaluate: ## Score the 003 checkpoint on the real-EEG holdout
+	@# Same rule as 002: no --quick. A reduced-cost variant silently changes the
+	@# participant set the claim rests on.
+	env PYTHONPATH=. $(PY) -m scwbd.foundation.evaluate \
+	  --config configs/run3/scwbd-003.yaml \
+	  --checkpoint $(CKPT_003)/last.pt \
+	  --out reports/training/evaluation_run3.json
+
+.PHONY: release-003-derived
+release-003-derived: ## Read 003's contributed sources, moved parameters and attachment kinds OFF the weights
+	@# Every claim here comes from the checkpoint, not from a card. Run 2 shipped
+	@# with cards asserting a source trained modules it could not reach, and every
+	@# audit read the assertion rather than the weights.
+	env PYTHONPATH=. $(PY) $(ROOT)/scripts/publish_003.py --checkpoint $(CKPT_003)/last.pt
 
 .PHONY: release-002-restamp
 release-002-restamp: ## Correct the 002 checkpoint's model_id to its config designation
