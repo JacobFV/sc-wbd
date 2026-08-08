@@ -75,12 +75,22 @@ _RUN2_GRANTS: dict[str, tuple[str, ...]] = {
     ),
 }
 
-#: Both live architectures. The pooled/run-1 arm names its regional modules
+#: Every live architecture. The pooled/run-1 arm names its regional modules
 #: ``local``/``residual``/``readout``; the family-padded arm prefixes them
 #: ``family_*``. A pattern dead in one arm may be intended; a pattern dead in
-#: BOTH is the defect.
+#: EVERY arm is the defect.
+#:
+#: Run 3's architecture is here because it is the only one that builds the
+#: modules run 3's cards grant: ``eeg_montages.*`` (one observation head per
+#: montage) and ``tms_drive.*`` (the measured pulse). Checked against run 2's
+#: checkpoint alone, those patterns correctly report as matching nothing --
+#: they name modules that did not exist when those weights were written. The
+#: fix is to check against the architecture the cards describe, which is what
+#: this file's own docstring said to do when run 3 shipped.
 _ARCHITECTURES = ("checkpoints/scwbd-002-pilot/stage_T1_measured_founding.pt",
-                  "checkpoints/ci-smoke/last.pt")
+                  "checkpoints/ci-smoke/last.pt",
+                  "checkpoints/scwbd-003-smoke/last.pt",
+                  "checkpoints/scwbd-003/last.pt")
 
 
 

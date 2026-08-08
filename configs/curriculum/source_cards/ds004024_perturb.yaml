@@ -71,7 +71,13 @@ channels:
       Not consumed by a likelihood.
 
 is_simulated: false
-losses: [likelihood, perturbation]
+# `likelihood`, not a `perturbation` loss kind. What is scored here is a
+# Gaussian NLL of measured post-pulse EEG given a rollout that included the
+# drive -- an ordinary likelihood in sensor space. The intervention lives in the
+# `tms_pulse` channel's ATTACHMENT, which is the axis that carries it; inventing
+# a loss kind for it would put the same fact in two places and let them
+# disagree. `role` licenses this set and the mixture refuses anything outside it.
+losses: [likelihood, forecast]
 
 gradient_permission:
   # The pulse's own parameters. Without this the drive sits at its

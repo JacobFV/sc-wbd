@@ -1,0 +1,14 @@
+# Smoke override for configs/run3/scwbd-003.yaml.
+#
+# A DISTINCT `train.run_name`, not just a distinct `--out`. `--out` moves the
+# checkpoints; the JSONL log is keyed by run_name, so a smoke run sharing the
+# name would append to the production log and the two would be indistinguishable
+# afterwards.
+base: scwbd-003.yaml
+train:
+  run_name: scwbd-003-smoke
+  out_dir: checkpoints/scwbd-003-smoke
+  resume: false
+  max_wall_seconds: 3600
+data:
+  batch: 8

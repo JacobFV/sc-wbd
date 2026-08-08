@@ -58,6 +58,11 @@
 # may be read off this run.
 
 model:
+  # 414, matching the real Schaefer400x7 + Tian subcortex prior. SCWBD takes its
+  # shape from the anatomy, so this field is otherwise inert -- which is exactly
+  # why it is checked: left at the 454 default it would record a parcellation the
+  # model never loaded.
+  n_regions: 414
   family_state: true          # the treatment arm of the 11.4 comparison
   family_allow_derived_partition: false
   local_core: learned

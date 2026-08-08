@@ -297,7 +297,61 @@ class FoundationTrainer:
         }
         #: Built with the perturbation corpus; `None` when none is on disk.
         self.tms_drive = None
+        #: sha256 of every parameter AT INITIALISATION, taken before a single
+        #: step. This is the measurement half of the run-2 repair: a card
+        #: pattern that matches a name proves the mechanism, and a tensor whose
+        #: hash has changed proves the outcome. Run 2 shipped with the first
+        #: broken and nothing checking the second, so the loss fell and 88.8% of
+        #: the model sat at its initialisation for the whole run.
+        self.init_fingerprint: dict[str, str] = self._fingerprint_parameters()
         self.flop_per_step = 0.0
+
+    def _fingerprint_parameters(self) -> dict[str, str]:
+        """``name -> sha256`` over every trainable tensor's current bytes."""
+        import hashlib
+
+        out: dict[str, str] = {}
+        for prefix, mod in (
+            ("model", self.model),
+            ("posterior", self.posterior),
+            ("tms_drive", getattr(self, "tms_drive", None)),
+        ):
+            if mod is None:
+                continue
+            for name, p in mod.named_parameters():
+                key = name if prefix == "model" else f"{prefix}.{name}"
+                out[key] = hashlib.sha256(
+                    p.detach().to(torch.float32).cpu().numpy().tobytes()
+                ).hexdigest()
+        return out
+
+    def moved_since_init(self) -> dict[str, Any]:
+        """Which parameters differ from their initialisation, by module.
+
+        Bit-comparison via hash, deliberately, not a tolerance: the question is
+        "did this tensor receive a gradient at all", and any answer that
+        involves a threshold invites one to be tuned until the answer is yes.
+        """
+        now = self._fingerprint_parameters()
+        moved = {k for k, v in now.items() if self.init_fingerprint.get(k) != v}
+        frozen = sorted(set(now) - moved)
+        by_module: dict[str, dict[str, int]] = {}
+        for k in now:
+            top = k.split(".")[0]
+            e = by_module.setdefault(top, {"moved": 0, "frozen": 0})
+            e["moved" if k in moved else "frozen"] += 1
+        return {
+            "n_parameters": len(now),
+            "n_moved": len(moved),
+            "n_frozen": len(frozen),
+            "by_module": by_module,
+            "frozen_tensors": frozen[:200],
+            "note": (
+                "Bit-identical to initialisation means the tensor received no "
+                "gradient. A module entirely in `frozen` while on the forward "
+                "path is the run-2 defect."
+            ),
+        }
 
     # ------------------------------------------------------------------
     # sources
@@ -1829,6 +1883,13 @@ class FoundationTrainer:
                 "theta_prior": self.theta_prior.as_dict(),
                 "parameter_report": self.model.parameter_report(),
                 "posterior_parameters": count_parameters(self.posterior),
+                # Derived from the weights in this very file, not asserted. The
+                # published card reads `contributed_sources` and `moved` off the
+                # checkpoint rather than off the config that hoped for them.
+                "moved_since_init": self.moved_since_init(),
+                "contributed_sources": sorted(self._contributed),
+                "admitted_but_no_term": {k: v for k, v in self._absent_admitted.items() if v},
+                "tms_drive": self.tms_drive.summary() if self.tms_drive is not None else None,
             },
         )
 
