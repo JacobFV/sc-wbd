@@ -400,3 +400,102 @@ the other side's *tests*, and "everything else was additive" is not the same as
 "everything else is consistent". An additive file that imports the rejected API is a
 collection error, which is louder than a failure and easier to mistake for an
 environment problem.
+
+---
+
+## ISSUE-008 — the measured-BOLD path is not a haemodynamic model
+
+**Status:** open, diagnosed, **not repaired**. The fix is a design decision, not a patch.
+**Severity:** invalidates the fMRI likelihood of SC-WBD-003 and of every earlier run that
+scored `ds002336_real` BOLD. Found at 46% of run 3, from a diverging loss term.
+
+### What was observed
+
+`real_bold_nll` climbs monotonically in every stage: 21.7 at step 1 → ~2×10⁶ by step 6,000,
+peak 4.37×10⁶. Five orders of magnitude. Meanwhile the five Balloon-Windkessel parameters
+(`log_kappa`, `log_gamma`, `log_tau`, `alpha`, `neural_gain`) never receive a gradient.
+
+Those two facts have one cause.
+
+### Three compounding defects
+
+**1. The Balloon ODE is never integrated in the measured path.**
+`FoundationTrainer.real_bold_losses` obtains its haemodynamic state from
+
+```python
+hemo = self._whole_brain_hemo(roll.state)      # reads the `hemo` COMPONENT of the state
+mu, lv = self.model.bold.signal(hemo, roll.state)
+```
+
+`BOLDHead.step` — the actual Balloon-Windkessel integrator, and the only consumer of those
+five parameters — runs solely inside `SCWBD.rollout(with_hemo=True)`, and only `sim_losses`
+passes that. So the measured path never calls the physics, which is exactly why the physical
+parameters are frozen.
+
+**2. `signal()` therefore reads unconstrained latents as blood volume and deoxyhaemoglobin.**
+
+```python
+v = hemo[..., 2].clamp_min(1e-3)
+q = hemo[..., 3]
+y = self.v0 * (k1 * (1 - q) + k2 * (1 - q / v) + k3 * (1 - v))
+```
+
+In the simulated path `v` and `q` come out of the ODE and sit near their equilibrium of 1. In
+the measured path they are two channels of the learned regional state, integrated by
+`family_local`/`family_residual` under six *other* losses, with nothing pinning them to a
+physiological range. `clamp_min` bounds `v` from below but leaves `q/v` free to reach ~1000·q.
+As the regional model trains, those channels drift and the BOLD prediction drifts with them —
+monotonically, because training is monotone.
+
+The component is *named* `hemo` and is not constrained to be haemodynamic. That naming is what
+made this survive: every reader, including the one who wrote `_whole_brain_hemo`, sees a
+variable called `hemo` being passed to a Balloon signal equation.
+
+**3. The clocks differ by 250×.**
+A BOLD window is 32 frames at TR = 2 s; `context` splits it 24/8, so the target is **16 s** of
+haemodynamics. The rollout that predicts it is `n_steps = 8` at `dt_model = 0.008 s` — **64 ms**
+of simulated time. The path predicts sixteen seconds of haemodynamic response from sixty-four
+milliseconds of neural rollout, indexing both by the same integer.
+
+This is the deepest of the three. `body.tex`'s first differentiator is *joint multirate
+inference*; this path does not do multirate at all — it puts the slow modality on the fast clock.
+
+### What it does not do
+
+It does not contaminate the other sources. `MixtureTrainer.step` normalises each source before
+accumulating, the mixture total stayed near 1.0, and the correlation between `log10(bold_nll)`
+and the other measured terms is −0.28, −0.10, −0.03 and −0.13 — all slightly *negative*, which
+is what "EEG improves with training while BOLD worsens with training" produces, not what
+contamination produces.
+
+### What must not be claimed
+
+No fMRI or haemodynamic claim may be read off SC-WBD-003, or off any earlier checkpoint scored
+through this path. `ds002336_real`'s BOLD channel contributed a gradient and no information.
+That is a different statement from "every enabled source contributed", and the model card must
+make the difference explicit.
+
+### What would discharge it
+
+Three candidate fixes, in increasing order of honesty and cost:
+
+1. **Constrain the state channels** — reparameterise `v`, `q` through `softplus` around 1, or add
+   a prior penalty pulling them to equilibrium. Cheapest; makes the number finite without making
+   it a haemodynamic model. A patch, not a fix.
+2. **Integrate the Balloon ODE in the measured path** — give `real_bold_losses` the `with_hemo`
+   rollout the simulated path uses. Restores the physics and unfreezes the five parameters, but
+   does not touch the clock mismatch: 8 steps of ODE at 8 ms still spans 64 ms.
+3. **Make the multirate real** — roll the neural clock for the duration a BOLD frame actually
+   covers (2 s = 250 steps per frame) and integrate the haemodynamics across it, or adopt an
+   explicit slow-clock scheme. This is the only option that makes the path mean what its name
+   says, and it is the project's own stated differentiator, so it belongs in the architecture
+   rather than in a loss function.
+
+### The pattern
+
+A variable named for the physics is not constrained by the physics. `hemo` passed to a Balloon
+signal equation reads as haemodynamic state to every reader; the only thing that made it
+haemodynamic was an ODE that the measured path never called. Where two code paths compute the
+same named quantity by different means — one physical, one learned — the divergence between them
+is invisible until something blows up, and here it took five orders of magnitude before anyone
+looked.
