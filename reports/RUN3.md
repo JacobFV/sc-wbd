@@ -418,6 +418,42 @@ Outside `tests/foundation`, `tests/schema/test_carrier_and_views.py` fails at
 `pytest`. Pre-existing, from the noether2 merge, and not repaired here for the
 same reason as the R12 duplication.
 
+## When the run finishes
+
+In order. Each step's output is the input to the next, and none of them invents
+a number.
+
+1.  `make health-run3` — expect `COMPLETE global_step=13400`. If it says
+    anything else, read it before continuing: a run stopped at a wall-clock
+    deadline replays its whole stage on resume with a fresh OneCycle schedule,
+    so "nearly finished" and "finished" need different responses.
+
+2.  `pytest tests/foundation/test_regional_tensors_moved.py` — **launch check
+    #2 on real weights.** `family_local` / `family_residual` / `family_readout`
+    not bit-identical to their initialisation, `behaviour` / `eeg_montages` /
+    `tms_drive` moved, `residual_ratio` not exactly 0.0, `unfingerprinted`
+    empty. This is the check run 2 failed silently.
+
+3.  `pytest tests/foundation/test_card_patterns_reach_the_model.py` — check #1
+    against the finished checkpoint rather than the architecture stub.
+
+4.  `make release-003-derived` — writes `reports/attachment_kinds.{json,md}` and
+    `reports/scwbd-003_derived.json`, all read off the weights.
+
+5.  `make release-003-evaluate` — the eegmmidb holdout. No `--quick`; it refuses
+    the holdout, which is the point.
+
+6.  `make release-003-ablate` — leave-one-source-out. Hours; retrains per arm.
+
+7.  Fill the Results section below from (4)–(6). Then the site: the `scwbd-003`
+    row currently carries a `training` chip and claims no score, so it needs the
+    chip changed, the numbers added, and — if the numbers are bad — the same
+    treatment runs 1 and 2 got, which is a `negative result` chip and the reason
+    in plain terms.
+
+8.  `make site && make site-stage` — **read the staged diff**, then
+    `make site-deploy`.
+
 ## Results
 
 **PENDING** — filled from the checkpoint after the run completes. Nothing is
