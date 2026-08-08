@@ -568,7 +568,8 @@ failure.
 
 | file | failures | status |
 | --- | ---: | --- |
-| `test_family_state.py` | 5 | **known**, listed in HANDOFF-003: R12 is implemented twice in unrelated exception hierarchies (`R12Violation` vs `CompilerRefusal`), and `validate()` reaches the second first, so the message the tests match on is unreachable. Deciding which is authoritative is a design call, not a repair. |
+| `test_family_state.py` | 4 | **known**, listed in HANDOFF-003: R12 is implemented twice in unrelated exception hierarchies (`R12Violation` vs `CompilerRefusal`), and `validate()` reaches the second first, so the message the tests match on is unreachable. Deciding which is authoritative is a design call, not a repair. |
+| `test_family_state.py` | 1 | **ISSUE-009**, and it was hiding inside the row above. `test_checkpoint_emission_declares_the_arm` fails on `AttributeError: 'FoundationConfig' object has no attribute 'get'`, not on the duplication. A separate defect in `check_r12`, counted as known because the total matched. |
 | `test_curriculum_admission.py` | 1 → **0** | Mine, and the guard was built to catch it. Fixed. |
 
 The admission failure was the guard working: its own comment says the

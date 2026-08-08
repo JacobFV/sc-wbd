@@ -525,3 +525,63 @@ haemodynamic was an ODE that the measured path never called. Where two code path
 same named quantity by different means — one physical, one learned — the divergence between them
 is invisible until something blows up, and here it took five orders of magnitude before anyone
 looked.
+
+
+---
+
+## ISSUE-009 — `check_r12` cannot read a `FoundationConfig`, so a manifest cannot be attached to a checkpoint
+
+**Status:** open, diagnosed, **not repaired**. The repair is entangled with the R12 duplication,
+which is a design call.
+**Severity:** low for SC-WBD-003, which never exercises the path. Blocking for any run that wants
+its checkpoints to carry a claim manifest.
+
+### What was observed
+
+```
+save_checkpoint(path, model=..., config=FoundationConfig(...), manifest=man)
+  -> ClaimManifest.validate(config) -> refuse_r12 -> check_r12
+  -> AttributeError: 'FoundationConfig' object has no attribute 'get'
+```
+
+`scwbd/schema/designation.py:551` is `config.get("model") if config else None`. The parameter is
+annotated `Mapping[str, Any] | None`, and the function's own docstring names `save_checkpoint` as
+one of its three call sites — but `save_checkpoint` holds a `FoundationConfig` dataclass and hands
+it straight through. The annotation and the documented caller disagree, and the caller is right
+about what it has.
+
+The next line is a second instance of the same assumption: `isinstance(model_cfg, Mapping)` would
+reject `FoundationConfig.model`, a `ModelConfig` dataclass, even once the attribute access is
+fixed. So this is a coercion that is missing, not a typo.
+
+### Why SC-WBD-003 is not affected
+
+`FoundationTrainer._save` passes no `manifest`, and `save_checkpoint` only reaches the R12 path
+when one is supplied. Run 3's checkpoints were written normally, and no `claim_manifest.json` or
+`CLAIM_MANIFEST.md` exists in `checkpoints/scwbd-003/`. None of `release-003-derived`,
+`release-003-evaluate` or `release-003-ablate` constructs a manifest either, so the publication
+runbook does not touch it.
+
+The consequence worth stating plainly: **R12 has never been evaluated against run 3.** Run 3 is
+the treatment arm and would pass, but "would pass" is not "was checked", and the designation
+guarantee is the thing R12 exists to provide.
+
+### How it was found, which is the point
+
+`reports/RUN3.md` recorded five known failures in `tests/foundation/test_family_state.py`, all
+attributed to the R12 double implementation. Four of them are. The fifth is this, and it was
+invisible because the *count* matched: five expected, five observed, cause assumed.
+
+This is the failure mode RUN2.md §448 already named — a known-failure set catalogued as
+"known-and-not-blocking" without anyone asking what else was inside it. The set had grown a new
+member and stayed the same size elsewhere in the ledger. A known-failure row must therefore carry
+the failure *mode*, not only the count, and be re-checked against actual output rather than
+against its own previous total.
+
+### What would discharge it
+
+Coerce at the boundary: give `check_r12` a small adapter that accepts either a `Mapping` or a
+config object and yields a `Mapping` view of it and of its `model` section. Fixing the
+`AttributeError` alone does **not** turn the test green — the control-arm half then raises
+`CompilerRefusal` where the test expects `R12Violation`, which is the duplication again. So the
+two should be discharged together, and the duplication decided first.
