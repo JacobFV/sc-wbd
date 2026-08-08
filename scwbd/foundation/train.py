@@ -284,16 +284,19 @@ class FoundationTrainer:
         self._contributed: set[str] = set()
         #: Per stage, the sources it admitted that produced no term at all.
         self._absent_admitted: dict[str, list[str]] = {}
-        #: Admitted ids that are never expected to appear as their own loss key:
-        #: the anatomical prior enters through `anat_losses`, the simulated
-        #: sources through `sim_losses`, and the calibration/control cards
-        #: constrain other terms rather than adding one.
+        #: Admitted ids that are never expected to appear as their own loss key,
+        #: because they constrain OTHER terms rather than adding one:
+        #: `montage_calibration` narrows the nuisance parameters a stage may
+        #: train, and `negative_control_shuffled` grants nothing by design.
+        #:
+        #: `anatomical_prior` and `sim_wholebrain` are deliberately NOT here.
+        #: They arrive through `anat_losses` and `sim_losses` rather than through
+        #: the measured loop, but both emit a term under their own source id, so
+        #: exempting them would suppress the exact check this exists for -- an
+        #: admitted source that silently contributes nothing.
         self._never_a_term: set[str] = {
-            "anatomical_prior",
             "montage_calibration",
             "negative_control_shuffled",
-            "sim_wholebrain",
-            "tribe_v2_teacher",
         }
         #: Built with the perturbation corpus; `None` when none is on disk.
         self.tms_drive = None
