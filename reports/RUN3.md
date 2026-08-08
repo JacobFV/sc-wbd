@@ -24,6 +24,18 @@ run — from 11.2% reachable to a set the checkpoint itself reports.
 | attachment kinds exercised | `observation` | `observation`, `boundary_output`, `stimulus` |
 | trained on stimulation data | no | yes |
 
+## Results
+
+**PENDING** — filled from the checkpoint after the run completes. Nothing is
+written here until it is measured.
+
+- contributed sources, derived from `extra.contributed_sources`
+- per attachment kind, whether anything of that kind reached the model
+  (`reports/attachment_kinds.md`)
+- parameters moved since initialisation, by module, with `unfingerprinted` empty
+- leave-one-source-out, including any family with negative transfer
+- held-out NLL and MSE against the baseline set
+
 ## The sources, as they came off disk
 
 Every number below was printed by the trainer while building its caches, not
@@ -172,15 +184,26 @@ This does not touch the orientation result (5.6% scalar vs 51.7% 3-vector),
 which was measured on a real BEM solution rather than on this fallback. It does
 bound anything read off runs 1 and 2 about this operator's *spatial* structure.
 
-## The two launch checks
+## The three launch checks
+
+HANDOFF-003 specified two. A third was added when it turned out the permission
+system has two layers and only one of them was checked.
 
 1. `pytest tests/foundation/test_card_patterns_reach_the_model.py` — the
-   **mechanism**: no module unreachable by every enabled card, and no grant
-   pattern that names nothing. Run 3's architecture is in `_ARCHITECTURES`,
-   because `eeg_montages.*` and `tms_drive.*` name modules that did not exist
-   when run 2's weights were written.
+   **mechanism, card layer**: no module unreachable by every enabled card, and
+   no grant pattern that names nothing. Run 3's architecture is in
+   `_ARCHITECTURES`, because `eeg_montages.*` and `tms_drive.*` name modules
+   that did not exist when run 2's weights were written.
 
-2. `pytest tests/foundation/test_regional_tensors_moved.py` — the
+2. `pytest tests/foundation/test_stage_permissions_reach_the_model.py` — the
+   **mechanism, stage layer**. The effective permission is the *intersection* of
+   a card's pattern and the stage's `tier_permissions`, so a dead stage glob
+   empties the permission for whatever it covered and check 1 cannot see it.
+   `configs/run3` carried four such globs — `local.*`, `residual.*`,
+   `readout.*`, `log_dt_scale`, all pooled-arm names that match nothing in the
+   family-padded arm this run builds — until this check was written.
+
+3. `pytest tests/foundation/test_regional_tensors_moved.py` — the
    **measurement**: `family_local`, `family_residual` and `family_readout` are
    not bit-identical to their initialisation, and `residual_ratio` is not
    exactly 0.0. Bit comparison via sha256 of the initial parameters, recorded in
@@ -487,15 +510,3 @@ a number.
 
 8.  `make site && make site-stage` — **read the staged diff**, then
     `make site-deploy`.
-
-## Results
-
-**PENDING** — filled from the checkpoint after the run completes. Nothing is
-written here until it is measured.
-
-- contributed sources, derived from `extra.contributed_sources`
-- per attachment kind, whether anything of that kind reached the model
-  (`reports/attachment_kinds.md`)
-- parameters moved since initialisation, by module, with `unfingerprinted` empty
-- leave-one-source-out, including any family with negative transfer
-- held-out NLL and MSE against the baseline set
