@@ -1035,6 +1035,41 @@ class FoundationTrainer:
         report["grad_norm"] = gnorm
         print(f"[smoke] backward ok: grads={len(grads)}/{len(params)} |g|={gnorm:.3e} "
               f"total={float(total.detach()):.4f}", flush=True)
+
+        # Which MODULES actually received a gradient, at step 0, before any
+        # optimiser has run. This is the run-2 question asked at the only moment
+        # it is cheap to answer: `test_regional_tensors_moved` needs a trained
+        # stage, and by then the run has spent hours. A module here with
+        # `n_nonzero == 0` while it sits on the forward path will still be at
+        # its initialisation when the stage ends.
+        #
+        # Non-zero, not merely non-None: a `.grad` full of exact zeros is what a
+        # module reached only through a detached path looks like, and it counts
+        # as "has a gradient" to every check that tests for None.
+        with torch.no_grad():
+            named = list(self.model.named_parameters())
+            named += [(f"posterior.{n}", p) for n, p in self.posterior.named_parameters()]
+            if self.tms_drive is not None:
+                named += [(f"tms_drive.{n}", p) for n, p in self.tms_drive.named_parameters()]
+            by_module: dict[str, dict[str, int]] = {}
+            for name, p in named:
+                top = name.split(".")[0]
+                e = by_module.setdefault(top, {"n": 0, "n_grad": 0, "n_nonzero": 0})
+                e["n"] += 1
+                if p.grad is not None:
+                    e["n_grad"] += 1
+                    if bool((p.grad != 0).any()):
+                        e["n_nonzero"] += 1
+        report["gradient_by_module"] = by_module
+        dead = sorted(m for m, e in by_module.items() if e["n_nonzero"] == 0)
+        report["modules_with_no_gradient"] = dead
+        print("[smoke] gradient by module: "
+              + ", ".join(f"{m}={e['n_nonzero']}/{e['n']}" for m, e in sorted(by_module.items())),
+              flush=True)
+        if dead:
+            print(f"[smoke] MODULES WITH NO GRADIENT AT STEP 0: {dead}. Each will be "
+                  "bit-identical to its initialisation when this stage ends unless a "
+                  "later stage reaches it.", flush=True)
         if self.device.type == "cuda":
             peak = torch.cuda.max_memory_allocated(self.device) / 1e9
             reserved = torch.cuda.max_memory_reserved(self.device) / 1e9

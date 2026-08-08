@@ -257,6 +257,7 @@ def build_latent_drive(
     gain: float = 1.0,
     time_course: Tensor | None = None,
     dt_s: float = 1e-3,
+    device: "torch.device | str | None" = None,
 ) -> Tensor:
     """``(B,T,N,D)`` additive latent drive for ``SCWBD.rollout(u=...)``.
 
@@ -278,6 +279,12 @@ def build_latent_drive(
     vals = vals.reshape(-1).to(_DT)
     if not torch.isfinite(vals).all():
         raise ValueError("parcel drive contains non-finite values; refusing to inject")
+    # Build on the drive's own device by default. A CPU-only assembly silently
+    # worked for every caller that passed a constant `drive`, and fails the
+    # moment the drive is a LEARNED tensor living with the model on CUDA -- the
+    # scatter mixes devices. Defaulting to `vals.device` keeps the autograd path
+    # intact instead of forcing a copy that would strand the gradient.
+    dev = torch.device(device) if device is not None else vals.device
 
     flayout = getattr(model, "family_layout", None)
     layout = getattr(model, "layout", None)
@@ -291,8 +298,9 @@ def build_latent_drive(
     ).reshape(-1)
     if env.shape[0] != n_steps:
         raise ValueError(f"time_course has {env.shape[0]} steps, expected {n_steps}")
+    env = env.to(dev)
 
-    u = torch.zeros(batch, n_steps, n_regions, dim, dtype=_DT)
+    u = torch.zeros(batch, n_steps, n_regions, dim, dtype=_DT, device=dev)
 
     if flayout is not None:
         # Resolve the component's offset per family. The shared prefix puts it
@@ -304,11 +312,11 @@ def build_latent_drive(
                 sl = flayout.component_slice(name, component)
             except Exception:  # family does not declare it -- skip, do not guess
                 continue
-            idx = flayout.index(name).to(torch.long)
+            idx = flayout.index(name, device=dev).to(torch.long)
             u[:, :, idx, sl] = (
                 gain * vals[idx].reshape(1, 1, -1, 1) * env.reshape(1, -1, 1, 1)
             )
-        u = u * flayout.in_span_mask(dtype=_DT).reshape(1, 1, n_regions, dim)
+        u = u * flayout.in_span_mask(dtype=_DT).to(dev).reshape(1, 1, n_regions, dim)
     else:
         sl = layout.slice(component)
         u[:, :, :, sl] = gain * vals.reshape(1, 1, -1, 1) * env.reshape(1, -1, 1, 1)
