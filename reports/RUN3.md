@@ -253,13 +253,37 @@ logged fields alone and will be separated by probing a checkpoint offline rather
 than by adding diagnostics mid-run.
 
 It does not threaten the other sources: `MixtureTrainer.step` normalises each
-source before accumulating, and `mixture_total` sits near 1.0 throughout. It
-does mean that if it never recovers, ds002336's BOLD term contributed a gradient
-without contributing information — which is a different claim from "every source
-contributed gradient", and the results section will say which one is true.
+source before accumulating, and `mixture_total` sits near 1.0 throughout.
+
+**Resolved: it is a transient, not a divergence.** Measured over the first 60
+steps of the launched run:
+
+| step | `real_bold_nll` | eegmmidb NLL | perturb NLL |
+| ---: | ---: | ---: | ---: |
+| 1 | 21.7 | 2.225 | 2.982 |
+| 20 | 9.03e4 | 2.393 | 2.396 |
+| 40 | 3.11e4 | 1.881 | 2.088 |
+| 60 | 5.76e3 | 1.844 | 1.531 |
+
+A 16× fall over 40 steps. The reading that fits: the Balloon-Windkessel state is
+driven by `rate_e` from a regional model that is at its initialisation on step
+1, and it settles as that model trains. No intervention was made and none was
+needed — which is the reason for measuring the trend before acting on the first
+alarming number.
 
 This is the first run in which `bold.*` is trainable from step 1; run 2 froze it
-for every card that could have reached it.
+for every card that could have reached it, so nothing in run 2 could have shown
+this.
+
+**A note on `tests/evaluation_audit`.** HANDOFF-003 warns that its
+`conftest.py` hard-codes a path into `scwbd-wt/turing` and that removing the
+worktrees changes what the suite tests. The worktrees are gone and the path is
+absent, as is its in-repo fallback. The fixture does the right thing: it
+`pytest.skip`s with the reason ("no checkpoint carrying torch.compile's
+`_orig_mod.` prefix is present on this machine"). So the load-integrity test is
+now **skipped rather than passing**, which is visible rather than silent, and
+needs no repair — only the awareness that a green run of that file is not
+evidence about the `_orig_mod.` defect any more.
 
 ## Results
 
