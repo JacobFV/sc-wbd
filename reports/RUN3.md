@@ -538,6 +538,13 @@ latent bug in the test — expectations built by appending
 happened to sort before `montage_calibration`, which enabling `sleepedf_real`
 broke.
 
+`tests/intervene` and `tests/runtime` pass with **no failures**. Worth checking
+rather than assuming: run 3 modified `scwbd/intervene/impulse_response.py` —
+`build_latent_drive` assembled the drive on the CPU unconditionally and now
+follows the drive's own device — and HANDOFF-003 records that package as green,
+which is a state easy to break and easy not to notice, since nothing in the
+foundation suite imports it.
+
 Outside `tests/foundation`, `tests/schema/test_carrier_and_views.py` fails at
 **collection** (ISSUE-007) and takes the directory with it under a plain
 `pytest`. Pre-existing, from the noether2 merge, and not repaired here for the
