@@ -164,8 +164,8 @@ the field is.[[note: A 200-permutation shuffled-normal null puts the real contra
 above every permutation (p = 0.005). The criterion was committed while the
 checkpoint directory was still empty.]] The field calculations are validated.</p>
 
-<p>SC-WBD-003 is trained on measured stimulation: single-pulse TMS delivered over
-one primary motor cortex with 64-channel EEG recording, 704 epochs from two
+<p>SC-WBD-003 trains on measured stimulation: single-pulse TMS delivered over one
+primary motor cortex with 64-channel EEG recording, 704 epochs from two
 participants. The evoked response is there in the data before any model touches
 it — trial-averaged global field power reaches 5.4&times; baseline for left-M1
 pulses and 4.6&times; for right-M1, peaking around 160–170&nbsp;ms.[[note: The
@@ -282,6 +282,28 @@ or download.</p>
   five stage checkpoints.]] So this result does not say structured regional
   state fails to help. That part of the model was a random initialisation
   taking part in the forward pass for 8,700 steps.</td>
+</tr>
+<tr>
+  <td><strong>scwbd-003</strong></td>
+  <td><span class="chip unknown">training</span></td>
+  <td>26,304,729 parameters over the 414 regions, trained on <strong>seven measured
+  sources</strong> through <strong>four observation montages</strong>: 64-channel
+  EEG (109 participants), whole-night polysomnography (78), a 70-channel cap (2),
+  a second 64-channel cap (2), parcel-space BOLD (10), button presses (2) and
+  single-pulse TMS-EEG (2). Two kinds of signal reach the model that never had a
+  source before — a <em>boundary output</em>, produced by the participant and
+  measured outside the skull, and a <em>measured intervention</em>.[[note: The
+  schema has always declared four attachment kinds — stimulus, observation,
+  boundary_output, context. Every source in run 2 was an observation, so three of
+  the four were untested while the schematic above gave them equal billing. Run 3
+  exercises three; <code>context</code> still has no source and the run's report
+  says so rather than omitting it.]] No score is claimed here: this row will
+  carry held-out numbers, which sources actually contributed gradient, and a
+  leave-one-source-out result when the run finishes.[[note: The ablation is
+  leave-one-out specifically because it can return a null. The identifiability
+  benchmark measured joint multirate inference as <em>failing</em> to beat
+  isolated modalities in every regime, and an evaluation unable to reproduce that
+  would be unable to disagree with the premise it is testing.]]</td>
 </tr>
 <tr>
   <td><strong>A model that beats its baselines</strong></td>

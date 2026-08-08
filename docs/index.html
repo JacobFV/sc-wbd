@@ -205,9 +205,26 @@ through that person's own head, not an average one.</p>
 difference is carried by the coil's <em>orientation</em> rather than by how strong
 the field is.<span class="note"><input type="checkbox" id="index-n2" class="note-toggle"><label for="index-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>A 200-permutation shuffled-normal null puts the real contrast
 above every permutation (p = 0.005). The criterion was committed while the
-checkpoint directory was still empty.</span></span> The field calculations are validated. The
-step from field to neural response is not, and is flagged as unvalidated in the
-code, because no model here has been trained on stimulation data.</p>
+checkpoint directory was still empty.</span></span> The field calculations are validated.</p>
+
+<p>SC-WBD-003 trains on measured stimulation: single-pulse TMS delivered over one
+primary motor cortex with 64-channel EEG recording, 704 epochs from two
+participants. The evoked response is there in the data before any model touches
+it — trial-averaged global field power reaches 5.4&times; baseline for left-M1
+pulses and 4.6&times; for right-M1, peaking around 160–170&nbsp;ms.<span class="note"><input type="checkbox" id="index-n3" class="note-toggle"><label for="index-n3" class="note-ref">3</label><span class="note-body"><span class="note-n">3</span>The
+model's fast clock is 8 ms, so components earlier than roughly N45 sit below its
+temporal resolution and nothing here claims them. The first 10 ms after each
+pulse is excluded from the likelihood by a mask rather than deleted, so the
+rollout still integrates through it.</span></span></p>
+
+<p>The step from a computed field to a neural response remains unvalidated, and
+the reason is now a property of the recording rather than of the model. Turning a
+coil into a drive requires the coil's position and orientation; that release was
+MRI-navigated but ships no per-pulse pose, so there is no field to validate the
+map from. The drive 003 learns is anchored only by which hemisphere the muscle
+response identifies and by that hemisphere's motor parcels. One target site, one
+intensity, two participants — a pulse somewhere the model has not seen is still
+untested.</p>
 </section>
 <section class="chapter tinted" id="fine-tuneable-for-personalized-neurotechnology">
 <h2>Fine-tuneable for personalized neurotechnology</h2>
@@ -252,7 +269,7 @@ or download.</p>
 <tr>
   <td><strong><a href="https://huggingface.co/datasets/jacob-valdez/scwbd-anatomy-prior-414">Anatomy prior</a></strong></td>
   <td><span class="chip pass">published</span></td>
-  <td>The 414 regions — 400 Schaefer cortical, 14 Tian subcortical — with the connectome, geometry and cortical normals, carrying receptor density, intrinsic timescale, myelin and thickness. Partitioned into nine families by a rule fixed before the test ran.<span class="note"><input type="checkbox" id="index-n3" class="note-toggle"><label for="index-n3" class="note-ref">3</label><span class="note-body"><span class="note-n">3</span>Ship the finest candidate partition in which <em>every</em> pair of families separates under a spin null. Yeo-7 separated 6 of 21 pairs and was rejected. The surviving split is binary over cortex — <code>cortex_unimodal</code> (138 parcels) and <code>cortex_association</code> (262) — plus seven subcortical families of two parcels each.</span></span></td>
+  <td>The 414 regions — 400 Schaefer cortical, 14 Tian subcortical — with the connectome, geometry and cortical normals, carrying receptor density, intrinsic timescale, myelin and thickness. Partitioned into nine families by a rule fixed before the test ran.<span class="note"><input type="checkbox" id="index-n4" class="note-toggle"><label for="index-n4" class="note-ref">4</label><span class="note-body"><span class="note-n">4</span>Ship the finest candidate partition in which <em>every</em> pair of families separates under a spin null. Yeo-7 separated 6 of 21 pairs and was rejected. The surviving split is binary over cortex — <code>cortex_unimodal</code> (138 parcels) and <code>cortex_association</code> (262) — plus seven subcortical families of two parcels each.</span></span></td>
 </tr>
 <tr>
   <td><strong>Dynamics backends</strong></td>
@@ -267,12 +284,12 @@ or download.</p>
 <tr>
   <td><strong>Real EEG corpus</strong></td>
   <td><span class="chip pass">built</span></td>
-  <td>109 PhysioNet participants, 64 channels, split <strong>71/11/27</strong> and verified participant-disjoint. Real human recording, kept strictly separate from the simulated corpus.<span class="note"><input type="checkbox" id="index-n4" class="note-toggle"><label for="index-n4" class="note-ref">4</label><span class="note-body"><span class="note-n">4</span>A simulated corpus can never be evidence that the model has learned anything about biology. Conflating the two would be the most basic error available to this project.</span></span></td>
+  <td>109 PhysioNet participants, 64 channels, split <strong>71/11/27</strong> and verified participant-disjoint. Real human recording, kept strictly separate from the simulated corpus.<span class="note"><input type="checkbox" id="index-n5" class="note-toggle"><label for="index-n5" class="note-ref">5</label><span class="note-body"><span class="note-n">5</span>A simulated corpus can never be evidence that the model has learned anything about biology. Conflating the two would be the most basic error available to this project.</span></span></td>
 </tr>
 <tr>
   <td><strong>Stimulation path</strong></td>
   <td><span class="chip unknown">partial</span></td>
-  <td>A validated E-field solver joined to the dynamics as an additive drive. The <em>field</em> computations pass their gates; the mapping from drive to neural response is flagged unvalidated in code, because no checkpoint has been trained on stimulation data.<a class="src" href="https://github.com/JacobFV/sc-wbd/blob/master/scwbd/intervene/impulse_response.py">scwbd/intervene/impulse_response.py</a></td>
+  <td>A validated E-field solver joined to the dynamics as an additive drive. The <em>field</em> computations pass their gates. The mapping from a <em>computed field</em> to a neural response is still unvalidated, and the obstacle is now the recording rather than the model: the measured stimulation corpus on disk (704 single-pulse TMS-EEG epochs, CC0) ships no per-pulse coil pose, so no field can be computed for the pulses that were actually delivered.<a class="src" href="https://github.com/JacobFV/sc-wbd/blob/master/scwbd/intervene/impulse_response.py">scwbd/intervene/impulse_response.py</a><span class="note"><input type="checkbox" id="index-n6" class="note-toggle"><label for="index-n6" class="note-ref">6</label><span class="note-body"><span class="note-n">6</span>Recovering a pose from the data was considered and refused. The release states the target was the first dorsal interosseous representation of one M1 and was MRI-navigated, but a position inferred from that description is an assumption about the study, not a measurement of the coil, and an E-field computed from it would carry a precision nothing supports.</span></span></td>
 </tr>
 <tr>
   <td><strong><a href="https://huggingface.co/jacob-valdez/scwbd-001-beta">scwbd-001-beta</a></strong></td>
@@ -283,7 +300,7 @@ or download.</p>
   <td><strong><a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">scwbd-002-pilot</a></strong></td>
   <td><span class="chip fail">negative result</span></td>
   <td>2.5M parameters over the 414 regions, the treatment arm. It loses to every
-  baseline on both columns, NLL and MSE.<span class="note"><input type="checkbox" id="index-n5" class="note-toggle"><label for="index-n5" class="note-ref">5</label><span class="note-body"><span class="note-n">5</span>NLL 3.179 against 2.045 for the
+  baseline on both columns, NLL and MSE.<span class="note"><input type="checkbox" id="index-n7" class="note-toggle"><label for="index-n7" class="note-ref">7</label><span class="note-body"><span class="note-n">7</span>NLL 3.179 against 2.045 for the
   best baseline; MSE 36.27 against 4.53. Every paired participant-clustered
   interval excludes zero. And 3.179 flatters it: SC-WBD is scored on
   <code>target/s</code> with the Jacobian folded into the log-variance while
@@ -300,7 +317,7 @@ or download.</p>
   curriculum gates were named for the previous run's stages, so no gradient was
   ever taken on a real recording; and <strong>88.7% of the parameters could not
   receive a gradient at all</strong>, including the entire family-indexed
-  regional model that is the treatment arm's whole thesis.<span class="note"><input type="checkbox" id="index-n6" class="note-toggle"><label for="index-n6" class="note-ref">6</label><span class="note-body"><span class="note-n">6</span>The regional
+  regional model that is the treatment arm's whole thesis.<span class="note"><input type="checkbox" id="index-n8" class="note-toggle"><label for="index-n8" class="note-ref">8</label><span class="note-body"><span class="note-n">8</span>The regional
   modules were renamed <code>local</code> → <code>family_local</code> and so on
   when the family-padded architecture landed. The permission cards still grant
   <code>local.*</code>, and <code>fnmatch("family_local.ports.out_proj.weight",
@@ -312,6 +329,28 @@ or download.</p>
   five stage checkpoints.</span></span> So this result does not say structured regional
   state fails to help. That part of the model was a random initialisation
   taking part in the forward pass for 8,700 steps.</td>
+</tr>
+<tr>
+  <td><strong>scwbd-003</strong></td>
+  <td><span class="chip unknown">training</span></td>
+  <td>26,304,729 parameters over the 414 regions, trained on <strong>seven measured
+  sources</strong> through <strong>four observation montages</strong>: 64-channel
+  EEG (109 participants), whole-night polysomnography (78), a 70-channel cap (2),
+  a second 64-channel cap (2), parcel-space BOLD (10), button presses (2) and
+  single-pulse TMS-EEG (2). Two kinds of signal reach the model that never had a
+  source before — a <em>boundary output</em>, produced by the participant and
+  measured outside the skull, and a <em>measured intervention</em>.<span class="note"><input type="checkbox" id="index-n9" class="note-toggle"><label for="index-n9" class="note-ref">9</label><span class="note-body"><span class="note-n">9</span>The
+  schema has always declared four attachment kinds — stimulus, observation,
+  boundary_output, context. Every source in run 2 was an observation, so three of
+  the four were untested while the schematic above gave them equal billing. Run 3
+  exercises three; <code>context</code> still has no source and the run's report
+  says so rather than omitting it.</span></span> No score is claimed here: this row will
+  carry held-out numbers, which sources actually contributed gradient, and a
+  leave-one-source-out result when the run finishes.<span class="note"><input type="checkbox" id="index-n10" class="note-toggle"><label for="index-n10" class="note-ref">10</label><span class="note-body"><span class="note-n">10</span>The ablation is
+  leave-one-out specifically because it can return a null. The identifiability
+  benchmark measured joint multirate inference as <em>failing</em> to beat
+  isolated modalities in every regime, and an evaluation unable to reproduce that
+  would be unable to disagree with the premise it is testing.</span></span></td>
 </tr>
 <tr>
   <td><strong>A model that beats its baselines</strong></td>
