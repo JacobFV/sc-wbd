@@ -76,10 +76,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\sffamily\scriptsize\color{muted}SuperCognition Labs \textperiodcentered\ SC-WBD Technical Thesis}
-\fancyhead[R]{\sffamily\scriptsize\color{muted}V9 \textperiodcentered\ Draft. Pending Development}
-\fancyfoot[L]{\sffamily\scriptsize\color{muted}Integrated Whole-Brain Modeling Program}
 \fancyfoot[C]{\sffamily\scriptsize\color{ink}\thepage}
-\fancyfoot[R]{\sffamily\scriptsize\color{frontpurple}supercognitionlabs.com}
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
 \setlength{\headheight}{12pt}
@@ -88,8 +85,10 @@
 
 \input{figures}
 
-% VERSION -- bump when you edit this paper. It appears in the running head of
-% every page after the first; the title page is deliberately bare. Currently V9.
+% The running head carries the organisation and the document; the foot carries
+% the page number. It used to carry a version-and-status stamp and a programme
+% name and a URL as well, which is three lines of furniture on every page for a
+% reader who wants to know which page they are on.
 \begin{document}
 \thispagestyle{empty}
 
@@ -121,6 +120,9 @@ Joint, multirate inference identifies coupling and delay parameters that isolate
 
 Heterogeneous public, partnered, prospective, and simulated trajectories supervise only the modules and ports they observe; missing states are marginalized rather than labeled, so a subject measured with EEG alone still trains the shared dynamics without inventing their haemodynamics. The system predicts rollouts across modalities, compares TMS and tFUS targets under an individualized head model, and reports calibrated uncertainty on both.
 
+\vspace{2mm}
+\noindent\textbf{Models, data, and code.} The implementation is public. Source is at \href{https://github.com/JacobFV/sc-wbd}{github.com/JacobFV/sc-wbd}; the 414-region anatomy prior, the simulated corpus, and both trained checkpoints are at \href{https://huggingface.co/jacob-valdez}{huggingface.co/jacob-valdez}; and \href{https://sc-wbd.pages.dev}{sc-wbd.pages.dev} carries a running statement of what is built and what each checkpoint measured. Both released checkpoints are \emph{negative results}---each loses to its baselines---and are published as such, with the mechanism of each loss documented rather than summarized.
+
 \vspace{4mm}
 {\sffamily\bfseries\fontsize{7.4}{8.5}\selectfont\color{muted}KEYWORDS}\par
 {\sffamily\fontsize{8.2}{10}\selectfont\color{muted}
@@ -135,7 +137,7 @@ whole-brain modeling; heterogeneous data fusion; multiscale neural dynamics; ide
 \input{supplementary_summary}
 
 \section{Data and Materials Availability}
-No participant dataset is analyzed or claimed in this thesis. The development plan targets a precision-neuroscience deep-sampling design of 23 adults across 89 longitudinal sessions; the individual, rather than a pooled group mean, is the principal unit of inference. Enrollment, sample counts, and data release remain prospective and require ethics approval, explicit sharing consent, de-identification, and re-identification-risk review. Schemas, synthetic fixtures, benchmark definitions, compiler code, and governance-permitted research artifacts are planned for \href{https://github.com/JacobFV/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics}{github.com/JacobFV/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics}. The comprehensive candidate-source register is supplied separately as an implementation supplement; inclusion in that register is not a claim of access or fitness.
+No participant dataset is analyzed or claimed in this thesis. The development plan targets a precision-neuroscience deep-sampling design of 23 adults across 89 longitudinal sessions; the individual, rather than a pooled group mean, is the principal unit of inference. Enrollment, sample counts, and data release remain prospective and require ethics approval, explicit sharing consent, de-identification, and re-identification-risk review. Schemas, synthetic fixtures, benchmark definitions, compiler code, and governance-permitted research artifacts are released at \href{https://github.com/JacobFV/sc-wbd}{github.com/JacobFV/sc-wbd}. Released artifacts are enumerated, with their state and measured results, at \href{https://sc-wbd.pages.dev}{sc-wbd.pages.dev}, which also carries the computed citation set and licence union for every source the repository holds (\href{https://sc-wbd.pages.dev/attribution.html}{sc-wbd.pages.dev/attribution.html}); licence terms differ per artifact because the data beneath them differs, and are computed per artifact rather than asserted once. The comprehensive candidate-source register is supplied separately as an implementation supplement; inclusion in that register is not a claim of access or fitness.
 
 \section{Author Contributions}
 Jacob Valdez: conceptualization, architecture, methodology, software design, visualization, project formulation, and writing.
@@ -145,9 +147,6 @@ No dedicated external funding is reported for this development manuscript.
 
 \section{Conflict of Interest}
 The author is Founding Architect at SuperCognition Labs, the organization proposing and developing SC-WBD, and may have future commercial interests in neurotechnology applications. No clinical capability, regulatory clearance, therapeutic efficacy, or completed human-data release is asserted.
-
-\section{Generative AI Statement}
-Generative AI assisted with drafting, language editing, and the production of schematic vector figures. Scientific claims, citations, and any future submitted version would require independent author verification under the applicable journal policy.
 
 \section{Document Status}
 This is a technical thesis and development contract: draft, pending development. It is not a clinical protocol, regulatory submission, completed software release, or report of empirical findings. Its scientific claims are conditional on the falsification gates stated herein.

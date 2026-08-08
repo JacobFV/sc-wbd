@@ -542,6 +542,18 @@ properties, coupling, steering, and focal displacement contribute uncertainty
 \citep{phipps2024}. Repeated calibration points and raw transform records are
 therefore first-class training data.
 
+Two ports in Table~\ref{tab:modalities} are not instruments at all. A sensory
+stimulus is the world acting on the subject: it has a presentation clock and a
+latency budget, but no forward operator to invert, because nothing about it is
+a measurement. A behavioural or peripheral output---gaze, keypress, speech,
+heart rate, a test response---is produced by the subject and measured outside
+the skull. Both carry real information about neural state and neither is a
+reading of it, and the distinction is enforced rather than advised: an
+\texttt{observation} must declare the forward operator it is measured through
+or it is refused, so eye tracking cannot be admitted as a measurement of
+cortex. Without that axis the only way to attach a button press would be to
+declare it a neural observation, which is a different and false claim.
+
 \begin{table*}[t]
 \centering
 \footnotesize
@@ -581,13 +593,27 @@ Transducer drive \(\rightarrow\) in situ acoustic field \(\rightarrow\) candidat
 Three-dimensional focus, pulse sequence, thermal and mechanical exposure histories &
 Transducer \(\rightarrow\) tracker/head \(\rightarrow\) MRI/CT \(\rightarrow\) acoustic grid/target &
 Skull and coupling model, registration, steering, focal shift, cavitation/thermal estimates, unresolved neuromodulatory mechanism\\
+
+Sensory stimulus &
+Stimulus drive into declared sensory ports; the world acting on the subject, with no forward operator to invert &
+Frame- or sample-clocked event and continuous streams; no neural support of its own &
+Presentation device \(\rightarrow\) display/transducer latency calibration \(\rightarrow\) session clock \(\rightarrow\) acquisition clock &
+Presentation latency and jitter, display or audio transfer function, attention and compliance, clock drift between stimulus and recording hardware\\
+
+Behavioural and peripheral output &
+Boundary-output operator; produced by the subject and measured outside the skull, never a neural observation &
+Event or continuous sampling at device rate; effector or autonomic support &
+Sensor \(\rightarrow\) body or effector frame \(\rightarrow\) session clock; no head-model or atlas chain &
+Device calibration and drift, transport latency, biomechanical and autonomic noise, task strategy, and misattribution if declared as a measurement of neural state\\
 \bottomrule
 \end{tabularx}
 \caption{\textbf{Source-native interfaces for cross-method whole-brain inference.}
 The architecture relates methods through explicit observation or intervention
 operators rather than assigning them one nominal resolution. Spatial support,
 clock, coordinate chain, calibration points, bias, and variance remain part of
-every read or write.}
+every read or write. The last two rows are not instruments: a sensory stimulus
+enters through the body and a behavioural response leaves through it, and both
+are evidence about the brain without being measurements of it.}
 \label{tab:modalities}
 \end{table*}
 
