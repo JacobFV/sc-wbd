@@ -264,16 +264,34 @@ steps of the launched run:
 | 20 | 9.03e4 | 2.393 | 2.396 | 0.687 |
 | 40 | 3.11e4 | 1.881 | 2.088 | 0.635 |
 | 60 | 5.76e3 | 1.844 | 1.531 | 0.649 |
-| 80 | 1.01e3 | 1.595 | — | — |
+| 80 | 1.01e3 | 1.595 | 1.505 | 0.512 |
 | 100 | 5.21e2 | 1.712 | 1.696 | 0.585 |
+| 120 | 7.14e2 | 2.227 | 1.827 | 0.477 |
+| 140 | 2.77e1 | 2.659 | 2.184 | 0.148 |
+| 160 | 5.94e2 | 2.727 | 2.139 | 0.578 |
+| 180 | 4.23e2 | 2.818 | 1.761 | 0.199 |
+| 200 | 2.90e3 | 1.923 | 1.559 | 0.191 |
+| 220 | 3.08e3 | 2.224 | 1.766 | 0.145 |
 
-A **173× fall** from the peak, monotone from step 20 on, while every other
-source improved over the same window. The reading that fits: the
-Balloon-Windkessel state is
+**A correction to an earlier reading of this table.** Through step 60 the fall
+looked monotone and this file said so. It is not: past step 100 the term
+oscillates between about 3e1 and 3e3 rather than continuing down. What survives
+is the part that mattered — it left the 1e4–1e5 range within 60 steps and has
+not returned to it — and what does not survive is "monotone", which was a claim
+about four points.
+
+Read at batch 8, one BOLD window per step, so single-step values are noisy by
+construction; the range is the signal, not any one number. The reading that
+fits: the Balloon-Windkessel state is
 driven by `rate_e` from a regional model that is at its initialisation on step
 1, and it settles as that model trains. No intervention was made and none was
 needed — which is the reason for measuring the trend before acting on the first
 alarming number.
+
+Whether this term ends up carrying *information*, as opposed to merely carrying
+a gradient, is not settled by any of the above and is left to the
+leave-one-source-out arm. Those are two different claims about the same source
+and the results section will say which one holds.
 
 This is the first run in which `bold.*` is trainable from step 1; run 2 froze it
 for every card that could have reached it, so nothing in run 2 could have shown
