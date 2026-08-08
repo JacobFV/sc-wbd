@@ -132,6 +132,18 @@ are, so activity in one region moves the regions it is actually connected to.</p
 they looked, and what they said about it — alongside what their brain did. Four
 different kinds of evidence about one response, all landing on one model.</p>
 
+<p>What each region carries matters more than how many regions there are.
+Summarising a parcel by one number retains <strong>5.6%</strong> of the whitened
+EEG lead field; carrying its net dipole moment — three numbers instead of one —
+retains <strong>51.7%</strong>. Splitting parcels into eight times as many
+scalar pieces reaches 16.2%.[[note: Measured on a real boundary-element forward
+solution, not on the analytic stand-in the trainer falls back to. Cortical
+folding cancels opposing dipoles within a parcel, which is why subdividing runs
+into a ceiling — a further 1.29&times; at most — while keeping the orientation
+does not. <a href="engineering/resolution-pair.html">The full table</a>.]] So
+orientation buys roughly nine times what resolution buys, and the state is built
+to carry it.</p>
+
 <p>The prediction comes back with a confidence attached rather than as a bare
 number, and a value the model could not actually resolve comes back marked
 unresolved instead of as a plausible guess.</p>
