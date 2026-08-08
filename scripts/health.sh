@@ -38,7 +38,11 @@ age=$(( $(date +%s) - $(stat -c %Y "$LOG") ))
 # successful run was tell a 10-minute watchdog to relaunch a finished job on top
 # of its own evaluation.
 TARGET="${TARGET:-8700}"
-last=$(grep -oE 'global_step=[0-9]+' "$LOG" | tail -1 | cut -d= -f2)
+# Two log formats are live. Run 2's stdout capture writes `global_step=123`;
+# the JsonlLogger writes `"global_step": 123`. Reading only the first reported a
+# healthy run-3 job as "wrong log, or the format changed" -- an instrument
+# failing on its own input again, which is the class ISSUE-004 is about.
+last=$(grep -oE '"?global_step"?[=:][[:space:]]*[0-9]+' "$LOG" | tail -1 | grep -oE '[0-9]+$')
 
 # The CHECKPOINT is the authority on how far training got; the log is a
 # transcript of it and can be shorter than the run for reasons that have nothing
@@ -88,11 +92,26 @@ tb=$(grep -c 'Traceback' "$LOG" || true)
 [ "${tb:-0}" -eq 0 ] || fail 2 "$tb traceback(s) in $LOG"
 
 # 4. Progress.  A step number that does not move is a hang, not a slow step.
-last=$(grep -oE 'global_step=[0-9]+' "$LOG" | tail -1 | cut -d= -f2)
+# Two log formats are live. Run 2's stdout capture writes `global_step=123`;
+# the JsonlLogger writes `"global_step": 123`. Reading only the first reported a
+# healthy run-3 job as "wrong log, or the format changed" -- an instrument
+# failing on its own input again, which is the class ISSUE-004 is about.
+last=$(grep -oE '"?global_step"?[=:][[:space:]]*[0-9]+' "$LOG" | tail -1 | grep -oE '[0-9]+$')
 [ -n "${last:-}" ] || fail 1 "no global_step line in $LOG -- wrong log, or the format changed"
 
-stage=$(grep -oE 'stage=[A-Za-z0-9_]+' "$LOG" | tail -1 | cut -d= -f2)
-rej=$(grep -oE 'npe_rejected=[0-9]+' "$LOG" | tail -1 | cut -d= -f2)
-nll=$(grep -oE 'sim_forecast_nll=[0-9.]+' "$LOG" | tail -1 | cut -d= -f2)
+# Same two formats as `global_step` above: `k=v` from the stdout capture,
+# `"k": v` from the JsonlLogger. `_field <name>` returns whichever is present,
+# so the report says what it found instead of printing `?` beside a healthy run.
+_field() {
+    grep -oE "\"?$1\"?[=:][[:space:]]*\"?[A-Za-z0-9_.+-]+" "$LOG" \
+        | tail -1 | sed -E 's/.*[=:][[:space:]]*"?//'
+}
+stage=$(_field stage)
+rej=$(_field npe_rejected)
+# Run 3's founding stage admits no simulated source, so `sim_forecast_nll` is
+# absent by design there. Fall back to the measured EEG likelihood rather than
+# reporting `?` for a run that is reporting a number.
+nll=$(_field sim_forecast_nll)
+[ -n "${nll:-}" ] || nll=$(_field eegmmidb_real_eeg_nll)
 
 echo "HEALTHY stage=$stage global_step=$last nll=${nll:-?} npe_rejected=${rej:-?} procs=$procs log_age=${age}s"
