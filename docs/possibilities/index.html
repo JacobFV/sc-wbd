@@ -200,10 +200,14 @@ distinction without a difference at the resolution we can measure.</li>
 endpoint that matters. The entire argument rests on the average brain being the
 wrong object. That is an empirical claim and it is testable.</li>
 <li><strong>The forward model cannot predict a perturbation it has not
-seen.</strong> No checkpoint here has been trained on perturbational data, and
-the mapping from stimulation to response is flagged unvalidated in code for that
-reason. If predicting held-out perturbations turns out to require training on the
-perturbations themselves, the closed loop does not close.</li>
+seen.</strong> This one is now closer to measurable and still open. SC-WBD-003
+trains on measured single-pulse TMS-EEG, so the premise that used to sit here —
+that no checkpoint had seen perturbational data at all — no longer holds. What
+the corpus supports is narrow: one target site, one intensity, two participants,
+and no per-pulse coil pose, so a pulse delivered somewhere the model has not seen
+is still untested and the map from a computed field to a response is still
+unvalidated. If predicting held-out perturbations turns out to require training
+on those perturbations themselves, the closed loop does not close.</li>
 </ul>
 </section>
 <section class="chapter tinted" id="where-the-work-actually-stands">
