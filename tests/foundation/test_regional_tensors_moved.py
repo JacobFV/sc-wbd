@@ -242,6 +242,53 @@ def test_every_parameter_has_a_recorded_initialisation(ckpt: Path) -> None:
     )
 
 
+def test_the_initialisation_is_reproducible_so_a_resume_does_not_inflate_it() -> None:
+    """`moved_since_init` must survive an interrupted run, and this is why it does.
+
+    The fingerprint is taken in ``FoundationTrainer.__init__``, before any
+    checkpoint is loaded. So after a resume it fingerprints a **fresh**
+    initialisation and then has trained weights loaded over it — and the whole
+    measurement is only meaningful if that fresh initialisation is bit-identical
+    to the original one.
+
+    It is, because ``set_determinism(cfg.train.seed)`` runs before the model is
+    constructed. Remove or reorder that and every resumed run would report
+    ~100% of tensors "moved" the instant it started, silently inflating run 3's
+    central published claim in the direction that flatters it.
+
+    A 13,400-step run over ~25 hours will plausibly be resumed at least once,
+    which is what makes this worth asserting rather than assuming.
+    """
+    import hashlib
+
+    from scwbd.foundation.anatomy import load_anatomy
+    from scwbd.foundation.config import load_config
+    from scwbd.foundation.model import SCWBD
+    from scwbd.foundation.util import set_determinism
+
+    cfgp = REPO / "configs/run3/scwbd-003.yaml"
+    if not cfgp.is_file():
+        pytest.skip("run-3 config absent")
+    cfg = load_config(cfgp)
+    anat = load_anatomy(device="cpu")
+
+    def fingerprint() -> str:
+        set_determinism(cfg.train.seed)
+        m = SCWBD(cfg.model, anat)
+        h = hashlib.sha256()
+        for name, p in sorted(m.named_parameters()):
+            h.update(name.encode())
+            h.update(p.detach().numpy().tobytes())
+        return h.hexdigest()
+
+    assert fingerprint() == fingerprint(), (
+        "two constructions at the same seed produced different weights, so the "
+        "initialisation this run is compared against is not reproducible. After "
+        "any resume, `moved_since_init` would report nearly everything as moved "
+        "regardless of training."
+    )
+
+
 def test_there_is_something_to_check() -> None:
     """Guards the guard: a parametrisation over an empty list passes vacuously.
 

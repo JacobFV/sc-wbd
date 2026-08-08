@@ -604,6 +604,21 @@ which is what run 2 lost to.
 In order. Each step's output is the input to the next, and none of them invents
 a number.
 
+**Resume was verified against the live checkpoint** (read-only, mid-run): the
+step-500 file reloads into a freshly built model with **0 missing and 0
+unexpected keys**, the `real_split` fingerprint is present so the evaluation can
+prove the split matches, and the TMS drive restores through its own slot.
+
+`moved_since_init` also survives a resume, and that is not automatic. The
+fingerprint is taken in `__init__`, before any checkpoint is loaded, so after a
+resume it fingerprints a *fresh* initialisation and has trained weights loaded
+over it. The measurement stays meaningful only because
+`set_determinism(cfg.train.seed)` runs before the model is constructed — two
+constructions at the same seed are bit-identical, verified. Without it, every
+resumed run would report ~100% of tensors "moved" the instant it started,
+inflating run 3's central claim in the direction that flatters it. Asserted in
+`test_regional_tensors_moved.py`.
+
 1.  `make health-run3` — expect `COMPLETE global_step=13400`. If it says
     anything else, read it before continuing: a run stopped at a wall-clock
     deadline replays its whole stage on resume with a fresh OneCycle schedule,
