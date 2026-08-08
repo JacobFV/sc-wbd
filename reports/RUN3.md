@@ -613,6 +613,17 @@ The step-2,000 threshold above stands unchanged. It has not been moved because
 the numbers improved — that is the point of having written it down at 2.2% — but
 on this evidence it is unlikely to fire.
 
+### Closed at step 2,000: the threshold passed
+
+Split-half delta **−0.235**, the first six logged points averaging **1.942**
+against the last six at **1.387**. So this configuration does train its founding
+likelihood, and the flat reading at step 300 was the instrument rather than the
+model, as diagnosed at the time.
+
+Recorded either way rather than left implicit. A criterion fixed in advance is
+only worth fixing if its resolution gets stated when it arrives — a threshold
+that is quietly dropped once the numbers look fine was never a threshold.
+
 One thing not yet true: at ~1.55, eegmmidb is still slightly worse than
 predicting the target's own marginal (1.42). Falling toward it is not the same
 as beating it, and beating the marginal is not the same as beating persistence,
