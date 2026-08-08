@@ -16,22 +16,31 @@ import { PARCEL_GROUP, PARCEL_XYZ } from "./parcels";
 /**
  * "What SC-WBD is."
  *
- * Product-first: what the system is and what it does. Every number here is
- * traceable to a file in the repository — the 414 = 400 + 14 parcel split from
- * site/static/brain.json and tests/anatomy/test_families.py; the four
- * attachment kinds from scwbd/schema/attachment.py:66; the 5.6% / 51.7% lead
- * field variance pair from reports/anatomy_families.md and
- * scwbd/anatomy/geometry.py:478.
+ * Written for someone who has never read a neuroscience paper.
+ *
+ * The previous cut opened on "an integrated whole-brain foundation model across
+ * modalities, scales and dynamics" and spent a third of its running time on the
+ * schema's four attachment kinds and the whitened lead field. Both are true and
+ * neither answers the only question a first-time viewer is actually asking,
+ * which is what this is for. The arc is now problem -> model -> mechanism ->
+ * use -> invitation, and the jargon is spent only where a plain word would be
+ * less honest rather than merely less impressive.
+ *
+ * The numbers are still traceable: 414 = 400 + 14 from site/static/brain.json
+ * and tests/anatomy/test_families.py; the sampling rates from the corpus
+ * manifests; the closing status from reports/run2_eval.md.
  */
 
-const T1 = 115; // the framing sentence
-const T2 = 145; // one brain, 414 parcels
-const T3 = 190; // four attachment kinds
-const T4 = 125; // EEG alone still trains the shared dynamics
-const T5 = 140; // the state carries orientation
-const T6 = 145; // what you can do
+const T1 = 165; // the brain is complicated and no instrument sees it whole
+const T2 = 250; // three instruments, three disagreements
+const T3 = 150; // so results do not add up, and almost none of it is about you
+const T4 = 165; // the model
+const T5 = 190; // how it works: 414 regions
+const T6 = 215; // how it works: every signal constrains what it can speak to
+const T7 = 235; // what you would use it for
+const T8 = 190; // the honest status, and the invitation
 
-export const OVERVIEW_DURATION = T1 + T2 + T3 + T4 + T5 + T6;
+export const OVERVIEW_DURATION = T1 + T2 + T3 + T4 + T5 + T6 + T7 + T8;
 
 /* ------------------------------------------------------------------ cloud */
 
@@ -118,47 +127,120 @@ const ParcelCloud: React.FC<{
   );
 };
 
-/* ------------------------------------------------------------- attachment */
+/* ------------------------------------------------------------- instrument */
 
-const Attachment: React.FC<{
+/**
+ * One way of looking at a brain, with the two things about it that make the
+ * others hard to combine with: how fast it reads, and how much it can see.
+ * The point of the row is the mismatch down the columns, so the columns are
+ * aligned and fixed-width rather than sized to their contents.
+ */
+const Instrument: React.FC<{
   name: string;
-  gloss: string;
-  detail: string;
+  what: string;
+  speed: string;
+  reach: string;
   delay: number;
-}> = ({ name, gloss, detail, delay }) => (
+}> = ({ name, what, speed, reach, delay }) => (
   <Rise delay={delay}>
     <div
       style={{
         display: "flex",
         alignItems: "baseline",
-        gap: 40,
+        gap: 48,
         borderTop: `1px solid ${theme.rule}`,
-        padding: "18px 0",
-        width: 1560,
+        padding: "26px 0",
+        width: 1620,
       }}
     >
-      <div
-        style={{
-          fontFamily: theme.mono,
-          fontSize: 30,
-          color: theme.ink,
-          flex: "0 0 330px",
-          letterSpacing: "-0.01em",
-        }}
-      >
-        {name}
-      </div>
-      <div style={{ flex: "1 1 auto" }}>
-        <div style={{ fontFamily: theme.serif, fontSize: 34, color: theme.ink, lineHeight: 1.3 }}>
-          {gloss}
+      <div style={{ flex: "0 0 330px" }}>
+        <div
+          style={{
+            fontFamily: theme.sans,
+            fontSize: 42,
+            fontWeight: 650,
+            color: theme.ink,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {name}
         </div>
         <div
           style={{
             fontFamily: theme.sans,
-            fontSize: 23,
+            fontSize: 24,
             color: theme.ink3,
-            marginTop: 7,
-            lineHeight: 1.35,
+            marginTop: 8,
+          }}
+        >
+          {what}
+        </div>
+      </div>
+      <div
+        style={{
+          flex: "0 0 470px",
+          fontFamily: theme.serif,
+          fontSize: 32,
+          color: theme.ink2,
+          lineHeight: 1.32,
+        }}
+      >
+        {speed}
+      </div>
+      <div
+        style={{
+          flex: "1 1 auto",
+          fontFamily: theme.serif,
+          fontSize: 32,
+          color: theme.ink2,
+          lineHeight: 1.32,
+        }}
+      >
+        {reach}
+      </div>
+    </div>
+  </Rise>
+);
+
+/* ------------------------------------------------------------ capability  */
+
+const Capability: React.FC<{
+  title: string;
+  detail: string;
+  delay: number;
+}> = ({ title, detail, delay }) => (
+  <Rise delay={delay}>
+    <div
+      style={{
+        display: "flex",
+        gap: 30,
+        alignItems: "baseline",
+        padding: "20px 0",
+        maxWidth: 1600,
+      }}
+    >
+      <div style={{ fontFamily: theme.mono, fontSize: 34, color: theme.ink3 }}>&rarr;</div>
+      <div>
+        <div
+          style={{
+            fontFamily: theme.sans,
+            fontSize: 46,
+            fontWeight: 650,
+            letterSpacing: "-0.02em",
+            color: theme.ink,
+            lineHeight: 1.2,
+          }}
+        >
+          {title}
+        </div>
+        <div
+          style={{
+            fontFamily: theme.serif,
+            fontSize: 33,
+            color: theme.ink2,
+            lineHeight: 1.4,
+            marginTop: 10,
+            maxWidth: 1320,
           }}
         >
           {detail}
@@ -168,272 +250,253 @@ const Attachment: React.FC<{
   </Rise>
 );
 
-/* ------------------------------------------------------------------ bars  */
-
-/** Two measured shares of the whitened EEG lead field, drawn to scale. */
-const LeadFieldBars: React.FC<{ delay: number }> = ({ delay }) => {
-  const frame = useCurrentFrame();
-  const grow = interpolate(frame - delay, [0, 34], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const eased = 1 - Math.pow(1 - grow, 3);
-
-  const rows = [
-    { label: "per-parcel scalar", value: 5.6, color: theme.ink3 },
-    { label: "3-vector current-dipole moment", value: 51.7, color: theme.ink },
-  ];
-  const track = 1180;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 34 }}>
-      {rows.map((r) => (
-        <div key={r.label}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-              width: track,
-              marginBottom: 12,
-            }}
-          >
-            <span style={{ fontFamily: theme.sans, fontSize: 26, color: theme.ink2 }}>
-              {r.label}
-            </span>
-            <span
-              style={{
-                fontFamily: theme.mono,
-                fontSize: 34,
-                color: r.color,
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {(r.value * eased).toFixed(1)}%
-            </span>
-          </div>
-          <div style={{ width: track, height: 16, background: theme.bgSoft, borderRadius: 2 }}>
-            <div
-              style={{
-                width: (track * r.value * eased) / 60,
-                height: 16,
-                background: r.color,
-                borderRadius: 2,
-              }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-/* ------------------------------------------------------------ capability  */
-
-const Capability: React.FC<{ children: React.ReactNode; delay: number }> = ({
-  children,
-  delay,
-}) => (
-  <Rise delay={delay}>
-    <div
-      style={{
-        display: "flex",
-        gap: 26,
-        alignItems: "baseline",
-        padding: "13px 0",
-        maxWidth: 1520,
-      }}
-    >
-      <div style={{ fontFamily: theme.mono, fontSize: 30, color: theme.ink3 }}>&rarr;</div>
-      <div style={{ fontFamily: theme.serif, fontSize: 38, color: theme.ink, lineHeight: 1.32 }}>
-        {children}
-      </div>
-    </div>
-  </Rise>
-);
-
 /* ----------------------------------------------------------------- video  */
 
 export const Overview: React.FC = () => {
+  const at2 = T1;
+  const at3 = at2 + T2;
+  const at4 = at3 + T3;
+  const at5 = at4 + T4;
+  const at6 = at5 + T5;
+  const at7 = at6 + T6;
+  const at8 = at7 + T7;
+
   return (
     <AbsoluteFill style={{ background: theme.bg }}>
+      {/* 1 — the problem, stated without a single technical word */}
       <Sequence durationInFrames={T1}>
         <FadeIO durationInFrames={T1}>
           <Slide wordmark={false}>
-            <Rise delay={0}>
-              <div
-                style={{
-                  fontFamily: theme.sans,
-                  fontSize: 34,
-                  fontWeight: 600,
-                  letterSpacing: "0.22em",
-                  color: theme.ink3,
-                }}
-              >
-                SC&#8209;WBD
-              </div>
-            </Rise>
-            <div style={{ height: 40 }} />
-            <Headline delay={8} size={80}>
-              An integrated whole-brain foundation model across modalities, scales
-              and dynamics.
+            <Kicker delay={0}>Start here</Kicker>
+            <div style={{ height: 38 }} />
+            <Headline delay={8} size={76}>
+              Your brain has about 86 billion cells, and they are all talking at
+              once.
             </Headline>
-            <div style={{ height: 52 }} />
+            <div style={{ height: 48 }} />
             <div style={{ width: 900 }}>
-              <DrawRule delay={34} />
+              <DrawRule delay={40} />
             </div>
+            <div style={{ height: 36 }} />
+            <Body delay={48} size={38}>
+              Nothing we can put on a person sees more than a sliver of that.
+            </Body>
           </Slide>
         </FadeIO>
       </Sequence>
 
-      <Sequence from={T1} durationInFrames={T2}>
+      {/* 2 — and the slivers do not line up */}
+      <Sequence from={at2} durationInFrames={T2}>
         <FadeIO durationInFrames={T2}>
           <Slide>
-            <div style={{ display: "flex", alignItems: "center", gap: 100 }}>
+            <Headline delay={0} size={62}>
+              Every way of looking sees something different.
+            </Headline>
+            <div style={{ height: 44 }} />
+            <Instrument
+              delay={22}
+              name="EEG"
+              what="electrodes on the scalp"
+              speed="Reads a thousand times a second."
+              reach="Cannot tell you much about where it came from."
+            />
+            <Instrument
+              delay={46}
+              name="MRI"
+              what="a scanner around the head"
+              speed="Reads once every two seconds."
+              reach="Sees the whole brain, blood flow rather than activity."
+            />
+            <Instrument
+              delay={70}
+              name="Behaviour"
+              what="what the person does"
+              speed="Reads whenever they move, look or speak."
+              reach="Not a brain measurement at all — but still evidence."
+            />
+            <div style={{ height: 44 }} />
+            <Body delay={96} size={34}>
+              Different speeds, different places, different units. And usually
+              measured on different people.
+            </Body>
+          </Slide>
+        </FadeIO>
+      </Sequence>
+
+      {/* 3 — why the mismatch is the thing that matters */}
+      <Sequence from={at3} durationInFrames={T3}>
+        <FadeIO durationInFrames={T3}>
+          <Slide>
+            <Kicker delay={0}>The consequence</Kicker>
+            <div style={{ height: 36 }} />
+            <Headline delay={8} size={66}>
+              So the findings never quite add up — and almost none of them are
+              about <em>your</em> brain.
+            </Headline>
+            <div style={{ height: 44 }} />
+            <Body delay={40} size={36}>
+              Each study learns a little about an average brain. The average
+              brain is a statistic. Nobody is treated with a statistic.
+            </Body>
+          </Slide>
+        </FadeIO>
+      </Sequence>
+
+      {/* 4 — the model */}
+      <Sequence from={at4} durationInFrames={T4}>
+        <FadeIO durationInFrames={T4}>
+          <Slide>
+            <div style={{ display: "flex", alignItems: "center", gap: 90 }}>
               <div style={{ flex: "1 1 auto" }}>
-                <Kicker delay={0}>One brain, one state</Kicker>
-                <div style={{ height: 40 }} />
-                <Headline delay={8} size={68}>
-                  One brain, modelled as a 414&#8209;parcel dynamical system.
+                <Kicker delay={0}>SC&#8209;WBD</Kicker>
+                <div style={{ height: 34 }} />
+                <Headline delay={8} size={62}>
+                  One working model of one person&#8217;s brain, that every
+                  measurement is allowed to correct.
                 </Headline>
-                <div style={{ height: 46 }} />
-                <Rise delay={30}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 22 }}>
-                    <CountUp to={400} delay={34} duration={30} color={theme.ink} size={82} />
-                    <span
-                      style={{ fontFamily: theme.sans, fontSize: 27, color: theme.ink3 }}
-                    >
-                      cortical
-                    </span>
-                    <span
-                      style={{ fontFamily: theme.mono, fontSize: 54, color: theme.ink3 }}
-                    >
-                      +
-                    </span>
-                    <CountUp to={14} delay={34} duration={30} color={theme.ink} size={82} />
-                    <span
-                      style={{ fontFamily: theme.sans, fontSize: 27, color: theme.ink3 }}
-                    >
-                      subcortical
-                    </span>
-                  </div>
-                </Rise>
+                <div style={{ height: 40 }} />
+                <Body delay={38} size={34}>
+                  Not a separate result per instrument. One shared model they all
+                  argue with.
+                </Body>
               </div>
               <Rise delay={14} distance={0}>
-                <ParcelCloud size={600} delay={14} />
+                <ParcelCloud size={560} delay={14} />
               </Rise>
             </div>
           </Slide>
         </FadeIO>
       </Sequence>
 
-      <Sequence from={T1 + T2} durationInFrames={T3}>
-        <FadeIO durationInFrames={T3}>
-          <Slide>
-            <Kicker delay={0}>Every modality supervises the part it observes</Kicker>
-            <div style={{ height: 30 }} />
-            <Headline delay={6} size={58}>
-              Four attachment kinds.
-            </Headline>
-            <div style={{ height: 34 }} />
-            <Attachment
-              delay={22}
-              name="stimulus"
-              gloss="The world driving the subject."
-              detail="Audio, video, text, task events."
-            />
-            <Attachment
-              delay={40}
-              name="observation"
-              gloss="A measurement of the brain through a declared forward operator."
-              detail="EEG via a lead field, BOLD via a haemodynamic model, MEG."
-            />
-            <Attachment
-              delay={58}
-              name="boundary_output"
-              gloss="Produced by the subject, measured outside the skull."
-              detail="Eye tracking, motor, speech, ECG, cognitive-test responses."
-            />
-            <Attachment
-              delay={76}
-              name="context"
-              gloss="Slow conditioning."
-              detail="Time of day, session, drug state."
-            />
-          </Slide>
-        </FadeIO>
-      </Sequence>
-
-      <Sequence from={T1 + T2 + T3} durationInFrames={T4}>
-        <FadeIO durationInFrames={T4}>
-          <Slide>
-            <Kicker delay={0}>Partial coverage is the normal case</Kicker>
-            <div style={{ height: 42 }} />
-            <Headline delay={8} size={66}>
-              A subject measured with EEG alone still trains the shared dynamics.
-            </Headline>
-            <div style={{ height: 50 }} />
-            <div style={{ width: 800 }}>
-              <DrawRule delay={34} />
-            </div>
-            <div style={{ height: 38 }} />
-            <Body delay={40} size={38}>
-              Missing states are marginalised, never imputed.
-            </Body>
-          </Slide>
-        </FadeIO>
-      </Sequence>
-
-      <Sequence from={T1 + T2 + T3 + T4} durationInFrames={T5}>
+      {/* 5 — mechanism, part one: what the model is made of */}
+      <Sequence from={at5} durationInFrames={T5}>
         <FadeIO durationInFrames={T5}>
           <Slide>
-            <Kicker delay={0}>The state carries orientation</Kicker>
+            <Kicker delay={0}>How it works</Kicker>
             <div style={{ height: 34 }} />
-            <Headline delay={6} size={54}>
-              Share of the whitened EEG lead field a parcel can express.
+            <Headline delay={6} size={62}>
+              The brain is divided into 414 regions, and each one gets its own
+              state.
             </Headline>
-            <div style={{ height: 48 }} />
-            <LeadFieldBars delay={22} />
+            <div style={{ height: 50 }} />
+            <Rise delay={30}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 24 }}>
+                <CountUp to={400} delay={34} duration={30} color={theme.ink} size={92} />
+                <span style={{ fontFamily: theme.sans, fontSize: 29, color: theme.ink3 }}>
+                  on the surface
+                </span>
+                <span style={{ fontFamily: theme.mono, fontSize: 58, color: theme.ink3 }}>
+                  +
+                </span>
+                <CountUp to={14} delay={34} duration={30} color={theme.ink} size={92} />
+                <span style={{ fontFamily: theme.sans, fontSize: 29, color: theme.ink3 }}>
+                  deep inside
+                </span>
+              </div>
+            </Rise>
             <div style={{ height: 46 }} />
-            <Body delay={62} size={36} color={theme.ink}>
-              Orientation buys about 9&#215; what spatial resolution buys.
+            <Body delay={64} size={34}>
+              Each region carries its own activity and its own uncertainty, and
+              they are wired to each other the way the real ones are.
             </Body>
           </Slide>
         </FadeIO>
       </Sequence>
 
-      <Sequence from={T1 + T2 + T3 + T4 + T5} durationInFrames={T6}>
+      {/* 6 — mechanism, part two: the rule that makes partial data usable */}
+      <Sequence from={at6} durationInFrames={T6}>
         <FadeIO durationInFrames={T6}>
-          <Slide wordmark={false}>
-            <Kicker delay={0}>What you can do with it</Kicker>
+          <Slide>
+            <Kicker delay={0}>The rule that makes it work</Kicker>
+            <div style={{ height: 34 }} />
+            <Headline delay={6} size={60}>
+              Every signal is only allowed to correct the part of the model it
+              can actually speak to.
+            </Headline>
+            <div style={{ height: 46 }} />
+            <Body delay={34} size={36}>
+              Where you looked is real evidence. It is not a reading of your
+              cortex, and a model that confuses the two learns the wrong thing.
+            </Body>
             <div style={{ height: 40 }} />
-            <Capability delay={10}>
-              Roll the state forward and predict across modalities.
-            </Capability>
-            <Capability delay={26}>
-              Put a subject&#8217;s fMRI into the 414-parcel space.
-            </Capability>
-            <Capability delay={42}>
-              Build a lead field on their own head geometry.
-            </Capability>
-            <Capability delay={58}>
-              Compare TMS and tFUS targets under an E-field model.
-            </Capability>
-            <div style={{ height: 54 }} />
-            <div style={{ width: 700 }}>
-              <DrawRule delay={78} />
+            <div style={{ width: 980 }}>
+              <DrawRule delay={64} />
             </div>
-            <div style={{ height: 32 }} />
-            <Rise delay={86}>
+            <div style={{ height: 34 }} />
+            <Body delay={72} size={36} color={theme.ink}>
+              So a person measured only one way still improves the shared model
+              — and what was never measured is left unknown rather than invented.
+            </Body>
+          </Slide>
+        </FadeIO>
+      </Sequence>
+
+      {/* 7 — what it is for */}
+      <Sequence from={at7} durationInFrames={T7}>
+        <FadeIO durationInFrames={T7}>
+          <Slide>
+            <Kicker delay={0}>What you would use it for</Kicker>
+            <div style={{ height: 38 }} />
+            <Capability
+              delay={14}
+              title="See what the brain is doing"
+              detail="Predict what comes next, and get an honest confidence with it rather than a bare number."
+            />
+            <Capability
+              delay={38}
+              title="Try a treatment before it touches anyone"
+              detail="Magnetic stimulation is already used for depression, and where you aim it matters. Compare targets on that person's own head, in simulation."
+            />
+            <Capability
+              delay={62}
+              title="Tune it to one person"
+              detail="Start from the shared model, fit it to an individual, and build a device around the brain in front of you instead of an average one."
+            />
+          </Slide>
+        </FadeIO>
+      </Sequence>
+
+      {/* 8 — the status, said plainly, and the way in */}
+      <Sequence from={at8} durationInFrames={T8}>
+        <FadeIO durationInFrames={T8}>
+          <Slide wordmark={false}>
+            <Kicker delay={0}>Where it stands today</Kicker>
+            <div style={{ height: 34 }} />
+            <Headline delay={8} size={58}>
+              It does not beat its baselines yet. We publish the numbers anyway.
+            </Headline>
+            <div style={{ height: 42 }} />
+            <Body delay={36} size={36}>
+              The weights, the data, the code and the paper are public, including
+              every measurement that went against us.
+            </Body>
+            <div style={{ height: 52 }} />
+            <div style={{ width: 760 }}>
+              <DrawRule delay={62} />
+            </div>
+            <div style={{ height: 36 }} />
+            <Rise delay={72}>
+              <div
+                style={{
+                  fontFamily: theme.mono,
+                  fontSize: 44,
+                  letterSpacing: "-0.01em",
+                  color: theme.ink,
+                }}
+              >
+                sc-wbd.pages.dev
+              </div>
+            </Rise>
+            <div style={{ height: 18 }} />
+            <Rise delay={82}>
               <div
                 style={{
                   fontFamily: theme.sans,
                   fontSize: 30,
-                  letterSpacing: "0.05em",
-                  color: theme.ink2,
+                  color: theme.ink3,
                 }}
               >
-                SC-WBD &mdash; modalities, scales and dynamics in one model.
+                Start with it today.
               </div>
             </Rise>
           </Slide>

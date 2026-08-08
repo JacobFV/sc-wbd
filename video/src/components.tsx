@@ -71,13 +71,15 @@ export const Headline: React.FC<{
   <Rise delay={delay}>
     <div
       style={{
-        fontFamily: theme.serif,
+        // Sans, matching the site's headings. Body copy stays serif in both
+        // places; the split is what makes a heading scannable next to it.
+        fontFamily: theme.sans,
         fontSize: size,
         lineHeight: 1.12,
-        letterSpacing: "-0.02em",
+        letterSpacing: "-0.028em",
         color: theme.ink,
-        fontWeight: 600,
-        maxWidth: 1400,
+        fontWeight: 650,
+        maxWidth: 1500,
       }}
     >
       {children}
