@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decorative guards — SC-WBD</title>
+<meta name="description" content="A catalogue of checks that were green, plausible, load-bearing, and structurally incapable of failing.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Decorative guards — SC-WBD">
+<meta property="og:description" content="A catalogue of checks that were green, plausible, load-bearing, and structurally incapable of failing.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+  <script defer src="../static/brain.js"></script>
+  <script defer src="../static/arch.js"></script>
+  <script defer src="../static/reveal.js"></script>
+</head>
+<body class="">
+
+<div class="scrollprog" id="scrollprog" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="../index.html">SC&#8209;WBD</a>
+    <nav>
+        <a href="../index.html">Overview</a>
+        <a href="../engineering/index.html" class="active">Engineering</a>
+        <a href="../possibilities/index.html">Possibilities</a>
+        <a href="../attribution.html">Attribution</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<nav class="railnav" aria-label="Sections on this page">
+  <ol>
+    <li><a href="#the-tell" data-rail="the-tell"><span class="rail-label">The tell</span></a></li>
+    <li><a href="#four-distinct-variants-because-the-fixes-differ" data-rail="four-distinct-variants-because-the-fixes-differ"><span class="rail-label">Four distinct variants, becau…</span></a></li>
+    <li><a href="#the-inverse-category-guards-that-assert-a-defect" data-rail="the-inverse-category-guards-that-assert-a-defect"><span class="rail-label">The inverse category</span></a></li>
+    <li><a href="#a-preregistered-threshold-with-no-reference-clas" data-rail="a-preregistered-threshold-with-no-reference-clas"><span class="rail-label">A preregistered threshold wit…</span></a></li>
+    <li><a href="#the-human-variants" data-rail="the-human-variants"><span class="rail-label">The human variants</span></a></li>
+    <li><a href="#the-standard-we-now-hold-and-it-is-stricter-than" data-rail="the-standard-we-now-hold-and-it-is-stricter-than"><span class="rail-label">The standard we now hold, and…</span></a></li>
+    <li><a href="#three-habits-in-the-order-they-are-worth" data-rail="three-habits-in-the-order-they-are-worth"><span class="rail-label">Three habits, in the order th…</span></a></li>
+  </ol>
+</nav>
+
+  <div class="wrap">
+    <div class="pagehead">
+      <h1>Decorative guards: checks that cannot fail</h1>
+      <p class="standfirst">A guard is decorative when its reading is constant with respect to the question being asked. It still produces output. The output still looks like evidence. It simply cannot come out any other way.</p>
+      <p class="applies"><span>Applies to</span> <strong>every run</strong> — the catalogue is about check design, not about any checkpoint. Each entry names the run it was found in.</p>
+    </div>
+<div class="prose">
+<section class="chapter chapter-intro" id="engineering-decorative-guards-top">
+
+
+<p class="lede">Every instance below was green, plausible and load-bearing.
+Because a decorative guard looks like evidence, it is worse than no instrument at
+all — confident reasoning follows from it. Seven of them were found
+<em>inside the machinery built to catch exactly this</em>.</p>
+</section>
+<section class="chapter" id="the-tell">
+<h2>The tell</h2>
+
+
+<p>In every case the instrument returned the same value under both branches of
+the question it was asked.</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th>Instrument</th><th>Read the same under…</th></tr></thead>
+<tbody>
+<tr><td>Parameter-binding glob match</td><td>CPU and CUDA<span class="note"><input type="checkbox" id="engineering-decorative-guards-n1" class="note-toggle"><label for="engineering-decorative-guards-n1" class="note-ref">1</label><span class="note-body"><span class="note-n">1</span>The compiler renames parameters when it optimises the model. Exact names matched nothing on GPU; prefix globs still matched, so the permission system reported success. Every CPU test passed.</span></span></td></tr>
+<tr><td>Container memory accounting</td><td>capped and uncapped<span class="note"><input type="checkbox" id="engineering-decorative-guards-n2" class="note-toggle"><label for="engineering-decorative-guards-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>It charges host pages; the allocation was on the device. Reported 8.17&nbsp;GB while the process held 97.9&nbsp;GB.</span></span></td></tr>
+<tr><td>“Allocated by PyTorch” in an OOM message</td><td>batch 64 and batch 192<span class="note"><input type="checkbox" id="engineering-decorative-guards-n3" class="note-toggle"><label for="engineering-decorative-guards-n3" class="note-ref">3</label><span class="note-body"><span class="note-n">3</span>At out-of-memory it always equals the cap, by construction — 38.93&nbsp;GB at batch 192 and 39.70&nbsp;GB at batch 128, against a 40&nbsp;GB cap. It produced two wrong batch-size estimates in a row, in opposite directions.</span></span></td></tr>
+<tr><td>The <code>-dirty</code> suffix on a provenance hash</td><td>clean source and modified source</td></tr>
+<tr><td>A backend's 0% clamp rate</td><td>the prior fit the support, and the prior never arrived</td></tr>
+<tr><td>A <code>git diff</code> against <code>HEAD</code></td><td>the worktree it was written in, and any other</td></tr>
+<tr><td>Composite training loss</td><td>a real change in forecast quality, and a reweighting of unrelated terms</td></tr>
+<tr><td>A stop-trigger at “10× the running floor”</td><td>an unstable learning rate, and a reproducible hard batch</td></tr>
+<tr><td>Window z-standard-deviation</td><td>a normaliser that bounds the tail, and one that defines the metric to 1</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<span class="callout-label">The rule</span>
+<p>If you cannot name a state of the world that would make the reading come out
+differently, <strong>you do not have a measurement.</strong></p>
+</div>
+</section>
+<section class="chapter tinted" id="four-distinct-variants-because-the-fixes-differ">
+<h2>Four distinct variants, because the fixes differ</h2>
+
+
+<h3>1. Absence — where a missing record looks exactly like a clean one</h3>
+
+<p>Two of the sharpest cases share this form. No <code>-dirty</code> suffix would
+mean clean source; no clamp record would mean the prior fit inside the backend's
+support. In both cases the absence was produced by the mechanism
+<em>failing to run at all</em> — and absence is exactly what success looks
+like.</p>
+
+<p>The provenance case is the one that stings: the run writes to tracked files as
+it goes, so the artifact is <strong>always</strong> dirty. Every checkpoint this
+project has ever produced is stamped <code>-dirty</code>, and the field was about
+to be handed to a new provenance-enforcement gate that would have consumed a
+signal structurally incapable of ever reading clean.</p>
+
+<p>The clamp case: a helper resolved a lookup key to <code>None</code> whenever a
+backend spelled its timescale parameter differently, then skipped the block
+<em>silently, writing no provenance entry</em>. A perfect 0% clamp rate meant the
+prior had never arrived at all. It affected 21.6% of the corpus, and it was found
+by asking why two backends had scored a suspiciously perfect zero.</p>
+
+<blockquote>
+<p>A field that is only ever written on success is not a record. It is a wish.</p>
+</blockquote>
+
+<p>This variant cannot be caught by looking harder at the output, because there is
+no output to look at. <strong>The remedy is to make the null case write
+something</strong> — when a mapping is undisclosed, record
+<code>{"disclosed": false}</code> explicitly, so that silence never reads as
+safe.</p>
+
+<h3>2. The wrong question, asked of a fine instrument</h3>
+
+<p>The composite training loss is a perfectly good instrument. It is a weighted
+sum whose terms move for unrelated reasons, so comparing two runs on it conflates
+“the model forecasts better” with “a different term happens to dominate right
+now”.</p>
+
+<p>It misled twice in one hour, in opposite directions. At step 80 it showed
+3.717 against 2.447 — a large apparent effect — where the interpretable forecast
+metric read 20.943 against 20.980, no effect at all. Over steps 40–140 it showed
+a consistent advantage that <em>reversed</em> by step 160, while forecast quality
+tracked within 2% throughout.</p>
+
+<p><strong>For a comparison, choose the narrowest metric that answers the actual
+question — and choose it before seeing which one is favourable.</strong> An
+aggregate is for monitoring, not for adjudicating.</p>
+
+<h3>3. The preserved quantity — the cleanest case here</h3>
+
+<p>This one was caught before the instrument had ever run, and it is the most
+transferable.</p>
+
+<p>The paper warns that <em>a lower-variance model is not preferred when it
+achieves stability by smoothing away the effect of interest</em>. We built a
+check that executes that warning, and built it well: it applies an effect
+function identically to the truth and to both predictions, so “the model is
+smoother” and “the model lost the effect” are separated rather than conflated,
+and it bootstraps the retention ratio. <strong>The mechanism is sound.</strong></p>
+
+<p>All of its discriminating power lives in one callable, and the default was
+<em>global dynamic range</em>. Now write down the failure mode it exists to
+catch: a heterogeneous model fails by collapsing every region onto one shared
+dynamic. Take any signal and rescale each channel to the pooled temporal standard
+deviation:</p>
+
+<blockquote>
+<p>Between-region differentiation is destroyed. Global dynamic range is
+unchanged — <strong>not approximately, exactly.</strong></p>
+</blockquote>
+
+<p>The check would have run, returned a retention ratio near 1.0, reported “not
+smoothing”, and been structurally incapable of any other reading on the one input
+it exists to catch. It would then have sat in the report as evidence that the
+model's win was earned.</p>
+
+<p>The instrument is right; the question is right; the <em>conserved quantity</em>
+is wrong. That is invisible to code review, invisible to tests that assert the
+check runs, and invisible to a passing negative control — unless the negative
+control is built out of the failure mode itself. The replacement test asserts
+both halves, because only the pair is informative: the old effect function is
+<em>blind</em> to the collapse, and the new one <em>sees</em> it.</p>
+
+<div class="callout">
+<span class="callout-label">The generalisable question</span>
+<p>Take the failure this guard exists to catch. Apply it to the guard's input.
+<strong>Does the reading move?</strong></p>
+<p>This is stronger than “write a negative control”, because it says what the
+negative control has to be <em>made of</em>: not a world where the claim is
+merely false, but a world built out of the specific failure mode. A negative
+control assembled some other way can pass while the guard stays blind.</p>
+</div>
+
+<h3>4. Unrepresentable — the guard is sound and the surrogate cannot express the failure</h3>
+
+<p>Covered in <a href="variance-channel.html">essay 02</a>. The identifiability
+checks run on a linear-Gaussian surrogate in which state-independent innovation
+covariance is a <em>theorem</em>, so a variance parameter with no path from state
+was not merely undetected — it was <strong>unrepresentable</strong>. Every check
+was green and every check was correct.</p>
+</section>
+<section class="chapter" id="the-inverse-category-guards-that-assert-a-defect">
+<h2>The inverse category: guards that assert a defect still exists</h2>
+
+
+<p>The mirror image, and it is easy to miss because these guards fail
+<em>loudly</em> — which makes them recoverable, but also makes them look like
+someone else's bug.</p>
+
+<p>One test asserted that a fallback connectome is labelled <em>not
+biological</em>. Sound, and it fired correctly for months. Then the loader was
+hardened so that it <strong>refuses</strong> to substitute the synthetic prior
+silently — it now raises unless explicitly forced. The test's fixture does not
+force it, so the path the guard polices <em>is never entered</em>. Where the
+assets are absent it raises; where they are present it would load the
+<strong>real</strong> prior and the assertion would fail.</p>
+
+<div class="callout">
+<span class="callout-label">Filed as a near miss, deliberately</span>
+<p>A decorative guard is green and unable to go red. This is the adjacent
+failure: <strong>the guard is intact and its subject moved out from under
+it.</strong> Miscategorising it would be the same sloppiness the register exists
+to name. The effect is the same — that code path has no live test — but the fix
+differs: not “replace the instrument” but “restore the subject”, one argument in
+one fixture.</p>
+</div>
+
+<p>The general form is a test that encodes <em>“this is still broken”</em>. It is
+a legitimate thing to write, and it must be labelled as such, because otherwise
+the person who fixes the defect is greeted by a red suite and no explanation of
+why fixing something broke the build.</p>
+</section>
+<section class="chapter tinted" id="a-preregistered-threshold-with-no-reference-clas">
+<h2>A preregistered threshold with no reference class</h2>
+
+
+<p>This is the headline finding, and it survived <em>every</em> procedural
+safeguard the project has.</p>
+
+<p>A training-continuation trigger required a forecast metric to fall below 1.0
+by step 900. It was written before the data existed, never moved, honoured to the
+letter when it resolved, escalated the moment a sibling clause fired, and
+adjudicated by a party who was not its author. <strong>Every safeguard worked, in
+order, correctly.</strong></p>
+
+<p>The result — not met, 1.1200 — is still uninterpretable. To know whether
+“below 1.0” was a reasonable ask of a 1.76M-parameter model, on 37 simulated
+shards, with roughly 40% of its regional-timescale prior missing or clamped, you
+need a <strong>reference class</strong>: a capacity-matched baseline, a matched
+control, the same architecture at another budget. The project had none. Without
+one, the threshold cannot distinguish <em>a model that underperformed</em> from
+<em>a number that was never achievable</em>. Both produce an identical
+reading.</p>
+
+<blockquote>
+<p>A preregistered threshold with no reference class is <strong>a guess with a
+timestamp</strong>.</p>
+</blockquote>
+
+<p>Note what this is not. It is not “be more disciplined” — discipline was not
+the binding constraint and more of it would not have helped. <strong>Process
+discipline cannot manufacture a reference class.</strong> The bar was
+inappropriate, and not because it was too high; height was never the issue, it
+had no scale.</p>
+
+<p><strong>The fix: state a threshold's reference class when you set it, or set a
+matched control instead of an absolute value.</strong> An absolute number encodes
+an assumption about what is achievable, and that assumption becomes invisible the
+moment the number is written down. A control encodes no such assumption. Prefer
+controls — under an instrument rescale, both sides of a comparison move together
+and the comparison survives.</p>
+
+<h3>And what a preregistration inherits</h3>
+
+<p>The same threshold demonstrates a limitation of preregistration as a
+technique. Midway through, a normaliser defect was found and fixed, and the
+metric's scale changed by two orders of magnitude:</p>
+
+<div class="tablewrap">
+<table>
+<thead><tr><th></th><th class="num">Before fix</th><th class="num">After fix</th></tr></thead>
+<tbody>
+<tr><td>Metric at step 1</td><td class="num">184.338</td><td class="num">1.692</td></tr>
+<tr><td>What “below 1.0” demands</td><td class="num">a 99.5% descent</td><td class="num">roughly 41%</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>The restart fixed the signal the bar was <em>evaluated on</em>. It did not fix
+the bar — because the bar had been chosen by looking at the same corrupted
+numbers. Half the contamination was repaired; the other half was invisible
+<em>precisely because it had already been written down.</em> A committed number
+stops attracting scrutiny, which is most of its value and, here, exactly the
+problem.</p>
+
+<p>When the instrument a preregistration was written against is found defective,
+the preregistration does not become wrong. It becomes
+<strong>uninterpretable</strong>, and the honest response is to report it as
+uninterpretable rather than to re-set it — <em>regardless of which direction the
+new bar would move. A harder bar is not a cleaner one.</em> Report it in three
+layers that are never merged: the literal fact, the interpretation, and the
+adjudication — with the third decided by someone who is not the author. Merging
+the first two lets a caveat quietly do the work of a result; merging the last two
+lets the author grade their own homework.</p>
+</section>
+<section class="chapter" id="the-human-variants">
+<h2>The human variants</h2>
+
+
+<p>The rows above are mechanisms that cannot discriminate. These are
+<em>processes</em> that cannot discriminate, and they are the ones the project
+actually ran into.</p>
+
+<h3>A conclusion nobody is attacking</h3>
+
+<p>A conclusion that survives only because everyone has become invested in it
+reads exactly like one that survives because it is true. Same confidence, same
+articulacy, same absence of dissent. Nobody lied; the mechanism that would have
+produced disagreement quietly stopped running — the absence variant again, in
+people.</p>
+
+<p>Both directions appeared within one hour on the same decision: the author
+reaching for the reading that makes their most recent action look correct, and
+the reviewer <strong>under-auditing evidence because it arrived
+well-argued</strong>. The second is more dangerous, because it converts one
+party's error into everyone's, and it gets stronger the better the collaboration
+is going.</p>
+
+<blockquote>
+<p>A conclusion nobody is trying to break is not a finding. It is a consensus.</p>
+</blockquote>
+
+<h3>True, and not the proposition at issue</h3>
+
+<p>The most durable of all of these, because attacking it <em>confirms</em> it.</p>
+
+<p>A rule said: commit nothing until the artifact freezes its identity. Three
+commits went in anyway, each justified by <em>“docs-only commits cannot change
+the model.”</em> That justification is <strong>correct</strong>. It is simply not
+the proposition the rule was protecting. There was nothing false to notice, no
+contradiction to trip over — and the substituted rule was strictly easier to
+satisfy.</p>
+
+<p><strong>A rationalisation that is false gets caught; one that is true but
+irrelevant does not.</strong> The check is not “is this reasoning sound?” — it
+will be. The check is: <em>which proposition does this argument establish, and is
+it the one at issue?</em></p>
+
+<h3>Auditing the incentive instead of the argument</h3>
+
+<p>An argument that <em>disadvantages its own author</em> feels checked on
+arrival. It is not. One such argument was accepted for exactly that reason,
+called sharp, and turned out to be wrong on inspection.</p>
+
+<blockquote>
+<p>Accepting a generous argument from the party it disadvantages is the same
+error as accepting a flattering one from the party it favours. Both substitute a
+judgement about <em>incentive</em> for a judgement about <em>validity</em>. The
+first feels like rigour, which makes it the more durable of the two.</p>
+</blockquote>
+
+<h3>A true explanation that does not exhaust the cause</h3>
+
+<p>A training stage replayed after a resume. The diagnosis — resume granularity
+is stage-level, so an interrupted stage replays from step 1 — was
+<strong>true</strong>, and it is a real design property. It was also incomplete: a
+<em>completed</em> stage was replaying too, because the bookkeeping that records a
+stage as finished ran after the checkpoint write, so no stage ever recorded itself
+as done.</p>
+
+<p>A wrong explanation gets falsified by the next observation. A right but partial
+one absorbs it. <strong>The correctness is load-bearing for the error.</strong>
+The operative check: <em>does this explanation account for the full magnitude of
+what I observed, or only for its existence?</em></p>
+
+<h3>A descriptive range that becomes a threshold by drift</h3>
+
+<p>A quantity was explicitly ruled a diagnostic, not a criterion. Someone then
+observed it oscillating and wrote <em>“I will not report this again unless it
+leaves the 5–14 band.”</em> The band was <em>descriptive</em> — a range that had
+been seen. Attaching a reporting decision to it made it a <em>criterion</em>.
+Nobody decided to set a threshold; it assembled itself out of an observation plus
+a commitment, and later fired on a sample 0.6% over an edge chosen by eye.</p>
+
+<p><strong>A descriptive range with a decision attached to it is a threshold,
+however it was arrived at.</strong> Report the trajectory, not the band.</p>
+</section>
+<section class="chapter tinted" id="the-standard-we-now-hold-and-it-is-stricter-than">
+<h2>The standard we now hold, and it is stricter than the one we recommended</h2>
+
+
+<p>This document spent a long time saying: <em>write a negative control; show the
+guard can fire.</em> That is the weaker form. It constructs a failing
+<strong>input</strong> and asserts the guard goes red.</p>
+
+<p>The stronger form mutates the <strong>implementation</strong>. Stub the
+validator to a no-op and confirm all fourteen guards fail. Replace the definition
+they protect with a structurally similar but meaningless one, and confirm the
+test still fails — against a matched null control, so that “a regrouping fails”
+cannot just mean “any regrouping fails”.</p>
+
+<blockquote>
+<p>A firing test proves the guard responds to a bad input you thought of.
+<strong>A mutation test proves the guard is load-bearing on the code it
+protects.</strong></p>
+</blockquote>
+
+<p>Several of our own firing tests are the weaker form and are recorded as
+<em>not yet at this standard</em>, rather than described as if they were.</p>
+</section>
+<section class="chapter" id="three-habits-in-the-order-they-are-worth">
+<h2>Three habits, in the order they are worth</h2>
+
+
+<ol>
+<li><strong>Make the guard fail on purpose before trusting it.</strong> Break the
+thing deliberately and confirm the alarm sounds. Doing this to a memory cap
+caught a real bug in the fix itself — a guard that raised an error instead of
+enforcing a limit, which is the same failure one level up.</li>
+<li><strong>Say what you expect to see if the thing is broken, before
+reading.</strong> If that is the same as what you expect if it is fine, stop and
+find a different instrument.</li>
+<li><strong>Ask of every caveat: if this were true, would the claim
+change?</strong> If not, the caveat is ornament and the claim is unearned. A
+retracted periodicity claim here carried an accurate, freely-volunteered aliasing
+caveat — and then asserted the period anyway. The caveat was correct, prominent,
+and load-bearing on nothing, and it bought unearned credibility precisely because
+it signalled awareness of the limitation it failed to apply.</li>
+</ol>
+
+<p>And its sibling, which is worse: <strong>a true qualifier that increases
+apparent confidence while the underlying measurement stays weak.</strong> We
+reported “2.24 s/step, settled, warm-up excluded”. Every word true — excluding
+warm-up is correct practice. But a reader hears <em>the confound has been
+handled</em>, when it actually meant <em>this is a 60-step sample taken
+immediately after warm-up</em>, precisely where a rate is least likely to have
+converged. The settled figure was 2.95, thirty-two percent higher. Warm-up was
+nameable; sample length was the larger error and went unnamed.</p>
+
+<div class="callout">
+<span class="callout-label">Prefer a mechanism to an instruction</span>
+<p>No amount of scrutinising a claim finds a defect that lives <em>inside the
+statistic</em>. One of ours reported the mean of absolute differences (2.21%)
+where the signed mean was 1.72% — the absolute value converted the one step
+where the treatment was <em>better</em> into a penalty. Nothing about it is
+incorrect, and it carries a connotation of caution that discourages anyone from
+checking which quantity it produces.</p>
+<p>The remedy was a tool, not vigilance: the script now emits the signed mean,
+the largest single deviation, and which steps favoured the treatment.
+<strong>Regenerate from source; do not audit the table.</strong></p>
+</div>
+
+<p class="lede"><a href="resolution-pair.html">Next: a measured FAIL, kept as the
+deliverable →</a></p>
+</section>
+</div>
+
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p class="foot-legal">Copyright &copy; 2026 SuperCognition Labs. Not a
+    medical device and not clinical advice.</p>
+  </div>
+</footer>
+
+</body>
+</html>
