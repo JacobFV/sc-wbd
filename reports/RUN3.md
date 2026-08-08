@@ -244,9 +244,10 @@ answered here.
 
 ## Things being watched during the run
 
-**The BOLD term diverges.** `real_bold_nll` goes from 21.7 at step 1 to ~9.0e4
-by step 20, reproducibly across three launches, while `bold_log_scale` stays
-flat at 5.578. The target is normalised to unit scale, so that magnitude implies
+**The BOLD term spikes early and settles.** `real_bold_nll` goes from 21.7 at
+step 1 to ~9.0e4 by step 20, reproducibly across three launches, while
+`bold_log_scale` stays flat at 5.578. It read as a divergence at the time and
+this heading said so; it is not one, and the table below is why. The target is normalised to unit scale, so that magnitude implies
 either a Balloon-Windkessel state that has run away or a predicted log-variance
 pinned at the `gaussian_nll` clamp; the two are not distinguishable from the
 logged fields alone and will be separated by probing a checkpoint offline rather
