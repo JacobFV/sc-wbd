@@ -228,15 +228,42 @@ def test_run2_config_admission_matches_its_declaration() -> None:
         for s in cfg.train.stages
         if s.enabled and s.steps > 0
     }
-    # ds002336_real joined tier 1 on 2026-08-06, once the parcel-space BOLD path
-    # was complete end to end (registration run, 55/55 runs cached, coverage
-    # invariant holding on every artifact). The expectations are widened rather
-    # than loosened: each still names the exact source set, so the next addition
-    # is refused the same way this one was.
-    MEASURED = ("ds002336_real", "eegmmidb_real")
+    # WHAT THIS TEST IS, exactly: it reads run 2's CONFIG against the CURRENT
+    # cards. It is not a record of what run 2 trained on. Run 2 trained with two
+    # measured sources; that fact lives in its checkpoints and in
+    # reports/training/scwbd-002-pilot/, and no edit here can change it.
+    #
+    # The guard's value is that adding a tier-1 card is refused until somebody
+    # writes down that they added one. It has now fired twice, as intended:
+    #
+    #   2026-08-06  + ds002336_real       parcel-space BOLD complete end to end
+    #   2026-08-07  + sleepedf_real       unblocked by the bipolar montage adapter
+    #               + ds000117_real       70ch digitised cap
+    #               + ds000117_behaviour  the first boundary_output in the mixture
+    #               + ds004024_rest_real  64ch 10-10, its own electrode order
+    #               + ds004024_perturb    the first measured intervention
+    #
+    # Widened, not loosened: each assertion still names the exact set, so the
+    # next addition is refused the same way these were.
+    MEASURED = (
+        "ds000117_behaviour",
+        "ds000117_real",
+        "ds002336_real",
+        "ds004024_perturb",
+        "ds004024_rest_real",
+        "eegmmidb_real",
+        "sleepedf_real",
+    )
+    # `source_ids` comes back SORTED, so the expectations are built as sorted
+    # sets rather than by appending. `(*MEASURED, "montage_calibration")` was
+    # correct only while every measured id happened to sort before it, which
+    # stopped being true when `sleepedf_real` was enabled.
+    def _with(*extra: str) -> tuple[str, ...]:
+        return tuple(sorted({*MEASURED, *extra}))
+
     assert got["T1_measured_founding"] == MEASURED
-    assert got["T2_boundary_calibration"] == (*MEASURED, "montage_calibration")
-    assert got["T3_population_prior"] == ("anatomical_prior", *MEASURED, "montage_calibration")
+    assert got["T2_boundary_calibration"] == _with("montage_calibration")
+    assert got["T3_population_prior"] == _with("anatomical_prior", "montage_calibration")
     assert "sim_wholebrain" in got["T4_simulator_extension"]
     assert got["T1_individualisation"] == MEASURED
     # the simulator is admitted LAST among the training tiers, and only there
