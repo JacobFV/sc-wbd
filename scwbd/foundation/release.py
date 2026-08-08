@@ -19,7 +19,25 @@ from .util import env_fingerprint, git_sha
 __all__ = ["build_manifest", "main"]
 
 
-def _source_rows(cfg_sources: Mapping[str, Any]) -> list[dict[str, Any]]:
+def _source_rows(
+    cfg_sources: Mapping[str, Any],
+    *,
+    contributed: "set[str] | None" = None,
+) -> list[dict[str, Any]]:
+    """One row per source, separating what it MAY train from what it DID.
+
+    ``gradient_permission`` and ``frozen`` come from the card: they are a
+    statement of permission. ``contributed_gradient`` comes from the
+    checkpoint's own ``extra.contributed_sources``: it is a statement of fact.
+
+    Run 2 shipped a card asserting that ``eegmmidb_real`` trained the regional
+    model, while every regional tensor stayed bit-identical to its
+    initialisation for the whole run. Both statements were in the artifact and
+    only the permission one was written down, so every audit read the
+    permission and reported it as the outcome. ``None`` means the checkpoint
+    predates the tracking and the question is unanswered -- which is not the
+    same as ``False``.
+    """
     rows = []
     for sid, s in sorted(cfg_sources.items()):
         rows.append(
@@ -27,6 +45,7 @@ def _source_rows(cfg_sources: Mapping[str, Any]) -> list[dict[str, Any]]:
                 "id": sid,
                 "role": s.get("role"),
                 "enabled": s.get("enabled", True),
+                "contributed_gradient": (None if contributed is None else sid in contributed),
                 "evidence_status": "simulator_conditioned" if s.get("is_simulated") else (
                     "prior" if s.get("role") == "prior" else "measured"
                 ),
@@ -40,6 +59,41 @@ def _source_rows(cfg_sources: Mapping[str, Any]) -> list[dict[str, Any]]:
             }
         )
     return rows
+
+
+def _attachment_kinds(
+    ck_extra: Mapping[str, Any], contributed: "set[str] | None"
+) -> dict[str, Any] | None:
+    """Which of the schema's four attachment kinds a run actually exercised.
+
+    Derived from the enabled cards' declared channels crossed with the
+    checkpoint's own contributed-source list. Returns ``None`` when the
+    checkpoint cannot answer, because a card that says "not exercised" and a
+    card that says "we did not record" are different cards.
+    """
+    if contributed is None:
+        return None
+    try:
+        from .attachment_report import attachment_report
+    except Exception:  # noqa: BLE001 - the card must build without it
+        return None
+    try:
+        rep = attachment_report(None)
+    except Exception:  # noqa: BLE001
+        return None
+    out: dict[str, Any] = {}
+    for kind, v in rep["kinds"].items():
+        feeding = [
+            c["source"]
+            for c in v["channels"]
+            if c["feeds_a_loss"] and c["enabled"] and c["source"] in contributed
+        ]
+        out[kind] = {
+            "declared_by_an_enabled_card": v["declared_by_enabled_card"],
+            "reached_the_model": bool(feeding),
+            "via_sources": sorted(set(feeding)),
+        }
+    return out
 
 
 def build_manifest(
@@ -56,12 +110,31 @@ def build_manifest(
     corpus = json.loads(Path(corpus_stats).read_text()) if corpus_stats and Path(corpus_stats).exists() else {}
 
     srcs = sm.get("sources", {})
+
+    # Read off the weights, not off the config. `extra.contributed_sources` is
+    # written by the trainer from the loss terms that actually ran, and
+    # `extra.moved_since_init` from a sha256 of every parameter taken before the
+    # first step. A checkpoint that predates either leaves them None, and None
+    # is reported as "unknown" rather than collapsed into "no".
+    ck_extra: dict[str, Any] = {}
+    if ck.exists():
+        try:
+            import torch
+
+            ck_extra = (
+                torch.load(ck, map_location="cpu", weights_only=False).get("extra") or {}
+            )
+        except Exception:  # noqa: BLE001 - a card must still build without torch
+            ck_extra = {}
+    contributed = ck_extra.get("contributed_sources")
+    contributed_set = set(contributed) if contributed is not None else None
+
     m = ClaimManifest(
         git_sha=git_sha(),
         environment=env_fingerprint(),
         weights_hash=hash_file(ck) if ck.exists() else "",
         config_hash=str(ev.get("config", {}).get("train", {}).get("seed", "")),
-        training_sources=_source_rows(srcs),
+        training_sources=_source_rows(srcs, contributed=contributed_set),
         anatomy=ev.get("anatomy", {}),
         corpus=corpus,
         cannot_do=CANNOT_DO,
@@ -71,6 +144,22 @@ def build_manifest(
             "posterior_parameters": sm.get("posterior_parameters"),
             "global_steps": sm.get("global_steps"),
             "stage_wall_seconds": {s["stage"]: s.get("wall_seconds") for s in sm.get("stages", []) if "stage" in s},
+            # "every enabled source contributed" and "every kind of signal the
+            # schema declares was exercised" are different claims, and only the
+            # second answers a schematic that gives boundary_output equal
+            # billing with observation. Both are recorded; neither is inferred
+            # from the other.
+            "contributed_sources": sorted(contributed_set) if contributed_set is not None else None,
+            "admitted_but_no_term": ck_extra.get("admitted_but_no_term") or {},
+            "parameters_moved_since_init": (
+                {
+                    k: v
+                    for k, v in (ck_extra.get("moved_since_init") or {}).items()
+                    if k in ("n_parameters", "n_moved", "n_frozen", "unfingerprinted")
+                }
+                or None
+            ),
+            "attachment_kinds_exercised": _attachment_kinds(ck_extra, contributed_set),
         },
         notes=(
             "SC-WBD-001-beta. The word 'beta' is load-bearing: this release targets build-order "
