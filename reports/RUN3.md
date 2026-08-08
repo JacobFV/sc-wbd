@@ -383,7 +383,7 @@ code, which is why the remaining risk there is low.
 
 ## Things being watched during the run
 
-**The BOLD term spikes early and settles.** `real_bold_nll` goes from 21.7 at
+**The BOLD term spikes early, then plateaus two orders above where it started.** `real_bold_nll` goes from 21.7 at
 step 1 to ~9.0e4 by step 20, reproducibly across three launches, while
 `bold_log_scale` stays flat at 5.578. It read as a divergence at the time and
 this heading said so; it is not one, and the table below is why. The target is normalised to unit scale, so that magnitude implies
@@ -413,12 +413,24 @@ steps of the launched run:
 | 200 | 2.90e3 | 1.923 | 1.559 | 0.191 |
 | 220 | 3.08e3 | 2.224 | 1.766 | 0.145 |
 
-**A correction to an earlier reading of this table.** Through step 60 the fall
-looked monotone and this file said so. It is not: past step 100 the term
-oscillates between about 3e1 and 3e3 rather than continuing down. What survives
-is the part that mattered — it left the 1e4–1e5 range within 60 steps and has
-not returned to it — and what does not survive is "monotone", which was a claim
-about four points.
+**Two corrections to earlier readings of this table**, both made as points
+accumulated, and both in the same direction — the first reading was too kind.
+
+*"Monotone"* was a claim about four points and is false at thirty-two: past step
+100 the term oscillates rather than continuing down.
+
+*"Settles"* is right about the shape and was wrong about the level. Measured over
+the last twelve logged points, the plateau is **a median of 3,717, not a return
+to the 21.7 it started at** — roughly 170× its own step-1 value. If the
+predicted log-variance is near zero, an NLL of that size implies the mean is
+about **86 standard deviations** off a target normalised to unit scale. That is
+not a transient settling; it is a term that left one bad regime for a less bad
+one and stopped.
+
+What survives from the original reading is the part that mattered operationally:
+it left the 1e4–1e5 range within 60 steps and has not returned, and the mixture
+normalises each source before accumulating, so it cannot dominate the others.
+What does not survive is any implication that the BOLD likelihood is fitting.
 
 Read at batch 8, one BOLD window per step, so single-step values are noisy by
 construction; the range is the signal, not any one number. The reading that
