@@ -81,6 +81,7 @@ def attachment_report(
     contributed: set[str] = set()
     moved: dict[str, dict[str, int]] = {}
     ckpt_path = None
+    ckpt_step = None
     if checkpoint is not None and Path(checkpoint).is_file():
         import torch
 
@@ -89,6 +90,7 @@ def attachment_report(
         contributed = set(extra.get("contributed_sources") or [])
         moved = ((extra.get("moved_since_init") or {}).get("by_module")) or {}
         ckpt_path = str(checkpoint)
+        ckpt_step = ck.get("step")
 
     def _modules_moved(kind: str) -> dict[str, int] | None:
         mods = {m: moved[m]["moved"] for m in _KIND_MODULES.get(kind, ()) if m in moved}
@@ -139,6 +141,7 @@ def attachment_report(
     absent = [k for k in ATTACHMENT_KINDS if not kinds[k]["reached_the_model"]]
     return {
         "checkpoint": ckpt_path,
+        "step": ckpt_step,
         "cards_dir": str(cards_dir),
         "contributed_sources": sorted(contributed),
         "kinds": kinds,
@@ -175,9 +178,38 @@ DEFAULT_CHANNELS_CONSUMED: dict[str, tuple[str, ...]] = {
 
 
 def render_markdown(rep: dict[str, Any]) -> str:
-    """The report as prose a card can carry, leading with what was exercised."""
+    """The report as prose a card can carry, leading with what was exercised.
+
+    The heading names the checkpoint and its step. Without that, a report
+    generated against an untrained architecture fingerprint renders as
+    "Attachment kinds exercised by SC-WBD-003 / ... 0 reached a loss", which
+    reads as a finding about the run and is a fact about a file written before
+    the run started. The artifact and the thing that generated it are two
+    objects; a report that does not say which one it read invites them to be
+    confused.
+    """
     lines: list[str] = []
-    lines.append("# Attachment kinds exercised by SC-WBD-003\n")
+    src = rep.get("checkpoint")
+    step = rep.get("step")
+    if not src:
+        lines.append("# Attachment kinds declared by the enabled source cards\n")
+        lines.append(
+            "**No checkpoint was read.** Every state below comes from the cards "
+            "alone, so nothing here says what a run did.\n"
+        )
+    else:
+        lines.append("# Attachment kinds exercised by SC-WBD-003\n")
+        lines.append(
+            f"Read from `{src}`"
+            + (f", step {step}." if step is not None else ".")
+            + (
+                "\n\n**This checkpoint was written before any training step**, so "
+                "every kind below correctly reports as not reached. It is a "
+                "statement about this file, not about the run.\n"
+                if step == 0
+                else "\n"
+            )
+        )
     lines.append(rep["claim"] + "\n")
     got = rep["kinds_that_reached_the_model"]
     lines.append(
