@@ -156,6 +156,32 @@ def test_the_residual_ratio_is_not_exactly_zero(ckpt: Path) -> None:
     )
 
 
+@pytest.mark.parametrize("ckpt", _checkpoints(), ids=lambda p: f"{p.parent.name}/{p.name}")
+def test_every_parameter_has_a_recorded_initialisation(ckpt: Path) -> None:
+    """A module built after the fingerprint has no baseline, and reads as moved.
+
+    ``tms_drive`` is constructed by ``build_data`` -- it only exists when the
+    perturbation corpus is on disk -- so it is absent from the fingerprint taken
+    in ``__init__``. ``moved_since_init`` then compared a hash against ``None``,
+    which is unequal, so the drive reported as MOVED on a checkpoint that had
+    never taken a step. Measured exactly that: ``tms_drive moved 4/4`` with
+    every other module frozen, on the architecture-only checkpoint.
+
+    That is a false pass in the guard run 3 exists for, on the module carrying
+    its novel claim. The trainer now registers late-built modules; this asserts
+    the set stays empty so the same thing cannot come back through another one.
+    """
+    rep = _moved(_load(ckpt))
+    unf = rep.get("unfingerprinted")
+    if unf is None:
+        pytest.skip("checkpoint predates the unfingerprinted field")
+    assert unf == [], (
+        f"{ckpt.name}: {unf} have no recorded initialisation, so their "
+        "moved/frozen status is not evidence either way. Register the module "
+        "with `_fingerprint_late_module` where it is built."
+    )
+
+
 def test_there_is_something_to_check() -> None:
     """Guards the guard: a parametrisation over an empty list passes vacuously.
 

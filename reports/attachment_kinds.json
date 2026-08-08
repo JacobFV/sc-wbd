@@ -1,0 +1,236 @@
+{
+  "checkpoint": "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/checkpoints/scwbd-003-smoke/last.pt",
+  "cards_dir": "/home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/configs/curriculum/source_cards",
+  "contributed_sources": [],
+  "kinds": {
+    "observation": {
+      "declared_by_any_card": true,
+      "declared_by_enabled_card": true,
+      "reached_the_model": false,
+      "n_channels_declared": 7,
+      "n_channels_feeding_a_loss": 6,
+      "modules_moved": {
+        "eeg": 0,
+        "eeg_montages": 0,
+        "bold": 0,
+        "observation": 0
+      },
+      "channels": [
+        {
+          "source": "ds000113_real",
+          "channel": "bold",
+          "enabled": false,
+          "feeds_a_loss": false,
+          "state": "disabled",
+          "n_channels": 400,
+          "operator": "balloon_windkessel_parcel",
+          "note": "Parcel space. Uncovered parcels are NaN in the data and False in the mask, never 0.0 -- a zero is a measurement of zero and the likelihood cannot tell them apart."
+        },
+        {
+          "source": "ds000117_real",
+          "channel": "eeg",
+          "enabled": true,
+          "feeds_a_loss": true,
+          "state": "admitted_not_yet_measured",
+          "n_channels": 70,
+          "operator": "lead_field",
+          "note": "Digitised electrode positions, averaged over the 2 fetched participants; the mean electrode deviates 3.23 mm from that average, which bounds the individual head geometry this single operator discards."
+        },
+        {
+          "source": "ds002336_real",
+          "channel": "eeg",
+          "enabled": true,
+          "feeds_a_loss": true,
+          "state": "admitted_not_yet_measured",
+          "n_channels": 64,
+          "operator": "lead_field",
+          "note": ""
+        },
+        {
+          "source": "ds002336_real",
+          "channel": "bold",
+          "enabled": true,
+          "feeds_a_loss": true,
+          "state": "admitted_not_yet_measured",
+          "n_channels": 400,
+          "operator": "balloon_windkessel_parcel",
+          "note": "Parcel space, not voxel space. Brought there by scwbd/sources/parcellate_bold.py; uncovered parcels are NaN and excluded by the per-run coverage mask, never imputed."
+        },
+        {
+          "source": "ds004024_perturb",
+          "channel": "eeg",
+          "enabled": true,
+          "feeds_a_loss": true,
+          "state": "admitted_not_yet_measured",
+          "n_channels": 64,
+          "operator": "lead_field",
+          "note": "Post-pulse scalp potential. Scored outside the artefact window only, by MASK -- the rollout still integrates through the excluded interval, so the operator is never asked to cross a discontinuity it did not produce."
+        },
+        {
+          "source": "ds004024_rest_real",
+          "channel": "eeg",
+          "enabled": true,
+          "feeds_a_loss": true,
+          "state": "admitted_not_yet_measured",
+          "n_channels": 64,
+          "operator": "lead_field",
+          "note": "Recorded at 20 kHz in DC mode and brought to the model's 125 Hz here. Average-referenced, matching the founding montage."
+        },
+        {
+          "source": "sleepedf_real",
+          "channel": "eeg_bipolar",
+          "enabled": true,
+          "feeds_a_loss": true,
+          "state": "admitted_not_yet_measured",
+          "n_channels": 2,
+          "operator": "bipolar_lead_field",
+          "note": "Fpz-Cz and Pz-Oz. BIPOLAR derivations, not monopolar potentials, and never average-referenced: the mean of two bipolar derivations is not a reference and subtracting it would mix frontal and occipital signals into each other."
+        }
+      ]
+    },
+    "stimulus": {
+      "declared_by_any_card": true,
+      "declared_by_enabled_card": true,
+      "reached_the_model": false,
+      "n_channels_declared": 2,
+      "n_channels_feeding_a_loss": 1,
+      "modules_moved": {
+        "tms_drive": 4
+      },
+      "channels": [
+        {
+          "source": "ds000117_real",
+          "channel": "face_stimulus",
+          "enabled": true,
+          "feeds_a_loss": false,
+          "state": "declared_only",
+          "n_channels": 1,
+          "operator": null,
+          "note": "Famous / unfamiliar / scrambled face onsets, on STI101. A stimulus, NOT a boundary output and NOT an observation: it is known independently of the participant and carries no likelihood over latent state on its own. It is declared so the attachment report can say a stimulus stream exists; it is not currently consumed by a loss, and the report says that too."
+        },
+        {
+          "source": "ds004024_perturb",
+          "channel": "tms_pulse",
+          "enabled": true,
+          "feeds_a_loss": true,
+          "state": "admitted_not_yet_measured",
+          "n_channels": 1,
+          "operator": null,
+          "note": "The intervention. A stimulus: known independently of the participant, and never evidence about latent state on its own. Onsets are exact on the amplifier sample clock (events.tsv carries an integer sample column). Intensity is DECLARED 100% rMT; the per-participant rMT in stimulator output units is not distributed, so no absolute dose exists and no intensity slope is estimable -- exactly one level is present."
+        }
+      ]
+    },
+    "boundary_output": {
+      "declared_by_any_card": true,
+      "declared_by_enabled_card": true,
+      "reached_the_model": false,
+      "n_channels_declared": 8,
+      "n_channels_feeding_a_loss": 2,
+      "modules_moved": {
+        "behaviour": 0
+      },
+      "channels": [
+        {
+          "source": "ds000113_real",
+          "channel": "cardiac_respiratory",
+          "enabled": false,
+          "feeds_a_loss": false,
+          "state": "disabled",
+          "n_channels": 2,
+          "operator": null,
+          "note": "Pulse oximeter and respiration belt, 500 Hz, concurrent with BOLD for 3 of the 4 participants on disk (21 localizer physio files). A second KIND of boundary output -- autonomic rather than motor -- and the one the public copy means by \"heart rate\". Declared and NOT consumed: this whole card is disabled, so nothing here reaches a loss."
+        },
+        {
+          "source": "ds000113_real",
+          "channel": "eyegaze",
+          "enabled": false,
+          "feeds_a_loss": false,
+          "state": "disabled",
+          "n_channels": 4,
+          "operator": null,
+          "note": "x, y, pupil dilation, movie frame index at 1000 Hz. Present in the release for ses-movie ONLY, whose BOLD was not fetched, so it is concurrent with no imaging on disk. Declared because the release carries it; unusable here for a reason of fetch scope rather than licence."
+        },
+        {
+          "source": "ds000117_behaviour",
+          "channel": "button_press",
+          "enabled": true,
+          "feeds_a_loss": true,
+          "state": "admitted_not_yet_measured",
+          "n_channels": 1,
+          "operator": null,
+          "note": "Two-alternative in-scanner button press, recovered from STI101 response bits 256 and 4096. Measured 113 responses to 146 stimuli in one run, median RT 0.751 s, all within 0.2-2.0 s of their stimulus. A response whose latency falls outside 0.15-2.5 s is DROPPED rather than attributed to a different trial."
+        },
+        {
+          "source": "ds000117_behaviour",
+          "channel": "response_time",
+          "enabled": true,
+          "feeds_a_loss": true,
+          "state": "admitted_not_yet_measured",
+          "n_channels": 1,
+          "operator": null,
+          "note": "Scored as log RT with the head's own predicted variance, as a separate term from the choice: collapsing them lets a confident-and-wrong RT be paid for by an easy choice."
+        },
+        {
+          "source": "ds004024_perturb",
+          "channel": "emg",
+          "enabled": true,
+          "feeds_a_loss": false,
+          "state": "declared_only",
+          "n_channels": 2,
+          "operator": null,
+          "note": "The motor evoked potential. Used to RECOVER the stimulated hemisphere (paired per-trial log ratio of FDI peak-to-peak, right over left, in a 15-45 ms window). A run whose laterality falls below the stated effect-size floor is skipped, not labelled with the sign of a noisy mean. Not consumed by a likelihood."
+        },
+        {
+          "source": "ds004024_rest_real",
+          "channel": "emg",
+          "enabled": true,
+          "feeds_a_loss": false,
+          "state": "declared_only",
+          "n_channels": 2,
+          "operator": null,
+          "note": "First dorsal interosseous EMG, left and right. A boundary output: muscle activity the participant produced, measured outside the skull. DECLARED AND NOT CONSUMED by a loss in run 3 -- it is used upstream, by derive_stimulated_hemisphere, to recover which M1 was stimulated. That is a use, not a likelihood, and the attachment report distinguishes them."
+        },
+        {
+          "source": "ds004024_rest_real",
+          "channel": "ecg",
+          "enabled": true,
+          "feeds_a_loss": false,
+          "state": "declared_only",
+          "n_channels": 1,
+          "operator": null,
+          "note": "Autonomic. Declared, present on disk, not consumed by a loss in run 3."
+        },
+        {
+          "source": "ds004024_rest_real",
+          "channel": "eog",
+          "enabled": true,
+          "feeds_a_loss": false,
+          "state": "declared_only",
+          "n_channels": 2,
+          "operator": null,
+          "note": "Ocular. Declared, present on disk, not consumed by a loss in run 3."
+        }
+      ]
+    },
+    "context": {
+      "declared_by_any_card": false,
+      "declared_by_enabled_card": false,
+      "reached_the_model": false,
+      "n_channels_declared": 0,
+      "n_channels_feeding_a_loss": 0,
+      "modules_moved": {
+        "context": 0
+      },
+      "channels": []
+    }
+  },
+  "kinds_that_reached_the_model": [],
+  "kinds_that_did_not": [
+    "observation",
+    "stimulus",
+    "boundary_output",
+    "context"
+  ],
+  "claim": "Not every attachment kind the schema declares was exercised: observation, stimulus, boundary_output, context reached no loss.",
+  "why_this_is_not_the_same_as_every_source_contributing": "A run can have every enabled source contribute gradient while three of the four attachment kinds are untouched, because a source list can be entirely observations. Only the per-kind answer speaks to the schematic that gives boundary_output equal billing with observation."
+}

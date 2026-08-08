@@ -328,15 +328,46 @@ class FoundationTrainer:
                 ).hexdigest()
         return out
 
+    def _fingerprint_late_module(self, prefix: str, mod) -> None:
+        """Record a module's initialisation when it is built after ``__init__``.
+
+        `tms_drive` is constructed by `build_data`, because it only exists when
+        the perturbation corpus is on disk. Without this, its parameters are
+        absent from `init_fingerprint`, and `moved_since_init` compares a hash
+        against `None` -- which is unequal, so the drive reports as MOVED on a
+        checkpoint that has never taken a step. Measured exactly that on the
+        architecture-only checkpoint: `tms_drive moved 4/4`, everything else
+        frozen.
+
+        That is a false pass in the one guard run 3 exists for, on the one
+        module carrying its novel claim.
+        """
+        import hashlib
+
+        for name, p in mod.named_parameters():
+            self.init_fingerprint[f"{prefix}.{name}"] = hashlib.sha256(
+                p.detach().to(torch.float32).cpu().numpy().tobytes()
+            ).hexdigest()
+
     def moved_since_init(self) -> dict[str, Any]:
         """Which parameters differ from their initialisation, by module.
 
         Bit-comparison via hash, deliberately, not a tolerance: the question is
         "did this tensor receive a gradient at all", and any answer that
         involves a threshold invites one to be tuned until the answer is yes.
+
+        A parameter with no recorded initialisation is reported separately
+        rather than counted as moved: "I never saw this start" and "this
+        changed" are different facts, and collapsing them is how a module that
+        never trained reads as one that did.
         """
         now = self._fingerprint_parameters()
-        moved = {k for k, v in now.items() if self.init_fingerprint.get(k) != v}
+        unfingerprinted = sorted(k for k in now if k not in self.init_fingerprint)
+        moved = {
+            k
+            for k, v in now.items()
+            if k in self.init_fingerprint and self.init_fingerprint[k] != v
+        }
         frozen = sorted(set(now) - moved)
         by_module: dict[str, dict[str, int]] = {}
         for k in now:
@@ -349,10 +380,17 @@ class FoundationTrainer:
             "n_frozen": len(frozen),
             "by_module": by_module,
             "frozen_tensors": frozen[:200],
+            # Should always be empty. Non-empty means a module was built after
+            # the fingerprint was taken and nobody registered it, so its
+            # moved/frozen status here is not evidence either way.
+            "unfingerprinted": unfingerprinted,
             "note": (
                 "Bit-identical to initialisation means the tensor received no "
                 "gradient. A module entirely in `frozen` while on the forward "
-                "path is the run-2 defect."
+                "path is the run-2 defect. Anything listed in `unfingerprinted` "
+                "has no recorded initialisation and its status here is not "
+                "evidence -- it is counted as frozen so the number cannot "
+                "flatter the run."
             ),
         }
 
@@ -828,6 +866,12 @@ class FoundationTrainer:
                     )
                     if getattr(self, "tms_drive", None) is None:
                         self.tms_drive = TMSDrive(self.anat).to(self.device)
+                        # Record its initialisation NOW. It is built here rather
+                        # than in `__init__`, so without this its parameters are
+                        # missing from `init_fingerprint` and every checkpoint
+                        # would report the drive as moved -- including one that
+                        # never took a step.
+                        self._fingerprint_late_module("tms_drive", self.tms_drive)
                     s = pds.summary()
                     print(f"ds004024_perturb: {s['epochs']} TMS-evoked epochs over "
                           f"{s['participants']} participants, {s['by_hemisphere']}, "
