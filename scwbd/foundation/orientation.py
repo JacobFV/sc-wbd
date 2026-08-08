@@ -51,7 +51,16 @@ __all__ = ["DipoleProjection"]
 
 
 class DipoleProjection(nn.Module):
-    """``(m, n̂, c) -> s``: a regional dipole moment resolved for a scalar lead field.
+    """``(m, n̂, c) -> s``: a moment collapsed for a **scalar** lead field.
+
+    **DECLARED COMPATIBILITY PATH -- not the primary route.**  This reduces a
+    3-vector moment to one number *before* the observation, and that reduction
+    is the lossy step: with a ``(n_channels, n_regions)`` lead field you are in
+    the scalar regime no matter what the state carries.  🧭 Gauss's
+    ``eta = 0.517`` was 204 degrees of freedom over 68 parcels -- a property of
+    the observation operator consuming three numbers, not of the state holding
+    three.  Use :class:`VectorLeadField` unless you are feeding an operator that
+    genuinely cannot take a moment; then use this, and say so.
 
     The normal and the coherence are **buffers, not parameters**: they are
     measured geometry, and fitting them would let the model explain a bad
@@ -168,3 +177,178 @@ class DipoleProjection(nn.Module):
             "coherence_is_buffer": True,
             "learned_scalars": 0 if self.log_gain is None else 1,
         }
+
+
+# ======================================================================
+# the vector lead field -- the half of O-5 that actually carries the 9x
+# ======================================================================
+class VectorLeadField(nn.Module):
+    """``(n_channels, n_regions, 3)``: a forward operator that consumes a MOMENT.
+
+    **This is the piece that makes the state's three numbers reach an
+    observation as three numbers.**  The scalar ``(n_channels, n_regions)``
+    lead field is
+
+    .. math::  L^{\\rm scalar}_{cp} = \\sum_{i \\in p} a_i\\, L_{ci} \\cdot \\hat n_i
+
+    — the normal is contracted *inside* the parcel sum, so the cancellation
+    between opposing sulcal banks is baked into the operator and is
+    irreversible.  Keeping the three components,
+
+    .. math::  L_{cp} = \\sum_{i \\in p} a_i\\, L_{ci} \\otimes \\hat n_i
+               \\in \\mathbb R^{3},\\qquad y_c = \\sum_p L_{cp}\\cdot m_p
+
+    makes the cancellation a property of **the data** — of which moments the
+    dynamics actually produces — rather than of the operator.  🧠 Cajal's
+    coherence then stops being a factor anyone applies and becomes a
+    *diagnostic*: a measurement of what a parcel's own folding costs it, which
+    you can compute after the fact instead of pre-applying.
+
+    Why this matters and why the earlier scalar-only version of this module was
+    half a fix: 🧭 Gauss's ``eta = 0.517`` was measured at **204 degrees of
+    freedom over 68 parcels — 68 x 3**.  It is a property of the *observation
+    operator* consuming three numbers, not of the *state* carrying three.  With
+    a scalar lead field the reduction to one number happens before the
+    observation, and the reduction is the lossy step, so a vector state buys
+    nothing.  0.056, not 0.517, no matter what the state holds.
+    """
+
+    def __init__(self, matrix: Tensor, channel_names: tuple[str, ...], *, units: str = "V",
+                 frame: str = "unknown", provenance: str = "unknown", note: str = "") -> None:
+        super().__init__()
+        if matrix.ndim != 3 or matrix.shape[-1] != 3:
+            raise ValueError(
+                f"a vector lead field is (n_channels, n_regions, 3); got {tuple(matrix.shape)}. "
+                "A 2-D matrix is the scalar operator and is exactly what this class exists to "
+                "replace -- see DipoleProjection for the declared compatibility path."
+            )
+        self.register_buffer("L", matrix.float())
+        self.channel_names = tuple(channel_names)
+        self.units, self.frame, self.provenance, self.note = units, frame, provenance, note
+
+    @property
+    def n_channels(self) -> int:
+        return int(self.L.shape[0])
+
+    @property
+    def n_regions(self) -> int:
+        return int(self.L.shape[1])
+
+    def forward(self, moment: Tensor) -> Tensor:
+        """``(..., N, 3) -> (..., C)``.  The moment reaches the sensors as a vector."""
+        if moment.shape[-2:] != (self.n_regions, 3):
+            raise ValueError(
+                f"moment is {tuple(moment.shape[-2:])}, expected ({self.n_regions}, 3)"
+            )
+        return torch.einsum("cnk,...nk->...c", self.L.to(moment.dtype), moment)
+
+    # -- the declared compatibility path -----------------------------------
+    def contract(self, normal: Tensor, coherence: Tensor | None = None) -> Tensor:
+        """``(C, N, 3) -> (C, N)``: the **lossy** scalar operator, made explicit.
+
+        This is what the existing ``(64, 414)`` lead field already is.  Producing
+        it here, from the vector form, means the loss is a named step with a
+        measurable size rather than a shape nobody questioned.
+        """
+        n = torch.nan_to_num(normal.float(), nan=0.0)
+        s = torch.einsum("cnk,nk->cn", self.L, n)
+        return s if coherence is None else s * torch.nan_to_num(coherence.float(), nan=0.0).reshape(1, -1)
+
+    @torch.no_grad()
+    def orientation_headroom(self, normal: Tensor, coherence: Tensor | None = None) -> dict[str, float]:
+        """How much of this forward operator the scalar path cannot reach.
+
+        Reports the fraction of the vector operator's energy retained by the
+        contracted one.  This is the local analogue of Gauss's eta and it is
+        computed on **our** forward model, so the 9x claim is re-derived rather
+        than cited.
+        """
+        full = float((self.L**2).sum())
+        scal = float((self.contract(normal, coherence) ** 2).sum())
+        # rank is the honest ceiling on what any state can drive through it
+        r_vec = int(torch.linalg.matrix_rank(self.L.reshape(self.n_channels, -1)).item())
+        r_sc = int(torch.linalg.matrix_rank(self.contract(normal, coherence)).item())
+        return {
+            "energy_vector": full,
+            "energy_scalar": scal,
+            "fraction_retained_by_contraction": scal / max(full, 1e-30),
+            "headroom_multiple": full / max(scal, 1e-30),
+            "rank_vector": r_vec,
+            "rank_scalar": r_sc,
+            "dof_vector": self.n_regions * 3,
+            "dof_scalar": self.n_regions,
+        }
+
+    def summary(self) -> dict[str, Any]:
+        return {
+            "shape": list(self.L.shape),
+            "consumes": "current-dipole moment (Hz*m), 3 per parcel",
+            "n_channels": self.n_channels,
+            "n_regions": self.n_regions,
+            "units": self.units,
+            "frame": self.frame,
+            "provenance": self.provenance,
+            "note": self.note,
+        }
+
+
+def build_vector_lead_field(anat, *, channel_names=None, device="cpu", conductivity: float = 0.33,
+                            allow_fallback: bool = True) -> VectorLeadField:
+    """Build ``(C, N, 3)``, preferring agent F's free-orientation BEM forward.
+
+    MNE's ``make_forward_solution`` is free-orientation by default
+    (``source_ori == FIFFV_MNE_FREE_ORI``) and its gain is ``(n_sens, 3*n_src)``,
+    so the three components are **already there** and the current scalar lead
+    field is throwing them away at the parcel-aggregation step.  Nothing new has
+    to be solved to keep them.
+
+    The analytic fallback is the same single-sphere kernel the scalar builder
+    uses with one line changed: it does not contract against the orientation.
+    It is **not** a head model and supports no source-localisation claim.
+    """
+    import math as _math
+
+    import numpy as np
+
+    from .heads import EEGMMIDB_CHANNELS, _montage_positions
+
+    names = tuple(channel_names or EEGMMIDB_CHANNELS)
+    dev = torch.device(device)
+
+    if not allow_fallback:
+        raise RuntimeError("free-orientation BEM forward not wired yet; pass allow_fallback=True")
+
+    try:
+        elec, kept = _montage_positions(names)
+    except Exception:  # noqa: BLE001
+        n_ch = len(names)
+        idx = np.arange(n_ch, dtype=np.float64)
+        phi = _math.pi * (3 - _math.sqrt(5)) * idx
+        z = 1 - 2 * (idx + 0.5) / n_ch
+        r = np.sqrt(np.clip(1 - z * z, 0, None))
+        elec = np.stack([r * np.cos(phi), r * np.sin(phi), z], 1) * 95.0
+        kept = names
+
+    src = anat.positions.detach().float().cpu().numpy()
+    r_src = np.linalg.norm(src, axis=1, keepdims=True)
+    r_ele = np.linalg.norm(elec, axis=1).mean()
+    src_s = src / max(r_src.max(), 1e-6) * (r_ele * 0.82)
+
+    d = elec[:, None, :] - src_s[None, :, :]  # (C, N, 3)
+    r = np.maximum(np.linalg.norm(d, axis=-1), 6.0)
+    # THE ONE CHANGED LINE: the scalar builder does
+    #     L = (d * orient).sum(-1) / (4 pi sigma r^3)
+    # contracting the orientation in. Keeping the axis is the whole fix.
+    L = d / (4 * _math.pi * conductivity * r[..., None] ** 3)
+    return VectorLeadField(
+        torch.as_tensor(L, dtype=torch.float32, device=dev),
+        tuple(kept),
+        units="V",
+        frame="synthetic_ellipsoid_RAS",
+        provenance="analytic_sphere_fallback_vector",
+        note=(
+            "Analytic single-sphere, free orientation. NOT a head model; no source-localisation "
+            "claim. Replace with agent F's free-orientation BEM forward "
+            "(mne.make_forward_solution is free-ori by default, gain (n_sens, 3*n_src))."
+        ),
+    )
