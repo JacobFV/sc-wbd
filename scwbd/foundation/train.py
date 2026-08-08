@@ -445,6 +445,29 @@ class FoundationTrainer:
                   "torch-level gradient permissions", flush=True)
         return rep
 
+    def stage_uses_real(self, stage: StageConfig) -> bool:
+        """Does this stage's curriculum admit the measured (tier-1) sources?
+
+        ONE definition, called by both `run_stage`'s admission and the smoke
+        precondition, so the guard tests the gate the trainer actually runs
+        rather than a second copy that can agree with a wrong answer (RL-9).
+
+        That shape is ported deliberately from `wt/curie`, which is the branch
+        that had this check and whose trainer was dropped in the merge. Its
+        MECHANISM is not ported. Curie's read
+
+            return stage.name in REAL_DATA_STAGES
+
+        which decides admission from the stage's NAME -- and that is the defect
+        it was written to catch, not a fix for it. Run 2 renamed every stage,
+        `REAL_DATA_STAGES` still listed run 1's, the intersection was empty, and
+        the tier-1 measured likelihood in a stage called `T1_measured_founding`
+        contributed nothing. Admission here comes from the config, through the
+        same `stage_admission` object `run_stage` builds.
+        """
+        admission = stage_admission(stage, cards_dir=self.cfg.mixture_cards, strict=False)
+        return bool(admission.admits_measured(self.sources))
+
     def stage_sources(
         self, stage: StageConfig, admission: StageAdmission | None = None
     ) -> dict[str, SourceSpec]:
@@ -944,6 +967,58 @@ class FoundationTrainer:
             print(f"[smoke] {path:12s} stage={st.name:14s} "
                   f"{ {k: round(float(v.detach()), 4) for k, v in ls.items()} }", flush=True)
             losses.update(ls)
+
+        # -- the paths run 3 adds -----------------------------------------
+        # Without these the precondition passes while three loss paths are
+        # unverified, which is a smoke test that measures the parts that already
+        # worked. Each is REQUIRED when its loader exists: a path that silently
+        # skips is the same failure as a card that grants nothing.
+        params = params + [p for p in (self.tms_drive.parameters() if self.tms_drive else [])]
+        extra_paths: list[tuple[str, Any, Any]] = []
+        for sid, loader in sorted(getattr(self, "eeg_loaders", {}).items()):
+            if sid == "eegmmidb_real":
+                continue
+            extra_paths.append((f"real_losses[{sid}]",
+                                lambda b, s, _sid=sid: self.real_losses(b, s, source_id=_sid),
+                                loader))
+        for sid, loader in sorted(getattr(self, "bold_loaders", {}).items()):
+            if sid == "ds002336_real":
+                continue
+            extra_paths.append((f"real_bold_losses[{sid}]",
+                                lambda b, s, _sid=sid: self.real_bold_losses(b, s, source_id=_sid),
+                                loader))
+        if getattr(self, "behaviour_loader", None) is not None:
+            extra_paths.append(("behaviour_losses", self.behaviour_losses, self.behaviour_loader))
+        if getattr(self, "perturb_loader", None) is not None:
+            extra_paths.append(("perturb_losses", self.perturb_losses, self.perturb_loader))
+
+        for path, fn, loader in extra_paths:
+            batch = next(loader)
+            ls, diag = fn(batch, real_stage)
+            for k, v in ls.items():
+                if not torch.isfinite(v):
+                    raise RuntimeError(f"smoke: {path} term {k!r} is non-finite ({float(v)!r})")
+            report["paths"][path] = {
+                "stage": real_stage.name,
+                "terms": sorted(ls),
+                "values": {k: float(v.detach()) for k, v in ls.items()},
+                "diagnostics": {k: v for k, v in diag.items() if isinstance(v, (int, float))},
+            }
+            print(f"[smoke] {path:34s} "
+                  f"{ {k: round(float(v.detach()), 4) for k, v in ls.items()} }", flush=True)
+            losses.update(ls)
+
+        # The attachment kinds this smoke actually exercised, named rather than
+        # counted: "five loss paths ran" does not say a boundary output did.
+        report["attachment_kinds_exercised"] = sorted(
+            {
+                "observation",
+                *(["boundary_output"] if "behaviour_losses" in report["paths"] else []),
+                *(["stimulus"] if "perturb_losses" in report["paths"] else []),
+            }
+        )
+        print(f"[smoke] attachment kinds exercised: "
+              f"{report['attachment_kinds_exercised']}", flush=True)
 
         total = sum(losses.values())
         total.backward()
