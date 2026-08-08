@@ -1,0 +1,118 @@
+# TIER 1 -- likelihood, measured. DISABLED, and the reason is a licence, not data.
+#
+# The corpus is READY. All 20 localizer BOLD runs of the 4 participants on disk
+# are parcellated into Schaefer400x7 and cached, coverage 0.988-1.000 per run,
+# 624 s total (reports/sources/ds000113_parcellation.json). The loader is
+# `bolddata.ParcelBOLDDataset` with `root: data/ds000113`, unchanged from the one
+# ds002336 uses. Enabling this source is a one-line flip the day its licence
+# resolves.
+#
+# THE BLOCK
+# ds000113 v1.3.0 as we hold it states NO LICENCE:
+#   - the snapshot ships no LICENSE file;
+#   - `dataset_description.json` has a "License" key whose value is the EMPTY
+#     STRING (re-verified against the pinned snapshot endpoint 2026-08-07);
+#   - the 23,818-byte README contains no occurrence of "licen", "PDDL", "CC0",
+#     "public domain" or "Creative Commons";
+#   - studyforrest.org, which now resolves, states a licence for the WEBSITE
+#     ("Content CC BY-SA unless indicated otherwise") and none for the data.
+#
+# The OpenNeuro **draft** record does say `License: "CC0"`. The draft is mutable
+# and is not the snapshot on disk -- ds000117's card already records rejecting
+# the s3 mirror for serving the draft rather than a pinned snapshot. And
+# reports/licence_audit.md sets the rule this repository holds itself to:
+#
+#     "`established` requires a licence identifier or text IN THIS REPOSITORY.
+#      A pointer to where a licence might be found is not a licence."
+#
+# A CC0 string in a mutable upstream record is a pointer. So the licence is
+# `unknown`, and an unknown licence may not enter an artifact whose licence must
+# be provable. Recording it as unknown is the result of the work, not a failure
+# to do it.
+#
+# ALSO WORTH CORRECTING: HANDOFF-003 describes ds000113 as a "116 mm slab". That
+# is the orientation-decoding sub-study. The localizer runs actually on disk are
+# whole-brain -- measured parcel coverage is 1.000 for three participants and
+# 0.988 for the fourth.
+
+id: ds000113_real
+role: likelihood
+enabled: false
+
+channels:
+  bold:
+    attachment: observation
+    n_channels: 400
+    units: percent_signal_change
+    clock: scanner
+    operator: balloon_windkessel_parcel
+    note: >-
+      Parcel space. Uncovered parcels are NaN in the data and False in the mask,
+      never 0.0 -- a zero is a measurement of zero and the likelihood cannot
+      tell them apart.
+  cardiac_respiratory:
+    attachment: boundary_output
+    n_channels: 2
+    units: arbitrary
+    clock: physio_500hz
+    note: >-
+      Pulse oximeter and respiration belt, 500 Hz, concurrent with BOLD for 3 of
+      the 4 participants on disk (21 localizer physio files). A second KIND of
+      boundary output -- autonomic rather than motor -- and the one the public
+      copy means by "heart rate". Declared and NOT consumed: this whole card is
+      disabled, so nothing here reaches a loss.
+  eyegaze:
+    attachment: boundary_output
+    n_channels: 4
+    units: normalized_screen_coordinates
+    clock: physio_1000hz
+    note: >-
+      x, y, pupil dilation, movie frame index at 1000 Hz. Present in the release
+      for ses-movie ONLY, whose BOLD was not fetched, so it is concurrent with no
+      imaging on disk. Declared because the release carries it; unusable here for
+      a reason of fetch scope rather than licence.
+
+is_simulated: false
+losses: [likelihood, forecast]
+
+gradient_permission:
+  - "bold.*"
+  - "coupling.*"
+  - "local.*"
+  - "family_local.*"
+  - "readout.*"
+  - "family_readout.*"
+  - "observation.*"
+frozen:
+  - "eeg.*"
+  - "eeg_montages.*"
+  - "behaviour.*"
+  - "tms_drive.*"
+  - "individualizer.*"
+
+# Measured from disk, not estimated: 4 participants, 20 localizer BOLD runs,
+# all 20 parcellated. n_eff is PARTICIPANTS.
+n_eff: 4.0
+n_rows: 20.0
+n_participants: 4
+n_sites: 1
+hierarchy_depth: 2
+
+measurement_variance: null
+bias_halfwidth: null
+bias_status: unknown
+model_discrepancy: null
+validity_overlap: 1.0
+leakage_audited: false
+
+compiler_permission:
+  - "port:*.bold_out"
+  - "observation:ds000113_real:nuisance"
+
+notes: >-
+  7T whole-brain localizer fMRI (retinotopy x4 and a movie localizer) from the
+  studyforrest project, 4 of 20 participants fetched. Blocked on a licence, not
+  on data or on code: the parcellated cache exists and the coverage is measured.
+  Resolving this means obtaining a licence statement that is in the bytes we
+  hold -- a versioned snapshot that carries one, or a written statement from the
+  authors -- not repeating the draft record's CC0 until it hardens into a fact.

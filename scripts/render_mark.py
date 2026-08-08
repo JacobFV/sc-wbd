@@ -27,6 +27,8 @@ import pathlib
 
 import matplotlib
 import matplotlib.collections
+import matplotlib.patches
+import matplotlib.path
 import matplotlib.patheffects
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -219,24 +221,34 @@ def main() -> int:
     )
 
     # ---- the two columns: what the model is for --------------------------
+    #
+    # Every label in a cluster runs as a curve to ONE point on the brain, with
+    # the cluster's hub as the control point. The lines bundle where the hub is
+    # and arrive together, which is what a cluster means: three labels meeting
+    # at a kink and continuing as one straight line said the same thing with a
+    # corner in it, and the corner read as a mistake.
     for side, groups in ((-1, LEFT), (+1, RIGHT)):
         ys, hubs = column_rows(groups)
         at = 0
         for g, hy in zip(groups, hubs):
             hx = side * HUB
-            # Hub to the brain, stopped on the fitted ellipse so the line meets
-            # the parcels rather than ending somewhere inside them.
+            # Where the bundle lands: on the fitted ellipse, so it meets the
+            # parcels rather than ending somewhere inside them.
             ang = np.arctan2(hy, hx)
-            ax.plot([hx, np.cos(ang) * BX * 1.03], [hy, np.sin(ang) * BZ * 1.03],
-                    color="#8c9bad", linewidth=0.5, alpha=0.9, zorder=3)
-            ax.plot([hx], [hy], marker="o", markersize=2.0, color="#8c9bad",
-                    markeredgewidth=0, zorder=3)
+            tx, ty = np.cos(ang) * BX * 1.03, np.sin(ang) * BZ * 1.03
             for name in g:
                 y = ys[at]
                 at += 1
-                ax.plot([hx, side * COLX], [hy, y], color="#8c9bad",
-                        linewidth=0.4, alpha=0.75, solid_capstyle="round",
-                        zorder=3)
+                ax.add_patch(matplotlib.patches.PathPatch(
+                    matplotlib.path.Path(
+                        [(side * COLX, y), (hx, hy), (tx, ty)],
+                        [matplotlib.path.Path.MOVETO,
+                         matplotlib.path.Path.CURVE3,
+                         matplotlib.path.Path.CURVE3],
+                    ),
+                    facecolor="none", edgecolor="#8c9bad", linewidth=0.42,
+                    alpha=0.8, capstyle="round", zorder=3,
+                ))
                 ax.plot([side * COLX], [y], marker="o", markersize=1.4,
                         color="#8c9bad", markeredgewidth=0, zorder=3)
                 ax.text(side * (COLX + 0.09), y, name,

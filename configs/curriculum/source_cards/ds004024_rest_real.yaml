@@ -1,0 +1,108 @@
+# TIER 1 -- likelihood, measured. ds004024 resting-state EEG.
+# OpenNeuro ds004024 v1.0.0, CC0, stated in the snapshot's own
+# dataset_description.json. Northwestern IRB STU00204239, NCT03723434.
+#
+# The eyes-open resting runs ONLY. No TMS pulses were delivered in these runs;
+# the stimulated runs are a separate card (ds004024_perturb) because they are a
+# different attachment and must be admitted separately.
+#
+# 64 electrodes with 10-10 names, so this montage resolves through
+# standard_1005 -- but in a DIFFERENT ORDER from eegmmidb, and the channel axis
+# is positional. It therefore gets its own operator rather than reusing the
+# founding one. Reusing it would produce no shape error and would score every
+# electrode against the wrong forward row.
+
+id: ds004024_rest_real
+role: likelihood
+enabled: true
+
+channels:
+  eeg:
+    attachment: observation
+    n_channels: 64
+    units: V
+    clock: ds004024.brainvision_amp
+    operator: lead_field
+    note: >-
+      Recorded at 20 kHz in DC mode and brought to the model's 125 Hz here.
+      Average-referenced, matching the founding montage.
+  emg:
+    attachment: boundary_output
+    n_channels: 2
+    units: V
+    clock: ds004024.brainvision_amp
+    note: >-
+      First dorsal interosseous EMG, left and right. A boundary output: muscle
+      activity the participant produced, measured outside the skull. DECLARED
+      AND NOT CONSUMED by a loss in run 3 -- it is used upstream, by
+      derive_stimulated_hemisphere, to recover which M1 was stimulated. That is
+      a use, not a likelihood, and the attachment report distinguishes them.
+  ecg:
+    attachment: boundary_output
+    n_channels: 1
+    units: V
+    clock: ds004024.brainvision_amp
+    note: Autonomic. Declared, present on disk, not consumed by a loss in run 3.
+  eog:
+    attachment: boundary_output
+    n_channels: 2
+    units: V
+    clock: ds004024.brainvision_amp
+    note: Ocular. Declared, present on disk, not consumed by a loss in run 3.
+
+is_simulated: false
+losses: [likelihood, forecast]
+
+gradient_permission:
+  - "local.*"
+  - "family_local.*"
+  - "residual.*"
+  - "family_residual.*"
+  - "coupling.*"
+  - "msg_proj.*"
+  - "msg_readin.*"
+  - "assimilate.*"
+  - "context.*"
+  - "readout.*"
+  - "family_readout.*"
+  - "observation.*"
+  - "eeg_montages.ds004024_rest_real.*"
+frozen:
+  - "eeg.*"           # not this source's montage
+  - "bold.*"          # no haemodynamics measured here
+  - "behaviour.*"     # EMG/ECG/EOG are declared but feed no behavioural loss
+  - "tms_drive.*"     # no pulse in a resting run; the drive belongs to the
+                      # perturbation card and must not be trained by baseline data
+  - "individualizer.*"
+
+# From disk: 2 participants with fetched signal binaries, ses-async14ms,
+# 1 resting run each at the verified setting. n_eff is PARTICIPANTS.
+n_eff: 2.0
+n_rows: 2.0
+n_participants: 2
+n_sites: 1
+hierarchy_depth: 2
+
+measurement_variance: null
+bias_halfwidth: null
+bias_status: unknown
+model_discrepancy: null
+validity_overlap: 1.0
+leakage_audited: false
+
+compiler_permission:
+  - "operator:local_field:*"
+  - "operator:long_range:*"
+  - "operator:assimilation:*"
+  - "region:*:state:*"
+  - "port:*.message_out"
+  - "port:*.message_in"
+  - "port:*.eeg_out"
+  - "observation:ds004024_rest_real:nuisance"
+
+notes: >-
+  n = 2. Upstream ships binaries for all 13 participants; this snapshot pinned a
+  2-participant subset, and the absence is our fetch choice rather than an
+  upstream gap. These are the same two participants the perturbation card uses,
+  which is what lets a stimulated response be compared against that
+  participant's own unstimulated baseline.

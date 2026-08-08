@@ -1,0 +1,108 @@
+# TIER 1 -- likelihood, measured. THE BOUNDARY OUTPUT.
+#
+# This is the card that makes `behaviour.*` reachable. Until it existed, every
+# other card's comment read "`behaviour.*` is NOT granted -- no source declares
+# a boundary_output channel yet, so nothing has evidence about it, and that
+# absence is the honest state", and
+# tests/foundation/test_card_patterns_reach_the_model.py listed `behaviour` as
+# deliberately unreachable. One source now declares one, so both change.
+#
+# What a boundary output IS, per scwbd/schema/attachment.py: something produced
+# BY the subject and measured outside the skull -- eye position, motor, speech,
+# autonomic. Evidence about the carrier that reaches the world through the body
+# rather than through a physical forward model of neural activity. That is why
+# this card declares NO operator on the behaviour channel and why the head it
+# trains (`BehaviourHead`) reads pooled state directly: an `observation` with no
+# operator is refused by ChannelSpec, and a boundary output WITH one is refused
+# too. Both refusals are load-bearing here.
+#
+# The trap this source presents, recorded because it is easy to fall into:
+# `beh/*_events.tsv` carries exactly the columns wanted -- `response_time`,
+# `button_press` -- and its `onset` is `n/a` on all 299 rows, because it is the
+# POST-SCAN DEBRIEFING (the participant re-rating the faces afterwards, per
+# task-facerecognition_events.json). It is not time-locked to any neural
+# recording. The presses used here are the in-scanner ones on STI101, which ORs
+# a button bit onto the stimulus code.
+
+id: ds000117_behaviour
+role: likelihood
+enabled: true
+
+channels:
+  button_press:
+    attachment: boundary_output
+    n_channels: 1
+    units: category
+    clock: elekta_meg_amp
+    note: >-
+      Two-alternative in-scanner button press, recovered from STI101 response
+      bits 256 and 4096. Measured 113 responses to 146 stimuli in one run,
+      median RT 0.751 s, all within 0.2-2.0 s of their stimulus. A response
+      whose latency falls outside 0.15-2.5 s is DROPPED rather than attributed
+      to a different trial.
+  response_time:
+    attachment: boundary_output
+    n_channels: 1
+    units: s
+    clock: elekta_meg_amp
+    note: >-
+      Scored as log RT with the head's own predicted variance, as a separate
+      term from the choice: collapsing them lets a confident-and-wrong RT be
+      paid for by an easy choice.
+
+is_simulated: false
+losses: [likelihood]
+
+gradient_permission:
+  # The point of this card.
+  - "behaviour.*"
+  # The state the behavioural readout pools over. A boundary output is evidence
+  # about the carrier, so it may inform the dynamics -- that is the difference
+  # between a boundary output and a stimulus.
+  - "local.*"
+  - "family_local.*"
+  - "residual.*"
+  - "family_residual.*"
+  - "readout.*"
+  - "family_readout.*"
+  - "assimilate.*"
+  - "context.*"
+  - "observation.*"
+frozen:
+  # A button press is not a scalp potential and may not calibrate one. The
+  # episodes are assimilated THROUGH the ds000117 EEG head, but the gradient for
+  # that head belongs to the card whose likelihood is in sensor space.
+  - "eeg.*"
+  - "eeg_montages.*"
+  - "bold.*"
+  - "coupling.*"
+  - "tms_drive.*"
+  - "individualizer.*"
+
+# From disk: 127 stimulus-locked episodes over 2 runs of sub-01 at the smoke
+# setting; the full 2-participant, 12-run corpus is larger. n_eff is PARTICIPANTS.
+n_eff: 2.0
+n_rows: 127.0
+n_participants: 2
+n_sites: 1
+hierarchy_depth: 2
+
+measurement_variance: null
+bias_halfwidth: null
+bias_status: unknown
+model_discrepancy: null
+validity_overlap: 0.5
+leakage_audited: false
+
+compiler_permission:
+  - "port:*.behaviour_out"
+  - "observation:behaviour:nuisance"
+  - "region:*:state:*"
+
+notes: >-
+  The two buttons are far from balanced -- 105 to 22 on the measured run -- so
+  the majority-class rate is logged beside the choice accuracy. An accuracy read
+  without it looks like learning when it is the prior. Licence CC0-1.0, stated
+  in the snapshot's own dataset_description.json. n = 2 participants: this
+  source exercises the boundary_output attachment and supports no
+  population-level behavioural claim.

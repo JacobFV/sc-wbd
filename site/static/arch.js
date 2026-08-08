@@ -60,9 +60,10 @@
    * draws them around the paper's cover figure: the page and the cover are one
    * drawing stated in two media.
    *
-   * Below USES_MIN_W the columns are not drawn at all -- on a phone they are
-   * two stacks of 6px type either side of a thumbnail, which is a texture
-   * rather than a list, and the sections below say the same thing in prose. */
+   * USES_MIN_W is the width below which they cannot go side by side: two
+   * stacks of 6px type either side of a thumbnail are a texture, not a list.
+   * A canvas that narrow is given a portrait frame by the stylesheet, and the
+   * clusters go above and below the brain instead. */
   var MARK = "SC-WBD-003";
   var USES_MIN_W = 620;                 // CSS px of canvas width
   var LEFT = [
@@ -98,6 +99,15 @@
    * units of `pitch` and centred on zero. The two columns hold 12 labels and
    * 11; hanging both from a common top would end the shorter one half a
    * cluster above the other for no reason a reader could name. */
+  /* How tall a column is, in pitches: every label but one, plus a gap between
+   * clusters. Counted from the lists rather than written down, so adding a use
+   * case moves the layout instead of silently overflowing it. */
+  function columnSpan(groups) {
+    var n = 0;
+    for (var i = 0; i < groups.length; i++) n += groups[i].length;
+    return (n - 1) + (groups.length - 1) * GAP;
+  }
+
   function columnRows(groups, pitch) {
     var slots = [], s = 0, gi, k;
     for (gi = 0; gi < groups.length; gi++) {
@@ -355,96 +365,149 @@
     }
 
 
-    /* Where the two columns sit on a canvas this size, or null if they do not
-     * fit. `colx` is what is left after the widest label, measured rather than
-     * assumed: "cognitive intervention design" is twice the width of "language
-     * decoding" and the columns have to clear the longer one.
+    /* Where the use cases sit on a canvas this size, or null if they do not
+     * fit.
      *
-     * Cached on the size: the canvas redraws every frame while the brain turns
-     * and none of this changes between frames. */
+     * Two layouts, chosen by the shape of the box rather than by a breakpoint,
+     * so the drawing always matches the frame the stylesheet gave it:
+     *
+     *   LANDSCAPE  two columns flanking the brain, six clusters, three a side.
+     *   PORTRAIT   the same six clusters above and below it, anchored on
+     *              alternating edges of the block so each bundle runs out into
+     *              a gutter instead of across its neighbours' words.
+     *
+     * Everything is measured, not assumed: "cognitive intervention design" is
+     * twice the width of "language decoding", and it is the long one the
+     * columns have to clear.
+     *
+     * Cached on the size -- the canvas redraws every frame while the brain
+     * turns, and none of this changes between frames. */
     var usesCache = null;
     function usesGeom(W, H) {
       if (usesCache && usesCache.W === W && usesCache.H === H) return usesCache.g;
-      var g = null;
-      if (W / dpr >= USES_MIN_W) {
-        var fs = Math.max(10.5, Math.min(13.5, (W / dpr) * 0.0132)) * dpr;
-        ctx.font = "500 " + fs + "px ui-sans-serif, system-ui, sans-serif";
-        var widest = 0, i, j;
-        for (i = 0; i < LEFT.length; i++) {
-          for (j = 0; j < LEFT[i].length; j++) {
-            widest = Math.max(widest, ctx.measureText(LEFT[i][j]).width);
+      var fs = Math.max(10, Math.min(13.5, (W / dpr) * 0.0132)) * dpr;
+      ctx.font = "500 " + fs + "px ui-sans-serif, system-ui, sans-serif";
+      var widest = 0, i, j;
+      [LEFT, RIGHT].forEach(function (col) {
+        for (i = 0; i < col.length; i++) {
+          for (j = 0; j < col[i].length; j++) {
+            widest = Math.max(widest, ctx.measureText(col[i][j]).width);
           }
         }
-        for (i = 0; i < RIGHT.length; i++) {
-          for (j = 0; j < RIGHT[i].length; j++) {
-            widest = Math.max(widest, ctx.measureText(RIGHT[i][j]).width);
-          }
-        }
-        var colx = W * 0.5 - widest - px(12);
-        // Twelve labels and two cluster gaps have to fit the height, and no
-        // row should be tighter than the type in it.
-        var pitch = Math.min((H - fs * 2) / (11 + 2 * GAP), fs * 2.1);
-        if (colx > W * 0.16 && pitch > fs * 1.25) {
-          g = {
-            colx: colx, hubx: colx * 0.85, fs: fs,
-            left: columnRows(LEFT, pitch), right: columnRows(RIGHT, pitch)
-          };
-        }
-      }
+      });
+      var ox = W * 0.5, oy = H * 0.5;
+      var g = (H / W > 1.05)
+        ? stacked(W, H, ox, oy, fs, widest)
+        : beside(W, H, ox, oy, fs, widest);
       usesCache = { W: W, H: H, g: g };
       return g;
     }
 
-    /* The name over the middle, and the use cases either side of it.
+    /* One cluster: where its labels are, the control point its lines bundle
+     * through, and the single point on the brain they all arrive at. The
+     * curves converge rather than meeting at a kink and continuing as one
+     * line -- a corner there reads as a mistake, and the cluster is the claim
+     * that these things are one kind of use, not that they share a wire. */
+    function cluster(names, xs, ys, align, cx, cy, ang, sc, ox, oy) {
+      var labels = [];
+      for (var i = 0; i < names.length; i++) {
+        labels.push({ x: xs[i], y: ys[i], t: names[i] });
+      }
+      return {
+        labels: labels, align: align, cx: cx, cy: cy,
+        tx: ox + Math.cos(ang) * RMAX * sc * 1.05,
+        ty: oy + Math.sin(ang) * ZMAX * sc * 1.05
+      };
+    }
+
+    function beside(W, H, ox, oy, fs, widest) {
+      var colx = W * 0.5 - widest - px(12);
+      // Twelve labels and two cluster gaps have to fit the height, and no row
+      // should be tighter than the type in it.
+      var pitch = Math.min((H - fs * 2) / columnSpan(LEFT), fs * 2.1);
+      if (W / dpr < USES_MIN_W || colx < W * 0.16 || pitch < fs * 1.25) return null;
+      var hubx = colx * 0.85;
+      var sc = Math.min(hubx * 0.80 / RMAX, H * 0.46 / ZMAX);
+      var out = [];
+      [[-1, LEFT], [1, RIGHT]].forEach(function (pair) {
+        var side = pair[0], groups = pair[1];
+        var rows = columnRows(groups, pitch), at = 0;
+        for (var gi = 0; gi < groups.length; gi++) {
+          var cx = ox + side * hubx, cy = oy + rows.hubs[gi];
+          var xs = [], ys = [];
+          for (var li = 0; li < groups[gi].length; li++) {
+            xs.push(ox + side * colx); ys.push(oy + rows.ys[at]); at++;
+          }
+          out.push(cluster(groups[gi], xs, ys, side > 0 ? "left" : "right",
+                           cx, cy, Math.atan2(cy - oy, cx - ox), sc, ox, oy));
+        }
+      });
+      return { fs: fs, sc: sc, clusters: out };
+    }
+
+    function stacked(W, H, ox, oy, fs, widest) {
+      var pitch = fs * 1.75;
+      var spanA = columnSpan(LEFT) * pitch;
+      var spanB = columnSpan(RIGHT) * pitch;
+      var pad = pitch * 1.6;
+      var half = (H - spanA - spanB - 2 * pad) / 2;
+      var blockW = widest + px(10);
+      if (W / dpr < 300 || half < fs * 2.6 || blockW > W * 0.86) return null;
+      var sc = Math.min(half / ZMAX, W * 0.46 / RMAX);
+      var out = [];
+      [[-1, LEFT, oy - half - pad - spanA / 2],
+       [1, RIGHT, oy + half + pad + spanB / 2]].forEach(function (pair) {
+        var dir = pair[0], groups = pair[1], mid = pair[2];
+        var rows = columnRows(groups, pitch), at = 0;
+        for (var gi = 0; gi < groups.length; gi++) {
+          // Alternating edges: the bundle leaves on the side its labels are
+          // anchored to, so it travels down a gutter and never crosses type.
+          var side = gi % 2 ? 1 : -1;
+          var ax = ox + side * blockW * 0.5;
+          var xs = [], ys = [], edge = null;
+          for (var li = 0; li < groups[gi].length; li++) {
+            var y = mid + rows.ys[at]; at++;
+            xs.push(ax); ys.push(y);
+            // The row of this cluster nearest the brain: the bundle bends past
+            // it, not through the middle of the block.
+            if (edge === null || (dir < 0 ? y > edge : y < edge)) edge = y;
+          }
+          out.push(cluster(groups[gi], xs, ys, side > 0 ? "right" : "left",
+                           ax + side * px(15), edge - dir * pitch * 1.4,
+                           (dir < 0 ? -1 : 1) * (Math.PI / 2 - side * 0.72),
+                           sc, ox, oy));
+        }
+      });
+      return { fs: fs, sc: sc, clusters: out };
+    }
+
+    /* The name over the middle, and the use cases around it.
      *
      * Stroked in the page's own ground rather than plated: the canvas is
      * transparent so the section shows through, and a filled rectangle here
      * would read as a card laid over the connectome. */
-    function drawMark(ox, oy, W, H, uses, sc) {
+    function drawMark(ox, oy, W, H, uses) {
       if (uses) {
-        var sides = [
-          { s: -1, groups: LEFT, rows: uses.left },
-          { s: 1, groups: RIGHT, rows: uses.right }
-        ];
-        for (var si = 0; si < sides.length; si++) {
-          var side = sides[si].s, groups = sides[si].groups, rows = sides[si].rows;
-          var hx = ox + side * uses.hubx;
-          var at = 0;
-          for (var gi = 0; gi < groups.length; gi++) {
-            var hy = oy + rows.hubs[gi];
-
-            // Hub to the brain, stopped on the parcels' own bound so the line
-            // meets the cloud rather than ending somewhere inside it.
-            var ang = Math.atan2(hy - oy, hx - ox);
-            ctx.strokeStyle = LINE; hairline(0.7); ctx.globalAlpha = 0.65;
+        ctx.font = "500 " + uses.fs + "px ui-sans-serif, system-ui, sans-serif";
+        ctx.textBaseline = "middle";
+        for (var ci = 0; ci < uses.clusters.length; ci++) {
+          var k = uses.clusters[ci], side = k.align === "left" ? 1 : -1;
+          for (var li = 0; li < k.labels.length; li++) {
+            var L = k.labels[li];
+            ctx.strokeStyle = LINE; hairline(0.6); ctx.globalAlpha = 0.6;
             ctx.beginPath();
-            ctx.moveTo(hx, hy);
-            ctx.lineTo(ox + Math.cos(ang) * RMAX * sc * 1.05,
-                       oy + Math.sin(ang) * ZMAX * sc * 1.05);
+            ctx.moveTo(L.x, L.y);
+            ctx.quadraticCurveTo(k.cx, k.cy, k.tx, k.ty);
             ctx.stroke();
-            ctx.globalAlpha = 0.8;
+            ctx.globalAlpha = 0.7;
             ctx.fillStyle = LINE;
-            ctx.beginPath(); ctx.arc(hx, hy, 2.1 * dpr, 0, 6.2832); ctx.fill();
-
-            for (var li = 0; li < groups[gi].length; li++) {
-              var y = oy + rows.ys[at], x = ox + side * uses.colx;
-              at++;
-              ctx.strokeStyle = LINE; hairline(0.6); ctx.globalAlpha = 0.5;
-              ctx.beginPath();
-              ctx.moveTo(hx, hy); ctx.lineTo(x, y); ctx.stroke();
-              ctx.globalAlpha = 0.7;
-              ctx.fillStyle = LINE;
-              ctx.beginPath(); ctx.arc(x, y, 1.5 * dpr, 0, 6.2832); ctx.fill();
-              ctx.globalAlpha = 1;
-              ctx.textAlign = side > 0 ? "left" : "right";
-              ctx.textBaseline = "middle";
-              ctx.font = "500 " + uses.fs + "px ui-sans-serif, system-ui, sans-serif";
-              ctx.fillStyle = INK2;
-              ctx.fillText(groups[gi][li], x + side * px(6), y);
-            }
+            ctx.beginPath(); ctx.arc(L.x, L.y, 1.5 * dpr, 0, 6.2832); ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.textAlign = k.align;
+            ctx.fillStyle = INK2;
+            ctx.fillText(L.t, L.x + side * px(6), L.y);
           }
         }
-        ctx.globalAlpha = 1;
       }
 
       var ms = Math.max(15, Math.min(34, (W / dpr) * 0.037)) * dpr;
@@ -478,10 +541,9 @@
       var rightW = W - rightX - 8 * dpr;
       var uses = annotated ? usesGeom(W, H) : null;
       var sc = uses
-        // Between the columns: the brain takes the room the labels leave,
-        // which is wider than it is tall, so the two axes are constrained
-        // separately.
-        ? Math.min(uses.hubx * 0.80 / RMAX, H * 0.46 / ZMAX)
+        // The brain takes the room the labels leave; usesGeom worked out how
+        // much that is when it placed them.
+        ? uses.sc
         : sceneOnly
         ? Math.min(H / 1.3, W / 2.05)
         // Sized from what is actually drawn: the parcels span about 1.2 units
@@ -567,7 +629,7 @@
       }
       ctx.globalAlpha = 1;
 
-      if (annotated) drawMark(ox, oy, W, H, uses, sc);
+      if (annotated) drawMark(ox, oy, W, H, uses);
 
       // Everything past this point is annotation. The hero has none of it.
       if (sceneOnly) return;

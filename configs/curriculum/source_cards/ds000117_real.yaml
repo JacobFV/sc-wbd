@@ -1,0 +1,103 @@
+# TIER 1 -- likelihood, measured. Wakeman-Henson multimodal face processing.
+# OpenNeuro ds000117 v1.1.0, CC0-1.0, stated in the snapshot's own
+# dataset_description.json (not inferred from a mutable draft).
+#
+# 70 scalp EEG channels of a 70-channel EasyCap, observed through THIS SOURCE'S
+# OWN lead field. The cap labels are `EEG001`..`EEG074` -- positions on a cap,
+# not 10-10 names -- so no standard table resolves them and the operator is
+# built from the digitised positions in the fif headers
+# (configs/montages/ds000117_eeg.json). See `cfg.model.montages`.
+#
+# The 306 MEG channels in the same files are PRESENT AND NOT USED. Gradiometers
+# and magnetometers measure different functionals of the field and neither is
+# the scalp potential this project's lead field maps to; putting them through an
+# EEG head would be the montage mistake one modality further out. Recorded here
+# rather than omitted, so "MEG is on disk and unmodelled" is a stated fact.
+
+id: ds000117_real
+role: likelihood
+enabled: true
+
+channels:
+  eeg:
+    attachment: observation
+    n_channels: 70
+    units: V
+    clock: elekta_meg_amp
+    operator: lead_field
+    note: >-
+      Digitised electrode positions, averaged over the 2 fetched participants;
+      the mean electrode deviates 3.23 mm from that average, which bounds the
+      individual head geometry this single operator discards.
+  face_stimulus:
+    attachment: stimulus
+    n_channels: 1
+    units: category
+    clock: elekta_meg_amp
+    note: >-
+      Famous / unfamiliar / scrambled face onsets, on STI101. A stimulus, NOT a
+      boundary output and NOT an observation: it is known independently of the
+      participant and carries no likelihood over latent state on its own. It is
+      declared so the attachment report can say a stimulus stream exists; it is
+      not currently consumed by a loss, and the report says that too.
+
+is_simulated: false
+losses: [likelihood, forecast]
+
+gradient_permission:
+  - "local.*"
+  - "family_local.*"
+  - "residual.*"
+  - "family_residual.*"
+  - "coupling.*"
+  - "msg_proj.*"
+  - "msg_readin.*"
+  - "assimilate.*"
+  - "context.*"
+  - "readout.*"
+  - "family_readout.*"
+  - "observation.*"
+  # This source's OWN observation head. `eeg.*` is deliberately NOT granted:
+  # the founding 64-channel montage belongs to eegmmidb, and a 70-channel cap
+  # may not calibrate electrodes it does not have.
+  - "eeg_montages.ds000117_real.*"
+frozen:
+  - "bold.*"          # the fMRI in this release is not parcellated here; an
+                      # M/EEG term may not train a haemodynamic head.
+  - "eeg.*"           # see above: not this source's montage.
+  - "behaviour.*"     # the behavioural stream is a SEPARATE card
+                      # (ds000117_behaviour). One card, one attachment kind.
+  - "tms_drive.*"
+  - "individualizer.*"
+
+# From disk: 2 participants x 6 runs, 1100 Hz, 70 scalp channels after removing
+# the EOG/ECG block (EEG061-064). n_eff is PARTICIPANTS.
+n_eff: 2.0
+n_rows: 12.0
+n_participants: 2
+n_sites: 1
+hierarchy_depth: 2
+
+measurement_variance: null
+bias_halfwidth: null
+bias_status: unknown
+model_discrepancy: null
+validity_overlap: 1.0
+leakage_audited: false
+
+compiler_permission:
+  - "operator:local_field:*"
+  - "operator:long_range:*"
+  - "operator:assimilation:*"
+  - "region:*:state:*"
+  - "port:*.message_out"
+  - "port:*.message_in"
+  - "port:*.eeg_out"
+  - "observation:ds000117_real:nuisance"
+
+notes: >-
+  n = 2. Upstream ships 16 participants; this snapshot pinned 2 complete ones
+  and the remaining 14 were not fetched. Two participants cannot estimate a
+  between-participant variance, so no population-level claim may cite this
+  source's n -- it contributes a second measured montage and a second recording
+  site, which is what it is for.

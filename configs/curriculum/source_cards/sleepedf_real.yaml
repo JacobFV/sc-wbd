@@ -1,33 +1,98 @@
-# TIER 1 -- likelihood, measured. DISABLED, and the reason is recorded rather
-# than the source silently omitted.
+# TIER 1 -- likelihood, measured. ENABLED for run 3.
 #
-# Two bipolar derivations (Fpz-Cz, Pz-Oz) cannot constrain a 64-channel
-# observation head. Enabling it without a source-specific montage adapter is the
-# forced consensus Appendix D warns against. It is the ONLY corpus here with a
-# genuine future-session holdout (night 1 -> night 2), so it is also the only
-# source that could ever support a G5 individualisation claim -- which is why it
-# stays in the mixture as a declared, disabled tier-1 source rather than being
-# dropped from the file.
+# This card was disabled for run 2 with the reason recorded:
+#
+#     "Two bipolar derivations (Fpz-Cz, Pz-Oz) cannot constrain a 64-channel
+#     observation head."
+#
+# That was true of the thing being attempted -- forcing Sleep-EDF through the
+# eegmmidb head -- and it is not a property of the data. A bipolar channel
+# measures V(anode) - V(cathode); the forward operator is linear in the source
+# amplitudes; so the correct gain row is exactly L[anode] - L[cathode].
+# `heads.build_bipolar_lead_field` derives that operator from the same monopolar
+# solution every other montage is built from, and this source now observes
+# through its own 2-row lead field.
+#
+# The alternative that was NOT taken: zero-padding Fpz-Cz and Pz-Oz into the
+# 64-channel montage. That asserts 62 measured-and-silent electrodes, which is
+# fabricated data, and the model would learn that most of the scalp is quiet.
+#
+# What the adapter does not do is invent information. The operator's rank is 2:
+# this source constrains a 2-dimensional projection of the source space and
+# supports no claim finer than that. The lead field's own note says so.
+#
+# Sleep is load-bearing for the public copy: the landing page uses slow-wave
+# depth and timing as the worked example for intervention simulation. A site
+# claiming a case that the run declined to touch is the thing this enabling
+# prevents.
+
 id: sleepedf_real
 role: likelihood
-enabled: false
+enabled: true
+
+channels:
+  eeg_bipolar:
+    attachment: observation
+    n_channels: 2
+    units: V
+    clock: sleep_edf_psg
+    operator: bipolar_lead_field
+    note: >-
+      Fpz-Cz and Pz-Oz. BIPOLAR derivations, not monopolar potentials, and never
+      average-referenced: the mean of two bipolar derivations is not a reference
+      and subtracting it would mix frontal and occipital signals into each
+      other.
+
 is_simulated: false
 losses: [likelihood, forecast]
-gradient_permission: ["local.*", "residual.*", "assimilate.*", "readout.*"]
-frozen: ["eeg.*", "bold.*", "coupling.*"]
+
+gradient_permission:
+  - "local.*"
+  - "family_local.*"
+  - "residual.*"
+  - "family_residual.*"
+  - "assimilate.*"
+  - "context.*"
+  - "readout.*"
+  - "family_readout.*"
+  - "observation.*"
+  # Its own 2-row operator. `eeg.*` stays frozen: two derivations may not
+  # calibrate a 64-electrode montage, which was the original objection and is
+  # still correct at the level it was aimed at.
+  - "eeg_montages.sleepedf_real.*"
+frozen:
+  - "eeg.*"
+  - "bold.*"
+  - "coupling.*"      # a 2-rank observation cannot identify long-range coupling
+  - "behaviour.*"
+  - "tms_drive.*"
+  - "individualizer.*"
+
 n_eff: 78.0
 n_rows: 197.0
 n_participants: 78
+n_sites: 1
 hierarchy_depth: 3
 measurement_variance: 0.5
 bias_halfwidth: 0.4
 bias_status: prior_specified_sensitivity
+model_discrepancy: null
 validity_overlap: 0.5
-notes: >
-  Blocked on a montage adapter, not on data: 7.60 GB and 78 participants are on
-  disk. Until the adapter exists, no G5 individualisation claim is evaluable on
-  any source in this mixture (eegmmidb has one session per participant).
+leakage_audited: false
+
 compiler_permission:
   - "operator:local_field:params"
   - "operator:assimilation:*"
   - "region:*:state:*"
+  - "observation:sleepedf_real:nuisance"
+
+notes: >-
+  7.60 GB and 78 participants on disk, whole-night home polysomnograms at 100 Hz.
+  Open Data Commons Attribution Licence (ODC-By 1.0); cite Kemp et al. 2000 and
+  Goldberger et al. 2000. This is the ONLY corpus here with a genuine
+  future-session holdout -- night 1 to night 2 -- and therefore the only source
+  that could ever support a G5 individualisation claim. Run 3 does not make one:
+  it inherits run 2's participant-disjoint split, on which no held-out person has
+  a fitted person effect, so individualisation is unmeasurable by construction.
+  That is a property of the split, not of this source, and it is what 004 needs
+  this corpus for.

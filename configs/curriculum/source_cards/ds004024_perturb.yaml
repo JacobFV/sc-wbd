@@ -1,0 +1,138 @@
+# TIER 1 -- likelihood, measured. THE MEASURED PERTURBATION.
+#
+# The only source in this mixture where something was DONE TO the brain rather
+# than recorded from it. Single-pulse TMS over the first dorsal interosseous
+# representation of one primary motor cortex, MRI-navigated, with 64-channel EEG
+# recording at 20 kHz. OpenNeuro ds004024 v1.0.0, CC0, stated in the snapshot's
+# own dataset_description.json. Northwestern IRB STU00204239, NCT03723434;
+# offline reconstruction of already-collected, consented, published data.
+#
+# WHAT THIS CLOSES
+# "No model here has been trained on stimulation data" stops being true. 003
+# trains on measured TMS-EEG and predicts a measured evoked response. The
+# response is real and was measured before any training: trial-averaged global
+# field power is 5.40x baseline for left-M1 runs and 4.56x for right-M1,
+# peaking at +168 ms and +160 ms -- the P180.
+#
+# WHAT THIS DOES NOT CLOSE, AND WHY IT CANNOT
+# The map from a computed E-field to a neural response. Computing a drive from a
+# coil needs the coil's position and orientation. ds004024 was MRI-navigated but
+# **distributes no per-pulse pose log** -- the loader records this as
+# `coil_pose: Provenance.UNKNOWN` and notes it "disables the E-field operator
+# path outright". With no pose there is no field, and with no field there is
+# nothing to validate the map FROM. The drive here is therefore LEARNED, with
+# only its hemisphere (from the lateralised MEP) and its spatial support (that
+# hemisphere's somatomotor parcels) anchored. The public claim that the field
+# computations are validated while the field-to-response map is not STANDS
+# UNCHANGED, and this card is the reason it still stands.
+#
+# `possibilities/` keeps "the forward model cannot predict a perturbation it has
+# not seen" as a live falsifier. Run 3 does NOT close it: one target site
+# (M1), one intensity (100% rMT), two participants, and no pose. Predicting a
+# response at a site or dose the model never saw is untested.
+
+id: ds004024_perturb
+role: likelihood
+enabled: true
+
+channels:
+  eeg:
+    attachment: observation
+    n_channels: 64
+    units: V
+    clock: ds004024.brainvision_amp
+    operator: lead_field
+    note: >-
+      Post-pulse scalp potential. Scored outside the artefact window only, by
+      MASK -- the rollout still integrates through the excluded interval, so the
+      operator is never asked to cross a discontinuity it did not produce.
+  tms_pulse:
+    attachment: stimulus
+    n_channels: 1
+    units: percent_of_resting_motor_threshold
+    clock: ds004024.brainvision_amp
+    note: >-
+      The intervention. A stimulus: known independently of the participant, and
+      never evidence about latent state on its own. Onsets are exact on the
+      amplifier sample clock (events.tsv carries an integer sample column).
+      Intensity is DECLARED 100% rMT; the per-participant rMT in stimulator
+      output units is not distributed, so no absolute dose exists and no
+      intensity slope is estimable -- exactly one level is present.
+  emg:
+    attachment: boundary_output
+    n_channels: 2
+    units: V
+    clock: ds004024.brainvision_amp
+    note: >-
+      The motor evoked potential. Used to RECOVER the stimulated hemisphere
+      (paired per-trial log ratio of FDI peak-to-peak, right over left, in a
+      15-45 ms window). A run whose laterality falls below the stated
+      effect-size floor is skipped, not labelled with the sign of a noisy mean.
+      Not consumed by a likelihood.
+
+is_simulated: false
+losses: [likelihood, perturbation]
+
+gradient_permission:
+  # The pulse's own parameters. Without this the drive sits at its
+  # initialisation while on the forward path -- a stimulus the model is not
+  # allowed to learn the effect of, and the loss would still fall. That is the
+  # run-2 defect with a different module name.
+  - "tms_drive.*"
+  - "local.*"
+  - "family_local.*"
+  - "residual.*"
+  - "family_residual.*"
+  - "coupling.*"
+  - "msg_proj.*"
+  - "msg_readin.*"
+  - "assimilate.*"
+  - "context.*"
+  - "readout.*"
+  - "family_readout.*"
+  - "observation.*"
+  # Shares the resting card's montage: same cap, same participants, same
+  # electrodes. One operator, granted by both cards that observe through it.
+  - "eeg_montages.ds004024_rest_real.*"
+frozen:
+  - "eeg.*"
+  - "bold.*"
+  - "behaviour.*"
+  - "individualizer.*"
+
+# From disk: 2 participants, ses-async14ms, spTMS runs 01-06 at 100% rMT.
+# 128 epochs verified over 2 runs of sub-CON001 (64 left-M1, 64 right-M1),
+# 48 scored steps each after the artefact mask. n_eff is PARTICIPANTS.
+n_eff: 2.0
+n_rows: 128.0
+n_participants: 2
+n_sites: 1
+hierarchy_depth: 2
+
+measurement_variance: null
+bias_halfwidth: null
+bias_status: unknown
+model_discrepancy: null
+validity_overlap: 0.5
+leakage_audited: false
+
+compiler_permission:
+  - "operator:local_field:*"
+  - "operator:long_range:*"
+  - "operator:assimilation:*"
+  - "region:*:state:*"
+  - "port:*.message_out"
+  - "port:*.message_in"
+  - "port:*.eeg_out"
+  - "observation:ds004024_perturb:nuisance"
+
+notes: >-
+  Two resolution bounds travel with every number read off this source. The
+  model's fast clock is 8 ms, so TEP components earlier than N45 are below its
+  temporal resolution and are not claimed; N100 and P180 are resolvable. And the
+  first 10 ms after each pulse is masked out of the likelihood, blanked before
+  filtering, because a zero-phase 0.5 Hz high-pass smears a 0.5 V step backwards
+  across the whole epoch -- measured, and it rejected every epoch before it was
+  fixed. At n = 2 with one target site and one intensity, this source supports
+  "the model was trained on measured stimulation and predicts a measured evoked
+  response" and nothing about generalising to an unseen perturbation.

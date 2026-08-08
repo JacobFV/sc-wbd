@@ -1,0 +1,352 @@
+# SC-WBD-003 -- every modality on disk, every enabled source verifiably contributing.
+#
+# What this run is for, in one line: a ~25M-parameter foundation model of one
+# brain's dynamics that rolls state forward, predicts across modalities, and
+# responds to a perturbation it was actually trained on.
+#
+# ---------------------------------------------------------------------------
+# SIZE: MEASURED, NOT ESTIMATED
+# ---------------------------------------------------------------------------
+# HANDOFF-003 estimated hidden=896 at ~24.3M and said in terms to read the real
+# number off a built model before launching. Measured on this architecture, with
+# the three extra montage heads and the TMS drive included:
+#
+#     hidden= 768   10.45M          hidden=1280   22.57M
+#     hidden= 896   13.06M          hidden=1408   26.30M   <- chosen
+#     hidden=1024   15.95M          hidden=1536   30.32M
+#
+# The estimates were low by about 1.9x. 1408 lands at 26.30M, centred in the
+# 20-30M band the handoff set. `n_local_layers` stays 3, `encoder_channels` and
+# `region_embed` go 96 -> 192 as instructed, and `posterior` is untouched: it
+# infers six scalars and that target does not grow with the dynamics.
+#
+# ---------------------------------------------------------------------------
+# WHAT CHANGED SINCE RUN 2, AND WHAT THEREFORE CANNOT BE ATTRIBUTED
+# ---------------------------------------------------------------------------
+# Run 3 changes width (288 -> 1408), the source list (2 measured -> 7), the
+# observation operators (one montage -> four, plus the 10-10 geometry repair in
+# known_issues ISSUE-006), and adds two attachment kinds that had no source at
+# all. No single difference between run 2 and run 3 is attributable to any one
+# of those. This run is not a controlled ablation of anything; it is the run
+# that makes the sources reachable. Stated here rather than discovered at
+# analysis time.
+#
+# ---------------------------------------------------------------------------
+# THE ONE THING RUN 2 GOT WRONG THAT THIS FILE EXISTS TO PREVENT
+# ---------------------------------------------------------------------------
+# 88.8% of run 2's parameters could not receive a gradient, because the modules
+# were renamed `local` -> `family_local` and the cards still granted the old
+# names. An unmatched glob is an empty permission set, not an error. Every
+# `tier_permissions` list below grants BOTH namings, and two checks gate the
+# launch:
+#
+#   pytest tests/foundation/test_card_patterns_reach_the_model.py
+#   pytest tests/foundation/test_regional_tensors_moved.py
+#
+# The second is new and is the measurement half: mechanism (a glob matches a
+# name) and measurement (the tensor is no longer bit-identical to its
+# initialisation) are independent, and run 2 passed neither.
+#
+# ---------------------------------------------------------------------------
+# INDIVIDUALISATION IS DEFERRED TO 004 BY DECISION
+# ---------------------------------------------------------------------------
+# Run 3 inherits run 2's participant-disjoint split, on which no held-out person
+# has a fitted person effect. The between-participant spread of the applied
+# theta shift is therefore exactly 0.000e+00 by construction, and
+# `subject_specific_ar` comes out bit-identical to `ar16`. That is the split,
+# not a bug. No stage below individualises and no claim about individualisation
+# may be read off this run.
+
+model:
+  family_state: true          # the treatment arm of the 11.4 comparison
+  family_allow_derived_partition: false
+  local_core: learned
+  hidden: 1408
+  n_local_layers: 3
+  region_embed: 192
+  encoder_channels: 192
+  context_dim: 128
+  message_dim: 12
+  n_delay_bins: 8
+  n_spectral_modes: 8
+  n_adaptation: 2
+  n_uncertainty: 4
+  dt_model: 0.008
+  hemo_ratio: 25
+  residual_rho_max: 0.35
+  residual_init_scale: 0.05
+  state_dependent_variance: true
+  n_eeg_channels: 64
+  # TWO, not the default four. ds000117 records exactly two response buttons, and
+  # a head with four outputs would carry two logits no source has evidence about
+  # -- ungoverned parameters on the forward path, which is the class of thing
+  # `compiler_bridge.audit_binding` exists to name.
+  n_behaviour: 2
+  use_bf16: true
+  compile: false
+
+  # One observation operator per montage. A source recorded on other electrodes
+  # measures a different projection of the same state; padding it into the
+  # founding montage would assert measured-and-silent channels.
+  # `eegmmidb_real` is absent from this map on purpose -- it IS the founding
+  # montage and observes through `model.eeg`.
+  montages:
+    sleepedf_real:
+      kind: bipolar
+      channels: ["EEG Fpz-Cz", "EEG Pz-Oz"]
+    ds000117_real:
+      kind: digitised
+      positions_file: configs/montages/ds000117_eeg.json
+      channels:
+        ["EEG001","EEG002","EEG003","EEG004","EEG005","EEG006","EEG007","EEG008","EEG009","EEG010",
+         "EEG011","EEG012","EEG013","EEG014","EEG015","EEG016","EEG017","EEG018","EEG019","EEG020",
+         "EEG021","EEG022","EEG023","EEG024","EEG025","EEG026","EEG027","EEG028","EEG029","EEG030",
+         "EEG031","EEG032","EEG033","EEG034","EEG035","EEG036","EEG037","EEG038","EEG039","EEG040",
+         "EEG041","EEG042","EEG043","EEG044","EEG045","EEG046","EEG047","EEG048","EEG049","EEG050",
+         "EEG051","EEG052","EEG053","EEG054","EEG055","EEG056","EEG057","EEG058","EEG059","EEG060",
+         "EEG065","EEG066","EEG067","EEG068","EEG069","EEG070","EEG071","EEG072","EEG073","EEG074"]
+    ds004024_rest_real:
+      kind: monopolar
+      channels:
+        ["Fp1","Fpz","Fp2","AF7","AF3","AFz","AF4","AF8","F7","F5","F3","F1","Fz","F2","F4","F6",
+         "F8","FT7","FC5","FC3","FC1","FCz","FC2","FC4","FC6","FT8","T7","C5","C3","C1","Cz","C2",
+         "C4","C6","T8","TP9","TP7","CP5","CP3","CP1","CPz","CP2","CP4","CP6","TP8","TP10","P7",
+         "P5","P3","P1","Pz","P2","P4","P6","P8","PO7","PO3","POz","PO4","PO8","O1","Oz","O2","Iz"]
+
+# Untouched from the default, deliberately. Six scalars (log_G, log_velocity,
+# ei_global, ei_gradient, log_sigma, drive) and that target does not grow with
+# the dynamics. At 26.3M the split is ~6% posterior to model, which is the right
+# shape; run 2's 67% was not.
+posterior:
+  summary_channels: 128
+  summary_layers: 4
+  flow_layers: 6
+  flow_hidden: 256
+  n_bands: 7
+  n_pcs: 16
+  nuisance_dim: 2
+
+data:
+  sim_index_fast: data/sim_corpus_414/index_fast.json
+  sim_index_slow: data/sim_corpus_414/index_slow.json
+  real_eeg_root: data/eegmmidb/1.0.0
+  real_sleep_root: data/sleep-edfx/1.0.0/sleep-cassette
+  ds000117_root: data/ds000117/1.1.0
+  ds004024_root: data/ds004024/1.0.0
+  ds000113_root: data/ds000113
+  # ds000113 is parcellated and cached but its card is DISABLED on licence
+  # grounds (no licence in the bytes we hold; see the card). Left out of
+  # `bold_roots` so the loader is not even built: a source that may not
+  # contribute should not be sitting in memory looking available.
+  bold_roots: {}
+  enable_perturbation: true
+  window: 64
+  context: 24
+  fs_hz: 125.0
+  # 128, down from run 2's 192. The rollout's activation cost is the constraint,
+  # not the weights, and it scales with `hidden`: 288 -> 1408 is 4.9x on the MLP
+  # intermediates. Verified against the real reserve in the smoke run before
+  # launch rather than assumed here.
+  batch: 128
+  num_workers: 4
+  pin_memory: false
+  val_fraction: 0.05
+  real_test_fraction: 0.25
+  seed: 20260807
+
+train:
+  run_name: scwbd-003
+  out_dir: checkpoints/scwbd-003
+  report_dir: reports/training
+  seed: 20260807
+  device: cuda
+  # FALSE. 003 trains on the real 414-parcel prior. `load_anatomy` RAISES rather
+  # than substituting the synthetic one, so this flag is the only route to the
+  # fallback and setting it true would be a declaration, not an accident.
+  anatomy_force_fallback: false
+  amp_dtype: bfloat16
+  # The GB10 has ONE ~121 GB unified pool and `systemd MemoryMax` does NOT bound
+  # CUDA allocations -- the cgroup sees host-side allocation only. This is the
+  # only bound on the caching allocator, not a backstop. 48 leaves the rest of
+  # the box usable and is checked against the smoke run's real reserve.
+  cuda_reserve_gb: 48.0
+  max_wall_seconds: 108000      # 30 h; run 2 took 9 h at 1/4.9 the MLP width
+  resume: true
+
+  stages:
+    # ---- 1 -----------------------------------------------------------------
+    - name: T1_measured_founding
+      steps: 4000
+      lr: 6.0e-4
+      warmup: 200
+      log_every: 20
+      ckpt_every: 500
+      lambda_obs: 1.0
+      lambda_forecast: 1.0
+      lambda_posterior: 0.0
+      lambda_anat: 0.0
+      lambda_perturb: 0.0
+      extra:
+        curriculum:
+          scope: regional + interface, measured only
+          admits: [1]
+          tier_permissions:
+            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "readout.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*", "log_dt_scale"]
+          objective: [likelihood, forecast, port]
+          rationale: >-
+            Seven measured sources found the representation before any
+            lower-integrity source exists: eegmmidb (64ch, 109 participants),
+            sleep-edfx (2 bipolar derivations, 78 participants, enabled for the
+            first time), ds000117 (70ch cap, 2 participants), ds004024 resting
+            (64ch, 2 participants), ds002336 (parcel BOLD, 10 participants), and
+            the two new attachment kinds -- ds000117_behaviour (boundary_output)
+            and ds004024_perturb (a measured intervention). `behaviour.*` and
+            `eeg_montages.*` are granted at tier 1 because tier-1 sources are the
+            only ones with evidence about them.
+    # ---- 2 -----------------------------------------------------------------
+    - name: T2_calibration
+      steps: 600
+      lr: 3.0e-4
+      warmup: 60
+      log_every: 20
+      ckpt_every: 300
+      lambda_obs: 1.0
+      lambda_cal: 0.3
+      lambda_posterior: 0.0
+      lambda_anat: 0.0
+      extra:
+        curriculum:
+          scope: instrument nuisance
+          admits: [1, 2]
+          tier_permissions:
+            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "readout.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
+                "eeg_montages.*.log_gain", "eeg_montages.*.offset",
+                "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
+          objective: [likelihood, calibration]
+          rationale: >-
+            Sized by what is being estimated, not by corpus size: per-channel
+            gain, offset and noise floor across four montages. A calibration
+            source has tiny measurement variance and would win a pure
+            inverse-variance contest, which is why it is admitted late and
+            narrowly. Note the tier-2 grants now name the montage heads too --
+            without that, three of the four montages' nuisance would be
+            calibrated by nobody.
+    # ---- 3 -----------------------------------------------------------------
+    - name: T3_population_prior
+      steps: 800
+      lr: 3.0e-4
+      warmup: 80
+      log_every: 20
+      ckpt_every: 400
+      lambda_anat: 0.05
+      lambda_posterior: 0.0
+      extra:
+        curriculum:
+          scope: anatomical prior
+          admits: [1, 2, 3]
+          tier_permissions:
+            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "readout.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
+                "eeg_montages.*.log_gain", "eeg_montages.*.offset",
+                "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
+            3: ["coupling.gain_*", "coupling.global_scale"]
+          objective: [likelihood, forecast, anatomy]
+          rationale: >-
+            The 9-family partition and the connectome scale enter here, after the
+            measured sources have already fixed the representation they modulate.
+    # ---- 4 -----------------------------------------------------------------
+    - name: T4_simulator
+      steps: 5000
+      lr: 2.0e-4
+      warmup: 250
+      log_every: 20
+      ckpt_every: 500
+      lambda_posterior: 1.0
+      lambda_kl: 0.01
+      lambda_slice: 1.0
+      lambda_anat: 0.05
+      extra:
+        curriculum:
+          scope: simulator-conditioned inference
+          admits: [1, 2, 3, 4]
+          tier_permissions:
+            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "readout.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
+                "eeg_montages.*.log_gain", "eeg_montages.*.offset",
+                "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
+            3: ["coupling.gain_*", "coupling.global_scale"]
+            4: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "readout.*", "family_readout.*", "posterior.*",
+                "log_dt_scale"]
+          objective: [likelihood, forecast, slice, posterior]
+          rationale: >-
+            The amortised posterior is founded here and only here. No measured
+            recording carries a theta label, so no tier-1 source can found it --
+            not as a wiring gap but in principle. That is the founding exemption
+            `configs/curriculum/tiers.yaml` already grants to `posterior.*`, and
+            this is the stage that uses it. Tier 4 does NOT reach `eeg.*`,
+            `eeg_montages.*`, `bold.*` or `behaviour.*`: a simulator may not
+            calibrate an instrument.
+    # ---- 5 -----------------------------------------------------------------
+    - name: T5_measured_return
+      steps: 3000
+      lr: 1.2e-4
+      warmup: 150
+      log_every: 20
+      ckpt_every: 500
+      lambda_obs: 1.0
+      lambda_forecast: 1.0
+      lambda_perturb: 1.0
+      lambda_posterior: 0.2
+      lambda_anat: 0.02
+      extra:
+        curriculum:
+          scope: return to measured
+          admits: [1, 2]
+          tier_permissions:
+            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "readout.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*",
+                "tms_drive.*", "log_dt_scale"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
+                "eeg_montages.*.log_gain", "eeg_montages.*.offset",
+                "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
+          objective: [likelihood, forecast, perturbation]
+          rationale: >-
+            The 1 -> 4 -> 1 return. The simulator is withdrawn and the measured
+            sources have the last word, so the final weights are conditioned on
+            evidence rather than on the generator. `tms_drive.*` is granted here
+            and nowhere else: the pulse's amplitude and its profile over motor
+            parcels are learned against the measured evoked response, and letting
+            a simulator stage touch them would fit the drive to synthetic
+            dynamics.
+
+mixture_cards: configs/curriculum/source_cards
+arm:
+  role: treatment
+  justification: >-
+    Heterogeneous region-indexed state with per-family operators
+    (`family_state: true`). Run 2 was nominally this arm and could not be read
+    as one, because the family-indexed modules never received a gradient.
+notes: >-
+  SC-WBD-003. Seven measured sources, four observation montages, and the first
+  boundary_output and measured perturbation in the mixture. Trained on this box:
+  1.1 TB free, all data in place, 121 GB unified. The second GB10 (spark-ec4d)
+  was probed and rejected -- 184 GB free of 3.7 TB against a 177 GB data
+  directory leaves no room for checkpoints, and nothing in scwbd/foundation is
+  distributed anyway.
