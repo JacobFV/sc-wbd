@@ -418,6 +418,40 @@ Outside `tests/foundation`, `tests/schema/test_carrier_and_views.py` fails at
 `pytest`. Pre-existing, from the noether2 merge, and not repaired here for the
 same reason as the R12 duplication.
 
+## Early read at step 300 (2.2%), and the threshold for acting on it
+
+Split the 16 logged points in half and compare means. This is a weak instrument
+— eight points a side, one batch of 8 windows per source per step — and it is
+recorded because "we looked early and it was ambiguous" is a different state
+from "we did not look".
+
+| term | first half | second half | delta |
+| --- | ---: | ---: | ---: |
+| `eegmmidb_real_eeg_nll` | 2.067 | 2.066 | **−0.001** |
+| `sleepedf_real_eeg_nll` | 2.342 | 2.470 | +0.129 |
+| `ds000117_real_eeg_nll` | 1.924 | 1.955 | +0.031 |
+| `perturb_nll` | 2.026 | 1.714 | **−0.312** |
+| mixture total | 1.257 | 1.168 | −0.089 |
+
+The perturbation term and the mixture total are moving. **The three EEG
+observation likelihoods are not.** eegmmidb is flat to three decimals.
+
+Two reasons not to act on this at step 300. OneCycle has only just reached its
+peak learning rate (6.0e-4), and on this schedule most of the improvement
+arrives during the anneal, not the ramp. And the forecast task is hard by
+construction: 24 steps of context, 64 steps rolled forward, which is 0.5 s ahead
+at 125 Hz — the task run 2 lost to persistence on.
+
+**The threshold, fixed now so it cannot be adjusted to fit later:** if
+`eegmmidb_real_eeg_nll` has not fallen by step 2,000 — half of T1, well past the
+LR peak — that is a finding about this configuration rather than a wait-and-see,
+and it goes in the results section as one. Nothing about the run changes on the
+strength of 16 points.
+
+For scale, a term of 2.07 in these units is worse than predicting the target's
+own marginal (0.5·(log 2π + 1) = 1.42), which is the number to beat before any
+comparison to a baseline is interesting.
+
 ## When the run finishes
 
 In order. Each step's output is the input to the next, and none of them invents
