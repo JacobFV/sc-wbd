@@ -255,17 +255,21 @@ than by adding diagnostics mid-run.
 It does not threaten the other sources: `MixtureTrainer.step` normalises each
 source before accumulating, and `mixture_total` sits near 1.0 throughout.
 
-**Resolved: it is a transient, not a divergence.** Measured over the first 60
+**Resolved: it is a transient, not a divergence.** Measured over the first 100
 steps of the launched run:
 
-| step | `real_bold_nll` | eegmmidb NLL | perturb NLL |
-| ---: | ---: | ---: | ---: |
-| 1 | 21.7 | 2.225 | 2.982 |
-| 20 | 9.03e4 | 2.393 | 2.396 |
-| 40 | 3.11e4 | 1.881 | 2.088 |
-| 60 | 5.76e3 | 1.844 | 1.531 |
+| step | `real_bold_nll` | eegmmidb NLL | perturb NLL | behaviour CE |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 21.7 | 2.225 | 2.982 | 0.641 |
+| 20 | 9.03e4 | 2.393 | 2.396 | 0.687 |
+| 40 | 3.11e4 | 1.881 | 2.088 | 0.635 |
+| 60 | 5.76e3 | 1.844 | 1.531 | 0.649 |
+| 80 | 1.01e3 | 1.595 | — | — |
+| 100 | 5.21e2 | 1.712 | 1.696 | 0.585 |
 
-A 16× fall over 40 steps. The reading that fits: the Balloon-Windkessel state is
+A **173× fall** from the peak, monotone from step 20 on, while every other
+source improved over the same window. The reading that fits: the
+Balloon-Windkessel state is
 driven by `rate_e` from a regional model that is at its initialisation on step
 1, and it settles as that model trains. No intervention was made and none was
 needed — which is the reason for measuring the trend before acting on the first
