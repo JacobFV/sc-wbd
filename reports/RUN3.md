@@ -289,6 +289,30 @@ now **skipped rather than passing**, which is visible rather than silent, and
 needs no repair — only the awareness that a green run of that file is not
 evidence about the `_orig_mod.` defect any more.
 
+## Test suite state after run 3's changes
+
+`pytest tests/foundation`, measured while training was running — so the timings
+are contended and are not reported, but a pass is a pass and a failure is a
+failure.
+
+| file | failures | status |
+| --- | ---: | --- |
+| `test_family_state.py` | 5 | **known**, listed in HANDOFF-003: R12 is implemented twice in unrelated exception hierarchies (`R12Violation` vs `CompilerRefusal`), and `validate()` reaches the second first, so the message the tests match on is unreachable. Deciding which is authoritative is a design call, not a repair. |
+| `test_curriculum_admission.py` | 1 → **0** | Mine, and the guard was built to catch it. Fixed. |
+
+The admission failure was the guard working: its own comment says the
+expectations are widened "so the next addition is refused the same way this one
+was", and adding five tier-1 cards was that addition. Fixing it also exposed a
+latent bug in the test — expectations built by appending
+`(*MEASURED, "montage_calibration")`, correct only while every measured id
+happened to sort before `montage_calibration`, which enabling `sleepedf_real`
+broke.
+
+Outside `tests/foundation`, `tests/schema/test_carrier_and_views.py` fails at
+**collection** (ISSUE-007) and takes the directory with it under a plain
+`pytest`. Pre-existing, from the noether2 merge, and not repaired here for the
+same reason as the R12 duplication.
+
 ## Results
 
 **PENDING** — filled from the checkpoint after the run completes. Nothing is
