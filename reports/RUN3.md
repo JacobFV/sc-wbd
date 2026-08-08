@@ -24,7 +24,34 @@ run — from 11.2% reachable to a set the checkpoint itself reports.
 | attachment kinds exercised | `observation` | `observation`, `boundary_output`, `stimulus` |
 | trained on stimulation data | no | yes |
 
-## Launch check #2 at step 500: the run-2 defect is fixed, with two findings
+## Launch check #2 at the end of stage 1 — the check HANDOFF-003 specified
+
+`checkpoints/scwbd-003/stage_T1_measured_founding.pt`, step 4,000, best loss
+0.1435. This is the artifact the handoff's check was written against, and it
+reads identically to the step-500 read below: **243 of 382 tensors moved
+(63.6%)**, `unfingerprinted` empty, `admitted_but_no_term` empty.
+
+    family_local     137/137        family_readout     0/36   frozen
+    family_residual   32/32         posterior          0/58   frozen
+    behaviour          5/5          tms_drive          0/4    frozen
+    eeg_montages      21/33         msg_proj           0/2    frozen
+    assimilate        11/11         observation       18/36
+
+Two of the three regional modules the handoff names are **completely** trained.
+The third, `family_readout`, is frozen for the structural reason set out below:
+no tier-1 loss reads `rollout.activity`, so no measured source can found it. T1
+admits tier 1 only, so this is the expected result rather than a failure, and
+`tiers.yaml` now carries the founding exemption. It should move in T4.
+
+`pytest tests/foundation/test_regional_tensors_moved.py` passes against this
+checkpoint, with the exemptions derived from `tiers.yaml` and the stage's own
+`tier_permissions` rather than listed.
+
+That the numbers are unchanged from step 500 is itself worth noting: whatever
+was going to receive a gradient in T1 had already received one by step 500, and
+3,500 further steps moved no additional tensor into the set.
+
+## Launch check #2 at step 500: the same result, earlier
 
 First real checkpoint, mid-T1. **243 of 382 tensors have moved off their
 initialisation — 63.6%, against run 2's 11.2%** — and `unfingerprinted` is
