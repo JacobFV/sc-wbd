@@ -174,6 +174,8 @@ def build_lead_field(
     device="cpu",
     conductivity: float = 0.33,
     allow_fallback: bool = True,
+    positions: "np.ndarray | Sequence[Sequence[float]] | None" = None,
+    positions_note: str = "",
 ) -> LeadField:
     """Prefer agent F's forward solution; else an analytic single-sphere lead field.
 
@@ -210,18 +212,33 @@ def build_lead_field(
 
     geometry = "real 10-10 montage positions (MNE standard_1005)"
     dropped: tuple[str, ...] = ()
-    try:
-        elec, kept = _montage_positions(channel_names)
-        dropped = tuple(n for n in channel_names if n not in set(kept))
-    except Exception:  # noqa: BLE001 - mne montage unavailable
-        geometry = "a Fibonacci spiral on a sphere -- NOT electrode geometry"
-        n_ch = len(channel_names)
-        idx = np.arange(n_ch, dtype=np.float64)
-        phi = math.pi * (3 - math.sqrt(5)) * idx
-        z = 1 - 2 * (idx + 0.5) / n_ch
-        r = np.sqrt(np.clip(1 - z * z, 0, None))
-        elec = np.stack([r * np.cos(phi), r * np.sin(phi), z], 1) * 95.0
+    if positions is not None:
+        # Measured digitisation, supplied by the caller. Preferred over the
+        # standard_1005 lookup whenever a source ships one: `EEG001`..`EEG074`
+        # are not 10-10 names and no table can resolve them, and a digitised
+        # position is the electrode where it actually sat.
+        elec = np.asarray(positions, dtype=np.float64)
+        if elec.shape != (len(channel_names), 3):
+            raise ValueError(
+                f"positions must be ({len(channel_names)}, 3) in mm, got {elec.shape}"
+            )
+        if not np.isfinite(elec).all():
+            raise ValueError("digitised positions contain non-finite values")
         kept = tuple(channel_names)
+        geometry = positions_note or "caller-supplied digitised electrode positions"
+    else:
+        try:
+            elec, kept = _montage_positions(channel_names)
+            dropped = tuple(n for n in channel_names if n not in set(kept))
+        except Exception:  # noqa: BLE001 - mne montage unavailable
+            geometry = "a Fibonacci spiral on a sphere -- NOT electrode geometry"
+            n_ch = len(channel_names)
+            idx = np.arange(n_ch, dtype=np.float64)
+            phi = math.pi * (3 - math.sqrt(5)) * idx
+            z = 1 - 2 * (idx + 0.5) / n_ch
+            r = np.sqrt(np.clip(1 - z * z, 0, None))
+            elec = np.stack([r * np.cos(phi), r * np.sin(phi), z], 1) * 95.0
+            kept = tuple(channel_names)
 
     src = anat.positions.detach().float().cpu().numpy()
     # scale source positions into the montage's radius so the geometry is consistent

@@ -605,10 +605,45 @@ class SCWBD(nn.Module):
             )
         if kind == "monopolar":
             return build_lead_field(anat, channel_names=channels, device=dev)
+        if kind == "digitised":
+            # Electrode geometry the source recorded, not a name lookup. Used
+            # where the channel labels resolve to nothing standard -- ds000117's
+            # are `EEG001`..`EEG074`, cap positions rather than 10-10 names.
+            import json
+            from pathlib import Path
+
+            ref = spec.get("positions_file")
+            if not ref:
+                raise ValueError(
+                    f"montage {source_id!r} is 'digitised' but names no "
+                    "positions_file; there is nowhere for the geometry to come from"
+                )
+            path = Path(ref)
+            if not path.is_absolute():
+                path = Path(__file__).resolve().parents[2] / path
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if tuple(payload["channels"]) != channels:
+                raise ValueError(
+                    f"montage {source_id!r}: the channels declared in the config "
+                    f"({len(channels)}) are not the channels in {path.name} "
+                    f"({len(payload['channels'])}), or are in a different order. "
+                    "The channel axis is positional, so this would relabel "
+                    "electrodes silently."
+                )
+            return build_lead_field(
+                anat,
+                channel_names=channels,
+                device=dev,
+                positions=payload["positions_mm"],
+                positions_note=(
+                    f"digitised electrode positions from {path.name} "
+                    f"({payload.get('note', '')})"
+                ),
+            )
         raise ValueError(
-            f"montage {source_id!r} declares kind={kind!r}; expected 'monopolar' "
-            "or 'bipolar'. There is no default: a bipolar derivation observed "
-            "through a monopolar row is the wrong operator and nothing "
+            f"montage {source_id!r} declares kind={kind!r}; expected 'monopolar', "
+            "'bipolar' or 'digitised'. There is no default: a bipolar derivation "
+            "observed through a monopolar row is the wrong operator and nothing "
             "downstream would report it."
         )
 

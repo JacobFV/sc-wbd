@@ -74,7 +74,11 @@ __all__ = [
     "RealEEGDataset",
     "EEGMMIDBDataset",
     "SleepEDFDataset",
+    "DS000117EEGDataset",
+    "DS004024RestDataset",
     "SLEEP_EDF_EEG_CHANNELS",
+    "DS004024_EEG_CHANNELS",
+    "ds000117_scalp_channels",
     "participant_split",
     "leakage_check",
     "make_loaders",
@@ -114,6 +118,10 @@ class RealEEGConfig:
     eegmmidb_root: Path = Path("/data/scwbd/eegmmidb/1.0.0")
     #: Root of the Sleep-EDF Expanded sleep-cassette subset (contains ``*-PSG.edf``).
     sleep_edfx_root: Path = Path("/data/scwbd/sleep-edfx/1.0.0/sleep-cassette")
+    #: Root of the ds000117 BIDS tree (contains ``sub-01/``...).
+    ds000117_root: Path = Path("/data/scwbd/ds000117/1.1.0")
+    #: Root of the ds004024 BIDS tree (contains ``sub-CON001/``...).
+    ds004024_root: Path = Path("/data/scwbd/ds004024/1.0.0")
 
     #: Common sampling rate every source is brought to.  125 Hz keeps the whole
     #: 0.5-45 Hz passband with margin while making sources commensurable.
@@ -151,6 +159,8 @@ class RealEEGConfig:
     def __post_init__(self) -> None:
         self.eegmmidb_root = Path(self.eegmmidb_root)
         self.sleep_edfx_root = Path(self.sleep_edfx_root)
+        self.ds000117_root = Path(self.ds000117_root)
+        self.ds004024_root = Path(self.ds004024_root)
         self.cache_dir = Path(self.cache_dir)
         if self.window_s <= 0:
             raise ValueError("window_s must be positive")
@@ -169,7 +179,13 @@ class RealEEGConfig:
 
     def as_json(self) -> dict[str, Any]:
         d = asdict(self)
-        for key in ("eegmmidb_root", "sleep_edfx_root", "cache_dir"):
+        for key in (
+            "eegmmidb_root",
+            "sleep_edfx_root",
+            "ds000117_root",
+            "ds004024_root",
+            "cache_dir",
+        ):
             d[key] = str(d[key])
         return d
 
@@ -317,6 +333,39 @@ class RealEEGDataset(Dataset):
             self.build()
 
     # -- to be provided by subclasses -----------------------------------
+    def _read_raw(self, path: str):
+        """Open one recording. EDF by default; override for other containers.
+
+        A hook rather than a format sniff: ``mne`` has a reader per container
+        and they take different arguments, and guessing from the extension would
+        put the choice somewhere no card can see it. Everything downstream of
+        this call -- filtering, resampling, referencing, windowing -- is shared,
+        so a new container costs one method.
+        """
+        import mne
+
+        return mne.io.read_raw_edf(path, preload=False, verbose="error")
+
+    def _window_starts_for(self, cand: dict[str, str], n_samples: int, win: int) -> np.ndarray:
+        """Where windows begin in the resampled recording.
+
+        The default is the uniform grid, which is what a source with no events
+        wants. A source whose windows must line up with something -- a stimulus,
+        a button press -- overrides this and returns event-locked starts.
+        """
+        return _window_starts(n_samples, win, self.cfg.stride_samples, self.cfg.max_windows_per_recording)
+
+    def _window_labels(
+        self, cand: dict[str, str], starts: Sequence[int], fs: float
+    ) -> list[dict[str, Any]] | None:
+        """Per-window targets to cache beside the signal, or ``None`` for no labels.
+
+        ``starts`` are the windows that actually survived artifact rejection, in
+        order, so a label list returned here is aligned with the stored shard by
+        construction rather than by a second pass that could drift out of step.
+        """
+        return None
+
     def _montage(self) -> Sequence[str]:
         raise NotImplementedError
 
@@ -411,8 +460,6 @@ class RealEEGDataset(Dataset):
         raised: a half-downloaded archive should degrade the dataset, not abort
         the job.
         """
-        import mne  # imported lazily: mne is heavy and only needed on a cache miss
-
         rec_id = cand["recording_id"]
         base = {
             "recording_id": rec_id,
@@ -423,7 +470,7 @@ class RealEEGDataset(Dataset):
             "source": self.source,
         }
         try:
-            raw = mne.io.read_raw_edf(cand["path"], preload=False, verbose="error")
+            raw = self._read_raw(cand["path"])
         except Exception as exc:  # noqa: BLE001 - mne raises many unrelated types
             LOGGER.warning("cannot open %s (%s); skipping", cand["path"], exc)
             return {**base, "status": "unreadable", "reason": f"{type(exc).__name__}: {exc}"}
@@ -491,9 +538,7 @@ class RealEEGDataset(Dataset):
         z_den = 1.4826 * np.maximum(mad / scale, 1e-12)
 
         win = self.cfg.window_samples
-        starts = _window_starts(
-            data.shape[1], win, self.cfg.stride_samples, self.cfg.max_windows_per_recording
-        )
+        starts = self._window_starts_for(cand, data.shape[1], win)
         kept: list[int] = []
         buf: list[np.ndarray] = []
         n_nonfinite = 0
@@ -530,6 +575,16 @@ class RealEEGDataset(Dataset):
             "n_dropped_artifact": int(n_artifact),
             "window_starts": kept,
         }
+        labels = self._window_labels(cand, kept, float(self.cfg.fs_target))
+        if labels is not None:
+            if len(labels) != len(kept):
+                raise ValueError(
+                    f"{rec_id}: {len(labels)} labels for {len(kept)} kept windows. "
+                    "A label list that is not aligned with the stored shard "
+                    "attaches one window's target to another window's signal, "
+                    "which trains a real loss on a fabricated pairing."
+                )
+            meta["window_labels"] = labels
         if not kept:
             meta["reason"] = "every candidate window was non-finite or exceeded z_max"
             return meta
@@ -570,7 +625,7 @@ class RealEEGDataset(Dataset):
         # Copy out of the memory map: the tensor must own writable memory, and
         # the copy is what makes a DataLoader worker's page cache reusable.
         window = np.array(self._shard(rec_idx)[w_idx], dtype=np.float32)
-        return {
+        item = {
             "eeg": torch.from_numpy(window),  # (T, C), robust-scaled units
             "subject": rec["subject"],
             "run": rec["run"],
@@ -578,6 +633,10 @@ class RealEEGDataset(Dataset):
             "source": self.source,
             "fs": float(rec["fs"]),
         }
+        labels = rec.get("window_labels")
+        if labels is not None:
+            item.update(labels[w_idx])
+        return item
 
     # -- provenance / auditing -------------------------------------------
     def provenance(self, idx: int) -> WindowProvenance:
@@ -780,6 +839,318 @@ class SleepEDFDataset(RealEEGDataset):
                         "session": f"night{night}",
                         "run": f"night{night}",  # one continuous run per night
                         "path": str(edf),
+                    }
+                )
+        return out
+
+
+# ======================================================================
+# ds000117 -- Wakeman-Henson multimodal face processing
+# ======================================================================
+class DS000117EEGDataset(RealEEGDataset):
+    """The 70 scalp EEG channels of ds000117, as fixed-length windows.
+
+    The cap is a 70-channel EasyCap whose channels are labelled ``EEG001`` ..
+    ``EEG074`` -- **cap positions, not 10-10 names**, which is why this source
+    needs a digitised montage (``configs/montages/ds000117_eeg.json``) rather
+    than a table lookup. ``EEG061``-``EEG064`` are the EOG/ECG block and are not
+    scalp potentials; they are excluded here and attach as boundary outputs
+    through :class:`DS000117BehaviourDataset` instead.
+
+    The 306 MEG channels in the same file are **not** loaded. MEG needs its own
+    forward operator -- gradiometers and magnetometers measure different
+    functionals of the same field, and neither is the potential this project's
+    lead field maps to. Loading them into an EEG head would be the montage
+    mistake one modality further out. Recorded on the card as present and
+    unused rather than omitted.
+    """
+
+    source = "ds000117_eeg"
+    average_reference = True
+
+    def _read_raw(self, path: str):
+        import mne
+
+        return mne.io.read_raw_fif(path, preload=False, verbose="error")
+
+    def _montage(self) -> Sequence[str]:
+        return ds000117_scalp_channels()
+
+    def _discover(self) -> list[dict[str, str]]:
+        root = self.cfg.ds000117_root
+        if not root.is_dir():
+            LOGGER.warning("ds000117 root %s does not exist; dataset will be empty", root)
+            return []
+        by_subject: dict[str, list[tuple[str, Path]]] = defaultdict(list)
+        for f in sorted(root.glob("sub-*/ses-meg/meg/*_task-facerecognition_run-*_meg.fif")):
+            m = re.search(r"_run-(\d+)_meg\.fif$", f.name)
+            if m is None:
+                continue
+            try:
+                if f.stat().st_size < 1_000_000:
+                    continue
+            except OSError:
+                continue
+            by_subject[f.parts[-4]].append((m.group(1), f))
+
+        subjects = sorted(by_subject)
+        if self.cfg.max_subjects is not None:
+            subjects = subjects[: self.cfg.max_subjects]
+        out: list[dict[str, str]] = []
+        for subject in subjects:
+            runs = sorted(by_subject[subject])
+            if self.cfg.max_runs_per_subject is not None:
+                runs = runs[: self.cfg.max_runs_per_subject]
+            for run, f in runs:
+                out.append(
+                    {
+                        "recording_id": f"{subject}_run-{run}",
+                        "subject": subject,
+                        "session": "ses-meg",
+                        "run": f"run-{run}",
+                        "path": str(f),
+                    }
+                )
+        return out
+
+
+#: Response bits on ds000117's ``STI101``. The line carries the stimulus code in
+#: its low bits and ORs a button bit on top, so ``261 == 5 | 256``. Two buttons
+#: were used; ``n_behaviour`` for this source is therefore 2, not 4.
+DS000117_RESPONSE_BITS: tuple[int, ...] = (256, 4096)
+#: Stimulus trigger codes: famous / unfamiliar / scrambled x first / immediate /
+#: delayed repeat. Everything outside this range on the low bits is not a face.
+DS000117_STIM_CODES = tuple(range(5, 20))
+#: A response is attributed to the stimulus it follows only inside this window.
+#: Outside it the pairing is a guess, and a guessed target trained against a real
+#: signal is indistinguishable in the loss from a learned one.
+DS000117_RT_WINDOW_S = (0.15, 2.5)
+
+
+class DS000117BehaviourDataset(DS000117EEGDataset):
+    """Stimulus-locked EEG episodes paired with the button press that followed.
+
+    **This is the boundary output.** ``ChannelSpec`` distinguishes what the world
+    did to the participant (``stimulus``), what was measured of the carrier
+    through an operator (``observation``) and what the participant *produced*
+    and was measured outside the skull (``boundary_output``). A button press is
+    the third. It is evidence about the carrier that does not pass through a
+    forward model of neural activity, and until this class existed nothing in
+    the mixture declared one -- which is why ``behaviour.*`` sat unreachable and
+    ``test_card_patterns_reach_the_model`` recorded it as deliberately ungranted.
+
+    Each item is the ``window_s`` of EEG **ending at stimulus onset**, plus the
+    choice and the log response time that followed. The window ends at onset on
+    purpose: a window overlapping the response contains the motor potential of
+    the very press being predicted, and the head would score well by reading the
+    answer off its own input.
+
+    Two things this deliberately does **not** use:
+
+    * ``beh/*_events.tsv``. That file has ``response_time`` and ``button_press``
+      columns and looks like the obvious source, but its ``onset`` is ``n/a``
+      for all 299 rows because it is the **post-scan debriefing** -- the
+      participant re-rating the faces afterwards, described in
+      ``task-facerecognition_events.json``. It is not time-locked to any neural
+      recording, and pairing it with EEG would fabricate the synchronisation.
+    * ``meg/*_events.tsv``. Those rows are the stimuli only; the presses are on
+      ``STI101`` in the raw file and nowhere else in the release.
+    """
+
+    source = "ds000117_behaviour"
+
+    #: Number of distinct buttons -- what the BehaviourHead's ``n_out`` must be.
+    n_choices = len(DS000117_RESPONSE_BITS)
+
+    def _events(self, path: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """``(stim_sample, resp_sample, resp_button)`` on the *native* clock."""
+        import mne
+
+        raw = mne.io.read_raw_fif(path, preload=False, verbose="error")
+        if "STI101" not in raw.ch_names:
+            return np.zeros(0, int), np.zeros(0, int), np.zeros(0, int)
+        line = raw.get_data(picks=["STI101"])[0].astype(np.int64)
+        rising = np.where(np.diff(line, prepend=0) > 0)[0]
+        codes = line[rising]
+        stim = rising[np.isin(codes & 0xFF, DS000117_STIM_CODES) & (codes < min(DS000117_RESPONSE_BITS))]
+        r_idx, r_btn = [], []
+        for s, c in zip(rising, codes):
+            for b, bit in enumerate(DS000117_RESPONSE_BITS):
+                if c & bit:
+                    r_idx.append(s)
+                    r_btn.append(b)
+                    break
+        return stim, np.asarray(r_idx, dtype=np.int64), np.asarray(r_btn, dtype=np.int64)
+
+    def _pairs(self, path: str, fs_native: float) -> list[tuple[int, int, float]]:
+        """``(stim_sample_native, button, rt_s)`` for each attributable response.
+
+        Memoised per path: the starts and the labels are derived from the same
+        pairing in two passes, and re-reading a 500 MB fif for the second pass
+        costs more than the whole rest of the preprocessing.
+        """
+        memo = getattr(self, "_pairs_memo", None)
+        if memo is None:
+            memo = {}
+            object.__setattr__(self, "_pairs_memo", memo)
+        if path in memo:
+            return memo[path]
+        stim, resp, btn = self._events(path)
+        lo, hi = DS000117_RT_WINDOW_S
+        out: list[tuple[int, int, float]] = []
+        for s, b in zip(resp, btn):
+            prev = stim[stim < s]
+            if not len(prev):
+                continue
+            rt = float((s - prev[-1]) / fs_native)
+            # A response outside the window is not attributed to a different
+            # stimulus, it is DROPPED: the alternative is inventing which trial
+            # a press belonged to.
+            if lo <= rt <= hi:
+                out.append((int(prev[-1]), int(b), rt))
+        memo[path] = out
+        return out
+
+    def _window_starts_for(self, cand: dict[str, str], n_samples: int, win: int) -> np.ndarray:
+        fs_native, ratio = self._native_ratio(cand["path"])
+        starts = []
+        for stim_native, _b, _rt in self._pairs(cand["path"], fs_native):
+            # Window ENDS at stimulus onset, so it contains no part of the response.
+            s0 = int(round(stim_native * ratio)) - win
+            if 0 <= s0 <= n_samples - win:
+                starts.append(s0)
+        # No `max_windows_per_recording` thinning: these windows are trials, not
+        # a grid, and dropping trials to a cap would silently subsample the
+        # behavioural design rather than the signal.
+        return np.asarray(sorted(set(starts)), dtype=np.int64)
+
+    def _native_ratio(self, path: str) -> tuple[float, float]:
+        import mne
+
+        raw = mne.io.read_raw_fif(path, preload=False, verbose="error")
+        fs_native = float(raw.info["sfreq"])
+        return fs_native, self.cfg.fs_target / fs_native
+
+    def _window_labels(
+        self, cand: dict[str, str], starts: Sequence[int], fs: float
+    ) -> list[dict[str, Any]] | None:
+        win = self.cfg.window_samples
+        fs_native, ratio = self._native_ratio(cand["path"])
+        # Rebuild the start -> (button, rt) map the same way the starts were
+        # derived, then look each surviving start up. Recomputing rather than
+        # threading state through means artifact rejection can drop any window
+        # without silently shifting the labels of the ones that remain.
+        by_start: dict[int, tuple[int, float]] = {}
+        for stim_native, b, rt in self._pairs(cand["path"], fs_native):
+            by_start[int(round(stim_native * ratio)) - win] = (b, rt)
+        out: list[dict[str, Any]] = []
+        for s0 in starts:
+            b, rt = by_start[int(s0)]
+            out.append(
+                {
+                    "choice": int(b),
+                    "log_rt": float(np.log(rt)),
+                    "rt_s": float(rt),
+                    "has_behaviour": True,
+                }
+            )
+        return out
+
+
+def ds000117_scalp_channels() -> tuple[str, ...]:
+    """The channel order of the digitised montage, read from the montage file.
+
+    Read rather than restated. The channel axis is positional, so a second
+    hard-coded list is a second thing to keep in step with the operator, and the
+    failure mode of the two disagreeing is a silent relabelling of electrodes.
+    """
+    import json
+    from pathlib import Path as _P
+
+    p = _P(__file__).resolve().parents[2] / "configs/montages/ds000117_eeg.json"
+    return tuple(json.loads(p.read_text(encoding="utf-8"))["channels"])
+
+
+# ======================================================================
+# ds004024 -- TMS-EEG (resting runs; the spTMS runs are the perturbation source)
+# ======================================================================
+#: The 64 scalp electrodes of the ds004024 BrainVision cap, in file order. All
+#: are 10-10 names, so this montage resolves through ``standard_1005``; it is a
+#: different *order* from eegmmidb, which is why it is a separate montage rather
+#: than a reuse -- the channel axis is positional.
+DS004024_EEG_CHANNELS = (
+    "Fp1", "Fpz", "Fp2", "AF7", "AF3", "AFz", "AF4", "AF8", "F7", "F5", "F3", "F1", "Fz",
+    "F2", "F4", "F6", "F8", "FT7", "FC5", "FC3", "FC1", "FCz", "FC2", "FC4", "FC6", "FT8",
+    "T7", "C5", "C3", "C1", "Cz", "C2", "C4", "C6", "T8", "TP9", "TP7", "CP5", "CP3", "CP1",
+    "CPz", "CP2", "CP4", "CP6", "TP8", "TP10", "P7", "P5", "P3", "P1", "Pz", "P2", "P4",
+    "P6", "P8", "PO7", "PO3", "POz", "PO4", "PO8", "O1", "Oz", "O2", "Iz",
+)
+
+
+class DS004024RestDataset(RealEEGDataset):
+    """The **resting** runs of ds004024: 64ch EEG, eyes open, no pulses.
+
+    Deliberately only the ``task-rest`` runs. The spTMS runs are perturbational
+    and belong to :mod:`scwbd.sources.perturbation.ds004024`, which preserves the
+    20 kHz clock and the pulse onsets exactly; putting them through this class
+    would resample them to 125 Hz and destroy both, and the resulting windows
+    would carry a TMS artefact that this class's z-score rejection would read as
+    a blink.
+
+    The resting runs are ordinary measured EEG on a 64-electrode 10-10 cap, and
+    they are the same participants the perturbation source uses, which is what
+    lets a stimulated response be scored against that participant's own
+    unstimulated baseline.
+    """
+
+    source = "ds004024_rest"
+    average_reference = True
+
+    def _read_raw(self, path: str):
+        import mne
+
+        return mne.io.read_raw_brainvision(path, preload=False, verbose="error")
+
+    def _montage(self) -> Sequence[str]:
+        return DS004024_EEG_CHANNELS
+
+    def _discover(self) -> list[dict[str, str]]:
+        root = self.cfg.ds004024_root
+        if not root.is_dir():
+            LOGGER.warning("ds004024 root %s does not exist; dataset will be empty", root)
+            return []
+        by_subject: dict[str, list[tuple[str, str, Path]]] = defaultdict(list)
+        for vhdr in sorted(root.glob("sub-*/ses-*/eeg/*_task-rest_run-*_eeg.vhdr")):
+            m = re.search(r"_(ses-[^_]+)_task-rest_run-(\d+)_eeg\.vhdr$", vhdr.name)
+            if m is None:
+                continue
+            # The header is tiny; it is the .eeg binary that says whether the
+            # run was actually fetched. ISSUE-003: a metadata-only subject looks
+            # populated from a directory listing.
+            binary = vhdr.with_name(vhdr.name.replace("_eeg.vhdr", "_eeg.eeg"))
+            try:
+                if not binary.exists() or binary.stat().st_size < 1_000_000:
+                    continue
+            except OSError:
+                continue
+            by_subject[vhdr.parts[-4]].append((m.group(1), m.group(2), vhdr))
+
+        subjects = sorted(by_subject)
+        if self.cfg.max_subjects is not None:
+            subjects = subjects[: self.cfg.max_subjects]
+        out: list[dict[str, str]] = []
+        for subject in subjects:
+            runs = sorted(by_subject[subject])
+            if self.cfg.max_runs_per_subject is not None:
+                runs = runs[: self.cfg.max_runs_per_subject]
+            for session, run, vhdr in runs:
+                out.append(
+                    {
+                        "recording_id": f"{subject}_{session}_rest_run-{run}",
+                        "subject": subject,
+                        "session": session,
+                        "run": f"rest_run-{run}",
+                        "path": str(vhdr),
                     }
                 )
         return out
