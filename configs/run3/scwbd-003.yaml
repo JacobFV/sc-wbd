@@ -133,7 +133,11 @@ posterior:
 
 data:
   sim_index_fast: data/sim_corpus_414/index_fast.json
-  sim_index_slow: data/sim_corpus_414/index_slow.json
+  # `sim_index_slow` is deliberately omitted. No slow-tier index was generated at
+  # 414 parcels, nothing in `scwbd/foundation/` reads the field, and naming a
+  # path that does not exist would be a config asserting a file it does not
+  # have. The default in DataConfig is likewise a path from another machine; it
+  # is inert either way, and leaving the key out says so.
   real_eeg_root: data/eegmmidb/1.0.0
   real_sleep_root: data/sleep-edfx/1.0.0/sleep-cassette
   ds000117_root: data/ds000117/1.1.0
