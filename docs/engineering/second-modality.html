@@ -11,19 +11,13 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
-<script>
-/* Applied before paint so an explicit theme choice does not flash. */
-(function () {
-  try {
-    var t = localStorage.getItem("scwbd-theme");
-    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) {}
-})();
-</script>
   <script defer src="../static/brain.js"></script>
   <script defer src="../static/arch.js"></script>
+  <script defer src="../static/reveal.js"></script>
 </head>
 <body class="">
+
+<div class="scrollprog" id="scrollprog" aria-hidden="true"></div>
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -31,22 +25,38 @@
     <nav>
         <a href="../index.html">Overview</a>
         <a href="../engineering/index.html" class="active">Engineering</a>
-        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../possibilities/index.html">Possibilities</a>
         <a href="../attribution.html">Attribution</a>
     </nav>
   </div>
 </header>
 
 <main>
+<nav class="railnav" aria-label="Sections on this page">
+  <ol>
+    <li><a href="#the-question" data-rail="the-question"><span class="rail-label">The question</span></a></li>
+    <li><a href="#what-was-actually-blocking-them" data-rail="what-was-actually-blocking-them"><span class="rail-label">What was actually blocking th…</span></a></li>
+    <li><a href="#none-of-it-for-two-of-the-three" data-rail="none-of-it-for-two-of-the-three"><span class="rail-label">None of it, for two of the th…</span></a></li>
+    <li><a href="#running-it" data-rail="running-it"><span class="rail-label">Running it</span></a></li>
+    <li><a href="#the-invariant-that-keeps-this-honest" data-rail="the-invariant-that-keeps-this-honest"><span class="rail-label">The invariant that keeps this…</span></a></li>
+    <li><a href="#then-a-second-axis-turned-out-to-be-missing" data-rail="then-a-second-axis-turned-out-to-be-missing"><span class="rail-label">Then a second axis turned out…</span></a></li>
+    <li><a href="#and-the-enable-did-not-take" data-rail="and-the-enable-did-not-take"><span class="rail-label">And the enable did not take</span></a></li>
+    <li><a href="#the-pattern-five-times-in-a-day" data-rail="the-pattern-five-times-in-a-day"><span class="rail-label">The pattern, five times in a…</span></a></li>
+    <li><a href="#follow-up-fixing-it-installed-the-opposite-error" data-rail="follow-up-fixing-it-installed-the-opposite-error"><span class="rail-label">Follow-up</span></a></li>
+    <li><a href="#the-check-that-would-have-accused-the-right-data" data-rail="the-check-that-would-have-accused-the-right-data"><span class="rail-label">The check that would have acc…</span></a></li>
+  </ol>
+</nav>
+
   <div class="wrap">
     <div class="pagehead">
-      <p class="kicker">Engineering · 13</p>
       <h1>Getting fMRI into parcel space</h1>
       <p class="standfirst">Three measured datasets sat disabled behind blockers that read like missing components. Two of them were missing a caller, not a component — and the module that would have been the caller had been on the main branch the whole time.</p>
+      <p class="applies"><span>Applies to</span> <strong>SC-WBD-002-pilot</strong> (run 2) and the source-card registry, which is shared across runs.</p>
     </div>
 <div class="prose">
-
+<section class="chapter" id="the-question">
 <h2>The question</h2>
+
 
 <p>Why does a whole-brain model train on EEG alone when there is fMRI on
 disk?</p>
@@ -54,8 +64,10 @@ disk?</p>
 <p>The honest answer looked like scope: parcel-space state, scanner-space data,
 no registration between them. Four measured sources are declared, three are
 switched off. That reads as a roadmap.</p>
-
+</section>
+<section class="chapter tinted" id="what-was-actually-blocking-them">
 <h2>What was actually blocking them</h2>
+
 
 <div class="tablewrap">
 <table>
@@ -71,8 +83,10 @@ switched off. That reads as a roadmap.</p>
 
 <p>Not one of them is disabled by policy. Each waits on an operator. So the
 question became: how much of that operator has to be written?</p>
-
+</section>
+<section class="chapter" id="none-of-it-for-two-of-the-three">
 <h2>None of it, for two of the three</h2>
+
 
 <p><code>anatomy/registration.py</code> is 513 lines titled <em>"BOLD → parcel
 registration: bring the atlas to the subject, never the reverse."</em> It
@@ -92,8 +106,10 @@ solver, and 55 BOLD runs with per-subject anatomy.</p>
 true, and it reads as <em>"none is available."</em> The distance to a second
 modality was a caller, not a component.</p>
 </blockquote>
-
+</section>
+<section class="chapter tinted" id="running-it">
 <h2>Running it</h2>
+
 
 <p>The missing piece was the consumer that joins registration to the atlas and
 averages within parcels. Written, then run on all ten subjects:</p>
@@ -109,8 +125,10 @@ per-subject coverage
 <p>Coverage ranges from 0.89 to 1.00. <strong>A global mask would be wrong for
 six of these ten subjects.</strong> That is not a tuning detail — it is why the
 mask has to travel with each run rather than being computed once.</p>
-
+</section>
+<section class="chapter" id="the-invariant-that-keeps-this-honest">
 <h2>The invariant that keeps this honest</h2>
+
 
 <p>A parcel outside the acquisition has no measurement. It is <code>NaN</code> in
 the timeseries and <code>False</code> in the mask, and those have to be the same
@@ -127,8 +145,10 @@ who forgets gets no number rather than a plausible one. And the test asserts
 mask and data agree <strong>parcel by parcel</strong>, not merely in count: a
 count check passes when the same number of parcels drift in both directions,
 which is the easy version of that test and the useless one.</p>
-
+</section>
+<section class="chapter tinted" id="then-a-second-axis-turned-out-to-be-missing">
 <h2>Then a second axis turned out to be missing</h2>
+
 
 <p>The datasets worth adding next carry more than brain recordings. MEG-MASC
 ships the audio that was played, with phonetic and word annotation. A
@@ -156,8 +176,10 @@ produced.</p>
 the audio that was played, and the participant's gaze — so guessing
 <em>observation</em> because the role is <em>likelihood</em> is exactly how a
 stimulus gets trained as a measurement of the brain.</p>
-
+</section>
+<section class="chapter" id="and-the-enable-did-not-take">
 <h2>And the enable did not take</h2>
+
 
 <p>With the path built, the card could be switched on. It was — and nothing
 changed, which is only visible if you check rather than assume.</p>
@@ -180,8 +202,10 @@ licence-bearing fields happen to agree. That is luck, not structure: two
 directories of one object, read by different halves of the system, agree until
 someone edits one — and the halves that disagree are <em>what trained</em> and
 <em>what the artifact claims about what trained</em>.</p>
-
+</section>
+<section class="chapter tinted" id="the-pattern-five-times-in-a-day">
 <h2>The pattern, five times in a day</h2>
+
 
 <p>A stage-admission module with its own patch and eleven tests, unapplied. A
 config block declaring exactly the right things, read by nobody. A registration
@@ -193,8 +217,10 @@ directory the trainer does not read.</p>
 Each time, the artifact that would have consumed it describes the capability as
 absent — so the codebase reads its own silence as a limitation.</p>
 </blockquote>
-
+</section>
+<section class="chapter" id="follow-up-fixing-it-installed-the-opposite-error">
 <h2>Follow-up: fixing it installed the opposite error</h2>
+
 
 <p>The split above is now closed. The release path no longer names a directory;
 it derives one from the checkpoint, which records what actually trained:</p>
@@ -226,8 +252,10 @@ different points in time, which is exactly the situation a fix creates.</p>
 <p>The checkpoint can tell them apart, because it stores the split it trained
 on. 109 participants — exactly <code>eegmmidb_real</code>'s declared count, with
 <code>ds002336_real</code>'s 10 appearing in no fold. The card now says so.</p>
-
+</section>
+<section class="chapter tinted" id="the-check-that-would-have-accused-the-right-data">
 <h2>The check that would have accused the right dataset</h2>
+
 
 <p>The obvious implementation intersects participant IDs. Run directly:</p>
 
@@ -249,7 +277,7 @@ direction it now <em>over</em>-claims, not only the direction it previously
 under-claimed. Correcting a pointer changes the error's sign, not its
 existence.</p>
 </blockquote>
-
+</section>
 </div>
 
   </div>
@@ -257,31 +285,10 @@ existence.</p>
 
 <footer class="sitefoot">
   <div class="wrap">
-    <p><strong>SC-WBD.</strong> Source, weights and every number on this site:
-    <a href="https://github.com/JacobFV/sc-wbd">github.com/JacobFV/sc-wbd</a>
-    &middot; <a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">model on
-    Hugging Face</a>.</p>
-    <p>Code is <a href="https://github.com/JacobFV/sc-wbd/blob/master/LICENSE">CC
-    BY-NC-SA 4.0</a>. Data sources carry their own licences, several of them
-    non-commercial and share-alike &mdash; see
-    <a href="../attribution.html">attribution</a>. Not a medical device and
-    not clinical advice.</p>
-    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+    <p class="foot-legal">Copyright &copy; 2026 SuperCognition Labs. Not a
+    medical device and not clinical advice.</p>
   </div>
 </footer>
-
-<script>
-document.getElementById("theme-toggle").addEventListener("click", function () {
-  var el = document.documentElement;
-  var cur = el.getAttribute("data-theme");
-  if (!cur) {
-    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  var next = cur === "dark" ? "light" : "dark";
-  el.setAttribute("data-theme", next);
-  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
-});
-</script>
 
 </body>
 </html>

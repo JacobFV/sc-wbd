@@ -113,9 +113,10 @@
 
     window.addEventListener("resize", function () { resize(); draw(); });
     // Follow the page theme: the mark sits on the page background, so a theme
-    // flip must repaint it.
-    var mo = new MutationObserver(function () { draw(); });
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    // flip must repaint it. The device preference is the only signal there is
+    // -- the `data-theme` attribute this used to watch went away with the
+    // theme toggle, and an observer on an attribute nothing sets is not a
+    // fallback, it is a line that never runs.
     var mq2 = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
     if (mq2 && mq2.addEventListener) mq2.addEventListener("change", draw);
     resize();

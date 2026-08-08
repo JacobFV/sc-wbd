@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Possibilities — SC-WBD</title>
+<meta name="description" content="What individualised whole-brain models make possible: closed-loop stimulation that knows where it landed, interfaces that hold across sessions, non-invasive intervention with feedback, and the measurements that would settle each one.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Possibilities — SC-WBD">
+<meta property="og:description" content="What individualised whole-brain models make possible: closed-loop stimulation that knows where it landed, interfaces that hold across sessions, non-invasive intervention with feedback, and the measurements that would settle each one.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
+  <script defer src="../static/brain.js"></script>
+  <script defer src="../static/arch.js"></script>
+  <script defer src="../static/reveal.js"></script>
+</head>
+<body class="">
+
+<div class="scrollprog" id="scrollprog" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="wordmark" href="../index.html">SC&#8209;WBD</a>
+    <nav>
+        <a href="../index.html">Overview</a>
+        <a href="../engineering/index.html">Engineering</a>
+        <a href="../possibilities/index.html" class="active">Possibilities</a>
+        <a href="../attribution.html">Attribution</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<nav class="railnav" aria-label="Sections on this page">
+  <ol>
+    <li><a href="#stimulation-that-knows-where-it-landed" data-rail="stimulation-that-knows-where-it-landed"><span class="rail-label">Stimulation that knows where…</span></a></li>
+    <li><a href="#interfaces-that-still-work-tomorrow" data-rail="interfaces-that-still-work-tomorrow"><span class="rail-label">Interfaces that still work to…</span></a></li>
+    <li><a href="#non-invasive-intervention-with-feedback" data-rail="non-invasive-intervention-with-feedback"><span class="rail-label">Non-invasive intervention wit…</span></a></li>
+    <li><a href="#modelling-what-an-experience-does" data-rail="modelling-what-an-experience-does"><span class="rail-label">Modelling what an experience…</span></a></li>
+    <li><a href="#what-would-tell-us-we-are-wrong" data-rail="what-would-tell-us-we-are-wrong"><span class="rail-label">What would tell us we are wro…</span></a></li>
+    <li><a href="#where-the-work-actually-stands" data-rail="where-the-work-actually-stands"><span class="rail-label">Where the work actually stands</span></a></li>
+  </ol>
+</nav>
+
+  <div class="wrap">
+    <div class="pagehead">
+      <h1>What an individualised brain model makes possible</h1>
+      <p class="standfirst">Almost everything worth doing to or with a nervous system needs a model of that nervous system. Here is what becomes reachable when you have one, in the order it becomes reachable, with the measurement that decides each step.</p>
+
+    </div>
+<div class="prose">
+<section class="chapter chapter-intro" id="possibilities-index-top">
+
+
+<p class="lede">The average brain is not a brain. It is a statistic, and no
+intervention is delivered to a statistic — which is why the most valuable
+capabilities in neurotechnology are all blocked on the same missing object: a
+model of one particular person's brain, good enough that you can ask it a
+question you have not already measured the answer to.</p>
+
+<p>That object is what this programme is building. The four sections below are
+ordered by how close each one is: the first is a problem of engineering and
+measurement, the last is a research programme. Each says what would have to be
+true, and what we would measure to find out.</p>
+</section>
+<section class="chapter" id="stimulation-that-knows-where-it-landed">
+<h2>Stimulation that knows where it landed</h2>
+
+
+<p>Transcranial magnetic stimulation is approved and reimbursed for treatment-
+resistant depression. Its weakness is not the physics — the induced electric
+field is computable, and we compute it, validated against analytic references.
+The weakness is that <strong>the loop is open</strong>. Targeting is done by
+scalp landmark or a group atlas, the response is assessed by symptom scales weeks
+later, and nothing in between tells you what the pulse did to the network.</p>
+
+<p>An individualised forward model closes that loop: predict the network
+consequence of a candidate coil pose, measure the consequence, and use the
+discrepancy to improve the model of that specific person. The same argument runs
+below the clinical bar — attention, sleep, anxiety regulation — where the
+evidentiary standard differs but the need for individualisation does not.</p>
+
+<p><strong>What decides it.</strong> Our own measurement says the current state
+representation is not yet sufficient:
+<a href="../engineering/resolution-pair.html">for 98.1% of cortical locations, a
+parcel-level model's prediction of the sensor response to focal stimulation is
+wrong by more than half its own magnitude.</a> That is a quantified obstacle with
+a known direction of fix — orientation, not spatial resolution — and closing it
+is the nearest concrete milestone on this page.</p>
+</section>
+<section class="chapter tinted" id="interfaces-that-still-work-tomorrow">
+<h2>Interfaces that still work tomorrow</h2>
+
+
+<p>Two capabilities usually discussed together, and very different in
+difficulty.</p>
+
+<p><strong>Computer control</strong> from EEG partly exists today: a handful of
+discrete intentions, decoded reliably enough to drive an interface. The gap
+between a laboratory demonstration and daily use is almost entirely stability —
+across sessions, across days, across a person's own state. That is structurally a
+problem of modelling <em>a person</em> rather than a population, which is exactly
+the problem an individualised generative model is for. A decoder fitted to
+yesterday's data has to be refitted; a model of the person can be updated.</p>
+
+<p><strong>Language decoding</strong> from non-invasive recording is much harder,
+and the honest statement is that published work is far from continuous
+open-vocabulary decoding from EEG. The interesting question is whether decoding
+against a person-specific <em>forward</em> model is easier than decoding against a
+discriminative map fitted to their data. There is a real reason to think so — the
+forward model constrains the solution with anatomy and dynamics the discriminative
+map has to learn from scratch. We have not shown it, and showing it is a
+falsifiable experiment rather than an aspiration.</p>
+</section>
+<section class="chapter" id="non-invasive-intervention-with-feedback">
+<h2>Non-invasive intervention with feedback</h2>
+
+
+<p>Transcranial focused ultrasound is the most interesting modality on the
+horizon: it reaches deep structures with spatial precision magnetic stimulation
+cannot approach, and its effects are reversible. A bidirectional loop — read the
+state, compute an intervention, deliver it, read the consequence — is the natural
+endpoint, and it is the point at which a forward model stops being a convenience
+and becomes the thing that makes the system possible at all.</p>
+
+<p>It is also where the safety argument has to be strongest, and where this
+project has spent effort well ahead of capability. The intervention planner
+refuses by default: a plan declaring intent to drive real hardware or to be
+applied to a person is rejected unless a record exists that a preliminary review
+occurred with an approving outcome, and a valid authorisation record is necessary
+and explicitly not sufficient. The gate does not open because a date passed —
+there is a test that advances the clock to 2027 to prove it. Thermal dose limits
+are enforced on live plans specifically because two of those axes had no producer
+anywhere in the codebase, which meant a live plan could otherwise have been
+silently unchecked on the one thing that burns tissue.</p>
+
+<div class="callout">
+<span class="callout-label">Why the refusals come first</span>
+<p>It is far easier to build a refusal into a system that cannot yet do anything
+than to retrofit one into a system that can. The gating above is out of
+proportion to what SC-WBD can do today, and that is deliberate.</p>
+</div>
+</section>
+<section class="chapter tinted" id="modelling-what-an-experience-does">
+<h2>Modelling what an experience does</h2>
+
+
+<p>If a generative model of an individual's dynamics is good enough to predict
+the consequence of a magnetic pulse, the same machinery in principle predicts the
+consequence of <em>any</em> input — a sentence, an image, a piece of music. The
+intervention stops being a coil and becomes <strong>content</strong>:
+individualised, non-invasive interventions delivered through the sensory channels
+a person already has.</p>
+
+<p>The obvious objection is the right one: this is what every therapist, teacher
+and film director already attempts, with a model that lives in their head. The
+proposal is not that the effect is new. It is that the model could be explicit,
+individual, and improvable against measurement. In the owner's framing it is</p>
+
+<blockquote>
+<p>the computational scaffolding dogs and humans and other mammals use for
+empathy</p>
+</blockquote>
+
+<p>— which is worth taking as a technical statement rather than a poetic one.
+Predicting what an input will do to another mind is what social cognition does,
+continuously and cheaply, in species with far less machinery than we propose to
+build. A mammal running a fast, wrong, useful model of a conspecific is an
+existence proof that the problem is tractable at <em>some</em> fidelity. The
+research question is which fidelity suffices for which purpose.</p>
+
+<p>Further out sits the framing that motivates the programme: an
+<strong>exocortex</strong> — cognitive capability that is genuinely yours, coupled
+tightly enough to feel like extension rather than tool use — and past that, a
+model of a particular person faithful enough to act as they would. The distance
+from here to there is not a matter of scaling. It is a sequence of unsolved
+problems, several of which we can now name precisely because we have tried and
+failed at the first one.</p>
+</section>
+<section class="chapter" id="what-would-tell-us-we-are-wrong">
+<h2>What would tell us we are wrong</h2>
+
+
+<p>A thesis without falsifiers is a pitch. Four results, any of which would
+substantially undercut this programme, and each of which we are positioned to
+measure:</p>
+
+<ul>
+<li><strong>Structured regional state does not beat a pooled vector at matched
+capacity.</strong> This is the pre-registered hypothesis of the current work. If
+the answer is no, the first differentiator is wrong and the architecture is more
+complexity than the evidence supports.</li>
+<li><strong>The anatomy prior does not resolve operator families.</strong>
+Partially true already — cytoarchitecture failed globally, and visual and
+somatomotor cortex do not separate on any evidence block we hold. If the binary
+unimodal/association split also fails to matter, then “region-indexed state” is a
+distinction without a difference at the resolution we can measure.</li>
+<li><strong>Individualisation does not beat a population model</strong> on any
+endpoint that matters. The entire argument rests on the average brain being the
+wrong object. That is an empirical claim and it is testable.</li>
+<li><strong>The forward model cannot predict a perturbation it has not
+seen.</strong> No checkpoint here has been trained on perturbational data, and
+the mapping from stimulation to response is flagged unvalidated in code for that
+reason. If predicting held-out perturbations turns out to require training on the
+perturbations themselves, the closed loop does not close.</li>
+</ul>
+</section>
+<section class="chapter tinted" id="where-the-work-actually-stands">
+<h2>Where the work actually stands</h2>
+
+
+<p>Nothing on this page has been demonstrated on a person, and no model published
+here yet beats its baselines. What exists is the machinery underneath: a typed
+schema that fails closed, a 414-region anatomy prior, six dynamics backends, a
+validated field solver, an identifiability laboratory, and two published
+checkpoints whose measured results are both negative and both public.
+<a href="../index.html">The overview</a> lists every one of them with its state,
+and the <a href="../engineering/index.html">engineering notes</a> describe, in
+detail, what went wrong building them and which run each lesson belongs to.</p>
+
+<p>That is the honest position, and it is also the reason to take the plan
+seriously: the obstacles on this page are named, quantified and attached to
+experiments, rather than deferred to scale.</p>
+</section>
+</div>
+
+  </div>
+</main>
+
+<footer class="sitefoot">
+  <div class="wrap">
+    <p class="foot-legal">Copyright &copy; 2026 SuperCognition Labs. Not a
+    medical device and not clinical advice.</p>
+  </div>
+</footer>
+
+</body>
+</html>

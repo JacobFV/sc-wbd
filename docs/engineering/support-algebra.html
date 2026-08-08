@@ -11,19 +11,13 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
-<script>
-/* Applied before paint so an explicit theme choice does not flash. */
-(function () {
-  try {
-    var t = localStorage.getItem("scwbd-theme");
-    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) {}
-})();
-</script>
   <script defer src="../static/brain.js"></script>
   <script defer src="../static/arch.js"></script>
+  <script defer src="../static/reveal.js"></script>
 </head>
 <body class="">
+
+<div class="scrollprog" id="scrollprog" aria-hidden="true"></div>
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -31,22 +25,38 @@
     <nav>
         <a href="../index.html">Overview</a>
         <a href="../engineering/index.html" class="active">Engineering</a>
-        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../possibilities/index.html">Possibilities</a>
         <a href="../attribution.html">Attribution</a>
     </nav>
   </div>
 </header>
 
 <main>
+<nav class="railnav" aria-label="Sections on this page">
+  <ol>
+    <li><a href="#the-question-this-came-from" data-rail="the-question-this-came-from"><span class="rail-label">The question this came from</span></a></li>
+    <li><a href="#what-the-algebra-refuses-and-why-that-is-the-des" data-rail="what-the-algebra-refuses-and-why-that-is-the-des"><span class="rail-label">What the algebra refuses, and…</span></a></li>
+    <li><a href="#the-refusal-that-was-measured-not-assumed" data-rail="the-refusal-that-was-measured-not-assumed"><span class="rail-label">The refusal that was measured…</span></a></li>
+    <li><a href="#lossy-and-invents-are-different-fields" data-rail="lossy-and-invents-are-different-fields"><span class="rail-label">Lossy and invents are differe…</span></a></li>
+    <li><a href="#point-spread-composes-or-it-refuses" data-rail="point-spread-composes-or-it-refuses"><span class="rail-label">Point-spread composes, or it…</span></a></li>
+    <li><a href="#clocks" data-rail="clocks"><span class="rail-label">Clocks</span></a></li>
+    <li><a href="#why-the-algebra-alone-does-not-answer-the-questi" data-rail="why-the-algebra-alone-does-not-answer-the-questi"><span class="rail-label">Why the algebra alone does no…</span></a></li>
+    <li><a href="#what-is-actually-blocking-the-other-sources" data-rail="what-is-actually-blocking-the-other-sources"><span class="rail-label">What is actually blocking the…</span></a></li>
+    <li><a href="#what-this-is-not-yet" data-rail="what-this-is-not-yet"><span class="rail-label">What this is not, yet</span></a></li>
+    <li><a href="#how-it-was-checked" data-rail="how-it-was-checked"><span class="rail-label">How it was checked</span></a></li>
+  </ol>
+</nav>
+
   <div class="wrap">
     <div class="pagehead">
-      <p class="kicker">Engineering · 11</p>
       <h1>Two montages are two views of one carrier</h1>
       <p class="standfirst">A support could say how many elements it had, never what one was. That distinction turned out to be the difference between 5.6% and 51.7% of the whitened lead field — so the algebra that relates supports refuses to treat it as a reshape.</p>
+      <p class="applies"><span>Applies to</span> the <strong>schema and observation layer</strong>, which every run shares. Nothing here is tied to a checkpoint.</p>
     </div>
 <div class="prose">
-
+<section class="chapter" id="the-question-this-came-from">
 <h2>The question this came from</h2>
+
 
 <p>Take readings from electrode montage A and readings from montage B. Can they
 inform one higher-dimensional underlying representation, together with a
@@ -59,8 +69,10 @@ resolution</code> and <strong>no operators</strong>. Two supports could not be
 related without a bespoke map. That is why the restriction/prolongation pair in
 <a href="resolution-pair.html">Engineering · 04</a> had to be declared as a
 one-off rather than derived.</p>
-
+</section>
+<section class="chapter tinted" id="what-the-algebra-refuses-and-why-that-is-the-des">
 <h2>What the algebra refuses, and why that is the design</h2>
+
 
 <p>The first instinct is an algebra that always returns a map. That is worse
 than having none. A fabricated correspondence between two parcellations is
@@ -83,8 +95,10 @@ everything else raises an error naming the missing declaration:</p>
 <tr><td>same frame, coarser → finer</td><td>prolongation, marked <em>invents</em></td></tr>
 </tbody>
 </table>
-
+</section>
+<section class="chapter" id="the-refusal-that-was-measured-not-assumed">
 <h2>The refusal that was measured, not assumed</h2>
+
 
 <p>A support says how many elements it has. It never said what <em>one element
 is</em>. We had no way to express the difference between one number per parcel
@@ -105,8 +119,10 @@ component as the uncertainty it is.</p>
 whose elements are vectors. Anything that cannot tell them apart will eventually
 average one into the other.</p>
 </blockquote>
-
+</section>
+<section class="chapter tinted" id="lossy-and-invents-are-different-fields">
 <h2>Lossy and invents are different fields</h2>
+
 
 <p>Restriction discards information and is honest about it. Prolongation
 <strong>asserts structure no measurement supports</strong>. A pipeline can
@@ -119,8 +135,10 @@ would be claiming that upsampling is free:</p>
 <pre><code>SupportMap(kind="prolongation", n_in=1, n_out=4, invents=False, ...)
 # ValueError: prolongation asserts structure no measurement supports;
 #             invents=False would claim upsampling is free</code></pre>
-
+</section>
+<section class="chapter" id="point-spread-composes-or-it-refuses">
 <h2>Point-spread composes, or it refuses</h2>
+
 
 <p>Mapping through a support smears the datum, so the kernels compose. Two
 Gaussians compose in closed form — FWHM adds in quadrature. Two opaque
@@ -131,15 +149,19 @@ support" the thesis rejects.</p>
 
 <p>Nominality is contagious: a composed kernel is no more real than its least
 real factor.</p>
-
+</section>
+<section class="chapter tinted" id="clocks">
 <h2>Clocks</h2>
+
 
 <p>5000 Hz EEG against 0.5 Hz BOLD refines onto the <em>faster</em> clock. The
 fast signal is already there; the slow one is held across the gap — which is
 invention, and the map says so rather than presenting interpolated values as
 measurements.</p>
-
+</section>
+<section class="chapter" id="why-the-algebra-alone-does-not-answer-the-questi">
 <h2>Why the algebra alone does not answer the question</h2>
+
 
 <p>An algebra for relating supports is necessary and not sufficient, and
 counting the current model says why:</p>
@@ -176,8 +198,10 @@ montages stop being two modules and become two rows.</p>
 each source carries its own operator and support, relating two of them is
 exactly the computation above — and the refusals are what stop two montages
 being quietly averaged into one another.</p>
-
+</section>
+<section class="chapter tinted" id="what-is-actually-blocking-the-other-sources">
 <h2>What is actually blocking the other sources</h2>
+
 
 <p>"Nine sources, one view" is the abstract statement. The concrete one is a
 list of three missing operators, each blocking a specific dataset that is
@@ -213,8 +237,10 @@ sixty-four is <em>literally</em> montage A and montage B — so
 <code>sleepedf</code> is the cheapest of the three to unlock, and the natural
 first consumer of the algebra. It is what turns this module from something with
 no importers into the thing that admits a second measured dataset.</p>
-
+</section>
+<section class="chapter" id="what-this-is-not-yet">
 <h2>What this is not, yet</h2>
+
 
 <p>Two limits, stated because an entry marked done is how a half-delivered
 change stops being visible:</p>
@@ -231,8 +257,10 @@ correspondence, so real geometric overlap is still to come.</li>
 
 <p>The refusal is the honest placeholder. The one-off is now visible as a
 refusal instead of hidden as a hand-written map.</p>
-
+</section>
+<section class="chapter tinted" id="how-it-was-checked">
 <h2>How it was checked</h2>
+
 
 <p>21 tests, most of them watching a refusal fire — and mutation-tested three
 ways, because a file that is mostly error paths and passes on the first run is
@@ -240,7 +268,7 @@ the exact thing <a href="appendix-defects.html">our register</a> distrusts.
 Allowing a rank change through, replacing quadrature with a naive sum, and
 letting opaque kernels be silently approximated each failed the intended test
 and only that one.</p>
-
+</section>
 </div>
 
   </div>
@@ -248,31 +276,10 @@ and only that one.</p>
 
 <footer class="sitefoot">
   <div class="wrap">
-    <p><strong>SC-WBD.</strong> Source, weights and every number on this site:
-    <a href="https://github.com/JacobFV/sc-wbd">github.com/JacobFV/sc-wbd</a>
-    &middot; <a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">model on
-    Hugging Face</a>.</p>
-    <p>Code is <a href="https://github.com/JacobFV/sc-wbd/blob/master/LICENSE">CC
-    BY-NC-SA 4.0</a>. Data sources carry their own licences, several of them
-    non-commercial and share-alike &mdash; see
-    <a href="../attribution.html">attribution</a>. Not a medical device and
-    not clinical advice.</p>
-    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+    <p class="foot-legal">Copyright &copy; 2026 SuperCognition Labs. Not a
+    medical device and not clinical advice.</p>
   </div>
 </footer>
-
-<script>
-document.getElementById("theme-toggle").addEventListener("click", function () {
-  var el = document.documentElement;
-  var cur = el.getAttribute("data-theme");
-  if (!cur) {
-    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  var next = cur === "dark" ? "light" : "dark";
-  el.setAttribute("data-theme", next);
-  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
-});
-</script>
 
 </body>
 </html>

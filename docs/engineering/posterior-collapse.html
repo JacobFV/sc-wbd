@@ -11,19 +11,13 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
-<script>
-/* Applied before paint so an explicit theme choice does not flash. */
-(function () {
-  try {
-    var t = localStorage.getItem("scwbd-theme");
-    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) {}
-})();
-</script>
   <script defer src="../static/brain.js"></script>
   <script defer src="../static/arch.js"></script>
+  <script defer src="../static/reveal.js"></script>
 </head>
 <body class="">
+
+<div class="scrollprog" id="scrollprog" aria-hidden="true"></div>
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -31,22 +25,34 @@
     <nav>
         <a href="../index.html">Overview</a>
         <a href="../engineering/index.html" class="active">Engineering</a>
-        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../possibilities/index.html">Possibilities</a>
         <a href="../attribution.html">Attribution</a>
     </nav>
   </div>
 </header>
 
 <main>
+<nav class="railnav" aria-label="Sections on this page">
+  <ol>
+    <li><a href="#what-the-guard-was-for" data-rail="what-the-guard-was-for"><span class="rail-label">What the guard was for</span></a></li>
+    <li><a href="#cause-one-the-conditioning-not-the-input" data-rail="cause-one-the-conditioning-not-the-input"><span class="rail-label">Cause one</span></a></li>
+    <li><a href="#cause-two-a-point-mass" data-rail="cause-two-a-point-mass"><span class="rail-label">Cause two</span></a></li>
+    <li><a href="#cause-three-one-learning-rate-for-two-different-" data-rail="cause-three-one-learning-rate-for-two-different-"><span class="rail-label">Cause three</span></a></li>
+    <li><a href="#a-fourth-claim-withdrawn" data-rail="a-fourth-claim-withdrawn"><span class="rail-label">A fourth claim, withdrawn</span></a></li>
+    <li><a href="#what-generalises" data-rail="what-generalises"><span class="rail-label">What generalises</span></a></li>
+  </ol>
+</nav>
+
   <div class="wrap">
     <div class="pagehead">
-      <p class="kicker">Engineering · 07</p>
       <h1>Three ways to break a density</h1>
       <p class="standfirst">A density reported -log q of 4.489e9, bit-identical across independent runs, from the very first step. Fixing it took three separate changes, and what found all three was a counter rather than a bound.</p>
+      <p class="applies"><span>Applies to</span> the <strong>normalising-flow density head</strong>, as built for run 2. The three causes are properties of that head's construction and recur wherever it is reused.</p>
     </div>
 <div class="prose">
-
+<section class="chapter" id="what-the-guard-was-for">
 <h2>What the guard was for</h2>
+
 
 <p>The first response was defensive: bound the loss to the envelope the flow's
 own construction implies. The coupling scale is <code>tanh</code>-bounded to
@@ -70,8 +76,10 @@ step 400   npe 0   rejected 400</code></pre>
 posterior loss would have been silently zeroed for an entire run and the model
 would have shipped with an amortized posterior that never trained, under a
 green log.</p>
-
+</section>
+<section class="chapter tinted" id="cause-one-the-conditioning-not-the-input">
 <h2>Cause one: the conditioning, not the input</h2>
+
 
 <p>An instrumented dump on the first real rejection:</p>
 
@@ -89,8 +97,10 @@ in its input far from the origin. A conditioning vector of 13 drives
 <code>log_prob</code> and <code>sample</code> alike so density and samples
 cannot disagree, bounds <code>-log q</code> at 17.04 across a 200× input
 range.</p>
-
+</section>
+<section class="chapter" id="cause-two-a-point-mass">
 <h2>Cause two: a point mass</h2>
+
 
 <p>The loss became finite and stayed absurd — around 4000 for an eight-dimensional
 flow. The configuration said <code>nuisance_dim: 2</code>, which accurately
@@ -112,8 +122,10 @@ density, and the attempt dominated everything else.</p>
 <p>Nothing in the config was wrong. The defect was that the intent had never
 been implemented and the placeholder standing in for it was silently
 pathological.</p>
-
+</section>
+<section class="chapter tinted" id="cause-three-one-learning-rate-for-two-different-">
 <h2>Cause three: one learning rate for two different objects</h2>
+
 
 <pre><code>step  80   npe    8.449   rejected 0
 step 100   npe  110.1
@@ -125,8 +137,10 @@ throughout. A step size that is merely large for a residual block is
 destabilising for a density, for the same reason as cause one: the translation
 is linear in its input. The posterior now trains in its own parameter group at
 0.1× the stage rate.</p>
-
+</section>
+<section class="chapter" id="a-fourth-claim-withdrawn">
 <h2>A fourth claim, withdrawn</h2>
+
 
 <p>The obvious next move was to bound the translation the way the scale already
 is. That was committed as "the root cause, not a delay" — before the comparison
@@ -143,8 +157,10 @@ unproven here.</p>
 <p>The honest summary: three fixes moved the onset from step 1 to step 800, the
 fourth is free, and the training run remains the only test that has ever
 reproduced the failure.</p>
-
+</section>
+<section class="chapter tinted" id="what-generalises">
 <h2>What generalises</h2>
+
 
 <p>Each cause was invisible to the others' tests. The conditioning bug passed
 every isolation test because the summary network is scale-robust on unmasked
@@ -154,6 +170,7 @@ fixed.</p>
 
 <p>Three sequential failures, each masking the next — and a rate, rather than a
 boolean, is what made them separable at all.</p>
+</section>
 </div>
 
   </div>
@@ -161,31 +178,10 @@ boolean, is what made them separable at all.</p>
 
 <footer class="sitefoot">
   <div class="wrap">
-    <p><strong>SC-WBD.</strong> Source, weights and every number on this site:
-    <a href="https://github.com/JacobFV/sc-wbd">github.com/JacobFV/sc-wbd</a>
-    &middot; <a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">model on
-    Hugging Face</a>.</p>
-    <p>Code is <a href="https://github.com/JacobFV/sc-wbd/blob/master/LICENSE">CC
-    BY-NC-SA 4.0</a>. Data sources carry their own licences, several of them
-    non-commercial and share-alike &mdash; see
-    <a href="../attribution.html">attribution</a>. Not a medical device and
-    not clinical advice.</p>
-    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+    <p class="foot-legal">Copyright &copy; 2026 SuperCognition Labs. Not a
+    medical device and not clinical advice.</p>
   </div>
 </footer>
-
-<script>
-document.getElementById("theme-toggle").addEventListener("click", function () {
-  var el = document.documentElement;
-  var cur = el.getAttribute("data-theme");
-  if (!cur) {
-    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  var next = cur === "dark" ? "light" : "dark";
-  el.setAttribute("data-theme", next);
-  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
-});
-</script>
 
 </body>
 </html>

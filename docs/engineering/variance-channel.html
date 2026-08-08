@@ -11,19 +11,13 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
-<script>
-/* Applied before paint so an explicit theme choice does not flash. */
-(function () {
-  try {
-    var t = localStorage.getItem("scwbd-theme");
-    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) {}
-})();
-</script>
   <script defer src="../static/brain.js"></script>
   <script defer src="../static/arch.js"></script>
+  <script defer src="../static/reveal.js"></script>
 </head>
 <body class="">
+
+<div class="scrollprog" id="scrollprog" aria-hidden="true"></div>
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -31,24 +25,39 @@
     <nav>
         <a href="../index.html">Overview</a>
         <a href="../engineering/index.html" class="active">Engineering</a>
-        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../possibilities/index.html">Possibilities</a>
         <a href="../attribution.html">Attribution</a>
     </nav>
   </div>
 </header>
 
 <main>
+<nav class="railnav" aria-label="Sections on this page">
+  <ol>
+    <li><a href="#the-number-nobody-had-quoted" data-rail="the-number-nobody-had-quoted"><span class="rail-label">The number nobody had quoted</span></a></li>
+    <li><a href="#the-mechanism-in-two-lines" data-rail="the-mechanism-in-two-lines"><span class="rail-label">The mechanism, in two lines</span></a></li>
+    <li><a href="#decomposing-the-penalty-and-the-surprise" data-rail="decomposing-the-penalty-and-the-surprise"><span class="rail-label">Decomposing the penalty</span></a></li>
+    <li><a href="#the-134-seconds" data-rail="the-134-seconds"><span class="rail-label">The 134 seconds</span></a></li>
+    <li><a href="#model-and-instrument-both-true" data-rail="model-and-instrument-both-true"><span class="rail-label">Model and instrument, both tr…</span></a></li>
+    <li><a href="#why-the-verification-apparatus-could-not-have-ca" data-rail="why-the-verification-apparatus-could-not-have-ca"><span class="rail-label">Why the verification apparatu…</span></a></li>
+    <li><a href="#the-repair-has-its-own-trap" data-rail="the-repair-has-its-own-trap"><span class="rail-label">The repair has its own trap</span></a></li>
+    <li><a href="#the-baseline-that-was-not-the-baseline" data-rail="the-baseline-that-was-not-the-baseline"><span class="rail-label">The baseline that was not the…</span></a></li>
+    <li><a href="#what-was-actually-wrong-in-one-table" data-rail="what-was-actually-wrong-in-one-table"><span class="rail-label">What was actually wrong, in o…</span></a></li>
+  </ol>
+</nav>
+
   <div class="wrap">
     <div class="pagehead">
-      <p class="kicker">Engineering · 02</p>
       <h1>Isolating the variance channel</h1>
       <p class="standfirst">Our model had the best conditional mean of all seven arms and the second-worst score. The entire deficit was one scalar that had a closed-form optimum and was handed to gradient descent for two minutes.</p>
+      <p class="applies"><span>Applies to</span> <strong>SC-WBD-001-beta</strong> (run 1). The single-scalar variance head was replaced for run 2, so the specific defect is closed; the diagnostic habit it produced is not run-specific.</p>
     </div>
 <div class="prose">
+<section class="chapter chapter-intro" id="engineering-variance-channel-top">
+
 
 <figure class="videofig">
-  <video controls preload="metadata" playsinline src="https://pub-045364f0fab44827afa95b1e44b6e18d.r2.dev/scwbd-variance-channel.mp4"></video>
-  <figcaption><strong>Isolating the variance channel</strong> &middot; 26 seconds</figcaption>
+  <video controls preload="metadata" playsinline aria-label="Isolating the variance channel, 26 seconds" src="https://pub-045364f0fab44827afa95b1e44b6e18d.r2.dev/scwbd-variance-channel.mp4"></video>
 </figure>
 
 
@@ -57,8 +66,10 @@ The true statement is that the forecast was the best in the table and only the
 confidence attached to it was wrong. Nothing in the instrument could say so,
 because the comparison table had no column in which the difference could
 appear.</p>
-
+</section>
+<section class="chapter" id="the-number-nobody-had-quoted">
 <h2>The number nobody had quoted</h2>
+
 
 <p>The evaluation record carried a mean-squared-error column that no report had
 read. On it, our model has the <strong>lowest MSE of all seven arms</strong>.</p>
@@ -80,8 +91,10 @@ in the text. We are reproducing the correction rather than quietly using the
 right number, because the habit of silently fixing quoted figures is how a
 project loses the ability to audit itself.</span></span> The deficit to persistence is
 0.2765. <strong>The variance penalty is 1.62× the entire gap.</strong></p>
-
+</section>
+<section class="chapter tinted" id="the-mechanism-in-two-lines">
 <h2>The mechanism, in two lines</h2>
+
 
 <p>The whole predictive variance for EEG:<a class="src" href="https://github.com/JacobFV/sc-wbd/blob/master/scwbd/foundation/heads.py">scwbd/foundation/heads.py:238</a></p>
 
@@ -107,8 +120,10 @@ function of</strong>, and read the answer off the expression rather than the
 docstring. <code>lv = self.log_noise.expand_as(y)</code> fails that check by
 inspection — before any run, before any data.</p>
 </div>
-
+</section>
+<section class="chapter" id="decomposing-the-penalty-and-the-surprise">
 <h2>Decomposing the penalty — and the surprise</h2>
+
 
 <p>The obvious hypothesis was horizon-flatness: a variance that cannot grow with
 horizon, scored at 24 horizons. It was pre-registered before the measurement, and
@@ -134,8 +149,10 @@ all seven arms, every baseline's flat-recalibration gap is 0.0000 to four
 decimals — the reimplementation reproduces each baseline's own calibration
 exactly. A decomposition that could not reproduce a known-correct case would
 not be evidence about the unknown one.</span></span></p>
-
+</section>
+<section class="chapter tinted" id="the-134-seconds">
 <h2>The 134 seconds</h2>
+
 
 <p>The parameter <code>eeg.log_noise</code> has mean <strong>0.2732</strong> and
 standard deviation <strong>0.0299</strong> across 64 channels — flat to 3%. It
@@ -158,8 +175,10 @@ haemodynamic head's <code>log_noise</code> is exactly <strong>−4.0000 across a
 gradient, because no measured haemodynamic data entered the corpus. Nothing was
 scored on it — which is why nobody noticed, and exactly why it is dangerous: the
 moment real data lands, an unfitted noise model is presented as a fitted one.</p>
-
+</section>
+<section class="chapter" id="model-and-instrument-both-true">
 <h2>Model and instrument, both true</h2>
+
 
 <p>The pre-registration provided for the possibility that this was partly an
 instrument defect, and it was. The comparison was <strong>not
@@ -215,8 +234,10 @@ person who needs to supply restraint is whoever is <em>not</em> invested in that
 particular outcome, and on a long enough task both parties take turns being
 that person.</p>
 </div>
-
+</section>
+<section class="chapter tinted" id="why-the-verification-apparatus-could-not-have-ca">
 <h2>Why the verification apparatus could not have caught it</h2>
+
 
 <p>The identifiability machinery found most of the other defects in this project.
 It could not have found this one, and the reason is structural rather than an
@@ -238,8 +259,10 @@ those blind spots are invisible from inside the apparatus.</p>
 <p>The generalised question, which now runs against every guard we write: ask not
 only <em>can it fire</em>, but <strong>is the failure it targets representable in
 the model it runs against</strong>?</p>
-
+</section>
+<section class="chapter" id="the-repair-has-its-own-trap">
 <h2>The repair has its own trap</h2>
+
 
 <p>The natural way to add a state-dependent variance term is to zero-initialise
 its output projection so the module “starts as a no-op”. <strong>That reproduces
@@ -263,8 +286,10 @@ measure.<span class="note"><input type="checkbox" id="engineering-variance-chann
 repair, which is why it is a standing ruling rather than a code review comment.
 The residual horizon embedding was dropped outright: 2.1% of the gap is not worth
 confounding the ablation for.</span></span></p>
-
+</section>
+<section class="chapter tinted" id="the-baseline-that-was-not-the-baseline">
 <h2>The baseline that was not the baseline</h2>
+
 
 <p>One more finding from the same audit, because it has the same shape. The
 “subject-specific autoregressive” baseline reported 77,248 parameters. The split
@@ -276,8 +301,10 @@ used.</strong> The 4,160 that are used go unreported. The internal counter
 records only <em>fit</em>-time fallbacks, so the descriptor reports 71 models in
 use when the true count is zero — a guard watching the wrong door, in a class
 whose own docstring names that hazard.</p>
-
+</section>
+<section class="chapter" id="what-was-actually-wrong-in-one-table">
 <h2>What was actually wrong, in one table</h2>
+
 
 <p>Four defects, each of which looked like a separate finding. They are one
 class: <em>a thing that is not the hypothesis, differing between arms, at a place
@@ -311,7 +338,7 @@ on stages nobody was watching.</p>
 </div>
 
 <p class="lede"><a href="appendix-defects.html">Next: checks that cannot fail →</a></p>
-
+</section>
 </div>
 
   </div>
@@ -319,31 +346,10 @@ on stages nobody was watching.</p>
 
 <footer class="sitefoot">
   <div class="wrap">
-    <p><strong>SC-WBD.</strong> Source, weights and every number on this site:
-    <a href="https://github.com/JacobFV/sc-wbd">github.com/JacobFV/sc-wbd</a>
-    &middot; <a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">model on
-    Hugging Face</a>.</p>
-    <p>Code is <a href="https://github.com/JacobFV/sc-wbd/blob/master/LICENSE">CC
-    BY-NC-SA 4.0</a>. Data sources carry their own licences, several of them
-    non-commercial and share-alike &mdash; see
-    <a href="../attribution.html">attribution</a>. Not a medical device and
-    not clinical advice.</p>
-    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+    <p class="foot-legal">Copyright &copy; 2026 SuperCognition Labs. Not a
+    medical device and not clinical advice.</p>
   </div>
 </footer>
-
-<script>
-document.getElementById("theme-toggle").addEventListener("click", function () {
-  var el = document.documentElement;
-  var cur = el.getAttribute("data-theme");
-  if (!cur) {
-    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  var next = cur === "dark" ? "light" : "dark";
-  el.setAttribute("data-theme", next);
-  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
-});
-</script>
 
 </body>
 </html>

@@ -11,19 +11,13 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
-<script>
-/* Applied before paint so an explicit theme choice does not flash. */
-(function () {
-  try {
-    var t = localStorage.getItem("scwbd-theme");
-    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) {}
-})();
-</script>
   <script defer src="../static/brain.js"></script>
   <script defer src="../static/arch.js"></script>
+  <script defer src="../static/reveal.js"></script>
 </head>
 <body class="">
+
+<div class="scrollprog" id="scrollprog" aria-hidden="true"></div>
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -31,20 +25,31 @@
     <nav>
         <a href="../index.html">Overview</a>
         <a href="../engineering/index.html" class="active">Engineering</a>
-        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../possibilities/index.html">Possibilities</a>
         <a href="../attribution.html">Attribution</a>
     </nav>
   </div>
 </header>
 
 <main>
+<nav class="railnav" aria-label="Sections on this page">
+  <ol>
+    <li><a href="#the-rule-written-first" data-rail="the-rule-written-first"><span class="rail-label">The rule, written first</span></a></li>
+    <li><a href="#the-result" data-rail="the-result"><span class="rail-label">The result</span></a></li>
+    <li><a href="#why-two-criteria-are-unevaluated-rather-than-fai" data-rail="why-two-criteria-are-unevaluated-rather-than-fai"><span class="rail-label">Why two criteria are unevalua…</span></a></li>
+    <li><a href="#what-this-settles-and-what-it-does-not" data-rail="what-this-settles-and-what-it-does-not"><span class="rail-label">What this settles, and what i…</span></a></li>
+  </ol>
+</nav>
+
   <div class="wrap">
     <div class="pagehead">
-      <p class="kicker">Engineering · 06</p>
       <h1>The identifiability benchmark returned a verdict</h1>
       <p class="standfirst">Three regions, linear-Gaussian, five designs, a decision rule written before the run. C1 and C2 are the thesis's first differentiator, and as measured they do not hold.</p>
+      <p class="applies"><span>Applies to</span> <strong>no checkpoint</strong> — a method benchmark on a three-region linear-Gaussian system with ground truth. The verdict is about the joint-inference claim itself, so it stands until that claim is re-tested.</p>
     </div>
 <div class="prose">
+<section class="chapter chapter-intro" id="engineering-identifiability-verdict-top">
+
 
 <p class="lede">SC-WBD's first claim is that fusing EEG and fMRI at their native
 sampling rates identifies coupling and delay parameters that neither modality
@@ -52,8 +57,10 @@ resolves alone, and that resampling to a common clock destroys the advantage.
 That is testable on a system small enough to have ground truth, so it was tested
 on one: three regions, linear dynamics, Gaussian noise, a 12 ms conduction delay
 and an explicit haemodynamic lag.</p>
-
+</section>
+<section class="chapter" id="the-rule-written-first">
 <h2>The rule, written first</h2>
+
 
 <p>Five criteria, each quantified over the minimum eigenvalue of the profile
 information matrix for the pre-registered parameters, evaluated in every regime.</p>
@@ -70,8 +77,10 @@ information matrix for the pre-registered parameters, evaluated in every regime.
 </tbody>
 </table>
 </div>
-
+</section>
+<section class="chapter tinted" id="the-result">
 <h2>The result</h2>
+
 
 <pre><code>verdict: INCOMPLETE
 
@@ -100,8 +109,10 @@ which is the one where the parameters are easiest to see.</p>
 <p>The rule says <em>every regime</em>, so partial passes are failures. That was
 decided before the numbers existed, which is the only time it can be decided
 honestly.</p>
-
+</section>
+<section class="chapter" id="why-two-criteria-are-unevaluated-rather-than-fai">
 <h2>Why two criteria are unevaluated rather than failed</h2>
+
 
 <p>The benchmark reports its own reasons, and both are properties of the
 experiment rather than of the model.</p>
@@ -129,8 +140,10 @@ delay is <code>5e-05</code>, posted a delay RMSE of <strong>0.028 ms</strong>
 against EEG's <strong>0.233 ms</strong> — eight times "better" purely by not
 moving. The report now measures each regime's offset from the prior mean in prior
 standard deviations and marks anything under 0.25 as unable to discriminate.</p>
-
+</section>
+<section class="chapter tinted" id="what-this-settles-and-what-it-does-not">
 <h2>What this settles, and what it does not</h2>
+
 
 <p>It is a measured negative on the thesis's first differentiator, from a
 benchmark that ran to completion on a system with ground truth. It is independent
@@ -147,7 +160,7 @@ are all live possibilities — and each would need its own rule written first.</
 per-design decomposition in
 <code>results_by_design_checkpoint.json</code> and the narrative in
 <code>reports/identifiability/summary.md</code>.</p>
-
+</section>
 </div>
 
   </div>
@@ -155,31 +168,10 @@ per-design decomposition in
 
 <footer class="sitefoot">
   <div class="wrap">
-    <p><strong>SC-WBD.</strong> Source, weights and every number on this site:
-    <a href="https://github.com/JacobFV/sc-wbd">github.com/JacobFV/sc-wbd</a>
-    &middot; <a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">model on
-    Hugging Face</a>.</p>
-    <p>Code is <a href="https://github.com/JacobFV/sc-wbd/blob/master/LICENSE">CC
-    BY-NC-SA 4.0</a>. Data sources carry their own licences, several of them
-    non-commercial and share-alike &mdash; see
-    <a href="../attribution.html">attribution</a>. Not a medical device and
-    not clinical advice.</p>
-    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+    <p class="foot-legal">Copyright &copy; 2026 SuperCognition Labs. Not a
+    medical device and not clinical advice.</p>
   </div>
 </footer>
-
-<script>
-document.getElementById("theme-toggle").addEventListener("click", function () {
-  var el = document.documentElement;
-  var cur = el.getAttribute("data-theme");
-  if (!cur) {
-    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  var next = cur === "dark" ? "light" : "dark";
-  el.setAttribute("data-theme", next);
-  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
-});
-</script>
 
 </body>
 </html>

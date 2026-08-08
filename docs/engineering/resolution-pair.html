@@ -11,19 +11,13 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='none'/><rect x='2' y='9' width='2' height='5'/><rect x='5.5' y='5' width='2' height='9'/><rect x='9' y='7' width='2' height='7'/><rect x='12.5' y='2' width='2' height='12'/></svg>">
-<script>
-/* Applied before paint so an explicit theme choice does not flash. */
-(function () {
-  try {
-    var t = localStorage.getItem("scwbd-theme");
-    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) {}
-})();
-</script>
   <script defer src="../static/brain.js"></script>
   <script defer src="../static/arch.js"></script>
+  <script defer src="../static/reveal.js"></script>
 </head>
 <body class="">
+
+<div class="scrollprog" id="scrollprog" aria-hidden="true"></div>
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -31,28 +25,44 @@
     <nav>
         <a href="../index.html">Overview</a>
         <a href="../engineering/index.html" class="active">Engineering</a>
-        <a href="../speculative/index.html">Where this leads</a>
+        <a href="../possibilities/index.html">Possibilities</a>
         <a href="../attribution.html">Attribution</a>
     </nav>
   </div>
 </header>
 
 <main>
+<nav class="railnav" aria-label="Sections on this page">
+  <ol>
+    <li><a href="#eleven-refusals-on-the-tin-ten-of-them-able-to-f" data-rail="eleven-refusals-on-the-tin-ten-of-them-able-to-f"><span class="rail-label">Eleven refusals on the tin, t…</span></a></li>
+    <li><a href="#the-pair-we-declared" data-rail="the-pair-we-declared"><span class="rail-label">The pair we declared</span></a></li>
+    <li><a href="#the-measurement" data-rail="the-measurement"><span class="rail-label">The measurement</span></a></li>
+    <li><a href="#the-finding-it-is-orientation-not-resolution" data-rail="the-finding-it-is-orientation-not-resolution"><span class="rail-label">The finding</span></a></li>
+    <li><a href="#how-far-this-carries-and-how-far-it-does-not" data-rail="how-far-this-carries-and-how-far-it-does-not"><span class="rail-label">How far this carries</span></a></li>
+    <li><a href="#why-the-failure-is-the-deliverable" data-rail="why-the-failure-is-the-deliverable"><span class="rail-label">Why the failure is the delive…</span></a></li>
+    <li><a href="#a-refusal-that-could-be-switched-off-by-declarin" data-rail="a-refusal-that-could-be-switched-off-by-declarin"><span class="rail-label">A refusal that could be switc…</span></a></li>
+  </ol>
+</nav>
+
   <div class="wrap">
     <div class="pagehead">
-      <p class="kicker">Engineering · 04</p>
       <h1>Orientation buys nine times what resolution buys</h1>
       <p class="standfirst">Parcel-level cortical state carries 5.6% of the whitened EEG lead field. Eight times more parcels barely moves it. Three numbers per parcel moves it nine-fold. The failure is the finding.</p>
+      <p class="applies"><span>Applies to</span> the <strong>anatomy prior and the state layout</strong> — every run built on parcel-level cortical state, including 003. The measurement is a property of the representation, not of a checkpoint.</p>
     </div>
 <div class="prose">
+<section class="chapter chapter-intro" id="engineering-resolution-pair-top">
+
 
 <p class="lede">This essay is about a measurement that came out badly and was
 kept. It is the cleanest example on this site of a result whose value is entirely
 in its being negative — it tells you something specific and quantitative about
 what regional brain state <em>is</em>, which a passing measurement would not
 have.</p>
-
+</section>
+<section class="chapter" id="eleven-refusals-on-the-tin-ten-of-them-able-to-f">
 <h2>Eleven refusals on the tin, ten of them able to fail</h2>
+
 
 <p>The compiler declares eleven refusals. One of them, R02, rejects a
 cross-scale prolongation without a declared restriction partner and tested
@@ -71,8 +81,10 @@ poset does not make a refusal honest. <strong>It makes it inert.</strong></p>
 <p>That is exactly the shape catalogued around twenty-six times in our
 <a href="appendix-defects.html">decorative guards register</a>, and coverage
 that cannot fail is worse than no coverage, because it gets counted.</p>
-
+</section>
+<section class="chapter tinted" id="the-pair-we-declared">
 <h2>The pair we declared</h2>
+
 
 <pre><code>cortical_source_dipole   ≤   parcel
       (fine)                 (coarse)
@@ -94,8 +106,10 @@ quantity — they are a different quantity related by an operator.</span></span>
 <p>The coarse support is where every region's state actually lives, where the
 connectome is defined, and where every prior is tabulated. Restriction is the
 area-weighted parcel mean; prolongation is the indicator fill.</p>
-
+</section>
+<section class="chapter" id="the-measurement">
 <h2>The measurement</h2>
+
 
 <p>The question is not <em>“is the coarse view an approximation?”</em> — of
 course it is. The question the paper's boundary check asks is whether the coarse
@@ -133,8 +147,10 @@ geodesic patch is the physiological unit of EEG generation.</span></span></p>
 <p><strong>Twelve of twelve ensembles fail the pre-registered criterion.</strong>
 Even a field smoother than any parcel — a 40&nbsp;mm correlation length against a
 50&nbsp;mm nominal parcel — still loses 64% of the observable.</p>
-
+</section>
+<section class="chapter tinted" id="the-finding-it-is-orientation-not-resolution">
 <h2>The finding: it is orientation, not resolution</h2>
+
 
 <p>The prior-free summary is the share of the observable the coarse support can
 carry. Under a prior with no free parameters the decomposition is exactly
@@ -180,8 +196,10 @@ eight times as many scalar parcels.</strong></p>
 <p>A scalar per parcel throws away the orientation structure that determines the
 sensor field, and no amount of spatial refinement buys it back.</p>
 </blockquote>
-
+</section>
+<section class="chapter" id="how-far-this-carries-and-how-far-it-does-not">
 <h2>How far this carries — and how far it does not</h2>
+
 
 <p>The table above is measured on a <strong>real BEM lead field</strong>: 7498
 source-space dipoles into 68 parcels. That is the number worth quoting, and it
@@ -232,8 +250,10 @@ dipoles the median relative topography error is <strong>0.977</strong>, and only
 prediction of the sensor response to a focal stimulation is wrong by more than
 half its own magnitude.</strong> That is precisely the TMS query the paper names,
 and the answer is that parcel state cannot answer it.</p>
-
+</section>
+<section class="chapter tinted" id="why-the-failure-is-the-deliverable">
 <h2>Why the failure is the deliverable</h2>
+
 
 <p>The measurement forces the design and forbids the alternatives. Because the
 parcel support provably cannot carry the observable, a
@@ -258,8 +278,10 @@ not fire. Declaring a pair that fails its boundary check gives R02 something rea
 to check and gives the next person a number to beat. Not declaring it gives
 everyone a green board.</p>
 </div>
-
+</section>
+<section class="chapter" id="a-refusal-that-could-be-switched-off-by-declarin">
 <h2>A refusal that could be switched off by declaring something</h2>
+
 
 <p>One more finding came out of this work, and it is the most structurally
 interesting thing on the page.</p>
@@ -297,7 +319,7 @@ their own new instrument on the day they built it.</span></span></p>
 
 <p class="lede"><a href="appendix-defects.html">Next: declaring where the
 implementation is narrower than the paper →</a></p>
-
+</section>
 </div>
 
   </div>
@@ -305,31 +327,10 @@ implementation is narrower than the paper →</a></p>
 
 <footer class="sitefoot">
   <div class="wrap">
-    <p><strong>SC-WBD.</strong> Source, weights and every number on this site:
-    <a href="https://github.com/JacobFV/sc-wbd">github.com/JacobFV/sc-wbd</a>
-    &middot; <a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">model on
-    Hugging Face</a>.</p>
-    <p>Code is <a href="https://github.com/JacobFV/sc-wbd/blob/master/LICENSE">CC
-    BY-NC-SA 4.0</a>. Data sources carry their own licences, several of them
-    non-commercial and share-alike &mdash; see
-    <a href="../attribution.html">attribution</a>. Not a medical device and
-    not clinical advice.</p>
-    <p><button class="theme-toggle" type="button" id="theme-toggle">Switch theme</button></p>
+    <p class="foot-legal">Copyright &copy; 2026 SuperCognition Labs. Not a
+    medical device and not clinical advice.</p>
   </div>
 </footer>
-
-<script>
-document.getElementById("theme-toggle").addEventListener("click", function () {
-  var el = document.documentElement;
-  var cur = el.getAttribute("data-theme");
-  if (!cur) {
-    cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  var next = cur === "dark" ? "light" : "dark";
-  el.setAttribute("data-theme", next);
-  try { localStorage.setItem("scwbd-theme", next); } catch (e) {}
-});
-</script>
 
 </body>
 </html>

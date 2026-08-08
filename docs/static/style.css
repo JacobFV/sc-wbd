@@ -3,6 +3,17 @@
  * Restrained by intent.  The chrome is monochrome; the only colour on the page
  * is a status colour attached to a measured result, so colour always means
  * something.  System fonts only — no CDN, no webfont download, no layout shift.
+ *
+ * Two structural rules the rest of the file follows:
+ *
+ *   TYPE     headings are sans, body copy is serif.  The pairing is the wrong
+ *            way round from a journal and the right way round for a product
+ *            page: the serif is for reading, the sans is for scanning, and
+ *            what you scan on this page is the headings.
+ *
+ *   THEME    the theme is the device's, full stop.  There is no toggle and no
+ *            stored preference, so every colour is defined once on :root and
+ *            once under prefers-color-scheme, and nowhere else.
  */
 
 :root {
@@ -20,6 +31,12 @@
   --todo-ink: #7a4e00;
   --todo-bg: #fdf6e6;
   --todo-rule: #d9a441;
+
+  /* Alternate sections carry a full-bleed wash so the page reads as a
+   * sequence rather than a column.  It is deliberately NOT --bg-soft: that
+   * token is what notes, callouts and provenance chips sit on, and reusing it
+   * for the ground would make all three vanish on every other section. */
+  --tint: #fbfaf7;
 
   --serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, "Times New Roman", serif;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -45,23 +62,8 @@
     --todo-ink: #f0c069;
     --todo-bg: #211a09;
     --todo-rule: #7a5c1c;
+    --tint: #14161a;
   }
-}
-
-/* The viewer's explicit toggle must beat the OS signal in both directions. */
-:root[data-theme="light"] {
-  --bg: #ffffff; --bg-soft: #f7f7f5; --bg-code: #f4f4f1;
-  --ink: #17181a; --ink-2: #55575c; --ink-3: #7d8085;
-  --rule: #e3e3df; --rule-strong: #c8c8c3;
-  --pass: #1a6b41; --fail: #9e2620; --unknown: #6c6f74;
-  --todo-ink: #7a4e00; --todo-bg: #fdf6e6; --todo-rule: #d9a441;
-}
-:root[data-theme="dark"] {
-  --bg: #101215; --bg-soft: #171a1e; --bg-code: #191c21;
-  --ink: #e5e7ea; --ink-2: #a6a9af; --ink-3: #7e8288;
-  --rule: #272b31; --rule-strong: #3b4047;
-  --pass: #5fbf8b; --fail: #ee7f74; --unknown: #90949a;
-  --todo-ink: #f0c069; --todo-bg: #211a09; --todo-rule: #7a5c1c;
 }
 
 * { box-sizing: border-box; }
@@ -185,12 +187,13 @@ main { padding-top: 3.2rem; }
 }
 
 .pagehead h1 {
+  font-family: var(--sans);
   font-size: clamp(1.85rem, 1.2rem + 2.4vw, 2.9rem);
-  line-height: 1.12;
-  letter-spacing: -0.018em;
-  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.026em;
+  font-weight: 650;
   margin: 0;
-  max-width: 26em;
+  max-width: 22em;
 }
 
 .standfirst {
@@ -201,36 +204,66 @@ main { padding-top: 3.2rem; }
   margin: 1.15rem 0 0;
 }
 
+/* Which run an engineering finding belongs to. Set as a boxed line rather than
+ * a sentence in the prose because it is the first thing a reader coming back
+ * at 003 needs, and it must not be findable only by reading the essay. */
+.applies {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: var(--measure);
+  margin: 1.4rem 0 0;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg-soft);
+  border-left: 2px solid var(--rule-strong);
+}
+.applies span {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-right: 0.5rem;
+}
+.applies strong { color: var(--ink); }
+
 /* Prose column with a margin rail for notes. */
 .prose { position: relative; padding-bottom: 4rem; }
 
-.prose > p,
-.prose > h2,
-.prose > h3,
-.prose > h4,
-.prose > ul,
-.prose > ol,
-.prose > blockquote,
-.prose > .callout,
-.prose > .todo,
-.prose > .keyfig,
-.prose > figcaption {
+/* The measure applies to running text.  Both selectors are listed because the
+ * build wraps headings and their prose into `.chapter` sections, and a page
+ * with no headings to split on is passed through unwrapped. */
+.prose > p, .chapter > p,
+.prose > h2, .chapter > h2,
+.prose > h3, .chapter > h3,
+.prose > h4, .chapter > h4,
+.prose > ul, .chapter > ul,
+.prose > ol, .chapter > ol,
+.prose > blockquote, .chapter > blockquote,
+.prose > .callout, .chapter > .callout,
+.prose > .todo, .chapter > .todo,
+.prose > .keyfig, .chapter > .keyfig,
+.prose > figcaption, .chapter > figcaption {
   max-width: var(--measure);
 }
 
+/* The section rule that used to sit on the heading now belongs to the section
+ * itself, which is a wider box — see `.chapter` below. */
 .prose h2 {
-  font-size: 1.45rem;
-  line-height: 1.25;
-  letter-spacing: -0.012em;
-  font-weight: 600;
-  margin: 3rem 0 0.9rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: clamp(1.4rem, 1.15rem + 0.8vw, 1.75rem);
+  line-height: 1.18;
+  letter-spacing: -0.022em;
+  font-weight: 650;
+  margin: 0 0 1rem;
 }
 
 .prose h3 {
-  font-size: 1.12rem;
-  font-weight: 600;
+  font-family: var(--sans);
+  font-size: 1.08rem;
+  letter-spacing: -0.012em;
+  font-weight: 650;
   margin: 2.1rem 0 0.6rem;
 }
 
@@ -360,7 +393,7 @@ code, kbd, samp {
   font-size: 0.855em;
 }
 
-.prose > p code,
+.prose p code,
 .prose li code,
 td code, th code,
 blockquote code {
@@ -406,6 +439,10 @@ a.src:hover { color: var(--ink); border-color: var(--rule-strong); }
   max-width: calc(var(--measure) + var(--margin-col) + 1.6rem);
 }
 
+/* A register rather than a figure: it wants the whole column, and clipping it
+ * to the measure-plus-rail just hides the licence text behind a scrollbar. */
+.tablewrap.wide { max-width: none; }
+
 table {
   border-collapse: collapse;
   width: 100%;
@@ -433,7 +470,54 @@ thead th {
 
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 0.78rem; }
 
+/* The source register keys are identifiers, not prose: `word-break: break-word`
+ * turned `ds000113` into three stacked fragments. */
+.srcs td:first-child code { white-space: nowrap; word-break: normal; }
+.srcs td:nth-child(2) { color: var(--ink-3); white-space: nowrap; }
+/* Citations carry bare DOIs and URLs. An unbreakable 40-character token sets
+ * the column's minimum width, which pushed the licence column off the page
+ * and behind a scrollbar. */
+.srcs td { overflow-wrap: anywhere; }
+
 tbody tr:last-child td { border-bottom: 0; }
+
+/* A small table that belongs beside a paragraph rather than in it.
+ *
+ * `.withside` exists to give the float a containing block the width of the
+ * measure. Notes get that for free by floating inside a <p>; a direct child of
+ * `.prose` floats against the full column instead, and the negative margin
+ * then pushes it off the page rather than into the rail.
+ *
+ * The table is placed BEFORE the paragraph in the source, so the narrow
+ * layout — where there is no rail to float into — puts it above, which is
+ * where a summary belongs when it cannot sit alongside. */
+.withside { max-width: var(--measure); }
+
+.sidetable {
+  float: right;
+  clear: right;
+  width: var(--margin-col);
+  margin: 0.35rem calc(-1 * (var(--margin-col) + 1.6rem)) 1rem 1.6rem;
+}
+.sidetable table { font-size: 0.78rem; }
+.sidetable th {
+  font-weight: 500;
+  color: var(--ink-3);
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.sidetable td { text-align: right; font-family: var(--mono); font-size: 0.74rem; }
+.sidetable tr:first-child th, .sidetable tr:first-child td { border-top: 1px solid var(--rule-strong); padding-top: 0.55rem; }
+
+@media (max-width: 78rem) {
+  .sidetable {
+    float: none;
+    width: auto;
+    max-width: var(--measure);
+    margin: 0 0 1.5rem;
+  }
+}
 
 /* --------------------------------------------------------------- statuses */
 
@@ -534,10 +618,11 @@ tbody tr:last-child td { border-bottom: 0; }
 }
 
 .card-title {
-  font-size: 1.18rem;
-  font-weight: 600;
+  font-family: var(--sans);
+  font-size: 1.14rem;
+  font-weight: 650;
   line-height: 1.25;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.018em;
   display: inline;
   border-bottom: 1px solid transparent;
 }
@@ -587,31 +672,20 @@ tbody tr:last-child td { border-bottom: 0; }
 
 /* ------------------------------------------------------------------ footer */
 
+/* A copyright line and nothing else.  The licence terms used to be recited
+ * here on every page and the nav was repeated under them; both are reachable
+ * from the masthead, and neither needed saying twice per page. */
 .sitefoot {
   border-top: 1px solid var(--rule);
-  margin-top: 3rem;
-  padding: 2rem 0 3.5rem;
+  margin-top: 4rem;
+  padding: 1.6rem 0 3rem;
   font-family: var(--sans);
   font-size: 0.8rem;
   line-height: 1.6;
   color: var(--ink-3);
 }
-.sitefoot .wrap > p { max-width: 42rem; margin: 0 0 0.7rem; }
-.sitefoot a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--rule); }
-.sitefoot a:hover { color: var(--ink); }
-
-.theme-toggle {
-  font-family: var(--sans);
-  font-size: 0.75rem;
-  color: var(--ink-3);
-  background: none;
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 0.25rem 0.6rem;
-  cursor: pointer;
-  margin-top: 0.5rem;
-}
-.theme-toggle:hover { color: var(--ink); border-color: var(--rule-strong); }
+.sitefoot p { margin: 0; }
+.foot-legal { max-width: 40rem; }
 
 /* ------------------------------------------------------------------ misc */
 
@@ -670,8 +744,9 @@ figcaption {
 .lede { font-size: 1.1rem; line-height: 1.55; }
 
 @media print {
-  .masthead, .sitefoot, .theme-toggle { display: none; }
+  .masthead, .sitefoot, .railnav, .scrollprog { display: none; }
   .note-body { float: none; width: auto; margin: 0.5rem 0; }
+  .chapter { opacity: 1 !important; transform: none !important; }
 }
 
 /* ---- The WBD mark: 414 parcels at their anatomical coordinates ---- */
@@ -696,17 +771,376 @@ figcaption {
 .videofig { margin: 1.6rem 0 2rem; }
 .videofig video {
   width: 100%;
-  max-width: var(--measure);
+  max-width: calc(var(--measure) + 6rem);
   display: block;
-  border-radius: 3px;
+  border-radius: 10px;
   background: #000;
 }
-.videofig figcaption {
-  font-family: var(--sans);
-  font-size: 0.78rem;
-  color: var(--ink-3);
-  margin-top: 0.5rem;
+
+/* ==========================================================================
+ * SCROLL STRUCTURE
+ *
+ * The build wraps every heading-delimited run in `<section class="chapter">`.
+ * These rules turn that structure into the thing you feel while scrolling: a
+ * sequence of panels, one of which you are in, with an index down the side and
+ * a progress hairline across the top.  reveal.js only adds and removes
+ * classes; every appearance is here.
+ * ========================================================================== */
+
+/* ---- progress hairline ---- */
+.scrollprog {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 80;
+  background: var(--ink);
+  opacity: 0.5;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  will-change: transform;
+  pointer-events: none;
 }
+
+/* ---- the chapters themselves ---- */
+.chapter {
+  position: relative;
+  padding: 3.2rem 0 3.4rem;
+}
+.chapter-intro { padding-top: 0; }
+
+/* The rule used to hang off each `<h2>`.  On a section it can span the full
+ * content box instead of stopping at the 36rem measure, which is what makes
+ * the break between panels read as a break. */
+.chapter + .chapter { border-top: 1px solid var(--rule); }
+
+/* A full-bleed wash on alternate sections.  `100vw` overflows by the width of
+ * the scrollbar, which `body { overflow-x: hidden }` absorbs. */
+.chapter.tinted::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: var(--tint);
+}
+.chapter.tinted + .chapter,
+.chapter.tinted { border-top-color: transparent; }
+
+/* On a tinted section the wash IS the soft ground, so everything that used
+ * --bg-soft to stand off the page — notes, callouts, provenance chips — has
+ * to stand off in the other direction or it disappears.  Rebinding the token
+ * on the section does that once, rather than per component. */
+.chapter.tinted { --bg-soft: var(--bg); }
+
+/* ---- the landing page's own layout, which changes under you ----
+ *
+ * Sections here are not a repeated column.  The heading moves out into a left
+ * track and PINS there while its section passes, so at any scroll position the
+ * page is telling you which part you are in, and the moment it swaps is the
+ * moment the section does.  Together with the alternating wash that is the
+ * whole of the scroll rhythm — which is why the landing page turns the section
+ * rail off: a fixed index and a pinned heading are the same information twice.
+ *
+ * Below 68rem there is no track to move into and it collapses back to one
+ * column, heading above content.
+ */
+@media (min-width: 68rem) {
+  body.release .chapter:not(.chapter-intro) {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    column-gap: 2.6rem;
+  }
+  body.release .chapter:not(.chapter-intro) > * { grid-column: 2; }
+  body.release .chapter:not(.chapter-intro) > h2 {
+    grid-column: 1;
+    grid-row: 1 / -1;          /* span every row, or sticky has nothing to move in */
+    align-self: start;
+    position: sticky;
+    top: 4.6rem;
+    margin: 0;
+    font-size: 1.16rem;
+    line-height: 1.24;
+    letter-spacing: -0.014em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  /* A rule under the heading that fills as you move through the section.
+   * `--secp` is written by reveal.js, and only by reveal.js; with the script
+   * absent the fallback 0 leaves an ordinary hairline. */
+  body.release .chapter:not(.chapter-intro) > h2::after {
+    content: "";
+    display: block;
+    height: 2px;
+    margin-top: 0.85rem;
+    background: linear-gradient(
+      to right,
+      var(--ink) 0 calc(var(--secp, 0) * 100%),
+      var(--rule) calc(var(--secp, 0) * 100%) 100%
+    );
+  }
+
+  /* The paper sits in the left track directly under the heading it belongs
+   * to, and pins there with it. Both are placed in column 1 spanning every
+   * row -- grid allows the overlap -- and the margin is what keeps the cover
+   * clear of the heading above it. */
+  body.release .chapter > .paper-release {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: start;
+    position: sticky;
+    top: 11.5rem;
+    margin: 6.9rem 0 0;
+    max-width: 13rem;
+  }
+}
+
+/* ---- reveal on entry ----
+ *
+ * Guarded on `.js-reveal`, which reveal.js sets on <html>.  Without the
+ * script — or with JavaScript off — no chapter is ever hidden, so the page
+ * degrades to the static document rather than to a blank one. */
+html.js-reveal .chapter {
+  opacity: 0;
+  transform: translateY(1.15rem);
+  transition: opacity 0.62s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.62s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+html.js-reveal .chapter.in { opacity: 1; transform: none; }
+
+/* Inside a revealed section the parts arrive in reading order rather than all
+ * at once, which is the difference between a section appearing and a section
+ * being laid out in front of you. Six steps and then flat: past that the last
+ * element of a long section would still be waiting when you reached it.
+ *
+ * Movement only, deliberately. The section as a whole already fades; staggering
+ * opacity as well would mean that any path where the transition does not run --
+ * a dropped class, a paint the compositor never advances -- leaves readable
+ * text sitting at zero. A stalled translate is a paragraph half a line low. A
+ * stalled fade is a blank page. */
+html.js-reveal body.release .chapter > * {
+  transform: translateY(0.6rem);
+  transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+html.js-reveal body.release .chapter.in > * { transform: none; }
+html.js-reveal body.release .chapter.in > *:nth-child(2) { transition-delay: 70ms; }
+html.js-reveal body.release .chapter.in > *:nth-child(3) { transition-delay: 140ms; }
+html.js-reveal body.release .chapter.in > *:nth-child(4) { transition-delay: 200ms; }
+html.js-reveal body.release .chapter.in > *:nth-child(5) { transition-delay: 250ms; }
+html.js-reveal body.release .chapter.in > *:nth-child(n + 6) { transition-delay: 290ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  html.js-reveal .chapter,
+  html.js-reveal body.release .chapter > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* A transform on the pinned heading would make `position: sticky` measure
+ * against a moved box, so the one element that must not drift is exempt. */
+html.js-reveal body.release .chapter > h2,
+html.js-reveal body.release .chapter > .paper-release {
+  transform: none;
+}
+
+/* ---- the hero receding ----
+ *
+ * reveal.js writes `--sp` (0 while the opening chapter owns the viewport, 1
+ * once it has left) and this is the only thing that reads it.  Translation and
+ * opacity only: a scale would change the canvas's measured box, and arch.js
+ * sizes its backing store off that box. */
+.chapter-intro .archhero {
+  transform: translateY(calc(var(--sp, 0) * -3rem));
+  opacity: calc(1 - var(--sp, 0) * 0.72);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chapter-intro .archhero { transform: none; opacity: 1; }
+}
+
+/* ---- the section rail ----
+ *
+ * Shown only where there is a genuine left gutter to put it in.  Margin notes
+ * already own the right gutter, so the two never compete for the same space. */
+.railnav { display: none; }
+
+@media (min-width: 92rem) {
+  .railnav {
+    display: block;
+    position: fixed;
+    top: 50%;
+    left: calc(50% - 44rem);
+    width: 11rem;
+    transform: translateY(-50%);
+    z-index: 50;
+  }
+  .railnav ol { list-style: none; margin: 0; padding: 0; }
+  .railnav li { margin: 0; }
+  .railnav a {
+    display: flex;
+    gap: 0.55rem;
+    align-items: baseline;
+    padding: 0.3rem 0;
+    font-family: var(--sans);
+    font-size: 0.76rem;
+    line-height: 1.3;
+    color: var(--ink-3);
+    text-decoration: none;
+    border: 0;
+    opacity: 0.55;
+    transition: opacity 0.25s ease, color 0.25s ease;
+  }
+  .railnav a:hover { opacity: 1; color: var(--ink); }
+  .railnav .rail-label {
+    border-bottom: 1px solid transparent;
+    overflow-wrap: anywhere;
+  }
+  .railnav a.here { opacity: 1; color: var(--ink); }
+  .railnav a.here .rail-label { border-bottom-color: var(--rule-strong); }
+}
+
+/* ==========================================================================
+ * RELEASE FURNITURE
+ * ========================================================================== */
+
+/* The headline runs straight into the hero, so the pagehead does not close
+ * itself off with a rule. */
+body.release .pagehead { border-bottom: 0; padding-bottom: 0.5rem; margin-bottom: 0; }
+
+/* The hero: what it is on the left, the thing itself on the right. Stacked
+ * below 62rem, where two columns would leave the paragraph too narrow to read
+ * and the brain too small to turn. */
+.herosplit { margin: 0.5rem 0 0; }
+
+@media (min-width: 62rem) {
+  .herosplit {
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 3rem;
+    max-width: calc(var(--measure) + var(--margin-col) + 1.6rem);
+  }
+  .herosplit .lede { max-width: none; }
+  /* Squarer than the full-width hero was: in half the width, a 2:1 frame is
+   * mostly empty either side of a brain that has to shrink to fit its height. */
+  .herosplit .archhero {
+    margin-top: 0;
+    aspect-ratio: 4 / 3;
+    max-height: 46vh;
+  }
+}
+
+/* The three ways in, as glyph-and-label links rather than a button bar, one
+ * per line. Inline they read as a toolbar; stacked they read as three doors.
+ * The hero carries the title, the object, one paragraph and these; anything
+ * else in that space is a fact the reader has not asked for yet. */
+.jumplinks {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  margin: 1.6rem 0 0;
+  padding: 0;
+  max-width: calc(var(--measure) + var(--margin-col) + 1.6rem);
+}
+.jumplinks li { margin: 0; }
+.jumplinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+  border: 0 !important;
+}
+.jumplinks svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+  fill: currentColor;
+  color: var(--ink-3);
+  transition: color 0.2s ease;
+}
+.jumplinks a span {
+  border-bottom: 1px solid var(--rule-strong);
+  padding-bottom: 2px;
+  transition: border-color 0.2s ease;
+}
+.jumplinks a:hover svg { color: var(--ink); }
+.jumplinks a:hover span { border-bottom-color: var(--ink); }
+
+/* ---- the paper: the cover, which is itself the link ---- */
+.paper-release {
+  margin: 1.4rem 0 0.5rem;
+  max-width: 15rem;
+}
+
+.paper-shot {
+  display: block;
+  position: relative;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: #ffffff;      /* the page is white in both themes; it is paper */
+  line-height: 0;
+  text-decoration: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 10px 26px rgba(0, 0, 0, 0.10);
+  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow 0.3s ease;
+}
+.paper-shot img { display: block; width: 100%; height: auto; }
+.paper-shot:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 18px 40px rgba(0, 0, 0, 0.16);
+}
+.paper-shot-open {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 0.55rem 0.8rem;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: #ffffff;
+  background: rgba(20, 22, 26, 0.86);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.paper-shot:hover .paper-shot-open,
+.paper-shot:focus-visible .paper-shot-open { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .paper-shot, .paper-shot:hover { transform: none; transition: none; }
+}
+
+/* ==========================================================================
+ * LANDING-PAGE NOTES
+ *
+ * Margin notes are right for the engineering essays, where the aside IS the
+ * argument and a reader has settled in for it.  On the landing page a column
+ * of grey boxes down the side reads as caveat rather than as detail, so there
+ * the note collapses behind its reference at every width and opens on a
+ * click.  Nothing is deleted; it is one click away instead of always open.
+ * ========================================================================== */
+body.flat-notes .note-body {
+  display: none;
+  float: none;
+  width: auto;
+  margin: 0.6rem 0;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-soft);
+  border-left: 2px solid var(--rule-strong);
+  font-size: 0.82rem;
+}
+body.flat-notes .note-toggle:checked + .note-ref + .note-body { display: block; }
+body.flat-notes .note-ref { border-bottom: 1px dotted var(--rule-strong); }
 
 /* ---- Interactive architecture diagram ---- */
 .archwrap { margin: 2rem 0 2.4rem; }
@@ -722,14 +1156,83 @@ figcaption {
   margin: 0.5rem 0 0;
 }
 
-/* Architecture diagrams: one per section, the first doubling as the hero. */
+/* ---- flat schematics ----
+ *
+ * Inline SVG, same linework as the canvas diagrams: hairlines, square corners,
+ * one warm hue for anything crossing the body boundary and one cool hue for a
+ * measurement. Sized in the page's own units so the labels read at roughly the
+ * size the surrounding prose does. */
+.schematic {
+  margin: 1.6rem 0 1.8rem;
+  max-width: calc(var(--measure) + var(--margin-col) + 1.6rem);
+  overflow-x: auto;
+}
+/* An SVG scaled to a phone's width takes its labels down with it -- 14px in an
+ * 880-unit viewBox is 6px at 430px wide, which is a picture of a diagram
+ * rather than a diagram. Below the floor it scrolls sideways instead, the same
+ * way a wide table does. */
+.schematic svg {
+  width: 100%;
+  min-width: 46rem;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.schematic .s-box,
+.schematic .s-dash {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: 1;
+}
+.schematic .s-strong { stroke: var(--ink-2); }
+.schematic .s-dash { stroke: var(--rule); stroke-dasharray: 4 5; }
+
+.schematic .s-arrow { fill: none; stroke: currentColor; stroke-width: 1.2; }
+.schematic .s-head { fill: currentColor; stroke: none; }
+
+.schematic text { font-family: var(--sans); fill: var(--ink-2); }
+.schematic .s-title {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  fill: var(--ink);
+}
+.schematic .s-kind {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+}
+.schematic .s-note { font-size: 14px; }
+
+/* The signal hues are the canvas palette, constant across themes because they
+ * encode attachment kind rather than lighting. */
+.schematic .s-warm { color: #c8874a; }
+.schematic .s-cool { color: #5b7fa6; }
+.schematic text.s-warm { fill: #c8874a; }
+.schematic text.s-cool { fill: #5b7fa6; }
+.schematic text.s-faint { fill: var(--ink-3); }
+
+/* Architecture diagrams: one per section, the first doubling as the hero.
+ * No background of its own -- the canvas clears to transparent so the
+ * section's wash shows through, which is why a diagram on a tinted section no
+ * longer sits in a paler rectangle. */
 .arch-canvas {
   display: block;
   width: 100%;
-  aspect-ratio: 21 / 9;
+  /* 16:9, not 21:9. These sit in the ~43rem content column now, and a three
+   * stage pipeline with type at page size does not fit in 21:9 of it. */
+  aspect-ratio: 16 / 9;
   touch-action: none;
-  background: var(--bg);
   margin: 0.8rem 0 0.3rem;
 }
-.archhero { margin: 1rem auto 0.3rem; }
+/* The hero draws the anatomy alone (see `data-panels="scene"` in arch.js), so
+ * it wants a squarer frame than the annotated diagrams and a cap in viewport
+ * units: 21:9 of a 62rem column is 33rem of mostly empty ground between the
+ * headline and the first thing you can act on. */
+.archhero {
+  margin: 0.6rem auto 0.3rem;
+  aspect-ratio: 2 / 1;
+  max-height: 52vh;
+}
 @media (max-width: 46rem) { .arch-canvas { aspect-ratio: 5 / 4; } }
