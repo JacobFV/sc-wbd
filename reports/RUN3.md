@@ -24,6 +24,35 @@ run — from 11.2% reachable to a set the checkpoint itself reports.
 | attachment kinds exercised | `observation` | `observation`, `boundary_output`, `stimulus` |
 | trained on stimulation data | no | yes |
 
+## T4 confirms the prediction: the readout was waiting for the simulator
+
+The founding exemption said `family_readout` could only be founded by the
+simulator and should move in T4. At T4's first checkpoint, step 5,900:
+
+| module | T1–T3 | T4 step 500 |
+| --- | ---: | ---: |
+| `family_readout` | 0/36 | **36/36** |
+| `posterior` | 0/58 | **58/58** |
+| all tensors | 243/382 | **337/382** |
+
+Both unfroze completely, in one stage, the first stage that admits tier 4. That
+is the exemption's reasoning confirmed rather than assumed: the constraint was
+never a permission, it was that nothing in tiers 1–3 reads `rollout.activity`
+and no measured recording carries a theta label.
+
+**By parameter, 99.98% of the model has now trained** — 6,045 of 26,304,808
+still untouched. What remains is small, static and understood:
+
+    observation.feat     18 tensors    eeg.source_proj       4
+    eeg_montages         12            tms_drive             4   (granted in T5 only)
+    bold (balloon)        5            msg_proj              2
+
+`source_proj` across the four observation heads is unreachable by construction —
+a parcel carrying a 3-vector moment is observed through the vector lead field,
+and the scalar projection it replaces is never called. `tms_drive` is granted in
+T5 alone, deliberately. The rest are partial freezes inside modules that are
+otherwise training.
+
 ## Launch check #2 at the end of stage 1 — the check HANDOFF-003 specified
 
 `checkpoints/scwbd-003/stage_T1_measured_founding.pt`, step 4,000, best loss
