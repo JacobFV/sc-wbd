@@ -9,6 +9,33 @@
 #   (nothing was widened; the permission set is unchanged)
 id: eegmmidb_real
 role: likelihood
+
+# The founding montage's channel declaration. This card predates the attachment
+# axis and carried no `channels:` block at all, which had a consequence nobody
+# would have looked for: `attachment_of` refuses a channel its card does not
+# declare, so the per-attachment-kind report omitted THE FOUNDING SOURCE from
+# the `observation` row. The 109-participant corpus that founds the
+# representation was absent from the table that says which kinds of signal
+# reached the model.
+#
+# Not a training defect -- the gradient path never consulted this block -- but
+# the report is a published claim, and it was answering "which sources
+# contribute an observation" without the largest one.
+channels:
+  eeg:
+    attachment: observation
+    n_channels: 64
+    units: V
+    clock: bci2000_amp
+    operator: lead_field
+    note: >-
+      Extended 10-10 Sharbrough montage at 160 Hz, brought to the model's
+      125 Hz. Average-referenced: the raw files are referenced to a single
+      electrode, which makes the topography reference-dependent, and the common
+      average is the least arbitrary choice available without an individual head
+      model. This is the montage `model.eeg` owns; every other EEG source
+      observes through its own operator in `model.eeg_montages`.
+
 is_simulated: false
 losses: [likelihood, forecast, calibration, posterior]
 gradient_permission:
