@@ -152,11 +152,28 @@ data:
   window: 64
   context: 24
   fs_hz: 125.0
-  # 128, down from run 2's 192. The rollout's activation cost is the constraint,
-  # not the weights, and it scales with `hidden`: 288 -> 1408 is 4.9x on the MLP
-  # intermediates. Verified against the real reserve in the smoke run before
-  # launch rather than assumed here.
-  batch: 128
+  # 8, MEASURED, not chosen. This was 128 by analogy with run 2's 192, and the
+  # smoke says that is impossible on this box.
+  #
+  # The constraint is not the weights and not one rollout -- it is that
+  # `MixtureTrainer.step` backwards each source with `retain_graph=True`, so
+  # every admitted source's activation graph is live at once. T1 admits seven
+  # measured sources plus the simulator, and the smoke holds all eight before
+  # backwarding, deliberately, because that is what the trainer does.
+  #
+  # Measured on this architecture at `batch: 8`, all eight graphs held:
+  #
+  #     peak CUDA allocated  41.97 GB
+  #     peak CUDA reserved   43.40 GB
+  #
+  # That is 90% of a 48 GB cap at the SMALLEST batch worth running. Scaling it
+  # to 128 was never going to fit, and finding out by launching would have cost
+  # hours. (Probing the scaling empirically is also not free: a sweep that
+  # reached 8 sources x batch 32 took the machine down.)
+  #
+  # Eight sources x batch 8 is 64 measured windows per step plus the simulator,
+  # so the per-step sample count is closer to run 2's than the number suggests.
+  batch: 8
   num_workers: 4
   pin_memory: false
   val_fraction: 0.05
@@ -176,9 +193,14 @@ train:
   amp_dtype: bfloat16
   # The GB10 has ONE ~121 GB unified pool and `systemd MemoryMax` does NOT bound
   # CUDA allocations -- the cgroup sees host-side allocation only. This is the
-  # only bound on the caching allocator, not a backstop. 48 leaves the rest of
-  # the box usable and is checked against the smoke run's real reserve.
-  cuda_reserve_gb: 48.0
+  # only bound on the caching allocator, not a backstop.
+  #
+  # 56, against a measured peak reserve of 43.40 GB: about 30% headroom for
+  # fragmentation, and still under half the pool so the rest of the box stays
+  # usable. Raising it further would not buy a larger batch -- it would only let
+  # the allocator grow unopposed toward the OOM that killed this machine once
+  # already today.
+  cuda_reserve_gb: 56.0
   max_wall_seconds: 108000      # 30 h; run 2 took 9 h at 1/4.9 the MLP width
   resume: true
 
