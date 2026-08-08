@@ -342,3 +342,61 @@ cause, and a note written inside the fallback branch will describe whatever the 
 had in mind rather than what ran. Where a substitution is possible, the artifact must
 carry which branch produced it — derived at runtime, not written as a literal. That is
 now what `geometry` in `build_lead_field` does.
+
+---
+
+## ISSUE-007 — `tests/schema/test_carrier_and_views.py` cannot be collected, and takes the whole schema directory with it
+
+**Status:** open. **Not** repaired here: which `support_algebra` is authoritative is a
+design call, not a fix.
+**Severity:** live. `pytest tests/schema` aborts at collection; without
+`--continue-on-collection-errors` the other 229 schema and foundation tests in the same
+invocation do not run.
+
+### The defect
+
+`wt/noether2` and master independently added `scwbd/schema/support_algebra.py` as two
+different implementations of the same idea with different public names:
+
+| master | noether2 |
+| --- | --- |
+| `relate` | `restriction_between` |
+| `compose_psf` | `_compose_psf` |
+| `common_temporal_refinement` | `common_refinement`, `temporal_common_refinement` |
+| — | `element_join`, `embed_along`, `project_along` |
+
+The merge kept master's, because `tests/schema/test_support_algebra.py` imports it.
+Everything else from that branch was additive and landed — **including
+`tests/schema/test_carrier_and_views.py`, which imports noether2's six names.** So a
+test file from one implementation now sits beside the other implementation, and the
+import fails at collection time rather than as a test failure.
+
+HANDOFF-003 records that master's `support_algebra` was kept and that
+`test_carrier_and_views.py` landed. It does not record that those two facts contradict
+each other, which is why this is written down here.
+
+### Why it is not repaired here
+
+The signatures differ, not just the names: `common_refinement(a, b, ia, ib,
+atom_weights=...)` has no counterpart in master's API. Porting means choosing which
+implementation of the support algebra is authoritative and rewriting the other's tests
+against it. That is the same category as the R12 duplication (`R12Violation` vs
+`CompilerRefusal`) which the handoff also declines to repair: a design decision with two
+defensible answers, made worse by being taken in passing.
+
+### What would discharge it
+
+Decide which implementation is authoritative. If master's: rewrite
+`test_carrier_and_views.py` against `relate` / `compose_psf` /
+`common_temporal_refinement`, and port `element_join`, `embed_along` and `project_along`
+if the carrier work needs them. If noether2's: replace the module and rewrite
+`test_support_algebra.py`. Either way one test file gets rewritten; the current state is
+the only one where neither does and the directory does not run.
+
+### The pattern
+
+A merge that keeps one side of a conflicted *module* must also decide what happens to
+the other side's *tests*, and "everything else was additive" is not the same as
+"everything else is consistent". An additive file that imports the rejected API is a
+collection error, which is louder than a failure and easier to mistake for an
+environment problem.
