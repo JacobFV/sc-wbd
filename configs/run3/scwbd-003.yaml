@@ -36,15 +36,27 @@
 # ---------------------------------------------------------------------------
 # 88.8% of run 2's parameters could not receive a gradient, because the modules
 # were renamed `local` -> `family_local` and the cards still granted the old
-# names. An unmatched glob is an empty permission set, not an error. Every
-# `tier_permissions` list below grants BOTH namings, and two checks gate the
-# launch:
+# names. An unmatched glob is an empty permission set, not an error.
+#
+# Every `tier_permissions` list below names the FAMILY-PADDED arm only, because
+# that is the arm this run builds (`family_state: true`). The source cards grant
+# both namings, correctly -- one card is shared across runs and arms -- but a run
+# config is one run with one arm, and a config carrying dead globs teaches a
+# reader that dead globs are normal. These lists did carry four
+# (`local.*`, `residual.*`, `readout.*`, `log_dt_scale`, none of which name
+# anything here) until a check was written that could see them.
+#
+# Three checks gate the launch:
 #
 #   pytest tests/foundation/test_card_patterns_reach_the_model.py
+#   pytest tests/foundation/test_stage_permissions_reach_the_model.py
 #   pytest tests/foundation/test_regional_tensors_moved.py
 #
-# The second is new and is the measurement half: mechanism (a glob matches a
-# name) and measurement (the tensor is no longer bit-identical to its
+# The first covers the CARD layer and the second the STAGE layer, and they are
+# genuinely different: the effective permission is the INTERSECTION of the two,
+# so a dead stage glob empties the permission for whatever it covered and no
+# card-level check can see it. The third is the measurement half -- mechanism (a
+# glob matches a name) and outcome (the tensor is no longer bit-identical to its
 # initialisation) are independent, and run 2 passed neither.
 #
 # ---------------------------------------------------------------------------
@@ -222,10 +234,10 @@ train:
           scope: regional + interface, measured only
           admits: [1]
           tier_permissions:
-            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+            1: ["family_local.*", "family_residual.*",
                 "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
-                "context.*", "readout.*", "family_readout.*", "observation.*",
-                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*", "log_dt_scale"]
+                "context.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
           objective: [likelihood, forecast, port]
           rationale: >-
             Seven measured sources found the representation before any
@@ -253,10 +265,10 @@ train:
           scope: instrument nuisance
           admits: [1, 2]
           tier_permissions:
-            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+            1: ["family_local.*", "family_residual.*",
                 "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
-                "context.*", "readout.*", "family_readout.*", "observation.*",
-                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*", "log_dt_scale"]
+                "context.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
             2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
                 "eeg_montages.*.log_gain", "eeg_montages.*.offset",
                 "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
@@ -283,10 +295,10 @@ train:
           scope: anatomical prior
           admits: [1, 2, 3]
           tier_permissions:
-            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+            1: ["family_local.*", "family_residual.*",
                 "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
-                "context.*", "readout.*", "family_readout.*", "observation.*",
-                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*", "log_dt_scale"]
+                "context.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
             2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
                 "eeg_montages.*.log_gain", "eeg_montages.*.offset",
                 "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
@@ -311,18 +323,17 @@ train:
           scope: simulator-conditioned inference
           admits: [1, 2, 3, 4]
           tier_permissions:
-            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+            1: ["family_local.*", "family_residual.*",
                 "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
-                "context.*", "readout.*", "family_readout.*", "observation.*",
-                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*", "log_dt_scale"]
+                "context.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
             2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
                 "eeg_montages.*.log_gain", "eeg_montages.*.offset",
                 "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
             3: ["coupling.gain_*", "coupling.global_scale"]
-            4: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+            4: ["family_local.*", "family_residual.*",
                 "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
-                "context.*", "readout.*", "family_readout.*", "posterior.*",
-                "log_dt_scale"]
+                "context.*", "family_readout.*", "posterior.*"]
           objective: [likelihood, forecast, slice, posterior]
           rationale: >-
             The amortised posterior is founded here and only here. No measured
@@ -349,11 +360,11 @@ train:
           scope: return to measured
           admits: [1, 2]
           tier_permissions:
-            1: ["local.*", "family_local.*", "residual.*", "family_residual.*",
+            1: ["family_local.*", "family_residual.*",
                 "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
-                "context.*", "readout.*", "family_readout.*", "observation.*",
+                "context.*", "family_readout.*", "observation.*",
                 "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*",
-                "tms_drive.*", "log_dt_scale"]
+                "tms_drive.*"]
             2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
                 "eeg_montages.*.log_gain", "eeg_montages.*.offset",
                 "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
