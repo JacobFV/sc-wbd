@@ -44,6 +44,7 @@
     <li><a href="#the-pattern-five-times-in-a-day" data-rail="the-pattern-five-times-in-a-day"><span class="rail-label">The pattern, five times in a…</span></a></li>
     <li><a href="#follow-up-fixing-it-installed-the-opposite-error" data-rail="follow-up-fixing-it-installed-the-opposite-error"><span class="rail-label">Follow-up</span></a></li>
     <li><a href="#the-check-that-would-have-accused-the-right-data" data-rail="the-check-that-would-have-accused-the-right-data"><span class="rail-label">The check that would have acc…</span></a></li>
+    <li><a href="#follow-up-run-3-answered-the-question-for-the-ot" data-rail="follow-up-run-3-answered-the-question-for-the-ot"><span class="rail-label">Follow-up</span></a></li>
   </ol>
 </nav>
 
@@ -277,6 +278,44 @@ direction it now <em>over</em>-claims, not only the direction it previously
 under-claimed. Correcting a pointer changes the error's sign, not its
 existence.</p>
 </blockquote>
+</section>
+<section class="chapter" id="follow-up-run-3-answered-the-question-for-the-ot">
+<h2>Follow-up: run 3 answered the question for the other two</h2>
+
+
+<p>The table above records <em>stated</em> blockers, and the page's argument is
+that each was an operator gap rather than a policy. SC-WBD-003 finished the
+count.</p>
+
+<p><code>sleepedf</code> needed <strong>about forty lines</strong>. Its blocker
+was "two bipolar derivations cannot constrain a 64-channel observation head",
+which is true of forcing Sleep-EDF through the eegmmidb head and is not a
+property of the data. A bipolar channel measures
+<code>V(anode) &minus; V(cathode)</code>, and the forward operator is linear in
+the source amplitudes, so the correct gain row is exactly
+<code>L[anode] &minus; L[cathode]</code> &mdash; derived from the same monopolar
+solution every other montage is built from. The operator's rank is 2, which the
+lead field states on itself so nobody reads 414 parcels out of two channels. It
+is now enabled at tier 1 with 77,827 windows over 78 participants.<span class="note"><input type="checkbox" id="engineering-second-modality-n1" class="note-toggle"><label for="engineering-second-modality-n1" class="note-ref">1</label><span class="note-body"><span class="note-n">1</span>The
+alternative was zero-padding two real channels into a 64-channel montage. That
+asserts 62 measured-and-silent electrodes, which is fabricated data, and the
+model would learn that most of the scalp is quiet.</span></span></p>
+
+<p><code>ds000113</code> needed <strong>none</strong>, and its stated blocker
+was wrong. It is not a 116&nbsp;mm slab &mdash; that is the orientation-decoding
+sub-study. The localizer runs actually on disk are whole-brain: all 20
+parcellated into Schaefer400x7, measured coverage 0.988&ndash;1.000 per run. The
+real blocker turned out to be one nobody had stated, because it is not an
+operator at all: <strong>the snapshot carries no licence.</strong> No LICENSE
+file, a <code>"License"</code> key whose value is the empty string, and no
+occurrence of "licen", "PDDL", "CC0" or "Creative Commons" in the README. The
+OpenNeuro <em>draft</em> record says CC0; the draft is mutable and is not the
+snapshot on disk, and a pointer to where a licence might be found is not a
+licence.</p>
+
+<p>So the corpus is parcellated, cached and unusable, and the card says so in
+those terms. That is the third instance on this page of the same shape: the
+blocker everyone can name is rarely the one holding the door.</p>
 </section>
 </div>
 
