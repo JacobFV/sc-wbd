@@ -175,6 +175,15 @@ class DataConfig:
     sim_index_slow: str = "/data/scwbd/sim_corpus/index_slow.json"
     real_eeg_root: str = "/data/scwbd/eegmmidb/1.0.0"
     real_sleep_root: str = "/data/scwbd/sleep-edfx/1.0.0"
+    #: Roots for the sources added in run 3. A root that does not exist yields
+    #: an empty dataset and a printed reason, never a silent zero-weight term.
+    ds000117_root: str = "data/ds000117/1.1.0"
+    ds004024_root: str = "data/ds004024/1.0.0"
+    ds000113_root: str = "data/ds000113"
+    #: Extra parcel-space BOLD corpora beyond ds002336, as ``source_id -> root``.
+    bold_roots: dict[str, str] = field(default_factory=dict)
+    #: Build the measured-perturbation (TMS-EEG) epochs.
+    enable_perturbation: bool = True
     window: int = 64  # model steps
     context: int = 24  # assimilation window, model steps
     fs_hz: float = 125.0

@@ -278,6 +278,25 @@ class FoundationTrainer:
         #: report so the artifact records which sources each stage admitted
         #: rather than leaving it to be inferred from the trainer's source.
         self._admissions: dict[str, Any] = {}
+        #: Source ids that actually produced a loss term at least once. Derived
+        #: from what ran, not from what a card claimed -- run 2 shipped with
+        #: cards asserting a source trained modules it could not reach.
+        self._contributed: set[str] = set()
+        #: Per stage, the sources it admitted that produced no term at all.
+        self._absent_admitted: dict[str, list[str]] = {}
+        #: Admitted ids that are never expected to appear as their own loss key:
+        #: the anatomical prior enters through `anat_losses`, the simulated
+        #: sources through `sim_losses`, and the calibration/control cards
+        #: constrain other terms rather than adding one.
+        self._never_a_term: set[str] = {
+            "anatomical_prior",
+            "montage_calibration",
+            "negative_control_shuffled",
+            "sim_wholebrain",
+            "tribe_v2_teacher",
+        }
+        #: Built with the perturbation corpus; `None` when none is on disk.
+        self.tms_drive = None
         self.flop_per_step = 0.0
 
     # ------------------------------------------------------------------
@@ -602,7 +621,170 @@ class FoundationTrainer:
             print(f"[warn] parcel BOLD unavailable ({type(exc).__name__}: {exc}); "
                   "no BOLD likelihood will be computed.", flush=True)
 
+        self._build_run3_sources(win, d)
         self._data_ready = True
+
+    # ------------------------------------------------------------------
+    # run 3 sources
+    # ------------------------------------------------------------------
+    def _build_run3_sources(self, win: int, d) -> None:
+        """The sources added for run 3, each keyed by the id its card uses.
+
+        Every one of these is optional at build time and reports why it is
+        absent. What must NOT happen is a source that a stage admits, whose
+        loader is missing, contributing a zero term that reads in the mixture
+        report as "trained and had no effect" -- so `run_stage` checks the
+        loader dict and `contributed_sources` records what actually ran.
+        """
+        from .realdata import (
+            DS000117BehaviourDataset,
+            DS000117EEGDataset,
+            DS004024RestDataset,
+            RealEEGConfig,
+            SleepEDFDataset,
+            participant_split,
+        )
+
+        self.eeg_loaders: dict[str, Any] = {}
+        self.eeg_datasets: dict[str, Any] = {}
+        self.behaviour_loader = None
+        self.behaviour_dataset = None
+        self.perturb_loader = None
+        self.perturb_dataset = None
+        self.bold_loaders: dict[str, Any] = {}
+        self.bold_datasets: dict[str, Any] = {}
+
+        # The founding montage is already built above; register it under its
+        # card id so one loop can serve every EEG source.
+        if getattr(self, "real_loader", None) is not None:
+            self.eeg_loaders["eegmmidb_real"] = self.real_loader
+            self.eeg_datasets["eegmmidb_real"] = self.real_dataset
+
+        rc = RealEEGConfig(
+            eegmmidb_root=Path(d.real_eeg_root),
+            sleep_edfx_root=Path(d.real_sleep_root) / "sleep-cassette"
+            if not str(d.real_sleep_root).endswith("sleep-cassette")
+            else Path(d.real_sleep_root),
+            ds000117_root=Path(d.ds000117_root),
+            ds004024_root=Path(d.ds004024_root),
+            window_s=win / d.fs_hz,
+            fs_target=d.fs_hz,
+            max_subjects=None if not self.quick else 2,
+            max_runs_per_subject=None if not self.quick else 1,
+            seed=d.seed,
+        )
+
+        def _add(source_id: str, cls, batch_div: int = 4) -> None:
+            try:
+                ds = cls(rc)
+            except Exception as exc:  # noqa: BLE001 - a source is optional, its absence is not
+                print(f"[warn] {source_id} unavailable ({type(exc).__name__}: {exc})", flush=True)
+                return
+            if len(ds) == 0:
+                print(f"[warn] {source_id}: 0 windows on disk; it will contribute "
+                      "no term rather than a zero one", flush=True)
+                return
+            split = participant_split(ds, test_fraction=d.real_test_fraction, val_fraction=0.1, seed=d.seed)
+            self._audit_real_split(split, ds)
+            self.eeg_datasets[source_id] = ds
+            self.eeg_loaders[source_id] = _cycle(
+                torch.utils.data.DataLoader(
+                    torch.utils.data.Subset(ds, split["train"]),
+                    batch_size=max(4, d.batch // batch_div),
+                    shuffle=True,
+                    num_workers=min(2, d.num_workers),
+                    drop_last=True,
+                )
+            )
+            print(f"{source_id}: {len(ds)} windows over {len(ds.subjects)} participants, "
+                  f"{len(ds.channel_names)} channels", flush=True)
+
+        _add("sleepedf_real", SleepEDFDataset)
+        _add("ds000117_real", DS000117EEGDataset)
+        _add("ds004024_rest_real", DS004024RestDataset)
+
+        # -- the boundary output ------------------------------------------
+        try:
+            bds = DS000117BehaviourDataset(rc)
+            if len(bds) > 0:
+                split = participant_split(bds, test_fraction=d.real_test_fraction, val_fraction=0.1, seed=d.seed)
+                self.behaviour_dataset = bds
+                self.behaviour_loader = _cycle(
+                    torch.utils.data.DataLoader(
+                        torch.utils.data.Subset(bds, split["train"]),
+                        batch_size=max(4, d.batch // 8),
+                        shuffle=True,
+                        num_workers=0,
+                        drop_last=True,
+                    )
+                )
+                print(f"ds000117_behaviour: {len(bds)} stimulus-locked episodes over "
+                      f"{len(bds.subjects)} participants -- the first boundary_output "
+                      "in the mixture", flush=True)
+            else:
+                print("[warn] ds000117_behaviour: no episodes; `behaviour.*` will be "
+                      "unreachable and the attachment report will say so", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[warn] ds000117_behaviour unavailable ({type(exc).__name__}: {exc})", flush=True)
+
+        # -- measured perturbation ----------------------------------------
+        if d.enable_perturbation:
+            try:
+                from .perturb import TMSDrive, TMSEpochConfig, TMSEpochDataset
+
+                pds = TMSEpochDataset(TMSEpochConfig(
+                    root=d.ds004024_root,
+                    fs_target=d.fs_hz,
+                    max_subjects=None if not self.quick else 1,
+                    max_runs_per_subject=None if not self.quick else 1,
+                ))
+                if len(pds) > 0:
+                    self.perturb_dataset = pds
+                    self.perturb_loader = _cycle(
+                        torch.utils.data.DataLoader(
+                            pds, batch_size=max(4, d.batch // 8), shuffle=True,
+                            num_workers=0, drop_last=True,
+                        )
+                    )
+                    if getattr(self, "tms_drive", None) is None:
+                        self.tms_drive = TMSDrive(self.anat).to(self.device)
+                    s = pds.summary()
+                    print(f"ds004024_perturb: {s['epochs']} TMS-evoked epochs over "
+                          f"{s['participants']} participants, {s['by_hemisphere']}, "
+                          f"{s['scored_steps_per_epoch']} scored steps each", flush=True)
+                    if pds.skipped:
+                        print(f"  skipped: {pds.skipped}", flush=True)
+                else:
+                    print("[warn] ds004024_perturb: no epochs; the measured-perturbation "
+                          "term will be absent", flush=True)
+            except Exception as exc:  # noqa: BLE001
+                print(f"[warn] ds004024_perturb unavailable ({type(exc).__name__}: {exc})", flush=True)
+
+        # -- extra BOLD corpora --------------------------------------------
+        if getattr(self, "bold_loader", None) is not None:
+            self.bold_loaders["ds002336_real"] = self.bold_loader
+            self.bold_datasets["ds002336_real"] = getattr(self, "bold_dataset", None)
+        for sid, root in (d.bold_roots or {}).items():
+            try:
+                from .bolddata import ParcelBOLDConfig, ParcelBOLDDataset
+
+                bd = ParcelBOLDDataset(ParcelBOLDConfig(root=root, source=sid), build=False)
+                if len(bd) == 0:
+                    print(f"[warn] {sid}: no cached parcellated windows under {root}", flush=True)
+                    continue
+                self.bold_datasets[sid] = bd
+                self.bold_loaders[sid] = _cycle(
+                    torch.utils.data.DataLoader(
+                        bd, batch_size=max(4, d.batch // 8), shuffle=True,
+                        num_workers=min(2, d.num_workers), drop_last=True,
+                    )
+                )
+                s = bd.summary()
+                print(f"{sid}: {s['windows']} BOLD windows over {s['participants']} "
+                      f"participants, {s['runs_cached']}/{s['runs_discovered']} runs cached",
+                      flush=True)
+            except Exception as exc:  # noqa: BLE001
+                print(f"[warn] {sid} unavailable ({type(exc).__name__}: {exc})", flush=True)
 
     # ------------------------------------------------------------------
     # smoke
@@ -868,15 +1050,56 @@ class FoundationTrainer:
             + self.model.bold.prior_penalty()
         }
 
-    def real_losses(self, batch: Mapping[str, Any], stage: StageConfig) -> tuple[dict[str, Tensor], dict[str, Any]]:
-        """Measured EEG: likelihood in **sensor space**, always."""
+    def eeg_projector(self, source_id: str) -> "SensorToParcel":
+        """The minimum-norm projector for one source's montage.
+
+        One per montage, because the pseudo-inverse is a function of that
+        montage's lead field. Sharing the 64-channel projector with a 2-channel
+        source would be a shape error; sharing it with another 64-channel source
+        on different electrodes would not be, and would quietly project through
+        the wrong geometry. Cached: the inverse is a fixed cost per montage.
+        """
+        cache = getattr(self, "_projectors", None)
+        if cache is None:
+            cache = {}
+            self._projectors = cache
+        if source_id not in cache:
+            head = self.model.eeg_head_for(source_id)
+            cache[source_id] = (
+                self.sensor_to_parcel
+                if head is self.model.eeg
+                else SensorToParcel(head.L).to(self.device)
+            )
+        return cache[source_id]
+
+    def real_losses(
+        self,
+        batch: Mapping[str, Any],
+        stage: StageConfig,
+        *,
+        source_id: str = "eegmmidb_real",
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
+        """Measured EEG: likelihood in **sensor space**, always.
+
+        ``source_id`` selects the observation head and the projector. A source
+        recorded on other electrodes is observed through its own operator; see
+        ``SCWBD.eeg_head_for``.
+        """
         eeg = batch["eeg"].to(self.device, non_blocking=True)  # (B,T,C)
         B, T, C = eeg.shape
+        head = self.model.eeg_head_for(source_id)
+        if C != head.L.shape[0]:
+            raise ValueError(
+                f"{source_id}: batch carries {C} channels and its observation head "
+                f"has {head.L.shape[0]}. The channel axis is positional -- refusing "
+                "to broadcast, which would score one electrode's data against "
+                "another's forward row."
+            )
         c = self.cfg.data.context
         ctx_e, tgt_e = eeg[:, :c], eeg[:, c:]
         n_pred = tgt_e.shape[1]
         with torch.no_grad():
-            src_ctx = self.sensor_to_parcel(ctx_e)
+            src_ctx = self.eeg_projector(source_id)(ctx_e)
             sd = src_ctx.std(dim=(1, 2), keepdim=True).clamp_min(1e-6)
             src_ctx = src_ctx / sd
         th = self.posterior.sample(ctx_e, 1)[:, 0][:, : len(THETA_NAMES)].detach()
@@ -895,15 +1118,174 @@ class FoundationTrainer:
         self.model.set_mechanistic_theta(th, self.anat)
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
             roll = self.model.rollout(y_context=src_ctx, theta=th, n_steps=n_pred, enforce_r05=False)
-            mu, lv = self.model.eeg(roll.state)
+            mu, lv = head(roll.state)
         mu, lv = mu.float(), lv.float()
         scale = tgt_e.std(dim=(1, 2), keepdim=True).clamp_min(1e-8)
         nll = gaussian_nll(tgt_e / scale, mu / scale.clamp_min(1e-8), lv - 2 * torch.log(scale))
-        losses = {REAL_LOSS_KEY: nll}
+        key = REAL_LOSS_KEY if source_id == "eegmmidb_real" else source_id
+        losses = {key: nll}
 
-        if self.individualizer is not None:
-            losses[REAL_LOSS_KEY] = losses[REAL_LOSS_KEY] + 1e-3 * self.individualizer.prior_penalty()
-        return losses, {"real_eeg_nll": float(nll.detach())}
+        if self.individualizer is not None and source_id == "eegmmidb_real":
+            losses[key] = losses[key] + 1e-3 * self.individualizer.prior_penalty()
+        return losses, {f"{source_id}_eeg_nll": float(nll.detach())}
+
+    def behaviour_losses(
+        self,
+        batch: Mapping[str, Any],
+        stage: StageConfig,
+        *,
+        source_id: str = "ds000117_behaviour",
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
+        """A boundary output: the button press the participant produced.
+
+        The distinction this exercises is the one ``schema/attachment.py``
+        exists for. An EEG channel is an ``observation`` -- the carrier seen
+        through a lead field. A button press is a ``boundary_output``: produced
+        *by* the subject and measured outside the skull, evidence about the
+        carrier that reaches the world through the body rather than through a
+        forward model of neural activity. It therefore attaches at
+        ``BehaviourHead``, which reads pooled state directly and declares no
+        operator, and **not** at an observation head.
+
+        Two terms, kept separate because they are different quantities: a
+        cross-entropy over which button, and a Gaussian NLL over log response
+        time with the head's own predicted variance. Collapsing them into one
+        scalar would let a confident-and-wrong RT be paid for by an easy choice.
+
+        Scored at the LAST rolled step. The head pools over regions and time is
+        not part of its input, so scoring every step would count one decision
+        once per timestep and weight this source by its window length.
+        """
+        eeg = batch["eeg"].to(self.device, non_blocking=True)  # (B,T,C)
+        choice = batch["choice"].to(self.device).long()
+        log_rt = batch["log_rt"].to(self.device).float()
+        B, T, C = eeg.shape
+        head_id = "ds000117_real"  # same cap, same operator as the EEG source
+        obs = self.model.eeg_head_for(head_id)
+        if C != obs.L.shape[0]:
+            raise ValueError(
+                f"{source_id}: batch carries {C} channels, the {head_id} head has "
+                f"{obs.L.shape[0]}"
+            )
+        c = self.cfg.data.context
+        ctx_e = eeg[:, :c] if T > c else eeg
+        n_pred = max(1, T - ctx_e.shape[1])
+        with torch.no_grad():
+            src_ctx = self.eeg_projector(head_id)(ctx_e)
+            src_ctx = src_ctx / src_ctx.std(dim=(1, 2), keepdim=True).clamp_min(1e-6)
+        th = self.posterior.sample(ctx_e, 1)[:, 0][:, : len(THETA_NAMES)].detach()
+        self.model.set_mechanistic_theta(th, self.anat)
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
+            roll = self.model.rollout(y_context=src_ctx, theta=th, n_steps=n_pred, enforce_r05=False)
+            out = self.model.behaviour(roll.state[:, -1:])
+        logits = out["choice_logits"].float()[:, 0]  # (B, n_out)
+        n_out = logits.shape[-1]
+        if int(choice.max()) >= n_out:
+            raise ValueError(
+                f"{source_id}: a choice index {int(choice.max())} does not fit the "
+                f"behaviour head's {n_out} outputs. Set cfg.model.n_behaviour to the "
+                "number of distinct responses the source actually records."
+            )
+        ce = torch.nn.functional.cross_entropy(logits, choice)
+        mean = out["log_rt_mean"].float()[:, 0]
+        lv = out["log_rt_logvar"].float()[:, 0]
+        rt_nll = gaussian_nll(log_rt, mean, lv)
+        total = ce + rt_nll
+        acc = float((logits.argmax(-1) == choice).float().mean().detach())
+        return (
+            {source_id: total},
+            {
+                "behaviour_choice_ce": float(ce.detach()),
+                "behaviour_rt_nll": float(rt_nll.detach()),
+                "behaviour_choice_acc": acc,
+                # The majority-class rate is logged beside the accuracy on
+                # purpose: this source's two buttons are far from balanced
+                # (105/22 measured on sub-01), so an accuracy read without it
+                # would look like learning when it is the prior.
+                "behaviour_majority_rate": float(
+                    torch.bincount(choice, minlength=n_out).max().float().div(len(choice)).detach()
+                ),
+            },
+        )
+
+    def perturb_losses(
+        self,
+        batch: Mapping[str, Any],
+        stage: StageConfig,
+        *,
+        source_id: str = "ds004024_perturb",
+    ) -> tuple[dict[str, Tensor], dict[str, Any]]:
+        """Measured perturbation: predict the response to a TMS pulse.
+
+        The pre-pulse interval assimilates, the pulse enters as an exogenous
+        latent drive (``SCWBD.rollout(u=...)``), and the likelihood is scored on
+        post-pulse samples **outside the artefact window**. The rollout still
+        integrates through the excluded interval -- the state evolves -- while
+        those samples contribute no gradient, because deleting them would splice
+        two segments together and ask the operator to cross a discontinuity it
+        did not produce.
+
+        What this does and does not license is stated on ``TMSDrive``: the drive
+        is learned, anchored to the MEP-derived hemisphere's motor parcels, not
+        computed from an E-field, because ds004024 distributes no coil pose.
+        """
+        drive = getattr(self, "tms_drive", None)
+        if drive is None:
+            raise RuntimeError(
+                f"{source_id} was admitted but no TMSDrive was built; refusing to "
+                "score a perturbation with no pulse in it"
+            )
+        eeg = batch["eeg"].to(self.device, non_blocking=True)  # (B,T,C)
+        mask = batch["loss_mask"].to(self.device)  # (B,T) bool
+        onset = int(batch["onset_step"][0])
+        hemis = list(batch["hemisphere"])
+        B, T, C = eeg.shape
+        head = self.model.eeg_head_for("ds004024_rest_real")
+        if C != head.L.shape[0]:
+            raise ValueError(
+                f"{source_id}: batch carries {C} channels, its head has {head.L.shape[0]}"
+            )
+        ctx_e = eeg[:, :onset]
+        tgt = eeg[:, onset:]
+        n_pred = tgt.shape[1]
+        if n_pred < 1:
+            raise ValueError(f"{source_id}: no post-pulse samples to score")
+        with torch.no_grad():
+            src_ctx = self.eeg_projector("ds004024_rest_real")(ctx_e)
+            src_ctx = src_ctx / src_ctx.std(dim=(1, 2), keepdim=True).clamp_min(1e-6)
+        th = self.posterior.sample(ctx_e, 1)[:, 0][:, : len(THETA_NAMES)].detach()
+        self.model.set_mechanistic_theta(th, self.anat)
+        # The pulse lands on the first rolled step: the rollout begins at the
+        # onset sample, so `onset_step=0` on the rollout's own axis.
+        u = drive(
+            self.model, hemis, n_steps=n_pred, onset_step=0, dt_s=self.cfg.model.dt_model
+        ).to(device=self.device, dtype=torch.float32)
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
+            roll = self.model.rollout(
+                y_context=src_ctx, theta=th, n_steps=n_pred, u=u, enforce_r05=False
+            )
+            mu, lv = head(roll.state)
+        mu, lv = mu.float(), lv.float()
+        m = mask[:, onset:].unsqueeze(-1).expand_as(tgt).float()
+        if float(m.sum()) == 0.0:
+            raise ValueError(
+                f"{source_id}: every post-pulse sample is masked out; the artefact "
+                "window covers the whole scored interval"
+            )
+        scale = tgt.std(dim=(1, 2), keepdim=True).clamp_min(1e-8)
+        nll = gaussian_nll(
+            tgt / scale, mu / scale.clamp_min(1e-8), lv - 2 * torch.log(scale), mask=m
+        )
+        gains = {h: float(drive.log_gain[h].detach().exp()) for h in ("left", "right")}
+        return (
+            {source_id: nll},
+            {
+                "perturb_nll": float(nll.detach()),
+                "perturb_scored_frac": float(m.mean().detach()),
+                "perturb_gain_left": gains["left"],
+                "perturb_gain_right": gains["right"],
+            },
+        )
 
     def _whole_brain_hemo(self, state: "Tensor") -> "Tensor":
         """``(..., N, D)`` structured state -> ``(..., N, 4)`` Balloon state.
@@ -1156,6 +1538,13 @@ class FoundationTrainer:
         specs = self.stage_sources(stage, admission)
         params = list(self.model.parameters()) + list(self.posterior.parameters())
         modules: dict[str, nn.Module] = {"model": self.model, "posterior": self.posterior}
+        # The pulse's own parameters. Registered under `tms_drive` so a card has
+        # a name to grant and `test_card_patterns_reach_the_model` can see them:
+        # a drive that cannot receive a gradient is a stimulus the model is not
+        # allowed to learn the effect of, and the loss would still fall.
+        if self.tms_drive is not None:
+            params = params + list(self.tms_drive.parameters())
+            modules["tms_drive"] = self.tms_drive
         if admission.individualize:
             if self.individualizer is None:
                 n_p = max(len(self._participant_ids()), 1)
@@ -1245,6 +1634,66 @@ class FoundationTrainer:
                         diag.update(bd)
                     except StopIteration:  # pragma: no cover
                         pass
+            # -- the sources added for run 3 -----------------------------
+            # Each is gated on BOTH the stage admitting it and its loader
+            # existing. A source admitted with no loader contributes nothing and
+            # is recorded in `self._absent_admitted`, because the failure this
+            # whole run exists to avoid is a source that reads as trained in the
+            # report and never produced a gradient.
+            if admission.admits_measured(self.sources):
+                for sid, loader in getattr(self, "eeg_loaders", {}).items():
+                    if sid == "eegmmidb_real" or sid not in admission.source_ids:
+                        continue
+                    try:
+                        rl, rd = self.real_losses(next(loader), stage, source_id=sid)
+                        losses.update(rl)
+                        diag.update(rd)
+                        self._contributed.add(sid)
+                    except StopIteration:  # pragma: no cover
+                        pass
+                for sid, loader in getattr(self, "bold_loaders", {}).items():
+                    if sid == "ds002336_real" or sid not in admission.source_ids:
+                        continue
+                    try:
+                        bl, bd = self.real_bold_losses(next(loader), stage, source_id=sid)
+                        losses.update(bl)
+                        diag.update(bd)
+                        self._contributed.add(sid)
+                    except StopIteration:  # pragma: no cover
+                        pass
+                bl_ = getattr(self, "behaviour_loader", None)
+                if bl_ is not None and "ds000117_behaviour" in admission.source_ids:
+                    try:
+                        hl, hd = self.behaviour_losses(next(bl_), stage)
+                        losses.update(hl)
+                        diag.update(hd)
+                        self._contributed.add("ds000117_behaviour")
+                    except StopIteration:  # pragma: no cover
+                        pass
+                pl_ = getattr(self, "perturb_loader", None)
+                if pl_ is not None and "ds004024_perturb" in admission.source_ids:
+                    try:
+                        ql, qd = self.perturb_losses(next(pl_), stage)
+                        losses.update(ql)
+                        diag.update(qd)
+                        self._contributed.add("ds004024_perturb")
+                    except StopIteration:  # pragma: no cover
+                        pass
+            if step == 1:
+                # An admitted source with no loss term is the run-2 failure in a
+                # different costume: the card says the source trains the model
+                # and nothing does. Named at step 1, once, and kept.
+                produced = set(losses) | self._contributed
+                if REAL_LOSS_KEY in losses:
+                    produced.add("eegmmidb_real")
+                missing = sorted(set(admission.source_ids) - produced - self._never_a_term)
+                if missing:
+                    print(
+                        f"[curriculum] {stage.name}: admitted but produced no term: "
+                        f"{missing}. Recorded, not silently dropped.",
+                        flush=True,
+                    )
+                    self._absent_admitted[stage.name] = missing
             if not losses:
                 raise RuntimeError(f"stage {stage.name} produced no admissible loss; check the source cards")
             mdiag = mixture.step(losses, measure_conflict=(step % 10 == 0))
