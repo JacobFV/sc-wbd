@@ -316,6 +316,28 @@ release-003-evaluate: ## Score the 003 checkpoint on the real-EEG holdout
 	  --checkpoint $(CKPT_003)/last.pt \
 	  --out reports/training/evaluation_run3.json
 
+.PHONY: release-003-ablate
+release-003-ablate: ## Leave-one-source-out: does each of the seven measured sources earn its place?
+	@# Separate from release-003-evaluate because it RETRAINS one arm per source
+	@# family -- eight arms at 200 steps, hours, not minutes.
+	@#
+	@# This is the evaluation HANDOFF-003 asks for by name. The identifiability
+	@# laboratory measured C1 (fusion information) and C2 (native beats resampled)
+	@# as FAILED in every regime, and an evaluation that cannot see a null fusion
+	@# effect would be unable to disagree with the run's own premise. Leave-one-out
+	@# can: `source_ablation` reports a family whose REMOVAL improves the metric
+	@# with the same prominence as a gain.
+	@#
+	@# Known limit, stated rather than discovered at analysis time: the arms are
+	@# scored on the SIMULATED validation set (`_sim_val_nll`), so this measures
+	@# what each source contributes to simulator-conditioned forecasting, not to
+	@# held-out measured prediction. Those are different questions.
+	env PYTHONPATH=. $(PY) -m scwbd.foundation.evaluate \
+	  --config configs/run3/scwbd-003.yaml \
+	  --checkpoint $(CKPT_003)/last.pt \
+	  --ablate-sources \
+	  --out reports/training/evaluation_run3_ablation.json
+
 .PHONY: release-003-derived
 release-003-derived: ## Read 003's contributed sources, moved parameters and attachment kinds OFF the weights
 	@# Every claim here comes from the checkpoint, not from a card. Run 2 shipped

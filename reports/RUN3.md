@@ -218,6 +218,49 @@ unevaluated for two named reasons the benchmark reports itself. That is a
 measured negative on the thesis's first differentiator and 003 does not address
 it.
 
+## How this run is evaluated, and why that shape
+
+HANDOFF-003 sets one constraint on the evaluation: the identifiability
+laboratory's verdict is a measured negative on the thesis's first differentiator
+— C1 (fusion information) and C2 (native beats resampled) FAILED in every regime
+on the three-region linear-Gaussian benchmark — and 003's evaluation must not be
+one that *cannot see it*.
+
+An evaluation that only reports "SC-WBD-003 achieves NLL x" cannot disagree with
+the premise that fusing modalities helps. Leave-one-source-out can:
+`source_ablation` retrains one arm per source family and **reports a family
+whose removal improves the metric with the same prominence as a gain**. Seven
+measured families means seven arms plus the baseline.
+
+    make release-003-evaluate    held-out measured EEG, no --quick
+    make release-003-ablate      leave-one-source-out, hours, retrains per arm
+    make release-003-derived     what the weights say happened
+
+One limit of the ablation, stated now rather than at analysis time: its arms are
+scored on the **simulated** validation set (`_sim_val_nll`), so it measures what
+each source contributes to simulator-conditioned forecasting, not to held-out
+measured prediction. Those are different questions and only the first is
+answered here.
+
+## Things being watched during the run
+
+**The BOLD term diverges.** `real_bold_nll` goes from 21.7 at step 1 to ~9.0e4
+by step 20, reproducibly across three launches, while `bold_log_scale` stays
+flat at 5.578. The target is normalised to unit scale, so that magnitude implies
+either a Balloon-Windkessel state that has run away or a predicted log-variance
+pinned at the `gaussian_nll` clamp; the two are not distinguishable from the
+logged fields alone and will be separated by probing a checkpoint offline rather
+than by adding diagnostics mid-run.
+
+It does not threaten the other sources: `MixtureTrainer.step` normalises each
+source before accumulating, and `mixture_total` sits near 1.0 throughout. It
+does mean that if it never recovers, ds002336's BOLD term contributed a gradient
+without contributing information — which is a different claim from "every source
+contributed gradient", and the results section will say which one is true.
+
+This is the first run in which `bold.*` is trainable from step 1; run 2 froze it
+for every card that could have reached it.
+
 ## Results
 
 **PENDING** — filled from the checkpoint after the run completes. Nothing is
@@ -226,5 +269,6 @@ written here until it is measured.
 - contributed sources, derived from `extra.contributed_sources`
 - per attachment kind, whether anything of that kind reached the model
   (`reports/attachment_kinds.md`)
-- parameters moved since initialisation, by module
+- parameters moved since initialisation, by module, with `unfingerprinted` empty
+- leave-one-source-out, including any family with negative transfer
 - held-out NLL and MSE against the baseline set
