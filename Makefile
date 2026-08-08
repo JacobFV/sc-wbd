@@ -101,6 +101,21 @@ link-data: ## Re-create the assets/data symlinks a merge deletes (run after ever
 health: ## Report on the running training job; fails loud if it cannot tell
 	@$(ROOT)/scripts/health.sh
 
+# The same script, pointed at run 3. `health` still defaults to run 2 because
+# run 2's artifacts are published and its log is the one every existing report
+# cites; a default that moved with the newest run would silently change what an
+# old instruction means. TARGET is the sum of `train.stages[].steps` in
+# configs/run3/scwbd-003.yaml -- keep them in step or a finished run reads as a
+# death and a watchdog relaunches it on top of its own evaluation.
+.PHONY: health-run3
+health-run3: ## Report on the SC-WBD-003 training job
+	@CONFIG=configs/run3/scwbd-003.yaml \
+	 LOG=reports/training/scwbd-003_train.jsonl \
+	 CKPT=checkpoints/scwbd-003 \
+	 TARGET=$$($(PY) -c "from scwbd.foundation.config import load_config; \
+	   print(sum(s.steps for s in load_config('configs/run3/scwbd-003.yaml').train.stages))") \
+	 $(ROOT)/scripts/health.sh
+
 ##@ Tests
 
 .PHONY: test
