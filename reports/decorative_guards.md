@@ -1681,8 +1681,20 @@ diligence — it is a structural property that can be checked at design time.
 |---|---|---|
 | `BindingDriftError` (`compiler_bridge`) | 394 declared gradient bindings naming tensors that no longer exist after the per-family rename | a six-hour run whose gradient masks governed nothing, with the permission system reporting enforcement it was not performing |
 | weight-movement check (⚡ Faraday) | a component that did not move under training | an untrained module presented as trained |
-| `SpanViolation` (`family_ops.py:275`, 🌊 Hodgkin) | `set_mechanistic_theta` never called, so seven engineered subcortical backends would run on defaults | **a completed run, with plausible numbers, and the anatomical conditioning silently dropped** |
+| `SpanViolation` (`family_ops.py:275`, 🌊 Hodgkin) | `set_mechanistic_theta` never called, so six engineered subcortical backends would run on defaults | **a completed run, with plausible numbers, and the anatomical conditioning silently dropped** |
 | condition-2 stop trigger | — (see the headline finding; it was honoured correctly and was still uninterpretable) | — |
+
+> **Correction, 🔬 Curie 2026-08-06: six, not seven.** The `SpanViolation` row
+> read "seven engineered subcortical backends", inherited from the handover's
+> list `accumb, amyg, caud, hippo, pal, put, thal`. Measured from the built
+> treatment arm, `family_local.mech` has **six** keys — `subcortex_accumb,
+> _caud, _hippo, _pal, _put, _thal`. The amygdala is **not** among them:
+> `families.py:398` states it has no engineered amygdalar backend and inherits
+> the generic core. Worth recording in this register specifically, because the
+> seven came from reading a list of subcortical families and assuming the
+> backend set matched it — the same move as the decorative diagnosis two
+> entries below, and it survived a handover and a filed report before anyone
+> built the model and counted.
 
 **The property they share: each asserts a claim about the world that the world
 can falsify.**
