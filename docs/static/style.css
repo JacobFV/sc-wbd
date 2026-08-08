@@ -1052,10 +1052,12 @@ body.release .pagehead { border-bottom: 0; padding-bottom: 0.5rem; margin-bottom
   aspect-ratio: 2.6 / 1;
   max-height: none;
 }
-/* Under the ring's cutoff the canvas is the brain and the mark alone, and a
- * 2.6:1 letterbox of it is mostly ground. */
+/* Too narrow for two columns either side, so the frame turns portrait and
+ * arch.js puts the same six clusters above and below the brain. The ratio is
+ * what twenty-three rows of type plus a brain between them need; in a 2.6:1
+ * letterbox they would be 6px tall. */
 @media (max-width: 46rem) {
-  .herosplit.herowide .archhero { aspect-ratio: 5 / 4; }
+  .herosplit.herowide .archhero { aspect-ratio: 13 / 25; }
 }
 
 /* The three ways in, as glyph-and-label links rather than a button bar, one

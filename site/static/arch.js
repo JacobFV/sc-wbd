@@ -403,21 +403,23 @@
       return g;
     }
 
+    /** The mark's type size: a share of the width, floored so it stays a name
+     * rather than a caption, and capped so it stays inside the brain. */
+    function mark(W, share, cap) {
+      return Math.max(15, Math.min(cap, (W / dpr) * share)) * dpr;
+    }
+
     /* One cluster: where its labels are, the control point its lines bundle
      * through, and the single point on the brain they all arrive at. The
      * curves converge rather than meeting at a kink and continuing as one
      * line -- a corner there reads as a mistake, and the cluster is the claim
      * that these things are one kind of use, not that they share a wire. */
-    function cluster(names, xs, ys, align, cx, cy, ang, sc, ox, oy) {
+    function cluster(names, xs, ys, align, cx, cy, tx, ty) {
       var labels = [];
       for (var i = 0; i < names.length; i++) {
         labels.push({ x: xs[i], y: ys[i], t: names[i] });
       }
-      return {
-        labels: labels, align: align, cx: cx, cy: cy,
-        tx: ox + Math.cos(ang) * RMAX * sc * 1.05,
-        ty: oy + Math.sin(ang) * ZMAX * sc * 1.05
-      };
+      return { labels: labels, align: align, cx: cx, cy: cy, tx: tx, ty: ty };
     }
 
     function beside(W, H, ox, oy, fs, widest) {
@@ -438,11 +440,14 @@
           for (var li = 0; li < groups[gi].length; li++) {
             xs.push(ox + side * colx); ys.push(oy + rows.ys[at]); at++;
           }
+          var ang = Math.atan2(cy - oy, cx - ox);
           out.push(cluster(groups[gi], xs, ys, side > 0 ? "left" : "right",
-                           cx, cy, Math.atan2(cy - oy, cx - ox), sc, ox, oy));
+                           cx, cy,
+                           ox + Math.cos(ang) * RMAX * sc * 1.05,
+                           oy + Math.sin(ang) * ZMAX * sc * 1.05));
         }
       });
-      return { fs: fs, sc: sc, clusters: out };
+      return { fs: fs, sc: sc, ms: mark(W, 0.037, 34), clusters: out };
     }
 
     function stacked(W, H, ox, oy, fs, widest) {
@@ -450,7 +455,7 @@
       var spanA = columnSpan(LEFT) * pitch;
       var spanB = columnSpan(RIGHT) * pitch;
       var pad = pitch * 1.6;
-      var half = (H - spanA - spanB - 2 * pad) / 2;
+      var half = H / 2 - pad - Math.max(spanA, spanB) - fs * 0.9;
       var blockW = widest + px(10);
       if (W / dpr < 300 || half < fs * 2.6 || blockW > W * 0.86) return null;
       var sc = Math.min(half / ZMAX, W * 0.46 / RMAX);
@@ -472,13 +477,18 @@
             // it, not through the middle of the block.
             if (edge === null || (dir < 0 ? y > edge : y < edge)) edge = y;
           }
+          // Where this cluster lands on the brain, as an angle off vertical:
+          // the far cluster comes in wide, the near one nearly straight down,
+          // so three bundles from one side arrive at three places instead of
+          // piling into one.
+          var off = 0.95 - 0.45 * (groups.length > 1 ? gi / (groups.length - 1) : 0);
           out.push(cluster(groups[gi], xs, ys, side > 0 ? "right" : "left",
                            ax + side * px(15), edge - dir * pitch * 1.4,
-                           (dir < 0 ? -1 : 1) * (Math.PI / 2 - side * 0.72),
-                           sc, ox, oy));
+                           ox + side * Math.sin(off) * RMAX * sc * 1.05,
+                           oy + dir * Math.cos(off) * ZMAX * sc * 1.05));
         }
       });
-      return { fs: fs, sc: sc, clusters: out };
+      return { fs: fs, sc: sc, ms: mark(W, 0.055, 30), clusters: out };
     }
 
     /* The name over the middle, and the use cases around it.
@@ -510,7 +520,7 @@
         }
       }
 
-      var ms = Math.max(15, Math.min(34, (W / dpr) * 0.037)) * dpr;
+      var ms = uses ? uses.ms : mark(W, 0.037, 34);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.font = "700 " + ms + "px ui-sans-serif, system-ui, sans-serif";
