@@ -1068,12 +1068,12 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
 
         _peek = _torch.load(ckpt, map_location="cpu", weights_only=False)
         if _peek.get("individualizer") is not None and tr.individualizer is None:
-            from .individual import Individualizer
-
-            _np = max(len(tr._participant_ids()), 1)
-            tr.individualizer = Individualizer(
-                len(THETA_NAMES), n_groups=2, n_participants=_np, n_sessions=max(_np * 4, 1)
-            ).to(tr.device)
+            # ONE constructor, the trainer's. This site used to size the module
+            # itself -- `n_sessions = n_participants * 4` -- so a checkpoint
+            # written with one session row per recorded session would not load
+            # into it, and `strict=False` turned the shape mismatch into a
+            # silently un-restored person effect.
+            tr.ensure_individualizer()
         del _peek
         payload = load_checkpoint(
             ckpt,

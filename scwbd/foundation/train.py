@@ -342,19 +342,38 @@ class FoundationTrainer:
         import hashlib
 
         out: dict[str, str] = {}
-        for prefix, mod in (
-            ("model", self.model),
-            ("posterior", self.posterior),
-            ("tms_drive", getattr(self, "tms_drive", None)),
-        ):
-            if mod is None:
-                continue
+        for prefix, mod in self._fingerprinted_modules():
             for name, p in mod.named_parameters():
                 key = name if prefix == "model" else f"{prefix}.{name}"
                 out[key] = hashlib.sha256(
                     p.detach().to(torch.float32).cpu().numpy().tobytes()
                 ).hexdigest()
         return out
+
+    def _fingerprinted_modules(self) -> list[tuple[str, nn.Module]]:
+        """Every module whose parameters `moved_since_init` must account for.
+
+        ONE list, read by both `_fingerprint_parameters` and `moved_since_init`,
+        because the two used to carry their own copies and the second could then
+        omit a module the first hashed -- which reports a parameter with a size
+        of zero rather than reporting it at all.
+
+        `individualizer` is here for the same reason `tms_drive` is: it is built
+        beside the data rather than in `__init__`, it is not part of `model`, and
+        run 3 left it out of both copies. A person effect that trains and is
+        never counted is indistinguishable in the report from one that was never
+        built, which is exactly what `evaluation_run3.json` recorded.
+        """
+        return [
+            (prefix, mod)
+            for prefix, mod in (
+                ("model", self.model),
+                ("posterior", self.posterior),
+                ("individualizer", getattr(self, "individualizer", None)),
+                ("tms_drive", getattr(self, "tms_drive", None)),
+            )
+            if mod is not None
+        ]
 
     def _fingerprint_late_module(self, prefix: str, mod) -> None:
         """Record a module's initialisation when it is built after ``__init__``.
@@ -405,13 +424,7 @@ class FoundationTrainer:
         # count (88.7% unreachable), so a tensor count set beside it is an
         # apples-to-oranges comparison, and the one it flatters is run 2.
         sizes: dict[str, int] = {}
-        for prefix, mod in (
-            ("model", self.model),
-            ("posterior", self.posterior),
-            ("tms_drive", getattr(self, "tms_drive", None)),
-        ):
-            if mod is None:
-                continue
+        for prefix, mod in self._fingerprinted_modules():
             for name, p in mod.named_parameters():
                 sizes[name if prefix == "model" else f"{prefix}.{name}"] = int(p.numel())
         frozen = sorted(set(now) - moved)
@@ -542,6 +555,37 @@ class FoundationTrainer:
                   "torch-level gradient permissions", flush=True)
         return rep
 
+    def bold_due(self, step: int) -> bool:
+        """Does the measured BOLD term run on this optimiser step?
+
+        ``model.bold_every`` is the slow modality's duty cycle in the training
+        loop. ``1`` is every step and is the only value at which the fMRI
+        likelihood sees as much data as a fast source; anything larger is a cost
+        decision that reduces the evidence behind every BOLD number, and the
+        model card has to say which.
+
+        A separate method rather than an inline modulo so the schedule is
+        testable without a 500-step rollout: the field was added with ISSUE-008's
+        fix and read by nothing for a whole cycle, which is a config key
+        describing a schedule the trainer does not run.
+        """
+        every = max(1, int(self.cfg.model.bold_every))
+        return int(step) % every == 0
+
+    def _config_individualises(self) -> bool:
+        """Does ANY enabled stage in this config fit a person effect?
+
+        Read from the same `stage_admission` object `run_stage` reads, not from
+        the stage's name: `stage_uses_real`'s docstring records what deciding
+        this from a name cost run 2.
+        """
+        for s in self.cfg.train.stages:
+            if not s.enabled:
+                continue
+            if stage_admission(s, cards_dir=self.cfg.mixture_cards, strict=False).individualize:
+                return True
+        return False
+
     def stage_uses_real(self, stage: StageConfig) -> bool:
         """Does this stage's curriculum admit the measured (tier-1) sources?
 
@@ -576,6 +620,12 @@ class FoundationTrainer:
         ``STAGE_PERMISSIONS.get(name, ("*",))``, grants **everything** to any
         other name, so an unrecognised stage silently widened every mask.
         """
+        #: (source, card pattern, stage pattern) triples whose intersection could
+        #: not be computed. Should always be empty; a non-empty list means the
+        #: effective permission fell back to the stage's pattern, which may be
+        #: broader than the card's. Guarded by
+        #: `tests/foundation/test_stage_permissions_do_not_widen_a_card.py`.
+        self.unresolved_permission_pairs: list[tuple[str, str, str]] = []
         if admission is not None:
             allow = admission.allow_globs()
             admitted: set[str] | None = set(admission.source_ids)
@@ -610,7 +660,16 @@ class FoundationTrainer:
                         elif fnmatch.fnmatch(p, a):
                             narrowed.append(p)  # card pattern is the narrower
                         else:
-                            narrowed.append(a)  # incomparable: prefer the stage
+                            # Incomparable. `glob_intersection` builds the pattern
+                            # that is inside BOTH; taking the stage's, as this used
+                            # to, granted more than the card did. "" means the two
+                            # share no name at all and nothing is granted.
+                            inter = glob_intersection(p, a)
+                            if inter is None:
+                                self.unresolved_permission_pairs.append((sid, p, a))
+                                narrowed.append(a)
+                            elif inter:
+                                narrowed.append(inter)
                 perm = tuple(dict.fromkeys(narrowed))
                 if "*" in s.gradient_permission:
                     perm = allow
@@ -965,6 +1024,16 @@ class FoundationTrainer:
                       flush=True)
             except Exception as exc:  # noqa: BLE001
                 print(f"[warn] {sid} unavailable ({type(exc).__name__}: {exc})", flush=True)
+
+        # -- the person / session effect -----------------------------------
+        # Built here, beside the corpora that size it, whenever ANY configured
+        # stage declares `individualize`. Building it in `run_stage` instead
+        # would put it after `maybe_resume`, so a resumed run would restore a
+        # module that did not yet exist and continue with re-initialised person
+        # effects while the log said "resumed" -- the defect `tms_drive` was
+        # moved out of `__init__` to avoid, in the other direction.
+        if self._config_individualises():
+            self.ensure_individualizer()
 
     # ------------------------------------------------------------------
     # smoke
@@ -1371,8 +1440,16 @@ class FoundationTrainer:
             src_ctx = src_ctx / sd
         th = self.posterior.sample(ctx_e, 1)[:, 0][:, : len(THETA_NAMES)].detach()
         if self.individualizer is not None:
-            pid = self.participant_index(batch.get("subject", []))
-            th = self.individualizer(participant=pid, base=th)
+            subs = list(batch.get("subject", []))
+            pid = self.participant_index(subs)
+            # The session effect is selected too. Passing only `participant`
+            # leaves `zeta` reachable by nothing but `prior_penalty`, which
+            # shrinks it toward zero -- so the run would report a two-level
+            # decomposition whose second level was never fitted, and
+            # `consolidate`'s whole gate (do not turn a night into a trait)
+            # would be guarding an empty channel.
+            sess = self.session_index(subs, list(batch.get("session", [])))
+            th = self.individualizer(participant=pid, session=sess, base=th)
             self.individualizer.observe_session(pid)
         # Bind theta-conditioned ParamPacks for every mechanistic family BEFORE the
         # rollout, and OUTSIDE autocast: the packs are fp32 and the backends integrate
@@ -1392,9 +1469,35 @@ class FoundationTrainer:
         key = REAL_LOSS_KEY if source_id == "eegmmidb_real" else source_id
         losses = {key: nll}
 
-        if self.individualizer is not None and source_id == "eegmmidb_real":
+        # R07's shrinkage, attached ONCE per optimiser step.
+        #
+        # This used to read `source_id == "eegmmidb_real"`, which ties the
+        # penalty to a corpus that has one session per person and therefore
+        # cannot support the individualisation claim at all. On a stage that
+        # admits sleep-edfx and not eegmmidb the penalty then disappeared
+        # entirely: `z_person` and `z_session` would be fitted with no prior,
+        # which is the unshrunk arrangement R07 refuses.
+        #
+        # The gate is now the permission -- whichever admitted EEG source is
+        # allowed to move `individualizer.*` carries it -- and a per-step marker
+        # keeps it from being added once per source, which would scale the
+        # shrinkage by the number of EEG corpora in the mixture.
+        if self.individualizer is not None and self._owns_individual_penalty(source_id):
             losses[key] = losses[key] + 1e-3 * self.individualizer.prior_penalty()
         return losses, {f"{source_id}_eeg_nll": float(nll.detach())}
+
+    def _owns_individual_penalty(self, source_id: str) -> bool:
+        """Is ``source_id`` the source that carries R07's shrinkage this step?"""
+        spec = self.sources.get(source_id)
+        if spec is None or not any(
+            g == "*" or g.startswith("individualizer") for g in spec.gradient_permission
+        ):
+            return False
+        if getattr(self, "_penalty_step", None) == self.global_step:
+            return self._penalty_owner == source_id
+        self._penalty_step = self.global_step
+        self._penalty_owner = source_id
+        return True
 
     def behaviour_losses(
         self,
@@ -1931,13 +2034,25 @@ class FoundationTrainer:
             params = params + list(self.tms_drive.parameters())
             modules["tms_drive"] = self.tms_drive
         if admission.individualize:
-            if self.individualizer is None:
-                n_p = max(len(self._participant_ids()), 1)
-                self.individualizer = Individualizer(
-                    len(THETA_NAMES), n_groups=2, n_participants=max(n_p, 1), n_sessions=max(n_p * 4, 1)
-                ).to(self.device)
+            if self.ensure_individualizer() is None:
+                raise RuntimeError(
+                    f"stage {stage.name!r} declares `individualize: true` and no measured "
+                    "EEG corpus is loaded, so there are no people to fit an effect for. "
+                    "A stage that cannot individualise must not run as though it did -- "
+                    "that is how `evaluation_run3.json` came to record "
+                    "'no individualizer on the trainer' after a completed run."
+                )
+            # The population dynamics are FROZEN here and the person effect is
+            # what moves. `eeg_montages.*` is in the set beside `eeg.*` because
+            # the only corpus with two sessions per person -- sleep-edfx -- is
+            # observed through its own 2-row bipolar operator and not through
+            # the founding montage; restricting to `eeg.*` would leave the
+            # individualisation source's own operator out of the optimiser while
+            # the stage's permission set named it.
             params = list(self.individualizer.parameters()) + [
-                p for n, p in self.model.named_parameters() if n.startswith("eeg.")
+                p
+                for n, p in self.model.named_parameters()
+                if n.startswith("eeg.") or n.startswith("eeg_montages.")
             ]
             modules["individualizer"] = self.individualizer
 
@@ -2002,7 +2117,23 @@ class FoundationTrainer:
             # admission the EEG term is, and on the loader existing -- a stage
             # may admit a BOLD source in the config before the corpus is cached,
             # and that must be a no-op rather than a crash or a silent zero.
+            #
+            # DUTY CYCLE. ISSUE-008's fix rolls the neural clock for the
+            # duration a BOLD frame actually covers, so this term costs
+            # `bold_predict_frames * TR / dt_model` rollout steps against run 3's
+            # 8 for the whole window. `model.bold_every` runs it every Nth
+            # optimiser step instead of every step. That is multirate in the
+            # training loop as well as in the model -- and it means the term sees
+            # 1/N of the data a fast source does, which is a statement about how
+            # much evidence reached the fMRI likelihood and belongs beside any
+            # number derived from it.
+            #
+            # The field was added with the fix and read by nothing, which is a
+            # config key that describes a schedule the trainer does not run.
             bold_loader = getattr(self, "bold_loader", None)
+            if bold_loader is not None and not self.bold_due(step):
+                bold_loader = None
+                diag["bold_skipped_this_step"] = True
             if bold_loader is not None and admission.admits_measured(self.sources):
                 bold_ids = [
                     sid
@@ -2163,9 +2294,9 @@ class FoundationTrainer:
             "mixture": rep,
         }
 
-    def _participant_ids(self) -> list[str]:
-        """Stable, sorted participant ids -- the grouping unit for R10 and Stage V."""
-        ds = getattr(self, "real_dataset", None)
+    @staticmethod
+    def _subjects_of(ds: Any) -> list[str]:
+        """Sorted subject ids of one dataset, duck-typed."""
         if ds is None:
             return []
         for attr in ("subjects", "participant_ids", "subject_ids"):
@@ -2177,6 +2308,67 @@ class FoundationTrainer:
         except Exception:  # noqa: BLE001 - fall back to sampling the items
             step = max(1, len(ds) // 500)
             return sorted({str(ds[i]["subject"]) for i in range(0, len(ds), step)})
+
+    def _participant_ids(self) -> list[str]:
+        """Stable, sorted participant ids across EVERY measured EEG corpus.
+
+        This used to read ``self.real_dataset`` alone -- eegmmidb. The
+        individualizer is applied in `real_losses`, which serves every EEG
+        source, so on run 3's source list all 78 sleep-edfx participants fell
+        through `participant_index`'s unknown branch onto row 0 and shared one
+        person effect. The between-participant spread of the applied shift is
+        then 0 for arithmetic reasons rather than for the split's reasons, and
+        the two are indistinguishable in the report.
+
+        Sleep-EDFx is the only corpus with two sessions per person, so it is the
+        only corpus the individualisation claim can be measured on: an index
+        that does not cover it cannot fit the effect the claim is about.
+
+        Subject ids are used bare, not namespaced by source, because
+        `session_individualisation` and every split fingerprint quote them bare.
+        A collision between two corpora would silently merge two people, so it
+        RAISES here instead.
+        """
+        per_source: dict[str, list[str]] = {}
+        for sid, ds in sorted((getattr(self, "eeg_datasets", {}) or {}).items()):
+            subs = self._subjects_of(ds)
+            if subs:
+                per_source[sid] = subs
+        if not per_source:
+            return self._subjects_of(getattr(self, "real_dataset", None))
+        owner: dict[str, str] = {}
+        clashes: dict[str, list[str]] = {}
+        for sid, subs in per_source.items():
+            for s in subs:
+                if s in owner and owner[s] != sid:
+                    clashes.setdefault(s, [owner[s]]).append(sid)
+                else:
+                    owner[s] = sid
+        if clashes:
+            raise RuntimeError(
+                f"subject id(s) appear in more than one corpus: {clashes}. The "
+                "individualizer indexes people by bare subject id, so this would "
+                "give two different people one person effect and report the merge "
+                "as an individualisation result. Namespace the ids in the loader."
+            )
+        return sorted(owner)
+
+    def _session_ids(self) -> list[str]:
+        """Stable, sorted ``subject/session`` ids across every measured EEG corpus.
+
+        The session effect ``zeta`` is the half of §6.5's decomposition that must
+        NOT become a permanent trait. Without an index it is never selected by
+        `Individualizer.forward`, only shrunk by `prior_penalty`, so it is driven
+        to zero and the decomposition is a person effect wearing a two-level
+        name. Qualified by subject for the reason `window_sessions` is: every
+        sleep-edfx participant has a ``night1``.
+        """
+        out: set[str] = set()
+        for ds in (getattr(self, "eeg_datasets", {}) or {}).values():
+            sess = getattr(ds, "window_sessions", None)
+            if sess:
+                out.update(map(str, sess))
+        return sorted(out)
 
     def real_split_fingerprint(self) -> dict[str, Any] | None:
         """Participant **ids** per fold plus a sha256, recorded in every checkpoint.
@@ -2216,6 +2408,82 @@ class FoundationTrainer:
                 self.unknown_participants.add(s)
             idx.append(self._pidx.get(s, 0))
         return torch.tensor(idx or [0], dtype=torch.long, device=self.device)
+
+    def session_index(self, subjects: Sequence[str], sessions: Sequence[str]) -> Tensor:
+        """Map ``subject/session`` pairs to Individualizer ``zeta`` rows.
+
+        Same convention as :meth:`participant_index`: an unseen session maps to
+        row 0, whose ``zeta`` is zero at initialisation, and the fact is recorded
+        in ``self.unknown_sessions``. That is the behaviour the held-out night
+        needs -- a session effect fitted on night 1 must NOT be applied to
+        night 2, or the evaluation scores the model on a coefficient fitted to
+        the thing being predicted.
+        """
+        if not hasattr(self, "_sidx"):
+            self._sidx = {s: i for i, s in enumerate(self._session_ids())}
+            self.unknown_sessions: set[str] = set()
+        if len(subjects) != len(sessions):
+            raise ValueError(
+                f"session_index got {len(subjects)} subjects and {len(sessions)} sessions; "
+                "they index the same windows. A batch missing its `session` key would "
+                "otherwise silently give every window session row 0, which is the "
+                "population session -- a fitted session effect reported as no effect."
+            )
+        idx = []
+        for subj, sess in zip(subjects, sessions):
+            key = f"{subj}/{sess}"
+            if key not in self._sidx:
+                self.unknown_sessions.add(key)
+            idx.append(self._sidx.get(key, 0))
+        return torch.tensor(idx or [0], dtype=torch.long, device=self.device)
+
+    def ensure_individualizer(self) -> Individualizer | None:
+        """Build the person/session effect, once, sized from the loaded corpora.
+
+        Run 3 recorded ``individualization: {"applied": false, "reason": "no
+        individualizer on the trainer (population model)"}`` because nothing ever
+        called this: the module existed, its checkpoint slot existed, and no
+        stage constructed one. Construction lives here rather than inline in
+        `run_stage` for the reason `tms_drive`'s does -- `maybe_resume` runs
+        before the first stage, and a module built after the resume is restored
+        from nothing while the log says "resumed".
+
+        Returns ``None`` when no measured corpus is loaded: a person effect over
+        zero people is not a smaller claim, it is a different object, and
+        `evaluate` reports its absence rather than scoring it.
+        """
+        if self.individualizer is not None:
+            return self.individualizer
+        people = self._participant_ids()
+        sessions = self._session_ids()
+        if not people:
+            return None
+        # ONE group. `n_groups=2` was the previous value and it asserted a
+        # population split no corpus here carries: nothing passes `group=` to
+        # `forward`, so `_alpha_raw` sat on the module receiving no gradient --
+        # a declared-and-frozen tensor, which is the pattern
+        # `test_regional_tensors_moved` exists to catch. With one group the
+        # centering projection makes `alpha` identically zero, so the tensor is
+        # inert BY CONSTRUCTION and `variance_decomposition` reports
+        # `group_var: 0.0` rather than a number nobody fitted. Declaring a group
+        # effect needs group labels, and none of the seven corpora ships any.
+        self.individualizer = Individualizer(
+            len(THETA_NAMES),
+            n_groups=1,
+            n_participants=len(people),
+            n_sessions=max(len(sessions), 1),
+        ).to(self.device)
+        # Its initialisation, recorded NOW. Without this its parameters are
+        # absent from `init_fingerprint`, `moved_since_init` compares a hash
+        # against `None`, and a person effect that has never taken a step
+        # reports as moved -- the false pass measured on `tms_drive`.
+        self._fingerprint_late_module("individualizer", self.individualizer)
+        print(
+            f"[individualizer] {len(people)} participants, {len(sessions)} sessions, "
+            f"theta_dim={len(THETA_NAMES)}",
+            flush=True,
+        )
+        return self.individualizer
 
     # ------------------------------------------------------------------
     def _save(self, name: str, stage: str, step: int, *, metrics: Mapping[str, Any] | None = None) -> Path:
@@ -2265,15 +2533,17 @@ class FoundationTrainer:
         p = self.out_dir / "last.pt"
         if not p.exists():
             return
-        # `build_data` constructs `tms_drive`, so resume must happen after it or
-        # the drive is None here and its weights are silently not restored --
-        # the training would resume with a re-initialised pulse and nothing
-        # would say so. `load_checkpoint` records `tms_drive_absent` either way.
+        # `build_data` constructs `tms_drive` and the individualizer, so resume
+        # must happen after it or both are None here and their weights are
+        # silently not restored -- the training would resume with a
+        # re-initialised pulse and re-initialised person effects, and nothing
+        # would say so. `load_checkpoint` records `*_absent` either way.
         self.build_data()
         payload = load_checkpoint(
             p,
             model=self.model,
             posterior=self.posterior,
+            individualizer=self.individualizer,
             tms_drive=self.tms_drive,
             map_location=str(self.device),
             strict=False,
@@ -2443,6 +2713,51 @@ def _glob_overlap(a: str, b: str) -> bool:
     return fnmatch.fnmatch(a.rstrip("*").rstrip("."), b.rstrip("*").rstrip(".")) or fnmatch.fnmatch(
         b.rstrip("*").rstrip("."), a.rstrip("*").rstrip(".")
     ) or a.split(".")[0] == b.split(".")[0]
+
+
+def glob_intersection(card: str, stage: str) -> str | None:
+    """The narrower of two dotted globs, or ``None`` when neither contains the other.
+
+    ``stage_sources`` intersects a card's ``A_k`` with the stage allowlist and
+    the result must be no broader than **either** side. When one pattern
+    fnmatches the other that is just the other one; the case this function
+    exists for is the pair that is incomparable both ways, where the old code
+    took the stage's pattern and thereby granted more than the card did:
+
+        card  eeg_montages.ds000117_real.*        (this source's own operator)
+        stage eeg_montages.*.log_gain             (every montage's gain)
+        old   eeg_montages.*.log_gain             <- BROADER THAN THE CARD
+
+    ds000117's card names one montage and the effective permission named four.
+    Nothing leaked in run 3 -- ``autograd.grad(..., allow_unused=True)`` returns
+    ``None`` for a head that source's loss does not touch -- so this was a
+    latent widening rather than a measured one, which is the kind that survives
+    three runs. The correct answer is segment-wise:
+
+        new   eeg_montages.ds000117_real.log_gain
+
+    ``fnmatch``'s ``*`` crosses dots, so two patterns with different segment
+    counts are almost always comparable and handled by the caller. When they are
+    not, this returns ``None`` and the caller records the pair rather than
+    guessing -- an unresolvable intersection is a config to fix, not a default
+    to pick.
+    """
+    import fnmatch
+
+    ca, sa = card.split("."), stage.split(".")
+    if len(ca) != len(sa):
+        return None
+    out: list[str] = []
+    for c, s in zip(ca, sa):
+        if c == s:
+            out.append(c)
+        elif fnmatch.fnmatch(c, s):
+            out.append(c)  # the card's segment is the narrower
+        elif fnmatch.fnmatch(s, c):
+            out.append(s)  # the stage's segment is the narrower
+        else:
+            return ""  # disjoint segment: the two patterns share no name
+    return ".".join(out)
 
 
 def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cover - entry point

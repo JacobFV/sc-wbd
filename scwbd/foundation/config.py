@@ -177,8 +177,22 @@ class PosteriorConfig:
     n_bands: int = 7
     n_pcs: int = 16
     dropout: float = 0.0
-    #: observation nuisance parameters appended to theta (gain, sensor noise)
-    nuisance_dim: int = 2
+    #: Observation nuisance parameters appended to theta (gain, sensor noise).
+    #:
+    #: 2 -> 0.  The trainer has never estimated these; it passes
+    #: ``torch.zeros(B, nuisance_dim)``, so the flow was asked to put finite
+    #: density on a point mass in two of its eight dimensions.  Run 2's pilot
+    #: measured that (`configs/run2/pilot-families.yaml`: -log q 5.30 with 0
+    #: rejections at 0, no convergence at 2) and set its own file to 0 -- but the
+    #: DEFAULT was left at 2, and `configs/run3/scwbd-003.yaml` says "untouched
+    #: from the default, deliberately", so run 3 inherited the defect a pilot had
+    #: already retired.  Measured on run 3's checkpoint: those two coordinates
+    #: collapsed to a sampled sd of 6.0e-4 and took 12.99 of the 15.9 nats by
+    #: which npe_loss fell.  Raise this above 0 only together with a code path
+    #: that estimates real nuisance values and passes them; `loss` refuses a
+    #: constant target column, so a placeholder cannot silently return.
+    #: ISSUE-012.
+    nuisance_dim: int = 0
 
 
 @dataclass

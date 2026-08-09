@@ -1,0 +1,290 @@
+# SC-WBD-004 -- a haemodynamic fMRI likelihood, and a person effect that is fitted.
+#
+# Derived from configs/run3/scwbd-003.yaml. Inherited rather than copied: the
+# architecture, the four observation montages and the data roots are the same
+# objects, and a copy would let them drift apart silently. What 004 changes is
+# listed here and nowhere else.
+#
+#   1. The measured BOLD path integrates the Balloon-Windkessel ODE across the
+#      duration a BOLD frame actually covers (ISSUE-008 fix (c)). This is the
+#      cost driver and it is measured below.
+#   2. A person/session effect is FITTED, in a sixth stage, on the only corpus
+#      with two sessions per participant.
+#
+# ---------------------------------------------------------------------------
+# COST: MEASURED ON THIS BOX, NOT ESTIMATED
+# ---------------------------------------------------------------------------
+# See reports/RUN4.md for the harness and the raw output. Measured with nothing
+# else running (`ps` first, every time), 20 optimiser steps of the T1 loss set
+# after 3 warmup steps, on the 414-parcel prior at hidden=1408:
+#
+#   MEASURED_BLOCK
+#
+# ---------------------------------------------------------------------------
+# INDIVIDUALISATION: WHAT MAKES IT MEASURABLE HERE AND NOT IN 003
+# ---------------------------------------------------------------------------
+# 003 recorded `individualization: {"applied": false, "reason": "no
+# individualizer on the trainer (population model)"}` after a completed 13,400-
+# step run. The class existed, the checkpoint slot existed, and no stage ever
+# constructed one -- `individualize` is a property of a stage's curriculum block
+# and no 003 stage declared it.
+#
+# `T6_individual` below declares it. Three things had to be true at once and
+# each was false in 003:
+#
+#   * the participant index spans every EEG corpus, not just eegmmidb. It read
+#     `real_dataset` alone, so all 78 sleep-edfx participants fell onto row 0
+#     and shared one person effect.
+#   * `sleepedf_real` GRANTS `individualizer.*`. It froze it through 003, which
+#     put the permission on the corpus with one session per person and withheld
+#     it from the corpus with two.
+#   * the individualizer's parameters are in `moved_since_init`. They were in
+#     neither of that function's two module lists, so a fitted person effect and
+#     an absent one produced the same report.
+#
+# The stage freezes the population dynamics and fits the effect plus the
+# observation nuisance. `eeg_montages.*` is granted beside `eeg.*` because
+# sleep-edfx is observed through its own 2-row bipolar operator.
+
+base: ../run3/scwbd-003.yaml
+
+model:
+  # ISSUE-008's fix, and the two fields that bound its cost.
+  #
+  # A BOLD window is 8 target frames at TR = 2 s. Rolling the neural clock for
+  # the duration each frame covers is 250 steps per frame at dt_model = 8 ms, so
+  # all 8 frames is 2,000 rollout steps against run 3's 8. That does not fit.
+  #
+  # BOLD_SIZING_BLOCK
+  bold_predict_frames: 2
+  bold_every: 1
+
+data:
+  # BATCH_BLOCK
+  batch: 8
+
+train:
+  run_name: scwbd-004
+  out_dir: checkpoints/scwbd-004
+  report_dir: reports/training
+  seed: 20260809
+  # 56 GB, unchanged from 003 and re-justified against 004's own measurement
+  # rather than inherited: see the cost block at the top of this file. The GB10
+  # has ONE ~121 GB unified pool and `systemd MemoryMax` does not bound CUDA
+  # allocations, so this is the only ceiling on the caching allocator.
+  cuda_reserve_gb: 56.0
+  max_wall_seconds: 129600     # 36 h
+  resume: true
+
+  stages:
+    # ---- 1 -----------------------------------------------------------------
+    - name: T1_measured_founding
+      steps: 4000
+      lr: 6.0e-4
+      warmup: 200
+      log_every: 20
+      ckpt_every: 500
+      lambda_obs: 1.0
+      lambda_forecast: 1.0
+      lambda_posterior: 0.0
+      lambda_anat: 0.0
+      lambda_perturb: 0.0
+      extra:
+        curriculum:
+          scope: regional + interface, measured only
+          admits: [1]
+          tier_permissions:
+            1: ["family_local.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
+          objective: [likelihood, forecast, port]
+          rationale: >-
+            As 003, with one difference that is not a curriculum change: `bold.*`
+            now reaches a Balloon-Windkessel integrator that actually runs, so
+            log_kappa, log_gamma, log_tau, alpha and neural_gain receive gradient
+            from this stage instead of sitting bit-identical to their
+            initialisation for the whole run.
+    # ---- 2 -----------------------------------------------------------------
+    - name: T2_calibration
+      steps: 600
+      lr: 3.0e-4
+      warmup: 60
+      log_every: 20
+      ckpt_every: 300
+      lambda_obs: 1.0
+      lambda_cal: 0.3
+      lambda_posterior: 0.0
+      lambda_anat: 0.0
+      extra:
+        curriculum:
+          scope: instrument nuisance
+          admits: [1, 2]
+          tier_permissions:
+            1: ["family_local.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
+                "eeg_montages.*.log_gain", "eeg_montages.*.offset",
+                "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
+          objective: [likelihood, calibration]
+          rationale: >-
+            Per-channel gain, offset and noise floor across four montages.
+            Admitted late and narrowly: a calibration source has tiny measurement
+            variance and would win a pure inverse-variance contest.
+    # ---- 3 -----------------------------------------------------------------
+    - name: T3_population_prior
+      steps: 800
+      lr: 3.0e-4
+      warmup: 80
+      log_every: 20
+      ckpt_every: 400
+      lambda_anat: 0.05
+      lambda_posterior: 0.0
+      extra:
+        curriculum:
+          scope: anatomical prior
+          admits: [1, 2, 3]
+          tier_permissions:
+            1: ["family_local.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
+                "eeg_montages.*.log_gain", "eeg_montages.*.offset",
+                "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
+            3: ["coupling.gain_*", "coupling.global_scale"]
+          objective: [likelihood, forecast, anatomy]
+          rationale: >-
+            The 9-family partition and the connectome scale enter after the
+            measured sources have fixed the representation they modulate.
+    # ---- 4 -----------------------------------------------------------------
+    - name: T4_simulator
+      steps: 5000
+      lr: 2.0e-4
+      warmup: 250
+      log_every: 20
+      ckpt_every: 500
+      lambda_posterior: 1.0
+      lambda_kl: 0.01
+      lambda_slice: 1.0
+      lambda_anat: 0.05
+      extra:
+        curriculum:
+          scope: simulator-conditioned inference
+          admits: [1, 2, 3, 4]
+          # `with_hemo` is NOT set. `sim_losses` reads `roll.activity` and never
+          # `roll.hemo`, so turning it on here would integrate the Balloon
+          # compartments and discard them -- compute spent to make a flag read
+          # as though the physics were engaged. The measured BOLD path is where
+          # the ODE runs and where a loss consumes it.
+          tier_permissions:
+            1: ["family_local.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
+                "eeg_montages.*.log_gain", "eeg_montages.*.offset",
+                "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
+            3: ["coupling.gain_*", "coupling.global_scale"]
+            4: ["family_local.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "family_readout.*", "posterior.*"]
+          objective: [likelihood, forecast, slice, posterior]
+          rationale: >-
+            The amortised posterior is founded here and only here; no measured
+            recording carries a theta label. Tier 4 does NOT reach `eeg.*`,
+            `eeg_montages.*`, `bold.*` or `behaviour.*`: a simulator may not
+            calibrate an instrument.
+    # ---- 5 -----------------------------------------------------------------
+    - name: T5_measured_return
+      steps: 3000
+      lr: 1.2e-4
+      warmup: 150
+      log_every: 20
+      ckpt_every: 500
+      lambda_obs: 1.0
+      lambda_forecast: 1.0
+      lambda_perturb: 1.0
+      lambda_posterior: 0.2
+      lambda_anat: 0.02
+      extra:
+        curriculum:
+          scope: return to measured
+          admits: [1, 2]
+          tier_permissions:
+            1: ["family_local.*", "family_residual.*",
+                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "context.*", "family_readout.*", "observation.*",
+                "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*",
+                "tms_drive.*"]
+            2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
+                "eeg_montages.*.log_gain", "eeg_montages.*.offset",
+                "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
+          objective: [likelihood, forecast, perturbation]
+          rationale: >-
+            The 1 -> 4 -> 1 return, so the final population weights are
+            conditioned on evidence rather than on the generator. `tms_drive.*`
+            is granted here and nowhere else.
+    # ---- 6 -----------------------------------------------------------------
+    - name: T6_individual
+      steps: 1200
+      lr: 6.0e-4
+      warmup: 60
+      log_every: 20
+      ckpt_every: 300
+      lambda_obs: 1.0
+      lambda_forecast: 1.0
+      lambda_perturb: 0.0
+      lambda_posterior: 0.0
+      lambda_anat: 0.0
+      extra:
+        curriculum:
+          scope: person and session effects, population weights frozen
+          admits: [1]
+          individualize: true
+          tier_permissions:
+            # `individualizer.*` and the observation nuisance, and NOTHING
+            # regional. This is the one stage in the run that cannot name
+            # `family_local`, and that is the design: the question is whether a
+            # person effect over theta predicts a held-out night GIVEN the
+            # population model, so letting the dynamics move here would answer a
+            # different question and would also make the held-out comparison
+            # against `stage_T5_measured_return.pt` incoherent.
+            #
+            # The optimiser is narrowed to the same set in `run_stage`; the
+            # permission is what governs, and the two agree on purpose.
+            1: ["individualizer.*",
+                "eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
+                "eeg_montages.*.log_gain", "eeg_montages.*.offset",
+                "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
+          objective: [likelihood, forecast]
+          rationale: >-
+            75 of sleep-edfx's 78 participants were recorded on two consecutive
+            nights, and it is the only corpus here with a second session of the
+            same person. The effect is fitted on the training nights and scored
+            on the held-out one by `session_individualisation`, per participant
+            with a cluster bootstrap over participants. A learning rate at the
+            T1 level rather than a decayed one, because these tensors start at
+            zero and have 1,200 steps to leave it -- the population weights they
+            modulate are frozen, so there is nothing for a large step to
+            destabilise.
+            The falsifier is stated in the evaluation and not softened here: if
+            the between-participant spread of the applied theta shift is at or
+            near zero on a split built to let it be non-zero, the third
+            capability is unsupported and the site says so.
+
+arm:
+  role: treatment
+  justification: >-
+    Heterogeneous region-indexed state with per-family operators
+    (`family_state: true`), as 003. 004 changes the BOLD likelihood and adds a
+    fitted person effect; neither touches the arm.
+notes: >-
+  SC-WBD-004. Two structural changes on 003: the measured fMRI likelihood
+  integrates the Balloon-Windkessel ODE across the interval a BOLD frame covers
+  rather than indexing 8 neural steps against 8 TRs, and a person/session effect
+  is fitted in a sixth stage on sleep-edfx's two-night structure. The BOLD
+  horizon is REDUCED to `bold_predict_frames` of 8 target frames to pay for the
+  first; that reduction belongs on the model card next to any fMRI number.

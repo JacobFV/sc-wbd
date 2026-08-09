@@ -60,13 +60,29 @@ gradient_permission:
   # calibrate a 64-electrode montage, which was the original objection and is
   # still correct at the level it was aimed at.
   - "eeg_montages.sleepedf_real.*"
+  # GRANTED FOR 004, having been frozen through 003.
+  #
+  # 75 of this corpus's 78 participants were recorded on two consecutive
+  # nights, and it is the ONLY corpus here with a second session of the same
+  # person. So it is the only source that can fit a person effect and then be
+  # asked whether that effect predicts a night it has not seen -- which is the
+  # individualisation claim in full. Freezing `individualizer.*` here while
+  # granting it to eegmmidb, whose 109 participants have one session each, put
+  # the permission on the corpus that cannot measure the claim and withheld it
+  # from the one that can.
+  #
+  # What the grant does NOT widen: the effect is six scalars per person over
+  # theta, not a per-person operator. A rank-2 observation constrains a
+  # 2-dimensional projection of source space and that is still the limit on
+  # everything else this card grants; `coupling.*` stays frozen for exactly
+  # that reason.
+  - "individualizer.*"
 frozen:
   - "eeg.*"
   - "bold.*"
   - "coupling.*"      # a 2-rank observation cannot identify long-range coupling
   - "behaviour.*"
   - "tms_drive.*"
-  - "individualizer.*"
 
 n_eff: 78.0
 n_rows: 197.0
