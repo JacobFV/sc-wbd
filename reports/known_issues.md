@@ -752,3 +752,71 @@ Two consequences worth stating:
 
 That last one is what unblocks the paper's multiresolution claim: `scale_prolongations` no longer
 has to stay empty to keep the refusal honest.
+
+
+---
+
+## ISSUE-011 — SC-WBD-003 cannot be released: four of its sources cannot be attributed
+
+**Status:** open, diagnosed, **not repaired**, and it BLOCKS publication of the run-3 artifact.
+**Severity:** high for release, zero for training. The weights are fine; the licence metadata that
+must accompany them is not.
+
+### What the gate says
+
+```
+$ python -m scwbd.release.publish run2-pilot --namespace jacob-valdez \
+      --checkpoint-dir checkpoints/scwbd-002-pilot
+NOT PUBLISHABLE  jacob-valdez/scwbd-002-pilot (model)
+  4 contributing source(s) cannot be attributed: ds000117_behaviour, ds004024_perturb,
+  ds004024_rest_real, sleepedf_real -- each "contributes to the checkpoint but links to no
+  dataset card, and is not a registered non-dataset source; nothing states what it must be
+  cited as". Citation is a condition of use for at least one input
+  (scwbd.anatomy.sources.SRC['tian2020']), so this artifact may not be released.
+```
+
+The refusal is correct and the gate is working. Tian's atlas licence makes citation a *condition
+of use*, so an artifact that cannot state what its inputs must be cited as may not go out.
+
+### The cause is the two-directory trap, and it is in CLAUDE.md
+
+`configs/curriculum/source_cards/` is read by **training**; `configs/source_cards/` by
+**release**. They are not the same directory. Run 3 added five cards to the curriculum directory
+and none to the release directory:
+
+| source | curriculum (training) | release (attribution) |
+| --- | :---: | :---: |
+| `ds000117_real` | yes | **absent** |
+| `ds000117_behaviour` | yes | **absent** |
+| `ds004024_rest_real` | yes | **absent** |
+| `ds004024_perturb` | yes | **absent** |
+| `sleepedf_real` | yes | present, but links to no dataset card |
+| `ds002336_real` | yes, enabled | present, `enabled: false` |
+
+### What discharges it, and the rule is already written down
+
+`configs/source_cards/ds002336_real.yaml` states the policy in its own header:
+
+> *"Enabling here would add this dataset's terms to a published model card without any checkpoint
+> having trained on it — a licence claim ahead of its evidence. It is enabled in the CURRICULUM
+> directory, and **it belongs here the moment a checkpoint has actually consumed it**."*
+
+A checkpoint now has. SC-WBD-003 trained on all six. So the release cards belong there now, each
+linking to its dataset card — `scwbd/sources/cards/{ds000117,ds004024,sleep-edfx,ds002336}.yaml`
+all exist and carry the licence and citation — and `ds002336_real` should become `enabled: true`
+on the release side.
+
+`link_sources_to_datasets` maps one mixture id to at most one dataset card by normalising
+`<x>_real -> <x>`, so `ds000117_behaviour` and `ds004024_perturb` will need explicit links rather
+than relying on the name rule.
+
+### Why it is not repaired here
+
+This changes the licence and citation terms of a published artifact, and the union licence on the
+attribution page with it. A wrong licence claim is worse than a blocked release, and this was found
+at the end of a long session. It is recorded rather than rushed, the gate refuses loudly in the
+meantime, and nothing can ship while it is open — which is the correct failure mode.
+
+**Do this before publishing SC-WBD-003 anywhere. The site is already deployed; the site is
+Cloudflare Pages and carries no weights. The model artifact has not been released and must not be
+until this is closed.**
