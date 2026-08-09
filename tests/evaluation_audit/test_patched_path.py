@@ -38,6 +38,20 @@ def test_scwbd_and_baselines_use_the_same_kind_of_estimator():
     the K=64 marginal is 2.4616 against a posterior-mean plug-in of 2.4993, a
     gift of 0.0377 nats -- 7x the ar16<->var4 gap of 0.0053 and larger than the
     entire 0.035-nat spread of the non-trivial baselines.
+
+    **This test used to assert the defect rather than the fix.** It grepped
+    ``_scwbd_scores`` for ``logsumexp`` and failed on any occurrence. That WAS
+    the right proxy while the marginal was the headline, and it was repaired:
+    the headline is now the plug-in at the posterior mean (the function's own
+    docstring leads with it, and the return dict labels it in ``estimator``),
+    while the marginal is retained under the distinct key
+    ``nll_per_window_marginal`` with its ESS and K/2->K drift diagnostics. The
+    grep was never updated, so it kept reporting a repaired defect as live --
+    the marginal's continued existence as a labelled secondary is the fix, not
+    the defect.
+
+    It now checks which key is the headline. A red means the marginal has been
+    promoted back into the column that is compared against a baseline.
     """
     from scwbd.foundation import baselines, evaluate
 
@@ -45,13 +59,40 @@ def test_scwbd_and_baselines_use_the_same_kind_of_estimator():
     assert "logsumexp" not in base_src, (
         "a baseline started marginalising; re-derive this test before trusting it"
     )
-    scwbd_src = inspect.getsource(evaluate._scwbd_scores)
-    assert "logsumexp" not in scwbd_src, (
-        "_scwbd_scores marginalises over the posterior while every baseline is "
-        "scored plug-in at its fitted parameters. Both sides of a comparison "
-        "must be the same kind of estimator. Either score SC-WBD plug-in at the "
-        "posterior mean, or give the baselines coefficient uncertainty too -- "
-        "the first is cheap and the second is a project."
+
+    src = inspect.getsource(evaluate._scwbd_scores)
+    # The headline column is the one `real_eeg_holdout` hands to bootstrap_ci and
+    # ranks against the baselines.
+    holdout = inspect.getsource(evaluate.real_eeg_holdout)
+    assert 'scw["nll_per_window"]' in holdout, (
+        "real_eeg_holdout no longer ranks on scw['nll_per_window']; find the "
+        "column it now compares against the baselines and re-point this test"
+    )
+
+    # `nll_per_window` must be built from the plug-in pass, and the marginal must
+    # stay in its own key. `logsumexp` is legitimate here -- it is how the
+    # SECONDARY is computed -- so the check is where its result lands.
+    marginal_sinks = [
+        ln.strip()
+        for ln in src.splitlines()
+        if "logsumexp" in ln or "nll_per_window_marginal" in ln
+    ]
+    assert marginal_sinks, (
+        "the marginal and its diagnostics have disappeared from _scwbd_scores. "
+        "It is a legitimate secondary and its removal is not obviously wrong, "
+        "but this test can no longer tell a plug-in headline from a marginal one"
+    )
+    assert 'out["nll_per_window_marginal"]' in src, (
+        "_scwbd_scores computes a logsumexp over theta draws but does not write "
+        "it to the separately labelled nll_per_window_marginal key. Both sides "
+        "of a comparison must be the same kind of estimator: the headline "
+        "nll_per_window must be the plug-in at the posterior mean, and the "
+        "marginal must be reported beside it under its own name with K, the "
+        "ESS and the K/2->K drift."
+    )
+    assert "plug-in" in src and "estimator" in src, (
+        "_scwbd_scores no longer labels its headline estimator. A number "
+        "compared against a plug-in baseline must say that it is one."
     )
 
 

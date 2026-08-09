@@ -63,6 +63,29 @@ def real_eeg(cfg):
 
 
 @pytest.fixture(scope="session")
+def window_subjects(real_eeg):
+    """``real_eeg.window_subjects`` materialised ONCE, as an array.
+
+    ``EEGMMIDBDataset.window_subjects`` is an uncached ``@property`` that rebuilds
+    ``[recordings[r]["subject"] for r, _ in window_index]`` -- one entry per
+    window, 235k on the released eegmmidb -- on **every access**.  Indexing it
+    inside a loop is therefore quadratic.
+
+    That is not hypothetical: ``{real_eeg.window_subjects[i] for i in fold}`` in
+    ``test_sampling_representativeness`` rebuilt the full list once per index of a
+    13k-window fold and ran for over ten minutes without finishing, which was
+    read as "the fixture builds the whole corpus".  The fixture builds in about
+    two seconds; the loop was the cost.  Take this array, never the property.
+
+    ``scwbd.foundation.evaluate._window_subject(ds, i)`` is the O(1) single-window
+    accessor and is what the evaluation itself uses.
+    """
+    import numpy as np
+
+    return np.asarray(real_eeg.window_subjects)
+
+
+@pytest.fixture(scope="session")
 def real_split(cfg, real_eeg):
     from scwbd.foundation.realdata import participant_split
 

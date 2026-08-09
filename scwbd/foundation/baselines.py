@@ -924,6 +924,11 @@ class SubjectSpecificBaseline(Baseline):
         self.models_: dict[Any, Baseline] = {}
         self.fallback_: Baseline | None = None
         self.fallback_subjects_: list[Any] = []
+        #: Filled by :meth:`predict`. ``fallback_subjects_`` records participants
+        #: who were thin *at fit time*; it says nothing about who was routed to
+        #: the fallback *at score time*, and reads clean precisely when routing
+        #: is 100% fallback. This is the missing half.
+        self.score_routing_: dict[str, Any] | None = None
 
     def _new_base(self) -> Baseline:
         kwargs = dict(self.base_kwargs)
@@ -981,13 +986,61 @@ class SubjectSpecificBaseline(Baseline):
         b, _, c = ctx.shape
         mean = torch.empty(b, horizon, c, device=ctx.device, dtype=torch.float32)
         log_var = torch.empty_like(mean)
+        n_own = 0
+        unmatched: list[Any] = []
         for subject in np.unique(g):
             idx = torch.as_tensor(np.flatnonzero(g == subject), dtype=torch.long, device=ctx.device)
-            model = self.models_.get(subject, self.fallback_)
+            own = self.models_.get(subject)
+            if own is None:
+                unmatched.append(subject)
+            else:
+                n_own += int(idx.numel())
+            model = own if own is not None else self.fallback_
             m, lv = model.predict(ctx[idx], horizon)
             mean[idx] = m
             log_var[idx] = lv
+        self.score_routing_ = self._routing_record(b, n_own, unmatched)
         return mean, log_var
+
+    def _routing_record(self, n: int, n_own: int, unmatched: Sequence[Any]) -> dict[str, Any]:
+        """Where the windows of the last :meth:`predict` call actually went.
+
+        A field only ever written on success is not a record: total degradation
+        and healthy operation must not produce identical provenance. At
+        ``fraction_via_pooled_fallback == 1.0`` this object is its pooled
+        fallback under a subject-specific name, and the row it contributes to a
+        comparison table is a duplicate of that fallback.
+        """
+        n_fb = int(n - n_own)
+        frac = float(n_fb) / float(n) if n else 0.0
+        rec: dict[str, Any] = {
+            "scored": True,
+            "n_windows": int(n),
+            "n_windows_via_subject_model": int(n_own),
+            "n_windows_via_pooled_fallback": n_fb,
+            "fraction_via_pooled_fallback": frac,
+            "n_subject_models_used": len(self.models_) - len(
+                [s for s in self.models_ if s in set(unmatched)]
+            ),
+            "subjects_without_a_fitted_model": sorted(str(s) for s in unmatched),
+            "covers": "the most recent predict()/score() call, not a running total",
+        }
+        if frac >= 1.0:
+            rec["degraded"] = (
+                "EVERY scored window was served by the pooled fallback. No "
+                "subject-specific model was used, so this arm is numerically the "
+                "pooled base model and must not be reported as a subject-specific "
+                "baseline. The usual cause is a participant-disjoint holdout "
+                "(refusal R10): the models are fitted on the train participants "
+                "and the lookup is done with test participants."
+            )
+        elif frac > 0.0:
+            rec["degraded"] = (
+                f"{100 * frac:.1f}% of scored windows were served by the pooled "
+                "fallback; the arm is a mixture of subject-specific and pooled "
+                "predictions."
+            )
+        return rec
 
     def n_parameters(self) -> int:
         total = sum(m.n_parameters() for m in self.models_.values())
@@ -999,6 +1052,18 @@ class SubjectSpecificBaseline(Baseline):
         d = super().describe()
         d["n_subject_models"] = len(self.models_)
         d["fallback_subjects"] = [str(s) for s in self.fallback_subjects_]
+        d["fallback_subjects_measured_at"] = (
+            "FIT time: participants with fewer than min_windows training windows. "
+            "This says nothing about which participants were routed to the "
+            "fallback when scoring -- see score_time_routing."
+        )
+        d["score_time_routing"] = self.score_routing_ or {
+            "scored": False,
+            "note": (
+                "describe() was called before score(); no window has been routed "
+                "yet. This field is not evidence of correct routing."
+            ),
+        }
         d["parameters_per_subject"] = (
             int(self.n_parameters() / max(len(self.models_), 1)) if self.models_ else 0
         )

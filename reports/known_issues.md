@@ -848,3 +848,323 @@ meantime, and nothing can ship while it is open — which is the correct failure
 **Do this before publishing SC-WBD-003 anywhere. The site is already deployed; the site is
 Cloudflare Pages and carries no weights. The model artifact has not been released and must not be
 until this is closed.**
+
+---
+
+## ISSUE-013 — `subject_specific_ar` is its pooled fallback, so the thesis's hardest baseline is not being run
+
+**Status:** open. Guarded by a test that is deliberately red:
+`tests/evaluation_audit/test_baseline_integrity.py::test_subject_specific_baseline_is_not_silently_its_pooled_fallback`.
+**Owner of the fix:** the evaluation protocol, not `baselines.py`.
+**Severity:** live. It affects a row in the published comparison table.
+
+### The defect
+
+`SubjectSpecificBaseline.fit` builds one model per **training** participant.
+`predict` routes each scored window through `self.models_.get(subject, self.fallback_)`.
+Refusal **R10 guarantees the train and test participant sets are disjoint** — the realised
+split is 71/11/27 with `train ∩ test = ∅` — so the lookup misses for **100% of scored
+windows** and every window is served by the pooled fallback, which at the same order and
+the same seed is numerically identical to `ar16`.
+
+Regenerated on the participant-balanced sample: `max |per-window difference| = 0.0`,
+`np.array_equal → True` across all 1,080 windows. The published table records the
+consequence directly — `reports/CLAIM_BOUNDARY.md` §3.5.6a and
+`reports/evaluation_audit.md` C1-M3 both show `subject_specific_ar` at 2.0132, the same
+NLL and the same interval as `ar16`.
+
+The damage is not a duplicated row. `SubjectSpecificBaseline._falsifies_comparison_if`
+says it exists so that *"if a model fitted on a participant alone predicts that
+participant's held-out future as well as the foundation model, then cross-participant
+pretraining transferred nothing."* That test is not being run, and a copy of `ar16` stands
+in its place under its name.
+
+`n_parameters` compounds it: the reported 77,248 are the 71 per-subject models that are
+never used, and the 4,160 that are actually used go unreported.
+
+### What is repaired here
+
+The **absence half**. `describe()` reported `n_subject_models: 71` and
+`fallback_subjects: []` — both true, both about *fit* time, and both reading healthy while
+score-time routing was 100% fallback. There was no field anywhere recording score-time
+routing, so total degradation and correct operation produced identical provenance.
+
+`SubjectSpecificBaseline.predict` now records where the windows went, and `describe()`
+emits it as `score_time_routing`: `n_windows_via_subject_model`,
+`n_windows_via_pooled_fallback`, `fraction_via_pooled_fallback`,
+`subjects_without_a_fitted_model`, and at 100% a `degraded` sentence naming R10 as the
+cause. `fallback_subjects` now carries `fallback_subjects_measured_at` saying in words
+that it is a fit-time field. Before `score()` is called the record reads
+`{"scored": false, ...}` rather than looking clean.
+
+This does not change any score. It makes the defect visible in `evaluation.json` instead
+of inferable only from a bit-comparison against `ar16`.
+
+### What discharges it
+
+A subject-specific baseline and a participant-disjoint holdout are in direct conflict, so
+the fix is a protocol decision, and there are exactly two honest resolutions:
+
+1. **Within-participant temporal split for this arm alone.** Fit each *test* participant's
+   model on that participant's earlier windows and score their later ones. It is then a
+   different quantity from every other row — it has seen the scored participant, the other
+   baselines have not — and must be labelled as such wherever it appears.
+2. **Drop the row and say why.** The comparison then carries no subject-specific baseline,
+   and the thesis claim that cross-participant pretraining transfers is correspondingly
+   unsupported rather than falsely supported.
+
+Silently serving `ar16` under the name is the one option that is not available. The red
+test is discharged by doing (1) or (2), not by relaxing the assertion.
+
+### Why it is not repaired here
+
+Either resolution changes a published row in the comparison table and, under (1), changes
+what "held out" means for that row. That is a protocol change with a paper consequence,
+not a patch. The routing record ships now so the artifact stops reading clean, and the
+test stays red so nothing can quietly ship on top of it.
+
+---
+
+## ISSUE-014 — `_assign_groups` reassigns participants when the participant set changes, and `--quick` re-splits silently
+
+**Status:** open. Guarded by two tests that are deliberately red, in
+`tests/evaluation_audit/test_split_and_verdict_integrity.py`:
+`test_participant_assignment_is_stable_under_a_changed_participant_set` and
+`test_quick_mode_does_not_silently_change_the_holdout`.
+**Severity:** live, and it fails in the direction that flatters the model.
+
+### The defect
+
+`scwbd.foundation.realdata._assign_groups` sorts the participant set, shuffles it with a
+seeded RNG and slices by count. The assignment of *every* participant therefore depends on
+*the whole set*. Measured on the 109-participant `eegmmidb` roster at the released
+`seed=20260805, test_fraction=0.25, val_fraction=0.1`:
+
+- Remove **one** participant and **17 of the remaining 108 change fold**. Fold sizes go
+  71/11/27 → 70/11/27, so this is reassignment, not resizing.
+- **4 of those 17 move from `train` into `test`.** The evaluation would score the model on
+  four people it was trained on and report the result as held-out generalisation.
+
+`evaluate_model` calls `trainer.build_data()`, which rebuilds the split from whatever
+corpus is on disk. One recording failing to preprocess, or one more finishing downloading,
+is enough. The failure is silent and reads **better** when broken: a memorised participant
+promoted into the test fold improves the held-out score.
+
+`evaluate --quick` is the same mechanism, deliberately triggered. It builds the dataset
+with `max_subjects=6` and re-splits it, which puts `['S001', 'S004']` in the held-out fold
+— **both of which the released run trained on**. The flag is documented as reducing cost;
+it also changes what "held out" means, and nothing in the output says so.
+
+### What already mitigates it, and how far
+
+B4 landed a real guard. `evaluate.split_fingerprint` hashes participant **ids** per fold,
+`real_eeg_holdout` compares it against `trainer._recorded_split_fingerprint`, and a
+mismatch raises rather than warns. That converts a silent leak into a refusal — for any
+checkpoint that recorded a fingerprint.
+
+The released checkpoint did not. `reports/scope_gap.md` records `real_split.verified` as
+`false`, so for the artifact that actually exists the guard is in its `NOT VERIFIED`
+branch: it writes the status into the report and proceeds. Detection, not prevention, and
+currently not even detection on the checkpoint that matters.
+
+### What discharges it
+
+Both halves, and they are independent:
+
+1. **Make the splitter order-independent.** `_hash_assign_groups` already exists in the
+   same module and is stable: the same removal moves **0 of 108** participants. Adopting
+   it costs the fold proportions the count-slicing was there to protect — it yields
+   67/31/11 rather than 71/27/11 on this roster — and, decisively, it **changes the split
+   the released checkpoint was trained under**. Doing it now would make the fingerprint
+   guard correctly refuse to evaluate SC-WBD-001-beta. It belongs at the start of a run,
+   not in the middle of one.
+2. **Record the fingerprint at training time**, so the guard has something to compare
+   against and the mitigation actually fires. This is the cheap half and it is
+   prerequisite to (1): with a recorded fingerprint, switching splitters produces a loud
+   refusal instead of a quietly different holdout.
+3. **`--quick` must refuse to re-split**, not re-split quietly: either subset the recorded
+   test fold, or fail with the reason. A flag that changes the meaning of the headline
+   metric while advertising a cost saving is the same class of defect as the split itself.
+
+### Why it is not repaired here
+
+(1) invalidates the released run's holdout and cannot be done to a checkpoint that has
+already trained; it is a next-run change and must be sequenced with one. (2) and (3) are
+in the training and CLI paths respectively, not the evaluation path this triage covers,
+and (2) has no effect on any checkpoint already written. The tests stay red so the
+sequencing decision cannot be lost.
+
+---
+
+## ISSUE-012 — the amortised posterior returns the prior, and the calibration block certifies it
+
+**Status:** open. The defect that fed it is fixed in code; the posterior itself is untrained and
+cannot be repaired without a run.
+**Severity:** high for any inference claim, zero for the forecast claims. It voids
+`amortized_posterior_self_consistency` as evidence of inference and everything downstream of it.
+**Diagnosed:** 2026-08-09, from `checkpoints/scwbd-003/last.pt` and the run's own logs. No training
+was launched; every number below is a read of an existing artifact or a forward pass on the
+finished checkpoint.
+
+Run 3's posterior over `log_G, log_velocity, ei_global, ei_gradient, log_sigma, drive` explains no
+variance in any of them — `posterior_r2` = −0.010, 0.000, −0.006, −0.015, −0.003, −0.005 on 512
+held-out simulated datasets — and it is well calibrated: `sbc_ks_pvalue_min` 0.098, `coverage_mae`
+0.021, `posterior_z_sd` 0.96–1.00.
+
+Those two facts are the same fact. **A posterior that ignores its conditioning and returns the
+prior is perfectly calibrated by construction**: its ranks are uniform because the truth is a draw
+from the distribution it reported, its coverage is on the diagonal, and its width honestly matches
+its error because both are the prior's width. The calibration block does not qualify the R²; it is
+what an uninformative posterior looks like when it passes.
+
+### It is the prior, measured
+
+Sampling the checkpointed posterior on 256 held-out simulated windows, posterior sd in units of the
+prior's own sd:
+
+| parameter | R² | posterior sd / prior sd | sd of the posterior *mean* / prior sd | z-sd |
+|---|---:|---:|---:|---:|
+| `log_G` | −0.001 | 1.024 | 0.090 | 0.96 |
+| `log_velocity` | −0.031 | 0.944 | 0.084 | 0.99 |
+| `ei_global` | −0.022 | 1.025 | 0.088 | 1.00 |
+| `ei_gradient` | −0.035 | 1.029 | 0.094 | 0.97 |
+| `log_sigma` | −0.012 | 1.032 | 0.089 | 1.00 |
+| `drive` | −0.035 | 1.035 | 0.086 | 0.98 |
+
+The posterior is as wide as the prior to within 3%, and its mean moves by 9% of a prior sd as the
+data change — uncorrelated with the truth. Shuffling the conditioning vector `c` across the batch
+changes `−log q` by **0.001–0.003 nats**. The flow does not read its conditioning.
+
+Two explanations are ruled out by measurement. It is **not** overfitting: the same numbers hold on
+training trajectories (`log_G` R² −0.052, sd ratio 1.026). It is **not** the train/eval input
+mismatch (training masks 35% of parcels, `evaluate.py` does not): masked and unmasked agree to
+three decimals on both splits.
+
+### Where the training signal went: a constant scored as a density
+
+`posterior.nuisance_dim` was 2 and `train.py` passed `nuis = torch.zeros(B, 2)`, so two of the
+flow's eight target coordinates were the **same number in every batch of the run**. A flow cannot
+put finite density on a point mass, and the attempt is not a slow failure — it is an unbounded
+reward that costs nothing.
+
+Decomposing the objective on the finished checkpoint, marginalising those two coordinates out on a
+grid:
+
+```
+-log q(theta, nuis=0 | c)                    = -5.245   <- the logged npe_loss
+-log q(theta | c), nuisance marginalised out =  7.746
+credit taken by the two constant coordinates = -12.991 nats
+H(prior over theta) in the flow's u-space    =  7.838 nats
+```
+
+The theta term sits **0.09 nats below the prior's own entropy**. That is the entire mutual
+information the posterior carries about theta: less than a seventh of a bit, across six parameters.
+`npe_loss` fell 10.3 → −5.6 across stage T4 and 13.0 of those 15.9 nats went into collapsing two
+coordinates onto a constant (sampled sd 6.0e-4). The loss curve fell all the way down, and it was
+measuring the wrong thing for almost all of it.
+
+**This was diagnosed in run 2 and published on the project's own site** —
+`site/content/engineering/posterior-collapse.html`, "cause two: a point mass", with the measurement
+(`nuisance_dim=0` reaches −log q 5.30 with 0 rejections; `nuisance_dim=2` does not converge).
+`configs/run2/pilot-families.yaml` set **its own file** to 0 and said why. The **default** in
+`config.py` stayed at 2, and `configs/run3/scwbd-003.yaml` says of its posterior block: *"Untouched
+from the default, deliberately."* A fix that lives in one pilot config and not in the default is
+not a fix.
+
+Two further contributors, measured but not isolated:
+
+- The whole posterior — summary encoder and flow — trains at `POSTERIOR_LR_SCALE` 0.02 × the stage
+  LR. T4's LR is 2.0e-4, so **4.0e-6**, for the 5000 steps of the only stage in which the posterior
+  receives any gradient at all. T5 sets `lambda_posterior: 0.2` and never fires: no simulated
+  source is admitted there, and the training log carries `npe_loss` for T4 and no other stage.
+- `ConditionalFlow.cond_norm` is a `LayerNorm` **across the 128 features of one sample**, not across
+  datasets. `c` carries a large fixed pattern (per-dim |mean| 0.56, within-vector spread 0.59) and
+  the part that varies between datasets is 0.063. After the LayerNorm the between-dataset variation
+  is **5.5% of the within-vector spread**: every dataset presents the coupling nets with nearly the
+  same vector. The remedy is per-dimension standardisation of `c` across datasets, which is a
+  modelling change and needs a run to validate.
+
+### It is not an identifiability wall — for two of the six
+
+This is the part that decides what the issue is. The identifiability laboratory
+(`reports/identifiability/results.json`) reports C1/C2/C3 FAILED in every regime, but it measures a
+**different parameter set** (`a21, a32, a13, tau`) in an exact linear-Gaussian surrogate that
+imports nothing from `scwbd.foundation`. It cannot speak for `log_G` and it does not: its EEG-only
+θ-profile λmin is 13.7, 16.0 and 1.84 across the three regimes — **not** zero. What fails there is
+*fusion*: `fmri_only` contributes 7.7e-07, and the joint is the EEG design to five figures.
+
+So the question was put directly to run 3's own conditioning. Probing the **same 128-d vector the
+flow is handed**, and explicit statistics of the same window, on 1536 held-out windows, 1029 fit /
+507 test:
+
+| probe | log_G | log_velocity | ei_global | ei_gradient | log_sigma | drive |
+|---|---:|---:|---:|---:|---:|---:|
+| run 3 amortised posterior | −0.010 | 0.000 | −0.006 | −0.015 | −0.003 | −0.005 |
+| ridge on `c` | **0.439** | −0.141 | 0.072 | 0.056 | **0.356** | −0.037 |
+| MLP on `c` | **0.753** | −0.135 | 0.069 | 0.109 | **0.490** | −0.049 |
+| ridge on explicit stats of the window | **0.521** | −0.084 | 0.002 | 0.081 | **0.318** | −0.032 |
+| MLP on explicit stats of the window | **0.897** | −0.075 | 0.015 | 0.115 | **0.629** | −0.043 |
+
+**`log_G` is 75% predictable from the very vector the flow conditions on, and the flow recovers
+none of it.** A two-layer MLP fitted on 1029 examples does what 5000 NPE steps over ~40,000
+simulated windows did not. For `log_G` and `log_sigma` this is a training defect and nothing else.
+
+For `log_velocity`, `ei_global`, `ei_gradient` and `drive` no probe clears 0.12, and the honest
+statement is that **nothing yet shows they are recoverable from a 24-frame (192 ms) window** and
+nothing yet shows they are not. Note that the corpus normalises every window by its median regional
+sd (`normalise_window`), which removes the absolute amplitude that `log_sigma` and `drive` live in
+before the posterior ever sees it; `log_sigma` survives that in the probes and `drive` does not.
+
+### What must NOT be claimed while this is open
+
+1. That SC-WBD-003 infers, recovers, estimates or characterises any generative parameter. It does
+   not. `posterior_r2` ≤ 0.001 on all six.
+2. That the posterior's calibration is evidence for its inference. It is evidence **against** —
+   calibration at the prior's width is what an uninformative posterior produces.
+3. Any individualisation, intervention-planning or model-selection claim that reads theta from this
+   posterior. The BOLD branch already refuses to (`real_bold_losses` uses prior theta and logs
+   `bold_theta_source: "prior"`); nothing else may quietly do otherwise.
+4. That the identifiability laboratory explains this. It concerns other parameters in another
+   model, and on this one `log_G` is demonstrably there to be found.
+5. That the amortised-inference machinery has earned its place. On the evidence it has not: the
+   6% of parameters spent on it bought 0.09 nats.
+
+### What discharges it
+
+Retrain the posterior — one stage, no whole-model run needed — with all four of:
+
+- `nuisance_dim` 0 (done: the default is now 0 and `AmortizedPosterior.loss` refuses a constant
+  target column, so a placeholder cannot silently return);
+- a posterior LR that is not 4e-6, chosen against a short sweep rather than inherited from a
+  divergence fix for a different failure;
+- conditioning standardised per dimension across datasets rather than per sample across features;
+- `lambda_posterior` in a stage that actually admits a simulated source.
+
+Discharged when `posterior_r2` for `log_G` clears **0.4** on held-out simulated datasets — below
+what a ridge probe on the same conditioning already achieves, so it is a floor the machinery must
+beat to justify existing — while `sbc_ks_pvalue_min > 0.01` and `coverage_mae < 0.05` still hold.
+Recovering calibration by widening back to the prior does not discharge it.
+
+If a retrain under those conditions still returns the prior, then the summary statistics are the
+wrong ones and the finding becomes an identifiability result about this observation operator, which
+is a more important result than the defect and should be written up as one.
+
+### Guard
+
+`tests/foundation/test_posterior_informativeness_is_declared.py`. `posterior_report` now emits
+`posterior_informative`, `uninformative_parameters` and `posterior_sd_over_prior_sd` beside the
+calibration numbers; a published evaluation that shows R² below 0.05 on every parameter and does
+not say so fails; the release claim `amortized_posterior_self_consistency` can no longer be graded
+`partial` on SBC and coverage alone, and an uninformative posterior adds a negative result;
+`AmortizedPosterior.loss` raises `ConstantTargetDimension` on a target column that never varies.
+
+Mutation-tested, six mutations, all caught, each restored file re-run green:
+default `nuisance_dim` 0→2; removing the constant-target refusal; the release gate reverted to
+calibration-only; `posterior_informative` hard-coded True; the declaration stripped from
+`reports/training/evaluation_run3.json`; `posterior_sd_over_prior_sd` zeroed.
+
+The declaration was backfilled into the five published `reports/training/evaluation*.json` files by
+deriving it from the `posterior_r2` already in each. **No measured value in any artifact was
+changed or recomputed.** Run 1's `evaluation.json` is the only one that declares informative
+(`ei_global` 0.273); run 2's three files are uninformative on every parameter, so this is not new in
+run 3 — it is the first run whose calibration was good enough to hide it.

@@ -62,32 +62,71 @@ def test_split_fingerprint_records_whether_it_was_verified(cfg, real_eeg, real_s
 
 
 def test_unverified_split_is_refused_or_recorded_not_silently_passed():
-    """The guard must not treat 'nothing recorded' as 'nothing wrong'."""
+    """The guard must not treat 'nothing recorded' as 'nothing wrong'.
+
+    **This test used to skip on a source literal.** It required
+    ``"recorded is not None" in src`` and skipped when absent -- and the fix
+    restructured the branch to ``if recorded is None: ... elif <mismatch>:
+    raise``, so the literal vanished and the test went green-by-skip. A skip
+    that reads as green is the decorative guard this whole directory exists to
+    catch, committed inside the test written to catch it.
+
+    It now checks the three states behaviourally-shaped: absent, mismatched,
+    matching, each of which must leave a distinguishable mark.
+    """
     from scwbd.foundation import evaluate
 
     src = inspect.getsource(evaluate.real_eeg_holdout)
-    guarded = "recorded is not None" in src
-    if not guarded:
-        pytest.skip("this build has no recorded-fingerprint guard to audit")
-    records_absence = "split_verified" in src or "verified" in src
-    assert records_absence, (
-        "the guard is `if recorded is not None and <mismatch>: raise`, so a "
-        "checkpoint that recorded no fingerprint passes silently and the returned "
-        "report says nothing about it. The [warn] is in main(), which "
-        "evaluate_model() and real_eeg_holdout() -- both public -- bypass."
+    assert "_recorded_split_fingerprint" in src, (
+        "real_eeg_holdout no longer looks for a recorded fingerprint at all; the "
+        "split it rebuilt is compared against nothing"
+    )
+    assert "raise RuntimeError" in src and "does not match the checkpoint" in src, (
+        "a recorded fingerprint that disagrees with the recomputed one no longer "
+        "raises. Evaluating would score a model on participants it may have "
+        "trained on."
+    )
+    # The ABSENT state is the one that used to pass silently: it must write its
+    # own status into `fp`, which the report carries as `real_split`.
+    assert "NOT VERIFIED" in src, (
+        "the `recorded is None` branch writes nothing. A checkpoint that recorded "
+        "no fingerprint then passes silently and the returned report carries a "
+        "recomputed sha256 that reads as provenance. The [warn] is in main(), "
+        "which evaluate_model() and real_eeg_holdout() -- both public -- bypass."
+    )
+    assert '"real_split": fp' in src, (
+        "the fingerprint block, with its verification status, is no longer "
+        "written into the returned report. A status the artifact does not carry "
+        "has not been recorded."
     )
 
 
-def test_verification_status_survives_into_the_returned_report():
-    """A warning printed to stdout is not part of the artifact."""
+def test_verification_status_survives_into_the_returned_report(cfg, real_eeg, real_split):
+    """A warning printed to stdout is not part of the artifact.
+
+    **This test used to grep for a literal the fix never adopted.** It demanded
+    ``"split_verified" in inspect.getsource(evaluate)``; the implementation
+    landed the same contract as ``fp["verified"]`` plus a human-readable
+    ``fp["verification"]``, so the test failed on a naming choice rather than on
+    a defect. Checked on the returned value now, not on a spelling.
+    """
     from scwbd.foundation import evaluate
 
     main_src = inspect.getsource(evaluate.main)
     if "_recorded_split_fingerprint" not in main_src:
         pytest.skip("this build does not hand a recorded fingerprint to the holdout")
-    warns_to_stdout = "[warn]" in main_src and "records no real_split" in main_src
-    assert not warns_to_stdout or "split_verified" in inspect.getsource(evaluate), (
-        "the 'records no real_split fingerprint' warning goes to stdout only. "
-        "evaluation.json is the artifact a reader receives; a provenance warning "
-        "that is not in it has not been recorded."
+
+    fp = _fingerprint_fn()(real_eeg, real_split)
+    assert fp.get("verified") is False, (
+        f"split_fingerprint returns verified={fp.get('verified')!r} without any "
+        f"comparison having happened. It must default to False: a recomputed "
+        f"sha256 that a reader can mistake for a checked one is the failure this "
+        f"field exists to prevent."
+    )
+    reason = str(fp.get("verification", ""))
+    assert "NOT VERIFIED" in reason.upper(), (
+        f"split_fingerprint's default verification reason is {reason!r}. The "
+        f"artifact must say in words that nothing was compared, because "
+        f"`verified: false` beside an authoritative-looking hash is read as a "
+        f"field nobody filled in."
     )
