@@ -62,6 +62,22 @@ CONFIG = REPO / "configs/run3/scwbd-003.yaml"
 #: what is being measured.
 BALLOON = ("log_kappa", "log_gamma", "log_tau", "alpha", "neural_gain")
 
+#: Why `stage_T4_simulator.pt` is absent, said precisely. Run 3 DID write it;
+#: `make release-003-ablate` then overwrote it with a 200-step arm (ISSUE-010)
+#: and the corrupted file was quarantined to
+#: `checkpoints/scwbd-003-ablation-debris/`. A skip reading "not written yet"
+#: would tell a future reader the run never reached T4, which is false and is
+#: the same class of defect as a health field showing a stale value.
+#:
+#: The measurement itself is not lost -- it was taken before the overwrite and
+#: is recorded in reports/RUN3.md and ISSUE-008: all five Balloon parameters
+#: frozen in T4, and bit-identical across the T4 -> T5 boundary.
+_MISSING_T4 = (
+    "stage_T4_simulator.pt was destroyed by ISSUE-010, not never written. The "
+    "reading it would recompute is recorded in reports/RUN3.md: all five frozen "
+    "in T4. This test goes live again on the next run."
+)
+
 
 def _load(path: Path) -> dict:
     import torch
@@ -157,7 +173,7 @@ def test_the_simulator_stage_does_not_integrate_the_ode_either() -> None:
 
     t4 = RUN3 / "stage_T4_simulator.pt"
     if not t4.is_file():
-        pytest.skip("run 3 has not written the simulator stage yet")
+        pytest.skip(_MISSING_T4)
     assert _frozen_balloon(_load(t4)) == list(BALLOON), (
         "the simulator stage moved the Balloon parameters. If that is real, the "
         "ODE is being integrated somewhere this file does not know about, and "
@@ -174,7 +190,9 @@ def test_the_measured_return_stage_leaves_them_untouched() -> None:
     """
     t4 = RUN3 / "stage_T4_simulator.pt"
     t5 = RUN3 / "stage_T5_measured_return.pt"
-    if not (t4.is_file() and t5.is_file()):
+    if not t4.is_file():
+        pytest.skip(_MISSING_T4)
+    if not t5.is_file():
         pytest.skip("run 3 has not reached the end of T5 yet")
 
     before, after = _balloon_hash(_load(t4)), _balloon_hash(_load(t5))
