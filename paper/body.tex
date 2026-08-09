@@ -1813,6 +1813,24 @@ Every ablation reports both variance and plausible systematic error; a lower
 variance model is not preferred when it achieves stability by smoothing away
 the effect of interest.
 
+Two of these comparisons have now been attempted against trained weights, and
+the gap between what was run and what the list requires belongs here rather than
+in the results. The leave-one-source-out sweep of Section 11.9 retrains one arm
+per source family and gives a family whose removal \emph{improves} the metric the
+same prominence as a gain, which is the negative-transfer test that Section 0.6
+requires to ship with an empirical result. It runs one arm per family with no
+seed replication, so it reports a sign pattern and no interval, and it is scored
+on simulated rather than measured validation data, so it answers a narrower
+question than this list poses. Separately, the comparison between region-specific
+pretraining and end-to-end blank-slate training is not supplied by the sequence
+of trained artifacts: successive runs differ in width, source list, and
+observation operators at once, which makes them a development history and not an
+ablation of any one of those factors. Held-out perturbational prediction is
+likewise open. The third artifact does train on measured single-pulse TMS, and
+the release carries no per-pulse coil pose, one target site, one intensity, and
+two participants, so a response at a site or dose the model has not seen remains
+unpredicted and untested.
+
 \subsection{11.5 First-Gate Results: the Section 0.3 Artifacts}
 
 Both Section 0.3 artifacts have been built and run. What follows are results
@@ -2201,7 +2219,10 @@ held 109 participants, so the test fraction was a choice rather than a
 constraint, and at the full split the limit falls to \(0.0699\). An
 inconclusive result under the original fold would have been indistinguishable
 from a true null. Power is a property of the design, not a diagnosis available
-after the fact, and it is now fixed before any arm trains.
+after the fact, and it is now fixed before any arm trains. The \(0.1404\) figure
+bounds this run's paired dispersion rather than the split: at the same 27
+participants, a later artifact resolves a \(0.0377\)-nat difference with an
+interval excluding zero (Section 11.9).
 
 \paragraph{What the successor run may claim.}
 Measured separation among cortical parcels supports a binary partition and
@@ -2227,10 +2248,19 @@ said \emph{segment rather than padded}; that is the alternative layout, which is
 built and tested but is not what these weights use. The artifact records
 \texttt{layout: family\_padded}, and $47.34\%$ of the $414 \times 59$ state
 plane is pad, because two hippocampal parcels of width two set the width for
-every region.) Final scores are not reported here; the run
-is incomplete at the time of writing and any number would be an interim read.
-What is reportable, and is the point of this subsection, is a class of defect
-that only a \emph{second} artifact can expose.
+every region.) The run has since completed, and it lost on both columns:
+held-out \(3.1789\) nats against \(2.0454\) for the best baseline, and MSE
+\(36.27\) against \(4.53\), every paired participant-clustered interval
+excluding zero. Two properties of that comparison outweigh the scores. The
+figure flatters the model by \(0.5694\) nats, because it is scored on a
+normalized target while every baseline is scored on the raw one, so the
+corrected gap is larger. And \(88.7\%\) of the parameters---\(2{,}231{,}447\) of
+\(2{,}516{,}530\), the entire family-indexed regional block---were named by no
+source card and stood at their initialization when the run ended, because an
+unmatched gradient-permission glob is an empty permission set rather than an
+error. The loss is therefore not evidence that heterogeneous regional state
+fails. What is reportable, and is the point of this subsection, is a class of
+defect that only a \emph{second} artifact can expose.
 
 \paragraph{What the artifact actually is, and how we found out.}
 The run trained on \emph{simulated} trajectories alone. Its configuration
@@ -2330,6 +2360,176 @@ was \emph{unrepresentable} in the test model, here it was representable but
 \emph{unreachable}---and both are cases of a green instrument saying nothing
 while appearing to say something reassuring.
 
+\subsection{11.9 Fourth-Gate Results: the First Artifact That Beats Its
+Baselines}
+
+A third whole-brain model was compiled with heterogeneous per-family regional
+state over 414 parcels, trained for \(13{,}400\) steps across five curriculum
+stages in 29 hours on seven measured sources and four observation montages, and
+scored on a participant-disjoint held-out split of the same corpus the second
+gate used, against six statistical baselines fitted on the same training windows.
+It beat all of them: \(1.9863\) nats per channel per sample
+against \(2.0240\) for a dense VAR(4) and \(2.0254\) for a per-channel AR(16),
+over \(1{,}080\) windows from 27 held-out participants, with every paired
+participant-clustered 95\% interval excluding zero---\(-0.0377\,[-0.0669,
+-0.0169]\) against the first and \(-0.0391\,[-0.0696, -0.0152]\) against the
+second. It is the first artifact in this program to clear that bar. The rest of
+this subsection is what the result is a result about, because one measurement
+moved and the scorecard around it did not.
+
+\paragraph{The win is in the density, not the conditional mean.}
+Scored on per-window MSE over the same windows, the same comparison is
+inconclusive against both strong baselines: \(-0.0527\,[-0.2252, +0.0954]\)
+against AR(16) and \(+0.0147\,[-0.0630, +0.0903]\) against VAR(4), each interval
+spanning zero. The model separates on MSE from persistence, from the population
+Gaussian, and from the dense neural arm, and from nothing else. The measured
+advantage is therefore in the predictive distribution rather than in the point
+forecast---the exact converse of the second-gate artifact, whose conditional mean
+beat every baseline while its variance channel lost the comparison
+(Section 11.7). Both scores are computed for that reason, and either one alone
+inverts a verdict.
+
+\paragraph{Five distinct comparators, not six.}
+The subject-specific autoregressive arm is bit-identical to AR(16). The split is
+participant-disjoint, so no test participant has a fitted person model and the
+arm falls through to its global fallback; the between-participant spread of the
+applied individualization shift is \(0.000\times10^{0}\) by construction, and the
+evaluation records that no individualizer was attached. This is a population
+model scored window-level, the split cannot measure individualization at all, and
+the individualization row of Table~\ref{tab:claim-gates} is untouched by the run.
+The same collapse was the fourth defect enumerated in Section 11.7, where it
+appeared as 71 fitted models reported in use against a true count of zero. It is
+now reported as an identity between two rows rather than as a sixth arm.
+
+\paragraph{A \(0.04\)-nat margin, and the units defect that would have
+manufactured one.} The third-gate run's held-out likelihood was flattered by
+\(0.5694\) nats, because the model was scored on a normalized target with the
+Jacobian folded into its log-variance while every baseline was scored on the raw
+target. That offset is fifteen times the present margin and would invert this
+verdict by itself. The evaluator now scores the model on the raw target in the
+same functional form the baselines use and keeps the normalized variant
+separately, and that was measured against these weights rather than inherited
+from the repair. Section 11.7 reports a minimum detectable effect of \(0.1404\)
+nats at 27 held-out participants, which the present margin sits well below while
+still excluding zero: that limit was derived from the second-gate run's own six
+paired comparisons, so it bounds an arm's paired dispersion and not the
+participant count.
+
+\paragraph{Nearly every parameter moved.}
+\(26{,}298{,}763\) of \(26{,}304{,}729\) parameters---\(99.98\%\)---differ from
+their initialization by bit comparison, against \(11.3\%\) of the third-gate
+model's parameters being reachable by any enabled gradient permission at all.
+The comparison is the point of the run and it has a units trap inside it: the
+checkpoint's own headline is 341 of 382 \emph{tensors}, \(89.3\%\), which set
+beside a parameter count flatters the earlier run by a factor of five hundred.
+The \(99.98\%\) is recomputed by bit comparison against a freshly constructed
+model at the training seed. The \(5{,}966\) parameters that never moved are four
+groups, and one of them is the haemodynamic block.
+
+\paragraph{No fMRI or haemodynamic claim may be read off this model.}
+The Balloon ODE was never integrated on any path in this run. Its five
+parameters are bit-identical to their initialization in all five stages,
+including the simulator stage, and bit-identical across the boundary between the
+last two, which is a whole stage of measured data. The measured-BOLD term rose
+monotonically in every stage, from \(21.7\) at the first logged step to about
+\(2\times10^{6}\), peaking at \(4.37\times10^{6}\); against a target normalized
+to unit scale, that places the predicted mean on the order of a thousand standard
+deviations out. The parcel-BOLD source did contribute a gradient, so the run's
+own statement that every enabled source contributed one is a statement about
+wiring and not about evidence. The path was repaired in code after the run
+finished; the weights were trained through the broken one and cannot be
+untrained. This is the third-gate lesson of Section 11.8 in its most expensive
+form---a declared mechanism absent from the path that exists to serve it, and a
+run that completes anyway.
+
+\paragraph{Leave-one-source-out returns the fusion null, on a metric that nearly
+guarantees it.} Eleven arms, 200 steps each, retrained from a common
+initialization at a fixed seed. Removing the simulator costs \(0.0445\) against
+an all-sources baseline of \(0.6793\). Removing any of the nine measured and
+prior families improves the score, by \(0.0006\) to \(0.0097\). Three properties
+bound what that can mean. The arms are scored on the \emph{simulated} validation
+set, so ``measured data makes simulator-conditioned forecasting slightly worse''
+is close to tautological: every gradient a measured source contributes pulls the
+model off the simulator it is then scored against. There is one arm per family
+and no seed replication, so no interval exists. And the simulated corpus drew
+each window offset from the global random stream, so each arm consumed an
+arm-dependent amount of randomness and was scored on different windows, which
+puts the deltas at the size window-sampling noise can plausibly reach; the offset
+is now seeded from the corpus seed and the item index, so two arms scored on the
+same indices see the same data. The individual deltas are consequently not effect
+sizes and are not quoted as such. What survives all three objections is the sign:
+nine of nine measured and prior families point the same way, and the single
+family whose removal hurts is the simulator.
+
+The null does not contradict the held-out win. They are measurements on different
+data under different metrics---the model beats every baseline on measured EEG,
+and no measured source improves simulator-conditioned forecasting---and reporting
+only the first would be the flattering half of one run. It is also the second
+place this program has measured a null fusion effect, the first being C1 and C2
+failing in every regime of the linear--Gaussian laboratory (Section 11.5).
+Whether the measured sources help \emph{measured} prediction is the question a
+reader would actually ask, and the ablation as run cannot ask it.
+
+\paragraph{The amortized posterior is calibrated and uninformative.}
+Simulation-based calibration over the six inferred parameters is clean: minimum
+KS \(p=0.098\), coverage mean absolute error \(0.021\), and z-score standard
+deviations of \(0.96\)--\(1.00\). The variance in the truth explained by the
+posterior mean is \(-0.010\), \(0.000\), \(-0.006\), \(-0.015\), \(-0.003\) and
+\(-0.005\): six parameters, none of them explained. The posterior is honest about
+its own uncertainty and carries almost nothing about \(\theta\), which is
+precisely the failure a calibration check cannot see, because a posterior that
+returns the prior is exactly calibrated. Sections 11.5 and 11.8 record two
+neighboring cases---a failure \emph{unrepresentable} in the surrogate the guard
+runs against, and a failure representable but \emph{unreachable} by the probe.
+This is a third: the failure is present, the guard runs directly on it, and the
+statistic the guard computes is invariant to it. Calibration and informativeness
+must therefore be reported as two numbers, never as one.
+
+\paragraph{The forward operator is still an analytic sphere.}
+The lead field records an analytic single-sphere fallback with condition number
+\(193.8\): radial dipoles in a homogeneous conducting sphere at real 10--10
+electrode positions. It supports no source-localization and no
+individual-anatomy claim, and every score above is a sensor-space score. That
+sentence is now derived from which branch of the builder actually ran, which is
+the repair for a defect under which every lead field this program had ever built
+used a Fibonacci spiral of points on a sphere while its own provenance note
+claimed real electrode positions---including the operators inside both earlier
+released checkpoints, which is why nothing read off them about this operator's
+spatial structure survives.
+
+\paragraph{What the sequence of runs is not a controlled comparison of.}
+Between the third-gate artifact and this one, the hidden width changed from 288
+to 1408, the measured source list from two sources to seven, the observation
+operators from one montage to four including the lead-field repair above, and two
+attachment kinds acquired a source for the first time. No difference in outcome
+is attributable to any one of those. Section 11.7's artifact is the
+equal-capacity generic-operator control that Section 11.4's first required
+ablation asks for, and the present artifact is nominally its treatment arm; the
+two are separated by far more than the factor under test, so that pairing is not
+the ablation either.
+
+Nor does the held-out win supply evidence for any row of
+Table~\ref{tab:claim-gates}. Four of the six baselines are statistical arms of
+\(2{,}208\) to \(20{,}544\) parameters. The one arm that is capacity-matched---a
+dense neural network of \(26{,}296{,}869\) parameters against the model's
+\(26{,}304{,}729\)---scores \(9.3607\) nats and a per-window MSE of \(1599.72\),
+four times worse than persistence on the log score and four hundred times worse
+on the squared error. An arm fitted that badly bounds nothing, and beating it
+measures its optimization rather than the structure under test. Every row of
+that table asks for a control matched on the specific structure at issue, and
+this run fields none. The identifiability laboratory's verdict is unchanged by
+the run and is not addressed by it.
+
+What the run licenses is narrow, and worth stating exactly: a model of this class,
+trained on this mixture, achieves a lower held-out Gaussian log loss on
+64-channel scalp EEG from 27 unseen participants than six baselines fitted on the
+same training windows. The leakage audit records that all of those recordings
+come from one site, so the split cannot falsify a site or device shortcut, and
+the held-out score is a number about one corpus rather than about the
+seven-source mixture, because the other six sources hold 78, 10, 4, 2, 2 and 2
+participants and five of them cannot support a held-out-participant claim at all.
+What the six other sources changed is the model being scored, not the test set.
+
 \section{12. Confidence-Calibrated Development Horizons}
 
 \subsection{12.1 Near-Term: Executable Multimodal Subsystems}
@@ -2372,6 +2572,22 @@ Increasing biological detail may improve credibility while worsening
 parameter identification. Compute-efficient surrogates may preserve ordinary
 trajectories while failing exactly under the perturbations for which the model
 is needed.
+
+Three of those failure modes have since been measured rather than anticipated,
+and the measurements sharpen them. A source can be wired into the objective,
+receive gradient at every step, and carry no information whatever: the
+parcel-BOLD channel of Section 11.9 did exactly that, through a haemodynamic
+module whose differential equation was never integrated, while a per-source
+diagnostic reported it as contributing. ``Every enabled source contributes
+gradient'' is a statement about wiring, and it is the weaker of the two claims it
+resembles. Second, identifiable content can be absent while every calibration
+statistic is nominal---the same run's amortized posterior is calibrated to a
+minimum KS \(p\) of \(0.098\) and explains none of the variance in any of six
+parameters---so calibration and informativeness are two numbers and a program
+that reports one of them has reported neither. Third, negative transfer is not
+hypothetical here: removing any one of nine measured and prior source families
+\emph{improved} simulator-conditioned forecasting, on a metric whose direction
+that comparison nearly guarantees, which establishes the sign and no magnitude.
 
 The mature connectome is neither fully known nor fully fixed. Human
 tractography lacks reliable direction for many pathways and contains false
