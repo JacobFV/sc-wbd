@@ -731,13 +731,28 @@ def source_ablation(trainer, *, steps: int = 120, seed: int = 0) -> dict[str, An
     #
     # An evaluation must not be able to modify its own subject. Redirected to a
     # scratch directory for the duration.
+    # And `report_dir`, which is the third output this had to be told about
+    # one at a time. `run_stage` also writes `mixture_<stage>.json` there, both
+    # flat and run-scoped, so an arm overwrote run 3's published T4 mixture with
+    # its own: ten sources became nine, `sleepedf_real` missing, because that
+    # was the family the arm had dropped.
+    #
+    # Enumerating outputs to suppress is how this defect kept coming back --
+    # `ckpt_every`, then `log_every`, then a logger redirect, then out_dir, and
+    # the mixture report was still writing to the production path. Redirect the
+    # DIRECTORIES; anything the trainer writes then follows automatically,
+    # including artifacts added later that nobody thinks to check here.
     _saved_logger = trainer.logger
     _saved_out = trainer.out_dir
+    _saved_reports = trainer.report_dir
     scratch = _saved_out.parent / f"{_saved_out.name}-ablation-scratch"
     scratch.mkdir(parents=True, exist_ok=True)
+    report_scratch = _saved_reports / f"{trainer.cfg.train.run_name}-ablation"
+    report_scratch.mkdir(parents=True, exist_ok=True)
     trainer.out_dir = scratch
+    trainer.report_dir = report_scratch
     trainer.logger = JsonlLogger(
-        trainer.report_dir / f"{trainer.cfg.train.run_name}_ablation_train.jsonl",
+        report_scratch / f"{trainer.cfg.train.run_name}_ablation_train.jsonl",
         echo=True,
         echo_every=1,
     )
@@ -746,6 +761,7 @@ def source_ablation(trainer, *, steps: int = 120, seed: int = 0) -> dict[str, An
     finally:
         trainer.logger = _saved_logger
         trainer.out_dir = _saved_out
+        trainer.report_dir = _saved_reports
 
 
 def _source_ablation_inner(trainer, *, steps: int, seed: int) -> dict[str, Any]:

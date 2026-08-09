@@ -124,6 +124,49 @@ def test_the_ablation_cannot_write_checkpoints_into_the_run_it_evaluates(
     assert trainer.out_dir == production, "out_dir was not restored"
 
 
+def test_the_ablation_cannot_write_reports_into_the_run_it_evaluates(
+    tmp_path: Path,
+) -> None:
+    """The third output this had to be told about one at a time.
+
+    `run_stage` writes `mixture_<stage>.json` into `report_dir`, flat and
+    run-scoped. An arm overwrote run 3's published `mixture_T4_simulator.json`
+    with its own — ten sources became nine, `sleepedf_real` missing, because
+    that was the family that arm had dropped. A published artifact silently
+    describing a 200-step leave-one-out arm instead of a 13,400-step run.
+
+    The fix is to redirect the DIRECTORY, not to enumerate what lands in it, so
+    an artifact added later is covered without anyone remembering this test.
+    """
+    from scwbd.foundation import evaluate as ev
+
+    trainer = _StubTrainer(tmp_path)
+    production = trainer.report_dir
+    (production / "mixture_T4_simulator.json").write_text('{"sources": 10}')
+    seen: dict[str, Path] = {}
+
+    def _fake_inner(tr, *, steps, seed):
+        seen["reports"] = Path(tr.report_dir)
+        (Path(tr.report_dir) / "mixture_T4_simulator.json").write_text('{"sources": 9}')
+        return {}
+
+    monkey = ev._source_ablation_inner
+    ev._source_ablation_inner = _fake_inner
+    try:
+        ev.source_ablation(trainer, steps=1, seed=0)
+    finally:
+        ev._source_ablation_inner = monkey
+
+    assert seen["reports"] != production, (
+        f"the ablation wrote reports into {production}, the directory holding "
+        "the published artifacts of the run it is evaluating"
+    )
+    assert (production / "mixture_T4_simulator.json").read_text() == '{"sources": 10}', (
+        "a published mixture report was overwritten by an ablation arm"
+    )
+    assert trainer.report_dir == production, "report_dir was not restored"
+
+
 def test_the_original_logger_is_restored_afterwards(tmp_path: Path) -> None:
     """A redirect that leaks would silently move all later logging."""
     from scwbd.foundation import evaluate as ev

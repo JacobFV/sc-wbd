@@ -40,3 +40,10 @@ site/_build/
 # once it describes a trained run; an untrained copy reads as a finding.
 reports/attachment_kinds.json
 reports/attachment_kinds.md
+
+# Ablation scratch: source_ablation redirects checkpoints and reports here so it
+# cannot overwrite the run it is evaluating (ISSUE-010). Arms are inspectable
+# but are not artifacts of any run.
+checkpoints/*-ablation-scratch/
+checkpoints/*-ablation-debris/
+reports/training/*-ablation/
