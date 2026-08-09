@@ -35,10 +35,29 @@ def _backend_of_item(sim_val) -> np.ndarray:
 
 @pytest.mark.parametrize("label,n_take", SLICES)
 def test_every_backend_appears_in_the_evaluated_slice(sim_val, label, n_take):
-    """E5 verdict test.  Fails while the head slice omits whole backends."""
+    """Every backend must reach the evaluated slice.
+
+    **This test used to assert the defect rather than the fix.** It read
+    ``bi[:n_take]`` -- the first N windows of a ``shuffle=False`` loader -- and
+    failed because the corpus is ordered by shard, so the head omitted whole
+    backends. That WAS the evaluation's behaviour and it was repaired:
+    `_sim_stratified` selects per backend, and its docstring records the measured
+    reason ("the first 512 of 1888 contained ZERO samples from two of the five
+    backends"). The test was never updated, so it kept reporting a fixed defect
+    as live -- contradicting run 3's own evaluation, which scored all five
+    backends at 64 windows each.
+
+    It now exercises the selector the evaluation calls. A red here means the
+    stratifier has regressed.
+    """
+    from scwbd.foundation.evaluate import _sim_stratified
+
     names = list(sim_val.backend_names)
     bi = _backend_of_item(sim_val)
-    head = bi[:n_take]
+    idx, _ = _sim_stratified(
+        sim_val, mode="proportional", total=n_take, caller=label
+    )
+    head = bi[np.asarray(idx)]
     counts = {names[j]: int((head == j).sum()) for j in range(len(names))}
     absent = sorted(k for k, v in counts.items() if v == 0)
     full = {names[j]: int((bi == j).sum()) for j in range(len(names))}
@@ -58,9 +77,16 @@ def test_head_slice_backend_mix_matches_the_fold(sim_val):
     and ``source_ablation`` adjudicates negative transfer with it.  A slice whose
     backend mix differs from the fold's answers a different question.
     """
+    from scwbd.foundation.evaluate import _sim_stratified
+
     names = list(sim_val.backend_names)
     bi = _backend_of_item(sim_val)
-    head = bi[: 8 * 64]
+    # `_sim_val_nll` calls `_sim_stratified(mode="proportional")`, which exists to
+    # preserve the fold's mixture. Measured on that, not on a head slice.
+    idx, _ = _sim_stratified(
+        sim_val, mode="proportional", total=8 * 64, caller="_sim_val_nll"
+    )
+    head = bi[np.asarray(idx)]
     p_head = np.array([(head == j).mean() for j in range(len(names))])
     p_full = np.array([(bi == j).mean() for j in range(len(names))])
     tv = 0.5 * np.abs(p_head - p_full).sum()

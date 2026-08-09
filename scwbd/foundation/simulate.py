@@ -617,7 +617,27 @@ class SimCorpus(torch.utils.data.Dataset):
         f = self._f(path)
         T = f["activity"].shape[1]
         w = min(self.window, T)
-        off = int(np.random.randint(0, T - w + 1)) if T > w else 0
+        # The offset is drawn from a generator seeded by (corpus seed, index),
+        # NOT from the global numpy RNG.
+        #
+        # It used to be `np.random.randint`, so the same index returned a
+        # different window on every call. `source_ablation` scores one arm per
+        # source family by calling `_sim_val_nll` after a training stage that has
+        # consumed an ARM-DEPENDENT amount of randomness -- so every arm was
+        # scored on different windows, and the leave-one-out deltas carried
+        # window-sampling noise that no error bar accounted for. Run 3's fusion
+        # null was computed that way; its deltas of 0.0006-0.0097 are the size
+        # this noise can plausibly reach.
+        #
+        # Deterministic per index means the arms are comparable, which is the
+        # whole premise of a leave-one-out. Training-time variety is unaffected:
+        # different indices still give different offsets, and the corpus is
+        # shuffled by the loader.
+        if T > w:
+            rng = np.random.default_rng((int(getattr(self, "seed", 0)) << 32) ^ int(i))
+            off = int(rng.integers(0, T - w + 1))
+        else:
+            off = 0
         a = np.asarray(f["activity"][ti, off : off + w], dtype=np.float32)
         th = np.asarray(f["theta"][ti], dtype=np.float32)
         ei = np.asarray(f["ei_regional"][ti], dtype=np.float32)
