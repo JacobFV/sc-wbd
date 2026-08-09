@@ -688,14 +688,29 @@ for every card that could have reached it, so nothing in run 2 could have shown
 this.
 
 **A note on `tests/evaluation_audit`.** HANDOFF-003 warns that its
-`conftest.py` hard-codes a path into `scwbd-wt/turing` and that removing the
-worktrees changes what the suite tests. The worktrees are gone and the path is
-absent, as is its in-repo fallback. The fixture does the right thing: it
-`pytest.skip`s with the reason ("no checkpoint carrying torch.compile's
-`_orig_mod.` prefix is present on this machine"). So the load-integrity test is
-now **skipped rather than passing**, which is visible rather than silent, and
-needs no repair — only the awareness that a green run of that file is not
-evidence about the `_orig_mod.` defect any more.
+`conftest.py` hard-codes a path into `scwbd-wt/turing`. That is true of ONE test
+in the directory — the `_orig_mod.` load-integrity test, which `pytest.skip`s
+with a clear reason and needs no repair.
+
+**Corrected 2026-08-09: the rest of the directory does not skip, it FAILS.**
+Measured, 26 failures against the released run-1 config and 24 against run 3's,
+so this is not run-1 history. Two clusters dominate: six of
+`assert not ['jansen_rit', 'linear_gaussian']` — backends absent from an
+evaluated slice — and four of "the scored sample contains 1 participant, so
+every participant-clustered 95% CI is [nan, nan]".
+
+**Those findings contradict run 3's actual evaluation**, which stratified
+correctly: `backend_comparison` scored all five backends at 64 windows each,
+`posterior_calibration` covered all five, and `real_eeg_holdout` used 27
+participants with finite intervals. So the audit and the evaluation disagree
+about the same code, and exactly one of them is wrong. That is the next thing to
+settle in this directory, and it is not settled here.
+
+Until it is: a red run of this file is not evidence that the released numbers are
+wrong, and a green one would not be evidence they are right. The run-3 numbers in
+this report were read off the evaluation's own output, whose stratification and
+participant counts are recorded in `reports/training/evaluation_run3.json` and
+can be checked directly.
 
 ## The behavioural head is predicting the majority class
 
