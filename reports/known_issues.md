@@ -420,7 +420,17 @@ environment problem.
 
 ## ISSUE-008 — the measured-BOLD path is not a haemodynamic model
 
-**Status: CLOSED 2026-08-09.** Fix (c), real multirate, with one compromise stated below.
+**Status: CLOSED 2026-08-09** in the code. Fix (c), real multirate, with one compromise stated
+below.
+
+> **SC-WBD-003 IS NOT RETROSPECTIVELY REPAIRED.** Its weights were trained through the broken path
+> and cannot be un-trained. Every statement this issue made about that run still holds: the Balloon
+> ODE never ran, the five haemodynamic parameters are bit-identical to their initialisation in all
+> five stages, `real_bold_nll` diverged to 4.4×10⁶, and **no fMRI or haemodynamic claim may be read
+> off SC-WBD-003 or any checkpoint in `checkpoints/scwbd-003/`.** "Closed" means the next run will
+> not have this defect. `test_balloon_parameters_receive_gradient.py` keys on the checkpoint's own
+> config for exactly this reason: it asserts the DEFECT against run 3's historical checkpoints and
+> the FIX against anything trained with `bold_predict_frames`.
 
 `real_bold_losses` now rolls the neural clock for the duration a BOLD frame actually covers and
 integrates the Balloon ODE across it. `dt_slow = dt_model * hemo_ratio` = 0.2 s; `slow_per_frame =
