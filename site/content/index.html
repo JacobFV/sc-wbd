@@ -1,5 +1,5 @@
 title: SC-WBD — Integrated whole-brain modelling across modalities, scales and dynamics
-description: A foundation model for one brain's dynamics across EEG, MEG, fMRI and stimulation — 414 parcels, structured per-region state, multiple clocks, individualized head model. No trained model here beats its baselines yet, and this site says so.
+description: A foundation model for one brain's dynamics across EEG, MEG, fMRI and stimulation — 414 parcels, structured per-region state, multiple clocks, individualized head model. One trained model now beats its statistical baselines on a held-out log score, narrowly; this site says exactly how narrowly.
 nav: index
 heading: SC-WBD: an integrated whole-brain foundation model across modalities, scales and dynamics
 standfirst:
@@ -25,7 +25,7 @@ invented.</p>
 <li><a href="https://github.com/JacobFV/sc-wbd">
   <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
   <span>Source on GitHub</span></a></li>
-<li><a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">
+<li><a href="https://huggingface.co/jacob-valdez/scwbd-003">
   <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 .6 15 4.3v.9L8 8.9 1 5.2v-.9L8 .6zM1 7.1l1.9 1L8 10.8l5.1-2.7 1.9-1v1.2L8 12.9 1 8.3V7.1zm0 3.3 1.9 1L8 14.1l5.1-2.7 1.9-1v1.2L8 16.2 1 11.6v-1.2z"/></svg>
   <span>Latest model on Hugging Face</span></a></li>
 </ul>
@@ -114,7 +114,7 @@ thing.</p>
 <div class="keyfig">
   <div><span class="n">414</span><span class="l">regions modelled at once<br>400 on the surface + 14 deep inside</span></div>
   <div><span class="n">4</span><span class="l">kinds of signal it learns from<br>each constraining only what it observes</span></div>
-  <div><span class="n">2.5M</span><span class="l">parameters in the current model<br>weights, data and code all public</span></div>
+  <div><span class="n">26.3M</span><span class="l">parameters in the current model<br>weights, data and code all public</span></div>
   <div><span class="n fail">0</span><span class="l">validated claims about brains<br>all five claim gates <span class="chip unknown">could_not_run</span></span></div>
 </div>
 
@@ -262,7 +262,7 @@ or download.</p>
   <td>Run-1 weights, published because they lose to copying the last observed sample forward. Structurally the control arm of our own ablation.</td>
 </tr>
 <tr>
-  <td><strong><a href="https://huggingface.co/jacob-valdez/scwbd-002-pilot">scwbd-002-pilot</a></strong></td>
+  <td><strong><a href="https://huggingface.co/jacob-valdez/scwbd-003">scwbd-002-pilot</a></strong></td>
   <td><span class="chip fail">negative result</span></td>
   <td>2.5M parameters over the 414 regions, the treatment arm. It loses to every
   baseline on both columns, NLL and MSE.[[note: NLL 3.179 against 2.045 for the
@@ -342,7 +342,13 @@ or download.</p>
   spanning zero. And run 2's units defect was re-checked rather than assumed
   gone — it flattered that run by 0.5694 nats, fifteen times this margin, which
   would have inverted the verdict. The model is now scored on the raw target in
-  the same form as the baselines.]]
+  the same form as the baselines. And the only CAPACITY-MATCHED control is
+  unfit: <code>dense_neural</code> has 26,296,869 parameters against the model's
+  26,304,729 and scores 9.361 nats, four times worse than persistence, so it
+  bounds nothing. The arms this result actually beats are statistical ones of
+  2,208 to 77,248 parameters &mdash; 26 million parameters ahead of a
+  5,184-parameter AR(16) by 0.04 nats. A matched neural control that trains is
+  the comparison this claim still needs.]]
   <strong>And no measured source earns its place.</strong> Leave-one-out over
   eleven retrained arms: only the simulator contributes, and all nine measured
   and prior families show <em>negative</em> transfer — the model forecasts
