@@ -46,7 +46,7 @@ from .heads import gaussian_nll
 from .simulate import THETA_NAMES, ThetaPrior
 from .util import Timer, git_sha, set_determinism
 
-__all__ = ["evaluate_model", "real_eeg_holdout", "posterior_calibration", "source_ablation", "main"]
+__all__ = ["evaluate_model", "real_eeg_holdout", "posterior_calibration", "source_ablation", "session_individualisation", "main"]
 
 
 # ======================================================================
@@ -1143,3 +1143,168 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
 
 if __name__ == "__main__":  # pragma: no cover
     main()
+
+
+# ======================================================================
+# individualisation: the claim the participant-disjoint split cannot measure
+# ======================================================================
+@torch.no_grad()
+def _theta_shift_spread(trainer, participants: Sequence[int]) -> dict[str, Any]:
+    """Between-participant spread of the applied theta shift.
+
+    On a participant-disjoint holdout this is **exactly** ``0.000e+00``, because
+    no held-out person has a fitted person effect -- their ``z_person`` row is
+    still zero. That is not a small effect; it is the split, and it is why
+    ``subject_specific_ar`` comes out bit-identical to ``ar16``.
+
+    Reported per theta dimension as well as pooled, because a shift that moves
+    one parameter and not the others is a different finding from one that moves
+    nothing.
+    """
+    ind = getattr(trainer, "individualizer", None)
+    if ind is None:
+        return {"available": False, "reason": "no individualizer on the trainer"}
+    delta = ind.delta.detach()
+    rows = [int(p) for p in participants if 0 <= int(p) < delta.shape[0]]
+    if not rows:
+        return {"available": False, "reason": "no scored participant has a person-effect row"}
+    d = delta[rows].float()
+    per_dim = d.std(dim=0, unbiased=False)
+    return {
+        "available": True,
+        "n_participants": len(rows),
+        "spread_pooled": float(d.std(unbiased=False)),
+        "spread_per_theta": [float(v) for v in per_dim],
+        "n_rows_exactly_zero": int((d.abs().sum(dim=1) == 0).sum()),
+        "note": (
+            "spread_pooled == 0.0 exactly means the individualizer applied nothing "
+            "to these participants. On a participant-disjoint split that is the "
+            "expected value and the reason individualisation cannot be measured "
+            "there at all."
+        ),
+    }
+
+
+def session_individualisation(
+    trainer,
+    *,
+    source_id: str = "sleepedf_real",
+    seed: int = 0,
+    per_participant: int = 20,
+    n_boot: int = 2000,
+) -> dict[str, Any]:
+    """Does a fitted person effect predict that person's HELD-OUT session?
+
+    The third capability on the landing page -- "fine-tuneable for personalized
+    neurotechnology" -- has never been measured, because every run so far used a
+    participant-disjoint split on which it is unmeasurable by construction.
+
+    Sleep-EDFx makes it measurable: 75 of its 78 participants were recorded on
+    two consecutive nights. `session_split` holds the participants fixed and
+    splits by session, so the same person is on both sides and the held-out
+    object is a NIGHT rather than a person.
+
+    This is the arrangement refusal **R10** forbids for a generalisation claim,
+    which is why it has its own splitter and its own audit. `leakage_check` is
+    expected to fail on this split; `session_leakage_check` is the one that
+    applies, and its failure modes are the opposite ones -- a night on both
+    sides, or a test participant absent from train.
+
+    Returns a report; ``ok`` is false and ``reason`` is set rather than raising,
+    so a run without the corpus still produces an artifact that says why.
+    """
+    from .realdata import session_leakage_check, session_split
+
+    ds = (getattr(trainer, "eeg_datasets", {}) or {}).get(source_id)
+    if ds is None:
+        return {
+            "ok": False,
+            "claim": "individualisation",
+            "reason": f"{source_id} is not loaded on this trainer, so the "
+            "individualisation claim cannot be measured. It is NOT thereby "
+            "supported.",
+        }
+
+    try:
+        split = session_split(ds, seed=seed)
+    except RuntimeError as exc:
+        return {"ok": False, "claim": "individualisation", "reason": str(exc)}
+
+    audit = session_leakage_check(split, ds)
+    if not audit["ok"]:
+        raise RuntimeError(
+            f"the session split does not hold: {audit['violations']}. Scoring it "
+            "would report a memorisation result as individualisation."
+        )
+
+    subjects = list(getattr(ds, "window_subjects", []))
+    test_idx = list(split["test"])
+    if per_participant > 0 and test_idx:
+        by_subj: dict[str, list[int]] = {}
+        for i in test_idx:
+            by_subj.setdefault(subjects[i], []).append(i)
+        rng = np.random.default_rng(seed)
+        test_idx = sorted(
+            j
+            for v in by_subj.values()
+            for j in (v if len(v) <= per_participant
+                      else list(rng.choice(v, per_participant, replace=False)))
+        )
+    if not test_idx:
+        return {"ok": False, "claim": "individualisation", "reason": "empty held-out session fold"}
+
+    bs = max(8, trainer.cfg.data.batch // 4)
+    loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(ds, test_idx), batch_size=bs, shuffle=False, num_workers=2
+    )
+    scores = _scwbd_scores(trainer, loader, n_mean_samples=64)
+    nll = np.asarray(scores["nll_per_window"], dtype=float)
+    scored_subjects = list(scores["subjects"])
+
+    pid = []
+    if hasattr(trainer, "participant_index"):
+        try:
+            pid = [int(v) for v in trainer.participant_index(scored_subjects).tolist()]
+        except Exception:  # noqa: BLE001 - a missing index is reported, not fatal
+            pid = []
+
+    # Per PARTICIPANT, not per window: 20 windows of one person are one
+    # observation of that person, and averaging them as though they were 20
+    # is the interval error `leakage_check`'s note already warns about.
+    per_person: dict[str, list[float]] = {}
+    for s, v in zip(scored_subjects, nll):
+        per_person.setdefault(str(s), []).append(float(v))
+    means = {k: float(np.mean(v)) for k, v in per_person.items()}
+
+    boot = None
+    if means and n_boot > 0:
+        keys = sorted(means)
+        vals = np.array([means[k] for k in keys])
+        rng = np.random.default_rng(seed)
+        draws = rng.choice(vals, size=(n_boot, len(vals)), replace=True).mean(axis=1)
+        boot = [float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))]
+
+    return {
+        "ok": True,
+        "claim": "individualisation",
+        "refuses": "generalisation",
+        "source": source_id,
+        "split_audit": audit,
+        "n_participants_individualisable": audit["n_participants_individualisable"],
+        "n_test_windows": len(test_idx),
+        "held_out_session_nll_per_participant": means,
+        "held_out_session_nll": float(np.mean(list(means.values()))) if means else None,
+        "held_out_session_nll_ci95": boot,
+        "theta_shift": _theta_shift_spread(trainer, pid),
+        "interval_note": (
+            "The interval is a cluster bootstrap over PARTICIPANTS on the "
+            "per-participant mean, not over windows. Windows within a night are "
+            "correlated and a window-level interval would be far too narrow."
+        ),
+        "what_would_falsify": (
+            "theta_shift.spread_pooled at or near zero means the individualizer "
+            "applied nothing even on a split built to let it apply something, and "
+            "the third capability is unsupported. Say so on the site in the terms "
+            "runs 1 and 2 got."
+        ),
+    }

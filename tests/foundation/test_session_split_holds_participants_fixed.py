@@ -224,3 +224,86 @@ def test_r10_fails_on_this_split_and_points_at_the_right_repair() -> None:
         "R10 rejected the split without naming the alternative, so the obvious "
         "next move is to weaken R10"
     )
+
+
+# ======================================================================
+# the evaluation that consumes the split
+# ======================================================================
+def test_individualisation_refuses_rather_than_reporting_nothing() -> None:
+    """An absent corpus must not read as an unsupported claim being supported.
+
+    "fine-tuneable for personalized neurotechnology" is on the landing page and
+    has never been measured. A silent absence here would let it stay there
+    unexamined, which is the same shape as a guard that cannot fire.
+    """
+    from scwbd.foundation.evaluate import session_individualisation
+
+    class _NoCorpus:
+        eeg_datasets: dict = {}
+
+    rep = session_individualisation(_NoCorpus(), source_id="sleepedf_real")
+    assert rep["ok"] is False
+    assert "NOT thereby supported" in rep["reason"], (
+        "the report does not say that an unmeasurable claim is unmeasured rather "
+        "than confirmed"
+    )
+
+
+def test_individualisation_refuses_a_split_that_does_not_hold() -> None:
+    """A leaky split must raise, not be scored.
+
+    The failure mode here is not R10's -- every participant is deliberately on
+    both sides. It is the same NIGHT on both sides, which would turn a held-out
+    score into a memorisation score.
+    """
+    from scwbd.foundation import evaluate as ev
+    from scwbd.foundation import realdata as rd
+
+    ds = FakeDataset(TWO_NIGHTS)
+
+    class _T:
+        eeg_datasets = {"sleepedf_real": ds}
+
+    # `session_individualisation` imports the audit at CALL time, so patching it
+    # on its source module is what reaches the caller.
+    real_check = rd.session_leakage_check
+    rd.session_leakage_check = lambda split, dataset: {
+        "ok": False,
+        "violations": [{"kind": "session_across_folds", "session": "SC400/night1"}],
+    }
+    try:
+        with pytest.raises(RuntimeError, match="memorisation"):
+            ev.session_individualisation(_T(), source_id="sleepedf_real")
+    finally:
+        rd.session_leakage_check = real_check
+
+
+def test_the_theta_shift_spread_is_the_named_falsifier() -> None:
+    """Zero spread means the individualizer applied nothing. Say so numerically.
+
+    On a participant-disjoint holdout this is exactly 0.000e+00 by construction.
+    Reporting it on the SESSION split is the point: if it is still zero there,
+    the capability is unsupported on a split built to let it show.
+    """
+    import torch
+
+    from scwbd.foundation.evaluate import _theta_shift_spread
+
+    class _Ind:
+        def __init__(self, delta):
+            self.delta = delta
+
+    unfitted = _Ind(torch.zeros(5, 6))
+    rep = _theta_shift_spread(type("T", (), {"individualizer": unfitted})(), [0, 1, 2])
+    assert rep["available"] and rep["spread_pooled"] == 0.0
+    assert rep["n_rows_exactly_zero"] == 3
+
+    fitted = torch.zeros(5, 6)
+    fitted[0, 0], fitted[1, 0], fitted[2, 0] = 0.5, -0.5, 0.25
+    rep2 = _theta_shift_spread(type("T", (), {"individualizer": _Ind(fitted)})(), [0, 1, 2])
+    assert rep2["spread_pooled"] > 0.0
+    assert rep2["n_rows_exactly_zero"] == 0
+    assert rep2["spread_per_theta"][0] > 0.0 and rep2["spread_per_theta"][1] == 0.0, (
+        "per-dimension spread is what separates 'moved one parameter' from "
+        "'moved everything', and they are different findings"
+    )
