@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .manifest import Claim, ClaimManifest, hash_file
+from .posterior import R2_INFORMATIVE_FLOOR
 from .report import CANNOT_DO
 from .util import env_fingerprint, git_sha
 
@@ -183,7 +184,18 @@ def build_manifest(
     if cal.get("available"):
         worst = min(cal.get("sbc_ks_pvalue", [1.0]) or [1.0])
         mae = cal.get("coverage_mae", 1.0)
-        status = "partial" if (worst > 0.01 and mae < 0.12) else "unsupported"
+        # Informativeness gates the claim, and it is not a refinement of the
+        # calibration test -- it is the half the calibration test cannot see.  A
+        # posterior that ignores its conditioning and returns the prior passes SBC
+        # and coverage by construction, so grading this claim on `worst` and `mae`
+        # alone graded run 3's posterior "partial" while it explained no variance
+        # in any of the six parameters.  See ISSUE-012.
+        r2 = cal.get("posterior_r2") or []
+        informative = cal.get("posterior_informative")
+        if informative is None:
+            informative = any(float(v) >= R2_INFORMATIVE_FLOOR for v in r2) if r2 else False
+        calibrated = worst > 0.01 and mae < 0.12
+        status = "partial" if (calibrated and informative) else "unsupported"
         m.add_claim(
             Claim(
                 id="amortized_posterior_self_consistency",
@@ -200,13 +212,17 @@ def build_manifest(
                     "coverage_mae": mae,
                     "posterior_r2": cal.get("posterior_r2"),
                     "posterior_z_sd": cal.get("posterior_z_sd"),
+                    "posterior_informative": informative,
+                    "uninformative_parameters": cal.get("uninformative_parameters"),
                     "n_datasets": cal.get("coverage", {}).get("n_datasets"),
                 },
                 sources=("sim_wholebrain",),
                 falsifier=(
-                    "SBC rank histograms departing from uniformity (KS p below 0.01) or an "
+                    "SBC rank histograms departing from uniformity (KS p below 0.01), an "
                     "expected-coverage curve deviating from the diagonal by more than 0.12 on held-out "
-                    "simulated datasets."
+                    f"simulated datasets, or posterior R^2 below {R2_INFORMATIVE_FLOOR} on every "
+                    "parameter -- a posterior that returns the prior satisfies the first two by "
+                    "construction and is not self-consistent inference, it is no inference."
                 ),
                 caveats=(
                     "Simulator-conditioned only. Calibration against the same simulator that produced "
@@ -217,6 +233,22 @@ def build_manifest(
                 ),
             )
         )
+        if not informative:
+            m.add_negative(
+                "amortized_posterior_uninformative",
+                "The amortized posterior explains no variance in the parameters it infers: "
+                f"posterior R^2 is below {R2_INFORMATIVE_FLOOR} on every parameter, so its mean does "
+                "not beat returning the prior mean. It is well calibrated, and that is not a "
+                "mitigation -- a posterior that returns the prior is calibrated by construction. "
+                "No parameter-recovery, individualisation or inference claim is supported by this "
+                "artifact. See ISSUE-012.",
+                {
+                    "posterior_r2": cal.get("posterior_r2"),
+                    "uninformative_parameters": cal.get("uninformative_parameters"),
+                    "sbc_ks_pvalue_min": worst,
+                    "coverage_mae": mae,
+                },
+            )
 
     # -- real EEG --------------------------------------------------------
     hold = ev.get("real_eeg_holdout", {})

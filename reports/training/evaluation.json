@@ -4406,6 +4406,13 @@
       2.4093337059020996,
       1.0826717615127563
     ],
+    "posterior_informative": true,
+    "uninformative_parameters": [
+      "ei_global",
+      "log_sigma"
+    ],
+    "informative_r2_floor": 0.05,
+    "informativeness_note": "posterior_r2 below 0.05 on 2 of 6 parameters (ei_global, log_sigma): the posterior explains no variance in them. Calibration does not qualify this -- an uninformative posterior that returns the prior is calibrated by construction. No parameter-recovery or inference claim may cite this block. See ISSUE-012 in reports/known_issues.md.  Derived on 2026-08-09 from the posterior_r2 already in this file; no measured value in this artifact was changed or recomputed.",
     "coverage_mae": 0.0678274855017662,
     "coverage": {
       "levels": [

@@ -1035,10 +1035,11 @@ The posterior is as wide as the prior to within 3%, and its mean moves by 9% of 
 data change — uncorrelated with the truth. Shuffling the conditioning vector `c` across the batch
 changes `−log q` by **0.001–0.003 nats**. The flow does not read its conditioning.
 
-Two explanations are ruled out by measurement. It is **not** overfitting: the same numbers hold on
-training trajectories (`log_G` R² −0.052, sd ratio 1.026). It is **not** the train/eval input
-mismatch (training masks 35% of parcels, `evaluate.py` does not): masked and unmasked agree to
-three decimals on both splits.
+Two explanations are ruled out by measurement. **Overfitting**: the same numbers hold on training
+trajectories — `log_G` R² −0.052, sd ratio 1.026 — so the flow does no better on the data it was
+fitted to. **The train/eval input mismatch** (training masks 35% of parcels, `evaluate.py` does
+not): across all four combinations of split and mask the sd ratios agree to within 0.005 per
+parameter and every R² stays inside ±0.05 of zero.
 
 ### Where the training signal went: a constant scored as a density
 
@@ -1075,8 +1076,9 @@ Two further contributors, measured but not isolated:
 
 - The whole posterior — summary encoder and flow — trains at `POSTERIOR_LR_SCALE` 0.02 × the stage
   LR. T4's LR is 2.0e-4, so **4.0e-6**, for the 5000 steps of the only stage in which the posterior
-  receives any gradient at all. T5 sets `lambda_posterior: 0.2` and never fires: no simulated
-  source is admitted there, and the training log carries `npe_loss` for T4 and no other stage.
+  receives any gradient at all. T5 sets `lambda_posterior: 0.2` and it never fires:
+  `reports/training/mixture_T5_measured_return.json` lists eight measured sources and no
+  `sim_wholebrain`, and the training log carries `npe_loss` for T4 and for no other stage.
 - `ConditionalFlow.cond_norm` is a `LayerNorm` **across the 128 features of one sample**, not across
   datasets. `c` carries a large fixed pattern (per-dim |mean| 0.56, within-vector spread 0.59) and
   the part that varies between datasets is 0.063. After the LayerNorm the between-dataset variation
@@ -1127,7 +1129,7 @@ before the posterior ever sees it; `log_sigma` survives that in the probes and `
 4. That the identifiability laboratory explains this. It concerns other parameters in another
    model, and on this one `log_G` is demonstrably there to be found.
 5. That the amortised-inference machinery has earned its place. On the evidence it has not: the
-   6% of parameters spent on it bought 0.09 nats.
+   1,111,568 parameters spent on it -- 3.5% of the checkpoint -- bought 0.09 nats.
 
 ### What discharges it
 

@@ -34,8 +34,19 @@ __all__ = [
     "sbc_ranks",
     "expected_coverage",
     "posterior_report",
+    "informativeness",
     "R09Violation",
+    "ConstantTargetDimension",
+    "R2_INFORMATIVE_FLOOR",
 ]
+
+#: A parameter whose ``posterior_r2`` is below this is reported as uninformative.
+#:
+#: ``R^2 <= 0`` means the posterior mean does not beat returning the prior mean,
+#: which is the one thing an amortized posterior must beat.  The floor sits above
+#: the sampling noise of the statistic (run 3: 512 datasets, |R^2| <= 0.016 on all
+#: six parameters) and well below any recovery worth calling recovery.
+R2_INFORMATIVE_FLOOR: float = 0.05
 
 BAND_EDGES = ((0.5, 4.0), (4.0, 8.0), (8.0, 13.0), (13.0, 20.0), (20.0, 30.0), (30.0, 45.0), (45.0, 60.0))
 
@@ -44,6 +55,25 @@ class R09Violation(RuntimeError):
     """A pseudo-likelihood was about to be reported as a calibrated posterior."""
 
     code = "R09"
+
+
+class ConstantTargetDimension(RuntimeError):
+    """A density was asked to model a target coordinate that never varies.
+
+    A normalizing flow cannot represent a point mass with finite density, and the
+    attempt is not a slow failure: it is an unbounded reward.  Every nat the flow
+    buys by shrinking a constant coordinate is a nat it did not have to buy from
+    the conditioning, and the loss curve falls the whole time.
+
+    Measured on run 3, from ``checkpoints/scwbd-003/last.pt``: ``nuisance_dim: 2``
+    with ``nuis = torch.zeros(...)`` collapsed those two coordinates to a sampled
+    sd of 6.0e-4 and took **12.99 of the 15.9 nats** by which ``npe_loss`` fell in
+    stage T4.  The remaining theta term settled at 7.746 nats against a prior
+    entropy of 7.838 -- the posterior learned the prior and nothing else.  See
+    ISSUE-012.
+    """
+
+    code = "NPE-CONST"
 
 
 # ======================================================================
@@ -305,6 +335,33 @@ class AmortizedPosterior(nn.Module):
     npe_rejected: int = 0
     npe_seen_max: float = 0.0
 
+    @staticmethod
+    def _refuse_constant_targets(theta: Tensor) -> None:
+        """Refuse a target coordinate that is the same value for every row.
+
+        Checked on the batch the objective is actually about to score, because
+        that is the only place the defect is visible: the *config* said
+        ``nuisance_dim: 2``, which is a correct statement of intent, and the
+        trainer passed ``torch.zeros`` for it because the intent was never
+        implemented.  Nothing in the config was wrong and nothing in the loss
+        curve looked wrong either.  A guard on the config could not have caught
+        it; a guard on the batch does.
+        """
+        if theta.ndim != 2 or theta.shape[0] < 2:
+            return
+        const = theta.amax(0) == theta.amin(0)
+        if bool(const.any()):
+            cols = const.nonzero().flatten().tolist()
+            vals = [float(theta[0, j]) for j in cols]
+            raise ConstantTargetDimension(
+                f"NPE target columns {cols} are constant at {vals} across a batch of "
+                f"{theta.shape[0]}. A flow cannot put finite density on a point mass, and the "
+                "attempt pays better than the conditioning does: on run 3 two such columns took "
+                "12.99 of the 15.9 nats by which npe_loss fell, while the theta term sat at the "
+                "prior entropy. If these are nuisance coordinates, either estimate and pass real "
+                "values for them or set posterior.nuisance_dim to 0. See ISSUE-012."
+            )
+
     def loss(self, y: Tensor, theta: Tensor) -> Tensor:
         """NPE objective: ``-E log q(theta | Y)`` in unconstrained space.
 
@@ -316,6 +373,7 @@ class AmortizedPosterior(nn.Module):
         that batch from destroying the run **and counts it**, so the rate is
         measurable instead of the failure being invisible until it is fatal.
         """
+        self._refuse_constant_targets(theta)
         c = self.summary(y)
         u, _ = self.to_unconstrained(theta)
         per = -self.flow.log_prob(u.float(), c.float())
@@ -469,6 +527,59 @@ def _ks_uniform_pvalue(ranks: np.ndarray, n_bins: int) -> float:
     return float(min(max(2 * s, 0.0), 1.0))
 
 
+def _sd_over_prior_sd(prior, sd: np.ndarray, P: int) -> list[float] | None:
+    """Mean posterior sd per parameter, in units of the prior's own sd.
+
+    ``1.0`` is the whole finding: the posterior's width is the prior's width, so
+    it returned the prior.  A number near 1 alongside ``R^2`` near 0 separates
+    "uninformative" from "noisy", which ``R^2`` alone cannot do.
+    """
+    if prior is None or not hasattr(prior, "bounds"):
+        return None
+    b = prior.bounds().cpu().numpy()
+    psd = (b[:P, 1] - b[:P, 0]) / math.sqrt(12.0)
+    return [float(np.asarray(sd)[..., j].mean() / psd[j]) for j in range(P)]
+
+
+def informativeness(
+    param_names: Sequence[str],
+    r2: Sequence[float],
+    *,
+    post_sd_over_prior_sd: Sequence[float] | None = None,
+    sd_of_post_mean_over_prior_sd: Sequence[float] | None = None,
+    floor: float = R2_INFORMATIVE_FLOOR,
+) -> dict[str, Any]:
+    """State, in the artifact, whether the posterior carries any information.
+
+    Calibration cannot answer this and never could: a posterior that ignores its
+    conditioning and returns the prior is perfectly calibrated *by construction* --
+    uniform SBC ranks, coverage on the diagonal, ``z_sd`` at 1.  Run 3 published
+    exactly that (``sbc_ks_pvalue_min`` 0.098, ``coverage_mae`` 0.021, all six
+    ``posterior_r2`` in ``[-0.016, 0.001]``), and the calibration block read as a
+    pass.  So the verdict is computed and written down beside the calibration
+    numbers rather than left for a reader to derive.
+    """
+    uninformative = [str(n) for n, v in zip(param_names, r2) if float(v) < floor]
+    out: dict[str, Any] = {
+        "posterior_informative": len(uninformative) < len(list(param_names)),
+        "uninformative_parameters": uninformative,
+        "informative_r2_floor": float(floor),
+    }
+    if post_sd_over_prior_sd is not None:
+        out["posterior_sd_over_prior_sd"] = [float(v) for v in post_sd_over_prior_sd]
+    if sd_of_post_mean_over_prior_sd is not None:
+        out["sd_of_posterior_mean_over_prior_sd"] = [float(v) for v in sd_of_post_mean_over_prior_sd]
+    if uninformative:
+        out["informativeness_note"] = (
+            f"posterior_r2 below {floor} on {len(uninformative)} of {len(list(param_names))} "
+            f"parameters ({', '.join(uninformative)}): the posterior explains no variance in them. "
+            "Calibration does not qualify this -- an uninformative posterior that returns the prior "
+            "is calibrated by construction. No parameter-recovery or inference claim may cite this "
+            "block. See ISSUE-012 in reports/known_issues.md."
+        )
+    return out
+
+
 def posterior_report(
     posterior: AmortizedPosterior,
     y: Tensor,
@@ -498,6 +609,14 @@ def posterior_report(
         r2.append(float(1 - ((post_mean[:, j] - truth[:, j]) ** 2).mean() / max(v, 1e-12)))
         rmse.append(float(np.sqrt(((post_mean[:, j] - truth[:, j]) ** 2).mean())))
         z_sd.append(float(((post_mean[:, j] - truth[:, j]) / np.maximum(post_sd[:, j], 1e-8)).std()))
+    inf = informativeness(
+        list(param_names)[:P],
+        r2,
+        post_sd_over_prior_sd=_sd_over_prior_sd(getattr(posterior, "prior", None), post_sd, P),
+        sd_of_post_mean_over_prior_sd=_sd_over_prior_sd(
+            getattr(posterior, "prior", None), post_mean.std(0, keepdims=True), P
+        ),
+    )
     return {
         "param_names": list(param_names)[:P],
         "sbc_ranks": ranks.tolist(),
@@ -507,6 +626,7 @@ def posterior_report(
         "posterior_r2": r2,
         "posterior_rmse": rmse,
         "posterior_z_sd": z_sd,  # ~1.0 iff the reported width matches the error
+        **inf,
         "coverage_mae": cov["coverage_mae"],
         "coverage": cov,
         "note": (

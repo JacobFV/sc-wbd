@@ -4921,6 +4921,17 @@
       0.983526349067688,
       0.9660274982452393
     ],
+    "posterior_informative": false,
+    "uninformative_parameters": [
+      "log_G",
+      "log_velocity",
+      "ei_global",
+      "ei_gradient",
+      "log_sigma",
+      "drive"
+    ],
+    "informative_r2_floor": 0.05,
+    "informativeness_note": "posterior_r2 below 0.05 on 6 of 6 parameters (log_G, log_velocity, ei_global, ei_gradient, log_sigma, drive): the posterior explains no variance in them. Calibration does not qualify this -- an uninformative posterior that returns the prior is calibrated by construction. No parameter-recovery or inference claim may cite this block. See ISSUE-012 in reports/known_issues.md.  Derived on 2026-08-09 from the posterior_r2 already in this file; no measured value in this artifact was changed or recomputed.",
     "coverage_mae": 0.020540371537208557,
     "coverage": {
       "levels": [

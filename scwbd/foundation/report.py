@@ -43,6 +43,10 @@ CANNOT_DO: tuple[str, ...] = (
     "Its haemodynamic head is fitted to simulated neural drive only: no BOLD, fMRI or fNIRS "
     "measurement entered training, so the BOLD output is a structural placeholder, not a "
     "predictor of measured haemodynamics.",
+    "It cannot infer the parameters it is built to infer. The amortized posterior explains no "
+    "variance in any of them on held-out simulated data, and it is well calibrated because it "
+    "returns the prior -- an uninformative posterior is calibrated by construction, so the "
+    "calibration curves qualify nothing. ISSUE-012.",
 )
 
 
@@ -355,6 +359,11 @@ def build_report(
         A("")
         A(f"- expected-coverage MAE (marginal): **{cal['coverage_mae']:.3f}**; "
           f"joint: {cal['coverage'].get('coverage_mae_joint', float('nan')):.3f}")
+        # The verdict goes above the calibration line, not below it: a reader who
+        # stops at "coverage MAE 0.021" has read a pass, and on run 3 that pass
+        # was produced by a posterior that returns the prior.  ISSUE-012.
+        if cal.get("informativeness_note"):
+            A(f"- **{cal['informativeness_note']}**")
         A(f"- {cal['note']}")
         A("")
 
