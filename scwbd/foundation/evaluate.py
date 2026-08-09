@@ -696,6 +696,43 @@ def posterior_calibration(trainer, *, n_datasets: int = 512, n_samples: int = 25
 # ======================================================================
 # per-source contribution / negative transfer
 # ======================================================================
+def _ablation_measured_loader(trainer, *, per_test_participant: int = 20):
+    """The held-out measured windows each ablation arm is scored on, or None.
+
+    Same dataset, same split and the same participant-stratified budget as
+    `real_eeg_holdout`, so an arm's measured score sits on the same footing as
+    the headline number. Fewer windows per participant (20 rather than 40),
+    because this runs once per arm rather than once per run and the arms are
+    compared against each other rather than against a baseline set.
+
+    The split fingerprint is CHECKED, not assumed: scoring an arm on
+    participants the checkpoint trained on would make every delta here a
+    memorisation delta.
+    """
+    ds = getattr(trainer, "real_dataset", None)
+    split = getattr(trainer, "real_split", None)
+    if ds is None or not split or not split.get("test"):
+        return None
+
+    recorded = getattr(trainer, "_recorded_split_fingerprint", None)
+    if recorded is not None:
+        fp = split_fingerprint(ds, split)
+        if recorded.get("sha256") != fp["sha256"]:
+            raise RuntimeError(
+                "real-EEG split does not match the checkpoint's, so the ablation "
+                "arms would be scored on participants the model may have trained "
+                f"on: recorded {recorded.get('sha256')}, recomputed {fp['sha256']}"
+            )
+
+    idx = _participant_stratified(ds, split["test"], per_test_participant, fold="test")
+    if not idx:
+        return None
+    bs = max(8, trainer.cfg.data.batch // 4)
+    return torch.utils.data.DataLoader(
+        torch.utils.data.Subset(ds, idx), batch_size=bs, shuffle=False, num_workers=2
+    )
+
+
 def source_ablation(trainer, *, steps: int = 120, seed: int = 0) -> dict[str, Any]:
     """Leave-one-source-family-out: does each family earn its place?
 
@@ -773,7 +810,28 @@ def _source_ablation_inner(trainer, *, steps: int, seed: int) -> dict[str, Any]:
     families = [k for k, v in trainer.sources.items() if v.enabled and v.role not in ("negative_control", "evaluation_only")]
     out: dict[str, Any] = {"families": families, "steps_per_arm": steps}
 
-    def short_train(drop: str | None) -> float:
+    # THE MEASURED HOLDOUT, built ONCE and reused by every arm.
+    #
+    # `_sim_val_nll` alone cannot answer the question this ablation exists for.
+    # It scores an arm on the simulator, and every measured gradient pulls the
+    # model away from the simulator, so "dropping a measured source improves the
+    # score" is close to a tautology -- run 3 returned nine negative deltas of
+    # nine and the direction was predictable before it ran. Meanwhile that run
+    # BEAT ITS BASELINES on measured EEG and nothing attributed the win.
+    #
+    # Same eleven arms, scored additionally on the same 27 held-out participants
+    # the headline result uses. Both are reported; neither replaces the other,
+    # and each says which it is.
+    measured_loader = _ablation_measured_loader(trainer)
+
+    def _measured_nll() -> float | None:
+        if measured_loader is None:
+            return None
+        scores = _scwbd_scores(trainer, measured_loader, n_mean_samples=64)
+        arr = scores["nll_per_window"]
+        return float(arr.mean()) if len(arr) else None
+
+    def short_train(drop: str | None) -> tuple[float, float | None]:
         set_determinism(seed)
         trainer.model.load_state_dict(base_state)
         trainer.posterior.load_state_dict(base_post)
@@ -786,18 +844,57 @@ def _source_ablation_inner(trainer, *, steps: int, seed: int) -> dict[str, Any]:
         st.log_every = 10**9
         trainer.run_stage(st)
         trainer.sources = saved
-        val = _sim_val_nll(trainer)
-        return val
+        return _sim_val_nll(trainer), _measured_nll()
 
-    out["with_all_sources"] = short_train(None)
+    sim_base, meas_base = short_train(None)
+    out["with_all_sources"] = sim_base
+    measured: dict[str, Any] = {
+        "available": meas_base is not None,
+        "metric": (
+            "mean per-window gaussian NLL, raw data units, sensor space, on the "
+            "same participant-disjoint holdout as real_eeg_holdout"
+        ),
+        "with_all_sources": meas_base,
+    }
     for f in families:
-        v = short_train(f)
+        v, mv = short_train(f)
         out[f"without_{f}"] = v
-        out[f"delta_{f}"] = v - out["with_all_sources"]
+        out[f"delta_{f}"] = v - sim_base
+        if meas_base is not None and mv is not None:
+            measured[f"without_{f}"] = mv
+            measured[f"delta_{f}"] = mv - meas_base
     out["negative_transfer"] = [f for f in families if out[f"delta_{f}"] < 0]
+
+    if meas_base is not None:
+        deltas = {f: measured[f"delta_{f}"] for f in families if f"delta_{f}" in measured}
+        measured["negative_transfer"] = [f for f, d in deltas.items() if d < 0]
+        measured["contributed"] = [f for f, d in deltas.items() if d > 0]
+        measured["interpretation"] = (
+            "delta > 0 means removing the family made MEASURED prediction worse, i.e. "
+            "the family carried information the model used on real data. This is the "
+            "attribution the simulated metric cannot provide. Same caveats on "
+            "magnitude as the simulated arm: one arm per family, no seed replication, "
+            "no error bar -- the sign pattern is the result, the deltas are not "
+            "effect sizes."
+        )
+    else:
+        measured["reason"] = (
+            "no real-EEG dataset or split on the trainer, so the arms could not be "
+            "scored on measured data. Reported rather than omitted: without this the "
+            "ablation answers only the simulated question."
+        )
+    out["measured"] = measured
     out["interpretation"] = (
         "delta > 0 means removing the family HURT (the family contributed); delta < 0 is "
         "NEGATIVE TRANSFER: the family made the model worse and is reported as such."
+    )
+    out["metric"] = "sim_val_nll"
+    out["metric_warning"] = (
+        "Scored on the SIMULATED validation set. Every measured gradient pulls the "
+        "model away from the thing being scored, so a measured source showing "
+        "negative transfer here is close to tautological. Run 3 returned nine "
+        "negative deltas of nine and the direction was predictable before it ran. "
+        "Read `measured` below instead for the question worth asking."
     )
     trainer.model.load_state_dict(base_state)
     trainer.posterior.load_state_dict(base_post)

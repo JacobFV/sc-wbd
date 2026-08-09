@@ -20,6 +20,7 @@ write: a future change to `log_every` must not be able to reopen this.
 
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
 import pytest
@@ -205,4 +206,40 @@ def test_the_logger_is_restored_even_when_an_arm_raises(tmp_path: Path) -> None:
     assert trainer.logger is before, (
         "after a failed arm the trainer is still pointed at the ablation log, so "
         "any later training in this process would write to the wrong file"
+    )
+
+
+def test_the_ablation_reports_a_measured_score_or_says_why_not(tmp_path: Path) -> None:
+    """`_sim_val_nll` alone cannot attribute a win on measured data.
+
+    Scoring an arm on the simulator asks "does dropping this measured source
+    help the model fit the simulator?", and every measured gradient pulls away
+    from exactly that -- so a negative delta is close to tautological. Run 3
+    returned nine of nine negative and the direction was predictable before it
+    ran, while that same run beat its baselines on measured EEG with nothing
+    attributing the win.
+
+    The `measured` block must therefore always be present: populated when a
+    real-EEG split exists, and carrying a `reason` when it does not. Silence
+    would let the simulated result read as the whole answer, which is how run 3
+    published a fusion null that could not have come out any other way.
+    """
+    from scwbd.foundation import evaluate as ev
+
+    src = inspect.getsource(ev._source_ablation_inner)
+    assert '"measured"' in src or "out[\"measured\"]" in src, (
+        "source_ablation no longer emits a `measured` block; the ablation is back "
+        "to answering only the simulated question"
+    )
+    assert "metric_warning" in src, (
+        "the simulated result no longer carries its caveat, so a reader cannot "
+        "tell that its direction is near-tautological"
+    )
+
+    # The measured loader must verify the split rather than trusting it.
+    loader_src = inspect.getsource(ev._ablation_measured_loader)
+    assert "sha256" in loader_src and "RuntimeError" in loader_src, (
+        "the ablation's measured loader no longer checks the split fingerprint; "
+        "an arm could be scored on participants the checkpoint trained on, which "
+        "would make every delta a memorisation delta"
     )
