@@ -784,7 +784,11 @@ def _prose_refusal(refuse, base_designation, offenders, *, arm_note: str | None)
     )
 
 
-def check_manifest_r12(manifest: Any, config: Mapping[str, Any] | None = None) -> None:
+def check_manifest_r12(
+    manifest: Any,
+    config: Mapping[str, Any] | None = None,
+    poset: "ResolutionPoset | None" = None,
+) -> None:
     """The seam ``ClaimManifest.refuse_r12`` calls.  Raises, or returns None.
 
     ``manifest`` is duck-typed on purpose -- the schema layer must not import
@@ -799,6 +803,7 @@ def check_manifest_r12(manifest: Any, config: Mapping[str, Any] | None = None) -
         config=config,
         regional_state=regional_state,
         claims=claims,
+        poset=poset,
         base_designation=str(getattr(manifest, "model_id", MODEL_DESIGNATION)),
     ):
         raise refusal

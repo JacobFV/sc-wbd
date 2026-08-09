@@ -232,7 +232,7 @@ class ClaimManifest:
                 continue
         return None
 
-    def refuse_r12(self, config: Any = None) -> None:
+    def refuse_r12(self, config: Any = None, poset: Any = None) -> None:
         """Refuse a §2.1 differentiator claim on a §11.4 control-arm artifact.
 
         Two ways to trip it, because run 1 tripped the second one:
@@ -259,7 +259,7 @@ class ClaimManifest:
         # poset, which a manifest does not record -- calling it with the manifest
         # alone silently ran only the operator and prose halves.
         try:
-            canonical(self, config)
+            canonical(self, config, poset) if poset is not None else canonical(self, config)
         except CompilerRefusal as exc:
             # ONE exception at the enforcement point. `R12Violation` subclasses
             # both `CompilerRefusal` and `OverclaimError`, so schema-side callers
@@ -275,8 +275,8 @@ class ClaimManifest:
             ) from exc
 
     # -- validation -------------------------------------------------------
-    def validate(self, config: Any = None) -> "ClaimManifest":
-        self.refuse_r12(config)
+    def validate(self, config: Any = None, poset: Any = None) -> "ClaimManifest":
+        self.refuse_r12(config, poset)
         if not self.cannot_do:
             raise OverclaimError(
                 "ClaimManifest.cannot_do is empty. An explicit statement of what the model cannot do "

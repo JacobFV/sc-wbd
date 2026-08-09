@@ -245,6 +245,34 @@ class FoundationTrainer:
             nuisance_dim=cfg.posterior.nuisance_dim,
         ).to(self.device)
         self.sensor_to_parcel = SensorToParcel(self.model.eeg.L).to(self.device)
+
+        # THE RESOLUTION POSET. Built here so the run carries the object R02 and
+        # R12 validate, instead of the config key that used to stand in for it.
+        #
+        # `cortical_source_dipole <= parcel` has been declared, measured and
+        # validated for two runs -- R o P = I on the coarse support to 4.4e-16,
+        # landmark-tested at 94% coverage, recorded in
+        # reports/transforms/resolution_pair.json -- and no training run has ever
+        # built it. `scwbd/foundation/` imported the poset in exactly one place,
+        # `compiler_bridge`, and the trainer touched none of it, so the paper's
+        # multiresolution claim rested on a machine that was never switched on.
+        #
+        # It could not be switched on before: R12's control test read
+        # `model.scale_prolongations`, so declaring a prolongation would have
+        # bought an exemption from the refusal that polices overclaiming, and a
+        # test had to pin that field empty to keep R12 honest. R12 now requires
+        # the compiled poset, so a run can carry its prolongations and still be
+        # refused if they are not real.
+        self.resolution_poset = None
+        try:
+            from .compiler_bridge import _poset
+
+            self.resolution_poset = _poset()
+        except Exception as exc:  # noqa: BLE001
+            # Recorded, not swallowed: a run without a poset makes no
+            # multiresolution claim, and the checkpoint must say which it is.
+            self._poset_error = f"{type(exc).__name__}: {exc}"
+            LOGGER.warning("resolution poset unavailable: %s", self._poset_error)
         if cfg.model.compile and self.device.type == "cuda":
             # Fuse the per-parcel elementwise chain. On the GB10's unified LPDDR5X
             # the regional operator is memory-bandwidth bound, not FLOP bound, so
@@ -2207,6 +2235,17 @@ class FoundationTrainer:
                 "sensor_to_parcel": self.sensor_to_parcel.summary(),
                 "real_split": self.real_split_fingerprint(),
                 "theta_names": list(THETA_NAMES),
+                # The resolution poset this run actually carried, so R12 can be
+                # answered from the artifact instead of from a config key.
+                "resolution_prolongations": (
+                    [
+                        [str(x.fine), str(x.coarse)]
+                        for x in self.resolution_poset.prolongations()
+                    ]
+                    if self.resolution_poset is not None
+                    else []
+                ),
+                "resolution_poset_error": getattr(self, "_poset_error", ""),
                 "theta_prior": self.theta_prior.as_dict(),
                 "parameter_report": self.model.parameter_report(),
                 "posterior_parameters": count_parameters(self.posterior),
