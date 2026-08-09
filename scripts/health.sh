@@ -102,16 +102,32 @@ last=$(grep -oE '"?global_step"?[=:][[:space:]]*[0-9]+' "$LOG" | tail -1 | grep 
 # Same two formats as `global_step` above: `k=v` from the stdout capture,
 # `"k": v` from the JsonlLogger. `_field <name>` returns whichever is present,
 # so the report says what it found instead of printing `?` beside a healthy run.
-_field() {
-    grep -oE "\"?$1\"?[=:][[:space:]]*\"?[A-Za-z0-9_.+-]+" "$LOG" \
+_grep_field() {
+    grep -oE "\"?$1\"?[=:][[:space:]]*\"?[A-Za-z0-9_.+-]+" \
         | tail -1 | sed -E 's/.*[=:][[:space:]]*"?//'
 }
+# CURRENT row only.  Scanning the whole log and taking the last match anywhere
+# is what this used to do, and it reports a number from a stage that ended hours
+# ago as though it were live: once T4 had written one `sim_forecast_nll`, the
+# fallback below could never fire again, so all of T5 displayed T4's final value
+# -- frozen to sixteen decimal places across every check, which reads exactly
+# like a hung loss.  A stale field is worse than an absent one; this file's own
+# header says so.
+_field() { tail -1 "$LOG" | _grep_field "$1"; }
+# ANYWHERE, explicitly, for fields that are genuinely run-scoped rather than
+# per-step.  Separate function so a stale read is always a deliberate one.
+_field_any() { _grep_field "$1" < "$LOG"; }
+
 stage=$(_field stage)
+[ -n "${stage:-}" ] || stage=$(_field_any stage)
+# Absent from the current row means this stage does not report it -- T5 admits
+# no simulator, so it runs no NPE.  `n/a` says that; `0` would claim a clean
+# rejection count that nothing measured.
 rej=$(_field npe_rejected)
-# Run 3's founding stage admits no simulated source, so `sim_forecast_nll` is
-# absent by design there. Fall back to the measured EEG likelihood rather than
-# reporting `?` for a run that is reporting a number.
+# Run 3's founding and measured-return stages admit no simulated source, so
+# `sim_forecast_nll` is absent by design there. Fall back to the measured EEG
+# likelihood rather than reporting `?` for a run that is reporting a number.
 nll=$(_field sim_forecast_nll)
 [ -n "${nll:-}" ] || nll=$(_field eegmmidb_real_eeg_nll)
 
-echo "HEALTHY stage=$stage global_step=$last nll=${nll:-?} npe_rejected=${rej:-?} procs=$procs log_age=${age}s"
+echo "HEALTHY stage=$stage global_step=$last nll=${nll:-n/a} npe_rejected=${rej:-n/a} procs=$procs log_age=${age}s"
