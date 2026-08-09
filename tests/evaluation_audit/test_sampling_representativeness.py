@@ -29,14 +29,23 @@ def _head_participants(cfg, dataset, indices, max_batches):
 def test_holdout_slice_covers_more_than_one_participant(
     cfg, real_eeg, real_split, fold, max_batches
 ):
-    seen, all_subs, bs = _head_participants(cfg, real_eeg, real_split[fold], max_batches)
+    # `max_batches` is retained as the parametrisation only to keep the ids
+    # stable; the evaluation no longer budgets in batches. See the sibling
+    # test's docstring: this file asserted a head slice that was fixed.
+    import numpy as np
+
+    from scwbd.foundation.evaluate import _participant_stratified
+
+    per = 40 if fold == "test" else 30
+    idx = _participant_stratified(real_eeg, real_split[fold], per, fold=fold)
+    subs = np.asarray(real_eeg.window_subjects)[np.asarray(idx)]
+    seen = sorted(set(subs.tolist()))
+    all_subs = sorted({real_eeg.window_subjects[i] for i in real_split[fold]})
     assert len(seen) > 1, (
-        f"real_eeg_holdout(max_batches={max_batches}) consumes the first "
-        f"{max_batches * bs} windows of the {fold} fold, which are ALL from "
-        f"participant {seen[0]!r}: {len(seen)} of {len(all_subs)} participants. "
-        f"On the train fold this fits every baseline on one person; on the test "
-        f"fold it scores every model on one person and hands bootstrap_ci a "
-        f"single cluster."
+        f"_participant_stratified drew {len(seen)} participant(s) from the {fold} "
+        f"fold's {len(all_subs)}. On train that fits every baseline on one person; "
+        "on test it scores every model on one person and hands bootstrap_ci a "
+        "single cluster. The stratifier has regressed to a window budget."
     )
 
 
@@ -45,9 +54,14 @@ def test_holdout_slice_is_a_representative_fraction_of_its_fold(
     cfg, real_eeg, real_split, fold
 ):
     """A summary of a fold must see a non-negligible share of it."""
-    bs = max(8, cfg.data.batch // 4)
+    # Measured on the sampler the evaluation calls, not on a head slice. The
+    # budget is PARTICIPANTS x windows-per-participant, which is the change that
+    # fixed the one-person defect this file was written for.
+    from scwbd.foundation.evaluate import _participant_stratified
+
+    per = 40 if fold == "test" else 30
     n_fold = len(real_split[fold])
-    n_used = min(40 * bs, n_fold)
+    n_used = len(_participant_stratified(real_eeg, real_split[fold], per, fold=fold))
     frac = n_used / n_fold
     assert frac >= 0.10, (
         f"real_eeg_holdout summarises the {fold} fold from {n_used} of {n_fold} "
@@ -59,19 +73,43 @@ def test_holdout_slice_is_a_representative_fraction_of_its_fold(
 def test_bootstrap_ci_is_given_more_than_one_cluster(cfg, real_eeg, real_split):
     """The interval the report calls 'participant-clustered' must have clusters.
 
-    ``bootstrap_ci`` returns ``(point, nan, nan)`` when ``n_clusters < 2``.  It
-    is right to refuse, but the caller does not notice: ``nll_ci95`` is written
-    as ``[NaN, NaN]`` beside prose about "overlapping participant-clustered
-    intervals".
-    """
-    from scwbd.foundation.baselines import bootstrap_ci
+    ``bootstrap_ci`` returns ``(point, nan, nan)`` when ``n_clusters < 2``. It is
+    right to refuse, and the caller does not notice: ``nll_ci95`` is written as
+    ``[NaN, NaN]`` beside prose about overlapping intervals.
 
-    bs = max(8, cfg.data.batch // 4)
-    idx = np.asarray(real_split["test"])
-    subs = np.asarray(real_eeg.window_subjects)[idx][: 40 * bs]
-    point, lo, hi = bootstrap_ci(np.random.default_rng(0).normal(size=subs.size), subs, n_boot=200)
+    **This test used to assert the defect.** It took a contiguous head slice --
+    ``window_subjects[test_idx][: 40 * bs]`` -- and folds are ordered by
+    recording, so the slice landed inside one participant and the assertion
+    failed by construction. That WAS the evaluation's behaviour, and it was
+    fixed: `_participant_stratified` now sets the budget in participants rather
+    than batches, and its docstring records why ("40 batches of 16 drew 640
+    windows from participant-ordered folds of ~2,650, so every baseline was fit
+    on one person"). The test was never updated, so it kept reporting a repaired
+    defect as live.
+
+    It now exercises the sampler the evaluation actually calls. A red here means
+    the stratifier has regressed, which is worth knowing; the old red meant only
+    that this file sliced differently from the code it audits.
+    """
+    import numpy as np
+
+    from scwbd.foundation.baselines import bootstrap_ci
+    from scwbd.foundation.evaluate import _participant_stratified
+
+    idx = _participant_stratified(real_eeg, real_split["test"], 40, fold="test")
+    subs = np.asarray(real_eeg.window_subjects)[np.asarray(idx)]
+    n = len(set(subs.tolist()))
+    assert n > 1, (
+        f"_participant_stratified returned {n} participant(s) from a test fold of "
+        f"{len(real_split['test'])} windows, so every participant-clustered "
+        "interval would be [nan, nan]. The stratifier has regressed to a window "
+        "budget."
+    )
+
+    point, lo, hi = bootstrap_ci(
+        np.random.default_rng(0).normal(size=subs.size), subs, n_boot=200
+    )
     assert np.isfinite(lo) and np.isfinite(hi), (
-        f"the scored sample contains {len(set(subs))} participant(s), so every "
-        f"'participant-clustered 95% CI' in the released report is [nan, nan] "
-        f"while the surrounding text describes intervals overlapping."
+        f"{n} participants reached bootstrap_ci and it still returned a "
+        "non-finite interval"
     )
