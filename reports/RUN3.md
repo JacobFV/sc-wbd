@@ -172,15 +172,86 @@ complete, it is just in two places.
 
 ## Results
 
-**PENDING** — filled from the checkpoint after the run completes. Nothing is
-written here until it is measured.
+The run completed: **13,400 / 13,400 steps**, all five stages, 2026-08-09T02:18,
+learning rate annealed to 5.2e-10. `make health-run3` reports `COMPLETE`.
+Every number below is read off `checkpoints/scwbd-003/last.pt`.
 
-- contributed sources, derived from `extra.contributed_sources`
-- per attachment kind, whether anything of that kind reached the model
-  (`reports/attachment_kinds.md`)
-- parameters moved since initialisation, by module, with `unfingerprinted` empty
-- leave-one-source-out, including any family with negative transfer
-- held-out NLL and MSE against the baseline set
+### Parameters moved since initialisation
+
+**99.98% of parameters** — 26,298,763 of 26,304,729 — differ from their
+initialisation by bit comparison. Run 2 shipped with 88.7% of parameters
+*unreachable*; this is the figure directly comparable to it, and the comparison
+is the point of the run.
+
+That figure was **recomputed here rather than read out of the checkpoint.**
+`moved_since_init` in run 3's checkpoints reports `parameters_total: null`: the
+parameter-count fields were added to `train.py` after the run had launched, so
+the running process wrote tensor counts only. The checkpoint's own headline,
+341/382 = 89.3%, is a **tensor** count and must not be set beside run 2's 88.7%,
+which is a parameter count. Putting them side by side flatters run 2 by a factor
+of five hundred. This is the second time that specific units error has been
+caught in this project.
+
+The recomputation is a bit comparison against a freshly constructed model at
+`train.seed`, which `test_regional_tensors_moved.py` proves is bit-identical to
+the original initialisation.
+
+The 5,966 frozen parameters (0.02%) are three groups, all accounted for:
+
+| frozen | parameters | why |
+| --- | ---: | --- |
+| `bold.{log_kappa,log_gamma,log_tau,alpha,neural_gain}` | 2,070 | **ISSUE-008.** The Balloon ODE was never integrated. |
+| `*.source_proj.*` in every EEG head | 1,796 | Dead code on this architecture: with 3-vector parcel moments `EEGHead.forward` takes the `L_vec` path and never calls `source_amplitude`. Flagged for deletion in HANDOFF-004. |
+| `observation.feat.<family>.weight` for 7 families | 1,656 | Per-family observation features for families no admitted source observes. |
+
+By module, tensors moved: `family_local` 137/137, `family_residual` 32/32,
+`family_readout` 36/36, `posterior` 58/58, `tms_drive` 4/4, `behaviour` 5/5,
+`assimilate` 11/11, `coupling` 3/3, `context` 4/4, `eeg_montages` 21/33,
+`eeg` 7/11, `observation` 18/36, `bold` 3/8, `msg_proj` **0/2**.
+`unfingerprinted` is empty.
+
+### Every enabled source contributed a gradient
+
+`extra.contributed_sources` names all eight, derived from the losses that
+actually ran, not from the cards: `ds000117_behaviour`, `ds000117_real`,
+`ds002336_real`, `ds004024_perturb`, `ds004024_rest_real`, `eegmmidb_real`,
+`sim_wholebrain`, `sleepedf_real`. `admitted_but_no_term` is empty.
+
+**That claim is narrower than it sounds, and ISSUE-008 is why.** A gradient
+arriving is not information arriving. `ds002336_real`'s BOLD channel contributed
+a gradient and no information, and no fMRI or haemodynamic claim may be read off
+this model.
+
+### Attachment kinds
+
+| kind | declared | feeding a loss | reached |
+| --- | ---: | ---: | :---: |
+| `observation` | 8 | 7 | yes |
+| `stimulus` | 2 | 1 | yes |
+| `boundary_output` | 8 | 2 | yes |
+| `context` | 0 | 0 | **no** |
+
+Three of the schema's four attachment kinds were exercised. `context` was
+declared by nothing and reached nothing.
+
+### The learned TMS drive
+
+Trained (4/4 tensors moved) and **not** computed from an E-field: left gain
+1.081 peaking at parcel 36 over 37 parcels, right gain 1.073 peaking at parcel
+237 over 40 parcels. The near-equal gains across independently learned
+hemispheres are the only internal consistency check this drive has.
+
+### ISSUE-008 confirmed a second way, on bytes
+
+The T4 → T5 boundary is a whole stage of measured data. The five Balloon
+parameters are **bit-identical across it**, and bit-identical to their
+initialisation in all five stages including `T4_simulator`. Recorded as an
+`xfail` in `test_balloon_parameters_receive_gradient.py` so the day it stops
+being true, the test says so.
+
+### Held-out evaluation and leave-one-source-out
+
+*(pending — `make release-003-evaluate` and `make release-003-ablate`)*
 
 ## The sources, as they came off disk
 

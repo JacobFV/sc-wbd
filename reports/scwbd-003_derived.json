@@ -1,0 +1,191 @@
+{
+  "checkpoint": "checkpoints/scwbd-003/last.pt",
+  "step": 13400,
+  "completed_stages": [
+    "T1_measured_founding",
+    "T2_calibration",
+    "T3_population_prior",
+    "T4_simulator",
+    "T5_measured_return"
+  ],
+  "parameters": {
+    "coupling": 3,
+    "msg_proj": 72,
+    "msg_readin": 9152,
+    "context": 17792,
+    "family_local": 18693938,
+    "family_residual": 5969331,
+    "family_readout": 131666,
+    "assimilate": 1356030,
+    "observation": 2073,
+    "eeg": 27697,
+    "eeg_montages": 59291,
+    "bold": 3312,
+    "behaviour": 34372,
+    "TOTAL": 26304729
+  },
+  "contributed_sources": [
+    "ds000117_behaviour",
+    "ds000117_real",
+    "ds002336_real",
+    "ds004024_perturb",
+    "ds004024_rest_real",
+    "eegmmidb_real",
+    "sim_wholebrain",
+    "sleepedf_real"
+  ],
+  "admitted_but_no_term": {},
+  "moved_since_init": {
+    "n_parameters": 382,
+    "n_moved": 341,
+    "n_frozen": 41,
+    "by_module": {
+      "coupling": {
+        "moved": 3,
+        "frozen": 0
+      },
+      "msg_proj": {
+        "moved": 0,
+        "frozen": 2
+      },
+      "msg_readin": {
+        "moved": 2,
+        "frozen": 0
+      },
+      "context": {
+        "moved": 4,
+        "frozen": 0
+      },
+      "family_local": {
+        "moved": 137,
+        "frozen": 0
+      },
+      "family_residual": {
+        "moved": 32,
+        "frozen": 0
+      },
+      "family_readout": {
+        "moved": 36,
+        "frozen": 0
+      },
+      "assimilate": {
+        "moved": 11,
+        "frozen": 0
+      },
+      "observation": {
+        "moved": 18,
+        "frozen": 18
+      },
+      "eeg": {
+        "moved": 7,
+        "frozen": 4
+      },
+      "eeg_montages": {
+        "moved": 21,
+        "frozen": 12
+      },
+      "bold": {
+        "moved": 3,
+        "frozen": 5
+      },
+      "behaviour": {
+        "moved": 5,
+        "frozen": 0
+      },
+      "posterior": {
+        "moved": 58,
+        "frozen": 0
+      },
+      "tms_drive": {
+        "moved": 4,
+        "frozen": 0
+      }
+    },
+    "frozen_tensors": [
+      "bold.alpha",
+      "bold.log_gamma",
+      "bold.log_kappa",
+      "bold.log_tau",
+      "bold.neural_gain",
+      "eeg.source_proj.0.bias",
+      "eeg.source_proj.0.weight",
+      "eeg.source_proj.2.bias",
+      "eeg.source_proj.2.weight",
+      "eeg_montages.ds000117_real.source_proj.0.bias",
+      "eeg_montages.ds000117_real.source_proj.0.weight",
+      "eeg_montages.ds000117_real.source_proj.2.bias",
+      "eeg_montages.ds000117_real.source_proj.2.weight",
+      "eeg_montages.ds004024_rest_real.source_proj.0.bias",
+      "eeg_montages.ds004024_rest_real.source_proj.0.weight",
+      "eeg_montages.ds004024_rest_real.source_proj.2.bias",
+      "eeg_montages.ds004024_rest_real.source_proj.2.weight",
+      "eeg_montages.sleepedf_real.source_proj.0.bias",
+      "eeg_montages.sleepedf_real.source_proj.0.weight",
+      "eeg_montages.sleepedf_real.source_proj.2.bias",
+      "eeg_montages.sleepedf_real.source_proj.2.weight",
+      "msg_proj.bias",
+      "msg_proj.weight",
+      "observation.feat.cortex_association.bias",
+      "observation.feat.cortex_association.weight",
+      "observation.feat.cortex_unimodal.bias",
+      "observation.feat.cortex_unimodal.weight",
+      "observation.feat.subcortex_accumb.bias",
+      "observation.feat.subcortex_accumb.weight",
+      "observation.feat.subcortex_amyg.bias",
+      "observation.feat.subcortex_amyg.weight",
+      "observation.feat.subcortex_caud.bias",
+      "observation.feat.subcortex_caud.weight",
+      "observation.feat.subcortex_hippo.bias",
+      "observation.feat.subcortex_hippo.weight",
+      "observation.feat.subcortex_pal.bias",
+      "observation.feat.subcortex_pal.weight",
+      "observation.feat.subcortex_put.bias",
+      "observation.feat.subcortex_put.weight",
+      "observation.feat.subcortex_thal.bias",
+      "observation.feat.subcortex_thal.weight"
+    ],
+    "unfingerprinted": [],
+    "note": "Bit-identical to initialisation means the tensor received no gradient. A module entirely in `frozen` while on the forward path is the run-2 defect. Anything listed in `unfingerprinted` has no recorded initialisation and its status here is not evidence -- it is counted as frozen so the number cannot flatter the run."
+  },
+  "tms_drive": {
+    "component": "rate_e",
+    "spatial_support": "atlas somatomotor parcels of the stimulated hemisphere",
+    "profile": "softmax over learned logits within the support",
+    "computed_from_efield": false,
+    "why_not": "ds004024 distributes no per-pulse coil pose, so no E-field can be computed and the field-to-response map is not exercised",
+    "left": {
+      "n_support_parcels": 37,
+      "gain": 1.080571174621582,
+      "peak_parcel": 36,
+      "peak_weight": 0.03063688799738884
+    },
+    "right": {
+      "n_support_parcels": 40,
+      "gain": 1.0725183486938477,
+      "peak_parcel": 237,
+      "peak_weight": 0.02793283946812153
+    }
+  },
+  "attachment_kinds": {
+    "observation": {
+      "reached_the_model": true,
+      "n_channels_declared": 8,
+      "n_channels_feeding_a_loss": 7
+    },
+    "stimulus": {
+      "reached_the_model": true,
+      "n_channels_declared": 2,
+      "n_channels_feeding_a_loss": 1
+    },
+    "boundary_output": {
+      "reached_the_model": true,
+      "n_channels_declared": 8,
+      "n_channels_feeding_a_loss": 2
+    },
+    "context": {
+      "reached_the_model": false,
+      "n_channels_declared": 0,
+      "n_channels_feeding_a_loss": 0
+    }
+  }
+}
