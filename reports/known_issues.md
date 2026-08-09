@@ -1117,6 +1117,19 @@ nothing yet shows they are not. Note that the corpus normalises every window by 
 sd (`normalise_window`), which removes the absolute amplitude that `log_sigma` and `drive` live in
 before the posterior ever sees it; `log_sigma` survives that in the probes and `drive` does not.
 
+### The summary encoder is not the bottleneck
+
+`SummaryNet` pools over channels with mean+max+std, so a 64-channel montage and a 414-parcel field
+produce the same summary shape and the 64 in `n_eeg_channels` never constrains it. Its output is
+where `log_G` is 75% predictable, so on simulated data it is passing the information through and
+the flow is discarding it.
+
+The fixed-shape problem it does have is elsewhere and is already refused rather than papered over:
+BOLD context arrives as `(B, T)` parcel means with no shape-compatible path into a `(B, T, C)`
+encoder, so `real_bold_losses` uses prior theta and logs `bold_theta_source: "prior"` instead of
+inventing a 400 -> 64 projection. A per-modality posterior is the fix and it is a modelling change,
+not a reshape.
+
 ### What must NOT be claimed while this is open
 
 1. That SC-WBD-003 infers, recovers, estimates or characterises any generative parameter. It does
