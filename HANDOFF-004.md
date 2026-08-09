@@ -382,34 +382,57 @@ g. Publish. The model card must say, per attachment kind, what reached the model
    AND whether the fMRI likelihood is now a haemodynamic model. If it is not,
    ds002336's BOLD channel stays declared-and-not-claimed.
 
-=== KNOWN FAILING — DO NOT "FIX" BY WEAKENING ===
+=== KNOWN FAILING — REWRITTEN 2026-08-09, ALL THREE ENTRIES WERE STALE ===
 
-  tests/foundation/test_family_state.py            5 failures, and they are NOT
-      one defect. FOUR are the R12 double implementation: it exists twice in
-      unrelated exception hierarchies (`R12Violation`, an OverclaimError, vs
-      `CompilerRefusal`), `validate()` reaches the second first, so the message
-      the tests match is unreachable. Deciding which is authoritative is a design
-      call, still not made after two runs — consider making it.
-      The FIFTH is ISSUE-009, and it hid inside the count: `check_r12` does
-      `config.get("model")` on a `FoundationConfig` dataclass and raises
-      AttributeError. Its own docstring names `save_checkpoint` as a caller, and
-      `save_checkpoint` passes exactly that object, so **a manifest cannot be
-      attached to a checkpoint at all**. Run 3 is unaffected only because the
-      trainer passes no manifest — which also means R12 has NEVER been evaluated
-      against a real run. If 004 wants its checkpoints to carry a claim manifest,
-      this is on the path. Fixing the AttributeError alone does not turn the test
-      green; the two discharge together, duplication first.
-      The lesson is the count: five expected, five observed, cause assumed. A
-      known-failure row must carry the failure MODE, not the number.
-  tests/schema/test_carrier_and_views.py           ISSUE-007. Fails at COLLECTION
-      and takes the whole directory with it under a plain `pytest`. It landed from
-      wt/noether2 and imports that branch's support_algebra names; master's
-      implementation was kept. One of the two test files has to be rewritten and
-      the choice is which implementation is authoritative.
-  tests/evaluation_audit/                          conftest hard-codes a path into
-      a worktree that no longer exists. The fixture skips loudly rather than
-      passing vacuously, so nothing is broken — but a green run of that file is no
-      longer evidence about the `_orig_mod.` defect.
+This section listed three known-failing groups. Every one of them has changed,
+and the list itself is the lesson: a known-failure register that nobody re-runs
+becomes a way of not looking.
+
+  tests/foundation/test_family_state.py    WAS 5 failures ("R12 is implemented
+      twice; deciding which is authoritative is a design call"). NOW 0. The call
+      had already been made and written down in `_r12_predicate`'s docstring --
+      schema owns the definition, checkpoint emission is the enforcement point,
+      delete the local fallback when the canonical predicate lands. It had
+      landed two runs earlier. R12Violation now derives from BOTH CompilerRefusal
+      and OverclaimError so neither side's callers break. See ISSUE-009.
+
+  tests/schema/test_carrier_and_views.py   WAS a COLLECTION error taking the
+      whole schema directory with it. NOW removed, ISSUE-007 closed. The two
+      `support_algebra` implementations were different LAYERS, not rivals:
+      master's is declarative (kind/lossy/invents/psf) and is what R02 and R12
+      validate, with 21 passing tests; the wt/noether2 file tested a
+      computational API master never adopted. tests/schema now collects and
+      passes in full, 212 tests.
+
+  tests/curriculum/                        WAS 3 failures, NOW 0. All three were
+      pinned expectations that run 3's own cards invalidated -- the tier map
+      missing the five cards run 3 added, and `behaviour.*` still listed as
+      ungrantable next to a note saying "expected to move once such a source is
+      enabled". It moved; nobody updated it.
+
+  tests/evaluation_audit/                  WAS described as "conftest hard-codes
+      a path into a worktree that no longer exists; the fixture skips loudly".
+      That is true of ONE test. The rest FAILED -- 26 of them -- and they were
+      asserting defects that had ALREADY BEEN FIXED: they reconstruct a
+      contiguous head slice of a shuffle=False loader, which is what the
+      evaluation used to do. `_sim_stratified` and `_participant_stratified`
+      replaced it, and their docstrings record the measured reasons. The tests
+      were never updated.
+      test_simulated_sample_coverage.py is now 8/8 after conversion.
+      test_sampling_representativeness.py is converted but UNMEASURED -- the
+      fixture builds the whole eegmmidb corpus (109 participants, 235k windows)
+      and exceeds ten minutes; it wants the `slow` marker.
+      The remaining files in that directory are NOT yet triaged.
+
+  ONE OF THOSE 26 WAS A LIVE DEFECT AND IT REACHES A PUBLISHED NUMBER.
+      `SimCorpus.__getitem__` drew its window offset from the GLOBAL numpy RNG,
+      so the same index returned a different window on every call, and
+      `source_ablation` scores each arm after a training stage that consumed an
+      arm-dependent amount of randomness. Every arm was scored on DIFFERENT
+      windows. Run 3's fusion null was computed that way; its deltas
+      (0.0006-0.0097 on a baseline of 0.6793) are the size that noise can reach.
+      The sign pattern -- nine of nine -- is what the result rested on and still
+      does. Fixed: the offset is seeded from (corpus seed, index).
 
 === OPERATIONAL — EVERY ONE OF THESE COST TIME IN 003 ===
 
