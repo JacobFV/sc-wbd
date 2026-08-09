@@ -38,6 +38,8 @@ class _StubTrainer:
 
     def __init__(self, tmp: Path) -> None:
         self.report_dir = tmp
+        self.out_dir = tmp / "checkpoints" / "scwbd-003"
+        self.out_dir.mkdir(parents=True, exist_ok=True)
         self.logger = _StubLogger(tmp / "scwbd-003_train.jsonl")
 
         class _T:
@@ -76,6 +78,50 @@ def test_the_ablation_redirects_the_logger_away_from_the_run_log(tmp_path: Path)
     assert "ablation" in seen["path"].name, (
         f"expected an ablation-specific log, got {seen['path'].name}"
     )
+
+
+def test_the_ablation_cannot_write_checkpoints_into_the_run_it_evaluates(
+    tmp_path: Path,
+) -> None:
+    """The half that destroys rather than pollutes.
+
+    `run_stage` writes `stage_<name>.pt` and `last.pt` into `trainer.out_dir`
+    when a stage ENDS, so `short_train`'s `ckpt_every = 10**9` does not stop it.
+    Each arm overwrote the artifact under evaluation: run 3's completed
+    13,400-step `last.pt` was replaced by a 200-step arm, and
+    `stage_T4_simulator.pt` was lost outright. The final weights survived only
+    because `stage_T5_measured_return.pt` sat later in the arm loop than the
+    kill.
+
+    An evaluation must not be able to modify its own subject.
+    """
+    from scwbd.foundation import evaluate as ev
+
+    trainer = _StubTrainer(tmp_path)
+    production = trainer.out_dir
+    (production / "last.pt").write_bytes(b"the real 13,400-step model")
+    seen: dict[str, Path] = {}
+
+    def _fake_inner(tr, *, steps, seed):
+        seen["out"] = Path(tr.out_dir)
+        (Path(tr.out_dir) / "last.pt").write_bytes(b"a 200-step ablation arm")
+        return {}
+
+    monkey = ev._source_ablation_inner
+    ev._source_ablation_inner = _fake_inner
+    try:
+        ev.source_ablation(trainer, steps=1, seed=0)
+    finally:
+        ev._source_ablation_inner = monkey
+
+    assert seen["out"] != production, (
+        f"the ablation wrote checkpoints into {production}, the directory "
+        "holding the model it is evaluating"
+    )
+    assert (production / "last.pt").read_bytes() == b"the real 13,400-step model", (
+        "the evaluated checkpoint was overwritten by an ablation arm"
+    )
+    assert trainer.out_dir == production, "out_dir was not restored"
 
 
 def test_the_original_logger_is_restored_afterwards(tmp_path: Path) -> None:

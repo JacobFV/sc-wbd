@@ -721,7 +721,21 @@ def source_ablation(trainer, *, steps: int = 120, seed: int = 0) -> dict[str, An
     # Redirected rather than silenced, so the arms remain inspectable.
     from .util import JsonlLogger
 
+    # And the CHECKPOINTS, which is the half that destroys rather than pollutes.
+    # `run_stage` writes `stage_<name>.pt` and `last.pt` into `trainer.out_dir`
+    # when a stage ENDS, so `ckpt_every = 10**9` does not prevent it. Each arm
+    # therefore overwrote the artifact being evaluated: run 3's completed
+    # 13,400-step `last.pt` was replaced by a 200-step ablation arm, and
+    # `stage_T4_simulator.pt` with it. The final weights survived only because
+    # `stage_T5_measured_return.pt` had not yet been reached by the arm loop.
+    #
+    # An evaluation must not be able to modify its own subject. Redirected to a
+    # scratch directory for the duration.
     _saved_logger = trainer.logger
+    _saved_out = trainer.out_dir
+    scratch = _saved_out.parent / f"{_saved_out.name}-ablation-scratch"
+    scratch.mkdir(parents=True, exist_ok=True)
+    trainer.out_dir = scratch
     trainer.logger = JsonlLogger(
         trainer.report_dir / f"{trainer.cfg.train.run_name}_ablation_train.jsonl",
         echo=True,
@@ -731,6 +745,7 @@ def source_ablation(trainer, *, steps: int = 120, seed: int = 0) -> dict[str, An
         return _source_ablation_inner(trainer, steps=steps, seed=seed)
     finally:
         trainer.logger = _saved_logger
+        trainer.out_dir = _saved_out
 
 
 def _source_ablation_inner(trainer, *, steps: int, seed: int) -> dict[str, Any]:

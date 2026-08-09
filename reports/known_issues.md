@@ -604,3 +604,64 @@ config object and yields a `Mapping` view of it and of its `model` section. Fixi
 `AttributeError` alone does **not** turn the test green — the control-arm half then raises
 `CompilerRefusal` where the test expects `R12Violation`, which is the duplication again. So the
 two should be discharged together, and the duplication decided first.
+
+
+---
+
+## ISSUE-010 — the source ablation overwrote the checkpoint it was evaluating
+
+**Status:** repaired. The destroyed artifacts were recovered; one is permanently lost.
+**Severity:** destroyed 25 hours of compute's primary artifact at its published path. Recovered
+from a sibling checkpoint written in the same instant.
+
+### What happened
+
+`make release-003-ablate` retrains one arm per source family on the **live trainer**, and
+`FoundationTrainer.run_stage` writes `stage_<name>.pt` and `last.pt` into `trainer.out_dir` when a
+stage ends. `source_ablation`'s `short_train` sets `ckpt_every = 10**9`, which suppresses periodic
+saves and does nothing about the stage-end save.
+
+So each arm overwrote the model under evaluation. Observed on `checkpoints/scwbd-003/`:
+
+* `last.pt` — run 3's completed 13,400-step model, replaced by a **200-step T4 ablation arm**
+* `stage_T4_simulator.pt` — **lost**, replaced the same way
+* `config.yaml`, `provenance.json` — rewritten by the arm
+
+`stage_T5_measured_return.pt` survived only because the arm loop had not reached a point that
+rewrote it. It is byte-for-byte the run's final state (step 13,400, `saved_utc`
+2026-08-09T09:18:17Z), so `last.pt` was restored from it and the restored file **reproduces the
+published derived report field-for-field** — `contributed_sources`, `moved_since_init`,
+`attachment_kinds`, `tms_drive`, all identical. No published number changed.
+
+`stage_T4_simulator.pt` is not recoverable. Its two uses were already discharged and recorded: the
+`family_readout` 0/36 → 36/36 confirmation, and ISSUE-008's T4 Balloon reading.
+
+### How it was caught
+
+`make health-run3` went `COMPLETE` → `UNHEALTHY(2): no training process, and global_step=201 <
+target 13400 — this is a death, not a completion`.
+
+That message is wrong about the cause and right to fire. The checkpoint-trust rule added after the
+run-2 log loss — *"take the FURTHEST evidence of progress"* — is what normally rescues a truncated
+log, and it could not help here because **the checkpoint was the thing being corrupted**. A guard
+that cross-checks A against B fails silently when one process writes both.
+
+### The repair
+
+`source_ablation` now redirects `trainer.out_dir` to `<out_dir>-ablation-scratch` and
+`trainer.logger` to `<run_name>_ablation_train.jsonl` for its duration, restoring both in a
+`finally` so a failed arm cannot leave the trainer pointed at scratch paths. Guarded by
+`tests/foundation/test_ablation_does_not_write_the_production_log.py`, which asserts on the paths
+the trainer holds rather than on the files an arm happens to write, so a future change to
+`ckpt_every` cannot reopen it.
+
+### The pattern
+
+**An evaluation must not be able to modify its subject.** The ablation was written as "retrain a
+few arms and read the metric" and inherited, through the trainer object, every side effect of
+training: the log, the checkpoints, the config copy. Nothing in its signature says it writes to
+disk at all. Where a read-only operation borrows a read-write object, the borrow is the defect;
+`ckpt_every` and `log_every` were two attempts to suppress symptoms of it, and both were
+incomplete because they enumerate what to switch off instead of redirecting where it goes.
+
+The checkpoints are now also mirrored outside the repo at `~/scwbd-003-backup/`, sha256-verified.
