@@ -199,15 +199,25 @@ re-derive them:
   * **Permission was never the blocker.** `bold.*` is granted by all five
     stages. The reflex reading of a frozen tensor in this repo — run 2's dead
     glob — is the wrong one here. There was no gradient to withhold.
-  * **"The five moved" is a false pass.** T4_simulator integrates the ODE on
-    synthetic data and unfreezes all five. Scope any check to stages admitting
-    no simulator tier, derived from `admits` rather than from stage names. The
-    T4 → T5 boundary is the sharpest discriminator available: T5 admits tiers
-    1–2, so measured BOLD that reached the physics would change those bytes.
+  * **Nothing integrated the ODE, not even the simulator.** This was first
+    written the other way — that T4 would unfreeze the five from synthetic
+    dynamics, making "the five moved" a false pass to scope around. Measured at
+    the T4 → T5 boundary, they are frozen in T4 as well. `with_hemo` defaults
+    to False and no run-3 stage sets it; `sim_losses` reads `roll.activity` and
+    never `roll.hemo` even when it is produced; and `prior_penalty`'s two
+    routes are both closed, the second because `anatomical_prior.yaml` freezes
+    `bold.*` on purpose.
 
-That distinction is 003's own lesson turned on itself, and it is the one thing
-from 003 most worth carrying: its machinery answers "did a gradient arrive",
-never "did it carry information".
+So ISSUE-008's fix (2) — "give `real_bold_losses` the `with_hemo` rollout the
+simulated path uses" — rests on a premise that is not true. There is no such
+rollout to borrow. Whatever you build, a loss has to consume `roll.hemo`;
+turning `with_hemo` on by itself integrates the compartments and throws them
+away, and it will look like progress.
+
+The lesson that survives the wrong prediction is 003's own, turned on itself:
+its machinery answers "did a gradient arrive", never "did it carry
+information" — and here it answered a third question nobody asked, "was there
+a gradient at all".
 
 === ORDER OF WORK ===
 

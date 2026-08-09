@@ -5,27 +5,43 @@ magnitude is a symptom that needs interpretation; five physical parameters
 bit-identical to their initialisation is the cause, stated as a fact about
 bytes.
 
-`BOLDHead.step` is the Balloon integrator and the **only** consumer of
-
     log_kappa   log_gamma   log_tau   alpha   neural_gain
 
-so if those tensors never move, the ODE was never called, whatever the BOLD
-loss reported. `SCWBD.rollout(with_hemo=True)` is the only caller of `step`,
-and only `sim_losses` passes it -- `real_bold_losses` reads the `hemo`
-component straight out of the learned regional state and hands two
-unconstrained latents to a Balloon signal equation as blood volume and
-deoxyhaemoglobin.
+`BOLDHead.step` is the Balloon integrator and the only consumer of them, so if
+those tensors never move, the ODE was never called -- whatever the BOLD loss
+reported.
 
-**The trap this file exists to avoid.** The obvious gate is "the five moved by
-the end of the run". It is a false pass. `bold.*` is granted by all five stages
-of `configs/run3/scwbd-003.yaml`, so permission is not what freezes them; and
-T4_simulator *does* run the ODE, on synthetic data. A gradient arriving there
-says nothing about whether measured fMRI reaches the physics, which is the
-entire question. So the measurement below is scoped to stages that admit no
-simulator, and a T4 gradient is explicitly refused as evidence.
+**The stronger fact, measured at the T4 -> T5 boundary.** They are frozen in
+`T4_simulator` too. The simulator stage does not integrate the ODE either, for
+three independent reasons, any one of which is sufficient:
 
-This is the same distinction run 3 got wrong at a larger scale: `moved_since_init`
-answers "did a gradient arrive", not "did it carry information".
+* `StageAdmission.with_hemo` defaults to False and no stage of
+  `configs/run3/scwbd-003.yaml` sets it, so `rollout()` is never asked for
+  haemodynamics. The `stage.name in ("IV_assembly",)` fallback in
+  `sim_losses` cannot fire either -- run 3's stages are named T1..T5.
+* Even under `with_hemo=True`, `sim_losses` reads `roll.activity` and never
+  `roll.hemo`. The compartments would be integrated and discarded.
+* The one term that does touch four of the five, `BOLDHead.prior_penalty()`,
+  reaches them through two routes and neither is open: `sim_losses` scales it
+  by `lambda_cal`, which is set only in T2 (a stage admitting no simulator, so
+  `sim_losses` does not run there); and `anat_losses` adds it unscaled, but
+  `configs/curriculum/source_cards/anatomical_prior.yaml` freezes `bold.*`
+  deliberately -- *"Training bold.* would have made a prior penalty its sole
+  author."*
+
+So the ODE was never integrated at any point in run 3, and the correct summary
+of ISSUE-008 is not "the measured path does not call the physics" but "nothing
+does".
+
+**What this file refuses.** An earlier version of this gate scoped itself to
+stages admitting no simulator, on the theory that T4 would move the five and a
+gradient arriving there would be a false pass. That theory was wrong -- checked
+against `stage_T4_simulator.pt`, they are frozen there too. The scoping is gone
+because it was protecting against something that does not happen, and a guard
+carrying a false rationale teaches the next reader the wrong model. What
+survives from it is the real lesson: `bold.*` is granted by all five stages, so
+permission was never what froze these, and the run-2 reflex ("some card's glob
+names nothing") is the wrong diagnosis here.
 """
 
 from __future__ import annotations
@@ -41,13 +57,10 @@ CONFIG = REPO / "configs/run3/scwbd-003.yaml"
 
 #: The five parameters of the Balloon-Windkessel model, and nothing else in
 #: `BOLDHead`. `log_noise`, `logvar_gain` and `rho` are observation-noise and
-#: readout terms -- they receive gradient from the signal equation whether or
-#: not the ODE ran, so including them would mask exactly what is being measured.
+#: readout terms -- they take gradient from the signal equation whether or not
+#: the ODE ran, and all three DID move, so including them would mask exactly
+#: what is being measured.
 BALLOON = ("log_kappa", "log_gamma", "log_tau", "alpha", "neural_gain")
-
-#: Integrity tier of the simulator. A stage admitting it can move the Balloon
-#: parameters from synthetic dynamics alone.
-SIMULATOR_TIER = 4
 
 
 def _load(path: Path) -> dict:
@@ -56,33 +69,8 @@ def _load(path: Path) -> dict:
     return torch.load(path, map_location="cpu", weights_only=False)
 
 
-def _stage_admits(stage: str) -> set[int] | None:
-    """Tiers a stage admits, read from the run config rather than its name."""
-    if not CONFIG.is_file():
-        return None
-    import yaml
-
-    cfg = yaml.safe_load(CONFIG.read_text())
-    for s in cfg["train"]["stages"]:
-        if s["name"] == stage:
-            cur = (s.get("extra") or {}).get("curriculum") or {}
-            return {int(t) for t in (cur.get("admits") or [])}
-    return None
-
-
-def _measured_only_checkpoints() -> list[Path]:
-    """Stage checkpoints whose stage admits no simulator tier.
-
-    Derived from the config, not from the stage name, so renaming a stage or
-    admitting tier 4 into it cannot quietly move a checkpoint out of scope.
-    """
-    out: list[Path] = []
-    for p in sorted(RUN3.glob("stage_*.pt")):
-        stage = p.name[len("stage_") : -len(".pt")]
-        admits = _stage_admits(stage)
-        if admits is not None and SIMULATOR_TIER not in admits:
-            out.append(p)
-    return out
+def _stage_checkpoints() -> list[Path]:
+    return sorted(RUN3.glob("stage_*.pt"))
 
 
 def _frozen_balloon(ck: dict) -> list[str]:
@@ -115,63 +103,85 @@ def _balloon_hash(ck: dict) -> str:
 
 
 @pytest.mark.parametrize(
-    "ckpt", _measured_only_checkpoints(), ids=lambda p: p.name[len("stage_") : -len(".pt")]
+    "ckpt", _stage_checkpoints(), ids=lambda p: p.name[len("stage_") : -len(".pt")]
 )
-def test_the_balloon_parameters_are_frozen_in_every_measured_only_stage(ckpt: Path) -> None:
-    """ISSUE-008, asserted as the measured fact it is.
+def test_the_balloon_parameters_are_frozen_in_every_stage(ckpt: Path) -> None:
+    """ISSUE-008, asserted as the measured fact it is -- in EVERY stage.
 
     This test is GREEN while the defect is open, and that is deliberate: it
-    pins the diagnosis to bytes so the day the measured BOLD path changes --
-    in either direction, fixed or further broken -- something goes red and
-    names the issue.
+    pins the diagnosis to bytes so the day the BOLD path changes -- in either
+    direction, repaired or further broken -- something goes red and names the
+    issue.
 
     **When this goes red because the path was repaired**, the repair is done:
-    close ISSUE-008 and invert this test to
-    ``assert not frozen`` under the same parametrisation. Do not delete it.
-    That inversion is gate #6 proper, and until the fix lands there is nothing
-    for it to assert that would not be wishful.
+    close ISSUE-008 and invert this test to ``assert not frozen``. Do not
+    delete it. That inversion is gate #6 proper, and until the fix lands there
+    is nothing for it to assert that would not be wishful.
     """
     frozen = _frozen_balloon(_load(ckpt))
     assert frozen == list(BALLOON), (
         f"{ckpt.name}: expected all five Balloon parameters frozen (ISSUE-008), "
-        f"got frozen={frozen}. If the measured BOLD path now integrates the ODE, "
-        "this is the good failure: close ISSUE-008 in reports/known_issues.md and "
-        "invert this assertion to `assert not frozen`. If it is not, then some "
-        "other path is writing to the haemodynamic parameters and the BOLD "
-        "likelihood is no longer the only thing they answer to."
+        f"got frozen={frozen}. If the BOLD path now integrates the ODE, this is "
+        "the good failure: close ISSUE-008 in reports/known_issues.md and invert "
+        "this assertion to `assert not frozen`. If it is not, then some other "
+        "path is writing to the haemodynamic parameters and the BOLD likelihood "
+        "is no longer the only thing they answer to."
     )
 
 
-def test_a_simulator_gradient_is_not_evidence_the_measured_path_integrates() -> None:
-    """The false pass this file was written to refuse.
+def test_the_simulator_stage_does_not_integrate_the_ode_either() -> None:
+    """The correction to this gate's first draft, kept as a check.
 
-    T4_simulator calls `rollout(with_hemo=True)`, so the five parameters can
-    move there on synthetic dynamics while measured fMRI still never reaches
-    them. A gate reading `moved_since_init` at the end of the run would report
-    them moved and discharge nothing.
+    It is tempting to assume the simulator exercises the physics -- it is the
+    stage named for it, and `sim_losses` is the only caller that can pass
+    `with_hemo`. It does not. Asserted here so the assumption cannot quietly
+    return, and so that turning `with_hemo` on without also consuming
+    `roll.hemo` in a loss does not read as a fix.
+    """
+    if not CONFIG.is_file():
+        pytest.skip("run-3 config absent")
+    import yaml
 
-    T5_measured_return admits tiers 1-2 only -- no simulator -- so the bytes
-    across the T4 -> T5 boundary are the discriminator: if `real_bold_losses`
-    integrated the ODE, a stage of measured BOLD would change them.
+    cfg = yaml.safe_load(CONFIG.read_text())
+    hemo_on = [
+        s["name"]
+        for s in cfg["train"]["stages"]
+        if ((s.get("extra") or {}).get("curriculum") or {}).get("with_hemo")
+    ]
+    assert not hemo_on, (
+        f"{hemo_on} now request with_hemo. That alone does not discharge "
+        "ISSUE-008: `sim_losses` reads roll.activity and never roll.hemo, so "
+        "the compartments would be integrated and thrown away. Check that a "
+        "loss actually consumes them before treating this as repaired."
+    )
+
+    t4 = RUN3 / "stage_T4_simulator.pt"
+    if not t4.is_file():
+        pytest.skip("run 3 has not written the simulator stage yet")
+    assert _frozen_balloon(_load(t4)) == list(BALLOON), (
+        "the simulator stage moved the Balloon parameters. If that is real, the "
+        "ODE is being integrated somewhere this file does not know about, and "
+        "the T4 -> T5 comparison below stops meaning what it says."
+    )
+
+
+def test_the_measured_return_stage_leaves_them_untouched() -> None:
+    """T5 admits tiers 1-2 and is a whole stage of measured data.
+
+    Byte comparison across the T4 -> T5 boundary, independent of
+    `moved_since_init`: two different mechanisms agreeing is worth more than
+    one mechanism asserted twice.
     """
     t4 = RUN3 / "stage_T4_simulator.pt"
     t5 = RUN3 / "stage_T5_measured_return.pt"
     if not (t4.is_file() and t5.is_file()):
-        pytest.skip("run 3 has not reached the T4 -> T5 boundary yet")
-
-    admits5 = _stage_admits("T5_measured_return") or set()
-    assert SIMULATOR_TIER not in admits5, (
-        "T5_measured_return now admits the simulator, so it can no longer "
-        "discriminate a measured gradient from a synthetic one. Pick another "
-        "measured-only stage or this test has quietly stopped measuring."
-    )
+        pytest.skip("run 3 has not reached the end of T5 yet")
 
     before, after = _balloon_hash(_load(t4)), _balloon_hash(_load(t5))
     if before == after:
         pytest.xfail(
             "ISSUE-008 confirmed across the T4 -> T5 boundary: a whole stage of "
-            "measured BOLD left the five Balloon parameters bit-identical. The "
-            "simulator moved them in T4; measured fMRI did not touch them."
+            "measured BOLD left the five Balloon parameters bit-identical."
         )
     # Reached only once the measured path integrates. Keep the assertion so the
     # xfail above cannot be the permanent resting state of this test.
@@ -185,9 +195,8 @@ def test_there_is_something_to_check() -> None:
     disk every parametrised test above collects zero cases and the file reports
     success while asserting nothing at all.
     """
-    if not RUN3.is_dir() or not sorted(RUN3.glob("stage_*.pt")):
-        pytest.skip("no run-3 stage checkpoint on disk yet")
-    assert _measured_only_checkpoints(), (
-        "run-3 stage checkpoints exist but none is measured-only, so the gate "
-        "above is vacuous. Check `admits` in configs/run3/scwbd-003.yaml."
+    if not RUN3.is_dir():
+        pytest.skip("no run-3 checkpoint directory yet")
+    assert _stage_checkpoints(), (
+        "no run-3 stage checkpoint on disk, so the gate above is vacuous."
     )

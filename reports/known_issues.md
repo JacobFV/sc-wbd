@@ -506,16 +506,35 @@ stages of `configs/run3/scwbd-003.yaml`. The familiar reading of a frozen tensor
 "some card's glob does not match it", the run-2 defect — is the wrong one here. Nothing withheld
 the gradient; there was no gradient.
 
-**"The five moved" is a false pass.** `T4_simulator` calls `rollout(with_hemo=True)`, so it
-integrates the ODE on synthetic dynamics and will unfreeze all five. A gate reading
-`moved_since_init` at the end of the run would therefore report them moved and discharge nothing.
-Any check must be scoped to stages admitting no simulator tier. The sharpest available
-discriminator is the **T4 → T5 boundary**: `T5_measured_return` admits tiers 1–2, so if
-`real_bold_losses` integrated the ODE, a whole stage of measured BOLD would change those bytes.
-Identical bytes across that boundary is ISSUE-008 confirmed a second way, independent of the loss.
+**The simulator does not integrate the ODE either, so the headline above is too narrow.**
+This was predicted the other way and the prediction was wrong. `T4_simulator` was expected to
+unfreeze all five from synthetic dynamics, making "the five moved" a false pass that any gate
+would have to scope around. Checked against `stage_T4_simulator.pt` at the T4 → T5 boundary:
+**they are frozen there too.** Three independent reasons, any one sufficient:
 
-This is run 3's own central lesson applied to itself: `moved_since_init` answers "did a gradient
-arrive", not "did it carry information".
+* `StageAdmission.with_hemo` defaults to `False` and **no stage of `configs/run3/scwbd-003.yaml`
+  sets it**, so `rollout()` is never asked for haemodynamics. `sim_losses`' fallback,
+  `stage.name in ("IV_assembly",)`, cannot fire either — run 3's stages are named T1…T5.
+* Even under `with_hemo=True`, `sim_losses` reads `roll.activity` and never `roll.hemo`. The
+  compartments would be integrated and discarded.
+* `BOLDHead.prior_penalty()` touches four of the five (all but `neural_gain`) and reaches them
+  through two routes, neither open. `sim_losses` scales it by `lambda_cal`, set only in T2 — a
+  stage admitting no simulator, so `sim_losses` does not run there. `anat_losses` adds it
+  unscaled, but `configs/curriculum/source_cards/anatomical_prior.yaml` freezes `bold.*`
+  deliberately: *"Training `bold.*` would have made a prior penalty its sole author."*
+
+So the correct statement of this issue is not "the measured path does not call the physics" but
+**nothing does**. `BOLDHead.step` did not execute at any point in run 3. That also means fix (2)
+below rests on a false premise — there is no `with_hemo` rollout in the simulated path to hand to
+`real_bold_losses`, because the simulated path does not use one.
+
+The consequence for measurement: because the five never move, a whole-run check is sufficient and
+no stage scoping is needed. The **T4 → T5 boundary** remains useful as a second, independent
+confirmation — a byte comparison rather than a re-reading of `moved_since_init`.
+
+The lesson that does survive the wrong prediction: `bold.*` is granted by all five stages, so
+permission was never what froze these, and run 2's reflex ("some card's glob names nothing") is
+the wrong diagnosis here.
 
 ### The pattern
 
