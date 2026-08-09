@@ -420,7 +420,29 @@ environment problem.
 
 ## ISSUE-008 — the measured-BOLD path is not a haemodynamic model
 
-**Status:** open, diagnosed, **not repaired**. The fix is a design decision, not a patch.
+**Status: CLOSED 2026-08-09.** Fix (c), real multirate, with one compromise stated below.
+
+`real_bold_losses` now rolls the neural clock for the duration a BOLD frame actually covers and
+integrates the Balloon ODE across it. `dt_slow = dt_model * hemo_ratio` = 0.2 s; `slow_per_frame =
+TR / dt_slow` = 10 at TR = 2 s; `n_neural = frames * slow_per_frame * hemo_ratio` = 500 for two
+frames. `rollout(with_hemo=True)` advances `BOLDHead.step` every `hemo_ratio` fast steps, so
+`roll.hemo` arrives on the slow clock and one BOLD sample is taken every `slow_per_frame`-th slow
+step, at the END of the interval it represents. Verified: 500 neural steps → 20 slow ODE samples →
+2 BOLD frames, and **all five Balloon parameters receive gradient**
+(`tests/foundation/test_bold_is_multirate.py`).
+
+TR is read from the batch and the path **refuses** if it is absent, rather than defaulting to 2.0
+and being right only for ds002336. A wrong TR silently rescales the clock ratio, which is this same
+defect in miniature.
+
+**THE COMPROMISE, STATED.** Predicting all 8 target frames is 2,000 neural steps against run 3's 8
+— a 250× rollout that does not fit the step budget. `model.bold_predict_frames` caps the horizon
+(default 2 frames = 4 s) and `model.bold_every` runs the term on a duty cycle. A slow modality
+attaching on a slow schedule is multirate in the training loop as well as in the model, but it is a
+**reduction in what is predicted** and both numbers belong on the model card beside any fMRI
+number. The old text below is kept for the diagnosis.
+
+**Original status:** open, diagnosed, not repaired. The fix is a design decision, not a patch.
 **Severity:** invalidates the fMRI likelihood of SC-WBD-003 and of every earlier run that
 scored `ds002336_real` BOLD. Found at 46% of run 3, from a diverging loss term.
 

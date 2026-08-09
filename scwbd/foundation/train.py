@@ -1539,6 +1539,39 @@ class FoundationTrainer:
             },
         )
 
+    def _bold_tr_seconds(self, batch: "Mapping[str, Any]") -> float:
+        """Seconds per BOLD frame, from the DATA, refusing to guess.
+
+        The clock ratio in `real_bold_losses` is `TR / (dt_model * hemo_ratio)`.
+        A wrong TR silently rescales it, which is the defect ISSUE-008 is about
+        in miniature -- so this reads the value the parcellation recorded and
+        raises if the batch does not carry one, rather than defaulting to 2.0
+        and being right only for ds002336.
+        """
+        tr = batch.get("tr")
+        if tr is None:
+            raise RuntimeError(
+                "the BOLD batch carries no 'tr', so the fast:slow clock ratio "
+                "cannot be computed. ParcelBOLDDataset records tr_seconds per run; "
+                "pass it through rather than assuming a repetition time"
+            )
+        if hasattr(tr, "float"):  # a tensor of per-item TRs
+            vals = tr.float().reshape(-1)
+            first = float(vals[0])
+            if not bool((vals == vals[0]).all()):
+                raise RuntimeError(
+                    f"a BOLD batch mixes repetition times {sorted(set(vals.tolist()))}; "
+                    "one clock ratio cannot serve them. Group windows by TR."
+                )
+            return first
+        if isinstance(tr, (list, tuple)):
+            if len(set(float(v) for v in tr)) > 1:
+                raise RuntimeError(
+                    f"a BOLD batch mixes repetition times {sorted(set(float(v) for v in tr))}"
+                )
+            return float(tr[0])
+        return float(tr)
+
     def _whole_brain_hemo(self, state: "Tensor") -> "Tensor":
         """``(..., N, D)`` structured state -> ``(..., N, 4)`` Balloon state.
 
@@ -1720,11 +1753,83 @@ class FoundationTrainer:
         )[:, : len(THETA_NAMES)].detach()
 
         self.model.set_mechanistic_theta(th, self.anat)
+
+        # ------------------------------------------------------------------
+        # MULTIRATE. ISSUE-008's fix (c), and the reason the other two were not
+        # taken.
+        #
+        # This path used to read a four-channel component NAMED `hemo` out of
+        # the learned regional state and hand it to a Balloon signal equation:
+        #
+        #     hemo = self._whole_brain_hemo(roll.state)
+        #     mu, lv = self.model.bold.signal(hemo, roll.state)
+        #
+        # `BOLDHead.step` -- the actual Balloon-Windkessel integrator, and the
+        # only consumer of log_kappa/log_gamma/log_tau/alpha/neural_gain -- was
+        # never called on measured data. It was never called ANYWHERE in run 3:
+        # `with_hemo` defaults False and no stage set it. So `signal()` read two
+        # unconstrained latents as blood volume and deoxyhaemoglobin, `q/v`
+        # wandered, and `real_bold_nll` went 21.7 -> 4.4e6 while the five
+        # physical parameters stayed bit-identical to their initialisation.
+        #
+        # And the clocks differed by 250x: 8 rollout steps at dt_model = 8 ms
+        # (64 ms) were indexed against 8 BOLD frames at TR = 2 s (16 s).
+        #
+        # Now the neural clock is rolled for the duration a BOLD frame actually
+        # covers and the haemodynamics are integrated across it:
+        #
+        #     dt_slow        = dt_model * hemo_ratio          (0.2 s)
+        #     slow_per_frame = TR / dt_slow                   (10 at TR = 2 s)
+        #     n_neural       = frames * slow_per_frame * hemo_ratio
+        #
+        # `rollout(with_hemo=True)` advances `BOLDHead.step` every `hemo_ratio`
+        # fast steps, so `roll.hemo` arrives on the slow clock and one BOLD
+        # frame is every `slow_per_frame`-th slow sample. The ODE runs, the five
+        # parameters take gradient, and the two clocks are related by a ratio
+        # read from the data rather than assumed.
+        #
+        # THE COMPROMISE, STATED. Predicting all 8 target frames means 2,000
+        # neural steps against run 3's 8 -- a 250x rollout that does not fit the
+        # step budget. `bold_predict_frames` caps the horizon (default 2 frames
+        # = 4 s = 500 steps) and `bold_every` runs this term on a duty cycle. A
+        # slow modality attaching on a slow schedule is multirate in the training
+        # loop as well as in the model, but it IS a reduction in what is
+        # predicted and both numbers belong in the model card.
+        tr = self._bold_tr_seconds(batch)
+        dt_slow = self.cfg.model.dt_model * self.cfg.model.hemo_ratio
+        slow_per_frame = max(1, int(round(tr / dt_slow)))
+        frames = max(1, min(n_pred, int(self.cfg.model.bold_predict_frames)))
+        n_neural = frames * slow_per_frame * self.cfg.model.hemo_ratio
+
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.cfg.model.use_bf16):
-            roll = self.model.rollout(y_context=src_ctx, theta=th, n_steps=n_pred, enforce_r05=False)
-            hemo = self._whole_brain_hemo(roll.state)
-            mu, lv = self.model.bold.signal(hemo, roll.state)
+            roll = self.model.rollout(
+                y_context=src_ctx,
+                theta=th,
+                n_steps=n_neural,
+                with_hemo=True,
+                enforce_r05=False,
+            )
+            if roll.hemo is None:
+                raise RuntimeError(
+                    "rollout(with_hemo=True) returned no haemodynamic state, so the "
+                    "Balloon ODE did not run. Turning with_hemo on without a loss that "
+                    "consumes roll.hemo integrates the compartments and discards them, "
+                    "which is ISSUE-008 wearing a fix."
+                )
+            # One sample per TR: the LAST slow step inside each frame, so the
+            # sample is the state at the end of the interval it represents
+            # rather than the start.
+            hemo = roll.hemo[:, slow_per_frame - 1 :: slow_per_frame][:, :frames]
+            # The predictive log-variance must come from the fast-clock state at
+            # the step each retained sample was taken -- `hemo_steps` records
+            # those indices so the alignment is checkable rather than trusted.
+            steps = list(roll.hemo_steps)[slow_per_frame - 1 :: slow_per_frame][:frames]
+            state_at = roll.state[:, steps] if steps else roll.state[:, -frames:]
+            mu, lv = self.model.bold.signal(hemo, state_at)
         mu, lv = mu.float(), lv.float()
+        # The target is truncated to the horizon actually predicted. Scoring 8
+        # frames against 2 predictions would silently compare different spans.
+        tgt_b = tgt_b[:, :frames]
 
         # The mask is the whole point: gaussian_nll marginalises unobserved
         # elements out rather than scoring them, so uncovered parcels contribute

@@ -127,6 +127,18 @@ class ModelConfig:
     n_uncertainty: int = 4
     dt_model: float = 0.008  # s, fast (neural) clock == corpus sampling interval
     hemo_ratio: int = 25  # slow (hemodynamic) clock = 25 * dt_model = 200 ms
+    #: BOLD frames the measured path predicts per window. ISSUE-008's fix rolls
+    #: the neural clock for the duration a frame actually covers, so the cost is
+    #: ``frames * (TR / dt_model)`` steps -- 250 per frame at TR = 2 s against
+    #: run 3's 8 for the whole window. 2 frames (4 s, 500 steps) is what fits the
+    #: step budget; it is a REDUCTION IN WHAT IS PREDICTED, not a free choice,
+    #: and it belongs in the model card next to any fMRI number.
+    bold_predict_frames: int = 2
+    #: Duty cycle for the measured BOLD term, in optimiser steps. A slow modality
+    #: may attach on a slow schedule -- that is multirate in the training loop as
+    #: well as in the model -- but it means the term sees 1/N of the data a
+    #: fast source does, which is a statement about evidence, not just cost.
+    bold_every: int = 1
     #: R05 guard: max admissible ||R_theta|| / ||F_local + F_long||
     residual_rho_max: float = 0.35
     residual_init_scale: float = 0.05

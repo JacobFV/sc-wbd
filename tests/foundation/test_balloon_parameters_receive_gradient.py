@@ -106,6 +106,21 @@ def _frozen_balloon(ck: dict) -> list[str]:
     return [n for n in BALLOON if f"bold.{n}" in frozen]
 
 
+def _trained_with_multirate(ck: dict) -> bool:
+    """Did this checkpoint's run integrate the Balloon ODE on measured data?
+
+    Read from the checkpoint's own config rather than from its date or its name.
+    `bold_predict_frames` is the field ISSUE-008's fix added; a run that predates
+    it cannot have had the multirate path, and one that carries it did.
+
+    This is what lets the gate assert the FIX going forward while still asserting
+    the DEFECT against run 3's historical checkpoints, which cannot be retrained
+    and would otherwise fail this file forever.
+    """
+    model_cfg = (ck.get("config") or {}).get("model") or {}
+    return "bold_predict_frames" in model_cfg
+
+
 def _balloon_hash(ck: dict) -> str:
     sd = ck.get("model") or {}
     h = hashlib.sha256()
@@ -134,14 +149,27 @@ def test_the_balloon_parameters_are_frozen_in_every_stage(ckpt: Path) -> None:
     delete it. That inversion is gate #6 proper, and until the fix lands there
     is nothing for it to assert that would not be wishful.
     """
-    frozen = _frozen_balloon(_load(ckpt))
+    ck = _load(ckpt)
+    frozen = _frozen_balloon(ck)
+
+    if _trained_with_multirate(ck):
+        # ISSUE-008 is fixed, so for any run trained through the multirate path
+        # the assertion is the INVERSION its first version promised.
+        assert not frozen, (
+            f"{ckpt.name}: {frozen} are bit-identical to their initialisation on a "
+            "run whose config declares the multirate BOLD path. The ODE is being "
+            "integrated and its parameters are still not learning -- check that a "
+            "loss consumes roll.hemo and that the stage grants bold.*."
+        )
+        return
+
+    # Pre-fix checkpoints record the defect and keep recording it. Run 3's are
+    # historical: they cannot be re-trained, and asserting the fix against them
+    # would fail forever for a reason that is not a regression.
     assert frozen == list(BALLOON), (
-        f"{ckpt.name}: expected all five Balloon parameters frozen (ISSUE-008), "
-        f"got frozen={frozen}. If the BOLD path now integrates the ODE, this is "
-        "the good failure: close ISSUE-008 in reports/known_issues.md and invert "
-        "this assertion to `assert not frozen`. If it is not, then some other "
-        "path is writing to the haemodynamic parameters and the BOLD likelihood "
-        "is no longer the only thing they answer to."
+        f"{ckpt.name}: this checkpoint predates the multirate BOLD path, so all "
+        f"five Balloon parameters should be frozen (ISSUE-008); got {frozen}. "
+        "Some other path is writing to the haemodynamic parameters."
     )
 
 
