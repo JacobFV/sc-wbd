@@ -1603,7 +1603,16 @@ def _enabled_but_unconsumed(ckpt: Path, card_dir: str) -> list[str]:
         # Run 3's checkpoint records `contributed_sources`, derived in
         # `MixtureTrainer` from the losses that actually ran. Where that exists
         # it is evidence, not inference, and the inference must not override it.
-        contributed = extra.get("contributed_sources")
+        # UNION with the training log. `extra.contributed_sources` under-reports
+        # on run 3's checkpoints -- see `contributed_sources_union` -- and taking
+        # it at face value would have put "`eegmmidb_real` produced no loss term"
+        # on a public card for the largest source in the run.
+        from ..foundation.release import contributed_sources_union
+
+        run_name = ((rec.get("config") or {}).get("train") or {}).get("run_name") or ""
+        contributed, _only_log = contributed_sources_union(
+            extra, Path("reports/training") / f"{run_name}_train.jsonl"
+        )
         if contributed:
             known = set(contributed)
             silent = []

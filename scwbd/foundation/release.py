@@ -382,3 +382,58 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover
 
 if __name__ == "__main__":  # pragma: no cover
     main()
+
+
+#: Per-source diagnostic key -> source id. The trainer writes one of these for
+#: every source that produced a loss term, so the training log is INDEPENDENT
+#: evidence of contribution and does not depend on `_contributed` being correct.
+CONTRIBUTION_MARKERS: dict[str, str] = {
+    "eegmmidb_real_eeg_nll": "eegmmidb_real",
+    "sleepedf_real_eeg_nll": "sleepedf_real",
+    "ds000117_real_eeg_nll": "ds000117_real",
+    "ds004024_rest_real_eeg_nll": "ds004024_rest_real",
+    "real_bold_nll": "ds002336_real",
+    "behaviour_choice_ce": "ds000117_behaviour",
+    "perturb_nll": "ds004024_perturb",
+    "sim_forecast_nll": "sim_wholebrain",
+}
+
+
+def contributed_sources_union(checkpoint_extra, train_log) -> tuple[list[str], list[str]]:
+    """``(union, only_in_log)`` -- what actually produced a loss term.
+
+    ``extra.contributed_sources`` UNDER-REPORTS on SC-WBD-003's checkpoints.
+    `_contributed.add` was reached only from the run-3 loop, while
+    ``eegmmidb_real`` and ``ds002336_real`` arrive at a loss through older call
+    sites. The trainer was fixed mid-run and a live process does not re-read its
+    own modules, so those checkpoints carry the short list and the log carries
+    the truth: 5 recorded against 8 that ran.
+
+    Union, never replacement. The log is a transcript and can be shorter than
+    the run -- `git checkout -- reports/training/` once truncated one -- so
+    neither source alone can be trusted to be complete.
+
+    Shared because two callers need the same answer and disagreed: the derived
+    report cross-checked the log and reported 8, while the publisher read the
+    raw field and was about to put "`eegmmidb_real` produced no loss term" on a
+    public model card for the largest source in the run.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+
+    recorded = sorted((checkpoint_extra or {}).get("contributed_sources") or [])
+    seen: set[str] = set()
+    p = _Path(train_log)
+    if p.is_file():
+        for line in p.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                rec = _json.loads(line)
+            except ValueError:
+                continue
+            for marker, sid in CONTRIBUTION_MARKERS.items():
+                if rec.get(marker) is not None:
+                    seen.add(sid)
+    union = sorted(set(recorded) | seen)
+    return union, sorted(seen - set(recorded))
