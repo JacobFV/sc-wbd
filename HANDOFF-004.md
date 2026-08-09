@@ -133,6 +133,40 @@ What must be measured, and what would falsify:
 004 measures it and the answer is no, that is a result and it goes on the site
 in the same terms runs 1 and 2 got.
 
+=== WHAT 003 MEASURED — THE RUN FINISHED ===
+
+13,400/13,400 steps, all five stages. Two results, and they are not in tension:
+they are different metrics on different data.
+
+  * **It beats its baselines.** 1.986 nats on 27 held-out participants against
+    2.024 (var4) and 2.025 (ar16); every paired participant-clustered 95%
+    interval excludes zero. First model in the project that does. FIVE distinct
+    comparators, not six — `subject_specific_ar` is bit-identical to `ar16`,
+    which is (2) above showing up in the baseline set.
+    It is a DENSITY result: on squared error the model is indistinguishable from
+    both AR baselines, intervals spanning zero. The margin is ~0.04 nats.
+    Run 2's units defect was re-checked, not assumed gone — it flattered that run
+    by 0.5694 nats, fifteen times this margin, enough to invert the verdict.
+  * **No measured source earns its place.** Leave-one-out, eleven arms: only
+    `sim_wholebrain` contributes (+0.0445); all nine measured and prior families
+    show negative transfer, −0.0006 to −0.0097. See the metric warning in (f) —
+    this is scored on the simulator and is close to tautological in direction.
+    The sign pattern is the result; the individual deltas are not effect sizes
+    and there is no error bar behind them.
+
+Two negative sub-results worth as much as the positive one:
+
+  * **The amortised posterior is calibrated and uninformative.** SBC clean
+    (min KS p = 0.098), coverage MAE 0.021, z-sd 0.96–1.00 — and `posterior_r2`
+    is −0.010, 0.000, −0.006, −0.015, −0.003, −0.005. Six parameters, no
+    explained variance. Calibration alone would have hidden it. If 004 leaves
+    this untouched, say so on the card rather than letting "calibrated" stand in
+    for "works".
+  * **`msg_proj` is frozen and nothing explains it.** 2 tensors, 72 parameters,
+    bit-identical to init after 13,400 steps, on the forward path. It is not the
+    Balloon group, not `source_proj` dead code, not an unobserved family. 0.0003%
+    of the model and the only frozen group with no story. Open question.
+
 === WHAT 003 ESTABLISHED — DO NOT RE-DERIVE ===
 
 Numbers here were measured, not estimated. Each is in reports/RUN3.md with its
@@ -238,17 +272,47 @@ e. Five checks, then a smoke that exercises every loss path, then the sixth
    check on the first real checkpoint.
 f. Launch. Then evaluate: held-out night-2 individualisation, leave-one-source-out
    including BOLD, and the standard baseline set.
+
+   **FIX THE ABLATION'S METRIC FIRST. It is one line and it is the difference
+   between an experiment and a tautology.** `source_ablation` scores every arm
+   on `_sim_val_nll` — the SIMULATED validation set. So it asks "does dropping
+   this measured source help the model fit the simulator?", and the answer is
+   structurally yes: during the 200 retraining steps, every measured gradient
+   pulls parameters away from the thing being scored. 003 duly returned nine
+   negative deltas out of nine and the direction was predictable before it ran.
+
+   Score the arms on the MEASURED holdout — `real_eeg_holdout`, the same 27
+   participants the headline result uses — and the same eleven arms answer the
+   question worth asking: which sources are carrying the win. Keep the simulated
+   score too if you like; report both, and label which is which.
+
+   This matters more than it looks. 003 beat every baseline on measured EEG and
+   **we do not know why**, because the one experiment designed to attribute the
+   win was pointed at the wrong target. Fusion, the simulator pretraining and the
+   architecture are all still live explanations and nothing in 003 separates them.
 g. Publish. The model card must say, per attachment kind, what reached the model,
    AND whether the fMRI likelihood is now a haemodynamic model. If it is not,
    ds002336's BOLD channel stays declared-and-not-claimed.
 
 === KNOWN FAILING — DO NOT "FIX" BY WEAKENING ===
 
-  tests/foundation/test_family_state.py            5 failures. R12 is implemented
-      twice in unrelated exception hierarchies (`R12Violation`, an OverclaimError,
-      vs `CompilerRefusal`); `validate()` reaches the second first so the message
+  tests/foundation/test_family_state.py            5 failures, and they are NOT
+      one defect. FOUR are the R12 double implementation: it exists twice in
+      unrelated exception hierarchies (`R12Violation`, an OverclaimError, vs
+      `CompilerRefusal`), `validate()` reaches the second first, so the message
       the tests match is unreachable. Deciding which is authoritative is a design
-      call. Still not made after two runs — consider making it.
+      call, still not made after two runs — consider making it.
+      The FIFTH is ISSUE-009, and it hid inside the count: `check_r12` does
+      `config.get("model")` on a `FoundationConfig` dataclass and raises
+      AttributeError. Its own docstring names `save_checkpoint` as a caller, and
+      `save_checkpoint` passes exactly that object, so **a manifest cannot be
+      attached to a checkpoint at all**. Run 3 is unaffected only because the
+      trainer passes no manifest — which also means R12 has NEVER been evaluated
+      against a real run. If 004 wants its checkpoints to carry a claim manifest,
+      this is on the path. Fixing the AttributeError alone does not turn the test
+      green; the two discharge together, duplication first.
+      The lesson is the count: five expected, five observed, cause assumed. A
+      known-failure row must carry the failure MODE, not the number.
   tests/schema/test_carrier_and_views.py           ISSUE-007. Fails at COLLECTION
       and takes the whole directory with it under a plain `pytest`. It landed from
       wt/noether2 and imports that branch's support_algebra names; master's
@@ -278,6 +342,30 @@ g. Publish. The model card must say, per attachment kind, what reached the model
     `mixture_T3_population_prior.json`. Now written run-scoped as well; keep it
     that way and check any new artifact path for the same collision.
   * `--out` moves checkpoints, not logs. Logs are keyed by `train.run_name`.
+  * **ISSUE-010: the ablation used to overwrite the checkpoint it was
+    evaluating.** `source_ablation` retrains on the LIVE trainer, and
+    `run_stage` writes `stage_<name>.pt` and `last.pt` into `trainer.out_dir` at
+    stage END — which `short_train`'s `ckpt_every = 10**9` does not prevent. It
+    destroyed run 3's 13,400-step `last.pt` and `stage_T4_simulator.pt` before
+    being caught. Repaired: `out_dir` and the logger are both redirected to
+    scratch for the ablation's duration and restored in a `finally`. You will run
+    this target — do not undo it, and note the pattern: an evaluation must not be
+    able to modify its subject. Guarded by
+    `tests/foundation/test_ablation_does_not_write_the_production_log.py`.
+  * A guard that cross-checks A against B is silent when one process writes
+    both. `health.sh` trusts the checkpoint over the log — added after run 2's
+    log loss — and could not see ISSUE-010, because the checkpoint was the thing
+    being corrupted.
+  * `health.sh` used to grep the WHOLE log and take the last match, so a key
+    written by an earlier stage kept displaying after that stage ended: all of T5
+    showed T4's final `sim_forecast_nll`, frozen to 16 decimals, which reads
+    exactly like a hung loss. Fixed to read the current row; `_field_any` keeps
+    the old behaviour under its own name. Absent fields print `n/a`, never a
+    borrowed number.
+  * Mutation sweeps: run them under `PYTHONDONTWRITEBYTECODE=1`. A same-length
+    mutation restored within one second reuses the mutant's `.pyc` — a sweep
+    reported a guard failing against an already-restored file. Always re-run the
+    restored file; a red there means the sweep, not the guard.
   * Never conclude from a number measured while another job was running. A test
     suite left running beside training moved the step rate from 8.06 to 10.37
     s/step.
@@ -331,12 +419,44 @@ Two sentences on the site are load-bearing and were rewritten in 003; do not let
     has not seen" as a live falsifier. 003 did not close it: one target site, one
     intensity, two participants.
 
+=== WHAT THE STRUCTURE IS BUYING — THE QUESTION 004 SHOULD BE ORGANISED AROUND ===
+
+Strip the framing and state what the model is. The latent is 414 regions ×
+**62 dimensions** — 25,668 numbers per timestep: `rate_e`, `rate_i`, 4
+haemodynamic compartments, 4 uncertainty channels, a 3-vector dipole moment, and
+49 family-native dimensions. The 414 axes carry real metadata: Schaefer400 +
+Tian14, family membership, PET receptor densities, myelin, thickness, the
+principal gradient, tract lengths, a group-average connectome.
+
+And **nothing measured is scored on that vector.** Every measured likelihood
+lives in observation space — 64-channel EEG, 2-channel PSG, 400-parcel BOLD, 2
+behavioural outputs, 70/64-channel TMS-EEG. Only the simulator is scored per
+parcel, because only the simulator has ground truth there. So the headline
+result, said flat: **given 24 samples of 64-channel EEG at 125 Hz, predict the
+next 40 with a better density than AR(16), by 0.04 nats.**
+
+Everything else is structure imposed on the latent path between those two things,
+and that structure is the bet. Its scorecard after 003:
+
+  better forecast than a linear baseline    yes, narrowly, density only
+  fusion across modalities helps            no (and see the metric warning)
+  haemodynamics are physical                no — the ODE never ran
+  the posterior infers parameters           no — R^2 ~ 0
+  source localisation                       no — analytic sphere lead field
+  individualisation                         never measured
+
+One row moved to yes in 003. 004 can move three: the clock makes haemodynamics
+real, the split makes individualisation measurable, and the ablation metric makes
+fusion answerable. Those are the same two pieces of work already specified plus
+one line, which is why the scope has not widened.
+
 === THE ONE THING TO KNOW ABOUT 003 ===
 
 It fixed what it set out to fix. 002 shipped with 88.7% of its parameters unable
 to receive a gradient; 003 trained 99.98% of them and proved it from the weights
 rather than from the cards, with three independent gate layers and a bit
-comparison against a pre-training hash.
+comparison against a pre-training hash. Then it beat every baseline on a held-out
+set, which no run here had done.
 
 And it published a diverging fMRI likelihood for 6,000 steps before anyone looked
 at the whole curve. The reachability machinery worked perfectly and answered a
@@ -345,4 +465,7 @@ carries information. Both are now measurable — `contributed` and `exercised` a
 separate states in the attachment report, and the leave-one-source-out arm exists
 to separate them.
 
-Build 004 so the second question is as hard to dodge as the first.
+The third question is the one 003 could not answer at all: **whether the thing
+that arrived was the thing that helped.** It won, and its own attribution
+experiment was pointed at the simulator, so the win is unattributed. Build 004 so
+all three are as hard to dodge as the first.
