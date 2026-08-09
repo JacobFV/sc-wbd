@@ -481,7 +481,24 @@ class SCWBD(nn.Module):
         exported = list(L.exported_names())
         self.export_dim = sum(L.spec(n).dim for n in exported)
         self._exported = exported
-        self.msg_proj = nn.Linear(self.export_dim, cfg.message_dim)
+        # POOLED ARM ONLY. Both call sites read
+        # `self.family_local.ports.message(...)` when a family layout exists and
+        # only fall back to `msg_proj` when it does not, so on the family arm
+        # this module sits on no forward path at all.
+        #
+        # Measured: 2 tensors, 72 parameters, bit-identical to their
+        # initialisation after run 3's 13,400 steps. It was the one frozen group
+        # in that run with no explanation, and the explanation is that it belongs
+        # to the other arm -- the same shape as `source_proj`, which the vector
+        # lead-field path bypasses. An unreachable module counted in the
+        # parameter total inflates the denominator of every "fraction trained"
+        # claim the project makes.
+        #
+        # Constructed conditionally rather than deleted: the pooled arm is a real
+        # configuration and is the control for sec. 11.4's first ablation.
+        self.msg_proj = (
+            nn.Linear(self.export_dim, cfg.message_dim) if not cfg.family_state else None
+        )
         self.msg_readin = nn.Sequential(nn.Linear(cfg.message_dim, cfg.hidden // 2), nn.GELU())
         long_dim = cfg.hidden // 2
 
