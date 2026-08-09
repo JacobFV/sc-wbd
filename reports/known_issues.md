@@ -758,7 +758,35 @@ has to stay empty to keep the refusal honest.
 
 ## ISSUE-011 — SC-WBD-003 cannot be released: four of its sources cannot be attributed
 
-**Status:** open, diagnosed, **not repaired**, and it BLOCKS publication of the run-3 artifact.
+**Status: CLOSED 2026-08-09.** It blocked publication of the run-3 artifact; it no longer does.
+
+The fix was a CODE fix, not a licence-authoring task, and the first draft of this issue said
+otherwise. The four sources already had vetted dataset cards carrying their licence and citation;
+what was missing was the LINK from mixture source to card. `link_sources_to_datasets` resolves that
+by stripping `_(real|sim|data)$` and squash-comparing, which cannot express two things run 3 made
+true:
+
+* `sleepedf_real` -> `sleep-edfx` squashes to `sleepedf` vs `sleepedfx` and does not match. The
+  function's docstring has claimed that mapping works since it was written. It never did.
+* SEVERAL mixture sources drawing on ONE dataset -- ds000117 attaches twice (observation and
+  boundary_output) and ds004024 twice (rest EEG and measured perturbation). A rule keyed on the
+  source id cannot map two ids to one card, and no regex makes it able to.
+
+`SOURCE_DATASET_ALIASES` in `scwbd/release/datasets.py` now states the five links explicitly, and
+an alias naming a card that does not exist raises rather than falling through to `None` -- `None`
+means "no dataset", and a typo must not be able to masquerade as that.
+
+**The licence union did not change, and that was checked rather than assumed.** `make site`
+reports `unattributable: 0` and `site/content/attribution.html` is byte-identical: ds000117 and
+ds004024 are CC0, sleep-edfx is ODC-By, and all were already subsumed by a union that Hansen's
+CC-BY-NC-SA already made non-commercial and share-alike. ds000117's
+`cite_wakeman_henson_2015` obligation is now carried where before nothing stated it.
+
+The original reason given for not repairing this -- "it changes the licence terms of a published
+artifact" -- was wrong. Nothing here authors a licence claim; it says which already-vetted card a
+source draws from, and the union is unchanged.
+
+**Original status:** open, diagnosed, not repaired, and it BLOCKS publication of the run-3 artifact.
 **Severity:** high for release, zero for training. The weights are fine; the licence metadata that
 must accompany them is not.
 

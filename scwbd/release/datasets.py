@@ -150,6 +150,39 @@ def _dataset_ids_in_config(config: Mapping[str, Any]) -> set[str]:
     return found
 
 
+#: Mixture source -> dataset card, stated rather than inferred from the name.
+#:
+#: The name heuristic below (strip ``_real``, squash, compare) cannot express two
+#: things that are both true of SC-WBD-003, and both were silently answered
+#: ``None`` -- which `attribution` correctly reports as "nothing states what it
+#: must be cited as", refusing the release:
+#:
+#: * a dataset whose card id is not a squashed form of the source id.
+#:   ``sleepedf_real`` -> ``sleep-edfx`` squashes to ``sleepedf`` vs ``sleepedfx``
+#:   and does not match. The docstring below has claimed that mapping works since
+#:   it was written; it never did.
+#: * SEVERAL mixture sources drawing on ONE dataset. Run 3 attaches ds000117
+#:   twice (an observation and a boundary_output) and ds004024 twice (rest EEG
+#:   and a measured perturbation). A rule keyed on the source id cannot map two
+#:   ids to one card, and no amount of regex makes it able to.
+#:
+#: Explicit, so a wrong link is visible in a diff rather than emergent from a
+#: regex. Every entry names a dataset card that exists in
+#: ``scwbd/sources/cards/`` and carries that dataset's own licence and citation:
+#: nothing here authors a licence claim, it says which already-vetted card a
+#: source draws from.
+SOURCE_DATASET_ALIASES: dict[str, str] = {
+    "sleepedf_real": "sleep-edfx",
+    # ds000117: Wakeman & Henson multimodal faces. Two attachment kinds, one
+    # acquisition, one licence.
+    "ds000117_real": "ds000117",
+    "ds000117_behaviour": "ds000117",
+    # ds004024: TMS-EEG. Rest blocks and single-pulse epochs, one acquisition.
+    "ds004024_rest_real": "ds004024",
+    "ds004024_perturb": "ds004024",
+}
+
+
 def link_sources_to_datasets(
     source_ids: Sequence[str],
     *,
@@ -175,6 +208,21 @@ def link_sources_to_datasets(
     for sid in source_ids:
         if sid in cards:
             out[sid] = cards[sid]
+            continue
+        # The declared link wins over the heuristic. An alias naming a card that
+        # does not exist is a hard error rather than a silent fall-through to
+        # `None`: `None` means "no dataset", and a typo must not be able to
+        # masquerade as that.
+        alias = SOURCE_DATASET_ALIASES.get(sid)
+        if alias is not None:
+            if alias not in cards:
+                raise KeyError(
+                    f"SOURCE_DATASET_ALIASES maps {sid!r} to dataset card {alias!r}, "
+                    f"which is not in scwbd/sources/cards/ ({sorted(cards)}). A source "
+                    "that names a missing card must fail here, not be reported as "
+                    "having no dataset at all."
+                )
+            out[sid] = cards[alias]
             continue
         stem = re.sub(r"_(real|sim|data)$", "", sid)
         squash = lambda s: re.sub(r"[^a-z0-9]", "", s.lower())  # noqa: E731
