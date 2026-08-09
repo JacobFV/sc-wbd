@@ -347,6 +347,21 @@ now what `geometry` in `build_lead_field` does.
 
 ## ISSUE-007 — `tests/schema/test_carrier_and_views.py` cannot be collected, and takes the whole schema directory with it
 
+**CLOSED 2026-08-09.** The open question was which of two `support_algebra` implementations is
+authoritative. It is master's, and the two are not rivals — they are different layers. Master's
+`SupportMap` is **declarative**: `kind`, `lossy`, `invents`, `psf`, `uncertainty_note`, with
+validators refusing a prolongation that claims not to invent and a restriction that claims not to
+lose. That is the object R02 and R12 validate, and it has 21 passing tests of its own covering the
+rank-change refusal, lossy restriction, PSF quadrature and clock refinement. The `wt/noether2` file
+tested a **computational** API — real projection matrices, `.apply()`, `.retained_energy()` — that
+master never adopted, so all six of its `support_algebra` imports named functions that do not
+exist and the file failed at collection, taking the directory with it.
+
+Removed. `tests/schema` now collects and passes in full (212 tests) for the first time. The file is
+in git history at `0b6f0dd` if the numerics layer is wanted later; when it is built — the parcel↔vertex
+prolongation needs exactly that — it gets tests written against what is actually built rather than
+against an API that was not.
+
 **Status:** open. **Not** repaired here: which `support_algebra` is authoritative is a
 design call, not a fix.
 **Severity:** live. `pytest tests/schema` aborts at collection; without
@@ -665,3 +680,43 @@ disk at all. Where a read-only operation borrows a read-write object, the borrow
 incomplete because they enumerate what to switch off instead of redirecting where it goes.
 
 The checkpoints are now also mirrored outside the repo at `~/scwbd-003-backup/`, sha256-verified.
+
+
+---
+
+## ISSUE-009 — CLOSED. `check_r12` now reads a config object, and R12 has one enforcer
+
+**Closed 2026-08-09**, together with the R12 duplication it was hiding inside.
+
+`check_r12` did `config.get("model")` on a `FoundationConfig` dataclass. Fixed by coercing at the
+boundary (`designation._as_mapping`) rather than at the three call sites, because the schema layer
+must not import `scwbd.foundation` — it cannot name the type but it can accept the shape.
+
+The duplication is resolved in the direction its own code already specified. `_r12_predicate`'s
+docstring said: the definition belongs in the schema refusal set, the enforcement point is
+checkpoint emission, and *when the canonical predicate lands, delete the local fallback*. It had
+landed two runs ago and the fallback was still there. The fallback is deleted; `refuse_r12` now
+raises `RuntimeError` if no canonical predicate is importable, so a missing definition fails loudly
+instead of silently re-forking the rule.
+
+`R12Violation` survives as the single exception at the enforcement point and derives from **both**
+`CompilerRefusal` and `OverclaimError`, so `except CompilerRefusal` (schema) and `except
+OverclaimError` (foundation) both still catch it, carrying the canonical predicate's `code`,
+`remedy`, `detail` and `evidence` unchanged.
+
+Two consequences worth stating:
+
+* **A manifest can now declare its own arm.** R12's remedy says "declare `arm.role='control'`" and
+  `foundation.ClaimManifest` has no `arm` field — the unactionable-remedy defect recorded in
+  ARCHITECTURE.md O-7. `check_r12` now accepts `regional_state.ablation_arm` as an arm declaration
+  of equal standing, which is the channel the manifest actually has. Config wins on disagreement.
+* **The prolongation exemption is closed.** R12's control test was `is_constant AND not
+  declares_prolongation`, and `declares_prolongation` could be satisfied by editing
+  `model.scale_prolongations` — a config key that switched a refusal off.
+  `tests/foundation/test_resolution_pair_r02.py` had to pin that field EMPTY to keep R12 firing.
+  Condition 2 is now satisfied only by a **compiled poset**, the object R02 validates. A run may
+  declare its prolongations honestly and R12 still fires unless the poset carries them, and the
+  refusal message says why the declaration did not count.
+
+That last one is what unblocks the paper's multiresolution claim: `scale_prolongations` no longer
+has to stay empty to keep the refusal honest.

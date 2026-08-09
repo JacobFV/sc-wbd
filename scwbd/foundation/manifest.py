@@ -27,6 +27,11 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Literal, Mapping, Sequence
 
+# The refusal DEFINITION lives in the schema layer; this module is the
+# enforcement point. Imported at module scope rather than inside the method
+# because `R12Violation` derives from it -- see that class's docstring.
+from ..schema.refusals import CompilerRefusal
+
 __all__ = ["Claim", "ClaimManifest", "OverclaimError", "R12Violation", "FAMILY_STATE_PHRASES"]
 
 EvidenceStatus = Literal["simulator_conditioned", "measured", "prior", "mixed", "none"]
@@ -65,8 +70,27 @@ class OverclaimError(ValueError):
     """A claim exceeded what the artifact's evidence can support."""
 
 
-class R12Violation(OverclaimError):
+class R12Violation(CompilerRefusal, OverclaimError):
     """Refusal **R12** — the artifact claims §2.1's differentiator but is the control.
+
+    **One rule, one enforcer, one exception.** R12 used to exist twice: this
+    class (an ``OverclaimError``, i.e. a ``ValueError``) and
+    ``scwbd.schema.refusals.CompilerRefusal``, in unrelated hierarchies, with
+    ``validate()`` reaching the schema one first — so this class's message was
+    unreachable and four tests matched a live implementation that a second one
+    pre-empted. It was deferred as "a design call" for three runs.
+
+    The call was in fact already made and written down, in
+    ``_r12_predicate``'s docstring: *the definition belongs with R01–R11 in the
+    schema refusal set; the enforcement point is checkpoint emission and stays
+    here; when the canonical predicate lands, delete the local fallback.* It
+    landed and the fallback was not deleted. It is deleted now.
+
+    This class survives as the single exception raised at the enforcement point,
+    and derives from **both** vocabularies so neither side's callers break:
+    ``except CompilerRefusal`` (schema) and ``except OverclaimError``
+    (foundation) both catch it, and it carries the canonical predicate's
+    ``code``, ``remedy``, ``detail`` and ``evidence`` unchanged.
 
     ``ARCHITECTURE.md`` §5: "each family declares its own backend. A single global
     ``local_core`` string is **not** conformant — that is the equal-capacity
@@ -221,45 +245,34 @@ class ClaimManifest:
         artifact described in the words of a different one.
         """
         canonical = self._r12_predicate()
-        if canonical is not None:
-            # D8: pass the CONFIG through. Noether's predicate is
-            # `r12_predicate(manifest, config)` and its prolongation half reads
-            # the poset, which a manifest does not record -- calling it with the
-            # manifest alone silently ran only the operator and prose halves.
+        if canonical is None:
+            raise RuntimeError(
+                "no canonical R12 predicate is importable from "
+                "scwbd.schema.refusals or scwbd.compiler.refusals. This used to "
+                "fall back to a second implementation living here, which is how "
+                "R12 came to exist twice in unrelated exception hierarchies. The "
+                "fallback is deleted: one definition, one enforcement point. "
+                "Restore the schema predicate rather than reinstating a local copy."
+            )
+        # D8: pass the CONFIG through. The predicate is
+        # `r12_predicate(manifest, config)` and its prolongation half reads the
+        # poset, which a manifest does not record -- calling it with the manifest
+        # alone silently ran only the operator and prose halves.
+        try:
             canonical(self, config)
-            return
-        arm = str(self.regional_state.get("ablation_arm", "")) if self.regional_state else ""
-        if arm == "treatment":
-            return
-        offenders: list[tuple[str, str]] = []
-        for c in self.claims:
-            if c.requires_family_state:
-                offenders.append((c.id, "claim.requires_family_state=True"))
-                continue
-            text = f"{c.statement} {' '.join(c.caveats)}"
-            for pat in FAMILY_STATE_PHRASES:
-                if re.search(pat, text, flags=re.I):
-                    offenders.append((c.id, f"statement matches /{pat}/"))
-                    break
-        if not offenders:
-            return
-        what = (
-            "this checkpoint declares no regional-state arm at all"
-            if not arm
-            else "this checkpoint is the equal-capacity generic-operator CONTROL "
-            "(ModelConfig.family_state=False: one local_core string and one state dimension "
-            "for every parcel)"
-        )
-        raise R12Violation(
-            "[R12] "
-            + ", ".join(f"claim {i!r} ({why})" for i, why in offenders)
-            + f" asserts body.tex §2.1's differentiator, but {what}. "
-            "body.tex §11.4's first required ablation is 'structured regional state versus one "
-            "scalar or pooled vector per region'; this artifact is the second of those two and "
-            "its results are a measurement of the control, not a test of the thesis. "
-            "Remedy: set model.family_state=true and assign per-family backends, or restate the "
-            "claim as a control-arm result. See reports/scope_gap.md and reports/dynamics/family_state.md."
-        )
+        except CompilerRefusal as exc:
+            # ONE exception at the enforcement point. `R12Violation` subclasses
+            # both `CompilerRefusal` and `OverclaimError`, so schema-side callers
+            # (`except CompilerRefusal`) and foundation-side callers
+            # (`except OverclaimError`) both still work, and the two R12
+            # vocabularies stop being a fork.
+            raise R12Violation(
+                exc.code,
+                getattr(exc, "remedy", None),
+                getattr(exc, "offending_object", None),
+                detail=getattr(exc, "detail", "") or "",
+                evidence=getattr(exc, "evidence", None),
+            ) from exc
 
     # -- validation -------------------------------------------------------
     def validate(self, config: Any = None) -> "ClaimManifest":

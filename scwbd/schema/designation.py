@@ -448,6 +448,34 @@ def _parse_pair(entry: Any) -> tuple[str, str]:
     return fine, coarse
 
 
+def _as_mapping(obj: Any) -> Any:
+    """A Mapping view of a config object, or ``obj`` unchanged.
+
+    ISSUE-009. ``check_r12`` annotates ``config`` as ``Mapping | None`` and its
+    own docstring names ``save_checkpoint`` as a call site — but save_checkpoint
+    holds a ``FoundationConfig`` dataclass and passes it straight through, so
+    ``config.get("model")`` raised ``AttributeError`` and **no manifest could be
+    attached to a checkpoint at all**. R12 had therefore never run against a real
+    training run.
+
+    Coerced here, at the boundary, rather than at each of the three call sites:
+    the schema layer must not import ``scwbd.foundation``, so it cannot name the
+    type, but it can accept the shape. Dataclasses and simple attribute objects
+    both work; anything already a Mapping passes through untouched.
+    """
+    if obj is None or isinstance(obj, Mapping):
+        return obj
+    import dataclasses
+
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        # `asdict` recurses and would turn nested dataclasses into dicts too,
+        # which is what the readers below want.
+        return dataclasses.asdict(obj)
+    if hasattr(obj, "__dict__"):
+        return dict(vars(obj))
+    return obj
+
+
 def read_prolongations(
     model_cfg: Mapping[str, Any] | None = None,
     *,
@@ -548,7 +576,40 @@ def check_r12(
         yield refuse(base_designation, f"arm declaration is not valid: {exc}")
         return
 
-    model_cfg = config.get("model") if config else None
+    # An artifact may declare its arm through `regional_state.ablation_arm` as
+    # well as through `config.arm.role`, and BOTH count.
+    #
+    # ARCHITECTURE.md O-7: R12's remedy says "declare arm.role='control'", and
+    # `foundation.ClaimManifest` has no `arm` field to put it in -- the only
+    # channel it has is `regional_state`, which `declare_regional_state`
+    # populates from the model. So a manifest validated without a config was
+    # refused for want of a declaration it had no means to make, while carrying
+    # that exact declaration in the field it does have. A refusal whose remedy
+    # is unactionable reads as help and wastes the reader's time looking for a
+    # field that does not exist.
+    #
+    # Config wins where both are present and disagree: the config describes the
+    # run, the report describes the weights, and a run that says "model" while
+    # its weights say "control" is refused below on the operator condition
+    # anyway.
+    if not arm.is_control and regional_state:
+        declared_arm = str((regional_state or {}).get("ablation_arm") or "").strip().lower()
+        if declared_arm == "control":
+            arm = ArmDeclaration(
+                role="control",
+                controls_for=str(
+                    (regional_state or {}).get("controls_for")
+                    or "11.4:structured_regional_state"
+                ),
+                justification=str(
+                    (regional_state or {}).get("arm_justification")
+                    or "declared by the artifact's own regional-state report "
+                    "(regional_state.ablation_arm='control')"
+                ),
+            )
+
+    config = _as_mapping(config)
+    model_cfg = _as_mapping(config.get("model")) if config else None
     if config is not None and not isinstance(model_cfg, Mapping):
         yield refuse(
             base_designation,
@@ -639,7 +700,25 @@ def check_r12(
         )
         return
 
-    is_control_shaped = assignment.is_constant and not prolongation.declares_prolongation
+    # THE CONFIG FIELD IS NOT EVIDENCE. Condition 2 is satisfied only by a
+    # prolongation carried in the COMPILED poset, which is the object R02
+    # validates. `model.scale_prolongations` states an intention; nothing checks
+    # it, so honouring it here would let an edit to a YAML key switch off the
+    # refusal that polices overclaiming.
+    #
+    # `tests/foundation/test_resolution_pair_r02.py` had to pin that field EMPTY
+    # to keep R12 firing, and said why: "A config key that switches a refusal off
+    # is not a declaration, it is an exemption." That pin is the workaround; this
+    # is the fix. With the field no longer load-bearing, a run may declare its
+    # prolongations honestly and R12 still fires unless the poset carries them.
+    poset_backed = prolongation.declares_prolongation and prolongation.source == "poset"
+    is_control_shaped = assignment.is_constant and not poset_backed
+
+    # An unverifiable declaration is not refused on its own -- when the operators
+    # are already heterogeneous it changes no verdict, and refusing there would be
+    # noise. It is refused where it WOULD have mattered, through the prose refusal
+    # below, whose note says why the declaration did not count.
+    unverifiable = prolongation.declares_prolongation and not poset_backed
 
     if not is_control_shaped:
         return  # conformant, or partial in a way R12 does not police
@@ -653,7 +732,16 @@ def check_r12(
             arm_note=(
                 f"this artifact is the equal-capacity generic-operator CONTROL: "
                 f"one operator ({assignment.distinct[0]!r}) for every region, "
-                f"read from {assignment.source}, and no declared prolongation"
+                f"read from {assignment.source}, and "
+                + (
+                    f"a prolongation declared only in model.{PROLONGATION_KEY} "
+                    f"({sorted(prolongation.pairs)}) with no compiled resolution "
+                    "poset to carry it -- R12 reads the poset R02 validates, so a "
+                    "config key is a statement of intent and cannot discharge this "
+                    "refusal"
+                    if unverifiable
+                    else "no declared prolongation"
+                )
             ),
         )
         return

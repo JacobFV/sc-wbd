@@ -348,16 +348,77 @@ def test_the_released_config_as_it_now_stands_is_permitted_only_as_a_control():
     )
 
 
+def _two_scale_poset() -> ResolutionPoset:
+    """A compiled, R02-shaped voxel<=parcel pair -- the evidence R12 accepts."""
+    return ResolutionPoset(
+        nodes=(
+            ScaleNode(id=ScaleId("voxel"), label="voxel"),
+            ScaleNode(id=ScaleId("parcel"), label="parcel"),
+        ),
+        relations=((ScaleId("voxel"), ScaleId("parcel")),),
+        maps=(
+            ScaleMapPair(
+                fine=ScaleId("voxel"),
+                coarse=ScaleId("parcel"),
+                restriction=MapSpec(name="parcel_average", kind="restriction"),
+                prolongation=MapSpec(
+                    name="parcel_to_voxel", kind="prolongation", returns_distribution=True
+                ),
+                landmark_coverage=0.9,
+                roundtrip_tested=True,
+                landmark_tested=True,
+                out_of_support_policy="return_distribution",
+            ),
+        ),
+    )
+
+
 def test_one_condition_alone_is_not_the_control_arm():
-    """R12 needs *both* conditions. Neither half is the sec. 11.4 control."""
+    """R12 needs *both* conditions. Neither half is the sec. 11.4 control.
+
+    Condition 2 is satisfied by a COMPILED POSET, not by
+    ``model.scale_prolongations``. This test used to grant it from the config
+    field, which is exactly the exemption
+    ``tests/foundation/test_resolution_pair_r02.py`` had to pin the field empty
+    to prevent: "a config key that switches a refusal off is not a declaration,
+    it is an exemption". The intent of this test is unchanged; the evidence it
+    offers for the second half is now evidence.
+    """
     report = _family_report()
     het_only = _run1_shape()
     het_only["model"]["family_state"] = True
     assert not list(check_r12(config=het_only, regional_state=report))
 
     prolongation_only = _run1_shape()
-    prolongation_only["model"]["scale_prolongations"] = ["voxel<=parcel"]
-    assert not list(check_r12(config=prolongation_only))
+    assert not list(check_r12(config=prolongation_only, poset=_two_scale_poset()))
+
+
+def test_the_config_field_alone_cannot_discharge_condition_two():
+    """The exemption, asserted closed.
+
+    Constant operators plus a prolongation named only in the config is the
+    control arm, and saying so in a YAML key does not change that. Before this
+    was fixed, the same input returned no refusal at all.
+    """
+    cfg = _run1_shape()
+    cfg["model"]["scale_prolongations"] = ["voxel<=parcel"]
+    refusals = list(check_r12(config=cfg))
+    assert refusals, (
+        "model.scale_prolongations alone switched R12 off -- the exemption is back"
+    )
+
+    # And with a differentiator claim it is refused as the control arm, with a
+    # message that says why the declaration did not count rather than the older
+    # and now-false 'no declared prolongation'.
+    claimed = list(
+        check_r12(
+            config=cfg,
+            claims=[_Claim("c1", statement="Heterogeneous regional state per parcel.")],
+        )
+    )
+    assert claimed
+    detail = " ".join(str(getattr(r, "detail", "")) for r in claimed)
+    assert "cannot discharge this refusal" in detail, detail
 
 
 def test_a_bare_manifest_with_no_arm_and_no_offending_claim_is_left_alone():

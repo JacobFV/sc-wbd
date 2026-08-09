@@ -712,9 +712,13 @@ _CONTROL_STATE = {
 
 
 def test_r12_refuses_a_family_state_claim_on_a_control_checkpoint():
+    # Matches "R12" rather than the old "[R12]": there is now ONE enforcer and
+    # its message is the canonical predicate's, which prefixes the bare code.
+    # The manifest's second implementation, whose "[R12] ..." string this used
+    # to match, is deleted -- see `R12Violation`'s docstring.
     m = _manifest(regional_state=dict(_CONTROL_STATE))
     m.add_claim(_claim("The model maintains heterogeneous regional state per parcel."))
-    with pytest.raises(R12Violation, match=r"\[R12\]"):
+    with pytest.raises(R12Violation, match=r"R12"):
         m.validate()
 
 
@@ -851,46 +855,49 @@ def test_r12s_remedy_names_a_field_this_manifest_cannot_carry() -> None:
     )
 
 
-def test_r12_is_implemented_twice_and_the_two_do_not_share_a_hierarchy() -> None:
-    """One rule, two enforcers, two exception vocabularies.
+def test_r12_has_exactly_one_enforcer_and_one_exception() -> None:
+    """The pin this replaces asserted the opposite, for three runs.
 
-    ``scwbd/foundation/manifest.py`` raises ``R12Violation`` (an
-    ``OverclaimError``, i.e. a ``ValueError``). ``scwbd/schema/designation.py``
-    raises ``CompilerRefusal``. Neither is a subclass of the other, and both
-    enforce R12.
+    R12 used to be implemented twice -- ``R12Violation`` (an ``OverclaimError``,
+    i.e. a ``ValueError``) in ``foundation/manifest.py`` and ``CompilerRefusal``
+    in ``schema/designation.py`` -- in unrelated hierarchies, with ``validate()``
+    reaching the schema one first. The manifest's message was therefore
+    unreachable and four tests in this file matched a live implementation that a
+    second one pre-empted. The old pin recorded this as "a design decision rather
+    than a repair" and deferred it.
 
-    ``ClaimManifest.validate()`` reaches the designation one first, so the
-    manifest's own check — and its message *"this checkpoint declares no
-    regional-state arm"*, which is exactly the string the sibling tests match
-    on — is never reached. Those tests are matching a live, correct
-    implementation that a second implementation pre-empts.
+    The decision had already been made and written down, in
+    ``_r12_predicate``'s docstring: the definition belongs in the schema refusal
+    set, the enforcement point is checkpoint emission, and *when the canonical
+    predicate lands, delete the local fallback*. It had landed. The fallback is
+    deleted now.
 
-    That is the root cause of the remaining R12 failures in this file, and
-    deciding which enforcer is authoritative is a design decision rather than a
-    repair — so it is pinned here rather than resolved.
-
-    Asserted as the CURRENT state: unifying them makes THIS test fail, which is
-    the prompt to revisit the sibling tests in the same change. See
-    ``ARCHITECTURE.md`` O-7 and ``reports/RUN2.md`` §5b.
+    Asserted here is the end state: ONE definition, ONE enforcement point, ONE
+    exception type satisfying both vocabularies so neither side's callers break.
     """
-    from scwbd.foundation.manifest import R12Violation
+    import inspect
+
+    from scwbd.foundation.manifest import ClaimManifest, OverclaimError, R12Violation
     from scwbd.schema.refusals import CompilerRefusal
 
-    assert not issubclass(R12Violation, CompilerRefusal), (
-        "R12Violation now derives from CompilerRefusal -- the two R12 enforcers "
-        "have been reconciled. Re-enable the sibling R12 tests, which match on "
-        "the manifest's message, and delete this pin."
+    assert issubclass(R12Violation, CompilerRefusal), (
+        "R12Violation no longer derives from CompilerRefusal -- schema-side "
+        "callers catching CompilerRefusal will miss it at the enforcement point"
     )
-    assert not issubclass(CompilerRefusal, R12Violation), "the hierarchies inverted"
+    assert issubclass(R12Violation, OverclaimError), (
+        "R12Violation no longer derives from OverclaimError -- foundation-side "
+        "callers catching OverclaimError will miss it"
+    )
 
-    # Both messages exist in the tree. The manifest's is the one the sibling
-    # tests match; it is unreachable through validate() because the designation
-    # check runs first.
-    import pathlib
-
-    root = pathlib.Path(__file__).resolve().parents[2]
-    manifest_msg = (root / "scwbd/foundation/manifest.py").read_text()
-    assert "declares no regional-state arm" in manifest_msg, (
-        "the manifest's R12 message changed; the sibling tests match on it, so "
-        "they need updating together with this pin"
+    # The fallback must stay gone. A second local implementation is how this
+    # started, and an absent canonical predicate must fail loudly rather than
+    # silently re-forking the rule.
+    src = inspect.getsource(ClaimManifest.refuse_r12)
+    assert "raise RuntimeError" in src, (
+        "refuse_r12 no longer refuses to run without the canonical predicate; "
+        "check that a local fallback has not been reinstated"
+    )
+    assert "FAMILY_STATE_PHRASES" not in src, (
+        "refuse_r12 is matching claim prose locally again -- that is the second "
+        "implementation coming back"
     )
