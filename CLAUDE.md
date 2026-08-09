@@ -128,3 +128,22 @@ the bare area name is the default one. The ones used daily:
     make site            build + link-check
     make site-stage      copy the checked build into docs/, and diff it
     make site-deploy     publish docs/ to Cloudflare Pages
+
+## Running several agents on this one worktree
+
+There is ONE branch and ONE worktree. Agents do not get their own; they all
+commit to master. That is deliberate — divergent branches were worse — but it
+means two failure modes that have both already happened:
+
+- **`git add -A` sweeps another job's in-flight files into your commit.** Three
+  agents hit this in one session; one caught it before pushing and reset. Stage
+  BY PATH, always. `git commit <paths>` or `git add <paths>`, never `-A`, never
+  `.`, in a shared tree.
+- **Mutation testing edits shared source.** A mutation is live on disk for the
+  seconds it takes to run one file, and any other agent's test run in that
+  window imports the mutant. Results from an overlapping window are not
+  evidence. Say which window you ran in, or re-run after the other job lands.
+
+And append-only edits to `reports/known_issues.md` have twice produced a stale
+`Status:` line and once a duplicated heading. Update the entry AND the status
+index at the top of that file, in the same commit.
