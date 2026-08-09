@@ -344,7 +344,8 @@ or download.</p>
 </tr>
 <tr>
   <td><strong>scwbd-003</strong></td>
-  <td><span class="chip unknown">training</span></td>
+  <td><span class="chip pass">beats its baselines</span>
+      <span class="chip fail">null fusion effect</span></td>
   <td>26,304,729 parameters over the 414 regions, trained on <strong>seven measured
   sources</strong> through <strong>four observation montages</strong>: 64-channel
   EEG (109 participants), whole-night polysomnography (78), a 70-channel cap (2),
@@ -356,35 +357,68 @@ or download.</p>
   boundary_output, context. Every source in run 2 was an observation, so three of
   the four were untested while the schematic above gave them equal billing. Run 3
   exercises three; <code>context</code> still has no source and the run's report
-  says so rather than omitting it.</span></span> Measured at the end of its founding stage,
-  step 4,000 of 13,400: the defect run 2 shipped with is fixed.
-  <strong>99.5% of its parameters have moved off their initialisation, against
+  says so rather than omitting it.</span></span> The run completed all 13,400 steps, and the
+  defect run 2 shipped with is fixed:
+  <strong>99.98% of its parameters have moved off their initialisation, against
   run 2's 11.3%</strong> — including the entire family-indexed regional model
   that is the treatment arm's whole thesis, every tensor of it.<span class="note"><input type="checkbox" id="index-n11" class="note-toggle"><label for="index-n11" class="note-ref">11</label><span class="note-body"><span class="note-n">11</span>Measured
   by hashing every parameter before the first step and comparing, so the answer
   is a bit comparison rather than a threshold somebody chose. Quoted in
-  parameters because run 2's figure is: by <em>tensor</em> count run 3 is 243 of
+  parameters because run 2's figure is: by <em>tensor</em> count run 3 is 341 of
   382, which sounds far worse and is not comparable, because the tensors that
-  never train are small ones. Two groups make up almost all of the 0.5%. The
-  per-family activity readout cannot be trained by any measured source — scoring
-  it needs ground-truth activity at the parcel and neither EEG nor BOLD has any
-  — so it waits for the simulator stage, recorded as a founding exemption
-  alongside the amortised posterior. And each observation head's
-  <code>source_proj</code> is bypassed entirely: once a parcel carries a
-  3-vector moment it is observed through the vector lead field, which is the
-  whole point of the orientation result above, and the scalar projection it
-  replaces is left unreachable.</span></span> No score is claimed yet:
-  this row gets held-out numbers and a leave-one-source-out result when the run
-  finishes.<span class="note"><input type="checkbox" id="index-n12" class="note-toggle"><label for="index-n12" class="note-ref">12</label><span class="note-body"><span class="note-n">12</span>The ablation is leave-one-out specifically because it can
-  return a null. The identifiability benchmark measured joint multirate
-  inference as <em>failing</em> to beat isolated modalities in every regime, and
-  an evaluation unable to reproduce that would be unable to disagree with the
-  premise it is testing.</span></span></td>
+  never train are small ones. Setting the two side by side would flatter run 2
+  by a factor of about five hundred, and the parameter figure had to be
+  recomputed from the weights to say it: the fields recording it were added to
+  the trainer after this run had launched, so the checkpoint itself carries only
+  tensor counts. The 5,966 frozen parameters are four groups that sum: 2,070 are
+  the Balloon haemodynamic parameters, which never received a gradient at all;
+  2,028 are per-family observation features for families no admitted source
+  observes; 1,796 are each observation head's <code>source_proj</code>, bypassed
+  entirely once a parcel carries a 3-vector moment and is observed through the
+  vector lead field; and 72 are <code>msg_proj</code>, which nothing accounts
+  for and which is an open question rather than a resolved one.</span></span>
+  <strong>On 27 held-out participants it beats every baseline</strong> — 1.986
+  nats against 2.024 for a 4th-order VAR and 2.025 for a 16th-order AR, with
+  every paired participant-clustered 95% interval excluding zero. It is the
+  first model here that does.<span class="note"><input type="checkbox" id="index-n12" class="note-toggle"><label for="index-n12" class="note-ref">12</label><span class="note-body"><span class="note-n">12</span>Five distinct comparators, not six:
+  <code>subject_specific_ar</code> is bit-identical to <code>ar16</code>, because
+  a participant-disjoint split leaves no test participant with a fitted person
+  model. The margin is ~0.04 nats — decisive at this sample size, and small. It
+  is a <em>density</em> result, not a better point forecast: on squared error the
+  model is statistically indistinguishable from both AR baselines, with intervals
+  spanning zero. And run 2's units defect was re-checked rather than assumed
+  gone — it flattered that run by 0.5694 nats, fifteen times this margin, which
+  would have inverted the verdict. The model is now scored on the raw target in
+  the same form as the baselines.</span></span>
+  <strong>And no measured source earns its place.</strong> Leave-one-out over
+  eleven retrained arms: only the simulator contributes, and all nine measured
+  and prior families show <em>negative</em> transfer — the model forecasts
+  marginally better without each of them.<span class="note"><input type="checkbox" id="index-n13" class="note-toggle"><label for="index-n13" class="note-ref">13</label><span class="note-body"><span class="note-n">13</span>Scored on the simulated
+  validation set, so this is close to tautological in direction: every gradient
+  a measured source contributes pulls the model away from the simulator it is
+  being scored against. It does not test whether measured data helps
+  <em>measured</em> prediction, which is the question worth asking and the next
+  run's job. One arm per family and no seed replication, so there is no error bar
+  and the individual deltas — 0.1% to 1.4% — are not effect sizes and should not
+  be quoted as any. The sign pattern is the result: nine of nine the same
+  direction. This is the fusion null the identifiability benchmark already
+  measured, and the ablation is shaped this way so that it could return one.</span></span>
+  Both results are this run's. Reporting only the first would be the flattering
+  half of it.</td>
 </tr>
 <tr>
   <td><strong>A model that beats its baselines</strong></td>
-  <td><span class="chip fail">does not exist</span></td>
-  <td>Nothing on this site should be read as a claim that we have one.</td>
+  <td><span class="chip pass">one, narrowly</span></td>
+  <td>This row read <em>does not exist</em> until 2026-08-09, and scwbd-003
+  changed it: on 27 held-out participants it beats all five distinct comparators
+  on the held-out log score, every paired interval excluding zero. The margin is
+  ~0.04 nats over a 16th-order AR. That is a real result and a narrow one, and it
+  does not extend to the claims this project is actually about: the same model is
+  indistinguishable from those baselines on squared error, no measured source
+  improves it under leave-one-out, its haemodynamic parameters never received a
+  gradient, and its amortised posterior explains no variance in the parameters it
+  infers. A better log score on 27 people is not a validated model of anyone's
+  brain, and nothing here should be read as a claim that we have one.</td>
 </tr>
 </tbody>
 </table>

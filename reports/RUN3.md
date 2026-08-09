@@ -196,13 +196,18 @@ The recomputation is a bit comparison against a freshly constructed model at
 `train.seed`, which `test_regional_tensors_moved.py` proves is bit-identical to
 the original initialisation.
 
-The 5,966 frozen parameters (0.02%) are three groups, all accounted for:
+The 5,966 frozen parameters (0.02%), 41 tensors, are four groups and they sum:
 
-| frozen | parameters | why |
-| --- | ---: | --- |
-| `bold.{log_kappa,log_gamma,log_tau,alpha,neural_gain}` | 2,070 | **ISSUE-008.** The Balloon ODE was never integrated. |
-| `*.source_proj.*` in every EEG head | 1,796 | Dead code on this architecture: with 3-vector parcel moments `EEGHead.forward` takes the `L_vec` path and never calls `source_amplitude`. Flagged for deletion in HANDOFF-004. |
-| `observation.feat.<family>.weight` for 7 families | 1,656 | Per-family observation features for families no admitted source observes. |
+| frozen | tensors | parameters | why |
+| --- | ---: | ---: | --- |
+| `bold.{log_kappa,log_gamma,log_tau,alpha,neural_gain}` | 5 | 2,070 | **ISSUE-008.** The Balloon ODE was never integrated. |
+| `observation.feat.<family>.weight` | 18 | 2,028 | Per-family observation features for families no admitted source observes. |
+| `*.source_proj.*` across four EEG heads | 16 | 1,796 | Dead code on this architecture: with 3-vector parcel moments `EEGHead.forward` takes the `L_vec` path and never calls `source_amplitude`. Flagged for deletion in HANDOFF-004. |
+| `msg_proj.{weight,bias}` | 2 | 72 | Unexplained. The derived report flags it `<-- FROZEN` and nothing here accounts for it; it is 0.0003% of the model and it is the one frozen group with no story. **Open question for 004.** |
+
+An earlier draft of this table said "1,656 over 7 families" for the third group
+and omitted `msg_proj` entirely, and the four rows did not sum to 5,966. Caught
+by adding them up at the staged-diff step, which is what that step is for.
 
 By module, tensors moved: `family_local` 137/137, `family_residual` 32/32,
 `family_readout` 36/36, `posterior` 58/58, `tms_drive` 4/4, `behaviour` 5/5,
