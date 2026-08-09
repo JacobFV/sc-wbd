@@ -323,9 +323,56 @@ Per-backend simulator NLL: `linear_gaussian` 0.170, `wong_wang` 0.313,
 The evaluation's `git_sha` records `-dirty`: the training log was still
 uncommitted when it ran. The code was at `e4813df`.
 
-### Leave-one-source-out
+### Leave-one-source-out: no measured source earns its place on this metric
 
-*(pending — `make release-003-ablate`, retrains eight arms)*
+Eleven arms, 200 steps each, retrained from the same initialisation at a fixed
+seed and scored on `_sim_val_nll`. `delta > 0` means removing the family **hurt**
+— the family contributed.
+
+| family | without it | delta | reading |
+| --- | ---: | ---: | --- |
+| `sim_wholebrain` | 0.7238 | **+0.0445** | contributed |
+| `anatomical_prior` | 0.6786 | −0.0006 | negative transfer |
+| `ds004024_rest_real` | 0.6779 | −0.0013 | negative transfer |
+| `montage_calibration` | 0.6773 | −0.0020 | negative transfer |
+| `ds000117_behaviour` | 0.6748 | −0.0044 | negative transfer |
+| `ds004024_perturb` | 0.6744 | −0.0049 | negative transfer |
+| `sleepedf_real` | 0.6742 | −0.0050 | negative transfer |
+| `ds000117_real` | 0.6739 | −0.0053 | negative transfer |
+| `eegmmidb_real` | 0.6731 | −0.0061 | negative transfer |
+| `ds002336_real` | 0.6696 | −0.0097 | negative transfer |
+
+All-sources baseline: 0.6793. **Nine of ten families show negative transfer.**
+The only source that earns its place is the simulator.
+
+**What this is not.** The metric is the *simulated* validation set, and the
+Makefile target has said so since it was written. So "measured data makes
+simulator-conditioned forecasting slightly worse" is close to tautological:
+every gradient a measured source contributes pulls the model away from fitting
+the simulator it is scored against. This ablation does not test whether the
+measured sources help *measured* prediction, which is the question anyone would
+actually ask, and it is the obvious thing for 004 to fix.
+
+**What it nonetheless is.** This is the fusion null, arriving where the
+identifiability laboratory already put it. C1 (fusion information) and C2
+(native beats resampled) were measured as FAILED in every regime, and
+`release-003-ablate` exists in this shape specifically so it could return a
+null — *"an evaluation that cannot see a null fusion effect would be unable to
+disagree with the run's own premise."* It saw one. Seven measured sources, four
+montages, a boundary output and a measured intervention, and the model would
+forecast the simulator marginally better without any of them.
+
+**On the magnitudes.** Individually they are tiny — 0.1% to 1.4% of a baseline
+of 0.68 — and there is **one arm per family and no seed replication**, so no
+error bar exists and the smallest deltas are not distinguishable from run-to-run
+noise. What is harder to dismiss is the *direction*: nine of nine measured and
+prior families point the same way. The individual numbers should not be quoted
+as effect sizes. The sign pattern is the result.
+
+**This does not contradict the held-out win.** The two measure different things
+on different data: SC-WBD-003 beats every baseline on measured EEG, and no
+measured source improves simulator forecasting. Both are true, and reporting
+only the first would be the more flattering half of one run.
 
 ## The sources, as they came off disk
 
