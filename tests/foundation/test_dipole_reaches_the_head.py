@@ -160,6 +160,7 @@ def test_the_published_checkpoint_still_loads_in_its_own_layout() -> None:
     """
     import torch
 
+    from scwbd.foundation.checkpoint import drop_arm_dead_keys
     from scwbd.foundation.families import layout_of_checkpoint
 
     ckpt = REPO / "checkpoints/scwbd-002-pilot/last.pt"
@@ -173,7 +174,14 @@ def test_the_published_checkpoint_still_loads_in_its_own_layout() -> None:
     with layout_of_checkpoint(ckpt):
         old = SCWBD(cfg.model, an)
         assert sum(c.dim for c in old.layout.components) == 59
-        old.load_state_dict(state)  # strict: raises on any mismatch
+        # `msg_proj` is the pooled arm's message projection and a family-arm
+        # model no longer builds it, so a pre-gating checkpoint carries two
+        # tensors this model does not have. Dropped through the SHARED named
+        # allowance, not by relaxing `strict` -- the guarantee under test is that
+        # the LAYOUT still loads, and a blanket strict=False would stop testing it.
+        state_old, dropped = drop_arm_dead_keys(state, old)
+        assert set(dropped) <= {"msg_proj.weight", "msg_proj.bias"}, dropped
+        old.load_state_dict(state_old)  # strict: raises on any other mismatch
 
     # And the switch is scoped, not global -- a process must be able to hold both
     # eras, or evaluating run 2 would silently downgrade every model built after
@@ -181,4 +189,4 @@ def test_the_published_checkpoint_still_loads_in_its_own_layout() -> None:
     new = SCWBD(cfg.model, an)
     assert sum(c.dim for c in new.layout.components) == 62
     with pytest.raises(RuntimeError):
-        new.load_state_dict(state)
+        new.load_state_dict(drop_arm_dead_keys(state, new)[0])

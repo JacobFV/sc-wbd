@@ -18,9 +18,43 @@ import torch
 
 from .config import FoundationConfig, designation
 from .manifest import ClaimManifest, hash_file
+
 from .util import env_fingerprint, git_sha
 
-__all__ = ["save_checkpoint", "load_checkpoint", "latest_checkpoint", "CheckpointError"]
+import logging
+
+LOGGER = logging.getLogger(__name__)
+
+__all__ = ["save_checkpoint", "load_checkpoint", "latest_checkpoint", "CheckpointError", "drop_arm_dead_keys"]
+
+#: Modules that belong to ONE arm and are simply absent on the other. A
+#: checkpoint from before a module was gated carries its tensors; the current
+#: model does not build them. Listed explicitly, so dropping a key is always a
+#: named decision and never a side effect of relaxing `strict`.
+#:
+#: `msg_proj` -- the pooled arm's message projection. Both call sites prefer
+#: `family_local.ports.message`, so on the family arm it is unreachable.
+_ARM_DEAD_MODULES = frozenset({"msg_proj"})
+
+
+def drop_arm_dead_keys(state: Mapping[str, Any], model: torch.nn.Module) -> tuple[dict, list[str]]:
+    """Remove tensors for modules THIS arm does not build. Returns (state, dropped).
+
+    Shared by `load_checkpoint` and by any caller loading a published checkpoint
+    directly, so the allowance is defined once and every drop is a named module
+    rather than a relaxed `strict` flag. A key absent from `_ARM_DEAD_MODULES` is
+    left in place and still raises, which is the point: this must not become a
+    general-purpose mismatch swallower.
+    """
+    own = set(model.state_dict())
+    dropped = sorted(
+        k for k in state if k not in own and k.split(".")[0] in _ARM_DEAD_MODULES
+    )
+    if not dropped:
+        return dict(state), []
+    keep = set(dropped)
+    return {k: v for k, v in state.items() if k not in keep}, dropped
+
 
 
 class CheckpointError(RuntimeError):
@@ -167,7 +201,26 @@ def load_checkpoint(
     if payload.get("format") != "scwbd-foundation-checkpoint/1":
         raise CheckpointError(f"unrecognised checkpoint format {payload.get('format')!r}")
     if model is not None:
-        missing, unexpected = model.load_state_dict(payload["model"], strict=strict)
+        sd = payload["model"]
+        # ARM-DEAD MODULES. A checkpoint written before a module was gated on its
+        # arm carries tensors the current model does not build, and `strict=True`
+        # rejects the whole load over them.
+        #
+        # `msg_proj` is the case: it is the POOLED arm's message projection, and
+        # a family-arm model no longer constructs it (72 unreachable parameters
+        # that inflated every "fraction trained" denominator). Run 3's published
+        # checkpoint has it; the current family-arm model does not.
+        #
+        # Dropped by NAME and REPORTED, never by relaxing `strict`. A blanket
+        # `strict=False` would also swallow a genuine architecture mismatch,
+        # which is the failure this whole file exists to make loud.
+        sd, dead = drop_arm_dead_keys(sd, model)
+        if dead:
+            payload.setdefault("load_report", {})["arm_dead_dropped"] = dead
+            LOGGER.info(
+                "dropped %d arm-dead tensor(s) not built by this arm: %s", len(dead), dead
+            )
+        missing, unexpected = model.load_state_dict(sd, strict=strict)
         if not strict and (missing or unexpected):
             payload.setdefault("load_report", {})["missing"] = list(missing)
             payload["load_report"]["unexpected"] = list(unexpected)

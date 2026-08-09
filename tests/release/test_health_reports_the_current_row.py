@@ -22,6 +22,8 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -54,6 +56,37 @@ def _write_log(path: Path) -> None:
     path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
 
 
+class _FakeTrainingProcess:
+    """A real process whose command line health.sh's detector matches.
+
+    The reporting line is only reached when a training process is LIVE: with
+    `procs=0` the script exits 2 ("a death, not a completion") long before it.
+    These tests first passed only because run 3's ablation happened to be
+    running at the time -- an accidental pass, which is the exact class this
+    repo catalogues.
+
+    A real process rather than an env override, so the test exercises the actual
+    `pgrep -af` path including its interpreter filter and its bash/make
+    exclusions. Those filters are themselves a documented trap (six misfires),
+    and a hook that bypassed them would stop testing them.
+    """
+
+    def __init__(self) -> None:
+        self.proc = subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(120)", "scwbd.foundation.train"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(0.4)  # let it appear in the process table
+
+    def __enter__(self) -> "_FakeTrainingProcess":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.proc.kill()
+        self.proc.wait(timeout=10)
+
+
 def _run_health(tmp_path: Path) -> str:
     log = tmp_path / "train.jsonl"
     _write_log(log)
@@ -78,7 +111,8 @@ def _run_health(tmp_path: Path) -> str:
 
 @pytest.mark.skipif(not HEALTH.is_file(), reason="health.sh absent")
 def test_a_field_from_an_ended_stage_is_not_reported_as_current(tmp_path: Path) -> None:
-    out = _run_health(tmp_path)
+    with _FakeTrainingProcess():
+        out = _run_health(tmp_path)
     assert STALE_SENTINEL not in out, (
         f"health.sh reported a value only present in an earlier stage's rows:\n{out}\n"
         "This is the whole-file `tail -1` read. A number from a stage that ended "
@@ -89,7 +123,8 @@ def test_a_field_from_an_ended_stage_is_not_reported_as_current(tmp_path: Path) 
 @pytest.mark.skipif(not HEALTH.is_file(), reason="health.sh absent")
 def test_the_live_row_is_what_gets_reported(tmp_path: Path) -> None:
     """Not reporting the stale value is only half of it -- it must report the real one."""
-    out = _run_health(tmp_path)
+    with _FakeTrainingProcess():
+        out = _run_health(tmp_path)
     assert LIVE_SENTINEL in out, (
         f"health.sh reported neither the stale value nor the live one:\n{out}\n"
         "Suppressing the stale read without falling through to the measured "
@@ -100,7 +135,8 @@ def test_the_live_row_is_what_gets_reported(tmp_path: Path) -> None:
 @pytest.mark.skipif(not HEALTH.is_file(), reason="health.sh absent")
 def test_a_field_absent_from_the_current_stage_says_so(tmp_path: Path) -> None:
     """`npe_rejected=0` claims a clean count; T5 runs no NPE and measured nothing."""
-    out = _run_health(tmp_path)
+    with _FakeTrainingProcess():
+        out = _run_health(tmp_path)
     assert "npe_rejected=n/a" in out, (
         f"expected `npe_rejected=n/a` for a stage that runs no NPE:\n{out}\n"
         "Reporting 0 asserts a rejection count that nothing computed."
