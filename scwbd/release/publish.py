@@ -51,7 +51,7 @@ from __future__ import annotations
 import json
 import re
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -1807,13 +1807,41 @@ def plan_run3(
     and the card says so rather than leaving a reader to infer it from a
     `contributed_sources` list that truthfully includes `ds002336_real`.
     """
-    return plan_run1_checkpoint(
+    plan = plan_run1_checkpoint(
         checkpoint_dir=checkpoint_dir,
         evaluation=evaluation,
         config=config,
         name=name,
         repo_root=repo_root,
     )
+
+    # ISSUE-008 goes at the TOP of the card, not in a footnote. The card is
+    # generated from the checkpoint, and the checkpoint truthfully lists
+    # `ds002336_real` among its contributing sources -- so a reader who is not
+    # told otherwise will reasonably conclude this model has an fMRI likelihood.
+    # It does not. Leaving them to infer it from a `contributed_sources` list is
+    # exactly the shape of defect this project exists to avoid.
+    limitation = (
+        "> ## No fMRI or haemodynamic claim may be read off this model\n>\n"
+        "> These weights were trained through a BOLD path that **never integrated "
+        "the Balloon-Windkessel ODE**. `BOLDHead.step` was not called in any of "
+        "the five stages, the five haemodynamic parameters (`log_kappa`, "
+        "`log_gamma`, `log_tau`, `alpha`, `neural_gain`) are **bit-identical to "
+        "their initialisation**, and `real_bold_nll` diverged monotonically from "
+        "21.7 to 4.4e6 over the run.\n>\n"
+        "> `ds002336_real` appears in `contributed_sources` and that is accurate: "
+        "its BOLD channel contributed a **gradient** and no **information**. The "
+        "two are different statements and only the first was ever checked.\n>\n"
+        "> The defect is repaired in the code (ISSUE-008, closed 2026-08-09) and "
+        "cannot be repaired in these weights, which cannot be un-trained. Any "
+        "fMRI, haemodynamic or neurovascular claim about this artifact is "
+        "unsupported.\n>\n"
+        "> Two further limits from the same run: the amortised posterior is "
+        "well-calibrated and **uninformative** (R^2 ~ 0 on all six parameters), "
+        "and the EEG lead field is an **analytic sphere**, not a head model, so "
+        "no source-localisation claim is available either.\n\n"
+    )
+    return replace(plan, card=limitation + (plan.card or ""))
 
 
 PLANNERS: Mapping[str, Any] = {
