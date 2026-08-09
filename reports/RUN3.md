@@ -249,9 +249,83 @@ initialisation in all five stages including `T4_simulator`. Recorded as an
 `xfail` in `test_balloon_parameters_receive_gradient.py` so the day it stops
 being true, the test says so.
 
-### Held-out evaluation and leave-one-source-out
+### Held-out evaluation: the first SC-WBD model that beats its baselines
 
-*(pending — `make release-003-evaluate` and `make release-003-ablate`)*
+1,080 windows over **27 held-out participants**, participant-disjoint from the
+71 trained on. Gaussian NLL in nats per channel per sample, sensor space,
+participant-clustered 95% intervals, plug-in at the posterior mean.
+
+| arm | NLL | paired vs SC-WBD (95% CI) |
+| --- | ---: | --- |
+| **scwbd-003** | **1.9863** | — |
+| `var4` | 2.0240 | −0.0377 [−0.0669, −0.0169] |
+| `ar16` | 2.0254 | −0.0391 [−0.0696, −0.0152] |
+| `subject_specific_ar` | 2.0254 | −0.0391 [−0.0696, −0.0152] |
+| `population_gaussian` | 2.0482 | −0.0619 [−0.0906, −0.0403] |
+| `persistence` | 2.3156 | −0.3293 [−0.3707, −0.2940] |
+| `dense_neural` | 9.3607 | −7.3744 [−7.5018, −7.2646] |
+
+Negative favours SC-WBD. **Every interval excludes zero**: `scwbd_beaten_by` is
+empty and so is `inconclusive_vs_scwbd`. Runs 1 and 2 were negative results;
+this one is not.
+
+**The units defect that made run 2's number unpublishable does not apply here,
+and that was checked rather than assumed.** Run 2's site text records that its
+NLL flattered the model because SC-WBD was scored on `target/s` with the
+Jacobian folded into the log-variance while every baseline was scored on the raw
+target — an offset of 0.5694 nats, which is fifteen times the margin above and
+would have inverted this verdict. `evaluate.py` now scores the model with
+`y = tgt_e.float()`, the raw target, in the same functional form as
+`baselines._gaussian_nll`, and keeps the log-`s` variant separately as
+`nlls_norm` rather than as the headline. The comparison is like-for-like.
+
+Four things this result is not:
+
+* **Five comparators, not six.** `subject_specific_ar` is bit-identical to
+  `ar16` — the participant-disjoint split leaves no test participant with a
+  fitted person model, so there is nothing subject-specific about it.
+* **A better point forecast.** On MSE the model is statistically
+  indistinguishable from the two strong baselines: `ar16` −0.0527
+  [−0.2252, **+0.0954**] and `var4` +0.0147 [−0.0630, +0.0903], both intervals
+  spanning zero. It beats `persistence`, `population_gaussian` and
+  `dense_neural`. The win is in the **density**, not the conditional mean —
+  which is the run-1 lesson in the opposite direction, and the reason both are
+  scored.
+* **Individual generalisation.** Window-level, and `individualization.applied`
+  is `false`: this is a population model. The split cannot measure
+  individualisation at all, which is what `session_split` is being built for in
+  004.
+* **Free of a site shortcut.** The leakage audit warns that all records come
+  from one site, so this split cannot falsify a site/device shortcut.
+
+Margins against the strong baselines are ~0.04 nats. Decisive at this sample
+size, and small.
+
+### Two negative sub-results from the same evaluation
+
+**The amortised posterior is calibrated and uninformative.** SBC is clean —
+minimum KS p = 0.098 over six parameters, coverage MAE 0.021, z-scores at
+0.96–1.00 — but `posterior_r2` is −0.010, 0.000, −0.006, −0.015, −0.003, −0.005.
+Six parameters, no explained variance. It is honest about its own uncertainty
+and carries almost no information about θ, and calibration alone would have hidden
+that.
+
+**The lead field is still the analytic sphere.** `provenance:
+analytic_sphere_fallback`, condition number 194. Radial dipoles in a homogeneous
+sphere at real 10-10 positions — it supports no source-localisation or
+individual-anatomy claim, and ISSUE-006 is why that sentence is now checked
+rather than trusted.
+
+Per-backend simulator NLL: `linear_gaussian` 0.170, `wong_wang` 0.313,
+`wilson_cowan` 0.773, `jansen_rit` 1.171, `stuart_landau` 1.284; overall
+`sim_val_nll` 0.711.
+
+The evaluation's `git_sha` records `-dirty`: the training log was still
+uncommitted when it ran. The code was at `e4813df`.
+
+### Leave-one-source-out
+
+*(pending — `make release-003-ablate`, retrains eight arms)*
 
 ## The sources, as they came off disk
 

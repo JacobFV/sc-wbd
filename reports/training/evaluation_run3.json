@@ -1,0 +1,5583 @@
+{
+  "model_id": "scwbd-003",
+  "git_sha": "e4813df9e21e7a08410f77b0dc9a81fbb5314ba4-dirty",
+  "evaluated_utc": "2026-08-09T09:23:07Z",
+  "config": {
+    "model": {
+      "n_regions": 414,
+      "local_core": "learned",
+      "family_state": true,
+      "family_cores": {},
+      "family_allow_derived_partition": false,
+      "d_key": 16,
+      "d_value": 16,
+      "d_grid": 12,
+      "d_context": 4,
+      "d_prediction": 8,
+      "state_dependent_variance": true,
+      "scale_prolongations": [],
+      "hidden": 1408,
+      "n_local_layers": 3,
+      "region_embed": 192,
+      "context_dim": 128,
+      "message_dim": 12,
+      "n_delay_bins": 8,
+      "n_spectral_modes": 8,
+      "n_adaptation": 2,
+      "n_uncertainty": 4,
+      "dt_model": 0.008,
+      "hemo_ratio": 25,
+      "residual_rho_max": 0.35,
+      "residual_init_scale": 0.05,
+      "encoder_channels": 192,
+      "encoder_layers": 3,
+      "dropout": 0.0,
+      "control_graph": "none",
+      "scalar_state_ablation": false,
+      "dense_coupling_ablation": false,
+      "n_eeg_channels": 64,
+      "n_behaviour": 2,
+      "montages": {
+        "sleepedf_real": {
+          "kind": "bipolar",
+          "channels": [
+            "EEG Fpz-Cz",
+            "EEG Pz-Oz"
+          ]
+        },
+        "ds000117_real": {
+          "kind": "digitised",
+          "positions_file": "configs/montages/ds000117_eeg.json",
+          "channels": [
+            "EEG001",
+            "EEG002",
+            "EEG003",
+            "EEG004",
+            "EEG005",
+            "EEG006",
+            "EEG007",
+            "EEG008",
+            "EEG009",
+            "EEG010",
+            "EEG011",
+            "EEG012",
+            "EEG013",
+            "EEG014",
+            "EEG015",
+            "EEG016",
+            "EEG017",
+            "EEG018",
+            "EEG019",
+            "EEG020",
+            "EEG021",
+            "EEG022",
+            "EEG023",
+            "EEG024",
+            "EEG025",
+            "EEG026",
+            "EEG027",
+            "EEG028",
+            "EEG029",
+            "EEG030",
+            "EEG031",
+            "EEG032",
+            "EEG033",
+            "EEG034",
+            "EEG035",
+            "EEG036",
+            "EEG037",
+            "EEG038",
+            "EEG039",
+            "EEG040",
+            "EEG041",
+            "EEG042",
+            "EEG043",
+            "EEG044",
+            "EEG045",
+            "EEG046",
+            "EEG047",
+            "EEG048",
+            "EEG049",
+            "EEG050",
+            "EEG051",
+            "EEG052",
+            "EEG053",
+            "EEG054",
+            "EEG055",
+            "EEG056",
+            "EEG057",
+            "EEG058",
+            "EEG059",
+            "EEG060",
+            "EEG065",
+            "EEG066",
+            "EEG067",
+            "EEG068",
+            "EEG069",
+            "EEG070",
+            "EEG071",
+            "EEG072",
+            "EEG073",
+            "EEG074"
+          ]
+        },
+        "ds004024_rest_real": {
+          "kind": "monopolar",
+          "channels": [
+            "Fp1",
+            "Fpz",
+            "Fp2",
+            "AF7",
+            "AF3",
+            "AFz",
+            "AF4",
+            "AF8",
+            "F7",
+            "F5",
+            "F3",
+            "F1",
+            "Fz",
+            "F2",
+            "F4",
+            "F6",
+            "F8",
+            "FT7",
+            "FC5",
+            "FC3",
+            "FC1",
+            "FCz",
+            "FC2",
+            "FC4",
+            "FC6",
+            "FT8",
+            "T7",
+            "C5",
+            "C3",
+            "C1",
+            "Cz",
+            "C2",
+            "C4",
+            "C6",
+            "T8",
+            "TP9",
+            "TP7",
+            "CP5",
+            "CP3",
+            "CP1",
+            "CPz",
+            "CP2",
+            "CP4",
+            "CP6",
+            "TP8",
+            "TP10",
+            "P7",
+            "P5",
+            "P3",
+            "P1",
+            "Pz",
+            "P2",
+            "P4",
+            "P6",
+            "P8",
+            "PO7",
+            "PO3",
+            "POz",
+            "PO4",
+            "PO8",
+            "O1",
+            "Oz",
+            "O2",
+            "Iz"
+          ]
+        }
+      },
+      "use_bf16": true,
+      "compile": false
+    },
+    "posterior": {
+      "summary_channels": 128,
+      "summary_layers": 4,
+      "flow_layers": 6,
+      "flow_hidden": 256,
+      "n_bands": 7,
+      "n_pcs": 16,
+      "dropout": 0.0,
+      "nuisance_dim": 2
+    },
+    "data": {
+      "sim_index_fast": "data/sim_corpus_414/index_fast.json",
+      "sim_index_slow": "/data/scwbd/sim_corpus/index_slow.json",
+      "real_eeg_root": "data/eegmmidb/1.0.0",
+      "real_sleep_root": "data/sleep-edfx/1.0.0/sleep-cassette",
+      "ds000117_root": "data/ds000117/1.1.0",
+      "ds004024_root": "data/ds004024/1.0.0",
+      "ds000113_root": "data/ds000113",
+      "bold_roots": {},
+      "enable_perturbation": true,
+      "window": 64,
+      "context": 24,
+      "fs_hz": 125.0,
+      "batch": 8,
+      "num_workers": 4,
+      "pin_memory": false,
+      "val_fraction": 0.05,
+      "real_test_fraction": 0.25,
+      "seed": 20260807
+    },
+    "train": {
+      "run_name": "scwbd-003",
+      "out_dir": "checkpoints/scwbd-003",
+      "report_dir": "reports/training",
+      "seed": 20260807,
+      "device": "cuda",
+      "anatomy_force_fallback": false,
+      "amp_dtype": "bfloat16",
+      "cuda_reserve_gb": 56.0,
+      "max_wall_seconds": 108000,
+      "resume": true,
+      "stages": [
+        {
+          "name": "T1_measured_founding",
+          "steps": 4000,
+          "lr": 0.0006,
+          "weight_decay": 0.01,
+          "warmup": 200,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 500,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.0,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "regional + interface, measured only",
+              "admits": [
+                1
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "port"
+              ],
+              "rationale": "Seven measured sources found the representation before any lower-integrity source exists: eegmmidb (64ch, 109 participants), sleep-edfx (2 bipolar derivations, 78 participants, enabled for the first time), ds000117 (70ch cap, 2 participants), ds004024 resting (64ch, 2 participants), ds002336 (parcel BOLD, 10 participants), and the two new attachment kinds -- ds000117_behaviour (boundary_output) and ds004024_perturb (a measured intervention). `behaviour.*` and `eeg_montages.*` are granted at tier 1 because tier-1 sources are the only ones with evidence about them."
+            }
+          }
+        },
+        {
+          "name": "T2_calibration",
+          "steps": 600,
+          "lr": 0.0003,
+          "weight_decay": 0.01,
+          "warmup": 60,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 300,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.0,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.3,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "instrument nuisance",
+              "admits": [
+                1,
+                2
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*",
+                  "eeg_montages.*.log_gain",
+                  "eeg_montages.*.offset",
+                  "eeg_montages.*.log_noise",
+                  "eeg_montages.*.nuisance*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "calibration"
+              ],
+              "rationale": "Sized by what is being estimated, not by corpus size: per-channel gain, offset and noise floor across four montages. A calibration source has tiny measurement variance and would win a pure inverse-variance contest, which is why it is admitted late and narrowly. Note the tier-2 grants now name the montage heads too -- without that, three of the four montages' nuisance would be calibrated by nobody."
+            }
+          }
+        },
+        {
+          "name": "T3_population_prior",
+          "steps": 800,
+          "lr": 0.0003,
+          "weight_decay": 0.01,
+          "warmup": 80,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 400,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.05,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "anatomical prior",
+              "admits": [
+                1,
+                2,
+                3
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*",
+                  "eeg_montages.*.log_gain",
+                  "eeg_montages.*.offset",
+                  "eeg_montages.*.log_noise",
+                  "eeg_montages.*.nuisance*"
+                ],
+                "3": [
+                  "coupling.gain_*",
+                  "coupling.global_scale"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "anatomy"
+              ],
+              "rationale": "The 9-family partition and the connectome scale enter here, after the measured sources have already fixed the representation they modulate."
+            }
+          }
+        },
+        {
+          "name": "T4_simulator",
+          "steps": 5000,
+          "lr": 0.0002,
+          "weight_decay": 0.01,
+          "warmup": 250,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 500,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.05,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 1.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "simulator-conditioned inference",
+              "admits": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*",
+                  "eeg_montages.*.log_gain",
+                  "eeg_montages.*.offset",
+                  "eeg_montages.*.log_noise",
+                  "eeg_montages.*.nuisance*"
+                ],
+                "3": [
+                  "coupling.gain_*",
+                  "coupling.global_scale"
+                ],
+                "4": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "posterior.*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "slice",
+                "posterior"
+              ],
+              "rationale": "The amortised posterior is founded here and only here. No measured recording carries a theta label, so no tier-1 source can found it -- not as a wiring gap but in principle. That is the founding exemption `configs/curriculum/tiers.yaml` already grants to `posterior.*`, and this is the stage that uses it. Tier 4 does NOT reach `eeg.*`, `eeg_montages.*`, `bold.*` or `behaviour.*`: a simulator may not calibrate an instrument."
+            }
+          }
+        },
+        {
+          "name": "T5_measured_return",
+          "steps": 3000,
+          "lr": 0.00012,
+          "weight_decay": 0.01,
+          "warmup": 150,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 500,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 1.0,
+          "lambda_anat": 0.02,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.2,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "return to measured",
+              "admits": [
+                1,
+                2
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_proj.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*",
+                  "tms_drive.*"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*",
+                  "eeg_montages.*.log_gain",
+                  "eeg_montages.*.offset",
+                  "eeg_montages.*.log_noise",
+                  "eeg_montages.*.nuisance*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "perturbation"
+              ],
+              "rationale": "The 1 -> 4 -> 1 return. The simulator is withdrawn and the measured sources have the last word, so the final weights are conditioned on evidence rather than on the generator. `tms_drive.*` is granted here and nowhere else: the pulse's amplitude and its profile over motor parcels are learned against the measured evoked response, and letting a simulator stage touch them would fit the drive to synthetic dynamics."
+            }
+          }
+        }
+      ]
+    },
+    "arm": {
+      "role": "treatment",
+      "controls_for": "",
+      "justification": "Heterogeneous region-indexed state with per-family operators (`family_state: true`). Run 2 was nominally this arm and could not be read as one, because the family-indexed modules never received a gradient."
+    },
+    "mixture_cards": "configs/curriculum/source_cards",
+    "notes": "SC-WBD-003. Seven measured sources, four observation montages, and the first boundary_output and measured perturbation in the mixture. Trained on this box: 1.1 TB free, all data in place, 121 GB unified. The second GB10 (spark-ec4d) was probed and rejected -- 184 GB free of 3.7 TB against a 177 GB data directory leaves no room for checkpoints, and nothing in scwbd/foundation is distributed anyway."
+  },
+  "n_parameters": {
+    "coupling": 3,
+    "msg_proj": 72,
+    "msg_readin": 9152,
+    "context": 17792,
+    "family_local": 18693938,
+    "family_residual": 5969331,
+    "family_readout": 131666,
+    "assimilate": 1356030,
+    "observation": 2073,
+    "eeg": 27697,
+    "eeg_montages": 59291,
+    "bold": 3312,
+    "behaviour": 34372,
+    "TOTAL": 26304729
+  },
+  "eval_seed": 0,
+  "anatomy": {
+    "n_regions": 414,
+    "n_cortex": 400,
+    "n_subcortex": 14,
+    "n_cerebellum": 0,
+    "density": 0.0718,
+    "mean_tract_length_mm": 38.76,
+    "edges_by_class": {
+      "hard": 1618,
+      "soft": 7386,
+      "proposed": 3270
+    },
+    "frame": "fsLR_32k_surface_RAS [conte69_32k]",
+    "n_gradient_covered": 400,
+    "gradient_uncovered_are_zero": true,
+    "provenance": "{'atlas': 'Schaefer400x7', 'space': 'fsLR', 'density': '32k', 'length': 'euclidean', 'sources': {'schaefer2018': {'name': 'Schaefer 2018 local-global parcellation', 'url': 'https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal', 'license': 'MIT (CBIG); underlying GSP data under its own terms', 'citation': 'Schaefer A. et al. (2018) Cereb Cortex 28:3095-3114.'}, 'enigma_hcp_sc': {'name': 'ENIGMA/HCP group-average structural connectome', 'url': 'https://enigma-toolbox.readthedocs.io/en/latest/pages/05.HCP/index.html', 'license': 'BSD-3-Clause code; HCP open-access data-use terms for the underlying scans', 'citation': 'Lariviere S. et al. (2021) Nat Methods 18:698-700; Van Essen D.C. et al. (2013) NeuroImage 80:62-79 (HCP).'}, 'neuromaps': {'name': 'neuromaps annotation collection', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'BSD-3-Clause (toolbox); per-annotation source terms', 'citation': 'Markello R.D. et al. (2022) Nat Methods 19:1472-1479.'}, 'tian2020': {'name': 'Tian subcortical parcellation S1-S4', 'url': 'https://github.com/yetianmed/subcortex', 'license': 'Melbourne Subcortex Atlas License: permission to use the atlas without restriction, including the rights to use, copy, modify, merge, publish and distribute, subject to the single condition that any publication using the atlas cites Tian Y. et al. (2020) Nat Neurosci 23:1421-1432. Attribution required.', 'citation': 'Tian Y. et al. (2020) Nat Neurosci 23:1421-1432.'}, 'hansen_receptors': {'name': 'Hansen neurotransmitter receptor/transporter PET atlas', 'url': 'https://github.com/netneurolab/hansen_receptors', 'license': 'CC-BY-NC-SA-4.0', 'citation': 'Hansen J.Y. et al. (2022) Nat Neurosci 25:1569-1581, plus the primary PET study for each tracer (see Table S3 of that paper).'}, 'hcps1200_maps': {'name': 'HCP S1200 group myelin (T1w/T2w), thickness and MEG maps', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'HCP open-access data-use terms', 'citation': 'Glasser M.F., Van Essen D.C. (2011) J Neurosci 31:11597-11616; Shafiei G. et al. (2022) PLoS Biol 20:e3001735 (MEG).'}, 'hill2010': {'name': 'Evolutionary and developmental cortical expansion', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Hill J. et al. (2010) PNAS 107:13135-13140.'}, 'margulies2016': {'name': 'Principal functional connectivity gradient', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Margulies D.S. et al. (2016) PNAS 113:12574-12579.'}, 'raichle_metabolism': {'name': 'Cerebral blood flow / volume / oxygen and glucose metabolism', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Vaishnavi S.N. et al. (2010) PNAS 107:17757-17762.'}, 'sydnor2021': {'name': 'Sensorimotor-association cortical axis', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Sydnor V.J. et al. (2021) Neuron 109:2820-2846.'}}, 'subcortical_atlas': {'name': 'Aseg14T', 'licence_key': 'tian2020', 'licence': 'Melbourne Subcortex Atlas License: permission to use the atlas without restriction, including the rights to use, copy, modify, merge, publish and distribute, subject to the single condition that any publication using the atlas cites Tian Y. et al. (2020) Nat Neurosci 23:1421-1432. Attribution required.', 'is_default': True, 'description': \"Melbourne Subcortex Atlas S1, merged by structure identity to the connectome's 14 aseg structures (anterior + posterior thalamus recombined). Licence grants use without restriction subject to citation; no non-commercial and no share-alike term.\"}, 'sources_note': \"This is what the assembled object CARRIES, which is a superset of what any one prior CONSUMES. load_maps builds every map present on disk, so hansen_receptors appears here whenever the PET volumes are installed -- including when no prior reads them. For the E/I prior specifically, read 'ei_ordering'.\", 'ei_ordering': {'ordering': 'hcp_hierarchy', 'is_default': True, 'description': 'Mean of three z-scored HCP S1200 group maps, oriented so the composite increases toward association cortex. Selected by the pre-committed criterion in reports/ei_ordering_substitution.md S1.', 'combine': 'zscore', 'maps_used': [{'map': 'myelin_t1t2', 'orientation': -1, 'source_key': 'hcps1200_maps', 'licence': 'HCP open-access data-use terms', 'n_covered': 400}, {'map': 'cortical_thickness', 'orientation': 1, 'source_key': 'hcps1200_maps', 'licence': 'HCP open-access data-use terms', 'n_covered': 400}, {'map': 'intrinsic_timescale_meg', 'orientation': 1, 'source_key': 'hcps1200_maps', 'licence': 'HCP open-access data-use terms', 'n_covered': 400}], 'licence_keys': ['hcps1200_maps'], 'declared_licence_keys': ['hcps1200_maps'], 'missing': {}, 'degenerate': None, 'degraded': False, 'available': True, 'n_covered': 400, 'n_parcels': 414, 'selection': 'reports/ei_ordering_substitution.md -- criterion committed at 97086e7 (branch master), measurement and implementation at cf37755. Two immutable SHAs, in that order; that ordering is the evidence that the criterion was not chosen to fit.'}}",
+    "is_biological": true,
+    "source_note": "adapted from scwbd.anatomy.BrainPrior (agent C)",
+    "families": {
+      "atlas": "Schaefer400x7",
+      "n_regions": 414,
+      "n_families": 9,
+      "provenance": "scwbd.anatomy.families.derive_families",
+      "is_biological": true,
+      "families": [
+        {
+          "family_id": "cortex_unimodal",
+          "division": "cortex",
+          "n_parcels": 138,
+          "evidence_tier": "measured_separation",
+          "training_status": "has_regional_data",
+          "membership_source": "schaefer2018",
+          "separating_evidence": [
+            "receptor_panel",
+            "myelin_thickness"
+          ],
+          "fields_established": [
+            "cytoarchitecture",
+            "receptor_profile",
+            "intrinsic_timescale_s",
+            "ei_prior"
+          ],
+          "nc_fields": [
+            "receptor_profile"
+          ]
+        },
+        {
+          "family_id": "cortex_association",
+          "division": "cortex",
+          "n_parcels": 262,
+          "evidence_tier": "measured_separation",
+          "training_status": "has_regional_data",
+          "membership_source": "schaefer2018",
+          "separating_evidence": [
+            "receptor_panel",
+            "myelin_thickness"
+          ],
+          "fields_established": [
+            "cytoarchitecture",
+            "receptor_profile",
+            "intrinsic_timescale_s",
+            "ei_prior"
+          ],
+          "nc_fields": [
+            "receptor_profile"
+          ]
+        },
+        {
+          "family_id": "subcortex_accumb",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_amyg",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_caud",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_hippo",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_pal",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_put",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_thal",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        }
+      ],
+      "declared_absent": [
+        "auditory",
+        "brainstem_hypothalamic_autonomic",
+        "cerebellum"
+      ],
+      "n_untrained": 7
+    },
+    "orientation": {
+      "n_covered": 400,
+      "coherence_median": 0.8511,
+      "coherence_min": 0.2751
+    }
+  },
+  "lead_field": {
+    "n_channels": 64,
+    "n_regions": 414,
+    "units": "V",
+    "frame": "fsLR_32k_surface_RAS [conte69_32k]",
+    "provenance": "analytic_sphere_fallback",
+    "physical_scale_volts_per_unit": 22.171859647225496,
+    "individual_head_model": false,
+    "condition_number": 193.81402587890625,
+    "note": "ANALYTIC SINGLE-SPHERE LEAD FIELD, NOT A HEAD MODEL. Radial dipoles in a homogeneous conducting sphere with electrodes at real 10-10 montage positions (MNE standard_1005). Supports no source-localisation or individual-anatomy claim."
+  },
+  "sensor_to_parcel": {
+    "kind": "minimum_norm_pseudoinverse",
+    "effective_rank": 64.0,
+    "mean_resolution_diagonal": 0.7368040084838867,
+    "note": "Assimilation input only. The likelihood is evaluated in sensor space; this projection supports no source-localisation claim."
+  },
+  "posterior_calibration": {
+    "param_names": [
+      "log_G",
+      "log_velocity",
+      "ei_global",
+      "ei_gradient",
+      "log_sigma",
+      "drive"
+    ],
+    "sbc_ranks": [
+      [
+        143,
+        125,
+        155,
+        6,
+        174,
+        44
+      ],
+      [
+        223,
+        120,
+        85,
+        228,
+        20,
+        191
+      ],
+      [
+        44,
+        110,
+        140,
+        234,
+        209,
+        165
+      ],
+      [
+        244,
+        121,
+        27,
+        49,
+        23,
+        48
+      ],
+      [
+        1,
+        140,
+        84,
+        198,
+        93,
+        124
+      ],
+      [
+        105,
+        109,
+        101,
+        148,
+        100,
+        238
+      ],
+      [
+        16,
+        120,
+        191,
+        65,
+        195,
+        120
+      ],
+      [
+        137,
+        123,
+        45,
+        206,
+        57,
+        149
+      ],
+      [
+        50,
+        11,
+        96,
+        40,
+        221,
+        194
+      ],
+      [
+        113,
+        7,
+        70,
+        210,
+        191,
+        166
+      ],
+      [
+        211,
+        6,
+        112,
+        181,
+        118,
+        118
+      ],
+      [
+        133,
+        144,
+        208,
+        67,
+        54,
+        69
+      ],
+      [
+        251,
+        140,
+        138,
+        204,
+        96,
+        115
+      ],
+      [
+        51,
+        150,
+        44,
+        46,
+        28,
+        236
+      ],
+      [
+        118,
+        154,
+        115,
+        163,
+        43,
+        106
+      ],
+      [
+        76,
+        142,
+        58,
+        199,
+        249,
+        50
+      ],
+      [
+        153,
+        147,
+        27,
+        86,
+        197,
+        19
+      ],
+      [
+        118,
+        111,
+        142,
+        72,
+        208,
+        160
+      ],
+      [
+        244,
+        104,
+        250,
+        98,
+        202,
+        176
+      ],
+      [
+        0,
+        98,
+        28,
+        124,
+        186,
+        187
+      ],
+      [
+        175,
+        95,
+        153,
+        98,
+        98,
+        222
+      ],
+      [
+        252,
+        125,
+        156,
+        67,
+        193,
+        180
+      ],
+      [
+        18,
+        118,
+        130,
+        123,
+        115,
+        137
+      ],
+      [
+        0,
+        123,
+        177,
+        197,
+        96,
+        122
+      ],
+      [
+        49,
+        131,
+        218,
+        43,
+        15,
+        57
+      ],
+      [
+        111,
+        127,
+        83,
+        170,
+        114,
+        80
+      ],
+      [
+        171,
+        32,
+        250,
+        48,
+        214,
+        145
+      ],
+      [
+        141,
+        32,
+        100,
+        207,
+        53,
+        162
+      ],
+      [
+        9,
+        212,
+        37,
+        123,
+        52,
+        230
+      ],
+      [
+        214,
+        225,
+        20,
+        236,
+        119,
+        154
+      ],
+      [
+        137,
+        210,
+        131,
+        209,
+        139,
+        180
+      ],
+      [
+        196,
+        212,
+        205,
+        144,
+        179,
+        33
+      ],
+      [
+        216,
+        82,
+        89,
+        80,
+        234,
+        161
+      ],
+      [
+        9,
+        86,
+        62,
+        43,
+        247,
+        109
+      ],
+      [
+        214,
+        82,
+        93,
+        247,
+        131,
+        176
+      ],
+      [
+        135,
+        209,
+        33,
+        208,
+        109,
+        106
+      ],
+      [
+        244,
+        207,
+        133,
+        182,
+        224,
+        133
+      ],
+      [
+        44,
+        215,
+        90,
+        132,
+        37,
+        216
+      ],
+      [
+        96,
+        215,
+        113,
+        124,
+        113,
+        181
+      ],
+      [
+        213,
+        219,
+        180,
+        128,
+        29,
+        161
+      ],
+      [
+        71,
+        133,
+        141,
+        57,
+        120,
+        210
+      ],
+      [
+        22,
+        115,
+        36,
+        111,
+        146,
+        94
+      ],
+      [
+        90,
+        119,
+        88,
+        195,
+        81,
+        74
+      ],
+      [
+        6,
+        113,
+        59,
+        132,
+        2,
+        184
+      ],
+      [
+        73,
+        40,
+        96,
+        159,
+        20,
+        80
+      ],
+      [
+        6,
+        38,
+        41,
+        53,
+        253,
+        70
+      ],
+      [
+        121,
+        33,
+        211,
+        98,
+        220,
+        30
+      ],
+      [
+        224,
+        148,
+        86,
+        12,
+        194,
+        194
+      ],
+      [
+        92,
+        153,
+        80,
+        32,
+        61,
+        184
+      ],
+      [
+        211,
+        128,
+        247,
+        129,
+        0,
+        143
+      ],
+      [
+        9,
+        131,
+        216,
+        255,
+        246,
+        142
+      ],
+      [
+        10,
+        142,
+        87,
+        180,
+        239,
+        32
+      ],
+      [
+        219,
+        143,
+        98,
+        189,
+        223,
+        23
+      ],
+      [
+        70,
+        138,
+        197,
+        256,
+        74,
+        20
+      ],
+      [
+        111,
+        171,
+        159,
+        20,
+        2,
+        83
+      ],
+      [
+        4,
+        190,
+        136,
+        31,
+        85,
+        6
+      ],
+      [
+        10,
+        189,
+        234,
+        23,
+        27,
+        193
+      ],
+      [
+        134,
+        194,
+        38,
+        196,
+        64,
+        51
+      ],
+      [
+        6,
+        195,
+        187,
+        62,
+        65,
+        66
+      ],
+      [
+        22,
+        142,
+        176,
+        45,
+        64,
+        126
+      ],
+      [
+        246,
+        129,
+        77,
+        147,
+        231,
+        67
+      ],
+      [
+        206,
+        123,
+        237,
+        79,
+        67,
+        28
+      ],
+      [
+        116,
+        97,
+        123,
+        24,
+        156,
+        82
+      ],
+      [
+        85,
+        91,
+        128,
+        153,
+        121,
+        135
+      ],
+      [
+        78,
+        92,
+        89,
+        121,
+        246,
+        220
+      ],
+      [
+        80,
+        97,
+        195,
+        182,
+        131,
+        192
+      ],
+      [
+        80,
+        88,
+        182,
+        131,
+        59,
+        57
+      ],
+      [
+        26,
+        186,
+        85,
+        94,
+        256,
+        90
+      ],
+      [
+        10,
+        192,
+        136,
+        237,
+        124,
+        128
+      ],
+      [
+        252,
+        190,
+        250,
+        178,
+        142,
+        221
+      ],
+      [
+        254,
+        230,
+        38,
+        242,
+        19,
+        85
+      ],
+      [
+        138,
+        236,
+        102,
+        117,
+        62,
+        146
+      ],
+      [
+        212,
+        98,
+        131,
+        11,
+        198,
+        109
+      ],
+      [
+        48,
+        96,
+        123,
+        237,
+        197,
+        55
+      ],
+      [
+        140,
+        84,
+        29,
+        115,
+        189,
+        94
+      ],
+      [
+        134,
+        87,
+        44,
+        201,
+        166,
+        44
+      ],
+      [
+        75,
+        241,
+        240,
+        27,
+        125,
+        82
+      ],
+      [
+        233,
+        237,
+        154,
+        34,
+        131,
+        29
+      ],
+      [
+        60,
+        243,
+        222,
+        31,
+        147,
+        67
+      ],
+      [
+        244,
+        235,
+        170,
+        255,
+        105,
+        195
+      ],
+      [
+        8,
+        218,
+        126,
+        204,
+        116,
+        169
+      ],
+      [
+        100,
+        206,
+        151,
+        100,
+        196,
+        23
+      ],
+      [
+        226,
+        211,
+        180,
+        135,
+        119,
+        186
+      ],
+      [
+        136,
+        217,
+        229,
+        128,
+        152,
+        104
+      ],
+      [
+        153,
+        68,
+        247,
+        120,
+        11,
+        108
+      ],
+      [
+        69,
+        77,
+        130,
+        35,
+        172,
+        244
+      ],
+      [
+        141,
+        226,
+        62,
+        244,
+        67,
+        134
+      ],
+      [
+        86,
+        219,
+        117,
+        18,
+        215,
+        250
+      ],
+      [
+        26,
+        231,
+        246,
+        135,
+        88,
+        70
+      ],
+      [
+        196,
+        18,
+        135,
+        138,
+        64,
+        254
+      ],
+      [
+        16,
+        27,
+        82,
+        127,
+        52,
+        179
+      ],
+      [
+        151,
+        25,
+        133,
+        141,
+        25,
+        99
+      ],
+      [
+        210,
+        135,
+        190,
+        178,
+        46,
+        0
+      ],
+      [
+        216,
+        127,
+        143,
+        73,
+        213,
+        192
+      ],
+      [
+        71,
+        125,
+        224,
+        11,
+        82,
+        111
+      ],
+      [
+        166,
+        109,
+        15,
+        117,
+        108,
+        34
+      ],
+      [
+        216,
+        124,
+        119,
+        127,
+        76,
+        234
+      ],
+      [
+        27,
+        58,
+        56,
+        168,
+        58,
+        33
+      ],
+      [
+        5,
+        56,
+        233,
+        73,
+        242,
+        40
+      ],
+      [
+        199,
+        50,
+        17,
+        205,
+        164,
+        101
+      ],
+      [
+        79,
+        63,
+        181,
+        211,
+        238,
+        203
+      ],
+      [
+        238,
+        56,
+        115,
+        240,
+        10,
+        149
+      ],
+      [
+        76,
+        51,
+        173,
+        161,
+        29,
+        151
+      ],
+      [
+        142,
+        73,
+        194,
+        126,
+        152,
+        25
+      ],
+      [
+        251,
+        65,
+        6,
+        221,
+        79,
+        253
+      ],
+      [
+        94,
+        80,
+        11,
+        46,
+        18,
+        188
+      ],
+      [
+        151,
+        100,
+        184,
+        192,
+        196,
+        53
+      ],
+      [
+        36,
+        69,
+        63,
+        165,
+        84,
+        30
+      ],
+      [
+        29,
+        69,
+        139,
+        127,
+        146,
+        55
+      ],
+      [
+        29,
+        67,
+        122,
+        173,
+        170,
+        75
+      ],
+      [
+        140,
+        57,
+        187,
+        29,
+        174,
+        100
+      ],
+      [
+        82,
+        153,
+        133,
+        218,
+        203,
+        100
+      ],
+      [
+        194,
+        155,
+        56,
+        80,
+        204,
+        18
+      ],
+      [
+        60,
+        153,
+        145,
+        222,
+        241,
+        38
+      ],
+      [
+        95,
+        46,
+        14,
+        134,
+        17,
+        73
+      ],
+      [
+        90,
+        35,
+        160,
+        240,
+        251,
+        235
+      ],
+      [
+        181,
+        56,
+        111,
+        206,
+        196,
+        2
+      ],
+      [
+        0,
+        44,
+        199,
+        219,
+        4,
+        103
+      ],
+      [
+        240,
+        54,
+        16,
+        149,
+        186,
+        37
+      ],
+      [
+        84,
+        103,
+        52,
+        108,
+        250,
+        215
+      ],
+      [
+        48,
+        63,
+        214,
+        182,
+        197,
+        53
+      ],
+      [
+        121,
+        75,
+        216,
+        139,
+        229,
+        50
+      ],
+      [
+        172,
+        215,
+        220,
+        88,
+        61,
+        114
+      ],
+      [
+        130,
+        207,
+        67,
+        106,
+        196,
+        115
+      ],
+      [
+        202,
+        207,
+        102,
+        245,
+        101,
+        31
+      ],
+      [
+        155,
+        163,
+        25,
+        170,
+        36,
+        126
+      ],
+      [
+        161,
+        181,
+        145,
+        223,
+        166,
+        137
+      ],
+      [
+        234,
+        184,
+        75,
+        229,
+        211,
+        174
+      ],
+      [
+        25,
+        251,
+        53,
+        179,
+        23,
+        174
+      ],
+      [
+        50,
+        244,
+        111,
+        148,
+        29,
+        208
+      ],
+      [
+        17,
+        217,
+        217,
+        71,
+        113,
+        213
+      ],
+      [
+        131,
+        218,
+        187,
+        201,
+        234,
+        178
+      ],
+      [
+        115,
+        207,
+        98,
+        151,
+        206,
+        45
+      ],
+      [
+        146,
+        99,
+        192,
+        162,
+        107,
+        168
+      ],
+      [
+        151,
+        94,
+        184,
+        48,
+        221,
+        179
+      ],
+      [
+        116,
+        25,
+        170,
+        0,
+        80,
+        176
+      ],
+      [
+        142,
+        27,
+        45,
+        182,
+        172,
+        130
+      ],
+      [
+        109,
+        105,
+        103,
+        69,
+        109,
+        180
+      ],
+      [
+        151,
+        108,
+        194,
+        192,
+        28,
+        117
+      ],
+      [
+        123,
+        57,
+        110,
+        68,
+        250,
+        127
+      ],
+      [
+        245,
+        71,
+        246,
+        203,
+        186,
+        40
+      ],
+      [
+        166,
+        61,
+        144,
+        72,
+        200,
+        197
+      ],
+      [
+        132,
+        69,
+        80,
+        3,
+        118,
+        169
+      ],
+      [
+        172,
+        78,
+        150,
+        211,
+        161,
+        226
+      ],
+      [
+        242,
+        91,
+        231,
+        120,
+        200,
+        70
+      ],
+      [
+        244,
+        0,
+        181,
+        128,
+        147,
+        52
+      ],
+      [
+        155,
+        1,
+        255,
+        154,
+        198,
+        165
+      ],
+      [
+        203,
+        0,
+        122,
+        148,
+        193,
+        80
+      ],
+      [
+        94,
+        210,
+        131,
+        149,
+        19,
+        144
+      ],
+      [
+        83,
+        215,
+        26,
+        196,
+        14,
+        110
+      ],
+      [
+        40,
+        204,
+        67,
+        87,
+        253,
+        129
+      ],
+      [
+        29,
+        215,
+        226,
+        112,
+        155,
+        152
+      ],
+      [
+        172,
+        194,
+        83,
+        176,
+        164,
+        95
+      ],
+      [
+        126,
+        215,
+        219,
+        178,
+        88,
+        151
+      ],
+      [
+        170,
+        49,
+        226,
+        167,
+        163,
+        24
+      ],
+      [
+        236,
+        39,
+        83,
+        5,
+        45,
+        173
+      ],
+      [
+        211,
+        43,
+        207,
+        68,
+        145,
+        194
+      ],
+      [
+        222,
+        49,
+        141,
+        139,
+        154,
+        256
+      ],
+      [
+        196,
+        1,
+        140,
+        48,
+        219,
+        42
+      ],
+      [
+        67,
+        2,
+        213,
+        140,
+        56,
+        10
+      ],
+      [
+        87,
+        1,
+        157,
+        10,
+        97,
+        89
+      ],
+      [
+        6,
+        4,
+        252,
+        200,
+        38,
+        28
+      ],
+      [
+        130,
+        15,
+        59,
+        142,
+        147,
+        114
+      ],
+      [
+        243,
+        19,
+        182,
+        242,
+        30,
+        24
+      ],
+      [
+        67,
+        19,
+        136,
+        41,
+        256,
+        62
+      ],
+      [
+        206,
+        238,
+        154,
+        179,
+        79,
+        173
+      ],
+      [
+        59,
+        245,
+        175,
+        29,
+        146,
+        5
+      ],
+      [
+        74,
+        242,
+        143,
+        186,
+        34,
+        219
+      ],
+      [
+        95,
+        252,
+        53,
+        125,
+        186,
+        137
+      ],
+      [
+        6,
+        251,
+        80,
+        222,
+        247,
+        46
+      ],
+      [
+        97,
+        251,
+        86,
+        33,
+        215,
+        57
+      ],
+      [
+        21,
+        251,
+        194,
+        187,
+        81,
+        227
+      ],
+      [
+        256,
+        123,
+        208,
+        29,
+        129,
+        236
+      ],
+      [
+        239,
+        131,
+        160,
+        222,
+        73,
+        252
+      ],
+      [
+        139,
+        136,
+        39,
+        133,
+        129,
+        162
+      ],
+      [
+        151,
+        69,
+        246,
+        184,
+        189,
+        152
+      ],
+      [
+        172,
+        72,
+        71,
+        232,
+        79,
+        248
+      ],
+      [
+        215,
+        55,
+        0,
+        16,
+        246,
+        82
+      ],
+      [
+        28,
+        161,
+        229,
+        96,
+        67,
+        184
+      ],
+      [
+        162,
+        184,
+        145,
+        172,
+        31,
+        170
+      ],
+      [
+        155,
+        181,
+        227,
+        151,
+        218,
+        249
+      ],
+      [
+        150,
+        129,
+        99,
+        139,
+        245,
+        30
+      ],
+      [
+        95,
+        119,
+        196,
+        66,
+        32,
+        238
+      ],
+      [
+        12,
+        136,
+        175,
+        147,
+        71,
+        54
+      ],
+      [
+        121,
+        140,
+        173,
+        5,
+        131,
+        110
+      ],
+      [
+        152,
+        29,
+        256,
+        4,
+        167,
+        81
+      ],
+      [
+        35,
+        46,
+        116,
+        210,
+        89,
+        243
+      ],
+      [
+        161,
+        32,
+        0,
+        10,
+        149,
+        138
+      ],
+      [
+        149,
+        28,
+        69,
+        51,
+        124,
+        233
+      ],
+      [
+        19,
+        203,
+        3,
+        146,
+        211,
+        207
+      ],
+      [
+        76,
+        177,
+        145,
+        45,
+        26,
+        222
+      ],
+      [
+        88,
+        186,
+        162,
+        199,
+        4,
+        183
+      ],
+      [
+        4,
+        144,
+        159,
+        182,
+        111,
+        25
+      ],
+      [
+        160,
+        158,
+        58,
+        91,
+        74,
+        40
+      ],
+      [
+        176,
+        107,
+        218,
+        161,
+        243,
+        96
+      ],
+      [
+        167,
+        114,
+        94,
+        245,
+        152,
+        214
+      ],
+      [
+        111,
+        116,
+        97,
+        203,
+        75,
+        129
+      ],
+      [
+        130,
+        184,
+        133,
+        197,
+        239,
+        109
+      ],
+      [
+        98,
+        181,
+        241,
+        253,
+        20,
+        119
+      ],
+      [
+        117,
+        164,
+        2,
+        250,
+        145,
+        71
+      ],
+      [
+        106,
+        159,
+        138,
+        248,
+        13,
+        256
+      ],
+      [
+        108,
+        151,
+        170,
+        173,
+        132,
+        156
+      ],
+      [
+        226,
+        151,
+        126,
+        205,
+        242,
+        198
+      ],
+      [
+        194,
+        149,
+        217,
+        44,
+        182,
+        180
+      ],
+      [
+        74,
+        158,
+        183,
+        37,
+        162,
+        200
+      ],
+      [
+        142,
+        189,
+        256,
+        152,
+        249,
+        108
+      ],
+      [
+        146,
+        177,
+        162,
+        194,
+        39,
+        96
+      ],
+      [
+        27,
+        2,
+        167,
+        79,
+        49,
+        141
+      ],
+      [
+        150,
+        3,
+        227,
+        138,
+        164,
+        251
+      ],
+      [
+        252,
+        128,
+        7,
+        1,
+        126,
+        256
+      ],
+      [
+        244,
+        126,
+        134,
+        76,
+        224,
+        211
+      ],
+      [
+        76,
+        134,
+        1,
+        187,
+        48,
+        191
+      ],
+      [
+        227,
+        135,
+        253,
+        6,
+        119,
+        18
+      ],
+      [
+        137,
+        139,
+        32,
+        79,
+        72,
+        77
+      ],
+      [
+        88,
+        145,
+        115,
+        33,
+        212,
+        41
+      ],
+      [
+        131,
+        136,
+        214,
+        112,
+        114,
+        36
+      ],
+      [
+        229,
+        123,
+        174,
+        240,
+        46,
+        250
+      ],
+      [
+        65,
+        235,
+        144,
+        1,
+        161,
+        69
+      ],
+      [
+        59,
+        238,
+        156,
+        27,
+        143,
+        81
+      ],
+      [
+        156,
+        237,
+        64,
+        21,
+        85,
+        231
+      ],
+      [
+        211,
+        230,
+        256,
+        101,
+        254,
+        205
+      ],
+      [
+        105,
+        235,
+        190,
+        109,
+        199,
+        153
+      ],
+      [
+        205,
+        118,
+        213,
+        205,
+        57,
+        112
+      ],
+      [
+        177,
+        131,
+        149,
+        92,
+        208,
+        228
+      ],
+      [
+        139,
+        110,
+        30,
+        2,
+        9,
+        179
+      ],
+      [
+        60,
+        208,
+        119,
+        190,
+        62,
+        113
+      ],
+      [
+        165,
+        204,
+        234,
+        74,
+        225,
+        168
+      ],
+      [
+        78,
+        205,
+        126,
+        236,
+        136,
+        62
+      ],
+      [
+        7,
+        206,
+        155,
+        177,
+        194,
+        131
+      ],
+      [
+        47,
+        8,
+        184,
+        39,
+        41,
+        60
+      ],
+      [
+        95,
+        5,
+        88,
+        213,
+        73,
+        126
+      ],
+      [
+        246,
+        83,
+        129,
+        146,
+        234,
+        55
+      ],
+      [
+        162,
+        111,
+        24,
+        144,
+        138,
+        142
+      ],
+      [
+        221,
+        110,
+        116,
+        201,
+        131,
+        212
+      ],
+      [
+        223,
+        92,
+        245,
+        223,
+        48,
+        249
+      ],
+      [
+        192,
+        173,
+        255,
+        2,
+        239,
+        29
+      ],
+      [
+        184,
+        173,
+        64,
+        45,
+        93,
+        150
+      ],
+      [
+        144,
+        152,
+        237,
+        149,
+        169,
+        154
+      ],
+      [
+        118,
+        166,
+        117,
+        15,
+        207,
+        160
+      ],
+      [
+        59,
+        159,
+        166,
+        112,
+        141,
+        25
+      ],
+      [
+        241,
+        214,
+        201,
+        226,
+        33,
+        256
+      ],
+      [
+        175,
+        213,
+        149,
+        256,
+        104,
+        115
+      ],
+      [
+        164,
+        203,
+        20,
+        31,
+        236,
+        12
+      ],
+      [
+        16,
+        205,
+        116,
+        16,
+        130,
+        206
+      ],
+      [
+        199,
+        188,
+        52,
+        137,
+        118,
+        109
+      ],
+      [
+        82,
+        175,
+        199,
+        137,
+        31,
+        223
+      ],
+      [
+        118,
+        170,
+        68,
+        57,
+        190,
+        32
+      ],
+      [
+        110,
+        191,
+        1,
+        104,
+        238,
+        167
+      ],
+      [
+        106,
+        96,
+        227,
+        19,
+        11,
+        224
+      ],
+      [
+        169,
+        94,
+        75,
+        162,
+        96,
+        133
+      ],
+      [
+        240,
+        91,
+        15,
+        210,
+        118,
+        221
+      ],
+      [
+        86,
+        86,
+        66,
+        160,
+        108,
+        70
+      ],
+      [
+        215,
+        92,
+        179,
+        73,
+        153,
+        18
+      ],
+      [
+        7,
+        237,
+        71,
+        236,
+        138,
+        66
+      ],
+      [
+        1,
+        236,
+        229,
+        60,
+        235,
+        39
+      ],
+      [
+        180,
+        70,
+        122,
+        100,
+        155,
+        85
+      ],
+      [
+        115,
+        65,
+        125,
+        84,
+        95,
+        87
+      ],
+      [
+        193,
+        162,
+        0,
+        203,
+        155,
+        171
+      ],
+      [
+        148,
+        159,
+        167,
+        240,
+        256,
+        8
+      ],
+      [
+        57,
+        143,
+        176,
+        173,
+        195,
+        89
+      ],
+      [
+        17,
+        149,
+        172,
+        92,
+        135,
+        129
+      ],
+      [
+        58,
+        149,
+        150,
+        220,
+        256,
+        120
+      ],
+      [
+        73,
+        157,
+        60,
+        158,
+        222,
+        71
+      ],
+      [
+        227,
+        174,
+        113,
+        214,
+        124,
+        237
+      ],
+      [
+        79,
+        168,
+        215,
+        222,
+        191,
+        90
+      ],
+      [
+        35,
+        175,
+        53,
+        119,
+        226,
+        81
+      ],
+      [
+        205,
+        175,
+        166,
+        185,
+        95,
+        15
+      ],
+      [
+        206,
+        180,
+        132,
+        149,
+        231,
+        54
+      ],
+      [
+        24,
+        175,
+        246,
+        217,
+        13,
+        14
+      ],
+      [
+        50,
+        184,
+        113,
+        15,
+        120,
+        54
+      ],
+      [
+        41,
+        178,
+        123,
+        79,
+        75,
+        6
+      ],
+      [
+        175,
+        141,
+        9,
+        197,
+        118,
+        62
+      ],
+      [
+        37,
+        143,
+        212,
+        127,
+        48,
+        18
+      ],
+      [
+        200,
+        151,
+        199,
+        140,
+        194,
+        33
+      ],
+      [
+        39,
+        155,
+        7,
+        179,
+        72,
+        150
+      ],
+      [
+        3,
+        66,
+        193,
+        40,
+        247,
+        150
+      ],
+      [
+        25,
+        69,
+        117,
+        111,
+        86,
+        86
+      ],
+      [
+        201,
+        57,
+        228,
+        86,
+        55,
+        13
+      ],
+      [
+        144,
+        234,
+        59,
+        0,
+        25,
+        154
+      ],
+      [
+        113,
+        224,
+        163,
+        77,
+        191,
+        209
+      ],
+      [
+        120,
+        235,
+        159,
+        76,
+        125,
+        158
+      ],
+      [
+        202,
+        12,
+        182,
+        37,
+        197,
+        99
+      ],
+      [
+        252,
+        23,
+        29,
+        13,
+        171,
+        116
+      ],
+      [
+        175,
+        53,
+        250,
+        164,
+        118,
+        232
+      ],
+      [
+        147,
+        63,
+        145,
+        3,
+        47,
+        35
+      ],
+      [
+        248,
+        55,
+        207,
+        244,
+        197,
+        56
+      ],
+      [
+        138,
+        248,
+        174,
+        139,
+        57,
+        251
+      ],
+      [
+        184,
+        246,
+        129,
+        21,
+        244,
+        14
+      ],
+      [
+        181,
+        249,
+        97,
+        194,
+        207,
+        136
+      ],
+      [
+        213,
+        78,
+        45,
+        85,
+        134,
+        162
+      ],
+      [
+        47,
+        65,
+        184,
+        231,
+        18,
+        239
+      ],
+      [
+        22,
+        49,
+        220,
+        26,
+        234,
+        19
+      ],
+      [
+        189,
+        42,
+        247,
+        109,
+        202,
+        79
+      ],
+      [
+        141,
+        51,
+        101,
+        215,
+        164,
+        193
+      ],
+      [
+        192,
+        52,
+        247,
+        95,
+        166,
+        122
+      ],
+      [
+        30,
+        152,
+        47,
+        124,
+        68,
+        187
+      ],
+      [
+        58,
+        48,
+        220,
+        9,
+        104,
+        223
+      ],
+      [
+        238,
+        56,
+        183,
+        17,
+        154,
+        17
+      ],
+      [
+        246,
+        242,
+        148,
+        121,
+        172,
+        142
+      ],
+      [
+        23,
+        245,
+        254,
+        7,
+        31,
+        221
+      ],
+      [
+        108,
+        247,
+        139,
+        117,
+        237,
+        154
+      ],
+      [
+        178,
+        248,
+        53,
+        70,
+        242,
+        23
+      ],
+      [
+        32,
+        44,
+        30,
+        219,
+        66,
+        215
+      ],
+      [
+        171,
+        256,
+        240,
+        101,
+        147,
+        152
+      ],
+      [
+        104,
+        255,
+        183,
+        216,
+        157,
+        192
+      ],
+      [
+        76,
+        256,
+        147,
+        108,
+        48,
+        175
+      ],
+      [
+        209,
+        255,
+        224,
+        214,
+        179,
+        253
+      ],
+      [
+        5,
+        255,
+        58,
+        256,
+        66,
+        106
+      ],
+      [
+        90,
+        88,
+        11,
+        196,
+        174,
+        186
+      ],
+      [
+        56,
+        89,
+        117,
+        68,
+        5,
+        33
+      ],
+      [
+        130,
+        94,
+        124,
+        56,
+        187,
+        81
+      ],
+      [
+        85,
+        41,
+        92,
+        101,
+        253,
+        139
+      ],
+      [
+        14,
+        47,
+        183,
+        86,
+        237,
+        96
+      ],
+      [
+        100,
+        52,
+        160,
+        0,
+        31,
+        40
+      ],
+      [
+        126,
+        45,
+        15,
+        241,
+        232,
+        81
+      ],
+      [
+        116,
+        34,
+        246,
+        120,
+        171,
+        140
+      ],
+      [
+        42,
+        142,
+        173,
+        16,
+        101,
+        187
+      ],
+      [
+        5,
+        151,
+        101,
+        16,
+        152,
+        40
+      ],
+      [
+        32,
+        59,
+        253,
+        74,
+        169,
+        36
+      ],
+      [
+        210,
+        59,
+        163,
+        142,
+        95,
+        63
+      ],
+      [
+        98,
+        65,
+        0,
+        1,
+        48,
+        61
+      ],
+      [
+        5,
+        69,
+        231,
+        148,
+        41,
+        159
+      ],
+      [
+        249,
+        58,
+        222,
+        215,
+        153,
+        42
+      ],
+      [
+        205,
+        56,
+        0,
+        181,
+        33,
+        126
+      ],
+      [
+        108,
+        247,
+        144,
+        248,
+        119,
+        234
+      ],
+      [
+        107,
+        246,
+        35,
+        73,
+        26,
+        190
+      ],
+      [
+        125,
+        243,
+        53,
+        240,
+        229,
+        92
+      ],
+      [
+        11,
+        250,
+        71,
+        150,
+        223,
+        226
+      ],
+      [
+        128,
+        245,
+        194,
+        189,
+        225,
+        43
+      ],
+      [
+        21,
+        8,
+        143,
+        84,
+        114,
+        51
+      ],
+      [
+        203,
+        4,
+        76,
+        50,
+        219,
+        152
+      ],
+      [
+        64,
+        6,
+        186,
+        39,
+        141,
+        255
+      ],
+      [
+        252,
+        5,
+        196,
+        40,
+        186,
+        147
+      ],
+      [
+        219,
+        99,
+        219,
+        151,
+        107,
+        206
+      ],
+      [
+        251,
+        110,
+        205,
+        145,
+        132,
+        168
+      ],
+      [
+        88,
+        114,
+        55,
+        143,
+        31,
+        232
+      ],
+      [
+        67,
+        117,
+        210,
+        67,
+        125,
+        16
+      ],
+      [
+        184,
+        209,
+        227,
+        139,
+        20,
+        162
+      ],
+      [
+        155,
+        205,
+        71,
+        73,
+        102,
+        128
+      ],
+      [
+        167,
+        206,
+        130,
+        23,
+        191,
+        13
+      ],
+      [
+        123,
+        135,
+        64,
+        191,
+        100,
+        161
+      ],
+      [
+        165,
+        130,
+        199,
+        38,
+        105,
+        219
+      ],
+      [
+        81,
+        102,
+        43,
+        228,
+        102,
+        72
+      ],
+      [
+        27,
+        101,
+        212,
+        16,
+        224,
+        256
+      ],
+      [
+        78,
+        100,
+        255,
+        202,
+        162,
+        42
+      ],
+      [
+        112,
+        88,
+        88,
+        29,
+        139,
+        185
+      ],
+      [
+        143,
+        44,
+        87,
+        107,
+        36,
+        147
+      ],
+      [
+        209,
+        47,
+        43,
+        174,
+        128,
+        222
+      ],
+      [
+        58,
+        35,
+        98,
+        125,
+        78,
+        150
+      ],
+      [
+        135,
+        92,
+        3,
+        176,
+        60,
+        109
+      ],
+      [
+        158,
+        101,
+        93,
+        139,
+        100,
+        40
+      ],
+      [
+        123,
+        105,
+        105,
+        46,
+        70,
+        247
+      ],
+      [
+        253,
+        81,
+        92,
+        59,
+        123,
+        100
+      ],
+      [
+        174,
+        73,
+        39,
+        221,
+        53,
+        85
+      ],
+      [
+        49,
+        84,
+        33,
+        174,
+        83,
+        23
+      ],
+      [
+        0,
+        99,
+        117,
+        153,
+        137,
+        124
+      ],
+      [
+        201,
+        91,
+        249,
+        110,
+        206,
+        222
+      ],
+      [
+        234,
+        76,
+        170,
+        202,
+        88,
+        192
+      ],
+      [
+        193,
+        210,
+        174,
+        57,
+        127,
+        28
+      ],
+      [
+        169,
+        214,
+        53,
+        88,
+        99,
+        252
+      ],
+      [
+        168,
+        220,
+        107,
+        105,
+        151,
+        106
+      ],
+      [
+        64,
+        190,
+        255,
+        56,
+        175,
+        70
+      ],
+      [
+        157,
+        173,
+        150,
+        50,
+        119,
+        149
+      ],
+      [
+        162,
+        177,
+        114,
+        240,
+        99,
+        201
+      ],
+      [
+        162,
+        91,
+        110,
+        154,
+        45,
+        74
+      ],
+      [
+        79,
+        100,
+        247,
+        112,
+        157,
+        162
+      ],
+      [
+        220,
+        111,
+        57,
+        79,
+        180,
+        104
+      ],
+      [
+        50,
+        134,
+        123,
+        192,
+        41,
+        58
+      ],
+      [
+        224,
+        109,
+        120,
+        242,
+        135,
+        42
+      ],
+      [
+        256,
+        254,
+        186,
+        92,
+        192,
+        236
+      ],
+      [
+        91,
+        253,
+        102,
+        87,
+        5,
+        87
+      ],
+      [
+        9,
+        251,
+        11,
+        194,
+        109,
+        192
+      ],
+      [
+        205,
+        203,
+        41,
+        77,
+        0,
+        71
+      ],
+      [
+        186,
+        179,
+        144,
+        132,
+        134,
+        114
+      ],
+      [
+        156,
+        89,
+        12,
+        104,
+        45,
+        28
+      ],
+      [
+        218,
+        81,
+        207,
+        169,
+        2,
+        45
+      ],
+      [
+        209,
+        93,
+        215,
+        121,
+        15,
+        17
+      ],
+      [
+        134,
+        85,
+        166,
+        183,
+        80,
+        186
+      ],
+      [
+        155,
+        187,
+        209,
+        127,
+        54,
+        80
+      ],
+      [
+        117,
+        200,
+        78,
+        212,
+        107,
+        81
+      ],
+      [
+        18,
+        70,
+        253,
+        70,
+        9,
+        135
+      ],
+      [
+        25,
+        71,
+        97,
+        105,
+        142,
+        45
+      ],
+      [
+        188,
+        59,
+        28,
+        196,
+        22,
+        138
+      ],
+      [
+        97,
+        199,
+        164,
+        96,
+        26,
+        171
+      ],
+      [
+        84,
+        191,
+        176,
+        131,
+        197,
+        113
+      ],
+      [
+        43,
+        195,
+        61,
+        221,
+        158,
+        226
+      ],
+      [
+        237,
+        198,
+        75,
+        183,
+        245,
+        211
+      ],
+      [
+        212,
+        253,
+        81,
+        121,
+        60,
+        89
+      ],
+      [
+        186,
+        256,
+        61,
+        110,
+        127,
+        182
+      ],
+      [
+        216,
+        255,
+        70,
+        165,
+        123,
+        77
+      ],
+      [
+        163,
+        255,
+        256,
+        174,
+        173,
+        201
+      ],
+      [
+        88,
+        256,
+        75,
+        180,
+        245,
+        164
+      ],
+      [
+        221,
+        256,
+        5,
+        90,
+        253,
+        133
+      ],
+      [
+        38,
+        253,
+        98,
+        84,
+        213,
+        107
+      ],
+      [
+        219,
+        26,
+        74,
+        164,
+        28,
+        148
+      ],
+      [
+        147,
+        38,
+        22,
+        207,
+        125,
+        43
+      ],
+      [
+        95,
+        30,
+        232,
+        154,
+        105,
+        30
+      ],
+      [
+        82,
+        38,
+        38,
+        203,
+        67,
+        81
+      ],
+      [
+        33,
+        38,
+        81,
+        138,
+        18,
+        14
+      ],
+      [
+        26,
+        37,
+        121,
+        68,
+        102,
+        256
+      ],
+      [
+        186,
+        230,
+        40,
+        221,
+        68,
+        38
+      ],
+      [
+        175,
+        228,
+        127,
+        217,
+        113,
+        68
+      ],
+      [
+        115,
+        223,
+        18,
+        13,
+        201,
+        50
+      ],
+      [
+        4,
+        72,
+        65,
+        139,
+        85,
+        0
+      ],
+      [
+        117,
+        62,
+        241,
+        121,
+        46,
+        9
+      ],
+      [
+        108,
+        63,
+        165,
+        96,
+        14,
+        69
+      ],
+      [
+        214,
+        76,
+        41,
+        15,
+        70,
+        227
+      ],
+      [
+        123,
+        52,
+        215,
+        176,
+        85,
+        241
+      ],
+      [
+        171,
+        48,
+        186,
+        210,
+        120,
+        94
+      ],
+      [
+        101,
+        83,
+        161,
+        153,
+        174,
+        255
+      ],
+      [
+        136,
+        89,
+        52,
+        162,
+        78,
+        187
+      ],
+      [
+        81,
+        77,
+        251,
+        95,
+        218,
+        56
+      ],
+      [
+        64,
+        141,
+        143,
+        79,
+        65,
+        162
+      ],
+      [
+        144,
+        141,
+        153,
+        226,
+        124,
+        254
+      ],
+      [
+        172,
+        150,
+        142,
+        146,
+        217,
+        19
+      ],
+      [
+        176,
+        156,
+        19,
+        172,
+        87,
+        176
+      ],
+      [
+        177,
+        142,
+        209,
+        121,
+        138,
+        41
+      ],
+      [
+        234,
+        179,
+        179,
+        59,
+        2,
+        202
+      ],
+      [
+        158,
+        170,
+        70,
+        111,
+        200,
+        194
+      ],
+      [
+        112,
+        240,
+        140,
+        238,
+        243,
+        55
+      ],
+      [
+        93,
+        243,
+        66,
+        208,
+        44,
+        214
+      ],
+      [
+        18,
+        243,
+        33,
+        143,
+        81,
+        191
+      ],
+      [
+        247,
+        242,
+        201,
+        214,
+        114,
+        52
+      ],
+      [
+        47,
+        201,
+        193,
+        57,
+        175,
+        78
+      ],
+      [
+        46,
+        184,
+        94,
+        255,
+        116,
+        194
+      ],
+      [
+        87,
+        197,
+        172,
+        54,
+        38,
+        21
+      ],
+      [
+        162,
+        193,
+        35,
+        163,
+        129,
+        121
+      ],
+      [
+        106,
+        160,
+        105,
+        140,
+        109,
+        44
+      ],
+      [
+        11,
+        144,
+        178,
+        107,
+        228,
+        229
+      ],
+      [
+        245,
+        161,
+        104,
+        107,
+        175,
+        69
+      ],
+      [
+        85,
+        180,
+        156,
+        198,
+        94,
+        8
+      ],
+      [
+        195,
+        182,
+        208,
+        59,
+        65,
+        216
+      ],
+      [
+        152,
+        171,
+        116,
+        163,
+        30,
+        160
+      ],
+      [
+        89,
+        154,
+        3,
+        109,
+        214,
+        99
+      ],
+      [
+        140,
+        145,
+        220,
+        155,
+        218,
+        133
+      ],
+      [
+        113,
+        149,
+        235,
+        133,
+        161,
+        154
+      ],
+      [
+        226,
+        137,
+        85,
+        168,
+        93,
+        104
+      ],
+      [
+        154,
+        147,
+        170,
+        182,
+        191,
+        14
+      ],
+      [
+        180,
+        134,
+        184,
+        195,
+        165,
+        196
+      ],
+      [
+        15,
+        133,
+        93,
+        232,
+        153,
+        130
+      ],
+      [
+        11,
+        208,
+        22,
+        112,
+        135,
+        232
+      ],
+      [
+        48,
+        200,
+        199,
+        239,
+        31,
+        93
+      ],
+      [
+        2,
+        190,
+        149,
+        254,
+        167,
+        26
+      ],
+      [
+        151,
+        208,
+        113,
+        183,
+        228,
+        142
+      ],
+      [
+        227,
+        73,
+        108,
+        161,
+        186,
+        71
+      ],
+      [
+        115,
+        81,
+        51,
+        148,
+        214,
+        182
+      ],
+      [
+        201,
+        88,
+        175,
+        170,
+        194,
+        119
+      ],
+      [
+        214,
+        79,
+        130,
+        139,
+        85,
+        165
+      ],
+      [
+        21,
+        116,
+        224,
+        7,
+        198,
+        104
+      ],
+      [
+        144,
+        105,
+        87,
+        89,
+        95,
+        138
+      ],
+      [
+        73,
+        106,
+        36,
+        110,
+        230,
+        237
+      ],
+      [
+        125,
+        109,
+        141,
+        27,
+        169,
+        239
+      ],
+      [
+        82,
+        65,
+        152,
+        165,
+        52,
+        182
+      ],
+      [
+        213,
+        61,
+        142,
+        152,
+        30,
+        79
+      ],
+      [
+        185,
+        61,
+        90,
+        14,
+        176,
+        121
+      ],
+      [
+        137,
+        67,
+        150,
+        253,
+        65,
+        248
+      ],
+      [
+        112,
+        85,
+        15,
+        32,
+        189,
+        134
+      ],
+      [
+        246,
+        88,
+        1,
+        135,
+        1,
+        22
+      ],
+      [
+        242,
+        83,
+        235,
+        166,
+        108,
+        201
+      ],
+      [
+        133,
+        174,
+        78,
+        241,
+        146,
+        120
+      ],
+      [
+        249,
+        174,
+        72,
+        68,
+        135,
+        39
+      ],
+      [
+        16,
+        152,
+        104,
+        236,
+        170,
+        30
+      ],
+      [
+        225,
+        149,
+        20,
+        109,
+        41,
+        152
+      ],
+      [
+        78,
+        40,
+        130,
+        122,
+        25,
+        56
+      ],
+      [
+        174,
+        36,
+        53,
+        4,
+        108,
+        68
+      ],
+      [
+        123,
+        32,
+        246,
+        77,
+        126,
+        236
+      ],
+      [
+        228,
+        42,
+        103,
+        244,
+        119,
+        116
+      ],
+      [
+        0,
+        188,
+        242,
+        186,
+        159,
+        2
+      ],
+      [
+        77,
+        186,
+        61,
+        43,
+        12,
+        74
+      ],
+      [
+        57,
+        176,
+        201,
+        222,
+        129,
+        64
+      ],
+      [
+        81,
+        107,
+        61,
+        140,
+        240,
+        193
+      ],
+      [
+        18,
+        113,
+        158,
+        101,
+        238,
+        159
+      ],
+      [
+        190,
+        244,
+        199,
+        3,
+        192,
+        58
+      ],
+      [
+        139,
+        240,
+        167,
+        144,
+        217,
+        109
+      ],
+      [
+        160,
+        243,
+        102,
+        155,
+        241,
+        39
+      ],
+      [
+        73,
+        216,
+        1,
+        243,
+        158,
+        214
+      ],
+      [
+        19,
+        211,
+        209,
+        229,
+        95,
+        184
+      ],
+      [
+        15,
+        216,
+        134,
+        81,
+        175,
+        214
+      ],
+      [
+        41,
+        211,
+        199,
+        19,
+        254,
+        26
+      ],
+      [
+        79,
+        0,
+        108,
+        133,
+        214,
+        108
+      ],
+      [
+        67,
+        0,
+        127,
+        159,
+        249,
+        212
+      ],
+      [
+        76,
+        0,
+        243,
+        76,
+        113,
+        104
+      ],
+      [
+        205,
+        0,
+        2,
+        198,
+        203,
+        145
+      ],
+      [
+        107,
+        58,
+        83,
+        106,
+        28,
+        163
+      ],
+      [
+        132,
+        70,
+        118,
+        186,
+        153,
+        85
+      ],
+      [
+        170,
+        79,
+        219,
+        145,
+        93,
+        185
+      ],
+      [
+        134,
+        95,
+        256,
+        139,
+        191,
+        96
+      ],
+      [
+        203,
+        89,
+        133,
+        187,
+        78,
+        164
+      ],
+      [
+        3,
+        131,
+        5,
+        104,
+        130,
+        114
+      ],
+      [
+        206,
+        126,
+        181,
+        164,
+        90,
+        45
+      ],
+      [
+        188,
+        142,
+        126,
+        152,
+        26,
+        143
+      ],
+      [
+        126,
+        151,
+        154,
+        143,
+        227,
+        215
+      ],
+      [
+        53,
+        128,
+        229,
+        29,
+        168,
+        35
+      ],
+      [
+        0,
+        142,
+        13,
+        6,
+        29,
+        212
+      ],
+      [
+        217,
+        98,
+        151,
+        171,
+        137,
+        238
+      ],
+      [
+        190,
+        109,
+        51,
+        231,
+        24,
+        167
+      ],
+      [
+        58,
+        107,
+        244,
+        74,
+        79,
+        226
+      ],
+      [
+        88,
+        101,
+        68,
+        199,
+        114,
+        158
+      ],
+      [
+        17,
+        62,
+        0,
+        121,
+        114,
+        112
+      ],
+      [
+        191,
+        66,
+        114,
+        167,
+        232,
+        49
+      ],
+      [
+        249,
+        53,
+        246,
+        3,
+        86,
+        127
+      ],
+      [
+        81,
+        61,
+        201,
+        58,
+        121,
+        73
+      ],
+      [
+        152,
+        93,
+        121,
+        85,
+        130,
+        120
+      ],
+      [
+        126,
+        106,
+        124,
+        215,
+        166,
+        221
+      ],
+      [
+        25,
+        227,
+        137,
+        33,
+        42,
+        86
+      ],
+      [
+        68,
+        228,
+        98,
+        5,
+        256,
+        61
+      ],
+      [
+        220,
+        217,
+        122,
+        63,
+        152,
+        6
+      ],
+      [
+        131,
+        223,
+        170,
+        206,
+        200,
+        97
+      ],
+      [
+        42,
+        0,
+        180,
+        2,
+        238,
+        83
+      ],
+      [
+        183,
+        3,
+        66,
+        68,
+        219,
+        67
+      ],
+      [
+        231,
+        3,
+        215,
+        83,
+        85,
+        93
+      ],
+      [
+        126,
+        4,
+        50,
+        219,
+        242,
+        81
+      ]
+    ],
+    "sbc_n_bins": 256,
+    "sbc_ks_pvalue": [
+      0.5896401001519039,
+      0.09756443488772733,
+      0.18313377236910958,
+      0.1982403841015137,
+      0.5247659970905914,
+      0.18619267003798634
+    ],
+    "sbc_ks_pvalue_min": 0.09756443488772733,
+    "posterior_r2": [
+      -0.009780645370483398,
+      0.0004144906997680664,
+      -0.005726456642150879,
+      -0.015488624572753906,
+      -0.0034265518188476562,
+      -0.0047119855880737305
+    ],
+    "posterior_rmse": [
+      1.481179118156433,
+      0.5531226992607117,
+      0.28575944900512695,
+      0.26035627722740173,
+      1.262370228767395,
+      0.462537556886673
+    ],
+    "posterior_z_sd": [
+      0.9980634450912476,
+      0.9790254235267639,
+      0.9645239114761353,
+      0.9738561511039734,
+      0.983526349067688,
+      0.9660274982452393
+    ],
+    "coverage_mae": 0.020540371537208557,
+    "coverage": {
+      "levels": [
+        0.10000000149011612,
+        0.20000000298023224,
+        0.30000001192092896,
+        0.4000000059604645,
+        0.5,
+        0.6000000238418579,
+        0.699999988079071,
+        0.800000011920929,
+        0.8999999761581421,
+        0.949999988079071
+      ],
+      "coverage_per_param": [
+        [
+          0.123046875,
+          0.12109375,
+          0.1171875,
+          0.125,
+          0.125,
+          0.08984375
+        ],
+        [
+          0.21875,
+          0.20703125,
+          0.2265625,
+          0.2265625,
+          0.224609375,
+          0.193359375
+        ],
+        [
+          0.3203125,
+          0.318359375,
+          0.333984375,
+          0.341796875,
+          0.32421875,
+          0.30859375
+        ],
+        [
+          0.4296875,
+          0.44140625,
+          0.462890625,
+          0.4375,
+          0.419921875,
+          0.42578125
+        ],
+        [
+          0.51953125,
+          0.52734375,
+          0.54296875,
+          0.53515625,
+          0.5234375,
+          0.541015625
+        ],
+        [
+          0.603515625,
+          0.642578125,
+          0.638671875,
+          0.615234375,
+          0.6171875,
+          0.630859375
+        ],
+        [
+          0.701171875,
+          0.75,
+          0.716796875,
+          0.720703125,
+          0.71484375,
+          0.728515625
+        ],
+        [
+          0.771484375,
+          0.81640625,
+          0.822265625,
+          0.80859375,
+          0.787109375,
+          0.833984375
+        ],
+        [
+          0.8671875,
+          0.873046875,
+          0.884765625,
+          0.900390625,
+          0.896484375,
+          0.916015625
+        ],
+        [
+          0.921875,
+          0.912109375,
+          0.931640625,
+          0.927734375,
+          0.951171875,
+          0.95703125
+        ]
+      ],
+      "coverage_mean": [
+        0.1168619841337204,
+        0.2161458432674408,
+        0.3245442807674408,
+        0.4361979365348816,
+        0.5315755605697632,
+        0.6246744990348816,
+        0.7220052480697632,
+        0.806640625,
+        0.8896484375,
+        0.93359375
+      ],
+      "coverage_joint": [
+        0.14453125,
+        0.24609375,
+        0.357421875,
+        0.458984375,
+        0.548828125,
+        0.640625,
+        0.73046875,
+        0.818359375,
+        0.908203125,
+        0.951171875
+      ],
+      "coverage_mae": 0.020540371537208557,
+      "coverage_mae_joint": 0.035468749701976776,
+      "n_datasets": 512,
+      "n_posterior_samples": 256
+    },
+    "note": "Calibration measured against the SAME simulator that generated the training corpus. It certifies self-consistency of the amortized posterior under simulator-conditioned evidence only, and is NOT evidence of biological validity or of correct inference on real data.",
+    "available": true,
+    "n_datasets": 512,
+    "backend_counts": {
+      "jansen_rit": 105,
+      "linear_gaussian": 32,
+      "stuart_landau": 52,
+      "wilson_cowan": 157,
+      "wong_wang": 166
+    },
+    "sampling": "backend-stratified, fold-proportional with a floor per backend"
+  },
+  "backend_comparison": {
+    "per_backend_nll": {
+      "jansen_rit": 1.1705313482671045,
+      "linear_gaussian": 0.1696484766434878,
+      "stuart_landau": 1.2840242981910706,
+      "wilson_cowan": 0.7732506804168224,
+      "wong_wang": 0.31272719423577655
+    },
+    "per_backend_n": {
+      "jansen_rit": 64,
+      "linear_gaussian": 64,
+      "stuart_landau": 64,
+      "wilson_cowan": 64,
+      "wong_wang": 64
+    },
+    "sampling": "backend-stratified, equal windows per backend",
+    "windows_selected_per_backend": {
+      "jansen_rit": 64,
+      "linear_gaussian": 64,
+      "stuart_landau": 64,
+      "wilson_cowan": 64,
+      "wong_wang": 64
+    },
+    "note": "The learned operator is the equal-capacity control for every mechanistic claim (Appendix D). Matching a family's trajectories is not evidence that the family is neurally realized."
+  },
+  "real_eeg_holdout": {
+    "available": true,
+    "n_test_windows": 1080,
+    "n_test_participants": 27,
+    "n_train_windows": 2130,
+    "n_train_participants": 71,
+    "windows_per_test_participant": 40,
+    "windows_per_train_participant": 30,
+    "sampling": "participant-stratified, evenly spaced within participant; budget fixed by participants, not batches",
+    "real_split": {
+      "participants_per_fold": {
+        "train": [
+          "S001",
+          "S002",
+          "S003",
+          "S005",
+          "S006",
+          "S008",
+          "S009",
+          "S010",
+          "S011",
+          "S012",
+          "S013",
+          "S014",
+          "S015",
+          "S016",
+          "S018",
+          "S019",
+          "S021",
+          "S022",
+          "S023",
+          "S027",
+          "S028",
+          "S030",
+          "S035",
+          "S038",
+          "S040",
+          "S041",
+          "S043",
+          "S044",
+          "S045",
+          "S047",
+          "S050",
+          "S053",
+          "S054",
+          "S055",
+          "S056",
+          "S058",
+          "S060",
+          "S061",
+          "S063",
+          "S064",
+          "S065",
+          "S068",
+          "S069",
+          "S070",
+          "S071",
+          "S072",
+          "S073",
+          "S074",
+          "S076",
+          "S077",
+          "S078",
+          "S080",
+          "S081",
+          "S083",
+          "S086",
+          "S088",
+          "S090",
+          "S093",
+          "S094",
+          "S095",
+          "S096",
+          "S098",
+          "S099",
+          "S101",
+          "S102",
+          "S104",
+          "S105",
+          "S106",
+          "S107",
+          "S108",
+          "S109"
+        ],
+        "val": [
+          "S007",
+          "S017",
+          "S020",
+          "S024",
+          "S029",
+          "S032",
+          "S048",
+          "S049",
+          "S052",
+          "S092",
+          "S097"
+        ],
+        "test": [
+          "S004",
+          "S025",
+          "S026",
+          "S031",
+          "S033",
+          "S034",
+          "S036",
+          "S037",
+          "S039",
+          "S042",
+          "S046",
+          "S051",
+          "S057",
+          "S059",
+          "S062",
+          "S066",
+          "S067",
+          "S075",
+          "S079",
+          "S082",
+          "S084",
+          "S085",
+          "S087",
+          "S089",
+          "S091",
+          "S100",
+          "S103"
+        ]
+      },
+      "sha256": "bdf41ba7cdfe063472ec46abc8e2abd083a305a75c7a106927cba491ee46ca00",
+      "verified": true,
+      "verification": "verified against the fingerprint recorded in the checkpoint"
+    },
+    "individualization": {
+      "applied": false,
+      "reason": "no individualizer on the trainer (population model)"
+    },
+    "metric": "gaussian NLL, nats per channel per sample, sensor space, participant-clustered 95% CI",
+    "estimator": "plug-in at posterior mean (matches the baselines' plug-in form)",
+    "results": {
+      "persistence": {
+        "nll_per_sample": 2.315569565803916,
+        "nll_ci95": [
+          2.2469234772661215,
+          2.4082649519570447
+        ],
+        "mse": 7.162838441278372,
+        "mse_ci95": [
+          5.933366908305152,
+          8.701430063783018
+        ],
+        "n_parameters": 4096,
+        "fit_seconds": 0.01,
+        "describe": {
+          "name": "persistence",
+          "n_parameters": 4096,
+          "fitted": true,
+          "assumptions": [
+            "the signal is locally constant on the prediction horizon",
+            "residual variance is stationary across participants and sessions"
+          ],
+          "falsifies_comparison_if": "If the foundation model does not beat persistence by a margin whose participant-clustered interval excludes zero, the predictive claim is explained by autocorrelation alone and must be withdrawn.",
+          "n_train_windows": 2130,
+          "n_train_subjects": 71,
+          "variance_calibration": "held_out_training_windows",
+          "seed": 0
+        }
+      },
+      "ar16": {
+        "nll_per_sample": 2.0253914804370314,
+        "nll_ci95": [
+          1.9623707310662226,
+          2.109641647449246
+        ],
+        "mse": 4.052783428587848,
+        "mse_ci95": [
+          3.4274497515984157,
+          4.824375370095863
+        ],
+        "n_parameters": 5184,
+        "fit_seconds": 0.43,
+        "describe": {
+          "name": "ar16",
+          "n_parameters": 5184,
+          "fitted": true,
+          "assumptions": [
+            "per-channel linear, stationary, Gaussian-innovation dynamics",
+            "one set of coefficients for the whole population (no subject fitting)",
+            "channels are conditionally independent given their own past",
+            "context is at least 16 samples long"
+          ],
+          "falsifies_comparison_if": "If a per-channel AR fitted on the same training windows matches the foundation model's held-out NLL, then the claimed benefit of connectome structure and per-region state reduces to per-channel spectral continuation and the structural claim is unsupported.",
+          "n_train_windows": 2130,
+          "n_train_subjects": 71,
+          "variance_calibration": "held_out_training_windows",
+          "seed": 0
+        }
+      },
+      "var4": {
+        "nll_per_sample": 2.0240212040918846,
+        "nll_ci95": [
+          1.9643847136392638,
+          2.1059944733977316
+        ],
+        "mse": 3.985338377645584,
+        "mse_ci95": [
+          3.4163352726209326,
+          4.6688143125497215
+        ],
+        "n_parameters": 20544,
+        "fit_seconds": 0.08,
+        "describe": {
+          "name": "var4",
+          "n_parameters": 20544,
+          "fitted": true,
+          "assumptions": [
+            "linear, stationary, dense lagged coupling between all channels",
+            "one coupling matrix for the whole population (no subject fitting)",
+            "ridge/rank regularisation is the right capacity control at this n",
+            "sensor-space coupling stands in for source-space coupling"
+          ],
+          "falsifies_comparison_if": "If a dense VAR fitted on the same windows matches the foundation model, then cross-channel structure did not have to be anatomical: an unconstrained linear coupling suffices, and the connectome-structured claim loses its evidential basis.",
+          "n_train_windows": 2130,
+          "n_train_subjects": 71,
+          "variance_calibration": "held_out_training_windows",
+          "seed": 0
+        }
+      },
+      "population_gaussian": {
+        "nll_per_sample": 2.0482221162981458,
+        "nll_ci95": [
+          1.987307487706895,
+          2.1294333805143832
+        ],
+        "mse": 4.15837000115878,
+        "mse_ci95": [
+          3.5304805596234896,
+          4.921879380634054
+        ],
+        "n_parameters": 2208,
+        "fit_seconds": 0.01,
+        "describe": {
+          "name": "population_gaussian",
+          "n_parameters": 2208,
+          "fitted": true,
+          "assumptions": [
+            "one stationary Gaussian describes the whole population",
+            "temporal structure is exhausted by a per-channel lag-1 autocovariance",
+            "no participant identity, session, montage or anatomy is used"
+          ],
+          "falsifies_comparison_if": "If the foundation model does not beat the population Gaussian on a participant's held-out future, then including that participant's data was not personalization, and no individualization claim may be made.",
+          "n_train_windows": 2130,
+          "n_train_subjects": 71,
+          "variance_calibration": "held_out_training_windows",
+          "seed": 0
+        }
+      },
+      "subject_specific_ar": {
+        "nll_per_sample": 2.0253914804370314,
+        "nll_ci95": [
+          1.9623707310662226,
+          2.109641647449246
+        ],
+        "mse": 4.052783428587848,
+        "mse_ci95": [
+          3.4274497515984157,
+          4.824375370095863
+        ],
+        "n_parameters": 77248,
+        "fit_seconds": 0.36,
+        "describe": {
+          "name": "subject_specific_ar",
+          "n_parameters": 77248,
+          "fitted": true,
+          "assumptions": [
+            "each participant has enough training windows to fit their own model",
+            "the participant's training and held-out windows are exchangeable (same session-level nonstationarity would flatter this baseline)",
+            "participant identity is known at test time"
+          ],
+          "falsifies_comparison_if": "If a model fitted on a participant alone predicts that participant's held-out future as well as the population-pretrained foundation model, then cross-participant pretraining transferred nothing on this port and the foundation claim fails regardless of the aggregate score.",
+          "n_train_windows": 2130,
+          "n_train_subjects": 71,
+          "variance_calibration": "per-subject: held_out_training_windows",
+          "seed": 0,
+          "n_subject_models": 71,
+          "fallback_subjects": [],
+          "parameters_per_subject": 1088,
+          "note": "n_parameters is the SUM over participants: this baseline is not capacity-matched to a single shared model and must not be presented as if it were. It is reported so the asymmetry is visible."
+        }
+      },
+      "dense_neural": {
+        "nll_per_sample": 9.360723766574154,
+        "nll_ci95": [
+          9.24431731953665,
+          9.491578368732222
+        ],
+        "mse": 1599.7175355134186,
+        "mse_ci95": [
+          1594.4206498237893,
+          1605.4063915733054
+        ],
+        "n_parameters": 26296869,
+        "fit_seconds": 75.19,
+        "describe": {
+          "name": "dense_gru_matched",
+          "n_parameters": 26296869,
+          "fitted": true,
+          "assumptions": [
+            "the optimiser found a solution worth comparing against (check loss_history before quoting this baseline)",
+            "parameter count is a fair capacity proxy at matched training steps and matched data",
+            "no connectome, adjacency or per-region state is used -- by construction",
+            "its variance head is fitted in-sample, which flatters it relative to the held-out-calibrated linear baselines"
+          ],
+          "falsifies_comparison_if": "If an unstructured network with the same parameter count, data and training budget matches the foundation model's held-out NLL, then the connectome and per-region state are decorative and the structural claim must be withdrawn.",
+          "n_train_windows": 2130,
+          "n_train_subjects": 71,
+          "variance_calibration": "heteroscedastic head trained in-sample on free-running rollouts (rollout_len=22)",
+          "seed": 0,
+          "target_parameters": 26304729,
+          "parameter_error": 0.0002988055873907692,
+          "hidden_size": 1691,
+          "num_layers": 2,
+          "train_steps": 400,
+          "rollout_len": 22,
+          "loss_history": [
+            2.800544500350952,
+            7.3673882484436035,
+            5.229818344116211,
+            4.264526844024658,
+            5.490617752075195,
+            6.911158084869385,
+            5.099096298217773,
+            8.331693649291992,
+            4.055951118469238,
+            5.130606651306152,
+            4.125748157501221,
+            4.022061347961426,
+            5.994329929351807,
+            3.897184371948242,
+            5.42146110534668,
+            4.813538551330566,
+            4.066897392272949,
+            4.394201278686523,
+            4.5153913497924805,
+            4.748495578765869,
+            4.518301963806152
+          ],
+          "capacity_matched": true
+        }
+      },
+      "scwbd-003": {
+        "nll_per_sample": 1.9862968921661377,
+        "nll_ci95": [
+          1.9416511790261226,
+          2.0413892584128512
+        ],
+        "mse": 4.000087261199951,
+        "mse_ci95": [
+          3.431525075766085,
+          4.704521671305238
+        ],
+        "n_parameters": 26304729,
+        "describe": {
+          "name": "scwbd-003",
+          "structured_state": true,
+          "connectome_masked": true,
+          "variance_calibration": "state-dependent: sourced from X^uncertainty via the observation interface, plus a separately parameterised per-channel instrument floor",
+          "noise_floor": {
+            "parameter": "eeg.log_noise",
+            "role": "per-channel instrument floor (electrode impedance, amplifier noise)",
+            "mean": -1.9658329486846924,
+            "sd_across_channels": 1.5182918310165405,
+            "at_initialisation": false,
+            "warning": null,
+            "state_dependent_variance": true
+          }
+        }
+      }
+    },
+    "ranking_best_first": [
+      [
+        "scwbd-003",
+        1.9862968921661377
+      ],
+      [
+        "var4",
+        2.0240212040918846
+      ],
+      [
+        "ar16",
+        2.0253914804370314
+      ],
+      [
+        "subject_specific_ar",
+        2.0253914804370314
+      ],
+      [
+        "population_gaussian",
+        2.0482221162981458
+      ],
+      [
+        "persistence",
+        2.315569565803916
+      ],
+      [
+        "dense_neural",
+        9.360723766574154
+      ]
+    ],
+    "paired_vs_scwbd": {
+      "persistence": {
+        "delta": -0.3292727565323865,
+        "ci_lo": -0.3707187672097374,
+        "ci_hi": -0.29398594713597387,
+        "excludes_zero": true
+      },
+      "ar16": {
+        "delta": -0.03909467116550163,
+        "ci_lo": -0.0695501383476787,
+        "ci_hi": -0.015152556278087478,
+        "excludes_zero": true
+      },
+      "var4": {
+        "delta": -0.037724394820354605,
+        "ci_lo": -0.06691019031736586,
+        "ci_hi": -0.016938796719467228,
+        "excludes_zero": true
+      },
+      "population_gaussian": {
+        "delta": -0.06192530702661585,
+        "ci_lo": -0.09061307153216115,
+        "ci_hi": -0.04034667429272777,
+        "excludes_zero": true
+      },
+      "subject_specific_ar": {
+        "delta": -0.03909467116550163,
+        "ci_lo": -0.0695501383476787,
+        "ci_hi": -0.015152556278087478,
+        "excludes_zero": true
+      },
+      "dense_neural": {
+        "delta": -7.3744269573026235,
+        "ci_lo": -7.501846733750016,
+        "ci_hi": -7.264598727963037,
+        "excludes_zero": true
+      }
+    },
+    "scwbd_beaten_by": [],
+    "inconclusive_vs_scwbd": [],
+    "paired_mse_vs_scwbd": {
+      "persistence": {
+        "delta": -3.162751030487319,
+        "ci_lo": -4.0752004959049675,
+        "ci_hi": -2.4288710253975454,
+        "excludes_zero": true
+      },
+      "ar16": {
+        "delta": -0.05269601779679457,
+        "ci_lo": -0.22517479172148913,
+        "ci_hi": 0.0954201308734438,
+        "excludes_zero": false
+      },
+      "var4": {
+        "delta": 0.014749033145468543,
+        "ci_lo": -0.06295846790127042,
+        "ci_hi": 0.09032683856586954,
+        "excludes_zero": false
+      },
+      "population_gaussian": {
+        "delta": -0.15828259036772782,
+        "ci_lo": -0.3240668865793419,
+        "ci_hi": -0.0222053359390271,
+        "excludes_zero": true
+      },
+      "subject_specific_ar": {
+        "delta": -0.05269601779679457,
+        "ci_lo": -0.22517479172148913,
+        "ci_hi": 0.0954201308734438,
+        "excludes_zero": false
+      },
+      "dense_neural": {
+        "delta": -1595.7174481026277,
+        "ci_lo": -1601.174313498936,
+        "ci_hi": -1590.477071860294,
+        "excludes_zero": true
+      }
+    },
+    "scwbd_mse_beaten_by": [],
+    "scwbd_mse_better_than": [
+      "persistence",
+      "population_gaussian",
+      "dense_neural"
+    ],
+    "mse_interpretation": "Paired participant-clustered 95% interval of the per-window MSE difference (scwbd minus baseline; negative favours SC-WBD). This is the CONDITIONAL MEAN, scored separately from the NLL on purpose: the two can and do disagree. Run 1 reported only the NLL and therefore filed a model with the lowest MSE of all seven arms as beaten by five of six. The difference between the two verdicts is the predictive variance, and it is a defect in the variance channel rather than in the forecast.",
+    "verdict": "No baseline beats scwbd-003 on the paired participant-clustered 95% interval of the per-window NLL difference",
+    "interpretation": "The verdict is the PAIRED interval, not the ranking: two overlapping marginal intervals can still admit a decisive paired difference, and a lower point estimate is not a claim. Models listed in `inconclusive_vs_scwbd` are neither better nor worse at this sample size. Window-level generalisation is not individual generalisation."
+  },
+  "sim_val_nll": 0.7108389027416706,
+  "wall_seconds": 1553.213851928711
+}
