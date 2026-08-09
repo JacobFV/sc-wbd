@@ -706,6 +706,36 @@ def source_ablation(trainer, *, steps: int = 120, seed: int = 0) -> dict[str, An
     """
     import copy
 
+    # The ablation RETRAINS, and the trainer's logger is keyed by
+    # `cfg.train.run_name` -- so every arm appends to the production run's
+    # training log. It did: `make release-003-ablate` put a `global_step=1`
+    # row on the end of run 3's completed 13,400-step record, and
+    # `make health-run3` then reported "log ends at global_step=1".
+    #
+    # `short_train` already sets `log_every = 10**9`, which is why this leaks
+    # one row per arm rather than hundreds -- step 1 logs regardless. A bound
+    # on the damage is not the same as not doing it: the log is the run's
+    # transcript, and CLAUDE.md carries this exact trap ("`--out` moves
+    # checkpoints, not logs") because it has cost real data here before.
+    #
+    # Redirected rather than silenced, so the arms remain inspectable.
+    from .util import JsonlLogger
+
+    _saved_logger = trainer.logger
+    trainer.logger = JsonlLogger(
+        trainer.report_dir / f"{trainer.cfg.train.run_name}_ablation_train.jsonl",
+        echo=True,
+        echo_every=1,
+    )
+    try:
+        return _source_ablation_inner(trainer, steps=steps, seed=seed)
+    finally:
+        trainer.logger = _saved_logger
+
+
+def _source_ablation_inner(trainer, *, steps: int, seed: int) -> dict[str, Any]:
+    import copy
+
     base_state = copy.deepcopy(trainer.model.state_dict())
     base_post = copy.deepcopy(trainer.posterior.state_dict())
     stage = trainer.cfg.train.stages[-2] if len(trainer.cfg.train.stages) > 1 else trainer.cfg.train.stages[0]
