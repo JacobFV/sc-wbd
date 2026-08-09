@@ -32,6 +32,20 @@ def test_corrected_cards_tier_as_designed() -> None:
         # exactly what should have caught this.
         "ds002336_real": 1,
         "sleepedf_real": 1,
+        # The five cards SC-WBD-003 added. All tier 1 by the documented rule --
+        # role=likelihood and is_simulated=false -- not by preference. The
+        # expectation is updated rather than the test relaxed, in the same terms
+        # as `ds002336_real` above.
+        #
+        # `ds000113_real` tiers as 1 and is DISABLED on licence grounds
+        # (PDDL/ODC-By conflict with the release bundle). Tier derivation is a
+        # property of the card, not of whether the run admits it, so it belongs
+        # here; whether it may be used is a separate refusal.
+        "ds000117_real": 1,
+        "ds000117_behaviour": 1,
+        "ds004024_rest_real": 1,
+        "ds004024_perturb": 1,
+        "ds000113_real": 1,
         "montage_calibration": 2,
         "anatomical_prior": 3,
         "sim_wholebrain": 4,

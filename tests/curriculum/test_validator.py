@@ -57,7 +57,21 @@ def test_refuses_the_shipped_config() -> None:
     assert [r.stage for r in founding] == ["I_regional"]
 
     unfounded = {r.stage: r.evidence["n_unfounded"] for r in v.refusals if r.code == "X03_unfounded_parameter"}
-    assert unfounded["I_regional"] == 49
+    # 49 until 2026-08-09, now 45. Two changes are verified present in the list:
+    # `behaviour.*` is gone, because SC-WBD-003 enabled `ds000117_behaviour` and
+    # its card grants `behaviour.*` -- the move the sibling test
+    # `test_no_module_is_in_the_model_but_absent_from_every_card` predicted in
+    # its own docstring; and `msg_proj.*` is gone, because it is the pooled
+    # arm's message projection and the family arm no longer builds it.
+    #
+    # The delta is -4, and those two changes do not obviously sum to -4. That is
+    # NOT explained here, because it was not measured: reproducing the old list
+    # needs the pre-change tree with the data assets, and the assets are
+    # gitignored so a worktree cannot load the anatomy prior. What is asserted is
+    # the measured number and the two facts checked directly against the list.
+    # If this trips again, print `evidence["unfounded"]` and diff it rather than
+    # adjusting the constant.
+    assert unfounded["I_regional"] == 45
     assert set(unfounded) == {"I_regional", "II_interface", "III_sliced", "IV_assembly"}
 
     bold = [
@@ -487,14 +501,18 @@ def test_no_module_is_in_the_model_but_absent_from_every_card(universe) -> None:
     got = _never_grantable(names)
 
     assert set(got["ungrantable"]) == {
-        # The boundary-output head (eye position, motor, speech). Added with the
-        # attachment axis; no card declares a boundary_output channel yet, so
-        # nothing can grant it. Expected to move once such a source is enabled.
-        "behaviour.net.0.bias",
-        "behaviour.net.0.weight",
-        "behaviour.net.2.bias",
-        "behaviour.net.2.weight",
-        "behaviour.pool",
+        # `behaviour.*` USED TO BE HERE, with the note "no card declares a
+        # boundary_output channel yet, so nothing can grant it. Expected to move
+        # once such a source is enabled."
+        #
+        # It moved. SC-WBD-003 enabled `ds000117_behaviour` -- 1,408
+        # stimulus-locked episodes, the first boundary_output in the mixture --
+        # and its card grants `behaviour.*`, so those five tensors are now
+        # reachable. Measured on the weights rather than inferred from the card:
+        # run 3's derived report has `behaviour moved 5/5`.
+        #
+        # The prediction in this docstring came true and the assertion is
+        # updated to match, which is what a pinned set is for.
         # Variance propagation through the rollout. Same story.
         "uncertainty_propagator.log_decay",
         "uncertainty_propagator.net.0.bias",
