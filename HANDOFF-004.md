@@ -23,6 +23,13 @@ those two pieces of work and nothing else. Do not add a source. Do not widen the
 corpus. 003 already admits every modality on disk whose licence permits it, and
 adding an eighth would be the easiest way to avoid the two hard things.
 
+A fourth thing is missing and 004 is NOT the run that fixes it, but the deferral
+must be deliberate: the differentiator in (3) has a spatial half as well as a
+temporal one, and 003 has exactly one spatial resolution. Section (3) below
+carries the sketch, what already exists, and why doing the clock properly makes
+it cheap. Read it before deciding the clock, because the two share machinery and
+the decision you make about R12 governs both.
+
 === (1) THE BOLD PATH: WHAT IS ACTUALLY WRONG ===
 
 Read ISSUE-008 in full before touching anything. The short version, because you
@@ -132,6 +139,87 @@ What must be measured, and what would falsify:
 "fine-tuneable for personalized neurotechnology". It has never been measured. If
 004 measures it and the answer is no, that is a result and it goes on the site
 in the same terms runs 1 and 2 got.
+
+=== (3) THE SPATIAL HALF — DEFERRED ON PURPOSE, AND HERE IS THE SKETCH ===
+
+This section exists so the deferral is a decision rather than an omission. 004
+does not do this. 005 should, and the sequencing below is why 004 makes it
+cheap.
+
+body.tex sec. 2 is explicit that the model is not supposed to have ONE spatial
+resolution: "SC-WBD consequently does not assign 'the brain' one spatial or
+temporal resolution. Resolution is a property of each state, source, operator,
+intervention, and query." Sec. 6.2 says evidence attaches "at the spatial and
+temporal supports they actually resolve", with gradients crossing calibrated
+restriction/prolongation maps and "no modality upsampled into fictitious
+precision".
+
+SC-WBD-003 has one spatial resolution: 414 parcels. The paper's first
+differentiator is half-implemented, and the missing half is spatial.
+
+WHAT IS ALREADY THERE — do not rebuild it:
+
+  * `compiler_bridge._poset()` declares ONE validated pair,
+    `cortical_source_dipole <= parcel`. The fine space is one normal-oriented
+    dipole per decimated white-surface vertex — i.e. the vertex space — and it
+    is the support the EEG lead field is *defined on*.
+  * `scwbd/transforms/sheaf.py` is the restriction/prolongation machinery and it
+    is built. Its own docstring records that it "had been built and simply never
+    instantiated, so a refusal that exists to police cross-scale maps was passing
+    a model that had none".
+  * `scwbd/schema/poset.py` carries ScaleMapPair, MapSpec, CocycleCheck,
+    ObstructionCertificate, GluingPolicy. `support_algebra.relate` and
+    `common_temporal_refinement` exist.
+  * `scwbd/foundation/` imports the poset in exactly ONE place —
+    `compiler_bridge` — and the trainer uses none of it.
+
+So the map is declared, the machinery exists, and the training path ignores
+both.
+
+WHAT NOT TO DO: make the whole state dense. 20,484 vertices x 62 dims is 49.5x
+run 3's state; the connectome is quadratic and would be 2,448x; there IS no
+vertex-level structural connectome to fill it with; a vertex is not a population
+so the mean-field justification for the mass models evaporates; fsaverage5 is
+cortex-only so the 14 Tian parcels vanish; and EEG's `effective_rank` is 64.0
+measured, so 20,070 of those dimensions would be constrained by nothing.
+
+WHAT TO DO INSTEAD — selective refinement, which is what the paper actually
+proposes: "an allocortical module might be expanded into sparse populations
+while the rest of the brain remains coarse." Refine WHERE A FINE MODALITY
+CONSTRAINS IT. The obvious first patch is motor cortex under TMS: `motor_parcels()`
+already exists in `perturb.py`, the E-field is a spatially fine object that the
+414-grid discards, and it is ~40 parcels rather than 414. Coarse backbone keeps
+the parcel connectome and subcortex; the refined patch gets a field operator
+rather than a mass operator, which the typed-operator machinery already admits
+("local convolutional, mesh, and neural-field topologies coexist with sparse
+long-range projections").
+
+THE ACTUAL BLOCKER IS NOT TECHNICAL. `tests/foundation/test_resolution_pair_r02.py`
+pins `model.scale_prolongations` EMPTY, on purpose:
+
+    "Filling it in is the obvious move and it was tried. [...] a populated field
+     stops R12 firing on undeclared single-backend configs. A config key that
+     switches a refusal off is not a declaration, it is an exemption."
+
+R12's control test is `is_constant AND not declares_prolongation`, both required.
+So declaring a prolongation is currently indistinguishable from buying an
+exemption from the refusal that polices overclaiming. Settling that is the same
+unmade decision as the R12 double implementation behind four of the five
+`test_family_state` failures. **Three runs have deferred it. It now blocks the
+paper's headline claim, which is a different order of cost than a red test.**
+
+WHY 004 MAKES 005 CHEAP: fixing the clock properly — ISSUE-008 option (c) — IS
+instantiating a prolongation. It needs `common_temporal_refinement` and a
+declared fast<->slow map, so it forces the R12 ruling and wires the poset into
+the trainer for the first time. Once one prolongation is real, validated and
+carrying gradient, the spatial one is incremental rather than novel. Do the
+temporal pair in 004 and leave the spatial pair declared-but-unrefined, with the
+R/P operators proven to round-trip. Then 005 turns refinement on.
+
+If 004 finds it cannot make the temporal prolongation real either, say so in the
+model card in those words. "Multiresolution" is on the landing page and in the
+paper's abstract; a run that ships with one spatial scale and one effective
+temporal clock has not delivered it, and the site should not imply otherwise.
 
 === WHAT 003 MEASURED — THE RUN FINISHED ===
 

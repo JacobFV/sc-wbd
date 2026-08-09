@@ -2,6 +2,35 @@
 
 Repo: https://github.com/JacobFV/sc-wbd — site: https://sc-wbd.pages.dev
 
+## Do not defer. Do not fall back. Fix it.
+
+When you find a defect, fix it in the turn you find it. Filing it, deferring it
+to the next run, or routing around it is not a neutral choice — in this repo it
+is the single most expensive habit there is, and the evidence is in the file
+below.
+
+- **R12 has been "a design call for the next run" for three runs.** It now blocks
+  the paper's headline claim, `scale_prolongations` is pinned empty by a test,
+  and five tests are red. Deferring converted a two-hour decision into a
+  structural blocker.
+- **ISSUE-008 was visible from step 1** — `real_bold_nll` at 21.7 and climbing.
+  It was not read until 46% of a 25-hour run. The whole fMRI likelihood is void.
+- **ISSUE-010 was "fixed" four times by falling back** — `ckpt_every`, then
+  `log_every`, then a logger redirect, then `out_dir` — and each partial fix left
+  something still writing to a production path. It destroyed a checkpoint and a
+  published report before the fifth attempt redirected the directories instead of
+  enumerating the outputs.
+
+The pattern in all three: a fallback that makes the symptom quieter leaves the
+defect live and removes the pressure to fix it. A plausible number is worse than
+an obviously broken one, because nobody looks again.
+
+So: no `try/except` that swallows, no default that stands in for a measurement,
+no "TODO(next run)", no disabling a check to make a run start. If something
+genuinely cannot be fixed now, it gets a named ISSUE with what would discharge
+it, a guard that fails loudly, and a line in the model card — and you say plainly
+in the turn that you did not fix it and why. Silence is the failure mode.
+
 ## Mistakes made repeatedly in this repo
 
 Each of these cost real time or real data. They are listed because they recur,
