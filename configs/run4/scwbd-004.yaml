@@ -14,11 +14,37 @@
 # ---------------------------------------------------------------------------
 # COST: MEASURED ON THIS BOX, NOT ESTIMATED
 # ---------------------------------------------------------------------------
-# See reports/RUN4.md for the harness and the raw output. Measured with nothing
-# else running (`ps` first, every time), 20 optimiser steps of the T1 loss set
-# after 3 warmup steps, on the 414-parcel prior at hidden=1408:
+# `scripts/measure_run4_cost.py`, 23 optimiser steps of the T1 loss set with the
+# first 3 discarded, on the 414-parcel prior at hidden=1408, all seven measured
+# sources contributing a term. Raw output in reports/run4_cost/, discussion in
+# reports/RUN4.md.
 #
-#   MEASURED_BLOCK
+#   frames  bold_every   s/step   peak reserved   peak allocated
+#        2           1      ---   OUT OF MEMORY at step 1, 56 GB cap
+#        1           1     9.45          52.54 GB       50.50 GB
+#        1           1     9.30          52.54 GB       50.50 GB   (repeat)
+#        1        1000     7.22          35.55 GB       34.18 GB   (BOLD off)
+#
+# Read three ways:
+#
+#   * **2 frames does not fit.** 500 neural steps of the Balloon ODE, held live
+#     beside seven other sources' graphs -- `MixtureTrainer` backwards each with
+#     `retain_graph=True` -- exceeded the 56 GB cap on the FIRST step. The cap
+#     held and the box survived; run 3's peak was 46.13 GB.
+#   * **The measured BOLD term costs 2.08 s/step and 17.0 GB of reserve** at one
+#     frame. That is the difference between the two arms above, and it is the
+#     whole increment over run 3's path, which rolled 8 neural steps.
+#   * **9.30 s/step against run 3's ~8.06.** 14,600 steps is ~38 h, which is why
+#     `max_wall_seconds` moved.
+#
+# Not measured, and stated rather than assumed: T4 admits the simulator as well
+# and is not this loss set, so the whole-run figure above is T1's rate applied to
+# every stage. It is a planning number, not a measurement of the run.
+#
+# One foreign pytest was running in another repository during the timed steps.
+# The harness records it (`contention` in each JSON) and it is why the step time
+# is quoted as an upper bound. Peak reserve is per-process and unaffected; the
+# two BOLD-on arms agree to the byte on memory and to 0.15 s on time.
 #
 # ---------------------------------------------------------------------------
 # INDIVIDUALISATION: WHAT MAKES IT MEASURABLE HERE AND NOT IN 003
@@ -46,6 +72,22 @@
 # observation nuisance. `eeg_montages.*` is granted beside `eeg.*` because
 # sleep-edfx is observed through its own 2-row bipolar operator.
 
+# ---------------------------------------------------------------------------
+# `msg_proj.*` IS GONE FROM EVERY STAGE, AND THAT IS NOT A TIDY-UP
+# ---------------------------------------------------------------------------
+# Run 3 granted it in all five stages and reported it frozen for 13,400 steps
+# with no explanation. The explanation is that `SCWBD.msg_proj` is the POOLED
+# arm's message projection and is now built only when `family_state` is false;
+# this run is the family arm, where both call sites read
+# `family_local.ports.message(...)`. The port projections it grants are already
+# inside `family_local.*`.
+#
+# The same drift had reached the compiler: `FOUNDATION_FAMILY_BINDING` still
+# bound `port:*.message_out` to `msg_proj.*`, so `audit_binding` reported eight
+# decorative permissions and `FoundationTrainer.__init__` refused to construct.
+# Found by building a run-4 trainer, not by a test -- every assertion in
+# `test_compiler_binding.py` runs on the pooled arm.
+
 base: ../run3/scwbd-003.yaml
 
 model:
@@ -55,12 +97,39 @@ model:
   # the duration each frame covers is 250 steps per frame at dt_model = 8 ms, so
   # all 8 frames is 2,000 rollout steps against run 3's 8. That does not fit.
   #
-  # BOLD_SIZING_BLOCK
-  bold_predict_frames: 2
+  # ONE, and it is `bold_predict_frames` that was cut rather than `batch`.
+  #
+  # 2 frames OOM'd at step 1 against the 56 GB cap; 1 fits at 52.54 GB reserved.
+  # The choice between the two levers is not arbitrary. The BOLD term alone
+  # accounts for 17.0 GB of the 52.54 -- measured, by running the same
+  # configuration with the term switched off -- so it is the term that does not
+  # fit, and halving `batch` would have degraded all seven measured sources to
+  # pay for one. `bold_predict_frames` degrades exactly the thing that is too
+  # expensive.
+  #
+  # WHAT IS LOST, PLAINLY. One frame at TR = 2 s is 2 s of predicted
+  # haemodynamics from 48 s of context. The BOLD response peaks around 5 s, so
+  # this term constrains the RISE of the response and not its peak or its
+  # undershoot, and no claim about HRF shape may be read off this run. That
+  # belongs on the model card beside any fMRI number. It is still 250 integrated
+  # ODE steps where run 3 had none.
+  #
+  # The next lever, if two frames are wanted, is a per-source BOLD batch: this
+  # term already runs at batch 4 (`max(4, data.batch // 8)`) while the others run
+  # at 8, and dropping it further would buy the horizon without touching them.
+  # That is a code change and 004 does not make it.
+  bold_predict_frames: 1
+  # EVERY step. A duty cycle buys step time and NOT memory -- on the steps it
+  # runs, the peak is identical -- so it was never the lever for the OOM, and
+  # raising it would reduce the evidence behind the fMRI likelihood to pay for
+  # ~1 s/step. The fMRI likelihood is half of what this run is for.
   bold_every: 1
 
 data:
-  # BATCH_BLOCK
+  # 8, unchanged from run 3 and RE-MEASURED rather than inherited. Run 3's
+  # comment records 41.97 GB allocated / 43.40 GB reserved at this batch on the
+  # old BOLD path; run 4 measures 50.50 / 52.54 on the new one. Same batch,
+  # +9 GB, and the 9 comes from the Balloon ODE.
   batch: 8
 
 train:
@@ -72,8 +141,17 @@ train:
   # rather than inherited: see the cost block at the top of this file. The GB10
   # has ONE ~121 GB unified pool and `systemd MemoryMax` does not bound CUDA
   # allocations, so this is the only ceiling on the caching allocator.
+  # 56 GB. Measured peak 52.54, so 6% headroom -- tighter than run 3's 30% and
+  # deliberately not raised. Raising it would not buy a larger batch; it would
+  # let the caching allocator grow toward the OOM that killed this machine twice.
+  # The cap is what stopped the 2-frame arm from taking the box down, and it did
+  # its job: the process died and nothing else did.
   cuda_reserve_gb: 56.0
-  max_wall_seconds: 129600     # 36 h
+  # 46 h. 14,600 steps at the measured 9.30 s/step is 37.7 h, and that rate is
+  # T1's applied to every stage -- T4 admits the simulator as well and was not
+  # measured. Run 3 finished 13,400 steps inside 30 h on a path whose BOLD term
+  # rolled 8 neural steps instead of 250.
+  max_wall_seconds: 165600
   resume: true
 
   stages:
@@ -95,7 +173,7 @@ train:
           admits: [1]
           tier_permissions:
             1: ["family_local.*", "family_residual.*",
-                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "coupling.*", "msg_readin.*", "assimilate.*",
                 "context.*", "family_readout.*", "observation.*",
                 "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
           objective: [likelihood, forecast, port]
@@ -122,7 +200,7 @@ train:
           admits: [1, 2]
           tier_permissions:
             1: ["family_local.*", "family_residual.*",
-                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "coupling.*", "msg_readin.*", "assimilate.*",
                 "context.*", "family_readout.*", "observation.*",
                 "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
             2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
@@ -148,7 +226,7 @@ train:
           admits: [1, 2, 3]
           tier_permissions:
             1: ["family_local.*", "family_residual.*",
-                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "coupling.*", "msg_readin.*", "assimilate.*",
                 "context.*", "family_readout.*", "observation.*",
                 "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
             2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
@@ -181,7 +259,7 @@ train:
           # the ODE runs and where a loss consumes it.
           tier_permissions:
             1: ["family_local.*", "family_residual.*",
-                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "coupling.*", "msg_readin.*", "assimilate.*",
                 "context.*", "family_readout.*", "observation.*",
                 "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*"]
             2: ["eeg.log_gain", "eeg.offset", "eeg.log_noise", "eeg.nuisance*",
@@ -189,7 +267,7 @@ train:
                 "eeg_montages.*.log_noise", "eeg_montages.*.nuisance*"]
             3: ["coupling.gain_*", "coupling.global_scale"]
             4: ["family_local.*", "family_residual.*",
-                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "coupling.*", "msg_readin.*", "assimilate.*",
                 "context.*", "family_readout.*", "posterior.*"]
           objective: [likelihood, forecast, slice, posterior]
           rationale: >-
@@ -215,7 +293,7 @@ train:
           admits: [1, 2]
           tier_permissions:
             1: ["family_local.*", "family_residual.*",
-                "coupling.*", "msg_proj.*", "msg_readin.*", "assimilate.*",
+                "coupling.*", "msg_readin.*", "assimilate.*",
                 "context.*", "family_readout.*", "observation.*",
                 "eeg.*", "eeg_montages.*", "bold.*", "behaviour.*",
                 "tms_drive.*"]

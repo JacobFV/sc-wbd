@@ -97,20 +97,60 @@ def test_the_bold_horizon_and_duty_cycle_are_declared() -> None:
     assert m.bold_predict_frames <= 8
 
 
-def test_the_measured_cost_is_written_into_the_config() -> None:
-    """A step time and a peak reserve, not an estimate.
+def test_the_config_is_sized_by_a_measurement_that_fits() -> None:
+    """The config's numbers must match an arm that was measured and did not OOM.
 
-    Run 3's `batch: 8` carries its measurement in a comment beside it and that
-    is why nobody re-derived it. Run 4's BOLD rollout is 500 neural steps where
-    run 3's was 8, so the number changed and the comment has to have changed
-    with it.
+    Written this way after the first version failed its own mutation test. That
+    version grepped the file for "s/step" and "GB", and deleting a row of the
+    cost table left both behind -- a guard that cannot be made to fail on the
+    regression it names is decorative, which is the category
+    `reports/decorative_guards.md` exists for.
+
+    So it checks the property instead: whatever `bold_predict_frames` and
+    `batch` the config declares, some recorded arm ran that configuration, and
+    that arm's peak reserve is under this config's own cap. Run 3's `batch: 8`
+    was a measured maximum on a BOLD path that rolled 8 neural steps; run 4's
+    rolls 250, and the 2-frame arm exceeded the cap on its first step.
     """
+    import json
+
+    m, d, t = _cfg().model, _cfg().data, _cfg().train
+    arms = sorted((REPO / "reports/run4_cost").glob("cost_*.json"))
+    assert arms, (
+        "no cost measurement on disk. The BOLD rollout is 250 neural steps per "
+        "frame against run 3's 8 for the whole window, so run 3's batch cannot "
+        "be carried over on an estimate."
+    )
+    recorded = [json.loads(p.read_text()) for p in arms]
+    match = [
+        r
+        for r in recorded
+        if r["bold_predict_frames"] == m.bold_predict_frames
+        and r["batch"] == d.batch
+        and r["bold_every"] == m.bold_every
+    ]
+    assert match, (
+        f"no recorded arm ran bold_predict_frames={m.bold_predict_frames}, "
+        f"batch={d.batch}, bold_every={m.bold_every}. Measured arms: "
+        + str([(r["bold_predict_frames"], r["batch"], r["bold_every"]) for r in recorded])
+    )
+    worst = max(r["peak_cuda_reserved_gb"] for r in match)
+    assert worst < t.cuda_reserve_gb, (
+        f"the measured peak reserve for this configuration is {worst:.2f} GB "
+        f"against a {t.cuda_reserve_gb} GB cap. Raising the cap does not buy "
+        "room -- it lets the caching allocator grow toward the OOM that has "
+        "taken this machine down twice. Reduce bold_predict_frames or batch."
+    )
+    # The measurement has to be IN the config too, not only on disk: run 3's
+    # batch survived three runs unquestioned because its number sat beside it.
     text = RUN4.read_text()
-    assert "s/step" in text, "no measured step time in the config"
-    assert "GB" in text and "reserved" in text, "no measured peak reserve in the config"
-    assert "MEASURED_BLOCK" not in text and "BATCH_BLOCK" not in text, (
-        "a placeholder survived into the config: the cost block was never filled "
-        "in with the measurement"
+    assert f"{worst:.2f} GB" in text, (
+        f"the measured peak reserve {worst:.2f} GB does not appear in the config. "
+        "A reader deciding whether to change `batch` must not have to go find it."
+    )
+    assert "OUT OF MEMORY" in text, (
+        "the config does not record that a larger horizon was tried and failed, "
+        "so the next reader will try it again"
     )
 
 

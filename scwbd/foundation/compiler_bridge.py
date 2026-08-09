@@ -328,7 +328,19 @@ FOUNDATION_FAMILY_BINDING: dict[str, tuple[str, ...]] = {
         "context.*",
     ),
     "operator:local_field:residual": ("family_residual.*",),
-    f"port:{_PORT_EXEMPLAR}.message_out": ("msg_proj.*", "family_local.ports.out_proj.*"),
+    # `msg_proj.*` is NOT here, and its absence is the point of this table.
+    #
+    # It was, alongside the family glob, and that stopped being true the moment
+    # the pooled arm's projection was gated on `not cfg.family_state`. Both call
+    # sites read `family_local.ports.message(...)` when a family layout exists,
+    # so on this arm `SCWBD.msg_proj` is `None` and the glob matches nothing --
+    # which `audit_binding` reports as a decorative permission and
+    # `BindingDriftError` refuses to train through. Measured: the run-4 trainer
+    # would not construct.
+    #
+    # `msg_readin` below keeps both namings because it is built unconditionally
+    # on both arms. The asymmetry is real, not an oversight.
+    f"port:{_PORT_EXEMPLAR}.message_out": ("family_local.ports.out_proj.*",),
     f"port:{_PORT_EXEMPLAR}.message_in": ("msg_readin.*", "family_local.ports.in_proj.*"),
     "observation:parcel_activity:nuisance": ("family_readout.*", "observation.*"),
     REGION_STATE_KEY: (
