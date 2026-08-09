@@ -1514,19 +1514,43 @@ def _unreachable_parameters(ckpt: Path, card_dir: str) -> list[str]:
             else ""
         )
     )
-    return [
+    # The renaming story is RUN 2's and must not be told about a run that fixed
+    # it. `local` -> `family_local` was run 2's defect; run 3 trained 99.98% of
+    # its parameters and the cards grant the current names.
+    renamed = {"local", "residual", "readout", "family_local", "family_residual", "family_readout"}
+    tells_the_rename_story = bool(set(mods) & renamed)
+
+    if n_dead == 0:
+        # Modules named by no card that carry no COUNTED parameters. Emitting the
+        # "N of M parameters (0.0%)" headline here is self-contradictory and reads
+        # as an alarm; it did, on run 3's card, beside a module with no entry in
+        # the parameter report at all.
+        return [
+            f"The modules {mods} are named by no card's `gradient_permission`. "
+            "They carry no parameters in this checkpoint's parameter report, so "
+            "the share of the model that could not receive a gradient is "
+            "**0.0%** -- this is a completeness note about the cards, not a "
+            "finding about the weights." + provenance
+        ]
+
+    head = (
         f"**{n_dead:,} of {n_all:,} parameters ({pct:.1f}%) could not receive a "
         f"gradient from any enabled source card during this run.** The modules "
         f"{mods} are named by no card's `gradient_permission`, so they sat at "
         "their initialisation for every step while still taking part in the "
-        "forward pass. This is a string mismatch, not a curriculum decision: the "
-        "regional modules were renamed `local` -> `family_local`, `residual` -> "
-        "`family_residual`, `readout` -> `family_readout`, and the cards still "
-        "grant the old names. An unmatched glob is an empty permission set, not "
-        "an error, so the loss fell and the run finished. Read the result "
-        "accordingly -- it does not show that heterogeneous regional state fails, "
-        "because the heterogeneous regional state never trained." + provenance
-    ]
+        "forward pass."
+    )
+    if tells_the_rename_story:
+        head += (
+            " This is a string mismatch, not a curriculum decision: the "
+            "regional modules were renamed `local` -> `family_local`, `residual` "
+            "-> `family_residual`, `readout` -> `family_readout`, and the cards "
+            "still grant the old names. An unmatched glob is an empty permission "
+            "set, not an error, so the loss fell and the run finished. Read the "
+            "result accordingly -- it does not show that heterogeneous regional "
+            "state fails, because the heterogeneous regional state never trained."
+        )
+    return [head + provenance]
 
 
 def _enabled_but_unconsumed(ckpt: Path, card_dir: str) -> list[str]:
@@ -1562,7 +1586,42 @@ def _enabled_but_unconsumed(ckpt: Path, card_dir: str) -> list[str]:
         import yaml
 
         rec = torch.load(last, map_location="cpu", weights_only=False)
-        folds = ((rec.get("extra") or {}).get("real_split") or {}).get(
+        extra = rec.get("extra") or {}
+
+        # DIRECT EVIDENCE BEATS THE INFERENCE BELOW.
+        #
+        # The heuristic that follows reads the recorded participant split and,
+        # if its count matches exactly one card's declared `n_participants`,
+        # concludes every OTHER source contributed nothing. That was sound for
+        # run 2, which had one real source and whose `real_split` was the whole
+        # story. It is FALSE for a multi-source run: run 3's `real_split` is
+        # eegmmidb's split specifically, the other six sources carry their own
+        # loaders and their own splits, and the heuristic would have put "`X`
+        # contributed nothing to these weights" on a public model card for six
+        # sources that each contributed a gradient every step.
+        #
+        # Run 3's checkpoint records `contributed_sources`, derived in
+        # `MixtureTrainer` from the losses that actually ran. Where that exists
+        # it is evidence, not inference, and the inference must not override it.
+        contributed = extra.get("contributed_sources")
+        if contributed:
+            known = set(contributed)
+            silent = []
+            for f in sorted(Path(card_dir).glob("*.yaml")):
+                c = yaml.safe_load(f.read_text()) or {}
+                sid = str(c.get("id") or f.stem)
+                if c.get("role") == "likelihood" and c.get("enabled", True) and sid not in known:
+                    silent.append(
+                        f"`{sid}` is enabled in the training mixture and produced no "
+                        "loss term in this run: it is absent from the checkpoint's "
+                        "own `contributed_sources`, which is recorded from the losses "
+                        "that ran rather than inferred from a participant count. Its "
+                        "licence and citation are listed below as terms this artifact "
+                        "inherits, not as a corpus that shaped it."
+                    )
+            return silent
+
+        folds = (extra.get("real_split") or {}).get(
             "participants_per_fold"
         ) or {}
         split = {p for v in folds.values() for p in v}
@@ -1718,11 +1777,42 @@ def plan_run2_pilot(
         )
 
 
+def plan_run3(
+    *,
+    checkpoint_dir: str | Path,
+    evaluation: str | Path = "reports/training/evaluation_run3.json",
+    config: str | Path = "configs/run3/scwbd-003.yaml",
+    name: str = "scwbd-003",
+    repo_root: Path | None = None,
+) -> ArtifactPlan:
+    """Plan the SC-WBD-003 checkpoint.
+
+    Same code path as runs 1 and 2 -- only the paths change, which is the point:
+    a publisher with a per-run branch is a publisher whose gates differ per run.
+
+    THE CARD MUST CARRY ISSUE-008. Run 3's weights were trained through a BOLD
+    path that never integrated the Balloon ODE: the five haemodynamic parameters
+    are bit-identical to their initialisation in all five stages and
+    `real_bold_nll` diverged to 4.4e6. The code is fixed; these weights are not
+    and cannot be. No fMRI or haemodynamic claim may be read off this artifact,
+    and the card says so rather than leaving a reader to infer it from a
+    `contributed_sources` list that truthfully includes `ds002336_real`.
+    """
+    return plan_run1_checkpoint(
+        checkpoint_dir=checkpoint_dir,
+        evaluation=evaluation,
+        config=config,
+        name=name,
+        repo_root=repo_root,
+    )
+
+
 PLANNERS: Mapping[str, Any] = {
     "anatomy-prior": plan_anatomy_prior,
     "run1-checkpoint": plan_run1_checkpoint,
     "sim-corpus": plan_sim_corpus,
     "run2-pilot": plan_run2_pilot,
+    "run3": plan_run3,
 }
 
 
@@ -1988,7 +2078,7 @@ def _main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI
     kwargs: dict[str, Any] = {}
     if args.artifact == "anatomy-prior":
         kwargs["include_maps"] = args.include_maps
-    elif args.artifact in ("run1-checkpoint", "run2-pilot"):
+    elif args.artifact in ("run1-checkpoint", "run2-pilot", "run3"):
         if not args.checkpoint_dir:
             raise SystemExit(
                 "--checkpoint-dir is required: the weights are not in this "
