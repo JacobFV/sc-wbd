@@ -30,6 +30,8 @@ from pathlib import Path
 
 import pytest
 
+from ._runs import parametrize_runs, raw_stages, training_runs
+
 REPO = Path(__file__).resolve().parents[2]
 RUN3 = REPO / "checkpoints/scwbd-003"
 SMOKE = REPO / "checkpoints/scwbd-003-smoke"
@@ -42,12 +44,32 @@ REGIONAL = ("family_local", "family_residual", "family_readout")
 RUN3_NEW = ("behaviour", "eeg_montages", "tms_drive")
 
 
-def _checkpoints() -> list[Path]:
-    out: list[Path] = []
-    for d in (RUN3, SMOKE):
-        if d.is_dir():
-            out += sorted(d.glob("stage_*.pt")) or sorted(d.glob("last.pt"))
+def _checkpoints() -> list[tuple[object, Path]]:
+    """``(run, checkpoint)`` for every discovered run, plus the run-3 smoke dir.
+
+    Was `(RUN3, SMOKE)`. The run whose regional tensors most need checking is the
+    one about to launch, and pinning this to run 3 meant run 4 could not reach
+    the gate HANDOFF-003 calls a launch precondition. The run is carried beside
+    the path because `_founding_exempt` has to read THAT run's stage block --
+    resolving a run-4 stage name against run 3's config would silently return
+    the wrong exemption set.
+    """
+    out: list[tuple[object, Path]] = []
+    for run in training_runs():
+        cks = [c for c in run.checkpoints if c.name.startswith("stage_")] or [
+            c for c in run.checkpoints if c.name == "last.pt"
+        ]
+        out += [(run, c) for c in cks]
+    if SMOKE.is_dir():
+        smoke = sorted(SMOKE.glob("stage_*.pt")) or sorted(SMOKE.glob("last.pt"))
+        run3 = next((r for r in training_runs() if r.run_id == "run3"), None)
+        out += [(run3, c) for c in smoke]
     return out
+
+
+def _ckpt_id(pair) -> str:
+    run, path = pair
+    return f"{path.parent.name}/{path.name}"
 
 
 def _load(path: Path) -> dict:
@@ -73,7 +95,7 @@ def _moved(ck: dict) -> dict:
     return rep
 
 
-def _founding_exempt(stage: str) -> set[str]:
+def _founding_exempt(run, stage: str) -> set[str]:
     """Modules a stage is *permitted* to leave frozen, derived not listed.
 
     Two independent sources, both auditable, neither a hard-coded allowance in
@@ -96,17 +118,15 @@ def _founding_exempt(stage: str) -> set[str]:
     """
     exempt: set[str] = set()
     tiers = REPO / "configs/curriculum/tiers.yaml"
-    cfgp = REPO / "configs/run3/scwbd-003.yaml"
-    if not (tiers.is_file() and cfgp.is_file()):
+    if not tiers.is_file() or run is None:
         return exempt
     import yaml
 
-    cfg = yaml.safe_load(cfgp.read_text())
     block = next(
         (
             ((s.get("extra") or {}).get("curriculum") or {})
-            for s in cfg["train"]["stages"]
-            if s["name"] == stage
+            for s in raw_stages(run)
+            if s.get("name") == stage
         ),
         None,
     )
@@ -129,13 +149,14 @@ def _founding_exempt(stage: str) -> set[str]:
     return exempt
 
 
-@pytest.mark.parametrize("ckpt", _checkpoints(), ids=lambda p: f"{p.parent.name}/{p.name}")
-def test_the_regional_modules_are_not_at_their_initialisation(ckpt: Path) -> None:
+@pytest.mark.parametrize("run_ckpt", _checkpoints(), ids=_ckpt_id)
+def test_the_regional_modules_are_not_at_their_initialisation(run_ckpt) -> None:
     """The check HANDOFF-003 makes a launch precondition."""
+    run, ckpt = run_ckpt
     ck = _load(ckpt)
     rep = _moved(ck)
     by = rep["by_module"]
-    exempt = _founding_exempt(str(ck.get("stage") or ""))
+    exempt = _founding_exempt(run, str(ck.get("stage") or ""))
     dead = []
     for m in REGIONAL:
         e = by.get(m)
@@ -151,18 +172,19 @@ def test_the_regional_modules_are_not_at_their_initialisation(ckpt: Path) -> Non
     )
 
 
-@pytest.mark.parametrize("ckpt", _checkpoints(), ids=lambda p: f"{p.parent.name}/{p.name}")
-def test_the_attachment_kinds_added_in_run3_received_gradient(ckpt: Path) -> None:
+@pytest.mark.parametrize("run_ckpt", _checkpoints(), ids=_ckpt_id)
+def test_the_attachment_kinds_added_in_run3_received_gradient(run_ckpt) -> None:
     """`behaviour`, the montage heads and the TMS drive are new and reachable.
 
     Each existed on the forward path before it had a source. The point of run 3
     is that each now has one, so "present and frozen" is exactly the regression
     to catch.
     """
+    run, ckpt = run_ckpt
     ck = _load(ckpt)
     rep = _moved(ck)
     by = rep["by_module"]
-    exempt = _founding_exempt(str(ck.get("stage") or ""))
+    exempt = _founding_exempt(run, str(ck.get("stage") or ""))
     dead = [
         f"{m} ({by[m]['frozen']} tensors)"
         for m in RUN3_NEW
@@ -175,14 +197,15 @@ def test_the_attachment_kinds_added_in_run3_received_gradient(ckpt: Path) -> Non
     )
 
 
-@pytest.mark.parametrize("ckpt", _checkpoints(), ids=lambda p: f"{p.parent.name}/{p.name}")
-def test_most_of_the_model_moved(ckpt: Path) -> None:
+@pytest.mark.parametrize("run_ckpt", _checkpoints(), ids=_ckpt_id)
+def test_most_of_the_model_moved(run_ckpt) -> None:
     """The headline number run 2 got wrong: 88.8% could not receive a gradient.
 
     A generous floor. It is not a quality bar -- a stage may legitimately freeze
     a head whose source it does not admit -- but a run in which most of the model
     is at its initialisation is the failure this whole file exists for.
     """
+    run, ckpt = run_ckpt
     rep = _moved(_load(ckpt))
     frac = rep["n_moved"] / max(rep["n_parameters"], 1)
     assert frac > 0.5, (
@@ -193,8 +216,8 @@ def test_most_of_the_model_moved(ckpt: Path) -> None:
     )
 
 
-@pytest.mark.parametrize("ckpt", _checkpoints(), ids=lambda p: f"{p.parent.name}/{p.name}")
-def test_the_residual_ratio_is_not_exactly_zero(ckpt: Path) -> None:
+@pytest.mark.parametrize("run_ckpt", _checkpoints(), ids=_ckpt_id)
+def test_the_residual_ratio_is_not_exactly_zero(run_ckpt) -> None:
     """`residual_ratio == 0.0` exactly is a frozen residual, not a small effect.
 
     The residual output projections are zero-initialised, so the ratio starts at
@@ -202,6 +225,7 @@ def test_the_residual_ratio_is_not_exactly_zero(ckpt: Path) -> None:
     moves it off zero; the assertion is therefore against the exact value and
     needs no tolerance to choose.
     """
+    run, ckpt = run_ckpt
     ck = _load(ckpt)
     metrics = ck.get("metrics") or {}
     extra = ck.get("extra") or {}
@@ -216,8 +240,8 @@ def test_the_residual_ratio_is_not_exactly_zero(ckpt: Path) -> None:
     )
 
 
-@pytest.mark.parametrize("ckpt", _checkpoints(), ids=lambda p: f"{p.parent.name}/{p.name}")
-def test_every_parameter_has_a_recorded_initialisation(ckpt: Path) -> None:
+@pytest.mark.parametrize("run_ckpt", _checkpoints(), ids=_ckpt_id)
+def test_every_parameter_has_a_recorded_initialisation(run_ckpt) -> None:
     """A module built after the fingerprint has no baseline, and reads as moved.
 
     ``tms_drive`` is constructed by ``build_data`` -- it only exists when the
@@ -231,6 +255,7 @@ def test_every_parameter_has_a_recorded_initialisation(ckpt: Path) -> None:
     its novel claim. The trainer now registers late-built modules; this asserts
     the set stays empty so the same thing cannot come back through another one.
     """
+    run, ckpt = run_ckpt
     rep = _moved(_load(ckpt))
     unf = rep.get("unfingerprinted")
     if unf is None:
@@ -242,7 +267,8 @@ def test_every_parameter_has_a_recorded_initialisation(ckpt: Path) -> None:
     )
 
 
-def test_the_initialisation_is_reproducible_so_a_resume_does_not_inflate_it() -> None:
+@parametrize_runs
+def test_the_initialisation_is_reproducible_so_a_resume_does_not_inflate_it(run) -> None:
     """`moved_since_init` must survive an interrupted run, and this is why it does.
 
     The fingerprint is taken in ``FoundationTrainer.__init__``, before any
@@ -266,10 +292,7 @@ def test_the_initialisation_is_reproducible_so_a_resume_does_not_inflate_it() ->
     from scwbd.foundation.model import SCWBD
     from scwbd.foundation.util import set_determinism
 
-    cfgp = REPO / "configs/run3/scwbd-003.yaml"
-    if not cfgp.is_file():
-        pytest.skip("run-3 config absent")
-    cfg = load_config(cfgp)
+    cfg = load_config(str(run.config))
     anat = load_anatomy(device="cpu")
 
     def fingerprint() -> str:
@@ -282,7 +305,7 @@ def test_the_initialisation_is_reproducible_so_a_resume_does_not_inflate_it() ->
         return h.hexdigest()
 
     assert fingerprint() == fingerprint(), (
-        "two constructions at the same seed produced different weights, so the "
+        f"{run.run_id}: two constructions at the same seed produced different weights, so the "
         "initialisation this run is compared against is not reproducible. After "
         "any resume, `moved_since_init` would report nearly everything as moved "
         "regardless of training."

@@ -51,9 +51,14 @@ from pathlib import Path
 
 import pytest
 
+from ._runs import parametrize_runs, raw_stages, training_runs
+
 REPO = Path(__file__).resolve().parents[2]
+
+#: Run 3, still named, because three assertions below are about ITS bytes: the
+#: T4 -> T5 boundary comparison and the two `_MISSING_T4` skips are historical
+#: facts about a finished run, not invariants a future run must satisfy.
 RUN3 = REPO / "checkpoints/scwbd-003"
-CONFIG = REPO / "configs/run3/scwbd-003.yaml"
 
 #: The five parameters of the Balloon-Windkessel model, and nothing else in
 #: `BOLDHead`. `log_noise`, `logvar_gain` and `rho` are observation-noise and
@@ -86,7 +91,16 @@ def _load(path: Path) -> dict:
 
 
 def _stage_checkpoints() -> list[Path]:
-    return sorted(RUN3.glob("stage_*.pt"))
+    """Every stage checkpoint of every discovered run, not just run 3's.
+
+    Was `sorted(RUN3.glob(...))`. Run 4 is the run whose Balloon parameters are
+    supposed to MOVE -- it is ISSUE-008's fix -- and pinning this to run 3 meant
+    the one checkpoint set the inversion was written for could never reach it.
+    """
+    out: list[Path] = []
+    for run in training_runs():
+        out += [c for c in run.checkpoints if c.name.startswith("stage_")]
+    return out
 
 
 def _frozen_balloon(ck: dict) -> list[str]:
@@ -173,7 +187,8 @@ def test_the_balloon_parameters_are_frozen_in_every_stage(ckpt: Path) -> None:
     )
 
 
-def test_the_simulator_stage_does_not_integrate_the_ode_either() -> None:
+@parametrize_runs
+def test_the_simulator_stage_does_not_integrate_the_ode_either(run) -> None:
     """The correction to this gate's first draft, kept as a check.
 
     It is tempting to assume the simulator exercises the physics -- it is the
@@ -182,23 +197,23 @@ def test_the_simulator_stage_does_not_integrate_the_ode_either() -> None:
     return, and so that turning `with_hemo` on without also consuming
     `roll.hemo` in a loss does not read as a fix.
     """
-    if not CONFIG.is_file():
-        pytest.skip("run-3 config absent")
-    import yaml
-
-    cfg = yaml.safe_load(CONFIG.read_text())
     hemo_on = [
         s["name"]
-        for s in cfg["train"]["stages"]
+        for s in raw_stages(run)
         if ((s.get("extra") or {}).get("curriculum") or {}).get("with_hemo")
     ]
     assert not hemo_on, (
-        f"{hemo_on} now request with_hemo. That alone does not discharge "
+        f"{run.run_id}: {hemo_on} now request with_hemo. That alone does not discharge "
         "ISSUE-008: `sim_losses` reads roll.activity and never roll.hemo, so "
         "the compartments would be integrated and thrown away. Check that a "
         "loss actually consumes them before treating this as repaired."
     )
 
+    # The byte assertion below is about RUN 3's T4 specifically -- a historical
+    # fact, not an invariant. A later run whose T4 legitimately moves them is the
+    # fix landing, and is asserted by the parametrised test above instead.
+    if run.run_id != "run3":
+        return
     t4 = RUN3 / "stage_T4_simulator.pt"
     if not t4.is_file():
         pytest.skip(_MISSING_T4)
@@ -241,8 +256,10 @@ def test_there_is_something_to_check() -> None:
     disk every parametrised test above collects zero cases and the file reports
     success while asserting nothing at all.
     """
-    if not RUN3.is_dir():
-        pytest.skip("no run-3 checkpoint directory yet")
+    runs = training_runs()
+    assert runs, "no training runs discovered at all"
     assert _stage_checkpoints(), (
-        "no run-3 stage checkpoint on disk, so the gate above is vacuous."
+        f"no stage checkpoint on disk for any of {[r.run_id for r in runs]}, so the "
+        "parametrised gate above collects zero cases and reports success while "
+        "asserting nothing."
     )

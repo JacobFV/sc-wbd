@@ -45,6 +45,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from ._runs import parameter_names, training_runs
+
 REPO = Path(__file__).resolve().parents[2]
 CARDS = REPO / "configs/curriculum/source_cards"
 CKPT = REPO / "checkpoints/scwbd-002-pilot/stage_T1_measured_founding.pt"
@@ -158,6 +160,14 @@ def _all_architecture_keys() -> list[str]:
             sub = ck.get(container)
             if isinstance(sub, dict):
                 keys += [f"{container}.{k}" for k in sub]
+
+    # The architectures the CONFIGS build, beside the ones already on disk.
+    # `_ARCHITECTURES` is a list of checkpoints, so it can only ever describe
+    # runs that have finished -- and the run whose cards most need checking is
+    # the one about to launch. Run 4 gates `msg_proj` off and adds the fitted
+    # individualizer, so its parameter set is not any saved file's.
+    for run in training_runs():
+        keys += list(parameter_names(run))
     return sorted(set(keys))
 
 
@@ -238,6 +248,17 @@ def test_no_module_is_unreachable_by_every_enabled_card() -> None:
         # which is the point: "frozen because no card names it" and "frozen
         # because a card froze it" are different facts and only one is auditable.
         "tau_prior",
+        # RETIRED, and only reachable from here because this gate now builds the
+        # architecture each run's config describes rather than reading finished
+        # checkpoints. `uncertainty_propagator` (5 tensors: log_decay and a
+        # 2-layer net) is built by configs/run2/scwbd-001.yaml and by NOTHING
+        # else -- run 3 and run 4 do not have it, and it is absent from run 3's
+        # published `model` state dict. No enabled card names it because the
+        # module it belonged to went away, not because a live module was
+        # overlooked. Recorded rather than granted: a card pattern invented to
+        # silence this would be a permission over a module that no longer
+        # exists, which is the decorative-grant defect this file tests for.
+        "uncertainty_propagator",
     }
     unexpected = [m for m in ungrantable_modules if m not in known]
     assert not unexpected, (
