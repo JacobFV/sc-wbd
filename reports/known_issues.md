@@ -28,7 +28,7 @@ here and the entries below are the detail.
 | ISSUE-009 | closed | `check_r12` could not read a config object; R12 had two enforcers |
 | ISSUE-010 | repaired | the ablation overwrote the checkpoint it was evaluating |
 | ISSUE-011 | closed | four sources unattributable; SC-WBD-003 could not be released |
-| ISSUE-012 | **open** | the amortised posterior is calibrated and carries no information |
+| ISSUE-012 | **open — cause found, discharge pending run 4** | the amortised posterior is calibrated and carries no information. The one-stage retrain ran 2026-08-10: the LEARNING RATE was the defect (`log_G` R² −0.001 at run 3's 4.0e-6, **+0.674** at 1.0e-3, control reproducing run 3 to 0.01), and the across-dataset conditioning is what keeps the high rate from being overconfident. Not discharged: `sbc_ks_pvalue_min` from the sweep is not comparable to production's, so calibration is unknown until a run measures it |
 | ISSUE-013 | closed 2026-08-09 for run 4 | the pooled `subject_specific_ar` row is dropped; the arm is measured on a within-participant temporal split. Run 3's published table still carries the duplicate row and is described as five comparators, not six |
 | ISSUE-014 | closed 2026-08-09 for run 4 | the split policy is versioned and declared per run; run 4 takes `stable_hash_v2` (0 of 108 move), runs 1-3 stay pinned to `shuffle_slice_v1` (28 move, 6 into test), and `--quick` refuses an order-dependent policy |
 | ISSUE-015 | closed 2026-08-09 | ~20 prose sites stated DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6×; rewritten, rebuilt and republished |
@@ -1450,6 +1450,55 @@ Recovering calibration by widening back to the prior does not discharge it.
 If a retrain under those conditions still returns the prior, then the summary statistics are the
 wrong ones and the finding becomes an identifiability result about this observation operator, which
 is a more important result than the defect and should be written up as one.
+
+### The retrain was run, 2026-08-10. The LR was the defect. The issue stays open.
+
+`scripts/sweep_posterior.py`, the one-stage retrain this issue asks for: posterior only, same
+objective, same masked context, same corpus, 1,500 steps per cell, held-out trajectories. Full
+protocol and the pre-registered decision rule in `reports/RUN4_LAUNCH_PLAN.md`; raw cells in
+`reports/run4_posterior/`.
+
+**The control reproduces run 3, which is what makes the rest evidence.** `layer_v1` at 4.0e-6 —
+run 3's exact setting, 0.02 × T4's 2.0e-4 — returns `log_G` R² **−0.001** at a posterior sd
+**1.031×** the prior's. This issue measured run 3's own checkpoint at −0.010 and 1.024. Two
+independent statistics agreeing to 0.01 and 0.7%.
+
+**Remedy (b), the learning rate, is the first-order cause.** At 1.0e-3 the same architecture
+reaches `log_G` R² **+0.674** with posterior sd 0.35× the prior's — past the 0.4 floor, past the
+0.439 ridge probe. 3.0e-3 degrades, so it is an optimum and not the edge of the grid.
+
+**Remedy (c), the conditioning, is what makes the high rate usable.** At 1.0e-3, `dataset_std_v2`
+pays 7.075 nats of held-out `−log q` where the per-sample LayerNorm pays 8.445 — worse than the
+prior-returning control's 7.866, i.e. `layer_v1` at that rate is overconfident and `dataset_std_v2`
+is not.
+
+**Two corrections to numbers reported earlier the same night**, recorded because the pattern
+matters more than either figure:
+
+- an earlier +0.834 was measured on a validation set taken as the first 512 windows in file order
+  — one or two shards, so one or two simulator backends. On a set spanning shards the same cell
+  gives +0.644. Superseded in `0eb0fca`.
+- an earlier reading that the conditioning change "does essentially nothing" came off a 300-step
+  smoke where it was a wash (0.323 vs 0.332). It is wrong at 1,500 steps.
+
+**What is NOT established, and why this issue is still open:**
+
+1. **Calibration.** `sbc_ks_pvalue_min` is 0.000 in every informative cell. That number is *not*
+   comparable to a published run's: `evaluate.posterior_calibration` draws its 512 datasets
+   backend-stratified and the sweep's are merely shuffled. So it is not evidence of failure and
+   not evidence of success. The discharge condition requires `> 0.01` measured by production, and
+   only a run produces that.
+2. **The `dataset_std_v2` arm is unstable across learning rate.** Held-out `−log q` reads
+   7.932 / 11.103 / 13.200 / 7.075 / 7.212 at 4.0e-6 / 4.0e-5 / 2.0e-4 / 1.0e-3 / 3.0e-3, with
+   `coverage_mae` tracking it (0.018 / 0.106 / 0.101 / 0.021 / 0.017). That is not a smooth
+   function of the learning rate. `layer_v1` over the same range is monotone. The sweep runs one
+   seed per cell with no replication and cannot separate running-statistics instability in
+   `_DatasetStandardise` from seed variance. A three-seed replication at the two candidate cells
+   is the last measurement before run 4's `lr_scale` is fixed; see `RUN4_LAUNCH_PLAN.md` §3a.
+
+So: the *cause* is established and remedied in `configs/run4`; the *discharge* is not, and run 4
+launches with its posterior's calibration unknown, stated in the model card rather than discovered
+afterwards.
 
 ### Guard
 
