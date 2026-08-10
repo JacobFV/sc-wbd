@@ -411,9 +411,44 @@ def test_universe_is_the_model_that_runs(universe) -> None:
     All three arrived with the attachment-axis and parcel-BOLD work. See
     ``test_no_module_is_in_the_model_but_absent_from_every_card`` for what is --
     and is not -- governing them.
+
+    163 -> 161 on 2026-08-10, and this one is a SHRINK, which the tripwire is
+    just as much for. The two are:
+
+      posterior.flow.cond_norm.weight   1
+      posterior.flow.cond_norm.bias     1
+
+    ISSUE-012's remedy (c) replaced the conditioning's per-sample
+    ``nn.LayerNorm`` with ``_DatasetStandardise``, which normalises each
+    conditioning dimension ACROSS datasets. Measured directly:
+
+        layer_v1        params ['cond_norm.weight', 'cond_norm.bias']  buffers []
+        dataset_std_v2  params []  buffers ['running_mean', 'running_var', 'n_batches']
+
+    The standardiser carries running statistics as BUFFERS and has no learnable
+    affine, so `parameter_universe` -- which counts `named_parameters()` with
+    `requires_grad` -- loses exactly two and gains none.
+
+    That is the intended design rather than a capability lost: every coupling net
+    applies its own learned linear map to ``c`` as its first operation
+    (`_Coupling.net[0]` takes ``cat([z*m, c])``), so an affine on the normaliser
+    is redundant with the layer immediately downstream of it.
+
+    Two things this delta does NOT silently break, both checked rather than
+    assumed: no card or stage glob names ``cond_norm`` (the launch gate
+    `test_no_stage_permission_glob_is_dead` would report it dead), and the
+    running statistics not being in `moved_since_init` cannot hide an unfitted
+    standardiser -- `_DatasetStandardise` RAISES `UnfittedConditioner` at eval
+    rather than passing ``c`` through at mean 0 / var 1.
     """
     names, prov = universe
-    assert len(names) == 163
+    assert len(names) == 161
+    # The shrink is exactly the two named above, not a coincidence of counts.
+    assert not [n for n in names if "cond_norm" in n], (
+        "cond_norm contributes learnable parameters again. If the conditioning "
+        "normaliser regained an affine, say why here -- it is redundant with the "
+        "linear map every coupling net applies to c immediately afterwards."
+    )
     assert "posterior.summary.conv.0.weight" in names
     assert "individualizer.mu" in names
     assert "coupling.gain_soft" in names
