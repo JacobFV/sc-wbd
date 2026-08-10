@@ -780,6 +780,30 @@ class FoundationTrainer:
         if self._data_ready:
             return
         d = self.cfg.data
+        # `--quick` REDUCES THE PARTICIPANT ROSTER, and under an order-dependent
+        # split policy a reduced roster is a different holdout. Measured on the
+        # released `shuffle_slice_v1` at seed 20260805: the six-participant quick
+        # roster puts S001 and S004 in the test fold although the 109-participant
+        # split trains on both. A flag advertised as a cost saving must not be
+        # able to redefine what "held out" means, so it refuses.
+        #
+        # Raised HERE, at the top, and not inside the measured-EEG block below:
+        # that block converts every exception into a "[warn] real EEG
+        # unavailable" and carries on, which would turn this refusal into the
+        # quietest possible message about the loudest possible defect.
+        from .realdata import ORDER_INDEPENDENT_POLICIES
+
+        if self.quick and d.split_policy not in ORDER_INDEPENDENT_POLICIES:
+            raise RuntimeError(
+                f"--quick with data.split_policy={d.split_policy!r} is refused. "
+                f"{d.split_policy!r} assigns a participant's fold from the whole "
+                "participant set, so building the corpus with `max_subjects` "
+                "re-splits it: a participant the full run TRAINED on can land in "
+                "the reduced run's holdout, and the score is then memorisation "
+                "reported as generalisation (R10, ISSUE-014). Either declare "
+                f"data.split_policy: {sorted(ORDER_INDEPENDENT_POLICIES)[0]!r}, "
+                "whose assignment does not depend on the roster, or drop --quick."
+            )
         idx = Path(d.sim_index_fast)
         if not idx.exists():
             raise FileNotFoundError(
@@ -817,7 +841,13 @@ class FoundationTrainer:
             )
             ds = EEGMMIDBDataset(rc)
             if len(ds) > 0:
-                split = participant_split(ds, test_fraction=d.real_test_fraction, val_fraction=0.1, seed=d.seed)
+                split = participant_split(
+                    ds,
+                    test_fraction=d.real_test_fraction,
+                    val_fraction=0.1,
+                    seed=d.seed,
+                    policy=d.split_policy,
+                )
                 # HARD GATE, before a single measured window can reach a loss.
                 # The routine existed and simply was not called; Stage III was
                 # gated by a coordinator remembering to ask, which worked once.
@@ -950,7 +980,13 @@ class FoundationTrainer:
                 print(f"[warn] {source_id}: 0 windows on disk; it will contribute "
                       "no term rather than a zero one", flush=True)
                 return
-            split = participant_split(ds, test_fraction=d.real_test_fraction, val_fraction=0.1, seed=d.seed)
+            split = participant_split(
+                ds,
+                test_fraction=d.real_test_fraction,
+                val_fraction=0.1,
+                seed=d.seed,
+                policy=d.split_policy,
+            )
             self._audit_real_split(split, ds)
             self.eeg_datasets[source_id] = ds
             self.eeg_loaders[source_id] = _cycle(
@@ -973,7 +1009,13 @@ class FoundationTrainer:
         try:
             bds = DS000117BehaviourDataset(rc)
             if len(bds) > 0:
-                split = participant_split(bds, test_fraction=d.real_test_fraction, val_fraction=0.1, seed=d.seed)
+                split = participant_split(
+                    bds,
+                    test_fraction=d.real_test_fraction,
+                    val_fraction=0.1,
+                    seed=d.seed,
+                    policy=d.split_policy,
+                )
                 self.behaviour_dataset = bds
                 self.behaviour_loader = _cycle(
                     torch.utils.data.DataLoader(

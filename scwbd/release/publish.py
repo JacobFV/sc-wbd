@@ -1134,11 +1134,22 @@ def _run1_card(plan: ArtifactPlan, *, ev: Mapping[str, Any], eval_rel: str) -> s
             f"{indiv.get('n_individualised_participants')} individualised, "
             f"{indiv.get('n_at_initialisation')} still at initialisation."
         )
-    body.append(
-        "- Two baselines in the table, `ar16` and `subject_specific_ar`, are "
-        "bit-identical: the participant-disjoint split routes every test window "
-        "to the `ar16` fallback. Read the table as four distinct baselines."
-    )
+    # Was UNCONDITIONAL, and said "four distinct baselines" beside a block two
+    # dozen lines above that says five. Both were literals about one particular
+    # evaluation; the count and the condition are now read off the artifact, so a
+    # protocol that no longer emits the duplicate row does not leave the card
+    # asserting a duplication that is not there.
+    _dropped = (ho.get("dropped_baselines") or {}).get("subject_specific_ar")
+    _n_baselines = len([k for k in arms if k != name])
+    if _ss and _ar and _ss.get("nll_per_sample") == _ar.get("nll_per_sample"):
+        body.append(
+            f"- Two baselines in the table, `ar16` and `subject_specific_ar`, are "
+            f"bit-identical: the participant-disjoint split routes every test "
+            f"window to the `ar16` fallback. Read the table as "
+            f"{max(_n_baselines - 1, 0)} distinct baselines."
+        )
+    elif _dropped:
+        body.append(f"- `subject_specific_ar` is not in the table. {_dropped}")
     body.append("")
 
     body += [

@@ -132,6 +132,25 @@ data:
   # +9 GB, and the 9 comes from the Balloon ODE.
   batch: 8
 
+  # ISSUE-014, discharged here because it can only be discharged at the start of
+  # a run. Run 3 inherits `shuffle_slice_v1`, which assigns a participant's fold
+  # from the WHOLE participant set: at run 3's own seed, removing one of the 109
+  # eegmmidb participants reassigns 28 of the remaining 108 and moves 6 of them
+  # from train into test. `evaluate_model` rebuilds the split from whatever
+  # corpus is on disk, so one recording that fails to preprocess is enough, and
+  # the failure reads BETTER when broken -- a memorised participant promoted into
+  # the test fold improves the held-out score.
+  #
+  # `stable_hash_v2` assigns each participant from their own group key and the
+  # seed alone. The same removal moves 0 of 108. Measured on this roster at
+  # seed 20260807, the realised folds are 67 train / 17 val / 25 test against
+  # 71/11/27 -- looser proportions, bought with a holdout that cannot drift.
+  #
+  # This is a DIFFERENT SPLIT from run 3's, deliberately. Run 4's numbers are
+  # therefore not directly comparable with run 3's held-out table, and
+  # `real_split.policy` in every 004 artifact says which one produced it.
+  split_policy: stable_hash_v2
+
 train:
   run_name: scwbd-004
   out_dir: checkpoints/scwbd-004

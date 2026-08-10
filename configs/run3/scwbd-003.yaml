@@ -190,6 +190,17 @@ data:
   pin_memory: false
   val_fraction: 0.05
   real_test_fraction: 0.25
+  # The participant-assignment policy this run TRAINED under. Declared, not
+  # inherited: the default is now `stable_hash_v2`, whose folds differ, and
+  # `checkpoints/scwbd-003/last.pt` carries a `real_split` fingerprint that
+  # verifies against 71/11/27 and no other split. Changing this line re-splits a
+  # released artifact and `real_eeg_holdout` will refuse to evaluate it.
+  #
+  # It is also the defect ISSUE-014 records: at this seed, removing one of the
+  # 109 participants reassigns 28 of the remaining 108 and moves 6 from train
+  # into test. That is why run 4 declares `stable_hash_v2` instead, and why this
+  # line stays as it is.
+  split_policy: shuffle_slice_v1
   seed: 20260807
 
 train:

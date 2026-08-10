@@ -80,6 +80,10 @@ __all__ = [
     "DS004024_EEG_CHANNELS",
     "ds000117_scalp_channels",
     "participant_split",
+    "assign_groups",
+    "SPLIT_POLICIES",
+    "ORDER_INDEPENDENT_POLICIES",
+    "DEFAULT_SPLIT_POLICY",
     "leakage_check",
     "make_loaders",
 ]
@@ -1198,11 +1202,23 @@ def _window_sessions(dataset: Any) -> list[str]:
 def _assign_groups(
     groups: Sequence[str], *, test_fraction: float, val_fraction: float, seed: int
 ) -> dict[str, str]:
-    """Deterministically assign whole participants to train/val/test.
+    """Policy ``shuffle_slice_v1``: shuffle the sorted participants, slice by count.
 
-    Shuffling with an explicit seed and slicing by count (rather than hashing)
-    keeps the realised fold sizes close to the requested fractions even for the
-    small subject counts used in smoke tests.
+    Realised fold sizes track the requested fractions exactly, which is what this
+    was written for.  It buys that with a property nobody declared: **the fold of
+    every participant depends on the whole participant set**, because the slice
+    boundaries move when the count does and the shuffle re-deals the whole list.
+
+    Measured on run 3's 109-participant eegmmidb roster at its own
+    ``seed=20260807``, ``test_fraction=0.25``, ``val_fraction=0.1``: removing one
+    participant reassigns **28 of the remaining 108**, and **6 of them move from
+    ``train`` into ``test``** -- the direction that scores a model on people it
+    memorised and reports the result as generalisation.  ISSUE-014.
+
+    It is kept, unchanged and bit-for-bit, because three released checkpoints
+    trained under it and their recorded split fingerprints must keep verifying.
+    New runs declare :data:`DEFAULT_SPLIT_POLICY` instead; see
+    :data:`SPLIT_POLICIES`.
     """
     ordered = sorted(set(groups))
     n = len(ordered)
@@ -1238,11 +1254,25 @@ def _assign_groups(
 def _hash_assign_groups(
     groups: Sequence[str], *, test_fraction: float, val_fraction: float, seed: int
 ) -> dict[str, str]:
-    """Order-independent fallback: SHA-256 of ``seed:participant`` into [0, 1).
+    """Policy ``stable_hash_v2``: SHA-256 of ``seed:participant`` into [0, 1).
 
-    Used when agent B's splitter cannot be imported or adapted.  It is stable
-    under adding or removing participants (useful while a download completes),
-    at the cost of noisier fold sizes.
+    A participant's fold is a function of **that participant's group key and the
+    seed alone**.  Nothing about who else is in the set can reach it, so the same
+    removal that moves 28 participants under ``shuffle_slice_v1`` moves **0**, and
+    a roster that grows or shrinks -- one recording that failed to preprocess, one
+    more download that finished, ``--quick`` -- cannot silently redefine the
+    holdout.
+
+    The price is paid in fold sizes, which are binomial rather than exact: on run
+    3's roster at ``seed=20260807`` this realises 67/17/25 (train/val/test) where
+    the count-slicing policy realises 71/11/27 for the same fractions.  That is
+    the trade, and it is the reason this is a per-run declaration rather than a
+    silent replacement.
+
+    On a small roster a fold can come out empty.  That is reported by
+    :func:`leakage_check` as a warning and by ``participant_split``'s realised
+    sizes; it is not repaired here, because a fixed-up fold would restore exactly
+    the set-dependence this policy exists to remove.
     """
     assignment: dict[str, str] = {}
     for g in sorted(set(groups)):
@@ -1257,12 +1287,64 @@ def _hash_assign_groups(
     return assignment
 
 
+#: The participant-assignment policies, by the name a run declares in
+#: ``data.split_policy``.  Two policies exist because a released checkpoint's
+#: holdout is part of the artifact: changing how participants are assigned
+#: changes which people the model may be scored on, so it is versioned rather
+#: than edited.  ``split_fingerprint`` records the name beside the participant
+#: ids, and ``real_eeg_holdout`` refuses when a checkpoint's recorded policy is
+#: not the one the evaluation rebuilt with.
+SPLIT_POLICIES: dict[str, Any] = {
+    "shuffle_slice_v1": _assign_groups,
+    "stable_hash_v2": _hash_assign_groups,
+}
+
+#: Policies whose assignment of a participant does not depend on which OTHER
+#: participants are in the set.  Only these are safe under a reduced roster
+#: (``--quick``, a partial download, a recording that failed to preprocess),
+#: because only these guarantee that a participant the full run trained on
+#: cannot appear in a reduced run's holdout.
+ORDER_INDEPENDENT_POLICIES = frozenset({"stable_hash_v2"})
+
+#: What a run gets if it does not say.  The sound one: a new run must not have
+#: to know about ISSUE-014 to avoid it.  Runs 1-3 declare ``shuffle_slice_v1``
+#: explicitly in their own config files, which is how their published holdouts
+#: stay reproducible.
+DEFAULT_SPLIT_POLICY = "stable_hash_v2"
+
+
+def assign_groups(
+    groups: Sequence[str],
+    *,
+    test_fraction: float,
+    val_fraction: float,
+    seed: int,
+    policy: str = DEFAULT_SPLIT_POLICY,
+) -> dict[str, str]:
+    """Assign whole participants to train/val/test under a **named** policy.
+
+    An unknown name raises.  It does not fall back to a default: a typo in
+    ``data.split_policy`` that quietly selected some other splitter would be
+    ISSUE-014 again, one layer up.
+    """
+    try:
+        fn = SPLIT_POLICIES[policy]
+    except KeyError:
+        raise ValueError(
+            f"unknown split policy {policy!r}; known: {sorted(SPLIT_POLICIES)}. "
+            "The policy decides which participants a model may be scored on, so "
+            "an unrecognised name is refused rather than defaulted."
+        ) from None
+    return fn(groups, test_fraction=test_fraction, val_fraction=val_fraction, seed=seed)
+
+
 def participant_split(
     dataset: Any,
     *,
     test_fraction: float = 0.25,
     val_fraction: float = 0.1,
     seed: int | None = None,
+    policy: str = DEFAULT_SPLIT_POLICY,
 ) -> dict[str, list[int]]:
     """Split *window indices* into train/val/test by **participant**.
 
@@ -1275,8 +1357,15 @@ def participant_split(
     when it can be imported and applied, so this module and agent B's evaluation
     code group identically (and so agent B's lineage checks, which refuse
     unresolved parentage, run here too).  If that import or adaptation fails,
-    a deterministic hash-based participant split is used instead and
-    ``dataset.participant_split_backend`` is set to ``"hash_fallback"``.
+    this function **raises**: a hash of a subject id is not lineage-aware and
+    may not stand in for a grouping that R10 requires be built from lineage.
+
+    ``policy`` names which participant-assignment rule is used once the grouping
+    exists -- see :data:`SPLIT_POLICIES`.  It is a per-run declaration because
+    the two policies produce different holdouts and three released checkpoints
+    trained under the older one.  The name is recorded on the dataset as
+    ``participant_split_policy`` and travels into the checkpoint through
+    ``evaluate.split_fingerprint``.
 
     Returns
     -------
@@ -1288,12 +1377,17 @@ def participant_split(
         raise ValueError("fractions must lie in [0, 1)")
     if test_fraction + val_fraction >= 1.0:
         raise ValueError("test_fraction + val_fraction must leave a training fold")
+    if policy not in SPLIT_POLICIES:
+        raise ValueError(
+            f"unknown split policy {policy!r}; known: {sorted(SPLIT_POLICIES)}"
+        )
     if seed is None:
         seed = int(getattr(getattr(dataset, "cfg", None), "seed", 0))
 
     win_subjects = _window_subjects(dataset)
     if not win_subjects:
         setattr(dataset, "participant_split_backend", "empty")
+        setattr(dataset, "participant_split_policy", policy)
         return {"train": [], "val": [], "test": []}
 
     backend = "hash_fallback"
@@ -1342,16 +1436,20 @@ def participant_split(
             "grouping or pass a split built by GroupedSplitter explicitly."
         ) from exc
 
-    if backend == "grouped_splitter":
-        assignment = _assign_groups(
-            groups, test_fraction=test_fraction, val_fraction=val_fraction, seed=seed
-        )
-    else:
-        assignment = _hash_assign_groups(
-            groups, test_fraction=test_fraction, val_fraction=val_fraction, seed=seed
-        )
+    # The grouping is R10's job and is done above; the POLICY only decides how
+    # the already-grouped participants are dealt into folds. Keeping the two
+    # separate is what lets a run change its policy without touching what a
+    # "participant" is.
+    assignment = assign_groups(
+        groups,
+        test_fraction=test_fraction,
+        val_fraction=val_fraction,
+        seed=seed,
+        policy=policy,
+    )
 
     setattr(dataset, "participant_split_backend", backend)
+    setattr(dataset, "participant_split_policy", policy)
     setattr(dataset, "participant_split_fallback_reason", fallback_reason)
     setattr(dataset, "participant_split_group_of_window", groups)
 
@@ -1440,6 +1538,7 @@ def leakage_check(split: dict[str, Iterable[int]], dataset: Any) -> dict[str, An
         "code": "R10",
         "source": getattr(dataset, "source", "unknown"),
         "split_backend": getattr(dataset, "participant_split_backend", "unknown"),
+        "split_policy": getattr(dataset, "participant_split_policy", "unknown"),
         "split_fallback_reason": getattr(dataset, "participant_split_fallback_reason", ""),
         "n_windows_total": n_total,
         "n_windows_per_fold": {n: len(i) for n, i in folds.items()},

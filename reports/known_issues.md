@@ -29,8 +29,8 @@ here and the entries below are the detail.
 | ISSUE-010 | repaired | the ablation overwrote the checkpoint it was evaluating |
 | ISSUE-011 | closed | four sources unattributable; SC-WBD-003 could not be released |
 | ISSUE-012 | **open** | the amortised posterior is calibrated and carries no information |
-| ISSUE-013 | **open** | `subject_specific_ar` is 100% fallback, so it is `ar16` |
-| ISSUE-014 | **open** | participant assignment unstable; `--quick` leaks trained participants |
+| ISSUE-013 | closed 2026-08-09 for run 4 | the pooled `subject_specific_ar` row is dropped; the arm is measured on a within-participant temporal split. Run 3's published table still carries the duplicate row and is described as five comparators, not six |
+| ISSUE-014 | closed 2026-08-09 for run 4 | the split policy is versioned and declared per run; run 4 takes `stable_hash_v2` (0 of 108 move), runs 1-3 stay pinned to `shuffle_slice_v1` (28 move, 6 into test), and `--quick` refuses an order-dependent policy |
 | ISSUE-015 | closed 2026-08-09 | ~20 prose sites stated DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6×; rewritten, rebuilt and republished |
 
 ---
@@ -883,7 +883,21 @@ until this is closed.**
 
 ## ISSUE-013 — `subject_specific_ar` is its pooled fallback, so the thesis's hardest baseline is not being run
 
-**Status:** open. Guarded by a test that is deliberately red:
+**Status: CLOSED 2026-08-09 for run 4.** Resolution (1) and (2) together: the row
+is dropped from the pooled table, and the quantity it was supposed to measure is
+measured on a within-participant temporal split under its own name. See "How it
+was discharged" at the end of this entry. The original diagnosis follows
+unchanged.
+
+> **RUN 3'S PUBLISHED TABLE IS NOT RETROSPECTIVELY EDITED.**
+> `reports/training/evaluation_run3.json` still carries six rows, one of which is
+> a duplicate of `ar16`, and `reports/RUN3.md`, the paper §11.9 and the site all
+> already say so in those words — "five distinct comparators, not six". Those
+> statements stay true and stay where they are. What changed is the protocol
+> every evaluation from now on runs: `real_eeg_holdout` no longer emits the row,
+> and `evaluate_model` emits `within_participant_holdout` beside it.
+
+**Original status:** open. Guarded by a test that is deliberately red:
 `tests/evaluation_audit/test_baseline_integrity.py::test_subject_specific_baseline_is_not_silently_its_pooled_fallback`.
 **Owner of the fix:** the evaluation protocol, not `baselines.py`.
 **Severity:** live. It affects a row in the published comparison table.
@@ -953,11 +967,67 @@ what "held out" means for that row. That is a protocol change with a paper conse
 not a patch. The routing record ships now so the artifact stops reading clean, and the
 test stays red so nothing can quietly ship on top of it.
 
+### How it was discharged
+
+Both resolutions, because they turn out to be halves of one change rather than
+alternatives.
+
+**(2) The row is gone from the pooled table.** `real_eeg_holdout` no longer
+constructs a `SubjectSpecificBaseline`, and its output carries
+`baseline_protocol: v2_no_pooled_subject_specific` plus a `dropped_baselines`
+entry naming the arm, the reason (R10 makes the fit and score participant sets
+disjoint, so the row was bit-for-bit `ar16`), and where the quantity went. A row
+that vanishes without a record is indistinguishable from one that never existed,
+which is how a duplicate survived three runs.
+
+**(1) The quantity is measured, on a split that can actually carry it.**
+`evaluate.within_participant_holdout` keeps the participant-disjoint OUTER
+holdout — the model has still trained on none of these people — and puts a
+temporal INNER split inside each held-out participant: the earliest 50% of their
+windows fit their own AR(16), **8 windows are dropped as a gap**, and their later
+windows are scored. Windows are non-overlapping by construction, but the last fit
+window and the first scored window are still adjacent in time and an AR fitted up
+to the boundary would be scored on the continuation of its own training signal;
+the gap is what makes the scored future a future. `ar16_pooled`, fitted on the
+train fold, is scored on the identical later windows, so the contrast is exactly
+"this person's own past" against "other people's data".
+
+**It is not a row in the main table, and the artifact says so.** The block carries
+`not_comparable_with`, because its baseline has seen the scored participant and
+every arm in `real_eeg_holdout.results` has not. Folding them into one table
+invites precisely the comparison that is invalid — which is the shape of the
+original defect, one level up.
+
+`n_parameters` is reported per arm as before, so the 77,248-parameters-never-used
+figure cannot recur: the models counted are the models used.
+
+**The guard inverted rather than relaxed.**
+`test_subject_specific_baseline_is_not_silently_its_pooled_fallback` now asserts
+both halves — that `real_eeg_holdout` no longer fits the arm and records why, and
+that on a within-participant split the arm is measurably different from its
+pooled base at 0% fallback routing. A second test pins that the replacement block
+is a separate top-level key rather than a row folded back in.
+
 ---
 
 ## ISSUE-014 — `_assign_groups` reassigns participants when the participant set changes, and `--quick` re-splits silently
 
-**Status:** open. Guarded by two tests that are deliberately red, in
+**Status: CLOSED 2026-08-09 for run 4.** All three items below are done: the
+splitter is versioned and declared per run, the fingerprint records which policy
+produced it, and `--quick` refuses an order-dependent policy rather than
+re-splitting quietly. See "How it was discharged" at the end of this entry. The
+original diagnosis follows unchanged.
+
+> **RUNS 1-3 ARE NOT RE-SPLIT.** `shuffle_slice_v1` is kept, bit-for-bit, and
+> `configs/scwbd_001_beta.yaml`, `configs/run2/scwbd-001.yaml` and
+> `configs/run3/scwbd-003.yaml` now name it in their own `data:` blocks. Verified:
+> re-running `configs/run3/scwbd-003.yaml` reproduces `checkpoints/scwbd-003/last.pt`'s
+> recorded `real_split` fingerprint field-for-field — the same 71/11/27 folds and
+> the same sha256 `bdf41ba7…`. The fingerprint check in `real_eeg_holdout` was
+> strengthened, not weakened: a recorded policy that disagrees with the rebuilt
+> one now raises even when the participant ids happen to match.
+
+**Original status:** open. Guarded by two tests that are deliberately red, in
 `tests/evaluation_audit/test_split_and_verdict_integrity.py`:
 `test_participant_assignment_is_stable_under_a_changed_participant_set` and
 `test_quick_mode_does_not_silently_change_the_holdout`.
@@ -1023,6 +1093,75 @@ already trained; it is a next-run change and must be sequenced with one. (2) and
 in the training and CLI paths respectively, not the evaluation path this triage covers,
 and (2) has no effect on any checkpoint already written. The tests stay red so the
 sequencing decision cannot be lost.
+
+### How it was discharged
+
+Run 4 has not launched, which is the only moment (1) can be taken, so it was taken
+here.
+
+**The splitter is versioned, not replaced.** `realdata.SPLIT_POLICIES` holds two
+named policies and a run declares one in `data.split_policy`:
+
+| policy | who uses it | reassigned when one of 109 goes | into `test` | realised folds |
+| --- | --- | ---: | ---: | --- |
+| `shuffle_slice_v1` | runs 1, 2, 3 | **28** of 108 | **6** | 71/11/27 |
+| `stable_hash_v2` | run 4, and the default | **0** of 108 | **0** | 67/17/25 |
+
+Measured on the 109-participant eegmmidb roster with the real lineage group keys
+(`-/S001` …) at run 3's own `seed=20260807`, `test_fraction=0.25`,
+`val_fraction=0.1`. The 17/4 in the original diagnosis above is the same
+measurement at the *default* seed 20260805, which is run 1's; both are recorded
+because the two tests use one each.
+
+`stable_hash_v2` buys stability with looser proportions — 67 training
+participants instead of 71 — and that is the trade, stated rather than
+discovered later. The fold sizes are binomial, so on a small roster a fold can
+come out empty; `leakage_check` warns and nothing fixes it up, because a fixed-up
+fold would restore exactly the set-dependence the policy exists to remove.
+
+**The default is the sound one.** A new run must not have to know about this issue
+to avoid it, so `DataConfig.split_policy` defaults to `stable_hash_v2` and the
+three historical run configs name `shuffle_slice_v1` explicitly. That is the
+direction that fails safe: a config that forgets to declare gets the stable
+policy, and a released checkpoint whose config was edited fails its own
+fingerprint check loudly.
+
+**(2) was already done and is now readable.** Both `checkpoints/scwbd-003/last.pt`
+and `checkpoints/scwbd-002-pilot/last.pt` do record a `real_split` fingerprint.
+The claim above that the released checkpoint does not was true of run 1's
+`stage_V_individual.pt`, which predates the field — that is what
+`reports/scope_gap.md`'s `real_split.verified: false` is about — and it was
+carried forward to run 3 without being re-checked against run 3's own artifact.
+`split_fingerprint` now also records `policy` beside the participant ids. It is
+deliberately **not** folded into the sha256: three released checkpoints already
+recorded that hash, and mixing a new field into it would make every one of them
+fail to verify against its own split. The ids are what verification rests on; the
+policy says how they came about, and `real_eeg_holdout` raises when a recorded
+policy disagrees with the rebuilt one even if the ids match — that agreement is a
+coincidence of one roster, not a property of the split.
+
+**(3) `--quick` refuses.** `FoundationTrainer.build_data` raises when
+`self.quick` is set and the declared policy is not in
+`ORDER_INDEPENDENT_POLICIES`, naming the policy, the measured leak and the two
+ways out. It is raised at the **top** of `build_data`, before the measured-EEG
+block, because that block converts every exception into a `[warn] real EEG
+unavailable` and carries on — a refusal placed three lines lower would have been
+the quietest possible message about the loudest possible defect, and the test
+calls `build_data` rather than grepping its source for exactly that reason.
+`configs/scwbd_ci_smoke.yaml` declares `stable_hash_v2` so the CI smoke, which
+runs with `--quick`, keeps running; it is CI, not a released checkpoint.
+
+Under `stable_hash_v2` the refusal is not needed and is kept anyway: the reduced
+roster gets *the same folds it has in the full roster*, participant for
+participant, which is resolution (3)'s "subset the recorded test fold" obtained
+structurally rather than by bookkeeping.
+
+**The guards inverted rather than relaxed.** Both tests now assert the fix, and
+two more were added: one pinning that the config default and the splitter default
+agree, one pinning that runs 1-3 declare `shuffle_slice_v1` and run 4 declares
+`stable_hash_v2`. `shuffle_slice_v1`'s measured instability (17 moved / 4 leaked
+at the default seed) is itself asserted, so the reason runs 1-3 are pinned to it
+stays a measurement rather than a memory.
 
 ---
 
@@ -1334,7 +1473,7 @@ run 3 — it is the first run whose calibration was good enough to hide it.
 
 ---
 
-## Suite ground truth, 2026-08-09
+## Suite ground truth, 2026-08-09 (superseded by the entry below)
 
 Measured on a QUIET TREE: all four background agents landed, nothing else editing
 source, no mutation sweep in flight. Every earlier suite count this session came
@@ -1361,5 +1500,45 @@ error in `tests/schema` taking the whole directory with it, 3 in
 was live and reached a published number (the `SimCorpus` global-RNG defect that
 scored every ablation arm on different windows).
 
-A red run of the three above is the correct state and must not be "fixed" by
-weakening them. If a FOURTH failure appears, it is new.
+---
+
+## Suite ground truth, 2026-08-09, after ISSUE-013 and ISSUE-014
+
+**Zero failures. There is no deliberately-red guard left in the fast suite.**
+
+    PYTHONDONTWRITEBYTECODE=1 pytest -q -p no:randomly -p no:warnings --tb=line
+    3,203 passed, 79 skipped, 0 failed, 0 errors      pytest_rc=0
+    22:33:46 -> 23:04:21, 30.6 min
+
+`pytest_rc` is read on its own line, immediately, and not through a pipe: the
+first attempt at this measurement piped pytest into `tail`, so the exit status
+reported was **`tail`'s**, which is the mistake this repository's own shell rule
+exists to prevent and which would have been reported as a pass regardless of the
+result.
+
+Measured on a QUIET TREE, verified with `ps` before starting and again at the
+end: no other `pytest`, no `scwbd` job, no mutation live on disk. An earlier
+full run of the same tree overlapped another agent's suite between 22:15 and
+22:25 and is therefore not the evidence quoted here; this one replaces it.
+
+The three guards that were red in the entry above now assert the fix:
+
+| test | was | now |
+| --- | --- | --- |
+| `test_subject_specific_baseline_is_not_silently_its_pooled_fallback` | ISSUE-013 defect | the row is gone from the pooled table AND the arm differs from `ar16` on a within-participant split |
+| `test_participant_assignment_is_stable_under_a_changed_participant_set` | ISSUE-014 defect | the default policy reassigns nobody |
+| `test_quick_mode_does_not_silently_change_the_holdout` | ISSUE-014 defect | the quick roster gets the same folds, and the historical policy's leak is still measured |
+
+Seven guards were added beside them, all green:
+`test_the_default_split_policy_is_the_order_independent_one`,
+`test_the_historical_policy_is_still_unstable_and_still_available`,
+`test_runs_one_to_three_declare_the_policy_they_trained_under`,
+`test_quick_refuses_an_order_dependent_split_policy`,
+`test_the_fingerprint_records_which_policy_produced_it`,
+`test_a_policy_mismatch_is_refused_even_when_the_participant_ids_agree`, and
+`test_the_within_participant_arm_is_not_pooled_with_the_disjoint_table`.
+
+**The expected count is now 0.** Any failure in the fast suite is new, and there
+is no longer a "known red" set to hide inside — which was the whole hazard
+RUN2.md §448 recorded: a known-failure row catalogued by its total rather than
+by its failure mode, growing a new member while the count stayed the same.

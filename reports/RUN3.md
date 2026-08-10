@@ -274,6 +274,15 @@ Negative favours SC-WBD. **Every interval excludes zero**: `scwbd_beaten_by` is
 empty and so is `inconclusive_vs_scwbd`. Runs 1 and 2 were negative results;
 this one is not.
 
+This table is baseline protocol **v1**, and the numbers above stand. Run 4 runs
+protocol v2, which drops the `subject_specific_ar` row rather than printing
+`ar16` twice, and measures the arm on a within-participant temporal split
+instead; and it splits participants with `stable_hash_v2` rather than the
+`shuffle_slice_v1` this run declares, so run 4's holdout is a different set of
+people. See `reports/RUN4.md` and ISSUE-013 / ISSUE-014. Nothing here is
+recomputed: `configs/run3/scwbd-003.yaml` names the splitter this run used, and
+re-running it reproduces the checkpoint's recorded split fingerprint exactly.
+
 **The units defect that made run 2's number unpublishable does not apply here,
 and that was checked rather than assumed.** Run 2's site text records that its
 NLL flattered the model because SC-WBD was scored on `target/s` with the

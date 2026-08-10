@@ -21,6 +21,11 @@ data:
   context: 8
   batch: 8
   num_workers: 0
+  # The smoke runs with `--quick`, which reduces the participant roster, and a
+  # reduced roster under `shuffle_slice_v1` (inherited from the base config) is a
+  # different holdout -- `build_data` refuses it. This is CI, not a released
+  # checkpoint, so it takes the order-independent policy and keeps running.
+  split_policy: stable_hash_v2
 train:
   run_name: scwbd-ci-smoke
   out_dir: checkpoints/ci-smoke

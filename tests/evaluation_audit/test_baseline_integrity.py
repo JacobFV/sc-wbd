@@ -2,14 +2,15 @@
 
 Two separate checks, and after triage they have opposite verdicts.
 
-1. **Live.** ``SubjectSpecificBaseline`` is fitted on the *train* participants and
-   scored on the *test* participants.  Refusal R10 makes those sets disjoint by
-   construction, so ``models_.get(subject, fallback_)`` misses for **every**
-   scored window and the baseline degrades to its pooled fallback -- which, at
-   the same order and the same seed, is bit-for-bit ``ar16``.  This is
-   **ISSUE-013**; it is a design conflict between a subject-specific baseline
-   and a participant-disjoint holdout, not a coding slip, and the test below
-   stays red until the protocol is changed.
+1. **Was live, now discharged (ISSUE-013).** ``SubjectSpecificBaseline`` was
+   fitted on the *train* participants and scored on the *test* participants.
+   Refusal R10 makes those sets disjoint by construction, so
+   ``models_.get(subject, fallback_)`` missed for **every** scored window and
+   the baseline degraded to its pooled fallback -- which, at the same order and
+   the same seed, is bit-for-bit ``ar16``.  It is a design conflict between a
+   subject-specific baseline and a participant-disjoint holdout, not a coding
+   slip, so the fix is a protocol change: the row is gone from the pooled table
+   and the quantity is measured on a within-participant temporal split instead.
 
 2. **Fixed.** ``describe()`` used to report nothing about score-time routing, so
    total degradation and healthy operation produced identical provenance.
@@ -48,41 +49,108 @@ def _clustered_windows(n_subjects: int, n_per: int, t: int = 72, c: int = 8, see
 
 
 def test_subject_specific_baseline_is_not_silently_its_pooled_fallback():
-    """E4a verdict test.  Fails while the fit and score participant sets are disjoint.
+    """E4a verdict test.  The arm must differ from ``ar16``, or not be reported.
 
-    **This one is a live finding, recorded as ISSUE-013, and is meant to be red.**
-    It is not stale: ``real_eeg_holdout`` still calls ``m.fit(tr_x, groups=tr_s)``
-    with the train participants and ``m.score(ctx, tgt, groups=te_s)`` with the
-    test participants, and R10 guarantees those sets are disjoint. Regenerated on
-    the participant-balanced sample, ``max |per-window difference| = 0.0`` across
-    all 1,080 windows against ``ar16``.
+    **This test used to assert the defect (ISSUE-013).** ``real_eeg_holdout``
+    fitted ``SubjectSpecificBaseline`` on the *train* participants and scored it
+    on the *test* participants, which R10 makes disjoint, so 100% of scored
+    windows routed to the pooled fallback and the row was bit-for-bit ``ar16``
+    -- a duplicate carrying the name of the hardest baseline the thesis names.
 
-    Discharged by changing the protocol -- a within-participant temporal split
-    for this arm, or dropping the row and saying why -- not by relaxing this
-    assertion. See ``reports/known_issues.md`` ISSUE-013.
+    A subject-specific baseline and a participant-disjoint holdout are in direct
+    conflict, so the discharge is a protocol change and both halves of it are
+    asserted here:
+
+    * the pooled table no longer contains the row, and records why it went;
+    * the quantity it was meant to measure is measured on a within-participant
+      temporal split, where the arm demonstrably is **not** its pooled fallback.
     """
+    import inspect
+
+    from scwbd.foundation import evaluate
     from scwbd.foundation.baselines import ARBaseline, SubjectSpecificBaseline
 
-    tr_x, tr_s = _clustered_windows(8, 40, seed=0)
-    te_x, te_s = _clustered_windows(4, 40, seed=99)
-    te_s = np.asarray([f"Q{s[1:]}" for s in te_s])  # disjoint ids, as R10 guarantees
-    ctx, tgt = te_x[:, :24], te_x[:, 24:]
+    # -- half 1: the duplicate row is gone from the pooled comparison ---------
+    src = inspect.getsource(evaluate.real_eeg_holdout)
+    assert '"subject_specific_ar": SubjectSpecificBaseline(' not in src, (
+        "real_eeg_holdout still fits a SubjectSpecificBaseline on the train "
+        "participants and scores it on the test participants. R10 makes those "
+        "sets disjoint, so every scored window routes to the pooled fallback and "
+        "the row is bit-for-bit ar16. ISSUE-013."
+    )
+    # The QUOTED key. `"dropped_baselines" in src` was satisfied by renaming the
+    # key to `_dropped_baselines_removed`, because the old name is a substring of
+    # the new one -- the mutation that removes the record left this green.
+    assert '"dropped_baselines": {' in src, (
+        "the row was removed without a record. A row that vanishes silently is "
+        "indistinguishable from one that never existed; the artifact must say "
+        "which arm went, why, and where the quantity is measured instead."
+    )
+    assert '"subject_specific_ar": (' in src and "within_participant_holdout" in src, (
+        "the dropped-baselines record does not name the arm that went, or does "
+        "not say where the quantity it measured is measured instead"
+    )
 
-    ss = SubjectSpecificBaseline(base=ARBaseline, base_kwargs={"order": 16}).fit(tr_x, groups=tr_s)
-    pooled = ARBaseline(order=16).fit(tr_x, groups=tr_s)
-    a = np.asarray(ss.score(ctx, tgt, te_s)["per_window_nll"])
-    b = np.asarray(pooled.score(ctx, tgt, te_s)["per_window_nll"])
+    # -- half 2: on a within-participant split the arm actually runs ----------
+    # Same participants on both sides -- what the temporal split gives it -- and
+    # the fit windows are disjoint from the scored ones.
+    x, s = _clustered_windows(4, 80, seed=0)
+    early = np.concatenate([np.flatnonzero(s == u)[:40] for u in np.unique(s)])
+    late = np.concatenate([np.flatnonzero(s == u)[40:] for u in np.unique(s)])
+    fit_x, fit_s = x[early], s[early]
+    sc_x, sc_s = x[late], s[late]
+    ctx, tgt = sc_x[:, :24], sc_x[:, 24:]
 
-    d = ss.describe()
+    ss = SubjectSpecificBaseline(base=ARBaseline, base_kwargs={"order": 16}).fit(
+        fit_x, groups=fit_s
+    )
+    pooled = ARBaseline(order=16).fit(fit_x, groups=fit_s)
+    a = np.asarray(ss.score(ctx, tgt, sc_s)["per_window_nll"])
+    b = np.asarray(pooled.score(ctx, tgt, sc_s)["per_window_nll"])
+
+    r = ss.describe()["score_time_routing"]
+    assert r["fraction_via_pooled_fallback"] == 0.0, (
+        f"on a within-participant temporal split every scored participant has a "
+        f"fitted model, yet {r['fraction_via_pooled_fallback']:.3f} of windows "
+        f"routed to the pooled fallback ({r['subjects_without_a_fitted_model']})"
+    )
     assert not np.array_equal(a, b), (
         f"subject_specific_ar is bit-for-bit identical to ar16 on every one of "
-        f"{a.size} scored windows: none of the test participants has a fitted "
-        f"model, so 100% of windows route to the pooled fallback. describe() "
-        f"reports n_subject_models={d['n_subject_models']} and "
-        f"fallback_subjects={len(d['fallback_subjects'])}, which reads healthy. "
-        f"The thesis's hardest baseline is not being run; a duplicate of ar16 is. "
-        f"ISSUE-013."
+        f"{a.size} scored windows even with each participant's own model fitted. "
+        f"The thesis's hardest baseline is still not being run."
     )
+
+
+def test_the_within_participant_arm_is_not_pooled_with_the_disjoint_table():
+    """The replacement arm is a different quantity and must be reported as one.
+
+    ``within_participant_holdout``'s baseline has seen the scored participant
+    and every arm in ``real_eeg_holdout.results`` has not. Putting them in one
+    table invites exactly the comparison that is invalid, which is how the
+    duplicate ``subject_specific_ar`` row survived three runs.
+    """
+    import inspect
+
+    from scwbd.foundation import evaluate
+
+    assert hasattr(evaluate, "within_participant_holdout")
+    src = inspect.getsource(evaluate.within_participant_holdout)
+    assert "not_comparable_with" in src, (
+        "the within-participant block does not declare what it may not be "
+        "compared against"
+    )
+    driver = inspect.getsource(evaluate.evaluate_model)
+    # The CALL, not the key. `rep["within_participant_holdout"]` is also written
+    # on the --quick branch, where it is a refusal object; a test that looked for
+    # the key alone stayed green with the real call deleted. Caught by mutating
+    # exactly that (`... = within_participant_holdout(trainer, seed=seed)` ->
+    # `pass`), which this assertion now fails on.
+    assert "within_participant_holdout(trainer" in driver, (
+        "evaluate_model never calls within_participant_holdout, so the arm that "
+        "replaces the dropped row is not in any artifact"
+    )
+    # It is a SEPARATE top-level key, not a row folded back into the table.
+    assert 'rep["within_participant_holdout"]' in driver
 
 
 def test_subject_specific_baseline_reports_score_time_fallback_routing():

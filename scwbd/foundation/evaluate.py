@@ -301,11 +301,19 @@ def split_fingerprint(ds, split: Mapping[str, Sequence[int]]) -> dict[str, Any]:
 
     Ids rather than indices: indices are meaningless if the corpus is rebuilt, so
     an index-based fingerprint would silently pass on a different dataset.
+
+    ``policy`` names the participant-assignment rule that produced these folds
+    (``realdata.SPLIT_POLICIES``).  It is reported beside the ids and **not**
+    folded into the sha256, deliberately: the sha256 is the thing three released
+    checkpoints already recorded, and mixing a new field into it would make every
+    one of them fail to verify against its own split.  The ids are what the
+    verification rests on; the policy says how they came about.
     """
     folds = {
         name: sorted({_window_subject(ds, i) for i in idxs}) for name, idxs in split.items()
     }
     blob = json.dumps(folds, sort_keys=True).encode()
+    policy = getattr(ds, "participant_split_policy", "unknown")
     # `verified` defaults to False and is flipped only by an actual comparison
     # against a recorded fingerprint. A reader of evaluation.json must not be able
     # to mistake a recomputed sha256 for a checked one: an authoritative-looking
@@ -313,6 +321,7 @@ def split_fingerprint(ds, split: Mapping[str, Sequence[int]]) -> dict[str, Any]:
     return {
         "participants_per_fold": folds,
         "sha256": hashlib.sha256(blob).hexdigest(),
+        "policy": policy,
         "verified": False,
         "verification": (
             "RECOMPUTED ONLY, NOT VERIFIED: no recorded fingerprint was compared "
@@ -345,7 +354,6 @@ def real_eeg_holdout(
         DenseNeuralBaseline,
         PersistenceBaseline,
         PopulationGaussianBaseline,
-        SubjectSpecificBaseline,
         VARBaseline,
         bootstrap_ci,
     )
@@ -374,11 +382,34 @@ def real_eeg_holdout(
         raise RuntimeError(
             "real-EEG split does not match the checkpoint's: recorded sha256 "
             f"{recorded.get('sha256')}, recomputed {fp['sha256']}. Evaluating would "
-            "score a model on participants it may have trained on."
+            "score a model on participants it may have trained on. Recorded split "
+            f"policy {recorded.get('policy', 'not recorded')!r}, this evaluation "
+            f"rebuilt with {fp['policy']!r}: if those differ, the config being "
+            "evaluated declares a different data.split_policy from the one the "
+            "checkpoint trained under."
+        )
+    elif recorded.get("policy") not in (None, "unknown", fp["policy"]):
+        # The ids matched under two different policies. That is possible on a
+        # small roster and it is still wrong to proceed: the agreement is a
+        # coincidence of this corpus, not a property of the split, and the next
+        # participant to appear breaks it.
+        raise RuntimeError(
+            f"real-EEG participant ids match but the split POLICY does not: the "
+            f"checkpoint recorded {recorded.get('policy')!r} and this evaluation "
+            f"rebuilt with {fp['policy']!r}. The folds agree on this roster by "
+            "coincidence; set data.split_policy to the recorded value."
         )
     else:
         fp["verified"] = True
-        fp["verification"] = "verified against the fingerprint recorded in the checkpoint"
+        fp["verification"] = (
+            "verified against the fingerprint recorded in the checkpoint"
+            + (
+                ""
+                if recorded.get("policy")
+                else " (which predates the `policy` field, so the split POLICY is "
+                "unverified; the participant ids are what matched)"
+            )
+        )
 
     # B1: budget in PARTICIPANTS, not batches.
     te_idx = _participant_stratified(ds, split["test"], per_test_participant, fold="test")
@@ -414,14 +445,24 @@ def real_eeg_holdout(
     )
     n_model_params = sum(p.numel() for p in trainer.model.parameters())
 
+    # `subject_specific_ar` IS NOT HERE, and its absence is the fix for
+    # ISSUE-013. Fitted on the train participants and scored on the test
+    # participants -- which R10 makes disjoint -- every scored window missed its
+    # own model and was served by the pooled fallback, which at the same order
+    # and the same seed is bit-for-bit `ar16`. It was a duplicate row carrying
+    # the name of the hardest baseline the thesis names.
+    #
+    # A subject-specific baseline and a participant-disjoint holdout are in
+    # direct conflict, so it is not repairable here: it needs a within-
+    # participant temporal split, which is a different quantity from every row
+    # in this table because it has SEEN the scored participant. That quantity is
+    # measured, separately and under its own name, by
+    # `within_participant_holdout`.
     models: dict[str, Any] = {
         "persistence": PersistenceBaseline(),
         "ar16": ARBaseline(order=16),
         "var4": VARBaseline(order=4),
         "population_gaussian": PopulationGaussianBaseline(),
-        "subject_specific_ar": SubjectSpecificBaseline(
-            ARBaseline, base_kwargs={"order": 16}, name="subject_specific_ar"
-        ),
         "dense_neural": DenseNeuralBaseline(target_parameters=n_model_params, steps=400, seed=seed),
     }
     rows: dict[str, Any] = {}
@@ -552,6 +593,23 @@ def real_eeg_holdout(
             "participant-stratified, evenly spaced within participant; budget fixed "
             "by participants, not batches"
         ),
+        "baseline_protocol": "v2_no_pooled_subject_specific",
+        # A row that disappears without a record is indistinguishable from a row
+        # that was never there. This says which one it is, and why.
+        "dropped_baselines": {
+            "subject_specific_ar": (
+                "DROPPED from this table under baseline protocol v2 (ISSUE-013). "
+                "Refusal R10 makes the fit and score participant sets disjoint, so "
+                "100% of scored windows routed to the pooled fallback and the row "
+                "was bit-for-bit `ar16` -- a duplicate carrying the name of the "
+                "hardest baseline the thesis names. Protocol v1 (runs 1-3) "
+                "reported it; those numbers stand as `ar16`'s. The quantity it was "
+                "supposed to measure is measured instead by "
+                "`within_participant_holdout`, on a within-participant temporal "
+                "split, and is NOT comparable with the rows here: it has seen the "
+                "scored participant and every row here has not."
+            )
+        },
         "real_split": fp,
         "individualization": scw.get("individualization"),
         "metric": "gaussian NLL, nats per channel per sample, sensor space, participant-clustered 95% CI",
@@ -591,6 +649,305 @@ def real_eeg_holdout(
             "is not a claim. Models listed in `inconclusive_vs_scwbd` are neither better nor "
             "worse at this sample size. Window-level generalisation is not individual "
             "generalisation."
+        ),
+    }
+
+
+def _within_participant_temporal_split(
+    ds,
+    test_indices: Sequence[int],
+    *,
+    fit_fraction: float,
+    gap_windows: int,
+    per_participant_fit: int,
+    per_participant_score: int,
+) -> tuple[dict[str, list[int]], dict[str, list[int]], list[dict[str, Any]]]:
+    """Per test participant: their earlier windows to fit on, later ones to score.
+
+    The ordering is the corpus's own window order, which for every EEG source
+    here is ``(recording, window within recording)`` -- and eegmmidb's recordings
+    are discovered subject-major and sorted by run label ``R01``..``R14``, so
+    ascending window index is ascending time for one person.
+
+    ``gap_windows`` windows are dropped between the two halves.  Windows are
+    non-overlapping by construction (``RealEEGConfig.window_stride_s = None``
+    means hop == window), but the last fit window and the first scored window are
+    still adjacent in time, and an AR fitted right up to the boundary is scored
+    on the continuation of its own training signal.  The gap is what makes the
+    scored future a future rather than a seam.
+
+    Returns ``(fit_by_subject, score_by_subject, skipped)``.  A participant with
+    too few windows on either side is **skipped and recorded**, never quietly
+    served from the other half.
+    """
+    by_sub: dict[str, list[int]] = defaultdict(list)
+    for i in test_indices:
+        by_sub[_window_subject(ds, i)].append(int(i))
+
+    fit_by: dict[str, list[int]] = {}
+    score_by: dict[str, list[int]] = {}
+    skipped: list[dict[str, Any]] = []
+    for sub in sorted(by_sub):
+        idxs = sorted(by_sub[sub])
+        cut = int(round(fit_fraction * len(idxs)))
+        early, late = idxs[:cut], idxs[cut + gap_windows :]
+        if len(early) < per_participant_fit or len(late) < 2:
+            skipped.append(
+                {
+                    "subject": sub,
+                    "n_windows": len(idxs),
+                    "n_earlier": len(early),
+                    "n_later_after_gap": len(late),
+                    "reason": (
+                        f"needs at least {per_participant_fit} earlier windows to fit "
+                        "a per-participant model and 2 later ones to score it"
+                    ),
+                }
+            )
+            continue
+        fit_by[sub] = _evenly_spaced(early, per_participant_fit)
+        score_by[sub] = _evenly_spaced(late, per_participant_score)
+    return fit_by, score_by, skipped
+
+
+def _evenly_spaced(pool: Sequence[int], k: int) -> list[int]:
+    """``k`` evenly spaced entries of ``pool``, deduplicated, order preserved."""
+    k = int(min(k, len(pool)))
+    if k <= 0:
+        return []
+    sel = np.linspace(0, len(pool) - 1, k).round().astype(int)
+    return [pool[j] for j in dict.fromkeys(sel.tolist())]
+
+
+def within_participant_holdout(
+    trainer,
+    *,
+    n_boot: int = 2000,
+    seed: int = 0,
+    fit_fraction: float = 0.5,
+    gap_windows: int = 8,
+    per_participant_fit: int = 60,
+    per_participant_score: int = 40,
+    n_mean_samples: int = 256,
+) -> dict[str, Any]:
+    """The subject-specific baseline, on a split that can actually run it.
+
+    This is the arm ``real_eeg_holdout`` no longer reports (ISSUE-013).  There it
+    was fitted on the *train* participants and scored on the *test* participants,
+    which R10 makes disjoint, so every scored window fell through to the pooled
+    fallback and the row was bit-for-bit ``ar16``.
+
+    Here the split is **within participant and temporal**, inside the held-out
+    fold: each test participant's own earlier windows fit their own AR(16), a gap
+    is dropped, and their later windows are scored.  The model never trained on
+    any of these people, so the outer holdout is intact; what changes is that the
+    *baseline* has seen the scored participant.
+
+    **This is a different quantity from every row of the main table and must
+    never be pooled with them.** It answers the question the thesis actually
+    asks: does a model fitted on this person alone predict this person's future
+    as well as a model pretrained across other people?  If it does, cross-
+    participant pretraining transferred nothing.
+
+    ``ar16_pooled`` -- an AR(16) fitted on the *train* fold, scored on the same
+    later windows -- is reported beside it, because "your own past" is only
+    interesting against "everyone else's data" on identical windows.
+
+    ``n_theta_samples`` is not exposed and the marginal is not computed: the
+    headline everywhere in this file is plug-in at the posterior mean, the
+    marginal is a labelled secondary of the main holdout, and computing it here
+    would cost 33 rollouts per batch for a diagnostic that already exists.
+    """
+    from .baselines import (
+        ARBaseline,
+        SubjectSpecificBaseline,
+        _paired_ci,
+        bootstrap_ci,
+    )
+
+    if getattr(trainer, "real_test", None) is None or len(trainer.real_test) == 0:
+        return {"available": False, "reason": "no measured EEG holdout available"}
+    cfg = trainer.cfg
+    c = cfg.data.context
+    ds = trainer.real_dataset
+    split = trainer.real_split
+
+    fit_by, score_by, skipped = _within_participant_temporal_split(
+        ds,
+        split["test"],
+        fit_fraction=fit_fraction,
+        gap_windows=gap_windows,
+        per_participant_fit=per_participant_fit,
+        per_participant_score=per_participant_score,
+    )
+    if len(score_by) < 2:
+        return {
+            "available": False,
+            "reason": (
+                f"{len(score_by)} test participant(s) have enough windows for a "
+                "within-participant temporal split; a participant-clustered "
+                "interval is undefined below 2"
+            ),
+            "skipped_participants": skipped,
+        }
+
+    fit_idx = [i for sub in sorted(fit_by) for i in fit_by[sub]]
+    score_idx = [i for sub in sorted(score_by) for i in score_by[sub]]
+    bs = max(8, cfg.data.batch // 4)
+
+    def _loader(idx: Sequence[int]):
+        return torch.utils.data.DataLoader(
+            torch.utils.data.Subset(ds, list(idx)),
+            batch_size=bs,
+            shuffle=False,
+            num_workers=2,
+        )
+
+    def collect(loader):
+        xs, ss = [], []
+        for b in loader:
+            xs.append(b["eeg"])
+            ss.extend(list(b["subject"]))
+        return (torch.cat(xs) if xs else torch.zeros(0), ss)
+
+    score_loader = _loader(score_idx)
+    fit_x, fit_s = collect(_loader(fit_idx))
+    sc_x, sc_s = collect(score_loader)
+    if sc_x.numel() == 0:
+        return {"available": False, "reason": "empty within-participant score fold"}
+    dev = trainer.device
+    fit_x, sc_x = fit_x.to(dev), sc_x.to(dev)
+    ctx, tgt = sc_x[:, :c], sc_x[:, c:]
+
+    # The population reference is fitted on the TRAIN fold, exactly as in the
+    # main holdout, so the contrast is "this person's own past" against "other
+    # people's data" and nothing else differs.
+    tr_idx = _participant_stratified(ds, split["train"], 30, fold="train")
+    tr_x, tr_s = collect(_loader(tr_idx))
+    tr_x = tr_x.to(dev)
+
+    ss_model = SubjectSpecificBaseline(
+        ARBaseline, base_kwargs={"order": 16}, name="subject_specific_ar_within"
+    ).fit(fit_x, groups=np.asarray(fit_s))
+    pooled = ARBaseline(order=16).fit(tr_x, np.asarray(tr_s))
+
+    groups = np.asarray(sc_s)
+    rows: dict[str, Any] = {}
+    per_window: dict[str, np.ndarray] = {}
+    for name, m in (("subject_specific_ar_within", ss_model), ("ar16_pooled", pooled)):
+        r = m.score(ctx, tgt, groups) if _accepts_groups(m.score) else m.score(ctx, tgt)
+        per = np.asarray(r.get("nll_per_window", r.get("per_window_nll", [])), dtype=float)
+        _pt, lo, hi = bootstrap_ci(per, groups, n_boot=n_boot, seed=seed)
+        rows[name] = {
+            "nll_per_sample": float(r["nll_per_sample"]),
+            "nll_ci95": [float(lo), float(hi)],
+            "mse": float(r.get("mse", float("nan"))),
+            "n_parameters": int(_nparams(m)),
+            "describe": m.describe() if hasattr(m, "describe") else {},
+        }
+        per_window[name] = per
+
+    routing = (rows["subject_specific_ar_within"]["describe"] or {}).get(
+        "score_time_routing", {}
+    )
+    frac_fallback = float(routing.get("fraction_via_pooled_fallback", 1.0))
+    if frac_fallback > 0.0:
+        # The whole point of this block is that every window reaches its own
+        # participant's model. If any did not, the arm is partly `ar16` again and
+        # the artifact says so rather than averaging the two together silently.
+        rows["subject_specific_ar_within"]["degraded"] = (
+            f"{100 * frac_fallback:.1f}% of scored windows were served by the "
+            "pooled fallback, so this arm is not purely subject-specific. "
+            "ISSUE-013 is only discharged at 0%."
+        )
+
+    scw = _scwbd_scores(
+        trainer, score_loader, n_theta_samples=0, n_mean_samples=n_mean_samples
+    )
+    scw_pw = np.asarray(scw["nll_per_window"], dtype=float)
+    arm = _designation(trainer.cfg)
+    _pt, lo, hi = bootstrap_ci(scw_pw, np.asarray(scw["subjects"]), n_boot=n_boot, seed=seed)
+    rows[arm] = {
+        "nll_per_sample": float(np.mean(scw_pw)),
+        "nll_ci95": [float(lo), float(hi)],
+        "mse": float(np.mean(scw["mse_per_window"])),
+        "n_parameters": int(sum(p.numel() for p in trainer.model.parameters())),
+    }
+
+    paired: dict[str, Any] = {}
+    for name, per in per_window.items():
+        if per.size != scw_pw.size:
+            paired[name] = {"error": f"length mismatch {per.size} vs {scw_pw.size}"}
+            continue
+        paired[name] = _paired_ci(scw_pw - per, groups, n_boot=n_boot, alpha=0.05, seed=seed)
+
+    ss_per = per_window["subject_specific_ar_within"]
+    pooled_per = per_window["ar16_pooled"]
+    own_vs_pooled = (
+        _paired_ci(ss_per - pooled_per, groups, n_boot=n_boot, alpha=0.05, seed=seed)
+        if ss_per.size == pooled_per.size
+        else {"error": "length mismatch"}
+    )
+    identical_to_pooled = bool(
+        ss_per.size == pooled_per.size and np.array_equal(ss_per, pooled_per)
+    )
+
+    d = paired.get("subject_specific_ar_within", {})
+    if "delta" not in d:
+        verdict = f"not decidable: {d.get('error', 'no paired interval')}"
+    elif not d.get("excludes_zero"):
+        verdict = (
+            f"{arm} and a per-participant AR(16) fitted on that participant's own "
+            "earlier windows are indistinguishable on this split "
+            f"({d['delta']:+.4f} [{d['ci_lo']:+.4f}, {d['ci_hi']:+.4f}]). "
+            "Cross-participant pretraining is not shown to transfer anything a "
+            "person's own past does not already give."
+        )
+    elif d["delta"] > 0:
+        verdict = (
+            f"{arm} is BEATEN by a per-participant AR(16) fitted on that "
+            f"participant's own earlier windows ({d['delta']:+.4f} "
+            f"[{d['ci_lo']:+.4f}, {d['ci_hi']:+.4f}]). On this corpus, "
+            "cross-participant pretraining bought less than the person's own past."
+        )
+    else:
+        verdict = (
+            f"{arm} beats a per-participant AR(16) fitted on that participant's "
+            f"own earlier windows ({d['delta']:+.4f} [{d['ci_lo']:+.4f}, "
+            f"{d['ci_hi']:+.4f}])."
+        )
+
+    return {
+        "available": True,
+        "protocol": "within_participant_temporal_v1",
+        "split": (
+            "OUTER: the participant-disjoint holdout, unchanged -- the model "
+            "trained on none of these people. INNER: within each held-out "
+            f"participant, the earliest {fit_fraction:.0%} of their windows fit "
+            f"their own model, {gap_windows} windows are dropped as a gap, and "
+            "their later windows are scored."
+        ),
+        "fit_fraction": fit_fraction,
+        "gap_windows": gap_windows,
+        "n_participants_scored": len(score_by),
+        "n_participants_skipped": len(skipped),
+        "skipped_participants": skipped,
+        "n_fit_windows": int(fit_x.shape[0]),
+        "n_score_windows": int(sc_x.shape[0]),
+        "score_time_routing": routing,
+        "fraction_via_pooled_fallback": frac_fallback,
+        "identical_to_pooled_ar16": identical_to_pooled,
+        "results": rows,
+        "paired_vs_scwbd": paired,
+        "subject_specific_minus_pooled": own_vs_pooled,
+        "verdict": verdict,
+        "not_comparable_with": (
+            "`real_eeg_holdout.results`. Every arm there is fitted on OTHER "
+            "people and has never seen the scored participant; the "
+            "subject-specific arm here has seen that participant's earlier "
+            "windows. The two numbers answer different questions and a table "
+            "containing both rows would invite exactly the comparison that is "
+            "invalid."
         ),
     }
 
@@ -1004,15 +1361,22 @@ def evaluate_model(
         # A cost flag may reduce precision; it must never redefine the claim.
         # A shrunken holdout is not a cheaper version of this result, it is a
         # different and unstated one.
-        rep["real_eeg_holdout"] = {
+        _refusal = {
             "available": False,
             "reason": (
                 "--quick refuses the real-EEG holdout. A reduced-cost variant would "
                 "silently change the participant set the claim rests on."
             ),
         }
+        rep["real_eeg_holdout"] = _refusal
+        rep["within_participant_holdout"] = dict(_refusal)
     else:
         rep["real_eeg_holdout"] = real_eeg_holdout(trainer, seed=seed)
+        # ISSUE-013's replacement for the dropped `subject_specific_ar` row. A
+        # SEPARATE top-level key, not a row in the table above, because it is a
+        # different quantity: the baseline has seen the scored participant and
+        # every arm in that table has not.
+        rep["within_participant_holdout"] = within_participant_holdout(trainer, seed=seed)
     rep["sim_val_nll"] = _sim_val_nll(trainer, n_windows=128 if quick else 512)
     rep["wall_seconds"] = t.elapsed
     if out:

@@ -222,6 +222,18 @@ class DataConfig:
     pin_memory: bool = False
     val_fraction: float = 0.05
     real_test_fraction: float = 0.25
+    #: Which participant-assignment policy builds the measured-data holdout.
+    #: ``scwbd.foundation.realdata.SPLIT_POLICIES`` documents both.
+    #:
+    #: This is a per-run declaration, not a tunable. The two policies produce
+    #: DIFFERENT holdouts from the same corpus and the same seed, so a run that
+    #: changes it is scored on different people -- which is why runs 1, 2 and 3
+    #: name ``shuffle_slice_v1`` in their own config files rather than inheriting
+    #: whatever the default happens to be that week.
+    #:
+    #: The default is the order-independent one: a new run must not have to know
+    #: about ISSUE-014 to avoid it.
+    split_policy: str = "stable_hash_v2"
     seed: int = 20260805
 
 

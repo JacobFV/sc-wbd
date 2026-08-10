@@ -235,7 +235,73 @@ records the wide pattern as the effective one. `glob_intersection` now computes
 the pattern inside both, segment by segment, and a pair whose intersection
 cannot be computed is recorded rather than guessed at.
 
+## The holdout run 4 is evaluated on is not run 3's
+
+Two evaluation defects were open against run 3 and both could only be discharged
+before a run starts, because both change what "held out" means. Run 4 takes them.
+
+### The split policy is declared, and run 4 declares a different one
+
+ISSUE-014. `shuffle_slice_v1` — runs 1, 2 and 3 — shuffles the sorted participant
+list and slices by count, so a participant's fold depends on the whole
+participant set. Measured on the 109-participant eegmmidb roster at run 3's own
+`seed=20260807`:
+
+| policy | reassigned when one participant goes | of them into `test` | folds |
+| --- | ---: | ---: | --- |
+| `shuffle_slice_v1` | **28** of 108 | **6** | 71 / 11 / 27 |
+| `stable_hash_v2` | **0** of 108 | **0** | 67 / 17 / 25 |
+
+`evaluate_model` rebuilds the split from whatever corpus is on disk, so one
+recording that fails to preprocess is enough to trigger the reassignment, and the
+failure reads *better* when broken: a participant the model memorised, promoted
+into the test fold, improves the held-out score.
+
+Run 4 declares `data.split_policy: stable_hash_v2`, whose assignment is a
+function of a participant's own group key and the seed alone. It costs four
+training participants and buys a holdout that cannot drift. `real_split.policy`
+in every 004 artifact records which policy produced it.
+
+**Run 3 is not re-split.** `configs/run3/scwbd-003.yaml` now names
+`shuffle_slice_v1` in its own `data:` block, and re-running it reproduces
+`checkpoints/scwbd-003/last.pt`'s recorded fingerprint field-for-field — the same
+71/11/27 folds, the same sha256 `bdf41ba7…`. **Run 4's held-out numbers are
+therefore not directly comparable with run 3's table**: they are computed on 25
+different people.
+
+`--quick` reduces the participant roster, which under an order-dependent policy
+is a different holdout — it put S001 and S004 in the test fold at run 1's seed
+although the full-roster split trains on both. `build_data` now refuses `--quick`
+outright unless the declared policy is order-independent.
+
+### `subject_specific_ar` is measured instead of duplicated
+
+ISSUE-013. The arm was fitted on the *train* participants and scored on the
+*test* participants, which R10 makes disjoint, so 100% of scored windows fell
+through to the pooled fallback and the row was bit-for-bit `ar16`. Three runs
+reported six baselines where there were five.
+
+Run 4's protocol (`baseline_protocol: v2_no_pooled_subject_specific`) drops the
+row from `real_eeg_holdout` and records in `dropped_baselines` that it went and
+why. The quantity it was supposed to measure — the hardest baseline the thesis
+names — is measured by `within_participant_holdout`, which keeps the
+participant-disjoint OUTER holdout and puts a temporal INNER split inside each
+held-out participant: their earliest 50% of windows fit their own AR(16), eight
+windows are dropped as a gap, and their later windows are scored. `ar16_pooled`,
+fitted on the train fold, is scored on the identical windows.
+
+On run 4's test fold that is **25 participants, none skipped, 1,500 fit windows
+and 1,000 scored windows**. Exercised end to end against run 3's weights on run
+3's fold: `fraction_via_pooled_fallback` **0.000** with all 27 participants
+served by their own model, against 1.000 under the old protocol. The arm is no
+longer `ar16`.
+
+It is reported as its own top-level block and carries `not_comparable_with`,
+because its baseline has seen the scored participant and every arm in the main
+table has not.
+
 ## PENDING — results
 
 Held-out night-2 individualisation, leave-one-source-out on the measured
-holdout, and the standard baseline set are filled in after the run.
+holdout, the within-participant arm and the standard baseline set are filled in
+after the run.

@@ -90,8 +90,16 @@ def real_split(cfg, real_eeg):
     from scwbd.foundation.realdata import participant_split
 
     d = cfg.data
+    # `policy=` explicitly, from the config, because the default and the released
+    # config now differ: `configs/scwbd_001_beta.yaml` declares the splitter run 1
+    # trained under, and a fixture that took the default would audit a holdout no
+    # released checkpoint has.
     return participant_split(
-        real_eeg, test_fraction=d.real_test_fraction, val_fraction=0.1, seed=d.seed
+        real_eeg,
+        test_fraction=d.real_test_fraction,
+        val_fraction=0.1,
+        seed=d.seed,
+        policy=d.split_policy,
     )
 
 
