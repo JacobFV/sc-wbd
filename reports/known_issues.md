@@ -31,6 +31,7 @@ here and the entries below are the detail.
 | ISSUE-012 | **open** | the amortised posterior is calibrated and carries no information |
 | ISSUE-013 | **open** | `subject_specific_ar` is 100% fallback, so it is `ar16` |
 | ISSUE-014 | **open** | participant assignment unstable; `--quick` leaks trained participants |
+| ISSUE-015 | **open** | ~20 prose sites state DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6× |
 
 ---
 
@@ -1022,6 +1023,73 @@ already trained; it is a next-run change and must be sequenced with one. (2) and
 in the training and CLI paths respectively, not the evaluation path this triage covers,
 and (2) has no effect on any checkpoint already written. The tests stay red so the
 sequencing decision cannot be lost.
+
+---
+
+## ISSUE-015 — the orientation argument is quoted everywhere from the wrong parcellation
+
+**Status:** open. The measurement that discharges it exists
+(`reports/transforms/resolution_pair_schaefer400.json`, 2026-08-09); the prose
+rewrite and republish do not.
+**Owner of the fix:** whoever next touches the site and paper together — it is one
+sweep across eight modules, `ARCHITECTURE.md`, a site claim test and a paper
+figure, and splitting it produces exactly the stale-half state this register exists
+to prevent.
+**Severity:** live, and it flatters nothing — it overstates a *limitation* of the
+model. Every affected statement is a true measurement, attributed to the wrong
+object.
+
+### The defect
+
+The declared resolution pair was measured on the 68-parcel Desikan-Killiany atlas
+and described as if it were SC-WBD's. SC-WBD runs 414 regions: Schaefer400x7 plus
+14 Aseg14T subcortical volumes. Measured on Schaefer400x7, on the same head and the
+same lead field:
+
+| quantity | quoted (DK-68) | SC-WBD (Schaefer400x7) |
+| --- | --- | --- |
+| scalar per parcel, η | 0.056 | **0.321** |
+| 3-vector per parcel, η | 0.517 | **0.834** |
+| orientation's advantage | 9.2× | **2.6×** |
+
+Two forms recur and both are false as written:
+
+- *"a per-parcel scalar carries 5.6% of the whitened lead field"*, said about this
+  model — it carries 32.1%.
+- *"more parcels buy almost nothing"* / *"orientation is worth about 9× what extra
+  parcels buy"* — inferred from k-means subdivision of DK's 68 parcels reaching
+  η = 0.162 at 542 elements. Schaefer400x7 reaches 0.321 at 400. The subdivision
+  was a bad proxy for a parcellation, and the generalisation drawn from it does not
+  hold.
+
+### Where
+
+`scwbd/anatomy/geometry.py`, `scwbd/anatomy/priors.py`,
+`scwbd/foundation/anatomy.py`, `scwbd/foundation/orientation.py`,
+`scwbd/foundation/heads.py`, `scwbd/schema/supports.py`,
+`scwbd/schema/support_algebra.py`, `scwbd/schema/carrier.py`, `ARCHITECTURE.md`
+(§5b and the narrowings table), `reports/transforms/resolution_pair.md` §0 and §3.5,
+`tests/release/test_site_claims.py` (which asserts the ~9× figure, so the published
+site carries it), and `HANDOFF-003.md`.
+
+### What discharges it
+
+Rewrite each site against
+`reports/transforms/resolution_pair_schaefer400.json`, keeping the DK figures where
+they are correctly attributed to DK — `reports/transforms/resolution_pair.md` is
+still a valid report about a valid pair. Then re-run `make site`, diff the built
+output against the published bytes before `site-stage`, and rebuild the paper. The
+site claim test must be updated in the same commit as the site content, or the
+published page and the test that guards it disagree.
+
+### Why it was not done in the same turn as the measurement
+
+Stated plainly: it is a republish, not an edit. `make site-deploy` pushes to
+Cloudflare and the model card's headline figure has already been nearly replaced
+once by a routine republish that nobody diffed. Landing the measurement, the guard
+and the pair switch without the republish leaves the repository in a state where
+the correct number is on disk and the wrong number is in prose — which is why this
+entry exists rather than a TODO.
 
 ---
 

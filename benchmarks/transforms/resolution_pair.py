@@ -18,9 +18,19 @@ from the same session.  Everything below is that one subject.
 * fine support -- the 7498 oct-6 source-space dipoles ``G`` is defined on.
   Weight ``a_v`` is the white-surface patch area of source ``v``, summed from
   the full-resolution triangulation over the vertices in ``pinfo``.
-* coarse support -- the subject's own ``aparc`` (Desikan-Killiany) parcels,
-  excluding the ``unknown`` label; sources inside no parcel keep weight zero and
-  are counted as a coverage deficit rather than folded into a neighbour.
+* coarse support -- a cortical parcellation of that same surface.  Two are
+  measurable here and both are measured, into separate artefacts:
+
+  ``aparc``          the subject's own Desikan-Killiany annot, 68 parcels,
+                     excluding the ``unknown`` label.
+  ``Schaefer400x7``  the 400 parcels **the model actually runs on**.  Its 414
+                     regions are Schaefer400x7 plus the 14 Aseg14T/Melbourne
+                     subcortical volumes; a cortical-surface source space has no
+                     fine support under the 14, so 400 is what this pair can
+                     carry and 414 is what the model has.  See ``--parc``.
+
+  Sources inside no parcel keep weight zero and are counted as a coverage
+  deficit rather than folded into a neighbour.
 * fine states -- five ensembles, deliberately not one:
   ``evoked_*``   MNE source estimates of the four real audiovisual evoked
                  responses (0-300 ms post-stimulus);
@@ -46,6 +56,11 @@ could see.
 Run::
 
     PYTHONPATH=. python benchmarks/transforms/resolution_pair.py
+    PYTHONPATH=. python benchmarks/transforms/resolution_pair.py --parc Schaefer400x7
+
+Each ``--parc`` writes its own artefact -- ``resolution_pair.json`` and
+``resolution_pair_schaefer400.json`` -- so neither run can land on the other's
+file.
 """
 
 from __future__ import annotations
@@ -136,6 +151,131 @@ def _membership(src, subjects_dir: Path, n_fine: int, parc: str):
     return [l.name for l in labels], assign
 
 
+# --------------------------------------------------------------------------
+# Schaefer400x7: the parcellation the model runs on
+# --------------------------------------------------------------------------
+#: FreeSurfer ``.annot`` files for Schaefer2018 in **fsaverage5** space,
+#: redistributed by the ENIGMA Toolbox and vendored in this repository.  Licence
+#: is established here and not by pointer: ``assets/src/enigma/LICENSE`` is
+#: BSD-3-Clause (`enigmatoolbox` in ``scwbd/anatomy/sources``), and the
+#: parcellation itself is `schaefer2018`, MIT (CBIG).  Both satisfy
+#: ``reports/licence_audit.md``'s rule that a licence be identifiable *in this
+#: repository*.
+SCHAEFER_ANNOT_DIR = "assets/src/enigma/enigmatoolbox/permutation_testing/annot"
+
+#: fsaverage5 is ico-5, and FreeSurfer's icosahedra are nested: the first 10242
+#: vertices of ``fsaverage``'s 163842-vertex sphere *are* fsaverage5's vertices,
+#: in order.  That identity is what lets an fsaverage5 annot be read as a label
+#: on fsaverage without resampling, and it is not assumed -- it is checked in
+#: ``tests/transforms/test_resolution_pair_schaefer.py`` two ways: the subset's
+#: nearest-neighbour spacing is icosahedrally uniform (max/min 1.20, against 7.2
+#: for a random subset of the same size), and the Schaefer annot read onto it is
+#: spatially contiguous (0.82 of 6-neighbour pairs share a label, against 0.012
+#: under permutation).  A wrong slice would make the parcellation noise, and
+#: noise still produces a plausible-looking energy fraction.
+FSAVERAGE5_N_VERTICES = 10242
+
+
+def fsaverage5_vertices(fsaverage_sphere: np.ndarray) -> np.ndarray:
+    """The fsaverage5 vertices of an ``fsaverage`` surface, in fsaverage5 order.
+
+    One line, and it is a function so that the guard in
+    ``tests/transforms/test_resolution_pair_schaefer.py`` tests *this* slice
+    rather than a copy of it.  A test that restates the expression it is
+    checking checks nothing.
+    """
+    return fsaverage_sphere[:FSAVERAGE5_N_VERTICES]
+
+
+def _membership_schaefer(
+    src, subjects_dir: Path, n_fine: int, n_rois: int = 400, networks: int = 7
+):
+    """Assign each fine source to a Schaefer parcel, via spherical registration.
+
+    The chain is one nearest-neighbour lookup, composed from two exact steps:
+    ``sample``'s ``?h.sphere.reg`` puts its white-surface vertices in
+    ``fsaverage``'s spherical frame, and the annot's fsaverage5 vertices are
+    ``fsaverage``'s first :data:`FSAVERAGE5_N_VERTICES`.  So for each source
+    dipole the nearest fsaverage5 vertex on the sphere carries its label -- the
+    same transfer ``mri_surf2surf`` performs, done here directly so the step is
+    visible rather than buried in a resampling.
+
+    fsaverage5's 3.49 mm mean spacing is finer than oct-6's 4.9 mm, so parcel
+    boundaries are resolved *below* the fine support's own scale; the transfer
+    is not the limiting approximation. Label 0 is the FreeSurfer medial wall and
+    becomes ``-1``: unassigned, counted as a coverage deficit.
+    """
+    import nibabel as nib
+    from scipy.spatial import cKDTree
+
+    root = Path(__file__).resolve().parents[2] / SCHAEFER_ANNOT_DIR
+    names: list[str] = []
+    assign = np.full(n_fine, -1, np.int64)
+    off = 0
+    base = 0
+    max_nn_mm = 0.0
+    for h, hemi in enumerate(("lh", "rh")):
+        annot = root / f"fsa5_{hemi}_schaefer_{n_rois}.annot"
+        if not annot.is_file():
+            raise SystemExit(
+                f"{annot} not found. The Schaefer pair is measured on the "
+                "vendored ENIGMA annot and is not approximated from another "
+                "atlas; without it there is no measurement to report."
+            )
+        lab, _, raw = nib.freesurfer.read_annot(annot)
+        raw = [n.decode() if isinstance(n, bytes) else n for n in raw]
+        if lab.size != FSAVERAGE5_N_VERTICES:
+            raise SystemExit(
+                f"{annot.name} has {lab.size} vertices, not fsaverage5's "
+                f"{FSAVERAGE5_N_VERTICES}; the nesting identity this transfer "
+                "rests on does not hold for it."
+            )
+        # raw[0] is 'Background+FreeSurfer_Defined_Medial_Wall'
+        hemi_names = raw[1:]
+        fs_sphere, _ = nib.freesurfer.read_geometry(
+            subjects_dir / "fsaverage" / "surf" / f"{hemi}.sphere"
+        )
+        sub_sphere, _ = nib.freesurfer.read_geometry(
+            subjects_dir / "sample" / "surf" / f"{hemi}.sphere.reg"
+        )
+        v = src[h]["vertno"]
+        d, nn = cKDTree(fsaverage5_vertices(fs_sphere)).query(sub_sphere[v])
+        max_nn_mm = max(max_nn_mm, float(d.max()))
+        l = lab[nn]
+        m = l > 0
+        assign[off : off + len(v)][m] = base + (l[m] - 1)
+        names.extend(hemi_names)
+        off += len(v)
+        base += len(hemi_names)
+    if base != n_rois:
+        raise ValueError(f"Schaefer{n_rois}x{networks}: annots name {base} parcels")
+    empty = int(np.bincount(assign[assign >= 0], minlength=base).min() == 0)
+    if empty:
+        raise SystemExit(
+            "a Schaefer parcel received no source dipole; R has a zero row and "
+            "R P = I cannot hold. The pair is not buildable at this fineness."
+        )
+    return names, assign, max_nn_mm
+
+
+#: ``name -> (n_coarse, provenance sentence)``.  Everything parcellation-shaped
+#: that varies between the two artefacts lives here.
+PARCELLATIONS = {
+    "aparc": (
+        68,
+        "aparc (Desikan-Killiany), subject's own annot, 'unknown' excluded",
+    ),
+    "Schaefer400x7": (
+        400,
+        "Schaefer400x7 (ENIGMA Toolbox fsaverage5 annot, BSD-3-Clause; "
+        "Schaefer 2018, MIT/CBIG), transferred to the subject by spherical "
+        "registration; medial wall excluded. This is 400 of the model's 414 "
+        "regions -- the other 14 are Aseg14T subcortical volumes, which a "
+        "cortical-surface source space has no fine support under",
+    ),
+}
+
+
 def _geodesics(src) -> list[np.ndarray]:
     """Geodesic distance among used sources, from the source space's own graph."""
     from scipy.sparse import csr_matrix
@@ -156,7 +296,7 @@ def _geodesics(src) -> list[np.ndarray]:
 
 
 # --------------------------------------------------------------------------
-def load_subject(verbose: bool = True) -> dict[str, Any]:
+def load_subject(verbose: bool = True, parc: str = "aparc") -> dict[str, Any]:
     import mne
 
     mne.set_log_level("ERROR")
@@ -186,7 +326,17 @@ def load_subject(verbose: bool = True) -> dict[str, Any]:
     )
 
     areas = np.concatenate([_patch_areas(s) for s in src])
-    names, assign = _membership(src, subjects_dir, G.shape[1], "aparc")
+    expect_n, parc_note = PARCELLATIONS[parc]
+    max_nn_mm = None
+    if parc == "aparc":
+        names, assign = _membership(src, subjects_dir, G.shape[1], "aparc")
+    else:
+        n_rois, networks = (int(x) for x in parc.removeprefix("Schaefer").split("x"))
+        names, assign, max_nn_mm = _membership_schaefer(
+            src, subjects_dir, G.shape[1], n_rois=n_rois, networks=networks
+        )
+    if len(names) != expect_n:
+        raise ValueError(f"{parc}: built {len(names)} parcels, expected {expect_n}")
 
     inv = mne.minimum_norm.read_inverse_operator(
         meg / "sample_audvis-eeg-oct-6-eeg-inv.fif"
@@ -212,6 +362,7 @@ def load_subject(verbose: bool = True) -> dict[str, Any]:
         "parcel_names": names, "channels": good, "bads": list(info["bads"]),
         "states": states, "subjects_dir": subjects_dir, "root": root,
         "n_fine": int(G.shape[1]), "mne_version": mne.__version__,
+        "parc": parc, "parc_note": parc_note, "label_transfer_max_mm": max_nn_mm,
     }
 
 
@@ -387,7 +538,12 @@ def measure(subject: dict[str, Any], *, verbose: bool = True) -> rp.PairMeasurem
             "subject": "mne-sample::sample",
             "forward": "sample_audvis-eeg-oct-6-fwd.fif (BEM 5120-5120-5120)",
             "source_space": "oct-6, fixed normal orientation, use_cps=True",
-            "parcellation": "aparc (Desikan-Killiany), subject's own annot, 'unknown' excluded",
+            "parcellation": subject["parc_note"],
+            **(
+                {"label_transfer_max_sphere_mm": subject["label_transfer_max_mm"]}
+                if subject["label_transfer_max_mm"] is not None
+                else {}
+            ),
             "inverse": "MNE, lambda2=1/9, pick_ori='normal'",
             "noise_cov": "sample_audvis-cov.fif",
             "reference": "explicit average reference on lead field and data",
@@ -410,10 +566,14 @@ def measure(subject: dict[str, Any], *, verbose: bool = True) -> rp.PairMeasurem
 def specificity(subject: dict[str, Any]) -> dict[str, Any]:
     """A measurement that cannot distinguish good from bad is decoration.
 
-    Three comparisons on the same head, the same lead field and the same
-    held-out states: the declared 68-parcel restriction, a 150-parcel one, and
+    Comparisons on the same head, the same lead field and the same held-out
+    states: the declared restriction, a finer one of the same construction, and
     the declared parcellation with its spatial structure destroyed.  If the
     metric did not separate these it would not be evidence about anything.
+
+    When the declared pair is not ``aparc``, the 68-parcel Desikan-Killiany
+    restriction is measured here too, so the two artefacts can be read against
+    each other without comparing numbers from different runs.
     """
     G, W, areas = subject["G"], subject["W"], subject["areas"]
     n_fine = subject["n_fine"]
@@ -435,7 +595,15 @@ def specificity(subject: dict[str, Any]) -> dict[str, Any]:
         }
 
     assign = subject["assign"]
-    row("declared_aparc", assign, len(subject["parcel_names"]), "the declared pair")
+    parc = subject["parc"]
+    row(f"declared_{parc}", assign, len(subject["parcel_names"]), "the declared pair")
+    if parc != "aparc":
+        n_dk, a_dk = _membership(
+            subject["src"], subject["subjects_dir"], n_fine, "aparc"
+        )
+        row("aparc", a_dk, len(n_dk),
+            "Desikan-Killiany on the same head: the other declared artefact's "
+            "coarse support, measured here so the two are comparable")
     n2, a2 = _membership(subject["src"], subject["subjects_dir"], n_fine, "aparc.a2009s")
     row("aparc_a2009s", a2, len(n2), "2.2x more parcels, same construction")
     rng = np.random.default_rng(0)
@@ -461,10 +629,18 @@ def specificity(subject: dict[str, Any]) -> dict[str, Any]:
             G, R3, np.linalg.pinv(R3), areas, whitener=W
         ),
     }
-    # Does the answer simply need more parcels? The production model runs 454
-    # regions, and no 454-parcel annot exists for this subject, so the honest
-    # way to reach that count is to subdivide the declared parcels by geodesic
-    # k-means and measure -- not to extrapolate a trend line to it.
+    # Does the answer simply need more parcels? A dose-response in parcel count,
+    # holding construction fixed: each declared parcel split into k clusters by
+    # position, measured rather than extrapolated.
+    #
+    # An earlier version of this comment said the production model ran 454
+    # regions and that no annot at that count existed for this subject, so
+    # subdivision was the only way to reach it. Both halves were wrong. The model
+    # runs 414 (Schaefer400x7 + 14 Aseg14T subcortical volumes; 454 is the inert
+    # `ModelConfig.n_regions` default that run 3's config overrides), and the
+    # Schaefer annot does exist in this tree -- `--parc Schaefer400x7` measures
+    # the real thing. These rows stay because a dose-response is still worth
+    # having, not because the count cannot be reached directly.
     from scipy.cluster.vq import kmeans2
 
     pos = np.vstack([s["rr"][s["vertno"]] for s in subject["src"]])
@@ -495,21 +671,31 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", default=None, help="output json (default: the declared path)")
     ap.add_argument("--no-specificity", action="store_true")
+    ap.add_argument(
+        "--parc", default="aparc", choices=sorted(PARCELLATIONS),
+        help="coarse support. 'aparc' is 68 Desikan-Killiany parcels; "
+             "'Schaefer400x7' is 400 of the 414 regions the model runs on.",
+    )
     args = ap.parse_args(argv)
 
     t0 = time.time()
-    subject = load_subject()
+    subject = load_subject(parc=args.parc)
     m = measure(subject)
     rec = m.as_record()
     if not args.no_specificity:
         rec["specificity"] = specificity(subject)
     rec["provenance"]["wall_seconds"] = round(time.time() - t0, 1)
 
-    out = Path(args.out) if args.out else rp.measurement_path()
+    # Each parcellation has its own artefact path, so a run of one cannot land
+    # on the other's file. That mattered here: the two answers differ by 6x, and
+    # a scratch run writing over the declared artefact is exactly ISSUE-010's
+    # shape.
+    out = Path(args.out) if args.out else rp.measurement_path(parc=args.parc)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(rec, indent=2) + "\n")
 
     print(f"\nwrote {out}")
+    print(f"  parcellation {args.parc}, n_coarse {m.n_coarse}")
     print(f"  R P = I to {m.coarse_roundtrip_residual:.3g}          -> paired: {m.roundtrip_ok}")
     print(f"  coverage {m.landmark_coverage:.4f} of cortical area   -> ok: {m.coverage_ok}")
     print(f"  held-out fine residual {m.heldout_fine_residual:.4g} vs declared prior sd "

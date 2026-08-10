@@ -1,4 +1,30 @@
-# The declared fine/coarse resolution pair
+# The fine/coarse resolution pair on Desikan-Killiany
+
+> ## ⚠️ UPDATED 2026-08-09 — this report measures a parcellation SC-WBD does not run on
+>
+> Everything below is a correct measurement of the pair
+> `cortical_source_dipole ≤ parcel` where `parcel` is the **68-parcel
+> Desikan-Killiany atlas**. SC-WBD keeps regional state on **414** parcels —
+> Schaefer400x7 plus 14 Aseg14T subcortical volumes — and the same pair on
+> Schaefer400x7 is a different answer:
+>
+> | | here (DK-68) | the model's (Schaefer400x7) |
+> |---|---|---|
+> | `lead_field_energy_retained` | 0.0561 | **0.3214** |
+> | 3 numbers per parcel | 0.5171 | **0.8343** |
+> | orientation's advantage | 9.2× | **2.6×** |
+>
+> **`reports/transforms/resolution_pair_schaefer400.md` is the declared pair.**
+> The trainer's `resolution_poset` and `compiler_bridge._poset()` read that
+> artefact; this one is kept as its reference, and is unchanged.
+>
+> The §0 headline and §3.5 finding 3 below — *"eight times more parcels barely
+> moves it"* — are the specific sentences that do not survive. They were
+> inferred from k-means subdivision of DK's parcels, which reaches η = 0.162 at
+> 542 elements; a real functional parcellation reaches 0.321 at 400. The
+> original text is left unedited, because a finding that quietly becomes a
+> corrected finding leaves no record that anything was wrong. Filed as
+> **ISSUE-015**.
 
 Owner: 🧭 Gauss (transforms, frames, frame/clock graphs). 2026-08-06.
 Branch `wt/gauss`. Closes the declaration half of `reports/scope_gap.md` **G-2**;

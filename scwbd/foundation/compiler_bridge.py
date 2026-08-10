@@ -743,21 +743,28 @@ def _poset() -> "ResolutionPoset":
                  support the EEG lead field is *defined on*: every column of
                  ``G`` in :mod:`scwbd.observe.leadfield` is one of these.
         coarse -- ``PARCEL_SCALE``, where every region's state, the connectome
-                 and every theta prior already live.
+                 and every theta prior already live.  Concretely: Schaefer400x7,
+                 the cortical 400 of the model's 414 regions.  Until 2026-08-09
+                 the artefact this reads described the 68-parcel
+                 Desikan-Killiany atlas instead -- a real, validated pair about
+                 a parcellation SC-WBD does not run on.  It retains 0.056 of the
+                 whitened lead field; the one the model actually uses retains
+                 0.321.
 
     ``R`` is the area-weighted parcel mean and ``P`` the indicator fill; they
     are a genuine right-inverse pair and ``P`` returns a distribution, never a
     point.  The numbers below are **read from the measured artefact**
-    ``reports/transforms/resolution_pair.json``
-    (``benchmarks/transforms/resolution_pair.py``), never defaulted.  If that
-    artefact is missing or does not describe these supports, the pair is
-    declared *untested* and R02 refuses the compile.  That is the point: a
-    guard that cannot fire reads as coverage
+    ``rp.MEASUREMENT_RELPATH`` (``benchmarks/transforms/resolution_pair.py``),
+    never defaulted.  If that artefact is missing or does not describe these
+    supports, the pair is declared *untested* and R02 refuses the compile.  That
+    is the point: a guard that cannot fire reads as coverage
     (``reports/decorative_guards.md``), and this one is armed by default.
 
     The authority policy is **fine-authoritative** and the boundary
-    measurement that forces it -- the coarse support carries 6.3% of the
-    whitened lead field -- is in ``reports/transforms/resolution_pair.md``.
+    measurement that forces it -- the coarse support carries 32.1% of the
+    whitened lead field, against 83.4% for the same parcels carrying a net
+    dipole moment -- is in
+    ``reports/transforms/resolution_pair_schaefer400.md``.
     That measurement is *not* wired to R02: R02 polices whether a map is
     admissible (paired, tested, honest about its uncertainty), not whether a
     coarse state is accurate.  Conflating the two would let a modelling result

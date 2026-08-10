@@ -29,7 +29,13 @@ to the artifact rather than to a parallel vocabulary.
   any dyadic sense; it is a mesh, which is precisely §2.6's point.
 * **coarse** -- anatomical parcels.  This is the support at which
   ``scwbd.foundation`` keeps regional state, at which the connectome is
-  defined, and at which every θ prior is tabulated.
+  defined, and at which every θ prior is tabulated.  Concretely, and this is
+  load-bearing: **Schaefer400x7**, the cortical 400 of the model's 414 regions.
+  Until 2026-08-09 the artefact read here described the 68-parcel
+  Desikan-Killiany atlas, which the model does not use.  It was a real,
+  validated pair about someone else's parcellation, and the quantity the pair
+  exists to establish differs between them by a factor of six -- see
+  :data:`DECLARED_PARCELLATION`.
 
 Both supports are real: the fine one because the forward model is solved on it
 from a real BEM of a real subject's MRI, the coarse one because the region
@@ -83,12 +89,12 @@ Authority policy
 ----------------
 :data:`AUTHORITY_POLICY` is ``"fine_authoritative"``, the first of §4.2's three.
 That choice is *forced by the measurement*, not assumed; see
-``reports/transforms/resolution_pair.md``.
+``reports/transforms/resolution_pair_schaefer400.md``.
 
 Measured artefact
 -----------------
-:func:`load_measurement` reads ``reports/transforms/resolution_pair.json``,
-which ``benchmarks/transforms/resolution_pair.py`` writes.  Nothing here
+:func:`load_measurement` reads :data:`MEASUREMENT_RELPATH`, which
+``benchmarks/transforms/resolution_pair.py`` writes.  Nothing here
 hard-codes a residual or a coverage.  If the artefact is absent, stale, or
 disagrees with the supports it claims to describe, :func:`load_measurement`
 returns ``None`` and the caller must declare the pair *untested* -- at which
@@ -120,6 +126,8 @@ __all__ = [
     "SCALE_COARSE",
     "AUTHORITY_POLICY",
     "MEASUREMENT_RELPATH",
+    "MEASUREMENT_RELPATHS",
+    "DECLARED_PARCELLATION",
     "SCHEMA_VERSION",
     "restriction_matrix",
     "prolongation_matrix",
@@ -142,8 +150,25 @@ SCALE_COARSE = "parcel"
 #: One of §4.2's three.  See the module docstring and the report.
 AUTHORITY_POLICY = "fine_authoritative"
 
-#: Where the measured artefact lives, relative to the repository root.
-MEASUREMENT_RELPATH = "reports/transforms/resolution_pair.json"
+#: Every measured artefact, by the coarse support it describes.  Two, because
+#: the pair is a property of a *particular* parcellation and the two answers
+#: differ by a factor of six.
+MEASUREMENT_RELPATHS = {
+    "Schaefer400x7": "reports/transforms/resolution_pair_schaefer400.json",
+    "aparc": "reports/transforms/resolution_pair.json",
+}
+
+#: The coarse support the **model** runs on.  ``scwbd.foundation`` keeps regional
+#: state on 414 parcels -- Schaefer400x7 plus 14 Aseg14T subcortical volumes --
+#: and 400 of those are the cortical ones an EEG source space has fine support
+#: under.  The declared pair must describe that support and not another: for two
+#: runs it described the 68-parcel Desikan-Killiany atlas, which the model does
+#: not use, and the difference is not cosmetic.  A per-parcel scalar retains
+#: 0.056 of the whitened lead field on DK-68 and 0.321 on Schaefer400x7.
+DECLARED_PARCELLATION = "Schaefer400x7"
+
+#: Where the declared measured artefact lives, relative to the repository root.
+MEASUREMENT_RELPATH = MEASUREMENT_RELPATHS[DECLARED_PARCELLATION]
 
 #: Bumped whenever the meaning of a recorded field changes, so a stale artefact
 #: is rejected rather than silently reinterpreted.
@@ -559,12 +584,13 @@ class PairMeasurement:
         return cls(**kw)  # type: ignore[arg-type]
 
 
-def measurement_path(root: str | Path | None = None) -> Path:
-    """Absolute path to the measured artefact."""
+def measurement_path(root: str | Path | None = None, parc: str | None = None) -> Path:
+    """Absolute path to a measured artefact; the declared one by default."""
+    rel = MEASUREMENT_RELPATHS[parc] if parc is not None else MEASUREMENT_RELPATH
     if root is not None:
-        return Path(root) / MEASUREMENT_RELPATH
+        return Path(root) / rel
     # scwbd/transforms/resolution_pair.py -> repo root
-    return Path(__file__).resolve().parents[2] / MEASUREMENT_RELPATH
+    return Path(__file__).resolve().parents[2] / rel
 
 
 def load_measurement(
