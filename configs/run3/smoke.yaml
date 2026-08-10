@@ -10,5 +10,12 @@ train:
   out_dir: checkpoints/scwbd-003-smoke
   resume: false
   max_wall_seconds: 3600
+  # Added 2026-08-10, retroactively. `--quick` shrinks the participant rosters
+  # and does NOT touch step counts, so this smoke ran T1's full step count until
+  # `max_wall_seconds` stopped it and never reached the later stages -- it
+  # exercised the first stage's loss paths and nothing else. Affects nothing run
+  # 3 published: this is the smoke config, not `scwbd-003.yaml`, and no number in
+  # any report came from it.
+  max_steps_per_stage: 4
 data:
   batch: 8

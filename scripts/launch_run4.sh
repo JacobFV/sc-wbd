@@ -57,6 +57,14 @@ if p.nuisance_dim != 0:
     )
 if p.cond_norm not in COND_NORMS:
     bad.append(f"cond_norm={p.cond_norm!r} is not one of {COND_NORMS}")
+cap = getattr(load_config(sys.argv[1]).train, "max_steps_per_stage", None)
+if cap is not None:
+    bad.append(
+        f"train.max_steps_per_stage={cap} is set in the RUN's config. It caps every "
+        "stage and exists only so a SMOKE can reach all six; in a run it silently "
+        "truncates training and every stage would finish early looking normal. "
+        "Remove it -- it belongs in configs/run4/smoke.yaml and nowhere else."
+    )
 if not (0 < p.lr_scale <= 20):
     bad.append(f"lr_scale={p.lr_scale} is outside (0, 20]")
 elif p.lr_scale == 0.02:

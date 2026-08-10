@@ -94,3 +94,43 @@ def test_the_launch_script_smokes_through_a_smoke_config() -> None:
         "runtime. A config edit could re-introduce the collision without touching "
         "this script, and the static check above would still pass."
     )
+
+
+# ======================================================================
+# a smoke must REACH every stage, and a run must never be capped
+# ======================================================================
+def test_the_smoke_caps_steps_so_it_reaches_every_stage() -> None:
+    """`--quick` shrinks rosters, not step counts.
+
+    The first working run-4 smoke ran T1's 4,000 steps at ~9.3 s/step, hit
+    `max_wall_seconds`, and stopped -- never entering T4 or T6, the two stages
+    carrying this run's new code (the posterior's rewritten conditioning, and
+    the first fitted individualiser). It exercised only the paths that already
+    worked, which is not the check HANDOFF-004 step e asks for.
+    """
+    for run, smoke in _pairs():
+        cap = getattr(load_config(str(smoke)).train, "max_steps_per_stage", None)
+        assert cap is not None and cap > 0, (
+            f"{smoke.relative_to(REPO)} does not cap max_steps_per_stage, so it runs "
+            "the run's full step counts and stops at the wall clock partway through "
+            "the first stage. It would never reach the later stages."
+        )
+        # ONE_CYCLE_MIN_STEPS is 3, and one step cannot catch a term that raises
+        # on its SECOND batch -- a stale cached shape, an exhausted iterator.
+        assert cap >= 4, f"{smoke.relative_to(REPO)} caps at {cap}; use at least 4"
+
+
+@pytest.mark.parametrize("run,smoke", _pairs(), ids=lambda p: f"{p.parent.name}/{p.name}")
+def test_the_run_config_never_caps_steps(run: Path, smoke: Path) -> None:
+    """`max_steps_per_stage` in a RUN config silently truncates training.
+
+    Every stage would finish early and look normal; the log would show each
+    stage completing, and only the step counts would betray it. It belongs in a
+    smoke config and nowhere else.
+    """
+    cap = getattr(load_config(str(run)).train, "max_steps_per_stage", None)
+    assert cap is None, (
+        f"{run.relative_to(REPO)} sets train.max_steps_per_stage={cap}. That caps "
+        "EVERY stage and exists only so a smoke can reach all of them. In a run it "
+        "truncates training silently."
+    )

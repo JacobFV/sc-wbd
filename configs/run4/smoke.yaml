@@ -21,5 +21,22 @@ train:
   # Long enough to reach every loss path once. The smoke's job is to make each
   # term raise if it is going to, not to produce a number.
   max_wall_seconds: 3600
+
+  # 4 steps per stage, so the smoke REACHES ALL SIX.
+  #
+  # `--quick` shrinks the participant rosters and does not touch step counts, so
+  # the first working smoke ran T1's 4,000 steps at ~9.3 s/step, hit
+  # `max_wall_seconds`, and stopped -- never entering T4 or T6, which carry this
+  # run's new code: the amortised posterior's rewritten conditioning (ISSUE-012)
+  # and the first fitted individualiser. A smoke that exercises only the paths
+  # that already worked is not the check HANDOFF-004 step e asks for.
+  #
+  # 4 rather than 1: a single step cannot show a loss term that raises on its
+  # SECOND batch, which is where a stale cached shape or an exhausted iterator
+  # shows up. ONE_CYCLE_MIN_STEPS is 3, so 4 also clears the scheduler's floor.
+  #
+  # NEVER set this in a run config -- it silently truncates training.
+  # `scripts/launch_run4.sh` step 2 refuses a run whose config sets it.
+  max_steps_per_stage: 4
 data:
   batch: 8

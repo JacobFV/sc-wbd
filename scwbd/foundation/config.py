@@ -330,6 +330,23 @@ class TrainConfig:
     #: returning them -- until the machine dies.  ``0`` disables the cap.
     cuda_reserve_gb: float = 40.0
     max_wall_seconds: float = 6 * 3600.0
+
+    #: Cap every stage at this many steps. ``None`` (the default) runs each
+    #: stage's own ``steps``.
+    #:
+    #: This exists so a SMOKE can reach every stage. ``--quick`` shrinks the
+    #: participant rosters and does **not** touch the step counts, so a smoke of
+    #: run 4 ran T1's 4,000 steps at ~9.3 s/step, hit ``max_wall_seconds``, and
+    #: stopped without ever entering T4 or T6 -- the two stages carrying the run's
+    #: new code (the amortised posterior's rewritten conditioning, and the first
+    #: fitted individualiser). A smoke that exercises only the paths that already
+    #: worked is not the check HANDOFF-004 step e asks for.
+    #:
+    #: Capped rather than overridden per stage in the smoke YAML, because the
+    #: stage list would then be a COPY of the run's and the two would drift --
+    #: which is the reason ``configs/run4`` inherits ``base:`` instead of copying.
+    max_steps_per_stage: int | None = None
+
     resume: bool = True
     stages: list[StageConfig] = field(
         default_factory=lambda: [

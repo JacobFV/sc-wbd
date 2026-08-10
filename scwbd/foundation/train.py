@@ -2284,18 +2284,32 @@ class FoundationTrainer:
                 }
             )
         opt = torch.optim.AdamW(groups, lr=stage.lr, weight_decay=stage.weight_decay, betas=(0.9, 0.95))
+        # `train.max_steps_per_stage` caps a SMOKE so it can reach every stage;
+        # None (the default) runs the stage's own count. The scheduler is built
+        # against the capped number, not the configured one, so a capped stage
+        # completes its schedule instead of being cut off part way up the ramp.
+        n_steps = stage.steps
+        cap = getattr(self.cfg.train, "max_steps_per_stage", None)
+        if cap is not None and cap > 0 and cap < n_steps:
+            print(
+                f"[{stage.name}] max_steps_per_stage={cap} caps this stage's "
+                f"{stage.steps} steps. THIS IS A SMOKE, not a run: no number from "
+                "it is a training result.",
+                flush=True,
+            )
+            n_steps = int(cap)
         sched = torch.optim.lr_scheduler.OneCycleLR(
             opt,
             max_lr=[g["lr"] for g in groups],
-            total_steps=max(stage.steps, ONE_CYCLE_MIN_STEPS),
-            pct_start=_one_cycle_pct_start(stage.warmup, stage.steps),
+            total_steps=max(n_steps, ONE_CYCLE_MIN_STEPS),
+            pct_start=_one_cycle_pct_start(stage.warmup, n_steps),
         )
         self.model.train()
         self.posterior.train()
         t0 = time.time()
         best = math.inf
         step = 0
-        for step in range(1, stage.steps + 1):
+        for step in range(1, n_steps + 1):
             if deadline is not None and time.time() > deadline:
                 print(f"[{stage.name}] wall-clock deadline reached at step {step}", flush=True)
                 break
