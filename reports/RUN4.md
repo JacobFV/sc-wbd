@@ -81,6 +81,40 @@ periodically diverges to 14.24. Better average tracking with blow-ups is a rate
 above the stable region. No further multiplier was tried: the finding is not a
 learning rate, and tuning one treats the symptom.
 
+## What the trunk-drift explanation predicts for this run — written at step 260
+
+Pre-registered while run 4 is training, so the eventual numbers can confirm or
+refute it rather than be explained by it afterwards. Which stage trains what:
+
+| stage | admits | grants `bold.*` | shared trunk |
+| --- | --- | --- | --- |
+| `T1_measured_founding` | 1 | yes | **trains** |
+| `T2_calibration` | 1,2 | yes | **trains** |
+| `T3_population_prior` | 1,2,3 | yes | **trains** |
+| `T4_simulator` | 1,2,3,4 | yes | **trains** |
+| `T5_measured_return` | 1,2 | yes | **trains** |
+| `T6_individual` | 1 | **no** | frozen |
+
+If BOLD degrades because the trunk moves under it, then:
+
+1. **`real_bold_nll` rises across T1–T5** and does not recover within a stage.
+   At step 260 it is 5.39 against 1.99 at step 1, already above the first
+   launch's 2.69 at the same step.
+2. **It is absent from T6's rows entirely.** T6 drops `ds002336_real` — its card
+   grants only `bold.*` and T6 grants none of it, so the source is admitted with
+   an empty permission set and skipped. Arm C's condition (a frozen trunk)
+   therefore recurs in T6 *without* the term that would test it, which is why
+   this run cannot settle the remedy and run 5 has to.
+3. **The published fMRI number reflects T5's end state**, not the final
+   checkpoint's training. Anyone reading it must be told that; the model card is
+   written accordingly.
+
+**The falsifier.** If `real_bold_nll` stabilises or falls while the trunk is
+still training — anywhere in T1–T5 — the 23.2 : 1 gradient-share explanation is
+wrong or incomplete, ISSUE-016 must be reopened, and `RUN5_DESIGN.md`'s adapter
+proposal loses its evidence. That would be the more interesting outcome and it is
+written here so it cannot be quietly absorbed.
+
 ## Run 3 could not have found this
 
 ISSUE-008 meant run 3's measured BOLD path never integrated the ODE. The term was
