@@ -73,9 +73,33 @@ fi
 # make echoes the recipe and the recipe names the module.  That self-match made
 # a finished run report procs=1 and skip the completion branch below.  Sixth
 # pgrep misfire on this project; match the interpreter, and drop shell wrappers.
-procs=$(pgrep -af 'scwbd\.foundation\.train' 2>/dev/null \
+all_train=$(pgrep -af 'scwbd\.foundation\.train' 2>/dev/null \
         | grep -E '(^|/)[0-9]+ .*(python[0-9.]*) ' \
-        | grep -vE 'bash -c|sh -c|make ' | wc -l)
+        | grep -vE 'bash -c|sh -c|make ')
+# SEVENTH pgrep misfire, and a new shape: matching the MODULE matches any run.
+# On 2026-08-10 run 4 was stopped deliberately and a diagnostic probe was running
+# beside it; `make health-run4` paired run 4's (correctly) stale log with the
+# PROBE's live process and reported "process alive but no write for 2910s -- this
+# is a hang". A watchdog acting on that would have relaunched a run that was
+# stopped on purpose, on top of a probe.
+#
+# So count only processes whose command line names THIS run's config. A run
+# started without --config cannot be told apart from another that way, which is
+# why the mismatch is reported rather than silently counted as zero.
+# Exclude only what is demonstrably a DIFFERENT run: a command line naming
+# some other --config. A process that names no config at all could be this run
+# started on the default, and calling that a death would be a false DEATH -- a
+# watchdog would relaunch on top of a live job, which is worse than the false
+# hang this replaced.
+foreign=$(printf '%s\n' "$all_train" | grep -E -- '--config[= ]' | grep -v -F -- "$CONFIG" || true)
+procs=$(printf '%s\n' "$all_train" | grep -c . || true)
+n_foreign=$(printf '%s\n' "$foreign" | grep -c . || true)
+procs=$(( procs - n_foreign ))
+[ "$procs" -lt 0 ] && procs=0
+if [ "${n_foreign:-0}" -gt 0 ]; then
+    echo "note: ${n_foreign} training process(es) belong to ANOTHER run and are not counted here:"
+    printf '%s\n' "$foreign" | sed 's/^/note:   /'
+fi
 if [ "${procs:-0}" -eq 0 ] && [ -n "${last:-}" ] && [ "$last" -ge "$TARGET" ]; then
     echo "COMPLETE global_step=$last (target $TARGET), no process — training is DONE, do not relaunch"
     exit 0
