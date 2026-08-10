@@ -86,6 +86,63 @@ This also settles the conditioning question, which I got wrong twice. At 1.0e-3,
 conditioning is **what makes the high learning rate usable at all**. Earlier
 notes calling it "essentially nothing" were read off the 300-step smoke.
 
+## 3a. AMENDMENT, 06:40 — the bracket says the v2 measurement is not reliable
+
+This is the "explicit line saying which previously reported number is
+superseded" that §2 requires. It is **not** a change to the rule in §3; it is a
+finding that the rule's input is noisier than the rule assumed.
+
+The bracket at 4.0e-5 and 2.0e-4 completed:
+
+| cond_norm | lr | log_G R² | −log q | cov_mae |
+| --- | ---: | ---: | ---: | ---: |
+| `layer_v1` | 4.0e-5 | +0.170 | 7.561 | 0.020 |
+| `layer_v1` | 2.0e-4 | +0.493 | 7.617 | 0.011 |
+| `dataset_std_v2` | 4.0e-5 | +0.089 | 11.103 | 0.106 |
+| `dataset_std_v2` | 2.0e-4 | +0.585 | 13.200 | 0.101 |
+
+Put beside the main grid, `dataset_std_v2`'s held-out `−log q` against learning
+rate reads:
+
+    4.0e-6   7.932      cov_mae 0.018
+    4.0e-5  11.103      cov_mae 0.106
+    2.0e-4  13.200      cov_mae 0.101
+    1.0e-3   7.075      cov_mae 0.021
+    3.0e-3   7.212      cov_mae 0.017
+
+**That is not a plausible smooth function of the learning rate**, and coverage
+tracks it, so it is not a single flaky statistic. `layer_v1` over the same range
+is monotone and well behaved (7.866 / 7.561 / 7.617 / 8.445 / 8.549).
+
+The sweep runs **one seed per cell and no replication** — stated in
+`source_ablation`'s own caveat language and true here too. A 6-nat swing that
+reverses direction twice is consistent with instability in the
+`_DatasetStandardise` running statistics interacting with OneCycleLR's schedule
+(momentum 0.01 is a ~100-batch timescale; the summary encoder moves under it at
+mid rates and the annealed tail lets it catch up at high ones). It is equally
+consistent with plain seed variance. **The sweep as run cannot tell those apart,
+and neither can I.**
+
+Consequence for §3: the rule stands, but `dataset_std_v2 @ 1.0e-3` was selected
+on a single draw from an arm now known to swing 6 nats. **`lr_scale = 5.0` is
+not safe to launch on this evidence.**
+
+### The one further measurement, with a hard stop
+
+Three seeds at each of the two candidate cells — `dataset_std_v2 @ 1.0e-3` and
+`layer_v1 @ 2.0e-4` — and then the decision is made and not revisited:
+
+* if `dataset_std_v2 @ 1.0e-3` is stable across seeds (all three passing the §3
+  density bar), `lr_scale = 5.0`;
+* otherwise `lr_scale = 1.0` (`layer_v1 @ 2.0e-4`: R² 0.493, `−log q` 7.617,
+  `cov_mae` 0.011 — lower R² than the v2 cell, monotone neighbours, best
+  coverage in the whole grid, and it still clears ISSUE-012's 0.4 floor and the
+  0.439 ridge probe).
+
+**No further rounds.** If the replication is itself ambiguous, take
+`lr_scale = 1.0`: choosing the stable arm under uncertainty is the decision, not
+a deferral of it.
+
 ## 4. Blocking before launch
 
 1. **The full-suite `F`.** A whole-suite run is in flight (~38% at 26 min,

@@ -1,0 +1,187 @@
+{
+  "discharge_condition": {
+    "log_G_r2": 0.4,
+    "sbc_ks_pvalue_min": 0.01,
+    "coverage_mae": 0.05
+  },
+  "n_cells": 4,
+  "n_discharging": 0,
+  "best_by_log_G_r2": {
+    "cond_norm": "dataset_std_v2",
+    "lr": 0.0002,
+    "steps": 1500,
+    "weight_decay": 0.01,
+    "seed": 0,
+    "n_posterior_parameters": 1102024,
+    "posterior_r2": {
+      "log_G": 0.5852590799331665,
+      "log_velocity": -0.02364790439605713,
+      "ei_global": -0.02903449535369873,
+      "ei_gradient": 0.0701143741607666,
+      "log_sigma": -0.24700963497161865,
+      "drive": -0.014596700668334961
+    },
+    "log_G_r2": 0.5852590799331665,
+    "held_out_neg_log_q": 13.20028305053711,
+    "train_neg_log_q_last50": 6.320689392089844,
+    "sbc_ks_pvalue_min": 1.1935454047930928e-99,
+    "coverage_mae": 0.1011848896741867,
+    "posterior_sd_over_prior_sd": [
+      0.31816309690475464,
+      0.9200709462165833,
+      0.8878979086875916,
+      0.7946189641952515,
+      0.5371289849281311,
+      1.0058276653289795
+    ],
+    "npe_rejected": 0,
+    "n_val": 512,
+    "sbc_n_bins": 256,
+    "eval_context": "unmasked, as evaluate.posterior_calibration",
+    "seconds": 173.5,
+    "discharges_issue_012": false
+  },
+  "recommended_lr_scale_at_T4": 1.0,
+  "cells": [
+    {
+      "cond_norm": "layer_v1",
+      "lr": 4e-05,
+      "steps": 1500,
+      "weight_decay": 0.01,
+      "seed": 0,
+      "n_posterior_parameters": 1102280,
+      "posterior_r2": {
+        "log_G": 0.16987651586532593,
+        "log_velocity": -0.01683640480041504,
+        "ei_global": -0.0030727386474609375,
+        "ei_gradient": 2.855062484741211e-05,
+        "log_sigma": 0.13692545890808105,
+        "drive": -0.0090407133102417
+      },
+      "log_G_r2": 0.16987651586532593,
+      "held_out_neg_log_q": 7.5611066818237305,
+      "train_neg_log_q_last50": 7.030114116668702,
+      "sbc_ks_pvalue_min": 2.8705737845601123e-06,
+      "coverage_mae": 0.02044270560145378,
+      "posterior_sd_over_prior_sd": [
+        0.7842516303062439,
+        0.9898631572723389,
+        1.035592794418335,
+        1.0312455892562866,
+        0.9569376111030579,
+        1.037882685661316
+      ],
+      "npe_rejected": 0,
+      "n_val": 512,
+      "sbc_n_bins": 256,
+      "eval_context": "unmasked, as evaluate.posterior_calibration",
+      "seconds": 177.6,
+      "discharges_issue_012": false
+    },
+    {
+      "cond_norm": "layer_v1",
+      "lr": 0.0002,
+      "steps": 1500,
+      "weight_decay": 0.01,
+      "seed": 0,
+      "n_posterior_parameters": 1102280,
+      "posterior_r2": {
+        "log_G": 0.49279093742370605,
+        "log_velocity": -0.009060978889465332,
+        "ei_global": 0.020261824131011963,
+        "ei_gradient": 0.02236729860305786,
+        "log_sigma": 0.13317304849624634,
+        "drive": -0.0004780292510986328
+      },
+      "log_G_r2": 0.49279093742370605,
+      "held_out_neg_log_q": 7.617434978485107,
+      "train_neg_log_q_last50": 6.2442226982116695,
+      "sbc_ks_pvalue_min": 1.3595657188425508e-47,
+      "coverage_mae": 0.011067691259086132,
+      "posterior_sd_over_prior_sd": [
+        0.6110687851905823,
+        0.9700884819030762,
+        1.0322200059890747,
+        0.9194676280021667,
+        0.713437020778656,
+        1.0393643379211426
+      ],
+      "npe_rejected": 0,
+      "n_val": 512,
+      "sbc_n_bins": 256,
+      "eval_context": "unmasked, as evaluate.posterior_calibration",
+      "seconds": 174.2,
+      "discharges_issue_012": false
+    },
+    {
+      "cond_norm": "dataset_std_v2",
+      "lr": 4e-05,
+      "steps": 1500,
+      "weight_decay": 0.01,
+      "seed": 0,
+      "n_posterior_parameters": 1102024,
+      "posterior_r2": {
+        "log_G": 0.0889081358909607,
+        "log_velocity": -0.013063549995422363,
+        "ei_global": 0.011379599571228027,
+        "ei_gradient": 0.030034899711608887,
+        "log_sigma": -0.6597038507461548,
+        "drive": 0.003390073776245117
+      },
+      "log_G_r2": 0.0889081358909607,
+      "held_out_neg_log_q": 11.103187561035156,
+      "train_neg_log_q_last50": 7.040584239959717,
+      "sbc_ks_pvalue_min": 3.9312498600659096e-101,
+      "coverage_mae": 0.10577472299337387,
+      "posterior_sd_over_prior_sd": [
+        0.37570738792419434,
+        0.8172094821929932,
+        0.9569998383522034,
+        0.901120662689209,
+        0.5869306921958923,
+        0.9776847958564758
+      ],
+      "npe_rejected": 0,
+      "n_val": 512,
+      "sbc_n_bins": 256,
+      "eval_context": "unmasked, as evaluate.posterior_calibration",
+      "seconds": 176.3,
+      "discharges_issue_012": false
+    },
+    {
+      "cond_norm": "dataset_std_v2",
+      "lr": 0.0002,
+      "steps": 1500,
+      "weight_decay": 0.01,
+      "seed": 0,
+      "n_posterior_parameters": 1102024,
+      "posterior_r2": {
+        "log_G": 0.5852590799331665,
+        "log_velocity": -0.02364790439605713,
+        "ei_global": -0.02903449535369873,
+        "ei_gradient": 0.0701143741607666,
+        "log_sigma": -0.24700963497161865,
+        "drive": -0.014596700668334961
+      },
+      "log_G_r2": 0.5852590799331665,
+      "held_out_neg_log_q": 13.20028305053711,
+      "train_neg_log_q_last50": 6.320689392089844,
+      "sbc_ks_pvalue_min": 1.1935454047930928e-99,
+      "coverage_mae": 0.1011848896741867,
+      "posterior_sd_over_prior_sd": [
+        0.31816309690475464,
+        0.9200709462165833,
+        0.8878979086875916,
+        0.7946189641952515,
+        0.5371289849281311,
+        1.0058276653289795
+      ],
+      "npe_rejected": 0,
+      "n_val": 512,
+      "sbc_n_bins": 256,
+      "eval_context": "unmasked, as evaluate.posterior_calibration",
+      "seconds": 173.5,
+      "discharges_issue_012": false
+    }
+  ]
+}
