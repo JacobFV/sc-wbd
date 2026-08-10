@@ -157,7 +157,13 @@ else
     fi
     echo "  smoke run_name=$SMOKE_NAME (run is $RUN_NAME)"
 
-    SMOKE_LOG="reports/training/run004_smoke.log"
+    # Into the smoke's OWN report dir, read from the smoke config, so every
+    # artifact the smoke produces sits under one directory. It collided with
+    # nothing at reports/training/, but a scratch file in the production reports
+    # directory is how the last four of these started.
+    SMOKE_DIR=$($PY -c "from scwbd.foundation.config import load_config; print(load_config('$SMOKE_CONFIG').train.report_dir)")
+    mkdir -p "$SMOKE_DIR"
+    SMOKE_LOG="$SMOKE_DIR/run004_smoke.log"
     PYTHONPATH="$PWD" PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
         $PY -m scwbd.foundation.train --config "$SMOKE_CONFIG" --quick > "$SMOKE_LOG" 2>&1
     SMOKE_RC=$?

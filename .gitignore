@@ -47,3 +47,12 @@ reports/attachment_kinds.md
 checkpoints/*-ablation-scratch/
 checkpoints/*-ablation-debris/
 reports/training/*-ablation/
+
+# Smoke scratch: the pre-launch smoke (scripts/launch_run4.sh step 5) redirects
+# its report_dir, checkpoints and log here so it cannot overwrite the run it is
+# checking. It once replaced 22,113 lines of run 3's
+# mixture_T1_measured_founding.json with 81 lines of its own. Same class as the
+# ablation scratch above, one directory over.
+reports/training/smoke-0*/
+checkpoints/*-smoke/
+reports/run4_posterior/_smoke/
