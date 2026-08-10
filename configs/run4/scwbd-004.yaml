@@ -90,6 +90,54 @@
 
 base: ../run3/scwbd-003.yaml
 
+# ---------------------------------------------------------------------------
+# THE POSTERIOR BLOCK IS RESTATED HERE, NOT INHERITED (ISSUE-012)
+# ---------------------------------------------------------------------------
+# Run 3's posterior returned the prior: `posterior_r2` <= 0.001 on all six
+# parameters, while an MLP on the very conditioning vector the flow is handed
+# reaches 0.753 on `log_G`. Three of the four causes were config, and run 3's
+# block is `base:` above.
+#
+# The trap this block exists to close: `nuisance_dim`'s DEFAULT was moved to 0
+# when ISSUE-012 was written, and run 3 sets it to **2** at line 144 of the file
+# this one inherits. A default cannot fix a config that overrides it. That is
+# ISSUE-012's own finding about run 2 -- "a fix that lives in one pilot config
+# and not in the default is not a fix" -- read in the other direction, and it
+# would have reached T4 with the defect intact. It would not have run silently:
+# `AmortizedPosterior.loss` raises ConstantTargetDimension on a target column
+# that never varies, so the run would have DIED about 5,400 steps and ~14 h in.
+# The guard works. Paying 14 h to fire it is still a waste.
+posterior:
+  summary_channels: 128
+  summary_layers: 4
+  flow_layers: 6
+  flow_hidden: 256
+  n_bands: 7
+  n_pcs: 16
+
+  # (a) No point-mass coordinates. The trainer passes `torch.zeros(B, n)` for
+  #     nuisance and has never estimated it, so at 2 the flow was asked to put
+  #     finite density on a constant -- an unbounded reward that costs nothing.
+  #     Measured on run 3's checkpoint: those two coordinates took 12.99 of the
+  #     15.9 nats by which `npe_loss` fell, and the theta term finished 0.09
+  #     nats BELOW the prior's own entropy.
+  nuisance_dim: 0
+
+  # (c) Standardise the conditioning per dimension ACROSS DATASETS. Run 3's
+  #     LayerNorm normalised across the 128 features of ONE SAMPLE, which keeps
+  #     the pattern every dataset shares and shrinks the part that tells them
+  #     apart: measured, the between-dataset variation ended at 5.5% of the
+  #     within-vector spread, and shuffling `c` across the batch moved `-log q`
+  #     by 0.001-0.003 nats. The flow was not ignoring its conditioning so much
+  #     as being handed the same vector every time.
+  cond_norm: dataset_std_v2
+
+  # (b) The posterior LR. Set by the sweep in reports/run4_posterior/, not
+  #     inherited: 0.02 x T4's 2.0e-4 is 4.0e-6, and it was chosen to stop a
+  #     DIVERGENCE whose two other causes -- the point mass and the conditioning
+  #     -- are fixed above. See scripts/sweep_posterior.py.
+  lr_scale: 0.02
+
 model:
   # ISSUE-008's fix, and the two fields that bound its cost.
   #

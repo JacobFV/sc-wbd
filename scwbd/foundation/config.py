@@ -194,6 +194,34 @@ class PosteriorConfig:
     #: ISSUE-012.
     nuisance_dim: int = 0
 
+    #: Which axis the conditioning is normalised over before it reaches a
+    #: coupling net -- ``layer_v1`` across the features of one sample (runs 1-3),
+    #: ``dataset_std_v2`` per feature across datasets (run 4 on).
+    #:
+    #: This is ISSUE-012's third remedy and it is versioned rather than replaced,
+    #: for the reason ISSUE-014 versioned the split policy: runs 1-3 were fitted
+    #: under v1 and their published numbers mean what they mean only under it.
+    #: Measured on run 3: after the v1 LayerNorm the between-dataset variation in
+    #: ``c`` is 5.5% of the within-vector spread, so every dataset presented the
+    #: flow with nearly the same vector and shuffling ``c`` across the batch moved
+    #: ``-log q`` by 0.001-0.003 nats. See scwbd.foundation.posterior.COND_NORMS.
+    cond_norm: str = "dataset_std_v2"
+
+    #: The posterior group's LR as a fraction of the stage LR.
+    #:
+    #: 0.02 was chosen to stop a *divergence* -- the coupling nets' weights
+    #: growing until the translation drove ``|z|`` out of range -- and ISSUE-012
+    #: found it still in force as the training LR for the only stage in which the
+    #: posterior receives any gradient at all. At T4's 2.0e-4 that is **4.0e-6**
+    #: for 5000 steps, and the posterior it produced returns the prior while a
+    #: two-layer MLP on the same conditioning reaches R^2 0.753 on ``log_G``.
+    #:
+    #: The divergence it was fixing had two other causes that are now fixed at
+    #: the source (``nuisance_dim`` 0, and the conditioning standardised across
+    #: datasets), so the rate no longer has to carry them. It is a config field
+    #: so it can be swept: ``scripts/sweep_posterior.py``.
+    lr_scale: float = 0.02
+
 
 @dataclass
 class DataConfig:

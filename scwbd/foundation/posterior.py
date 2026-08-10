@@ -220,10 +220,112 @@ class _Coupling(nn.Module):
         return (x - t) * torch.exp(-s), -s.sum(-1)
 
 
+class UnfittedConditioner(RuntimeError):
+    """A dataset-standardising conditioner was read before it saw any batch.
+
+    Raised rather than silently passing ``c`` through with mean 0 / var 1, which
+    is not a neutral default: the summary vector's per-dimension |mean| is 0.56
+    and the part that varies between datasets is 0.063, so an unfitted
+    standardiser hands the coupling nets nearly the same vector for every
+    dataset -- exactly the state ISSUE-012 measured on run 3.
+    """
+
+
+class _DatasetStandardise(nn.Module):
+    """Standardise each conditioning dimension **across datasets**.
+
+    This is the ISSUE-012 fix and the distinction it turns on is the whole
+    defect.  :class:`nn.LayerNorm` normalises across the 128 *features of one
+    sample*; it therefore preserves whatever fixed pattern every dataset shares
+    and shrinks the part that differs between them.  Measured on run 3's
+    checkpoint: ``c`` carries a per-dimension |mean| of 0.56 with a within-vector
+    spread of 0.59, while the between-dataset variation is 0.063.  After the
+    LayerNorm the between-dataset variation is **5.5% of the within-vector
+    spread** -- every dataset presents the coupling nets with nearly the same
+    vector, and the flow duly ignored it (``posterior_r2`` <= 0.001 on all six
+    parameters, and shuffling ``c`` across the batch moved ``-log q`` by
+    0.001-0.003 nats).
+
+    Standardising per dimension across the batch removes the shared pattern,
+    which is the only part that is common to every dataset, and rescales the
+    part that varies to unit sd -- the part that carries the information.  It
+    keeps the property LayerNorm was introduced for: the conditioning reaching a
+    coupling net is O(1) regardless of the summary encoder's scale, so the
+    unbounded translation cannot be driven far from the origin.
+
+    Running statistics are used at eval so a single dataset's posterior is a
+    function of that dataset alone, not of whichever batch it arrived in.  The
+    first training batch initialises them exactly rather than being blended into
+    0/1, so the estimate is unbiased from step 1 instead of decaying towards
+    correctness over ``1/momentum`` steps.
+    """
+
+    def __init__(self, dim: int, *, momentum: float = 0.01, eps: float = 1e-5) -> None:
+        super().__init__()
+        self.dim = int(dim)
+        self.momentum = float(momentum)
+        self.eps = float(eps)
+        self.register_buffer("running_mean", torch.zeros(dim))
+        self.register_buffer("running_var", torch.ones(dim))
+        self.register_buffer("n_batches", torch.zeros((), dtype=torch.long))
+
+    @property
+    def fitted(self) -> bool:
+        return bool(int(self.n_batches) > 0)
+
+    def forward(self, c: Tensor) -> Tensor:
+        if self.training and c.shape[0] >= 2:
+            mean = c.mean(0)
+            var = c.var(0, unbiased=False)
+            with torch.no_grad():
+                if not self.fitted:
+                    self.running_mean.copy_(mean.detach())
+                    self.running_var.copy_(var.detach())
+                else:
+                    self.running_mean.lerp_(mean.detach(), self.momentum)
+                    self.running_var.lerp_(var.detach(), self.momentum)
+                self.n_batches += 1
+        else:
+            if not self.fitted:
+                raise UnfittedConditioner(
+                    f"{type(self).__name__} was asked to normalise a batch of "
+                    f"{c.shape[0]} with no running statistics: either this posterior "
+                    "has never been trained, or it is being evaluated before its first "
+                    "training batch. Passing c through unstandardised would reproduce "
+                    "the ISSUE-012 state (between-dataset variation at 5.5% of the "
+                    "within-vector spread), so it is refused instead. Train at least one "
+                    "batch of >= 2 datasets, or set posterior.cond_norm to 'layer_v1' to "
+                    "get runs 1-3's per-sample LayerNorm back."
+                )
+            mean, var = self.running_mean, self.running_var
+        return (c - mean) / (var + self.eps).sqrt()
+
+    def extra_repr(self) -> str:
+        return f"dim={self.dim}, momentum={self.momentum}, fitted={self.fitted}"
+
+
+#: The conditioning normalisations this flow can be built with, by name.
+#:
+#: Versioned rather than replaced, for the reason ISSUE-014 versioned the split
+#: policy: runs 1-3's checkpoints were fitted under ``layer_v1`` and their
+#: published numbers mean what they mean only under it.  A run declares which
+#: one it trained with and the checkpoint records it, so a v1 checkpoint cannot
+#: be silently read through a v2 conditioner.
+COND_NORMS = ("layer_v1", "dataset_std_v2")
+
+
 class ConditionalFlow(nn.Module):
     """Conditional RealNVP with exact log-density in an unconstrained space."""
 
-    def __init__(self, dim: int, cond_dim: int, *, n_layers: int = 6, hidden: int = 256) -> None:
+    def __init__(
+        self,
+        dim: int,
+        cond_dim: int,
+        *,
+        n_layers: int = 6,
+        hidden: int = 256,
+        cond_norm: str = "dataset_std_v2",
+    ) -> None:
         super().__init__()
         self.dim = dim
         masks = []
@@ -247,10 +349,19 @@ class ConditionalFlow(nn.Module):
         # reports u|max = 3.96 and finite, so the flow's *input* was never the
         # problem; the conditioning was.
         #
-        # LayerNorm makes the flow conditioning-scale invariant without changing
-        # what it can represent, and it is applied in log_prob and sample alike
-        # so density and samples cannot disagree.
-        self.cond_norm = nn.LayerNorm(cond_dim)
+        # Both kinds make the flow conditioning-scale invariant without changing
+        # what it can represent, and both are applied in log_prob and sample
+        # alike so density and samples cannot disagree.  They differ in the AXIS
+        # they normalise over, and that axis is ISSUE-012: `layer_v1` is across
+        # the features of one sample, which preserves what every dataset shares
+        # and shrinks what distinguishes them; `dataset_std_v2` is across
+        # datasets per feature, which does the opposite.  See _DatasetStandardise.
+        if cond_norm not in COND_NORMS:
+            raise ValueError(f"posterior.cond_norm must be one of {COND_NORMS}, got {cond_norm!r}")
+        self.cond_norm_kind = cond_norm
+        self.cond_norm: nn.Module = (
+            nn.LayerNorm(cond_dim) if cond_norm == "layer_v1" else _DatasetStandardise(cond_dim)
+        )
 
     def log_prob(self, theta_u: Tensor, c: Tensor) -> Tensor:
         """``theta_u`` in unconstrained space -> log q(theta_u | c)."""
@@ -288,7 +399,13 @@ class AmortizedPosterior(nn.Module):
         self.theta_dim = theta_dim
         self.nuisance_dim = int(nuisance_dim)
         self.total_dim = theta_dim + self.nuisance_dim
-        self.flow = ConditionalFlow(self.total_dim, self.summary.dim, n_layers=cfg.flow_layers, hidden=cfg.flow_hidden)
+        self.flow = ConditionalFlow(
+            self.total_dim,
+            self.summary.dim,
+            n_layers=cfg.flow_layers,
+            hidden=cfg.flow_hidden,
+            cond_norm=getattr(cfg, "cond_norm", "dataset_std_v2"),
+        )
         self.prior = prior
         self._calibrated = False
         self._calibration_evidence: dict[str, Any] = {}

@@ -150,6 +150,11 @@ class FoundationTrainer:
     #: a conditioning distribution that changes every batch -- sliced-trajectory
     #: training re-draws the observed subgraph each step -- needs a smaller step
     #: than a residual stack, not merely a smaller one than before.
+    #: ISSUE-012 found this still in force as the *training* rate for the only
+    #: stage that gives the posterior any gradient, where the divergence it was
+    #: written for is no longer the binding problem. It is now the DEFAULT for
+    #: `posterior.lr_scale`, and a run overrides it in its own config; read
+    #: `self.posterior_lr_scale`, not this, everywhere but the default.
     POSTERIOR_LR_SCALE: float = 0.02
 
     #: Weight decay for the posterior group.
@@ -160,6 +165,11 @@ class FoundationTrainer:
     #: dynamics operators would pull them toward zero drift, which is a
     #: statement about the brain rather than about optimisation.
     POSTERIOR_WEIGHT_DECAY: float = 1e-2
+
+    @property
+    def posterior_lr_scale(self) -> float:
+        """The configured posterior LR fraction; :attr:`POSTERIOR_LR_SCALE` is the default."""
+        return float(getattr(self.cfg.posterior, "lr_scale", self.POSTERIOR_LR_SCALE))
 
     def __init__(
         self,
@@ -2172,7 +2182,7 @@ class FoundationTrainer:
             groups.append(
                 {
                     "params": post_params,
-                    "lr": stage.lr * self.POSTERIOR_LR_SCALE,
+                    "lr": stage.lr * self.posterior_lr_scale,
                     "weight_decay": self.POSTERIOR_WEIGHT_DECAY,
                 }
             )

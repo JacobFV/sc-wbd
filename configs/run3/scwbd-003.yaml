@@ -142,6 +142,13 @@ posterior:
   n_bands: 7
   n_pcs: 16
   nuisance_dim: 2
+  # Trained under the per-sample LayerNorm, and pinned to it. The DEFAULT moved
+  # to `dataset_std_v2` when ISSUE-012 measured that normalising across a
+  # sample's features preserves what every dataset shares and shrinks what
+  # distinguishes them. This run's weights and every number published from them
+  # are what they are under v1; a default that moved with the newest run would
+  # silently restate what this file trained.
+  cond_norm: layer_v1
 
 data:
   sim_index_fast: data/sim_corpus_414/index_fast.json
