@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import os
+import statistics
 import subprocess
 import sys
 import time
@@ -94,10 +95,21 @@ def mem_gb() -> float:
 
 
 def trend(vals: list[float]) -> tuple[float, float] | None:
+    """MEDIAN of each half, not the mean.
+
+    The mean is not robust to the single-batch spike this file has a separate
+    test for, and that is not hypothetical: on 2026-08-10 one EEG row of 34.41
+    dragged a 5-row mean to 9.20 and the monitor advised STOPPING A HEALTHY RUN.
+    EEG had already recovered to 2.04 and 2.18 in the two rows after it.
+
+    A false stop is the expensive direction here -- it throws away hours of a
+    38-hour run -- so the trend statistic has to ignore an outlier the spike test
+    already reported.
+    """
     n = TREND_ROWS
     if len(vals) < 2 * n:
         return None
-    return sum(vals[-n:]) / n, sum(vals[-2 * n : -n]) / n
+    return statistics.median(vals[-n:]), statistics.median(vals[-2 * n : -n])
 
 
 def main() -> int:
@@ -178,13 +190,13 @@ def main() -> int:
                 recent, prior = t
                 if recent > BOLD_ALARM:
                     print(
-                        f"RUN4 real_bold_nll ALARM: last-10 mean {recent:.2f} > {BOLD_ALARM}. "
+                        f"RUN4 real_bold_nll ALARM: {TREND_ROWS}-row median {recent:.2f} > {BOLD_ALARM}. "
                         "ISSUE-016 killed the first launch at 12.96; ISSUE-008 reached 21.7.",
                         flush=True,
                     )
                 elif prior > 0 and recent / prior >= TREND_RISE and not warned["bold"]:
                     print(
-                        f"RUN4 real_bold_nll RISING: last-10 {recent:.2f} vs prior-10 "
+                        f"RUN4 real_bold_nll RISING: {TREND_ROWS}-row median {recent:.2f} vs prior "
                         f"{prior:.2f} ({recent / prior:.2f}x) at step {last.get('global_step')}. "
                         "EXPECTED under ISSUE-016; watch eeg_nll for spread.",
                         flush=True,
@@ -201,7 +213,7 @@ def main() -> int:
                 recent, prior = te
                 if recent > EEG_ALARM and not warned["eeg"]:
                     print(
-                        f"RUN4 eeg_nll ALARM: last-10 mean {recent:.2f} > {EEG_ALARM}. The BOLD "
+                        f"RUN4 eeg_nll ALARM: {TREND_ROWS}-row median {recent:.2f} > {EEG_ALARM}. The BOLD "
                         "degradation may be spreading to the shared trunk -- this is the risk "
                         "RUN4_LAUNCH_PLAN.md §6 accepted explicitly. Consider stopping.",
                         flush=True,
