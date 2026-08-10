@@ -1482,7 +1482,12 @@ repo's own rule those were not evidence. This one is.
 
 `PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:randomly`, ~35 min.
 
-**Three failures, and all three are guards that are deliberately red:**
+**SUPERSEDED 2026-08-09 by `87975df`.** ISSUE-013 and ISSUE-014 were discharged, their three
+guards inverted to assert the fix, and the expected count moved from three to **ZERO**. The
+enumeration below is kept because it is what a clean tree measured at the time, and because the
+three tests named are now the ones that must stay GREEN.
+
+**Then: three failures, all three guards that were deliberately red:**
 
 | test | issue |
 | --- | --- |
