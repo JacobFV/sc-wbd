@@ -117,6 +117,20 @@ health-run3: ## Report on the SC-WBD-003 training job
 	   print(sum(s.steps for s in load_config('configs/run3/scwbd-003.yaml').train.stages))") \
 	 $(ROOT)/scripts/health.sh
 
+# Run 4. Same script, same contract, same reason the three names are separate:
+# `health` stays pinned to run 2 so an old instruction keeps meaning what it
+# meant. TARGET is the sum of `train.stages[].steps` in configs/run4 -- keep
+# them in step or a finished run reads as a death and the watchdog relaunches
+# it on top of its own evaluation.
+.PHONY: health-run4
+health-run4: ## Report on the SC-WBD-004 training job
+	@CONFIG=configs/run4/scwbd-004.yaml \
+	 LOG=reports/training/scwbd-004_train.jsonl \
+	 CKPT=checkpoints/scwbd-004 \
+	 TARGET=$$($(PY) -c "from scwbd.foundation.config import load_config; \
+	   print(sum(s.steps for s in load_config('configs/run4/scwbd-004.yaml').train.stages))") \
+	 $(ROOT)/scripts/health.sh
+
 ##@ Tests
 
 .PHONY: test
