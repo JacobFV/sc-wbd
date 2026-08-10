@@ -47,6 +47,7 @@ PAPER_PDF  := $(ROOT)/paper/output/sc_wbd_frontiers.pdf
 HF_NAMESPACE ?= jacob-valdez
 CKPT_002 ?= checkpoints/scwbd-002-pilot
 CKPT_003 ?= checkpoints/scwbd-003
+CKPT_004 ?= checkpoints/scwbd-004
 
 # R2 bucket for rendered media. Media is NEVER committed to this repository.
 R2_BUCKET  ?= scwbd-media
@@ -358,6 +359,45 @@ release-003-derived: ## Read 003's contributed sources, moved parameters and att
 	@# with cards asserting a source trained modules it could not reach, and every
 	@# audit read the assertion rather than the weights.
 	env PYTHONPATH=. $(PY) $(ROOT)/scripts/publish_003.py --checkpoint $(CKPT_003)/last.pt
+
+.PHONY: release-004-evaluate
+release-004-evaluate: ## Score the 004 checkpoint on the real-EEG holdout
+	@# Same rule as 002 and 003: no --quick. A reduced-cost variant silently
+	@# changes the participant set the claim rests on.
+	@#
+	@# READ THE posterior_calibration BLOCK BEFORE ANY INFERENCE CLAIM. ISSUE-012
+	@# is open: run 4's posterior LR is repaired and it should be informative
+	@# (log_G R^2 0.674-0.766 across four seeds in a one-stage retrain, against ~0
+	@# in run 3), but whether it stays CALIBRATED is decided here and nowhere
+	@# else. The sweep could not measure that comparably.
+	env PYTHONPATH=. $(PY) -m scwbd.foundation.evaluate \
+	  --config configs/run4/scwbd-004.yaml \
+	  --checkpoint $(CKPT_004)/last.pt \
+	  --out reports/training/evaluation_run4.json
+
+.PHONY: release-004-ablate
+release-004-ablate: ## Leave-one-source-out, scored on the MEASURED holdout as well
+	@# Unlike 003's, this scores each arm on the measured holdout too, not only on
+	@# `_sim_val_nll` -- HANDOFF-004 step f calls that "the difference between an
+	@# experiment and a tautology", because every measured gradient pulls away from
+	@# the simulated score during the retraining steps. 003 returned nine negative
+	@# deltas out of nine and the direction was predictable before it ran.
+	@#
+	@# ISSUE-016 makes this the interesting run for it: ds002336_real is 4.13% of
+	@# the mixture and outvoted 23.2:1, so the question "which sources are carrying
+	@# the win" now has a measured candidate answer to check against.
+	env PYTHONPATH=. $(PY) -m scwbd.foundation.evaluate \
+	  --config configs/run4/scwbd-004.yaml \
+	  --checkpoint $(CKPT_004)/last.pt \
+	  --ablate-sources \
+	  --out reports/training/evaluation_run4_ablation.json
+
+.PHONY: release-004-derived
+release-004-derived: ## Read 004's contributed sources and moved parameters OFF the weights
+	@# Every claim from the checkpoint, not from a card. Run 2 shipped with cards
+	@# asserting a source trained modules it could not reach, and every audit read
+	@# the assertion rather than the weights.
+	env PYTHONPATH=. $(PY) $(ROOT)/scripts/publish_003.py --checkpoint $(CKPT_004)/last.pt
 
 .PHONY: release-002-restamp
 release-002-restamp: ## Correct the 002 checkpoint's model_id to its config designation
