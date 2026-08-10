@@ -22,6 +22,48 @@ The run has not been launched. What follows is the cost measurement that sizes
 it, and nothing else. No training number appears in this file until there is a
 checkpoint to read it from.
 
+## The posterior learning rate, chosen by measurement before launch
+
+ISSUE-012 found run 3's amortised posterior returning the prior and named four
+remedies. Three are config; the one that had to be *measured* is the learning
+rate, and `scripts/sweep_posterior.py` is the one-stage retrain the issue says
+is sufficient — posterior only, same objective, same masked context, same
+corpus, 1,500 steps per cell, held-out trajectories. Protocol and the
+pre-registered decision rule: `reports/RUN4_LAUNCH_PLAN.md`. Raw cells:
+`reports/run4_posterior/`.
+
+**The control reproduces run 3, which is what makes the rest evidence.**
+`layer_v1` at 4.0e-6 — run 3's exact setting, 0.02 × T4's 2.0e-4 — returns
+`log_G` R² −0.001 at a posterior sd **1.031×** the prior's. ISSUE-012 measured
+run 3's own checkpoint at −0.010 and 1.024.
+
+**The learning rate was the defect.** Run 4 takes `lr_scale: 5.0`
+(1.0e-3 at T4), selected by the rule "held-out `−log q` must not exceed the
+prior-returning control's, then maximise R²", and confirmed across four seeds:
+
+| seed | log_G R² | −log q | cov_mae |
+| ---: | ---: | ---: | ---: |
+| 0 | +0.674 | 7.075 | 0.021 |
+| 1 | +0.729 | 6.497 | 0.016 |
+| 2 | +0.766 | 6.523 | 0.012 |
+| 3 | +0.747 | 6.536 | 0.018 |
+
+Every seed sits below the control's 7.866 nats, so the recovery is not bought
+with overconfidence. The stated alternative, `layer_v1` at 2.0e-4, is stable too
+but strictly worse on both axes (R² 0.49–0.54, `−log q` 7.36–7.85).
+
+**The across-dataset conditioning is what makes the high rate usable.** At
+1.0e-3 `dataset_std_v2` pays 7.075 nats where the per-sample LayerNorm pays
+8.445 — *worse* than the control — so `layer_v1` at that rate is overconfident
+and `dataset_std_v2` is not.
+
+**This does not discharge ISSUE-012, and run 4 does not assume it will.**
+`sbc_ks_pvalue_min` is 0.000 in every informative cell, and that number is not
+comparable to a published run's: `evaluate.posterior_calibration` draws its 512
+datasets backend-stratified where the sweep's are merely shuffled. So the
+posterior's calibration is **unknown** going in, and the model card says so
+rather than the run discovering it afterwards.
+
 ## Cost of the new BOLD path — MEASURED
 
 ISSUE-008's fix rolls the neural clock for the duration a BOLD frame actually

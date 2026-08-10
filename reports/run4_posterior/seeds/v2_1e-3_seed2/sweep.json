@@ -1,0 +1,82 @@
+{
+  "discharge_condition": {
+    "log_G_r2": 0.4,
+    "sbc_ks_pvalue_min": 0.01,
+    "coverage_mae": 0.05
+  },
+  "n_cells": 1,
+  "n_discharging": 0,
+  "best_by_log_G_r2": {
+    "cond_norm": "dataset_std_v2",
+    "lr": 0.001,
+    "steps": 1500,
+    "weight_decay": 0.01,
+    "seed": 2,
+    "n_posterior_parameters": 1102024,
+    "posterior_r2": {
+      "log_G": 0.7660372257232666,
+      "log_velocity": 0.007550358772277832,
+      "ei_global": 0.0383341908454895,
+      "ei_gradient": 0.0951274037361145,
+      "log_sigma": 0.49351727962493896,
+      "drive": 0.026554882526397705
+    },
+    "log_G_r2": 0.7660372257232666,
+    "held_out_neg_log_q": 6.52329158782959,
+    "train_neg_log_q_last50": 5.782249431610108,
+    "sbc_ks_pvalue_min": 3.533178342223648e-18,
+    "coverage_mae": 0.01210936438292265,
+    "posterior_sd_over_prior_sd": [
+      0.3818073272705078,
+      0.9407132863998413,
+      0.9668530821800232,
+      0.9401690363883972,
+      0.5783233046531677,
+      1.0026129484176636
+    ],
+    "npe_rejected": 0,
+    "n_val": 512,
+    "sbc_n_bins": 256,
+    "eval_context": "unmasked, as evaluate.posterior_calibration",
+    "seconds": 172.5,
+    "discharges_issue_012": false
+  },
+  "recommended_lr_scale_at_T4": 5.0,
+  "cells": [
+    {
+      "cond_norm": "dataset_std_v2",
+      "lr": 0.001,
+      "steps": 1500,
+      "weight_decay": 0.01,
+      "seed": 2,
+      "n_posterior_parameters": 1102024,
+      "posterior_r2": {
+        "log_G": 0.7660372257232666,
+        "log_velocity": 0.007550358772277832,
+        "ei_global": 0.0383341908454895,
+        "ei_gradient": 0.0951274037361145,
+        "log_sigma": 0.49351727962493896,
+        "drive": 0.026554882526397705
+      },
+      "log_G_r2": 0.7660372257232666,
+      "held_out_neg_log_q": 6.52329158782959,
+      "train_neg_log_q_last50": 5.782249431610108,
+      "sbc_ks_pvalue_min": 3.533178342223648e-18,
+      "coverage_mae": 0.01210936438292265,
+      "posterior_sd_over_prior_sd": [
+        0.3818073272705078,
+        0.9407132863998413,
+        0.9668530821800232,
+        0.9401690363883972,
+        0.5783233046531677,
+        1.0026129484176636
+      ],
+      "npe_rejected": 0,
+      "n_val": 512,
+      "sbc_n_bins": 256,
+      "eval_context": "unmasked, as evaluate.posterior_calibration",
+      "seconds": 172.5,
+      "discharges_issue_012": false
+    }
+  ]
+}

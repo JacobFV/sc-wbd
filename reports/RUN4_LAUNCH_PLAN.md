@@ -143,6 +143,39 @@ Three seeds at each of the two candidate cells — `dataset_std_v2 @ 1.0e-3` and
 `lr_scale = 1.0`: choosing the stable arm under uncertainty is the decision, not
 a deferral of it.
 
+### 3b. RESOLVED, 07:05 — the replication ran and `lr_scale = 5.0` stands
+
+Three seeds at each candidate, same frozen protocol:
+
+| cond_norm | lr | seed | log_G R² | −log q | cov_mae |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `dataset_std_v2` | 1.0e-3 | 0 | +0.674 | 7.075 | 0.021 |
+| `dataset_std_v2` | 1.0e-3 | 1 | +0.729 | 6.497 | 0.016 |
+| `dataset_std_v2` | 1.0e-3 | 2 | +0.766 | 6.523 | 0.012 |
+| `dataset_std_v2` | 1.0e-3 | 3 | +0.747 | 6.536 | 0.018 |
+| `layer_v1` | 2.0e-4 | 0 | +0.493 | 7.617 | 0.011 |
+| `layer_v1` | 2.0e-4 | 1 | +0.496 | 7.778 | 0.018 |
+| `layer_v1` | 2.0e-4 | 2 | +0.544 | 7.851 | 0.018 |
+| `layer_v1` | 2.0e-4 | 3 | +0.500 | 7.363 | 0.014 |
+
+**`dataset_std_v2` at 1.0e-3 passes the §3 density bar on all four seeds**
+(6.50–7.08, all below the 7.866 control) with R² 0.674–0.766 and `coverage_mae`
+0.012–0.021, everything well inside the 0.05 condition. `layer_v1` at 2.0e-4 is
+also stable but strictly worse on both axes.
+
+So the §3a condition is met on its own terms: **`lr_scale = 5.0`**, which is what
+`configs/run4/scwbd-004.yaml` already declares. No config change needed and the
+decision is closed.
+
+What this does **not** explain: the 4.0e-5 / 2.0e-4 `dataset_std_v2` cells that
+returned `−log q` 11.103 and 13.200 with `coverage_mae` ~0.10. Those remain
+anomalous and unexplained. They are **not** re-measured, because the rule was
+about the chosen cell and the chosen cell is stable — chasing them now would be
+the re-litigation §1 exists to prevent. They are written down here so that if run
+4's posterior misbehaves, the first hypothesis is already on the record:
+`_DatasetStandardise`'s running statistics interacting with the LR schedule at
+mid rates.
+
 ## 4. Blocking before launch
 
 1. **The full-suite `F`.** A whole-suite run is in flight (~38% at 26 min,
