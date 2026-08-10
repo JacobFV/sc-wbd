@@ -202,19 +202,29 @@ The lesson §1 was written about held here too. The value that moved was not
 argued into place — it moved because a measurement existed that did not before,
 and the measurement was taken across every stage rather than the convenient one.
 
-## 4. Blocking before launch
+## 4. Blocking before launch — ALL THREE DISCHARGED
 
-1. **The full-suite `F`.** A whole-suite run is in flight (~38% at 26 min,
-   slowed by contending with the sweep). One `F` appeared around 19%; `--tb=line`
-   prints names only at the end. **Must be identified and fixed** — the expected
-   count for this repo is ZERO and there is no known-red set to hide in.
-2. **`lr_scale` is still 0.02 in `configs/run4/scwbd-004.yaml`.** Set it to
-   **5.0** per §3. `launch_run4.sh` now refuses 0.02 by value, so this cannot be
-   forgotten silently.
-3. **`LAUNCH=no bash scripts/launch_run4.sh` end to end, including the GPU
-   smoke.** Never yet run. The smoke is the only check that can catch a loss term
-   raising on its first real batch, and ISSUE-008's multirate BOLD path is new
-   code on that path.
+Kept as written, with what each turned out to be. A blocker list edited into
+agreement with the outcome teaches nothing.
+
+1. ~~**The full-suite `F`.**~~ **DONE.** It was
+   `test_universe_is_the_model_that_runs`, `assert 161 == 163` — and it was
+   *mine*: ISSUE-012's `_DatasetStandardise` keeps running statistics as buffers
+   and has no learnable affine, so the parameter universe lost exactly
+   `cond_norm.weight` and `cond_norm.bias`. Re-baselined **with the delta named**,
+   which is what that tripwire's own docstring requires, plus a second assertion
+   pinning the cause so count and cause fail together. Mutation-tested: restoring
+   the affine returns the count to exactly 163.
+2. ~~**`lr_scale` is still 0.02.**~~ **DONE — 5.0**, by §3's rule and confirmed
+   across four seeds (§3b).
+3. ~~**`LAUNCH=no` end to end.**~~ **DONE.** It took *eight* runs, because each
+   pass surfaced something the previous one had hidden. See §3c; the last one
+   passed every check **and left the tree clean**, which is the measurement that
+   matters — dry run 7 also passed every check and silently modified five tracked
+   files.
+
+**Standing after this section: nothing in §4 blocks a launch.** What remains
+open is §5, which is open on purpose.
 
 ## 5. NOT blocking, and deliberately not resolved before launch
 
