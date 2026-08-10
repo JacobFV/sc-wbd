@@ -176,6 +176,32 @@ the re-litigation §1 exists to prevent. They are written down here so that if r
 `_DatasetStandardise`'s running statistics interacting with the LR schedule at
 mid rates.
 
+## 3c. CLOSED, 08:00 — what §4's three blockers turned into
+
+All three of §4 are discharged, and the smoke in §4.3 found **five** defects on
+the way. Three of them I would have scored as passing.
+
+| # | found | would have cost |
+| --- | --- | ---: |
+| 1 | `--quick` rosters (2 and 6) too small to populate three participant-disjoint folds | smoke unusable |
+| 2 | `_audit_real_split` WARNED on an empty fold though its docstring says it raises; torch then died in a `RandomSampler` naming neither source nor fold | a source admitted, `leakage_audited`, contributing no gradient |
+| 3 | `scripts/launch_run4.sh` smoked through the RUN's config, so the scratch run created `reports/training/scwbd-004_train.jsonl` | ISSUE-010 again — caught at **0 bytes** by `make health-run4` flipping "NOT FOUND" → "is EMPTY" |
+| 4 | the smoke never left T1: `--quick` shrinks rosters, not step counts | the posterior and individualiser paths untested — the two carrying run 4's new code |
+| 5 | **T4 exceeded the 56 GB cap** | **~14 hours**, at ~5,400 steps |
+
+On #5, the cap is now measured rather than inherited: **56 → 80 GB**, against a
+six-stage profile whose peak is **T5 at 59.95 GB, not T4's 57.98**. A cap fitted
+to T4 — which is what I was about to propose — would have died one stage later,
+repeating the exact error that caused the blocker (the original 56 was fitted to
+T1, the only stage the cost run measured). 80 is 33% headroom on a **121.6 GB
+unified** pool, leaving 41.6 GB host-side. Guarded from both sides: ≥15% over the
+measured peak, ≥30 GB left to the host, non-zero, and every stage in the config
+must appear in the measured record.
+
+The lesson §1 was written about held here too. The value that moved was not
+argued into place — it moved because a measurement existed that did not before,
+and the measurement was taken across every stage rather than the convenient one.
+
 ## 4. Blocking before launch
 
 1. **The full-suite `F`.** A whole-suite run is in flight (~38% at 26 min,
