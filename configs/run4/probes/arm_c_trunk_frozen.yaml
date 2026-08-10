@@ -6,7 +6,7 @@
 #    Flat here => the climb is the trunk drifting to what 96% of the gradient
 #    wants, and the BOLD head reading a latent regime that moved under it.
 #    Still climbing => the cause is inside the BOLD path after all.
-base: scwbd-004.yaml
+base: ../scwbd-004.yaml
 train:
   run_name: scwbd-004-probe-trunkfrozen
   out_dir: checkpoints/scwbd-004-probe-c

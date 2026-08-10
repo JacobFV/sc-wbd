@@ -12,7 +12,7 @@
 # RULE: below 2.5 at step 340 -> adopt and relaunch run 4 with it.
 #       otherwise -> relaunch as configured and report the degradation as a
 #       measured negative about fusion under a 23.2:1 source imbalance.
-base: scwbd-004.yaml
+base: ../scwbd-004.yaml
 train:
   run_name: scwbd-004-probe-boldfast
   out_dir: checkpoints/scwbd-004-probe-d

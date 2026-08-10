@@ -77,16 +77,51 @@ def test_the_run_config_does_not_carry_a_probe_value() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "probe", sorted((REPO / "configs/run4").glob("probe_*.yaml")), ids=lambda p: p.name
-)
+#: The ISSUE-016 arms, in their own directory. Globbed rather than listed so a
+#: fifth arm is covered the day it is written.
+def _probes() -> list[Path]:
+    return sorted(p for p in (REPO / "configs/run4/probes").glob("*.yaml"))
+
+
+def test_there_are_probes_to_check() -> None:
+    """An empty glob passes a parametrized test vacuously.
+
+    The probes were moved out of `configs/run4/` after their arms were recorded,
+    which left the original `configs/run4/probe_*.yaml` glob matching NOTHING —
+    the test below would have reported success while checking no files at all.
+    This repo lost 88.8% of run 2's parameters to an unmatched glob.
+    """
+    assert _probes(), (
+        "no probe configs found under configs/run4/probes/. If they were deleted, "
+        "delete the checks below with them rather than leaving a glob that passes "
+        "by matching nothing."
+    )
+
+
+def test_no_probe_config_sits_beside_the_run_config() -> None:
+    """`configs/run4/` holds the run and its smoke, and nothing that looks like either.
+
+    Three diagnostic arms lived there during ISSUE-016. Someone reaching for a
+    config in a hurry could have taken one, and each writes to a different
+    run_name, so the mistake would surface as a missing run rather than an error.
+    """
+    stray = sorted(
+        p.name for p in (REPO / "configs/run4").glob("*.yaml")
+        if p.name not in {"scwbd-004.yaml", "smoke.yaml"}
+    )
+    assert not stray, (
+        f"configs/run4/ contains {stray}. Only the run config and its smoke belong "
+        "there; diagnostics go in configs/run4/probes/ so nobody launches one."
+    )
+
+
+@pytest.mark.parametrize("probe", _probes(), ids=lambda p: p.name)
 def test_every_probe_config_is_marked_as_a_diagnostic(probe: Path) -> None:
     """A probe must be unmistakable in the file, not only in a commit message.
 
-    Three probe configs sit beside the run config in the same directory. The one
-    thing that must never happen is someone launching a run from one, so each
-    says what it is on its first lines and writes to its own run_name, out_dir
-    and report_dir.
+    Each says what it is on its first lines and writes to its own run_name,
+    out_dir and report_dir, so running one can neither be mistaken for the run
+    nor overwrite the run's artifacts.
     """
     head = probe.read_text()[:400].upper()
     assert "PROBE" in head and ("DIAGNOSTIC" in head or "NOT A RUN" in head), (

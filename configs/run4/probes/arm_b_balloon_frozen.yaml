@@ -4,7 +4,7 @@
 # Flat here => the ODE constants at 6.0e-4 are the cause.
 # Still climbing => it is the 250-step rollout gradient, and freezing them is
 # not the remedy.
-base: scwbd-004.yaml
+base: ../scwbd-004.yaml
 train:
   run_name: scwbd-004-probe-balloonfrozen
   out_dir: checkpoints/scwbd-004-probe
