@@ -129,10 +129,29 @@ step "5/6  smoke: every loss path, one short pass"
 if [ "${SKIP_SMOKE:-no}" = "yes" ]; then
     echo "  SKIPPED by SKIP_SMOKE=yes -- say so in the run's report."
 else
+    # configs/run4/smoke.yaml, NOT `--config <the run> --quick --out <scratch>`.
+    #
+    # `--out` moves the CHECKPOINTS; the JSONL log is keyed by `train.run_name`,
+    # so the first version of this step created
+    # `reports/training/scwbd-004_train.jsonl` -- the production log of a run
+    # that had not started. Caught at 0 bytes by `make health-run4` reporting
+    # "log is EMPTY" where it had said "log NOT FOUND" an hour before. ISSUE-010
+    # is this defect, four times over, and configs/run3/smoke.yaml already
+    # carried the warning.
+    SMOKE_CONFIG="${SMOKE_CONFIG:-configs/run4/smoke.yaml}"
+    [ -f "$SMOKE_CONFIG" ] || fail "$SMOKE_CONFIG not found; refusing to smoke through the run's own config"
+    SMOKE_NAME=$($PY -c "from scwbd.foundation.config import load_config; print(load_config('$SMOKE_CONFIG').train.run_name)")
+    RUN_NAME=$($PY -c "from scwbd.foundation.config import load_config; print(load_config('$CONFIG').train.run_name)")
+    if [ "$SMOKE_NAME" = "$RUN_NAME" ]; then
+        fail "the smoke config's run_name ($SMOKE_NAME) equals the run's ($RUN_NAME).
+    The JSONL log is keyed by run_name, so the smoke would append to the
+    production log and the two would be indistinguishable afterwards."
+    fi
+    echo "  smoke run_name=$SMOKE_NAME (run is $RUN_NAME)"
+
     SMOKE_LOG="reports/training/run004_smoke.log"
     PYTHONPATH="$PWD" PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
-        $PY -m scwbd.foundation.train --config "$CONFIG" --quick \
-        --out checkpoints/scwbd-004-smoke > "$SMOKE_LOG" 2>&1
+        $PY -m scwbd.foundation.train --config "$SMOKE_CONFIG" --quick > "$SMOKE_LOG" 2>&1
     SMOKE_RC=$?
     if [ $SMOKE_RC -ne 0 ]; then
         echo "--- last 40 lines of $SMOKE_LOG ---" >&2
