@@ -66,7 +66,7 @@ def _slice_mask(B: int, N: int, device, *, p_observed: float = 0.65, generator=N
     Duplicated rather than imported because importing it would mean constructing
     a `FoundationTrainer`, which builds the 26.3M-parameter dynamics model and
     the anatomy prior for a mask. Kept honest by
-    `tests/foundation/test_sweep_mask_matches_the_trainer.py`.
+    `tests/foundation/test_sweep_matches_the_trainer.py`.
     """
     u = torch.rand(B, N, device=device, generator=generator)
     keep = (u < p_observed).float()
@@ -100,13 +100,39 @@ def _loader(cfg, subset: str, *, batch: int, seed: int, workers: int) -> torch.u
     )
 
 
-def _context(act: torch.Tensor, cfg, device) -> torch.Tensor:
-    """The masked context window the posterior is conditioned on in `sim_losses`."""
+#: SBC bins used by `evaluate.posterior_calibration`. The sweep MUST match it.
+#:
+#: The first version of this script used 128 and applied the training slice mask
+#: at evaluation. Both differ from production, and the difference is not
+#: cosmetic: reproducing run 3's exact setting (layer_v1 at 4e-6) returned
+#: `sbc_ks_pvalue_min` 0.000 against the 0.0976 in
+#: `reports/training/evaluation_run3.json`. R^2 agreed to within 0.01 and
+#: calibration did not, so the calibration column was measuring the harness.
+#: A sweep whose numbers cannot be compared to the run they are meant to inform
+#: is an instrument that reports confidently and knows nothing.
+PRODUCTION_SBC_BINS = 256
+
+
+def _context(act: torch.Tensor, cfg, device, *, mask: bool) -> torch.Tensor:
+    """The context window the posterior is conditioned on.
+
+    ``mask=True`` reproduces `sim_losses`, which shows the posterior only the
+    observed subgraph. ``mask=False`` reproduces `evaluate.posterior_calibration`,
+    which passes `b["activity"][:, :context]` unmasked.
+
+    The two differ, ISSUE-012 measured that the difference does not move R^2
+    (the sd ratios agree to within 0.005 across all four combinations of split
+    and mask), and it says nothing about SBC ranks. Training uses the masked
+    form because that is what training does; evaluation uses the unmasked form
+    because that is what the published numbers are.
+    """
     act = act.to(device, non_blocking=True)
     ctx = act[:, : cfg.data.context]
+    if not mask:
+        return ctx
     B, _, N = ctx.shape
-    mask = _slice_mask(B, N, device).unsqueeze(1).expand_as(ctx)
-    return ctx * mask
+    m = _slice_mask(B, N, device).unsqueeze(1).expand_as(ctx)
+    return ctx * m
 
 
 def run_cell(
@@ -141,7 +167,7 @@ def run_cell(
         except StopIteration:
             it = iter(train_dl)
             batch = next(it)
-        y = _context(batch["activity"], cfg, device)
+        y = _context(batch["activity"], cfg, device, mask=True)
         theta = batch["theta"].to(device, non_blocking=True)
         loss = post.loss(y, theta)
         opt.zero_grad(set_to_none=True)
@@ -158,7 +184,7 @@ def run_cell(
     ys, ths = [], []
     with torch.no_grad():
         for batch in val_dl:
-            ys.append(_context(batch["activity"], cfg, device))
+            ys.append(_context(batch["activity"], cfg, device, mask=False))
             ths.append(batch["theta"].to(device))
             if sum(t.shape[0] for t in ths) >= 512:
                 break
@@ -166,7 +192,9 @@ def run_cell(
     th_val = torch.cat(ths)[:512]
 
     with torch.no_grad():
-        rep = posterior_report(post, y_val, th_val, param_names=THETA_NAMES, n_samples=128)
+        rep = posterior_report(
+            post, y_val, th_val, param_names=THETA_NAMES, n_samples=PRODUCTION_SBC_BINS
+        )
         held = float(post.loss(y_val, th_val))
 
     r2 = dict(zip(rep["param_names"], rep["posterior_r2"]))
@@ -186,6 +214,8 @@ def run_cell(
         "posterior_sd_over_prior_sd": rep.get("posterior_sd_over_prior_sd"),
         "npe_rejected": int(post.npe_rejected),
         "n_val": int(y_val.shape[0]),
+        "sbc_n_bins": PRODUCTION_SBC_BINS,
+        "eval_context": "unmasked, as evaluate.posterior_calibration",
         "seconds": round(time.time() - t0, 1),
     }
 
