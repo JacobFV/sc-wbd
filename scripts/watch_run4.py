@@ -38,8 +38,22 @@ JSONL = REPO / os.environ.get("WATCH_JSONL", "reports/training/scwbd-004_train.j
 RUNLOG = REPO / os.environ.get("WATCH_RUNLOG", "reports/training/run004.log")
 
 BOLD_ALARM = 12.0
-TREND_RISE = 1.6          # last-10 mean this many x the prior-10 mean
-EEG_ALARM = 4.0           # eeg_nll well above its ~1.6 working range
+TREND_RISE = 1.6          # last-N mean this many x the prior-N mean
+EEG_ALARM = 4.0           # sustained eeg_nll well above its ~1.6 working range
+
+#: Rows per trend window. `log_every` is 20, so a window of 20 ROWS is 400 STEPS
+#: -- the monitor would have been slower than the thing it watches. The first
+#: launch's EEG transient hit at step 120 and had fully recovered by 140; a test
+#: that could not speak until step 400 is not a monitor, it is a post-mortem.
+TREND_ROWS = 5
+
+#: A SINGLE row above this is reported immediately, separately from the trend.
+#: Both launches produced one large isolated EEG spike early in T1 (21.23 at step
+#: 120, then 2.38; 34.41 at step 140) and both are consistent with one bad batch.
+#: Worth seeing, not worth stopping for -- so it is labelled as a spike and the
+#: trend test remains the thing that decides.
+EEG_SPIKE = 10.0
+BOLD_SPIKE = 8.0
 GPU_CAP_GB = 80.0
 GPU_WARN_GB = 72.0
 MEM_FLOOR_GB = 12.0
@@ -80,9 +94,10 @@ def mem_gb() -> float:
 
 
 def trend(vals: list[float]) -> tuple[float, float] | None:
-    if len(vals) < 20:
+    n = TREND_ROWS
+    if len(vals) < 2 * n:
         return None
-    return sum(vals[-10:]) / 10.0, sum(vals[-20:-10]) / 10.0
+    return sum(vals[-n:]) / n, sum(vals[-2 * n : -n]) / n
 
 
 def main() -> int:
@@ -141,6 +156,21 @@ def main() -> int:
                     flush=True,
                 )
                 warned["gpu"] = True
+
+            # Isolated spikes, reported on the NEWEST row only so a past one is
+            # not re-announced every minute.
+            for key, lim, label in (
+                ("eegmmidb_real_eeg_nll", EEG_SPIKE, "eeg_nll"),
+                ("real_bold_nll", BOLD_SPIKE, "real_bold_nll"),
+            ):
+                v = last.get(key)
+                if isinstance(v, (int, float)) and v > lim:
+                    print(
+                        f"RUN4 {label} SPIKE {v:.2f} at step {last.get('global_step')} "
+                        f"(> {lim}). Both launches produced one isolated early-T1 EEG "
+                        "spike that recovered; watch the next rows before concluding.",
+                        flush=True,
+                    )
 
             b = [x["real_bold_nll"] for x in r if isinstance(x.get("real_bold_nll"), (int, float))]
             t = trend(b)
