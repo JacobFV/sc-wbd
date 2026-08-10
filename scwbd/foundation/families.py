@@ -316,9 +316,9 @@ def shared_components(*, n_uncertainty: int = 4) -> tuple[ComponentSpec, ...]:
         # `EEGHead.source_moment()` and the `(64, 414, 3)` `matrix_vec` were both
         # built, both correct, and both unreachable -- the same "the work exists
         # and the half that would use it is pointed somewhere else" shape this
-        # project keeps finding, in the one place it costs the most: a per-parcel
-        # scalar carries 5.6% of the whitened lead field, a 3-vector moment
-        # 51.7%.
+        # project keeps finding, in the one place it costs the most: on
+        # Schaefer400x7 a per-parcel scalar carries 32.1% of the whitened lead
+        # field, a 3-vector moment 83.4%.
         #
         # ARCHITECTURE.md deferred this to run 3 because changing the shared
         # interface changes every offset and would invalidate the checkpoints of
@@ -365,14 +365,15 @@ def _cortical(*, n_spectral_modes: int, n_adaptation: int, n_uncertainty: int) -
         # rate, and declaring it as such is what stops it being wired to a port
         # that carries activity (PortMismatch refuses cross-unit wiring).
         #
-        # Why it is worth three channels. 🧭 Gauss measured the fraction of the
-        # whitened lead field a regional state can express: a per-parcel SCALAR
-        # reaches eta = 0.056; subdividing to 542 parcels reaches 0.162; a net
-        # dipole moment at 3/parcel reaches 0.517. 🧠 Cajal showed by geometry
-        # that subdividing past 400 parcels buys at most a further 1.29x,
-        # because opposing sulcal banks cancel. Orientation buys ~9x what
-        # resolution buys, and every design decision before this one spent on
-        # resolution.
+        # Why it is worth three channels. The fraction of the whitened lead
+        # field a regional state can express, measured on the model's own 400
+        # cortical parcels (`reports/transforms/resolution_pair_schaefer400.md`
+        # §3.1): a per-parcel SCALAR reaches eta = 0.321; a net dipole moment at
+        # 3/parcel reaches 0.834. Subdividing those 400 parcels does buy
+        # something -- 0.415 at 800 elements, 0.708 at 3154 -- so the case for
+        # three channels is a rate, not an absolute: 1200 oriented numbers carry
+        # more than 3154 scalars do. Every design decision before this one spent
+        # on resolution, which is the more expensive of the two.
         #
     ) + (
         # `dipole` is normally part of `shared_components()` now, at a fixed

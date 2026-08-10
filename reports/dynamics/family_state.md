@@ -759,7 +759,11 @@ is green.
 **Orientation-bearing state.** Cajal shipped `normal` (414,3), `normal_coherence`
 and `normal_covered`; Gauss measured a scalar-per-parcel support at 5.6 % of the
 whitened lead field against **51.7 %** for a net dipole moment — ~9×, where more
-parcels buy ≤1.29×. Nothing in my family layout carries orientation yet. What it
+parcels buy ≤1.29×. [Corrected 2026-08-09, ISSUE-015: measured on Schaefer400x7,
+the parcellation this layout runs on, it is 32.1 % against **83.4 %** — 2.6×, and
+more parcels do buy something: 70.8 % at 3154 elements. Orientation is still the
+largest single win and the cheapest per degree of freedom.] Nothing in my family
+layout carries orientation yet. What it
 needs: a 3-vector `dipole` component on cortical families, its out-port declared
 in `Hz·m` (a moment, not a rate), and the EEG head projecting through
 `normal × coherence` rather than a scalar amplitude. **Coherence is the part that

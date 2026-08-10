@@ -16,9 +16,10 @@ declaration. That is the same fail-closed posture as the compiler's R-series.
 Three things it carries that ``Support`` cannot express today:
 
 **Element type.** A support says how many elements it has, never what one *is*.
-That distinction is load-bearing and was measured, not assumed: a per-parcel
-scalar carries 5.6% of the whitened lead field where three numbers per parcel
-carry 51.7%. A scalar support and a 3-vector support over the same parcels are
+That distinction is load-bearing and was measured, not assumed: on the model's
+own parcellation a per-parcel scalar carries 32.1% of the whitened lead field
+where three numbers per parcel carry 83.4%. A scalar support and a 3-vector
+support over the same parcels are
 different objects, and relating them requires an orientation field rather than a
 reshape. ``ElementType`` makes the difference visible and the algebra refuses to
 paper over it.
@@ -268,8 +269,9 @@ def relate(
             raise SupportIncompatible(
                 f"element rank changes ({se.rank} -> {de.rank}) and no orientation_ref is "
                 "given; projecting a vector onto a scalar requires an orientation field. "
-                "Measured, not hypothetical: a per-parcel scalar carries 5.6% of the "
-                "whitened lead field where three numbers per parcel carry 51.7%"
+                "Measured, not hypothetical: on Schaefer400x7 a per-parcel scalar "
+                "carries 32.1% of the whitened lead field where three numbers per "
+                "parcel carry 83.4%"
             )
         collapsing = se.rank > de.rank
         return SupportMap(

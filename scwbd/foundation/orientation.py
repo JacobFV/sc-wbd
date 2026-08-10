@@ -1,16 +1,20 @@
 """Projecting the regional dipole moment onto a lead field (O-5).
 
 The observation heads multiply a per-region **scalar** amplitude by a
-``(n_channels, n_regions)`` gain.  🧭 Gauss measured what that costs, as the
-fraction of the whitened lead field a regional state can express:
+``(n_channels, n_regions)`` gain.  What that costs, as the fraction of the
+whitened lead field a regional state can express, measured on the model's own
+400 cortical parcels (Schaefer400x7;
+``reports/transforms/resolution_pair_schaefer400.md`` §3.1):
 
-    per-parcel scalar          eta = 0.056
-    subdivided to 542 parcels  eta = 0.162
-    net dipole moment, 3/parcel eta = 0.517
+    per-parcel scalar, 400 parcels        eta = 0.321
+    net dipole moment, 3/parcel, 400      eta = 0.834
+    scalar, parcels subdivided to 3154    eta = 0.708
 
-and 🧠 Cajal showed by geometry that subdividing past 400 parcels buys at most a
-further 1.29x, because opposing banks of a sulcus cancel.  **Orientation buys
-about nine times what resolution buys.**
+**Orientation is the largest single win, at 2.6x, and the cheapest: 1200
+oriented numbers carry more than 3154 scalars do.**  Extra parcels are not
+free of value -- that claim came from the 68-parcel Desikan-Killiany atlas,
+where subdividing to 542 elements reached only 0.162, and it does not survive
+on this parcellation.
 
 This module is the projection, and it exists as its own file because the physics
 belongs in one place.  Given a parcel's dipole moment ``m`` (three numbers, Hz*m,
@@ -56,10 +60,10 @@ class DipoleProjection(nn.Module):
     **DECLARED COMPATIBILITY PATH -- not the primary route.**  This reduces a
     3-vector moment to one number *before* the observation, and that reduction
     is the lossy step: with a ``(n_channels, n_regions)`` lead field you are in
-    the scalar regime no matter what the state carries.  🧭 Gauss's
-    ``eta = 0.517`` was 204 degrees of freedom over 68 parcels -- a property of
-    the observation operator consuming three numbers, not of the state holding
-    three.  Use :class:`VectorLeadField` unless you are feeding an operator that
+    the scalar regime no matter what the state carries.  ``eta = 0.834`` was
+    1200 degrees of freedom over 400 parcels -- a property of the observation
+    operator consuming three numbers, not of the state holding three.  Use
+    :class:`VectorLeadField` unless you are feeding an operator that
     genuinely cannot take a moment; then use this, and say so.
 
     The normal and the coherence are **buffers, not parameters**: they are
@@ -144,11 +148,11 @@ class DipoleProjection(nn.Module):
     # -- what this buys, measured -----------------------------------------
     @torch.no_grad()
     def expressible_fraction(self, lead_field: Tensor) -> dict[str, float]:
-        """Gauss's ``eta`` for this projection against a given lead field.
+        """``eta`` for this projection against a given lead field.
 
         Returns the fraction of the lead field's squared Frobenius norm reachable
-        by a scalar-per-parcel state versus by a full 3-vector, so the ~9x claim
-        can be re-derived here rather than cited.
+        by a scalar-per-parcel state versus by a full 3-vector, so the 2.6x
+        orientation ratio can be re-derived here rather than cited.
         """
         L = lead_field.float()  # (C, N)
         scal = (L**2).sum()
@@ -180,7 +184,7 @@ class DipoleProjection(nn.Module):
 
 
 # ======================================================================
-# the vector lead field -- the half of O-5 that actually carries the 9x
+# the vector lead field -- the half of O-5 that actually carries the 2.6x
 # ======================================================================
 class VectorLeadField(nn.Module):
     """``(n_channels, n_regions, 3)``: a forward operator that consumes a MOMENT.
@@ -205,12 +209,12 @@ class VectorLeadField(nn.Module):
     you can compute after the fact instead of pre-applying.
 
     Why this matters and why the earlier scalar-only version of this module was
-    half a fix: 🧭 Gauss's ``eta = 0.517`` was measured at **204 degrees of
-    freedom over 68 parcels — 68 x 3**.  It is a property of the *observation
-    operator* consuming three numbers, not of the *state* carrying three.  With
-    a scalar lead field the reduction to one number happens before the
-    observation, and the reduction is the lossy step, so a vector state buys
-    nothing.  0.056, not 0.517, no matter what the state holds.
+    half a fix: ``eta = 0.834`` was measured at **1200 degrees of freedom over
+    400 parcels — 400 x 3**.  It is a property of the *observation operator*
+    consuming three numbers, not of the *state* carrying three.  With a scalar
+    lead field the reduction to one number happens before the observation, and
+    the reduction is the lossy step, so a vector state buys nothing.  0.321, not
+    0.834, no matter what the state holds.
     """
 
     def __init__(self, matrix: Tensor, channel_names: tuple[str, ...], *, units: str = "V",
@@ -259,9 +263,9 @@ class VectorLeadField(nn.Module):
         """How much of this forward operator the scalar path cannot reach.
 
         Reports the fraction of the vector operator's energy retained by the
-        contracted one.  This is the local analogue of Gauss's eta and it is
-        computed on **our** forward model, so the 9x claim is re-derived rather
-        than cited.
+        contracted one.  This is the local analogue of the pair's eta and it is
+        computed on **our** forward model, so the orientation ratio is re-derived
+        rather than cited.
         """
         full = float((self.L**2).sum())
         scal = float((self.contract(normal, coherence) ** 2).sum())

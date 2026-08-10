@@ -16,8 +16,8 @@ So every claim here is paired with the control that makes it discriminating:
   moves it (so the geometry is being read, not a fixed index);
 * a purely tangential field produces ~no drive **and** a purely normal field
   produces a large one (so the *projection* is load-bearing, not the
-  magnitude -- agent Gauss measured orientation carrying ~9x what parcel count
-  carries, and a magnitude discards all of it);
+  magnitude -- on the model's own 400 cortical parcels orientation carries 2.6x
+  what a scalar does, and a magnitude discards all of it);
 * halving coherence halves the drive (so agent Cajal's cancellation factor is
   read rather than declared);
 * a zero field leaves the trajectory exactly equal to baseline (so a "response"

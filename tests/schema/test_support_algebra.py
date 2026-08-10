@@ -63,7 +63,11 @@ def test_differing_units_are_refused():
 
 
 def test_a_rank_change_without_an_orientation_is_refused():
-    """The measured refusal: 5.6% vs 51.7% of the whitened lead field.
+    """The measured refusal: 32.1% vs 83.4% of the whitened lead field.
+
+    On Schaefer400x7, the model's own 400 cortical parcels.  Stated as 5.6% vs
+    51.7% until 2026-08-09, which is the same pair on Desikan-Killiany
+    (ISSUE-015).
 
     Collapsing three numbers per parcel to one is a projection onto an
     orientation -- a physical fact about the cortex -- not a reshape.

@@ -75,10 +75,12 @@ class AnatomyPrior:
     #: run because nothing read its provenance field.
     families: Any | None = None
     #: ``(N,3)`` unit net-dipole direction per parcel, ``nan`` off cortex.
-    #: 🧭 Gauss measured a scalar-per-parcel support carrying 5.6% of the
-    #: whitened lead field at 68 parcels and 16.2% at 542, against 51.7% for the
-    #: three-component net dipole moment: orientation is worth ~9x what extra
-    #: parcels are worth. Every other per-parcel field here is orientation-free.
+    #: On Schaefer400x7, the model's own cortical parcellation, a
+    #: scalar-per-parcel support carries 32.1% of the whitened lead field against
+    #: 83.4% for the three-component net dipole moment: orientation is worth 2.6x
+    #: on the same 400 parcels, and buys more per degree of freedom than any
+    #: subdivision measured. Every other per-parcel field here is
+    #: orientation-free.
     normal: Tensor | None = None
     #: ``(N,)`` folding coherence ``|Σ a n| / Σ a`` in ``[0,1]``. **Read this
     #: with `normal`, never `normal` alone.** A unit vector always looks equally

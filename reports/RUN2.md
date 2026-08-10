@@ -1940,9 +1940,11 @@ reason expired. `EEGHead.source_moment()` returned `None` for the whole of run 2
 `dipole` was declared per cortical family, which put it in the `private` block an
 observation head is forbidden to address. It is now shared at a fixed offset.
 
-This matters more than its size suggests: a per-parcel scalar carries **5.6%** of
-the whitened EEG lead field and a 3-vector moment **51.7%**. Run 2's EEG
-likelihood was reading the 5.6% path. The cost is recorded — D goes 59 → 62 and
+This matters more than its size suggests: a per-parcel scalar carries **32.1%** of
+the whitened EEG lead field on Schaefer400x7 and a 3-vector moment **83.4%**. Run
+2's EEG likelihood was reading the 32.1% path. [Written as 5.6% and 51.7% at the
+time; those are the same measurement on Desikan-Killiany. Corrected 2026-08-09,
+ISSUE-015.] The cost is recorded — D goes 59 → 62 and
 padding 47.34% → 49.73%, because the 14 subcortical regions now carry a zero
 dipole — and it strengthens O-6 rather than weakening it.
 
@@ -2038,12 +2040,15 @@ last is how a result survives longer than it should.
   declared out-ports (RL-4) — **and it is the remaining half of O-5.** The
   wiring fails closed on purpose: a vector moment cannot silently reach a
   scalar operator. 🧭 Gauss's 0.056 → 0.517 (~9×) was measured on a real BEM
-  lead field over 7498 source-space dipoles into 68 parcels; ours is the
-  analytic single-sphere fallback with near-radial orientations, where the
-  scalar contraction already captures 38% rather than 5.6%. 🌊 Hodgkin doubted
-  the 9× would carry to our forward model and **was right**. O-5's
-  justification stands at roughly a quarter of the escalated size, and the
-  full figure needs a real BEM solution with real cortical normals.
+  lead field over 7498 source-space dipoles into **68 Desikan-Killiany
+  parcels**; ours is the analytic single-sphere fallback with near-radial
+  orientations, where the scalar contraction already captures 38% rather than
+  5.6%. 🌊 Hodgkin doubted the 9× would carry to our forward model and **was
+  right**, for the wrong reason. [Amended 2026-08-09, ISSUE-015: re-measured on
+  Schaefer400x7, the parcellation this model runs on, the BEM figures are 0.321
+  → 0.834, a ratio of **2.6×** against this fallback's 2.64×. The gap was the
+  parcellation, not the sphere. O-5's justification stands at the size the
+  fallback already showed.]
 - **Seven subcortical families are 14 of 414 parcels** and out of claim on
   power at any participant count this corpus supports.
 - **The posterior guard freezes what it protects.** A rejected batch returns

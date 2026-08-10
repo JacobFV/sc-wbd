@@ -35,8 +35,9 @@ Three steps. The first is where the physics is.
 Induced current couples to the component of **E** along the cortical normal. A
 per-parcel field magnitude is the wrong quantity: it is sign-blind, so it cannot
 distinguish a field driving *into* cortex from one driving *out of* it, and
-those are not physiologically equivalent. Agent Gauss measured orientation
-carrying ~9× what parcel count carries; a magnitude discards all of it.
+those are not physiologically equivalent. On the model's own 400 cortical
+parcels orientation carries 2.6× what a scalar does, and more per degree of
+freedom than any subdivision measured; a magnitude discards all of it.
 
 Sign convention is inward-positive, matching
 `scwbd.runtime.backends.NormalComponentResponse`, which computes `-(E·n)` for

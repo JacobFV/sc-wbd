@@ -690,12 +690,15 @@ class BrainPrior:
         cortical sheet, so the subcortical parcels are ``nan`` with
         ``covered=False`` rather than given a direction they do not have.
 
-        The reason this exists rather than a scalar per parcel: 🧭 Gauss
-        measured that a scalar support carries 5.6% of the whitened lead field
-        at 68 parcels and 16.2% at 542, while the three-component net dipole
-        moment carries 51.7%.  Orientation is worth about 9x what extra parcels
-        are worth, and until now every per-parcel field here was
-        orientation-free.
+        The reason this exists rather than a scalar per parcel: on the model's
+        own parcellation, Schaefer400x7, a scalar support carries 32.1% of the
+        whitened lead field and the three-component net dipole moment carries
+        83.4%.  Orientation is the largest single win and it is the cheapest per
+        degree of freedom -- 1200 oriented numbers beat the 70.8% that 3154
+        subdivided scalars reach -- and until now every per-parcel field here was
+        orientation-free.  Extra parcels are worth something too, which is the
+        half of this that the DK-68 measurement got wrong: see
+        `reports/transforms/resolution_pair_schaefer400.md` §3.2.
 
         ``coherence`` is the load-bearing number, not the direction: cortical
         folding makes opposing banks inside one parcel cancel, so a parcel's

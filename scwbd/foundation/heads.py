@@ -97,9 +97,9 @@ class LeadField:
     #: This is what a 3-vector regional moment must be observed through.
     #: Contracting it against one mean normal per parcel -- which is what
     #: :attr:`matrix` is -- bakes the folding cancellation into the *operator*,
-    #: and that is where the difference between eta = 0.056 and eta = 0.517
-    #: lives.  A vector state observed through a scalar lead field is still in
-    #: the scalar regime.
+    #: and that is where the difference between eta = 0.321 and eta = 0.834
+    #: lives, measured on the model's own 400 cortical parcels.  A vector state
+    #: observed through a scalar lead field is still in the scalar regime.
     matrix_vec: Tensor | None = None
 
     def is_individual(self) -> bool:
@@ -259,14 +259,13 @@ def build_lead_field(
     # Contract against the per-source orientation to get the fixed-orientation
     # gain, and keep the uncontracted (C, N, 3) tensor beside it.
     #
-    # The contraction is where the 9x is lost.  A parcel's contribution to a
+    # The contraction is where the 2.6x is lost.  A parcel's contribution to a
     # sensor is the *vector* sum of its dipoles; summing them against one mean
-    # normal bakes in the folding cancellation irreversibly.  Gauss measured
-    # eta = 0.056 of the whitened lead field for a scalar-per-parcel support
-    # against 0.517 for a 3-vector, and Cajal corroborated geometrically that
-    # subdividing past 400 parcels buys at most a further 1.29x.  Keeping the
-    # three components makes the cancellation a property of the *data* rather
-    # than of the operator.
+    # normal bakes in the folding cancellation irreversibly.  On the model's own
+    # 400 cortical parcels a scalar-per-parcel support retains eta = 0.321 of
+    # the whitened lead field against 0.834 for a 3-vector.  Keeping the three
+    # components makes the cancellation a property of the *data* rather than of
+    # the operator.
     kernel = 1.0 / (4 * math.pi * conductivity * r**3)  # (C, N)
     L_vec = d * kernel[..., None]  # (C, N, 3) -- free orientation
     L = (d * orient[None, :, :]).sum(-1) * kernel
@@ -449,9 +448,12 @@ class EEGHead(nn.Module):
         # it against one mean normal per parcel -- which is what ``L`` is --
         # bakes the folding cancellation into the operator.  Measured on this
         # forward model: eta 0.3795 for the scalar support against 1.0 for the
-        # 3-vector, a ratio of 2.64x.  (Gauss's ~9x was on a real BEM solution;
-        # ours is the analytic sphere, where the scalar contraction already
-        # captures 38% rather than 5.6%.)
+        # 3-vector, a ratio of 2.64x -- which is the BEM answer on the model's
+        # own parcellation, 0.321 against 0.834, a ratio of 2.6x.  The two
+        # forward models agreed only after the BEM pair was re-measured on
+        # Schaefer400x7; on the 68-parcel Desikan-Killiany atlas the BEM ratio is
+        # 9.2x, and that gap was read for two runs as a property of the sphere
+        # approximation rather than of the parcellation.
         # persistent=False: the lead field is COMPILED PHYSICS, not fitted, so it
         # is rebuilt from the anatomy at construction and must never enter a
         # checkpoint.  Making it persistent broke every existing checkpoint --

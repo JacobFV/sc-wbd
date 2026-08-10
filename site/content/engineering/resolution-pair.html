@@ -1,8 +1,8 @@
 title: A measured FAIL, kept as the deliverable — SC-WBD
-description: We built the resolution pair the paper asks for, measured whether it validates, and it does not. The failing measurement is the result.
+description: We built the resolution pair the paper asks for, measured whether it validates, and it does not. The failing measurement is the result — and for two runs it was measured on the wrong parcellation.
 nav: engineering
-heading: Orientation buys nine times what resolution buys
-standfirst: Parcel-level cortical state carries 5.6% of the whitened EEG lead field. Eight times more parcels barely moves it. Three numbers per parcel moves it nine-fold. The failure is the finding.
+heading: One number per parcel carries 32.1% of the EEG observable; three carry 83.4%
+standfirst: Parcel-level cortical state on the model's own 400 parcels carries a third of the whitened EEG lead field, and the parcel's net dipole moment carries five sixths. The boundary check still fails. So does the version of this page that quoted the same measurement from a 68-parcel atlas the model does not use.
 applies: the <strong>anatomy prior and the state layout</strong> — every run built on parcel-level cortical state, including 003. The measurement is a property of the representation, not of a checkpoint.
 ---
 <div class="prose">
@@ -12,6 +12,20 @@ kept. It is the cleanest example on this site of a result whose value is entirel
 in its being negative — it tells you something specific and quantitative about
 what regional brain state <em>is</em>, which a passing measurement would not
 have.</p>
+
+<div class="callout">
+<span class="callout-label">Corrected 9 August 2026</span>
+<p>Every figure on this page below was, until that date, the same measurement run
+on the 68-parcel Desikan-Killiany atlas: 5.6% for a scalar per parcel, 51.7% for
+a 3-vector, a factor of nine. SC-WBD does not run on Desikan-Killiany. It runs on
+414 regions — Schaefer400x7 plus 14 subcortical volumes — and re-measured there,
+on the same subject, the same BEM lead field, the same 59 electrodes, the same
+noise covariance and the same twelve ensembles, the numbers are 32.1%, 83.4% and
+a factor of 2.6. The DK measurement was never wrong; it was attributed to the
+wrong object, and the error ran against us — it overstated a limitation. Both
+artefacts stay on disk. The one this page now quotes is
+<code>reports/transforms/resolution_pair_schaefer400.json</code>.</p>
+</div>
 
 <h2>Eleven refusals on the tin, ten of them able to fail</h2>
 
@@ -37,8 +51,8 @@ that cannot fail is worse than no coverage, because it gets counted.</p>
 
 <pre><code>cortical_source_dipole   ≤   parcel
       (fine)                 (coarse)
-      7498 elements          68 elements
-      4.9 mm nominal         50.3 mm nominal</code></pre>
+      7498 elements          400 elements
+      4.9 mm nominal         20.7 mm nominal</code></pre>
 
 <p>The fine support is the subject's own cortical source space: one
 normal-oriented current dipole per decimated white-surface vertex. This is the
@@ -53,8 +67,15 @@ parcels: rejected because sensors are not a finer view of the same physical
 quantity — they are a different quantity related by an operator.]]</p>
 
 <p>The coarse support is where every region's state actually lives, where the
-connectome is defined, and where every prior is tabulated. Restriction is the
-area-weighted parcel mean; prolongation is the indicator fill.</p>
+connectome is defined, and where every prior is tabulated: Schaefer400x7, the 400
+cortical parcels of the model's 414 regions.[[note: The other 14 are subcortical
+volumes. A cortical-surface source space has no fine support under them, so this
+pair cannot carry them and does not claim to; <code>n_coarse</code> is 400 and a
+guard asserts <code>414 − 14</code>. The labels reach the subject by one
+nearest-neighbour lookup on the registered sphere — median 1.40 mm, max 2.33 mm,
+against the fine support's own 4.94 mm scale — so the transfer is not the
+limiting approximation.]] Restriction is the area-weighted parcel mean;
+prolongation is the indicator fill.</p>
 
 <h2>The measurement</h2>
 
@@ -68,18 +89,23 @@ pushing the fine state through directly.</p>
 <table>
 <thead><tr><th>Condition</th><th class="num">Rel. error (whitened)</th><th class="num">Residual sd/ch</th><th class="num">Signal sd/ch</th><th>Verdict</th></tr></thead>
 <tbody>
-<tr><td>Left auditory</td><td class="num">0.969</td><td class="num">1.85</td><td class="num">1.90</td><td><span class="chip fail">fail</span></td></tr>
-<tr><td>Right auditory</td><td class="num">0.968</td><td class="num">1.86</td><td class="num">1.92</td><td><span class="chip fail">fail</span></td></tr>
-<tr><td>Left visual</td><td class="num">0.965</td><td class="num">1.90</td><td class="num">1.97</td><td><span class="chip fail">fail</span></td></tr>
-<tr><td>Right visual</td><td class="num">0.966</td><td class="num">1.86</td><td class="num">1.92</td><td><span class="chip fail">fail</span></td></tr>
+<tr><td>Left auditory</td><td class="num">0.765</td><td class="num">1.46</td><td class="num">1.90</td><td><span class="chip fail">fail</span></td></tr>
+<tr><td>Right auditory</td><td class="num">0.771</td><td class="num">1.48</td><td class="num">1.92</td><td><span class="chip fail">fail</span></td></tr>
+<tr><td>Left visual</td><td class="num">0.762</td><td class="num">1.50</td><td class="num">1.97</td><td><span class="chip fail">fail</span></td></tr>
+<tr><td>Right visual</td><td class="num">0.766</td><td class="num">1.47</td><td class="num">1.92</td><td><span class="chip fail">fail</span></td></tr>
 </tbody>
 </table>
 </div>
 
 <p>Read the last two columns together. <strong>The error introduced by coarsening
-is 1.86 noise standard deviations per channel, against a signal of 1.92.</strong>
-The coarse view does not merely lose precision at the boundary — it loses the
-observable.</p>
+is 1.46 to 1.50 noise standard deviations per channel, against a signal of 1.90
+to 1.97.</strong> The criterion is one noise standard deviation — the largest
+coarsening error this instrument could not detect — so the coarse view does not
+merely lose precision at the boundary. It loses most of the observable, on all
+four conditions, on the held-out pair as much as on the pair that set the prior.
+[[note: At Desikan-Killiany the same four conditions failed at 1.85 to 1.90
+sd/ch. The finer parcellation halves the excess over criterion and does not
+remove it.]]</p>
 
 <h3>Ruling out the estimator</h3>
 
@@ -91,67 +117,90 @@ geodesic — never Euclidean, because a Euclidean ball crosses sulcal banks and
 would introduce sign oscillation the inverse could be blamed for. A same-signed
 geodesic patch is the physiological unit of EEG generation.]]</p>
 
-<p><strong>Twelve of twelve ensembles fail the pre-registered criterion.</strong>
-Even a field smoother than any parcel — a 40&nbsp;mm correlation length against a
-50&nbsp;mm nominal parcel — still loses 64% of the observable.</p>
+<p><strong>Seven of twelve ensembles fail the pre-registered criterion, and all
+four real evoked responses are among them.</strong> What passes is what should:
+focal patches at 20 and 40&nbsp;mm and geodesic random fields at 10, 20 and
+40&nbsp;mm — every ensemble whose own scale is at or above the parcellation's
+20.7&nbsp;mm. Every 5&nbsp;mm ensemble fails, at 0.66 to 0.80 relative error,
+which is the expected answer rather than a surprise: no support with a
+20.7&nbsp;mm characteristic scale represents a 5&nbsp;mm patch. Real evoked
+responses sit with the failures.[[note: At Desikan-Killiany, nothing passed — twelve of twelve
+failed. Five passing is the finer parcellation's honest gain and it does not
+reach the ensembles the model is for.]]</p>
 
-<h2>The finding: it is orientation, not resolution</h2>
+<h2>The finding: orientation is the cheapest thing to add</h2>
 
 <p>The prior-free summary is the share of the observable the coarse support can
 carry. Under a prior with no free parameters the decomposition is exactly
-Pythagorean, so the number means something unambiguous.</p>
+Pythagorean, so the number means something unambiguous. Every row below was
+measured in the same run, on the same head, so the comparison does not span two
+invocations.</p>
 
 <div class="tablewrap">
 <table>
 <thead><tr><th>Restriction</th><th class="num">dof</th><th class="num">Observable retained</th></tr></thead>
 <tbody>
-<tr><td><strong>Declared: scalar parcel mean</strong></td><td class="num">68</td><td class="num">5.6%</td></tr>
-<tr><td>Same, membership scrambled (spatial null)</td><td class="num">68</td><td class="num">0.9%</td></tr>
-<tr><td>Parcels subdivided ×2</td><td class="num">136</td><td class="num">8.0%</td></tr>
-<tr><td>Parcels subdivided ×4</td><td class="num">272</td><td class="num">11.5%</td></tr>
-<tr><td>Parcels subdivided ×8</td><td class="num">542</td><td class="num">16.2%</td></tr>
-<tr><td><strong>Parcel net dipole moment (3 per parcel)</strong></td><td class="num">204</td><td class="num">51.7%</td></tr>
-<tr><td>Best possible restriction of size 68</td><td class="num">68</td><td class="num">100.0%</td></tr>
+<tr><td>Desikan-Killiany scalar parcel mean</td><td class="num">68</td><td class="num">5.6%</td></tr>
+<tr><td>Destrieux scalar parcel mean</td><td class="num">150</td><td class="num">10.8%</td></tr>
+<tr><td><strong>Declared: Schaefer400x7 scalar parcel mean</strong></td><td class="num">400</td><td class="num">32.1%</td></tr>
+<tr><td>Same, membership scrambled (spatial null)</td><td class="num">400</td><td class="num">5.2%</td></tr>
+<tr><td>Parcels subdivided ×2</td><td class="num">800</td><td class="num">41.5%</td></tr>
+<tr><td>Parcels subdivided ×4</td><td class="num">1595</td><td class="num">53.3%</td></tr>
+<tr><td>Parcels subdivided ×8</td><td class="num">3154</td><td class="num">70.8%</td></tr>
+<tr><td><strong>Parcel net dipole moment (3 per parcel)</strong></td><td class="num">1200</td><td class="num">83.4%</td></tr>
+<tr><td>Best possible restriction of size 400</td><td class="num">400</td><td class="num">100.0%</td></tr>
 </tbody>
 </table>
 </div>
 
-<p>Three things fall out, and the third is the result.</p>
+<p>Four things fall out, and the fourth is the result.</p>
 
 <p><strong>The metric responds.</strong> Scrambling the parcellation's spatial
-structure while keeping its parcel sizes drops the retained share by 6.4×. A
-measurement that could not tell those two apart would be reporting nothing —
-which is the first thing to check about any measurement, and the check this
-project now runs by reflex.</p>
+structure while keeping its 400 parcel sizes drops the retained share from 32.1%
+to 5.2%, a factor of 6.2. A measurement that could not tell those two apart would
+be reporting nothing — which is the first thing to check about any measurement,
+and the check this project now runs by reflex. It also fixes what the gain is
+made of: 400 badly placed parcels retain less than 68 well-placed ones.</p>
 
-<p><strong>68 is not a small number, it is a badly aligned one.</strong> The
-whitened lead field has rank 58, which is <em>less</em> than 68 — so <em>some</em>
-68-dimensional restriction retains 100% of the observable. The parcel restriction
-retains 5.6%. This is a subspace-alignment failure, not a dimension shortage, and
-those have completely different remedies.</p>
+<p><strong>400 is not a small number, it is a badly aligned one.</strong> The
+whitened lead field has rank 58, which is far <em>less</em> than 400 — so
+<em>some</em> 400-dimensional restriction retains 100% of the observable. The
+parcel restriction retains 32.1%. This is a subspace-alignment failure, not a
+dimension shortage, and those have completely different remedies.</p>
 
-<p><strong>It is orientation, not resolution.</strong> Subdividing to 542 coarse
-elements — more than the production model's entire region count — raises the
-retained share only to 16.2%. Keeping <em>three</em> numbers per parcel instead of
-one, the parcel's net dipole-moment vector, raises it to 51.7% on 204 degrees of
-freedom: <strong>nine times what the declared pair retains, and 3.2× better than
-eight times as many scalar parcels.</strong></p>
+<p><strong>Parcel count buys real amounts.</strong> 68 → 150 → 400 parcels of
+the same construction goes 5.6% → 10.8% → 32.1%, and subdividing the 400 goes on
+climbing: 41.5% at 800 elements, 70.8% at 3154. This page used to say the
+opposite — "more parcels buy almost nothing" — on the strength of k-means
+subdivision of Desikan-Killiany's 68 parcels reaching 16.2% at 542 elements.
+Schaefer400x7 reaches 32.1% with <em>fewer</em> elements than that. Splitting a
+large gyral parcel by centroid position produces pieces that do not follow the
+folding, and the folding is what decides whether a patch's field survives to the
+scalp. The old conclusion was about k-means, not about resolution.</p>
+
+<p><strong>Orientation is the largest single win and the cheapest.</strong>
+Keeping <em>three</em> numbers per parcel instead of one, the parcel's net
+dipole-moment vector, raises the retained share from 32.1% to 83.4%: a factor of
+2.6 on the same 400 parcels. Per number spent it wins outright —
+<strong>1,200 oriented numbers carry more than 3,154 subdivided scalars
+do.</strong> That is the form of the claim that survived re-measurement, and it
+is the reason the state carries a moment rather than a rate.</p>
 
 <blockquote>
 <p>A scalar per parcel throws away the orientation structure that determines the
-sensor field, and no amount of spatial refinement buys it back.</p>
+sensor field. Spatial refinement does buy it back, and it buys it back at about a
+third of the rate.</p>
 </blockquote>
 
 <h2>How far this carries — and how far it does not</h2>
 
 <p>The table above is measured on a <strong>real BEM lead field</strong>: 7498
-source-space dipoles into 68 parcels. That is the number worth quoting, and it
-is the one this page quotes.</p>
+source-space dipoles into 400 parcels, on the parcellation the model runs on.
+That is the number worth quoting, and it is the one this page quotes.</p>
 
-<p>It is not, however, the gain our own forward model sees. Building the
-free-orientation lead field in the model's <em>analytic single-sphere</em>
-fallback — where source orientations are close to radial — the same comparison
-gives:</p>
+<p>The trainer does not always have that lead field. Its fallback is an
+<em>analytic single sphere</em>, where source orientations are close to radial,
+and the same contraction there gives:</p>
 
 <div class="tablewrap">
 <table>
@@ -163,45 +212,46 @@ gives:</p>
 </table>
 </div>
 
-<p>A ratio of <strong>2.64×</strong>, not nine. The scalar contraction already
-captures 38% there rather than 5.6%, because near-radial sources are exactly the
-case a scalar handles well.</p>
+<p>A ratio of <strong>2.64×</strong>, against 2.6× for the BEM pair. The two
+forward models now agree, and the agreement should be read for less than it
+looks. The sphere's sources <em>are</em> the 414 parcels, so its second row is
+1.0000 by construction and the ratio measures the contraction alone; the BEM
+ratio measures the same contraction on top of a 7498 → 400 coarsening. Two
+different quantities landing on the same number is worth noting and is not a
+replication.</p>
 
 <blockquote>
-<p>Both numbers are correct. They are measurements of <em>different forward
-models</em>, and quoting the larger one as though it were ours would be the more
-exciting version of a result we did not get.</p>
+<p>For two runs this page explained the gap between Desikan-Killiany's 9× and the
+sphere's 2.64× as a property of the sphere approximation. It was a property of
+the 68-parcel atlas. The sphere was never the outlier.</p>
 </blockquote>
 
-<p>So the direction of the finding survives and its magnitude does not transfer:
-the argument for vector-valued regional state stands at roughly a quarter of the
-headline size until we solve a real BEM with real cortical normals. One of us
-predicted the 9× would not carry to our forward model, and was right.</p>
-
-<p>The medial wall is not the story either: excluding the unassigned sources —
-6.0% of cortical area — changes the answer by 0.0005.</p>
+<p>The medial wall is not the story either: 6.8% of cortical area is unassigned,
+and landmark coverage of 0.932 clears the 0.8 requirement.</p>
 
 <h3>The perturbational half, which needs no prior at all</h3>
 
 <p>For a unit focal perturbation at a fine dipole, the fine model predicts one
 sensor topography and the coarse view predicts another. This requires no state
 prior, so it cannot be flattered by a convenient one. Over all 7,498
-dipoles the median relative topography error is <strong>0.977</strong>, and only
-1.9% of locations come in below 0.5.</p>
+dipoles the median relative topography error is <strong>0.807</strong>, and
+11.7% of locations come in below 0.5.</p>
 
-<p><strong>For 98.1% of cortical locations, a coarse-authoritative model's
+<p><strong>For 88.3% of cortical locations, a coarse-authoritative model's
 prediction of the sensor response to a focal stimulation is wrong by more than
 half its own magnitude.</strong> That is precisely the TMS query the paper names,
-and the answer is that parcel state cannot answer it.</p>
+and the answer is that parcel state resolves 11.7% of the sites it could be asked
+about.[[note: 1.9% at Desikan-Killiany, where the median error was 0.977. The
+finer parcellation multiplies the resolved fraction by six and leaves it a
+minority.]]</p>
 
 <h2>Why the failure is the deliverable</h2>
 
 <p>The measurement forces the design and forbids the alternatives. Because the
-parcel support provably cannot carry the observable, a
-<em>coarse-authoritative</em> field would generate observable predictions from a
-state that demonstrably cannot carry them. The authority policy is therefore
-<strong>fine-authoritative</strong> — not as a preference, but as the only
-policy the measurement permits.</p>
+parcel support carries 32.1% of the observable, a <em>coarse-authoritative</em>
+field would generate observable predictions from a state that holds a third of
+them. The authority policy is therefore <strong>fine-authoritative</strong> — not
+as a preference, but as the only policy the measurement permits.</p>
 
 <p>And the model does not implement it. All state lives at the coarse node; the
 model holds no source-space object, so the restriction and prolongation operators
@@ -238,7 +288,7 @@ declaration.</p>
 <p>The fix is composition rather than a third condition: R12 must read
 <strong>R02's verdict</strong>, not the mere presence of a declaration. R02 asks
 whether the prolongation is any good; R12 may only be discharged by a declaration
-that R02 passed. The pair measured here fails 12 of 12, so under that rule it
+that R02 passed. The pair measured here fails 7 of 12, so under that rule it
 correctly does <em>not</em> switch R12 off.</p>
 
 <blockquote>

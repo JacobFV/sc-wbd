@@ -13,8 +13,10 @@ that ``SCWBD.build_layout`` forbids a head from addressing. Two correct halves,
 pointed at different address spaces — the same shape as the source-card rename
 that left 88.7% of run 2 untrainable, in the place it costs the most:
 
-    a per-parcel scalar carries  5.6% of the whitened EEG lead field
-    a 3-vector moment carries   51.7%
+    a per-parcel scalar carries  32.1% of the whitened EEG lead field
+    a 3-vector moment carries    83.4%
+
+on Schaefer400x7, the model's own 400 cortical parcels.
 
 ``ARCHITECTURE.md`` O-5b deferred this to run 3 because changing the shared
 interface changes every offset and would have invalidated the checkpoints of the

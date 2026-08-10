@@ -556,8 +556,9 @@ same subject" is a *computation over declared supports*, not a bespoke harness.
 `ds002336` is the case that would exercise it and is on disk.
 
 Constraint from the measurement: the pair Gauss validated **fails** its
-boundary check, and the cause is that a per-parcel scalar carries 5.6% of the
-whitened lead field against 51.7% for three numbers per parcel. So the algebra
+boundary check, and the cause is that a per-parcel scalar carries 32.1% of the
+whitened lead field against 83.4% for three numbers per parcel, on
+Schaefer400x7. So the algebra
 must carry **orientation**, not just extent — a support whose elements are
 scalars is a different kind of object from one whose elements are vectors, and
 today `Support` cannot tell them apart.
@@ -737,12 +738,41 @@ that *usually* agree are still two.
 This is the change the measurements have been asking for all day and that
 nothing has acted on.
 
-🧭 Gauss: a per-parcel scalar support carries **5.6%** of the whitened EEG lead
-field; 16.2% even subdivided to 542 parcels; **51.7%** for a net dipole moment
-at three numbers per parcel. 🧠 Cajal corroborated by independent geometry —
-folding cancellation means subdividing past 400 parcels buys at most a further
-**1.29×**. Two methods, one conclusion: **orientation buys ~9× what resolution
-buys, and we are spending everything on resolution.**
+On Schaefer400x7, the 400 cortical parcels of the model's 414 regions, a
+per-parcel scalar support carries **32.1%** of the whitened EEG lead field and a
+net dipole moment at three numbers per parcel carries **83.4%** — a factor of
+**2.6**, on 1200 degrees of freedom against 400. Subdividing the same parcels
+raises the scalar figure to 41.5% at 800 elements and 70.8% at 3154, so
+**orientation is the largest single win and the cheapest one: 1200 oriented
+numbers carry more than 3154 scalars do.**
+
+Three corrections to how this entry read until 2026-08-09, because the argument
+changed and not only the digits.
+
+**The figures were the wrong parcellation's.** 5.6% against 51.7%, a factor of
+9.2, measured on the 68-parcel Desikan-Killiany atlas — a real pair, about a
+parcellation this model does not run on
+(`reports/transforms/resolution_pair_schaefer400.md`).
+
+**🧠 Cajal's geometric 1.29× does not corroborate this and is no longer cited as
+though it did.** It bounds the parcel *moment* that survives folding, not the
+lead-field energy a state can express; measured directly, an eightfold
+subdivision raises the latter by 2.2×, above the bound. The two quantities are
+related and not interchangeable, and `reports/anatomy_families.md` §10.1 now says
+so where the bound is derived.
+
+**The gap between 9× and the analytic sphere's 2.64× was the parcellation, not
+the sphere.** For two runs it was written up as evidence that the single-sphere
+fallback understates orientation, and used as an argument for the individualised
+head-model work. The BEM pair on Schaefer400x7 gives 2.6× and the sphere gives
+2.64×. The sphere was never the outlier — read for what it measures, which is the
+contraction alone, on a source set that *is* the 414 parcels. That argument for
+the head-model work is withdrawn; the other arguments for it (real cortical
+normals, subject geometry, condition number) are untouched and are the ones to
+make.
+
+One method, one conclusion, and the conclusion is smaller: **orientation buys
+2.6× what a scalar carries, and we are spending everything on resolution.**
 
 Pyramidal cells sit normal to the sheet, so a parcel's contribution to any
 electromagnetic observation is the *vector* sum of its face normals weighted by
@@ -1136,8 +1166,8 @@ it makes the narrowing visible so it can be challenged.
 | **`family-granular-operators`** | §2.1 (nine registered operator types) | Run 2 assigns operators at **family** granularity, not per region. | A per-region assignment over 454 parcels has no evidence to fit it. Families are the finest granularity the anatomy prior actually distinguishes. | scheduled — revisit when a prior supports finer typing |
 | **`stage1-data-limited`** | §6.1 (per-regional-family phenotype pretraining across all listed modalities) | Stage I pretrains only the families for which we hold data. | ~~We do not have retinotopic, interoceptive, or nociceptive corpora.~~ **Amended 2026-08-06 (🗄️ Ada); the original clause is struck rather than deleted because it was the stated reason and it is now partly false.** We now hold retinotopic mapping (ds000113 `ses-localizer`, four traversals of the visual field per participant) and interoceptive series (ds000113 cardiac + respiratory at 500 Hz on every functional run). We still hold **no** nociceptive, endocrine, digestive, temperature-regulation, force/kinematic or gaze-during-free-behaviour corpus. Families without data are initialised from the prior and **declared untrained** in the manifest. Per-family status is enumerated in `reports/sources/inventory.md` §4. | permanent for run 2 |
 | **`hemo-native-space`** | §6.1 (regional families are pretrained *on* their measurements) | Every haemodynamic source on disk is in **its own scanner space**; no source is parcellated into the model's region index. | Registration to the Schaefer parcellation needs a normalisation engine, and there is none on this machine (`flirt`, `antsRegistration`, `mri_vol2vol`, `3dAllineate` absent; `antspy`, `nipype` not installed). Measured, not assumed: the ten ds002336 subjects' BOLD FOV centres are up to **28.77 mm** apart (max pairwise Euclidean distance in world coordinates; an earlier **23.25 mm** filed by me was a max over affine matrix *entries*, not a distance, and is withdrawn), so there is no shortcut. Everything *downstream* of the transform exists — the Schaefer400x7 MNI152-1mm label volume is on disk, `FrameGraph` can declare the transform, nilearn can average parcels, and every subject has a T1w. So the BOLD is **readable** (`scwbd.sources.loaders.bids_bold`, native grid + native TR) and **not yet trainable**. Recorded separately from N-4 because they fail differently: N-4 is "no data exists for this family", N-4a is "data exists, on disk, and one component is missing". Conflating them would let the second look like the first and never get fixed. Cost and owner: `reports/sources/inventory.md` §12 — ~2–3 days via an `antspyx` dependency the fleet has not taken, owner 🧠 Cajal (frames and atlas are theirs), and the retinotopy in ds000113 is the validation that can actually fail. | scheduled — blocks the haemodynamic likelihood, not the acquisition |
-| **`one-resolution-pair`** | §4.2 (arbitrary source-native resolution lattices) | Run 2 declares **one** validated fine/coarse pair with restriction/prolongation, not a general lattice. The pair is `cortical_source_dipole ≤ parcel`; `R` is the area-weighted parcel mean, `P` the indicator fill, both measured in `reports/transforms/resolution_pair.md`. | One pair tested properly beats a lattice declared and untested. It is also the minimum that gives R02 something to check — and R02 now fires on six distinct breakages of it (`tests/foundation/test_resolution_pair_r02.py`). | **done** for the pair; the lattice remains scheduled |
-| **`fine-authority-unimplemented`** | §4.2 (fine-authoritative fields: "an N×M or mesh-level state owns the degrees of freedom and coarser views are differentiable materializations") | The pair's declared authority policy is **fine-authoritative**, and SC-WBD-001-beta **does not implement it**. All state lives at the coarse node; the model holds no source-space object, so `R` and `P` are declared and measured but never applied in the forward pass. | The measurement forces the policy and forbids the alternatives: the parcel support carries 5.6% of the whitened EEG lead field, so a coarse-authoritative field would generate observable predictions from a state that provably cannot carry them. Implementing fine authority means giving the model source-space degrees of freedom, which is a run-3 change, not a patch. Declared here so the gap is attackable rather than invisible. | scheduled — run 3 |
+| **`one-resolution-pair`** | §4.2 (arbitrary source-native resolution lattices) | Run 2 declares **one** validated fine/coarse pair with restriction/prolongation, not a general lattice. The pair is `cortical_source_dipole ≤ parcel`; `R` is the area-weighted parcel mean, `P` the indicator fill, both measured in `reports/transforms/resolution_pair_schaefer400.md` — the coarse support is Schaefer400x7, the parcellation the model runs on. Until 2026-08-09 the declared artefact was `reports/transforms/resolution_pair.md`, the same pair on the 68-parcel Desikan-Killiany atlas, which retains 5.6% of the whitened lead field against Schaefer400x7's 32.1%. | One pair tested properly beats a lattice declared and untested. It is also the minimum that gives R02 something to check — and R02 now fires on six distinct breakages of it (`tests/foundation/test_resolution_pair_r02.py`). | **done** for the pair; the lattice remains scheduled |
+| **`fine-authority-unimplemented`** | §4.2 (fine-authoritative fields: "an N×M or mesh-level state owns the degrees of freedom and coarser views are differentiable materializations") | The pair's declared authority policy is **fine-authoritative**, and SC-WBD-001-beta **does not implement it**. All state lives at the coarse node; the model holds no source-space object, so `R` and `P` are declared and measured but never applied in the forward pass. | The measurement forces the policy and forbids the alternatives: the parcel support carries 32.1% of the whitened EEG lead field on Schaefer400x7, so a coarse-authoritative field would generate observable predictions from a state that carries a third of them. Implementing fine authority means giving the model source-space degrees of freedom, which is a run-3 change, not a patch. Declared here so the gap is attackable rather than invisible. | scheduled — run 3 |
 | **`psi-ab-unformed`** | §4.2 (compatibility pseudo-likelihood Ψ_ab over consensus views) | Not formed. Only one pair exists and it is not a consensus field, so there is no second view to disagree with. | Ψ_ab is defined over ≥2 views owning degrees of freedom simultaneously; under N-6 exactly one node owns any. Building Ψ_ab now would be a formula with no arguments. | blocked on N-6 |
 | **`neuromod-gain-only`** | §5 (competing neuromodulator hypotheses) | Neuromodulation enters as θ-conditioned gain only; no receptor-, target-, and timescale-resolved control fields. | The Hansen receptor maps give spatial density, not dynamics. Modelling the dynamics would be unearned. | permanent for run 2 |
 | **`two-cortical-families`** | §6.1 (five regional families: visual, auditory, motor/somatosensory/cerebellar, hippocampal, brainstem/hypothalamic/insular) | The anatomy prior declares **two** cortical families — `cortex_unimodal` (Vis+SomMot, 138 parcels) and `cortex_association` (262) — plus **seven** subcortical families separated by atlas identity alone. **Auditory, cerebellar and brainstem/hypothalamic/autonomic families are not declared at all.** Early visual is not separable from somatomotor and is folded into `cortex_unimodal`. | Two is the finest cortical partition in which *every pair* of families separates under a Váša spin null on a measured regional profile (FDR q<0.05). Yeo-7 fails on 15 of 21 pairs — including `SomMot vs Vis` (q=0.49/0.78). The von Economo–Koskinas cytoarchitectonic classes fail globally on every block, so cytoarchitecture is carried as description and may not be cited as the reason a family exists. Auditory cortex has no delineation in this parcellation; the cerebellum and brainstem/hypothalamus have **zero parcels**. Declaring those families would mean inventing their boundaries. See `reports/anatomy_families.md`. | scheduled — revisit per family when a parcellation or measurement block that resolves it arrives |
@@ -1232,7 +1262,7 @@ model layer implements the transform. Concretely:
 
 *Why the split:* the refinement operators are not shape-agnostic — scalar→vector
 is `s·n̂·coherence`, vector→scalar is `v·n̂` and **loses information** (exactly
-Gauss's 0.517 → 0.056), vector→vector across frames is a rotation. Type errors
+the pair's 0.834 → 0.321), vector→vector across frames is a rotation. Type errors
 should be impossible to represent; physics should live in one place and be
 testable.
 

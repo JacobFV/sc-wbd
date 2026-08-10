@@ -260,7 +260,7 @@ Everything else green, including tests/infer and tests/intervene.
 
 Open with what the thing does, in the indicative. A caveat goes after what it
 qualifies, once. Never open a page or paragraph with a negation. State real
-numbers flat — 51.7% is a measurement, not something that "suggests" anything.
+numbers flat — 83.4% is a measurement, not something that "suggests" anything.
 
 The refusal machinery, claim manifests and integrity tiers exist so the claims can
 be trusted. They are plumbing, not the product, and should be nearly invisible in
@@ -278,9 +278,12 @@ now `possibilities/`; `/speculative/` 301s to it via `docs/_redirects`. Write
 003 into that shape rather than appending to it.
 
 Results worth featuring, each already measured:
-  - orientation: a per-parcel scalar carries 5.6% of the whitened EEG lead field,
-    a 3-vector moment 51.7%, and folding cancellation caps further subdivision at
-    1.29x. Orientation buys ~9x what resolution buys.
+  - orientation: on Schaefer400x7, the model's own 400 cortical parcels, a
+    per-parcel scalar carries 32.1% of the whitened EEG lead field and a 3-vector
+    moment 83.4% — a factor of 2.6, and more per degree of freedom than any
+    subdivision measured. **Corrected 2026-08-09**: this brief said 5.6% against
+    51.7% and "orientation buys ~9x what resolution buys", which is the same pair
+    measured on the 68-parcel Desikan-Killiany atlas. See ISSUE-015.
   - the 9-family partition, separated on a 20-tracer PET receptor panel and on
     myelin+thickness under a 1000-spin Vasa null, FDR corrected — with von Economo
     tested and REJECTED.

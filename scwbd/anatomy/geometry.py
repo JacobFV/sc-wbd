@@ -475,12 +475,17 @@ class ParcelOrientation:
 
     Why this exists
     ---------------
-    🧭 Gauss measured that a **scalar** per parcel carries 5.6% of the whitened
-    lead field at 68 parcels and only 16.2% at 542, while **three numbers per
-    parcel** -- the net dipole moment -- carries 51.7%.  More parcels buy almost
-    nothing; orientation buys about 9x.  Every per-parcel field the anatomy
-    prior shipped before this was orientation-free, so the prior was supplying
-    the representation that measurement says is the weak one.
+    On **Schaefer400x7**, the 400 cortical parcels of the model's 414 regions, a
+    **scalar** per parcel carries 32.1% of the whitened lead field while **three
+    numbers per parcel** -- the net dipole moment -- carries 83.4%.  Orientation
+    is the largest single win available, by a factor of 2.6, and it is the
+    cheapest: 1200 oriented numbers over 400 parcels carry more than 3154 scalars
+    over subdivided ones (70.8%).  Every per-parcel field the anatomy prior
+    shipped before this was orientation-free, so the prior was supplying the
+    representation that measurement says is the weak one.
+    (`reports/transforms/resolution_pair_schaefer400.md` §3.1.  The same
+    comparison on the 68-parcel Desikan-Killiany atlas gives 5.6% against 51.7%,
+    a factor of 9.2; DK-68 is not the parcellation this model runs on.)
 
     The physics, and why ``coherence`` is the load-bearing number
     ------------------------------------------------------------

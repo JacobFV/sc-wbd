@@ -35,8 +35,9 @@ Three steps, and the first is where the physics lives:
    component of :math:`\\mathbf E` **along the cortical normal**.  A parcel's
    field magnitude is the wrong quantity: it is sign-blind, so it cannot tell
    a field driving into the cortex from one driving out of it, and those have
-   opposite physiological effect.  Agent Gauss measured orientation carrying
-   about 9x what parcel count carries; a magnitude discards all of it.
+   opposite physiological effect.  On the model's own 400 cortical parcels
+   orientation carries 2.6x what a scalar does, and more per degree of freedom
+   than any subdivision measured; a magnitude discards all of it.
 
 2. **Weight by coherence.**  A parcel spanning two banks of a sulcus has
    normals pointing opposite ways, and a uniform field drives them in

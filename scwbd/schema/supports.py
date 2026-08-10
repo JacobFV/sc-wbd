@@ -156,8 +156,8 @@ class ElementSpec(SchemaModel):
         """True when this element carries a direction a map could destroy.
 
         A scalar declaring ``projected_along`` is *derived* from an oriented
-        quantity but does not itself carry the orientation -- it is the 5.6 %
-        case.  It answers ``False`` on purpose.
+        quantity but does not itself carry the orientation -- it is the 32.1 %
+        case, against 83.4 % for the 3-vector.  It answers ``False`` on purpose.
         """
         return self.arity > 1
 
@@ -226,9 +226,10 @@ class Support(SchemaModel):
     ``n_elements`` counts the *elements*; it is **not** the dimension of the
     space.  The dimension is ``sum_i arity_i``, and ``element`` is what declares
     the arity.  See :mod:`scwbd.schema.carrier` for why that distinction is
-    load-bearing rather than pedantic: a per-parcel scalar carries 5.6 % of the
-    whitened EEG lead field and a per-parcel 3-vector carries 51.7 %, and until
-    ``element`` existed those were the same declared object.
+    load-bearing rather than pedantic: on Schaefer400x7 a per-parcel scalar
+    carries 32.1 % of the whitened EEG lead field and a per-parcel 3-vector
+    carries 83.4 %, and until ``element`` existed those were the same declared
+    object.
     """
 
     kind: SupportKind

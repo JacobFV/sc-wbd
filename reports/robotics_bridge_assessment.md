@@ -214,16 +214,16 @@ Two of these are not reconcilable by a transform.
 (`scwbd/transforms/resolution_pair.py:198-212`). A grid-merged display mesh
 carries no area per vertex and no index back into a full-resolution surface, so
 `R` cannot be built on it at all. Everything the resolution pair measures —
-`R P = I` to 4.44e-16, coverage 0.940, η = 0.0561 — is defined against that
-weighting.
+`R P = I` to 4.44e-16, coverage 0.932, η = 0.321 on the declared Schaefer400x7
+pair — is defined against that weighting.
 
 **Sulcal normals.** The content of a normal-oriented dipole model is that
 opposing sulcal banks have opposing normals. A marching-cubes isosurface of a T1
 at a tissue threshold largely does not resolve sulcal banks; its normals are the
 outward normals of a blob. Handing those to a lead field would produce a forward
 model whose orientation term is uninformative — and orientation is exactly what
-`reports/transforms/resolution_pair.md` diagnoses as the binding constraint (η
-rises from 0.0561 to 0.517 when a 3-vector per parcel is allowed).
+`reports/transforms/resolution_pair_schaefer400.md` diagnoses as the binding
+constraint (η rises from 0.321 to 0.834 when a 3-vector per parcel is allowed).
 
 Worth noting, because it is the third support in a page that already has two:
 the bridge's E-field is computed on neither of these. It lands on

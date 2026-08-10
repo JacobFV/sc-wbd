@@ -31,7 +31,7 @@ here and the entries below are the detail.
 | ISSUE-012 | **open** | the amortised posterior is calibrated and carries no information |
 | ISSUE-013 | **open** | `subject_specific_ar` is 100% fallback, so it is `ar16` |
 | ISSUE-014 | **open** | participant assignment unstable; `--quick` leaks trained participants |
-| ISSUE-015 | **open** | ~20 prose sites state DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6× |
+| ISSUE-015 | closed 2026-08-09 | ~20 prose sites stated DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6×; rewritten, rebuilt and republished |
 
 ---
 
@@ -355,8 +355,8 @@ that read the provenance string got a true answer to a different question.
 ### Scope
 
 This changes the operator, so it changes the model. It does **not** invalidate the
-orientation result (5.6% scalar vs 51.7% 3-vector): that was measured by 🧲 Gauss on a
-real BEM solution, not on this fallback. It does bound anything read off this
+orientation result (32.1% scalar vs 83.4% 3-vector on Schaefer400x7): that was
+measured by 🧲 Gauss on a real BEM solution, not on this fallback. It does bound anything read off this
 operator's *spatial* structure in runs 1 and 2 — the note now states which geometry
 was used, and `test_montage_adapter.py` asserts the real path is the one taken.
 
@@ -1028,9 +1028,10 @@ sequencing decision cannot be lost.
 
 ## ISSUE-015 — the orientation argument is quoted everywhere from the wrong parcellation
 
-**Status:** open. The measurement that discharges it exists
-(`reports/transforms/resolution_pair_schaefer400.json`, 2026-08-09); the prose
-rewrite and republish do not.
+**Status:** closed 2026-08-09. The prose was rewritten against
+`reports/transforms/resolution_pair_schaefer400.json`, the paper and site were
+rebuilt, and `docs/` was deployed to Cloudflare Pages. See "How it was
+discharged" below.
 **Owner of the fix:** whoever next touches the site and paper together — it is one
 sweep across eight modules, `ARCHITECTURE.md`, a site claim test and a paper
 figure, and splitting it produces exactly the stale-half state this register exists
@@ -1090,6 +1091,56 @@ once by a routine republish that nobody diffed. Landing the measurement, the gua
 and the pair switch without the republish leaves the repository in a state where
 the correct number is on disk and the wrong number is in prose — which is why this
 entry exists rather than a TODO.
+
+### How it was discharged
+
+The argument changed, not only the digits, and three conclusions had to go with
+the numbers:
+
+1. ***"More parcels buy almost nothing"* is false and is gone.** It came from
+   k-means-subdividing DK's 68 parcels to 542 elements for η = 0.162.
+   Schaefer400x7 reaches 0.321 with 400, and subdividing *those* reaches 0.708 at
+   3154. What survives is the per-degree-of-freedom form: 1200 oriented numbers
+   carry more (0.834) than 3154 subdivided scalars do (0.708).
+2. **🧠 Cajal's 1.29× is no longer offered as corroboration.** It bounds the
+   parcel *moment* surviving folding, not the lead-field energy a state can
+   express; the direct measurement puts the latter at 2.2× for an eightfold
+   subdivision. `reports/anatomy_families.md` §10.1 says so where the bound is
+   derived.
+3. **The 9× / 2.64× gap was never the sphere, and an argument rests on that.**
+   The analytic single-sphere fallback gives 2.64×; the BEM pair on
+   Schaefer400x7 gives 2.6×. Two runs of prose explained that gap as an artefact
+   of the sphere approximation — `reports/RUN2.md` records 🌊 Hodgkin as having
+   predicted it and been right, and the site said the argument for
+   vector-valued state "stands at roughly a quarter of the headline size until
+   we solve a real BEM with real cortical normals". Both were reading the
+   parcellation. This partly exonerates the analytic sphere and **withdraws one
+   stated argument for the individualised head-model work**: the sphere does not
+   understate orientation. The remaining arguments for that work — real cortical
+   normals, subject geometry, the condition number repaired in run 3 — are
+   untouched, and are the ones to make. `ARCHITECTURE.md` O-5 records the
+   withdrawal.
+
+Every remaining appearance of 5.6%, 51.7% or ~9× on the site, in the modules and
+in the reports now names Desikan-Killiany within the sentence, and
+`tests/release/test_site_claims.py` enforces both halves:
+`test_the_orientation_figures_are_the_declared_pairs_own` reads η out of
+`rp.MEASUREMENT_RELPATH` rather than hard-coding it, so switching
+`DECLARED_PARCELLATION` without rewriting the site fails; and
+`test_a_superseded_parcellations_figures_are_never_stated_bare` requires a
+parcellation named within 500 characters of any DK figure. Three mutations, each
+restored and re-run green, under `PYTHONDONTWRITEBYTECODE=1`:
+
+| mutation | caught by |
+| --- | --- |
+| landing page's 32.1% reverted to 5.6% | the bare-figure guard |
+| 83.4% drifted to 83.5% across four pages | the artefact-agreement guard |
+| "on a 68-parcel atlas" deleted, figures left | the bare-figure guard |
+
+The second is the one worth reading: the first mutation left the DK figure
+*attributed* elsewhere on the site, so only the proximity check caught it. A
+guard that only compared digits to the artefact would have passed a page that
+published DK's number as SC-WBD's — which is the defect this entry records.
 
 ---
 

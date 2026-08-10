@@ -18,8 +18,8 @@ the control: unbroken, the same path yields no R02 at all, so the fixtures above
 are firing on what they claim to be firing on.
 
 Note what is deliberately *not* wired to R02: the measured boundary result
-(the parcel support carries 5.6% of the whitened lead field, so the coarse view
-does not preserve the EEG observable).  That is a modelling fact about the
+(the parcel support carries 32.1% of the whitened lead field on Schaefer400x7,
+so the coarse view does not preserve the EEG observable).  That is a modelling fact about the
 artifact, not a violation of the map contract, and dressing it as a refusal
 would let a measurement masquerade as a rule.  It is recorded in the report and
 in ARCHITECTURE.md Sec. 5b instead.

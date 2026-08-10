@@ -26,8 +26,9 @@ input width, the width of a state plane -- is a statement about ``n_dof``, not
 about ``n_elements``.  ``LeadField`` being ``(n_channels, n_regions)`` is the
 special case ``arity == 1`` with the orientation silently spent; the free
 orientation case is ``(n_channels, n_regions, 3)`` and the two differ by a
-factor of 9 in retained lead-field energy (``reports/transforms/
-resolution_pair.md`` sec. 3.5: 5.6 % against 51.7 %).  A type that cannot tell
+factor of 2.6 in retained lead-field energy on the model's own parcellation
+(``reports/transforms/resolution_pair_schaefer400.md`` sec. 3.1: 32.1 % against
+83.4 %).  A type that cannot tell
 those apart cannot refuse the wrong one, which is why :class:`ElementSpec`
 exists and why ``Support`` now carries one.
 

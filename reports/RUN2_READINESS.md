@@ -26,6 +26,11 @@ measured **not** to validate at its boundary — the parcel support carries 5.6%
 of the whitened EEG lead field, residual 1.86 against a 1.92 noise sd/ch signal.
 **That FAIL is the filed result**, and it is a finding about what regional state
 *is*, not a blocker: orientation buys 9× what parcel count buys.
+[Corrected 2026-08-09, ISSUE-015: those figures are the pair measured on the
+68-parcel Desikan-Killiany atlas, not on Schaefer400x7, which is what run 2 ran
+on. On Schaefer400x7 the parcel support carries 32.1%, the residual is 1.47 sd/ch
+against 1.92, and orientation buys 2.6×. The boundary check still fails. Left in
+place because it is what was written at the time.]
 
 ---
 

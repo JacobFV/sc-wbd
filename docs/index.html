@@ -173,16 +173,19 @@ are, so activity in one region moves the regions it is actually connected to.</p
 they looked, and what they said about it — alongside what their brain did. Four
 different kinds of evidence about one response, all landing on one model.</p>
 
-<p>What each region carries matters more than how many regions there are.
-Summarising a parcel by one number retains <strong>5.6%</strong> of the whitened
-EEG lead field; carrying its net dipole moment — three numbers instead of one —
-retains <strong>51.7%</strong>. Splitting parcels into eight times as many
-scalar pieces reaches 16.2%.<span class="note"><input type="checkbox" id="index-n2" class="note-toggle"><label for="index-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>Measured on a real boundary-element forward
-solution, not on the analytic stand-in the trainer falls back to. Cortical
-folding cancels opposing dipoles within a parcel, which is why subdividing runs
-into a ceiling — a further 1.29&times; at most — while keeping the orientation
-does not. <a href="engineering/resolution-pair.html">The full table</a>.</span></span> So
-orientation buys roughly nine times what resolution buys, and the state is built
+<p>What each region carries counts for as much as how many regions there are.
+Summarising one of the model's 400 cortical parcels by a single number retains
+<strong>32.1%</strong> of the whitened EEG lead field; carrying its net dipole
+moment — three numbers instead of one — retains <strong>83.4%</strong>. Splitting
+the same parcels into eight times as many scalar pieces reaches 70.8%, and costs
+3,154 numbers to the moment's 1,200.<span class="note"><input type="checkbox" id="index-n2" class="note-toggle"><label for="index-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>Measured on a real boundary-element forward
+solution, not on the analytic stand-in the trainer falls back to, and measured on
+Schaefer400x7 — the parcellation this model runs on. Until August 2026 this page
+quoted 5.6% against 51.7%, a factor of nine: the same measurement on the
+68-parcel Desikan-Killiany atlas, which the model does not use. Both are real and
+only one is about SC-WBD.
+<a href="engineering/resolution-pair.html">The full table</a>.</span></span> So orientation
+is the largest single win available and the cheapest one, and the state is built
 to carry it.</p>
 
 <p>The prediction comes back with a confidence attached rather than as a bare

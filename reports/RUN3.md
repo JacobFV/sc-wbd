@@ -523,8 +523,9 @@ note was a literal written inside the fallback branch. It is now derived from
 which branch ran. Measured after the repair, the same 64-channel operator has
 condition number 193.8 on real geometry.
 
-This does not touch the orientation result (5.6% scalar vs 51.7% 3-vector),
-which was measured on a real BEM solution rather than on this fallback. It does
+This does not touch the orientation result (32.1% scalar vs 83.4% 3-vector on
+Schaefer400x7; 5.6% vs 51.7% on Desikan-Killiany), which was measured on a real
+BEM solution rather than on this fallback. It does
 bound anything read off runs 1 and 2 about this operator's *spatial* structure.
 
 ## The three launch checks

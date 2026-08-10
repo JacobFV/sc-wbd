@@ -60,7 +60,7 @@ def test_a_bipolar_row_is_exactly_the_difference_of_two_monopolar_rows(anat) -> 
     assert bip.matrix_vec is not None, (
         "the free-orientation gain must survive the derivation: a 3-vector "
         "regional moment observed through the scalar contraction is back in the "
-        "scalar regime, which is the 9x this project measured"
+        "scalar regime, which is the 2.6x this project measured"
     )
     assert torch.allclose(bip.matrix_vec[0], mono.matrix_vec[0] - mono.matrix_vec[1])
 

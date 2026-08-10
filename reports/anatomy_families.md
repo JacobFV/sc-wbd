@@ -392,10 +392,13 @@ collapsing the two would hide exactly that.
 ## 10. Addendum: per-parcel dipole orientation (2026-08-06)
 
 Added on the architect's ruling after 🧭 Gauss measured that a scalar-per-parcel
-support carries **5.6%** of the whitened lead field at 68 parcels and **16.2%**
-at 542, against **51.7%** for the three-component net dipole moment. Every
-per-parcel field this prior shipped before today was orientation-free, so the
-prior was supplying the representation the measurement calls the weak one.
+support carries **32.1%** of the whitened lead field on Schaefer400x7 against
+**83.4%** for the three-component net dipole moment. Every per-parcel field this
+prior shipped before today was orientation-free, so the prior was supplying the
+representation the measurement calls the weak one. (The ruling was made on the
+same comparison measured at 68 Desikan-Killiany parcels — 5.6% against 51.7%,
+16.2% subdivided to 542 — which is a different parcellation from this prior's;
+re-measured 2026-08-09, ISSUE-015. The ruling stands and its margin is smaller.)
 
 `scwbd.anatomy.geometry.parcel_orientation` → `ParcelOrientation`, reached from
 `BrainPrior.dipole_orientation()` and `AnatomyPrior.normal` /
@@ -426,15 +429,20 @@ Same computation across granularities, total area held fixed:
 | Schaefer400x7 | 400 | 256 | 0.851 | 77.8% |
 
 Quadrupling the parcel count recovers 61.9% → 77.8%, and the ceiling is 100%, so
-**at most a further 1.29× is available from subdividing beyond 400** — whereas
-Gauss measures orientation as worth about 9×. This is an independent geometric
-route to his result and it offers the mechanism: extra parcels help only by
-un-cancelling moment that folding destroyed *within* a parcel, and by 400 there
-is little left to un-cancel.
+**at most a further 1.29× of parcel moment is available from subdividing beyond
+400**. The mechanism: extra parcels un-cancel moment that folding destroyed
+*within* a parcel, and by 400 there is little left to un-cancel.
 
-Stated as corroboration, not proof: Gauss measured whitened lead-field variance
-captured; this measures geometric dipole cancellation. They are related, not
-identical.
+**This bounds moment, not observable energy, and it was read as if it bounded
+both** (corrected 2026-08-09, ISSUE-015). The sentence here used to end "whereas
+Gauss measures orientation as worth about 9×", offered as an independent
+geometric route to that result. Measured directly on the same 400 parcels,
+subdividing them ×8 to 3154 elements raises retained lead-field energy from 0.321
+to 0.708 — a factor of 2.2, above the 1.29× this section bounds — because a
+finer parcel also aligns better with the lead field's row space, which is a gain
+this computation does not see. The two quantities are related and not
+interchangeable, and the orientation ratio on this parcellation is 2.6×
+(`reports/transforms/resolution_pair_schaefer400.md` §3.1).
 
 ### 10.2 Caveats
 

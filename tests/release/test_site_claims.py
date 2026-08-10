@@ -54,29 +54,74 @@ def test_parcel_count_matches_the_anatomy_prior():
     assert n == 414, f"anatomy says {n}, the site says 414"
 
 
-def test_the_orientation_ratio_is_the_measured_one_not_the_escalated_one():
-    """Both ratios are real; they are different forward models.
+def _declared_pair() -> dict:
+    from scwbd.transforms import resolution_pair as rp
 
-    ~9x (0.056 -> 0.517) is measured on a **real BEM lead field**, 7498
-    source-space dipoles into 68 parcels.  2.64x (0.3795 -> 1.0) is what our own
-    **analytic single-sphere** forward model gives, where near-radial sources
-    mean the scalar contraction already captures 38%.  Quoting the larger one as
-    ours would be the more exciting version of a result we did not get, so any
-    page citing the 9x figure must also carry the 2.64x.
+    art = ROOT / rp.MEASUREMENT_RELPATH
+    if not art.is_file():
+        pytest.skip("no declared resolution-pair measurement on disk")
+    return json.loads(art.read_text())
 
-    **This test skipped silently for weeks.** It searched for "9x" and "9×"; the
-    page says "nine times" and "nine-fold". A guard that only knows the spelling
-    its author thought of is the naming defect wearing a test's clothes -- and
-    the skip made it look like the claim simply was not on the site.
+
+def test_the_orientation_figures_are_the_declared_pairs_own():
+    """The site's eta figures must come from the pair the model declares.
+
+    They did not, for two runs.  ``reports/transforms/resolution_pair.json``
+    measures ``cortical_source_dipole <= parcel`` on the 68-parcel
+    Desikan-Killiany atlas: 5.6% for a scalar per parcel against 51.7% for a
+    3-vector, a factor of 9.2.  SC-WBD runs Schaefer400x7, where the same pair
+    on the same head and the same BEM lead field gives 32.1% against 83.4%, a
+    factor of 2.6.  Both measurements are real; only one is about this model,
+    and the site published the other one (ISSUE-015).
+
+    So the figures are read out of ``rp.MEASUREMENT_RELPATH`` -- whichever
+    artefact ``DECLARED_PARCELLATION`` names -- rather than written here.
+    Switching the declared parcellation and not the site fails this test, which
+    is the coupling that was missing.
     """
+    d = _declared_pair()
+    scalar = d["lead_field_energy_retained"]
+    vector = d["specificity"]["net_dipole_moment"]["lead_field_energy_retained"]
     text = _all_site_text()
-    NINE = re.compile(r"\b9(\.0)?\s*[x×]|\bnine[- ](?:fold|times)|\bnine times\b", re.I)
-    if not NINE.search(text) and "2.64" not in text:
-        pytest.skip("the site does not cite an orientation ratio")
-    if NINE.search(text):
-        assert "2.64" in text, (
-            "the site cites the ~9x BEM ratio without the 2.64x measured on our "
-            "own forward model"
+    for what, value in (("scalar per parcel", scalar), ("3-vector per parcel", vector)):
+        pct = f"{100 * value:.1f}%"
+        assert pct in text, (
+            f"the declared pair retains {pct} for a {what} and no page says so; "
+            f"the site is quoting some other measurement"
+        )
+
+
+def test_a_superseded_parcellations_figures_are_never_stated_bare():
+    """5.6% and 51.7% may appear -- attributed, and only attributed.
+
+    The defect ISSUE-015 records is not a wrong number.  Every affected sentence
+    quoted a true measurement of the Desikan-Killiany atlas as a fact about
+    SC-WBD.  A figure whose parcellation is unstated is the failure mode, so the
+    guard is proximity to an attribution rather than absence of the digits.
+
+    An earlier version of this test searched only for "9x" and "9×" while the
+    page said "nine times" and "nine-fold", and skipped silently for weeks.  The
+    pattern below carries every spelling that has appeared on this site.
+    """
+    d = _declared_pair()
+    dk = d["specificity"]["aparc"]
+    superseded = [
+        f"{100 * dk['lead_field_energy_retained']:.1f}%",  # 5.6%
+        "51.7%",
+        "51.7 %",
+    ]
+    pattern = "|".join(re.escape(s) for s in superseded)
+    pattern += r"|\b9(\.\d)?\s*[x×]|\bnine[- ](?:fold|times)"
+    ATTRIBUTED = re.compile(r"desikan|dk-68|68[- ]parcel|68 parcels", re.I)
+    text = _all_site_text()
+    found = list(re.finditer(pattern, text, re.I))
+    if not found:
+        pytest.skip("the site no longer cites the Desikan-Killiany pair")
+    for m in found:
+        window = text[max(0, m.start() - 500) : m.end() + 500]
+        assert ATTRIBUTED.search(window), (
+            f"{m.group(0)!r} is on the site with no parcellation named within "
+            f"500 characters: ...{text[max(0, m.start() - 120) : m.end() + 120]}..."
         )
 
 
