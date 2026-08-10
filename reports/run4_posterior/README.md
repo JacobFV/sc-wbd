@@ -1,5 +1,16 @@
 # Picking run 4's posterior learning rate by measurement
 
+> **THE TABLE BELOW IS SUPERSEDED AND ITS HEADLINE NUMBER IS TOO HIGH.** It was
+> measured on a validation set taken as the first 512 windows in file order —
+> one or two shards, so one or two simulator backends. Re-measured on a shuffled
+> set that spans shards, `layer_v1` at 1.0e-3 gives **R² +0.644, not +0.800**,
+> and held-out `−log q` **8.445, not 5.324** — worse than the 4.0e-6 control's
+> 7.866 despite far better R², which is overconfidence, not recovery. The
+> superseding numbers are in `sweep_highlr.json` and the rewrite below it.
+> Left in place rather than deleted because the control-reproduces-run-3 result
+> was measured here and still stands.
+
+
 ISSUE-012 found that run 3's amortised posterior returns the prior: `posterior_r2`
 ≤ 0.001 on all six parameters, posterior sd within 3% of the prior's, and
 shuffling the conditioning across the batch moving `−log q` by 0.001–0.003 nats.
