@@ -32,7 +32,16 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--checkpoint", default="checkpoints/scwbd-003/last.pt")
     p.add_argument("--cards", default="configs/curriculum/source_cards")
-    p.add_argument("--out", default="reports/scwbd-003_derived.json")
+    p.add_argument(
+        "--out",
+        default=None,
+        help="default: reports/<run_name>_derived.json, from the CHECKPOINT's run_name",
+    )
+    p.add_argument(
+        "--train-log",
+        default=None,
+        help="default: reports/training/<run_name>_train.jsonl, from the checkpoint",
+    )
     a = p.parse_args(argv)
 
     ck_path = REPO / a.checkpoint
@@ -43,6 +52,24 @@ def main(argv: list[str] | None = None) -> int:
         )
     ck = torch.load(ck_path, map_location="cpu", weights_only=False)
     extra = ck.get("extra") or {}
+
+    # EVERY per-run path comes from the checkpoint's own run_name.
+    #
+    # This script was written for run 3 and hard-coded three: the training log,
+    # the output file and the banner. Pointed at run 4's checkpoint by
+    # `make release-004-derived` it would have read RUN 3's log, OVERWRITTEN run
+    # 3's published `reports/scwbd-003_derived.json`, and printed "SC-WBD-003"
+    # over run 4's numbers. Same class as ISSUE-010: a command for one run
+    # writing a production path belonging to another.
+    run_name = ((ck.get("config") or {}).get("train") or {}).get("run_name") or ""
+    if not run_name:
+        raise SystemExit(
+            f"{ck_path} records no train.run_name, so this script cannot tell which "
+            "run's log to read or which file to write. It will not guess: guessing "
+            "is how run 3's derived report would have been overwritten by run 4's."
+        )
+    out_path = REPO / (a.out or f"reports/{run_name}_derived.json")
+    log_path = REPO / (a.train_log or f"reports/training/{run_name}_train.jsonl")
     metrics = ck.get("metrics") or {}
 
     contributed = sorted(extra.get("contributed_sources") or [])
@@ -58,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
     # Union, not replacement: the log is a transcript and can be shorter than
     # the run, so neither source can be trusted alone to be complete.
     log_seen: set[str] = set()
-    log = REPO / "reports/training/scwbd-003_train.jsonl"
+    log = log_path
     if log.is_file():
         marker_to_source = {
             "eegmmidb_real_eeg_nll": "eegmmidb_real",
@@ -87,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     drive = extra.get("tms_drive")
     params = extra.get("parameter_report") or {}
 
-    print(f"=== SC-WBD-003, read from {a.checkpoint} ===")
+    print(f"=== {run_name}, read from {a.checkpoint} ===")
     print(f"step               {ck.get('step')}")
     print(f"stage              {ck.get('stage')}")
     print(f"completed stages   {metrics.get('completed_stages')}")
@@ -168,10 +195,11 @@ def main(argv: list[str] | None = None) -> int:
             for k in rep["kinds"]
         },
     }
-    out = REPO / a.out
+    out = out_path
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    print(f"\nwrote {a.out}, reports/attachment_kinds.json, reports/attachment_kinds.md")
+    print(f"\nwrote {out.relative_to(REPO)}, reports/attachment_kinds.json, "
+          "reports/attachment_kinds.md")
     return 0
 
 
