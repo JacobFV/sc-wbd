@@ -64,6 +64,47 @@ datasets backend-stratified where the sweep's are merely shuffled. So the
 posterior's calibration is **unknown** going in, and the model card says so
 rather than the run discovering it afterwards.
 
+## Peak memory, ALL SIX STAGES — measured, and it moved the cap
+
+The cost block below measures **T1's loss set**, and says so: *"T4 admits the
+simulator as well and is not this loss set … a planning number, not a
+measurement of the run."* That sentence turned out to be the most useful line in
+this file.
+
+The pre-launch smoke — `scripts/launch_run4.sh` step 5, run for the first time
+on 2026-08-10 — walked all six stages at 4 steps each and **T4 died at the 56 GB
+cap**, wanting 352 MiB more. In a real run that is ~5,400 steps and **~14 hours**
+in. Re-measured with the cap lifted to 75 GB and a watchdog armed at 10 GB
+`MemAvailable`, `gpu_reserved_gb` at each stage's first step:
+
+| stage | GB reserved |
+| --- | ---: |
+| `T1_measured_founding` | 47.41 |
+| `T2_calibration` | 49.17 |
+| `T3_population_prior` | 49.17 |
+| `T4_simulator` | 57.98 |
+| **`T5_measured_return`** | **59.95** |
+| `T6_individual` | 59.95 |
+
+**The peak is T5, not T4.** A cap fitted to T4's 58 GB would have died one stage
+later — the same mistake that produced the blocker, made a second time. This is
+the whole argument for measuring every stage rather than the one that happens to
+be convenient.
+
+`cuda_reserve_gb` is therefore **56 → 80**: 33% headroom over 59.95, on a
+**121.6 GB unified** pool, leaving 41.6 GB host-side. Unified matters — GPU and
+host share one pool, `systemd MemoryMax` does not bound CUDA, and reporting it
+as "RAM plus GPU" is what OOM'd this box. During the measurement `MemAvailable`
+never fell below 46 GB.
+
+The ceiling is raised, not removed. It remains the only thing bounding the
+caching allocator, and it is what stopped the two-frame BOLD arm from taking the
+machine down.
+
+Caveat carried forward: these are step-1 figures from a 4-step-per-stage smoke.
+Reserve can drift upward across thousands of steps, which is what the 33% is
+for; run 3's full 29-hour run peaked at 46.13 GB against a 56 GB cap.
+
 ## Cost of the new BOLD path — MEASURED
 
 ISSUE-008's fix rolls the neural clock for the duration a BOLD frame actually

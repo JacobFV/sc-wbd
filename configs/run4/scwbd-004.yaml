@@ -233,12 +233,38 @@ train:
   # rather than inherited: see the cost block at the top of this file. The GB10
   # has ONE ~121 GB unified pool and `systemd MemoryMax` does not bound CUDA
   # allocations, so this is the only ceiling on the caching allocator.
-  # 56 GB. Measured peak 52.54, so 6% headroom -- tighter than run 3's 30% and
-  # deliberately not raised. Raising it would not buy a larger batch; it would
-  # let the caching allocator grow toward the OOM that killed this machine twice.
-  # The cap is what stopped the 2-frame arm from taking the box down, and it did
-  # its job: the process died and nothing else did.
-  cuda_reserve_gb: 56.0
+  # 56 -> 80 GB, and this is the one number in this file set from a MEASUREMENT
+  # OF ALL SIX STAGES rather than of T1.
+  #
+  # 56 was fitted to a cost run that measured T1's loss set only, and this file
+  # said so: "T4 admits the simulator as well and is not this loss set ... a
+  # planning number, not a measurement of the run." The pre-launch smoke then
+  # measured the run, and T4 died at the cap -- it wanted 352 MiB more than 56
+  # GB, about 5,400 steps and ~14 h into a real run.
+  #
+  # Re-measured with the cap lifted, one smoke walking all six stages
+  # (reports/training/, `gpu_reserved_gb` at each stage's step 1):
+  #
+  #     T1_measured_founding   47.41 GB
+  #     T2_calibration         49.17 GB
+  #     T3_population_prior    49.17 GB
+  #     T4_simulator           57.98 GB
+  #     T5_measured_return     59.95 GB   <- PEAK
+  #     T6_individual          59.95 GB
+  #
+  # The peak is T5, NOT T4. A cap fitted to T4's 58 would have died one stage
+  # later -- which is the same mistake that produced this blocker, made twice.
+  #
+  # 80 is 33% headroom over 59.95. The machine is 121.6 GB and the pool is
+  # UNIFIED -- GPU and host share it, `systemd MemoryMax` does not bound CUDA,
+  # and misreporting it as "RAM plus GPU" is what OOM'd this box. 80 leaves 41.6
+  # GB host-side; during the measurement (cap 75) MemAvailable never fell below
+  # 46 GB with a watchdog armed at 10.
+  #
+  # Still a real ceiling, which is the point: it is the only thing bounding the
+  # caching allocator, and it is what stopped the 2-frame arm from taking the
+  # box down. Raised against evidence, not removed.
+  cuda_reserve_gb: 80.0
   # 46 h. 14,600 steps at the measured 9.30 s/step is 37.7 h, and that rate is
   # T1's applied to every stage -- T4 admits the simulator as well and was not
   # measured. Run 3 finished 13,400 steps inside 30 h on a path whose BOLD term
