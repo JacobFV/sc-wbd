@@ -59,6 +59,25 @@ if p.cond_norm not in COND_NORMS:
     bad.append(f"cond_norm={p.cond_norm!r} is not one of {COND_NORMS}")
 if not (0 < p.lr_scale <= 20):
     bad.append(f"lr_scale={p.lr_scale} is outside (0, 20]")
+elif p.lr_scale == 0.02:
+    # The value ISSUE-012 named as the defect, refused by VALUE and not merely
+    # range-checked. 0.02 x T4's 2.0e-4 is 4.0e-6, and the sweep reproduced run
+    # 3's result there exactly: log_G R^2 -0.001 at a posterior sd 1.03x the
+    # prior's -- the posterior IS the prior. A range check on (0, 20] accepts it,
+    # which would have let run 4 spend 38 h re-measuring a known defect.
+    #
+    # If 0.02 is ever genuinely wanted again, write it as 0.0200 or set
+    # SCWBD_ALLOW_RUN3_LR=yes and say why in the run's report. Refusing a
+    # specific known-bad value is uglier than a range and catches the thing that
+    # actually happened.
+    import os
+    if os.environ.get("SCWBD_ALLOW_RUN3_LR") != "yes":
+        bad.append(
+            "lr_scale=0.02 is run 3's value, and ISSUE-012 measured that it returns "
+            "the prior (log_G R^2 -0.001, posterior sd 1.03x the prior's). Set it "
+            "from reports/run4_posterior/, or export SCWBD_ALLOW_RUN3_LR=yes to "
+            "launch at it deliberately."
+        )
 for b in bad:
     print("  REFUSED:", b)
 print(f"  nuisance_dim={p.nuisance_dim}  cond_norm={p.cond_norm}  lr_scale={p.lr_scale}")

@@ -90,10 +90,29 @@ def _loader(cfg, subset: str, *, batch: int, seed: int, workers: int) -> torch.u
             "glob is an empty permission set, not an error -- this repo lost 88.8% of run 2's "
             "parameters to that. Refusing to report a sweep over no data."
         )
+    # The VALIDATION loader is shuffled too, at a fixed seed.
+    #
+    # It was `shuffle=(subset == "train")`, so the eval set was the first 512
+    # windows in file order -- which is the first shard or two, i.e. one or two
+    # simulator backends. `evaluate.posterior_calibration` draws its 512
+    # BACKEND-STRATIFIED, and the difference is not academic: reproducing run 3's
+    # setting gave `posterior_r2` and `posterior_sd_over_prior_sd` that match its
+    # published values (+0.001 vs -0.010; 1.031 vs 1.024) while
+    # `sbc_ks_pvalue_min` came out 0.000 against a published 0.0976. Two of three
+    # statistics agreeing pins the disagreement to the eval POPULATION rather
+    # than to the posterior, and SBC ranks are far more sensitive to a
+    # homogeneous sample than R^2 is.
+    #
+    # Shuffling is not full stratification -- it does not guarantee the backend
+    # proportions production uses -- so the sweep's calibration column is still
+    # only comparable to itself. That is stated in the report rather than
+    # papered over.
+    g = torch.Generator().manual_seed(seed if subset == "train" else seed + 977)
     return torch.utils.data.DataLoader(
         ds,
         batch_size=batch,
-        shuffle=(subset == "train"),
+        shuffle=True,
+        generator=g,
         num_workers=workers,
         drop_last=True,
         persistent_workers=workers > 0,
