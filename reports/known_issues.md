@@ -1212,3 +1212,35 @@ deriving it from the `posterior_r2` already in each. **No measured value in any 
 changed or recomputed.** Run 1's `evaluation.json` is the only one that declares informative
 (`ei_global` 0.273); run 2's three files are uninformative on every parameter, so this is not new in
 run 3 — it is the first run whose calibration was good enough to hide it.
+
+---
+
+## Suite ground truth, 2026-08-09
+
+Measured on a QUIET TREE: all four background agents landed, nothing else editing
+source, no mutation sweep in flight. Every earlier suite count this session came
+from a window where an agent was mutation-testing shared code, and by this
+repo's own rule those were not evidence. This one is.
+
+`PYTHONDONTWRITEBYTECODE=1 pytest tests -q -p no:randomly`, ~35 min.
+
+**Three failures, and all three are guards that are deliberately red:**
+
+| test | issue |
+| --- | --- |
+| `test_subject_specific_baseline_is_not_silently_its_pooled_fallback` | ISSUE-013 |
+| `test_participant_assignment_is_stable_under_a_changed_participant_set` | ISSUE-014 |
+| `test_quick_mode_does_not_silently_change_the_holdout` | ISSUE-014 |
+
+Nothing else fails. Each of the three states in its own docstring that it is a
+live finding and meant to be red, and names the sequence that discharges it.
+
+Where the day started, for comparison: 5 red in `test_family_state`, a COLLECTION
+error in `tests/schema` taking the whole directory with it, 3 in
+`tests/curriculum`, 26 in `tests/evaluation_audit`, 1 in `tests/release`. Of the
+26, eight were stale — asserting defects that had already been fixed — and one
+was live and reached a published number (the `SimCorpus` global-RNG defect that
+scored every ablation arm on different windows).
+
+A red run of the three above is the correct state and must not be "fixed" by
+weakening them. If a FOURTH failure appears, it is new.
