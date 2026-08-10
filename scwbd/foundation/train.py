@@ -555,6 +555,39 @@ class FoundationTrainer:
                   "torch-level gradient permissions", flush=True)
         return rep
 
+    def note_ungranted(self, stage_name: str, specs: Mapping[str, SourceSpec]) -> list[str]:
+        """Admitted sources this stage grants NOTHING, recorded and returned.
+
+        The intersection of a card's ``A_k`` with the stage allowlist can be
+        empty, and an empty permission set is an error to nothing:
+        ``GradientGate.grads`` returns ``{}`` without calling autograd. Such a
+        source costs a full forward pass, contributes a loss VALUE that
+        renormalises every other source's mixture weight, and cannot move a
+        parameter.
+
+        Measured on run 4's ``T6_individual``: it admits tier 1 whole -- there is
+        no per-source admission -- while granting only ``individualizer.*`` and
+        the observation nuisance, so ``ds002336_real`` ran a 250-step Balloon
+        rollout on every step and logged ``real_bold_nll`` on every step against
+        an empty permission set.
+
+        Skipping changes the mixture's renormalisation, which is a change to the
+        objective, so the skip is written into ``_absent_admitted`` and printed
+        rather than taken quietly. A separate method so the recording can be
+        asserted without a stage-length run.
+        """
+        ungranted = sorted(sid for sid, s in specs.items() if not s.gradient_permission)
+        if ungranted:
+            prior = set(self._absent_admitted.get(stage_name, ()))
+            self._absent_admitted[stage_name] = sorted(prior | set(ungranted))
+            print(
+                f"[curriculum] {stage_name}: admitted with an EMPTY permission set, so "
+                f"skipped: {ungranted}. Their cards and this stage's tier_permissions "
+                "do not overlap; they would cost a rollout and grant nothing.",
+                flush=True,
+            )
+        return ungranted
+
     def bold_due(self, step: int) -> bool:
         """Does the measured BOLD term run on this optimiser step?
 
@@ -2024,6 +2057,24 @@ class FoundationTrainer:
             flush=True,
         )
         specs = self.stage_sources(stage, admission)
+        # ADMITTED AND GRANTED NOTHING. The intersection of a card's A_k with
+        # this stage's allowlist can be empty, and an empty permission set is
+        # not an error to `fnmatch` -- `GradientGate.grads` returns `{}` without
+        # calling autograd at all. The source then costs a full forward pass,
+        # produces a loss VALUE that enters the mixture total and renormalises
+        # every other source's weight, and produces no gradient.
+        #
+        # Measured on run 4's `T6_individual`, which admits tier 1 whole while
+        # granting only `individualizer.*` and the observation nuisance:
+        # `ds002336_real` ran a 250-step Balloon rollout on every step, logged
+        # `real_bold_nll` on every step, and could not move one parameter.
+        #
+        # Skipped and NAMED, not silently dropped: dropping it changes the
+        # mixture's renormalisation, which is a change to the objective, so it
+        # has to be visible in the log and in `_absent_admitted`. This is the
+        # "exercised versus contributed" distinction the attachment report
+        # exists for, one level earlier.
+        ungranted = self.note_ungranted(stage.name, specs)
         params = list(self.model.parameters()) + list(self.posterior.parameters())
         modules: dict[str, nn.Module] = {"model": self.model, "posterior": self.posterior}
         # The pulse's own parameters. Registered under `tms_drive` so a card has
@@ -2087,8 +2138,8 @@ class FoundationTrainer:
         sched = torch.optim.lr_scheduler.OneCycleLR(
             opt,
             max_lr=[g["lr"] for g in groups],
-            total_steps=max(stage.steps, 2),
-            pct_start=min(0.3, stage.warmup / max(stage.steps, 1)),
+            total_steps=max(stage.steps, ONE_CYCLE_MIN_STEPS),
+            pct_start=_one_cycle_pct_start(stage.warmup, stage.steps),
         )
         self.model.train()
         self.posterior.train()
@@ -2106,7 +2157,11 @@ class FoundationTrainer:
                 losses.update(sl)
                 diag.update(sd)
             losses.update(self.anat_losses(admission))
-            if self.real_train is not None and admission.admits_measured(self.sources):
+            if (
+                self.real_train is not None
+                and admission.admits_measured(self.sources)
+                and REAL_LOSS_KEY not in ungranted
+            ):
                 try:
                     rl, rd = self.real_losses(next(self.real_loader), stage)
                     losses.update(rl)
@@ -2138,8 +2193,11 @@ class FoundationTrainer:
                 bold_ids = [
                     sid
                     for sid in admission.source_ids
-                    if getattr(self.sources.get(sid), "modality", "") == "bold"
-                    or sid.startswith("ds002336")
+                    if (
+                        getattr(self.sources.get(sid), "modality", "") == "bold"
+                        or sid.startswith("ds002336")
+                    )
+                    and sid not in ungranted
                 ]
                 if bold_ids:
                     try:
@@ -2160,6 +2218,8 @@ class FoundationTrainer:
                 for sid, loader in getattr(self, "eeg_loaders", {}).items():
                     if sid == "eegmmidb_real" or sid not in admission.source_ids:
                         continue
+                    if sid in ungranted:
+                        continue
                     try:
                         rl, rd = self.real_losses(next(loader), stage, source_id=sid)
                         losses.update(rl)
@@ -2170,6 +2230,8 @@ class FoundationTrainer:
                 for sid, loader in getattr(self, "bold_loaders", {}).items():
                     if sid == "ds002336_real" or sid not in admission.source_ids:
                         continue
+                    if sid in ungranted:
+                        continue
                     try:
                         bl, bd = self.real_bold_losses(next(loader), stage, source_id=sid)
                         losses.update(bl)
@@ -2178,7 +2240,11 @@ class FoundationTrainer:
                     except StopIteration:  # pragma: no cover
                         pass
                 bl_ = getattr(self, "behaviour_loader", None)
-                if bl_ is not None and "ds000117_behaviour" in admission.source_ids:
+                if (
+                    bl_ is not None
+                    and "ds000117_behaviour" in admission.source_ids
+                    and "ds000117_behaviour" not in ungranted
+                ):
                     try:
                         hl, hd = self.behaviour_losses(next(bl_), stage)
                         losses.update(hl)
@@ -2187,7 +2253,11 @@ class FoundationTrainer:
                     except StopIteration:  # pragma: no cover
                         pass
                 pl_ = getattr(self, "perturb_loader", None)
-                if pl_ is not None and "ds004024_perturb" in admission.source_ids:
+                if (
+                    pl_ is not None
+                    and "ds004024_perturb" in admission.source_ids
+                    and "ds004024_perturb" not in ungranted
+                ):
                     try:
                         ql, qd = self.perturb_losses(next(pl_), stage)
                         losses.update(ql)
@@ -2713,6 +2783,49 @@ def _glob_overlap(a: str, b: str) -> bool:
     return fnmatch.fnmatch(a.rstrip("*").rstrip("."), b.rstrip("*").rstrip(".")) or fnmatch.fnmatch(
         b.rstrip("*").rstrip("."), a.rstrip("*").rstrip(".")
     ) or a.split(".")[0] == b.split(".")[0]
+
+
+#: Fewest steps for which OneCycleLR has ANY valid ``pct_start``.
+#:
+#: Its first phase ends at ``pct_start * total_steps - 1``, so a non-degenerate
+#: warmup needs ``pct_start >= 2/n`` and a non-degenerate anneal needs
+#: ``pct_start <= (n-1)/n``. At ``n = 2`` those cross and no value works.
+#: Established by enumeration against torch 2.13, not by reading the source.
+ONE_CYCLE_MIN_STEPS = 3
+
+
+def _one_cycle_pct_start(warmup: int, steps: int) -> float:
+    """``pct_start`` for OneCycleLR that cannot make a zero-length phase.
+
+    `OneCycleLR` divides by the length of each phase, so a `pct_start` that puts
+    the warmup and anneal boundaries on the same step raises
+
+        ZeroDivisionError: float division by zero
+
+    from inside `get_lr`, before the first batch. Measured on a 6-step smoke of
+    run 4's `T6_individual`: `min(0.3, 1/6)` put both boundaries on step 1.
+
+    Production stages cannot reach it -- 1,200 steps with a 60-step warmup is
+    0.05 -- which is why it is worth guarding rather than why it is not.
+    CLAUDE.md and HANDOFF-004 both ask for a SHORT bounded run before a launch
+    and before any cost claim, and a scheduler that crashes only on short runs
+    makes the precondition harder to run than the thing it precedes.
+
+    The valid range is ``2/n`` to ``(n-1)/n``, ENUMERATED against torch rather
+    than derived: the first attempt used ``1/n``, which is off by one and still
+    threw at every step count including 600. `tests/foundation/
+    test_a_short_stage_still_schedules.py` builds and steps a real scheduler
+    instead of asserting the arithmetic.
+
+    Only the LOWER bound is applied. The upper one was here and its mutation
+    test could not make it fail: ``raw`` is capped at 0.3, and ``(n-1)/n >= 2/3``
+    for every ``n >= ONE_CYCLE_MIN_STEPS``, so the clamp could never bind. A
+    branch that cannot be exercised is decorative, and this file has a register
+    of those.
+    """
+    n = max(int(steps), ONE_CYCLE_MIN_STEPS)
+    raw = min(0.3, max(int(warmup), 0) / n)
+    return float(max(raw, 2.0 / n))
 
 
 def glob_intersection(card: str, stage: str) -> str | None:

@@ -79,6 +79,56 @@ already runs at batch 4 — `max(4, data.batch // 8)` — while the others run a
 and dropping it further buys the horizon without touching them. It is a code
 change and 004 does not make it.
 
+## T6 — measured, and it found a source running for nothing
+
+12 steps of the individualisation stage, the same harness. The person effect is
+built and fitted:
+
+    [individualizer] 191 participants, 266 sessions, theta_dim=6
+
+191 = 109 eegmmidb + 78 sleep-edfx + 2 + 2, which is the index spanning every
+corpus rather than eegmmidb alone. From the checkpoint's own
+`moved_since_init`, after 12 steps:
+
+| module | moved | frozen |
+| --- | ---: | ---: |
+| `individualizer` | 5 | 1 |
+| `eeg` | 6 | 5 |
+| `eeg_montages` | 18 | 15 |
+| `family_local` | 0 | 137 |
+| `bold` | 0 | 8 |
+
+`z_person` and `z_session` both leave zero. The one frozen individualizer
+tensor is `_alpha_raw`, inert by construction at `n_groups=1` — no corpus here
+ships group labels, and a group effect nothing indexes is a declared-and-frozen
+tensor. `family_local` 0/137 is the frozen population the stage declares.
+`unfingerprinted` is empty, so nothing reports as moved for want of a recorded
+initialisation.
+
+**Two admitted sources were granted nothing and ran anyway.** T6 admits tier 1
+as a whole — admission is per tier, there is no per-source switch — while
+granting only `individualizer.*` and the observation nuisance. `ds002336_real`
+and `ds000117_behaviour` overlap that in nothing, and an empty permission set is
+an error to nothing: `GradientGate.grads` returns `{}` without calling autograd.
+So `ds002336_real` ran a 250-step Balloon rollout on every step, logged
+`real_bold_nll` on every step, entered the mixture total, renormalised every
+other source's weight, and could not move one parameter.
+
+`note_ungranted` now names them and the loss call sites skip them:
+
+    [curriculum] T6_individual: admitted with an EMPTY permission set, so
+    skipped: ['ds000117_behaviour', 'ds002336_real'].
+
+| T6 | s/step | peak reserved |
+| --- | ---: | ---: |
+| before | 5.64 | 52.50 GB |
+| after | 3.52 | 30.13 GB |
+
+Skipped and NAMED, into `_absent_admitted`, because dropping a term changes the
+mixture's renormalisation and that is a change to the objective. It is the
+"exercised versus contributed" distinction the attachment report exists for, one
+stage earlier than the report can see it.
+
 ## What the measurement does not cover
 
 Stated rather than left to be assumed:
@@ -86,8 +136,8 @@ Stated rather than left to be assumed:
 * **T4 was not measured.** It admits the simulator as well, and the 46 h wall
   budget is T1's rate applied to all 14,600 steps. That is a planning number and
   not a measurement of the run.
-* **T6 was not measured.** It admits the same seven sources as T1 with a
-  narrowed optimiser, so it should be no more expensive; nothing checked.
+* **T6's step time was measured under contention** (6 competing processes) and
+  is an upper bound. Its peak reserve is per-process and is not.
 * **One foreign pytest ran in another repository during the timed steps.** The
   harness samples competing processes and records them, so every step time here
   is an upper bound. The two BOLD-on arms were measured under different
