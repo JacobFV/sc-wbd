@@ -1662,6 +1662,28 @@ ds000117_behaviour  0.0045
 that is 96% not-BOLD, so it converges toward what the EEG-like sources want. The
 BOLD head reads that same latent state.
 
+### It reproduces across two independent launches
+
+The relaunch tracks the aborted one closely. Over the 18 logged steps they share
+(1–340), same seed and same config but separate processes, separate data
+ordering and a different machine state:
+
+```
+                  relaunch   first launch
+real_bold_nll     median 2.27   2.64      last 4.18   5.05
+eeg_nll           median 1.87   1.76
+```
+
+Both start at exactly 1.987, both hold flat to ~step 100, both climb from ~120,
+and both produce one large isolated EEG transient early in T1 that fully recovers
+(21.23 at step 120 → 2.38; 34.41 at step 140 → 5.78 → 2.04).
+
+So the degradation is a **property of the configuration, not of a trajectory**.
+That matters for what can be claimed: a single diverging run invites "it was a bad
+seed", and two do not. It also means the first launch's later steps are a
+reasonable forecast for this one — it reached 12.96 by step 400 and was still
+climbing.
+
 ### Run 3 could not have found this
 
 ISSUE-008 meant run 3's measured BOLD path never integrated the Balloon ODE, so
