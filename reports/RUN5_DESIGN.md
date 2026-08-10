@@ -1,0 +1,111 @@
+# Run 5, designed from run 4's evidence rather than from run 4's disappointment
+
+Written 2026-08-10, while run 4 is training, because the evidence this rests on is
+four diagnostic arms that will be much harder to reconstruct later. It is a
+DESIGN NOTE, not a handoff: run 4 has not produced results, and nothing here
+should be started before it does.
+
+Run 4's stated purpose was a haemodynamic fMRI likelihood. It got one, and the
+first thing a working one revealed is that it loses 23 : 1. That is the finding
+run 5 is about.
+
+---
+
+## What is established, and how
+
+Four arms, matched LR schedules, same seed. Configs in `configs/run4/probes/`;
+arm A is the run itself, log preserved in `reports/run4_aborted/`.
+
+| arm | intervention | `real_bold_nll` |
+| --- | --- | --- |
+| A | as launched | 3.21 @160, **12.96 @400** |
+| B | five Balloon-Windkessel ODE constants frozen | 3.70 @160 — no better |
+| C | shared trunk frozen, observation heads live | **1.92 @160, 1.86 @200, falling** |
+| D | `bold.*` in its own group at 5× the stage LR | median 2.11, **max 14.24** — oscillates |
+
+Three conclusions, each carrying its own refutation:
+
+1. **It is not the ODE constants.** Arm B freezes exactly the five physical
+   parameters and the climb is unchanged. The obvious hypothesis — a
+   residual-stack learning rate applied to ODE rate constants — is wrong, and it
+   was the one that looked right.
+2. **It is the trunk.** Arm C holds the shared latent state still and the BOLD
+   head *improves*. The head models this data perfectly well.
+3. **Chasing the trunk faster is not the fix.** Arm D improves the median and
+   destabilises: better tracking with periodic blow-ups is a rate above the
+   stable region, not a solution.
+
+The cause is a **gradient-share imbalance**. `per_source_contribution` in T1:
+
+```
+eegmmidb_real       0.7021
+sleepedf_real       0.2154
+ds002336_real       0.0413   <- the only haemodynamic source
+ds004024_rest_real  0.0147
+ds000117_real       0.0147
+ds004024_perturb    0.0073
+ds000117_behaviour  0.0045
+```
+
+**4.13% against 95.87% — 23.2 : 1.** The trunk converges on what the EEG-like
+sources want; the BOLD head reads that same state.
+
+## The independent corroboration, which is the interesting part
+
+`paper/body.tex` §11 reports, from the identifiability laboratory and by a
+completely different route — analytic Fisher information in a linear-Gaussian
+surrogate that imports nothing from `scwbd.foundation` — that the hemodynamic
+channel carries **0.1% to 1.0%** of the electrical channel's information about
+the coupling gains.
+
+An analytic argument said the haemodynamic channel is one to three orders of
+magnitude weaker. An empirical training run put it at 4% of the gradient and
+watched it lose. **These are the same fact arriving twice**, and neither was
+derived from the other. That is worth a paragraph in the paper once run 4's
+numbers exist — it turns a null result into a prediction that was confirmed.
+
+## The proposal: an adapter, not a second trunk
+
+Arm C says the head does not need more capacity. It needs a representation that
+does not move underneath it while 96% of the gradient reshapes the shared one.
+
+**A per-parcel map between the shared latent state and `BOLDHead`, trained only
+by the haemodynamic term.**
+
+Constraints, every one of them from a defect this repository has already paid
+for:
+
+* **It must appear in `moved_since_init`.** Run 2 trained 11.2% of its parameters
+  and shipped; the individualizer was invisible to that report until run 4.
+  A module that cannot be seen to have moved will not be noticed not moving.
+* **It must be reachable by exactly one card's `gradient_permission`.** If EEG's
+  gradient can touch it, it is not an adapter, it is more trunk. And an unmatched
+  glob is an empty permission set, not an error.
+* **It must be small.** The point is isolation, not capacity. If it needs to be
+  large to work, the diagnosis was wrong.
+* **The four launch gates must cover it** before it trains, which they will,
+  because they are parameterised over the run under test.
+
+## The falsifier, stated before anything is built
+
+**If `real_bold_nll` still climbs with the adapter in place, the adapter is not
+the answer** and the imbalance is deeper than the interface — the shared state
+itself may be unable to serve both clocks, which would be a much more important
+result and an argument for the paper's heterogeneous-state thesis rather than a
+tuning failure.
+
+This is one hypothesis at the same epistemic level "the ODE constants are
+diverging" occupied before arm B refuted it. It is written here so that it can be
+wrong in public.
+
+## Explicitly NOT the plan
+
+* **Reweighting the mixture.** Rejected in `RUN4_LAUNCH_PLAN.md` §6 before the
+  deciding data existed, and the reasons stand: `ds002336` is 485 windows from 10
+  participants at one site, and upweighting it pulls the trunk away from the EEG
+  holdout the published headline rests on. The weight would also be a number
+  nobody could defend.
+* **Tuning `bold_lr_scale`.** Arm D's oscillation is not a bracketing problem to
+  be solved with 2.0. The finding is not a learning rate.
+* **Dropping fMRI.** The likelihood works — arm C is the proof. What fails is
+  fusion under imbalance, and that is the thing worth fixing.
