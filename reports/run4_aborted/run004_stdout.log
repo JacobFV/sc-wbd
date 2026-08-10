@@ -1,0 +1,70 @@
+[mem] CUDA reserve capped at 80.0 GB (fraction=0.658 of 121.6 GB unified pool)
+{
+  "parameters": {
+    "coupling": 3,
+    "msg_readin": 9152,
+    "context": 17792,
+    "family_local": 18693938,
+    "family_residual": 5969331,
+    "family_readout": 131666,
+    "assimilate": 1356030,
+    "observation": 2073,
+    "eeg": 27697,
+    "eeg_montages": 59291,
+    "bold": 3312,
+    "behaviour": 34372,
+    "TOTAL": 26304657
+  },
+  "posterior": 1102024
+}
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=67/17/25 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 235647 windows, train/val/test = 145202/36500/53945
+measured BOLD: 485 windows over 10 participants, 55/55 runs cached, 0 dropped for coverage
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=46/7/25 of 78
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+sleepedf_real: 77827 windows over 78 participants, 2 channels
+[leakage] NOTE ds000117_eeg: fold(s) ['val'] are EMPTY and are NOT read by this call site (it consumes ['train']). windows per fold {'train': 2833, 'val': 0, 'test': 2989}, participants {'train': 1, 'val': 0, 'test': 1} of 2. No number is computed from them; the R10 audit over a fold this small establishes correspondingly little.
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=1/0/1 of 2
+[leakage] warning: fold 'val' is empty
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+ds000117_real: 5822 windows over 2 participants, 70 channels
+[leakage] NOTE ds004024_rest: fold(s) ['val', 'test'] are EMPTY and are NOT read by this call site (it consumes ['train']). windows per fold {'train': 502, 'val': 0, 'test': 0}, participants {'train': 2, 'val': 0, 'test': 0} of 2. No number is computed from them; the R10 audit over a fold this small establishes correspondingly little.
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=2/0/0 of 2
+[leakage] warning: fold 'val' is empty
+[leakage] warning: fold 'test' is empty
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+ds004024_rest_real: 502 windows over 2 participants, 64 channels
+ds000117_behaviour: 1408 stimulus-locked episodes over 2 participants -- the first boundary_output in the mixture
+ds004024_perturb: 704 TMS-evoked epochs over 2 participants, {'left': 384, 'right': 320}, 48 scored steps each
+  skipped: [{'run': 'sub-CON006/run-06', 'reason': "the lateralised MEP did not decide the stimulated hemisphere above the stated effect-size floor; the drive's spatial support cannot be placed and this run is skipped rather than assigned the sign of a noisy mean"}]
+[individualizer] 191 participants, 266 sessions, theta_dim=6
+[noise-floor init] log_noise +0.0000 -> +0.0308  (variance 1.0000 -> 4.9878, realised 19.2420)
+
+=== Stage T1_measured_founding: 4000 steps, lr=0.0006 ===
+[curriculum] T1_measured_founding: tiers [1] sources ['ds000117_behaviour', 'ds000117_real', 'ds002336_real', 'ds004024_perturb', 'ds004024_rest_real', 'eegmmidb_real', 'sleepedf_real'] absent_tiers [] provenance=config:extra.curriculum
+stage=T1_measured_founding  step=1  global_step=1  loss=1  lr=2.404e-05  wall_s=21.5  traj_s_per_s=0.2  gpu_reserved_gb=46.16  eegmmidb_real_eeg_nll=1.743  real_bold_nll=1.987  bold_log_scale=5.676  bold_parcels_covered=399
+stage=T1_measured_founding  step=20  global_step=20  loss=1.313  lr=3.824e-05  wall_s=227  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=2.217  real_bold_nll=1.987  bold_log_scale=5.69  bold_parcels_covered=400
+stage=T1_measured_founding  step=40  global_step=40  loss=1.231  lr=7.954e-05  wall_s=447.6  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.648  real_bold_nll=1.987  bold_log_scale=5.704  bold_parcels_covered=399
+stage=T1_measured_founding  step=60  global_step=60  loss=1.408  lr=0.0001438  wall_s=665.7  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.657  real_bold_nll=1.976  bold_log_scale=5.758  bold_parcels_covered=397
+stage=T1_measured_founding  step=80  global_step=80  loss=1.407  lr=0.0002247  wall_s=865.5  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.652  real_bold_nll=1.978  bold_log_scale=5.926  bold_parcels_covered=398
+stage=T1_measured_founding  step=100  global_step=100  loss=1.835  lr=0.0003143  wall_s=1071  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=2.327  real_bold_nll=1.953  bold_log_scale=5.612  bold_parcels_covered=400
+stage=T1_measured_founding  step=120  global_step=120  loss=6.531  lr=0.0004036  wall_s=1281  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=21.23  real_bold_nll=2.858  bold_log_scale=5.394  bold_parcels_covered=400
+stage=T1_measured_founding  step=140  global_step=140  loss=1.093  lr=0.0004838  wall_s=1488  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=2.381  real_bold_nll=3.152  bold_log_scale=5.803  bold_parcels_covered=397
+stage=T1_measured_founding  step=160  global_step=160  loss=1.007  lr=0.0005471  wall_s=1690  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=2.153  real_bold_nll=3.212  bold_log_scale=5.596  bold_parcels_covered=398
+stage=T1_measured_founding  step=180  global_step=180  loss=0.9596  lr=0.0005871  wall_s=1886  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.94  real_bold_nll=2.591  bold_log_scale=5.479  bold_parcels_covered=398
+stage=T1_measured_founding  step=200  global_step=200  loss=0.9621  lr=0.0006  wall_s=2080  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.7  real_bold_nll=2.226  bold_log_scale=5.789  bold_parcels_covered=397
+stage=T1_measured_founding  step=220  global_step=220  loss=1.245  lr=0.0006  wall_s=2281  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.95  real_bold_nll=3.189  bold_log_scale=5.467  bold_parcels_covered=400
+stage=T1_measured_founding  step=240  global_step=240  loss=1.115  lr=0.0005998  wall_s=2486  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.779  real_bold_nll=3.332  bold_log_scale=5.647  bold_parcels_covered=395
+stage=T1_measured_founding  step=260  global_step=260  loss=0.976  lr=0.0005996  wall_s=2690  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.816  real_bold_nll=2.691  bold_log_scale=5.574  bold_parcels_covered=400
+stage=T1_measured_founding  step=280  global_step=280  loss=0.9783  lr=0.0005993  wall_s=2890  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.597  real_bold_nll=3.254  bold_log_scale=5.72  bold_parcels_covered=400
+stage=T1_measured_founding  step=300  global_step=300  loss=1.004  lr=0.000599  wall_s=3095  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.548  real_bold_nll=2.247  bold_log_scale=5.369  bold_parcels_covered=400
+stage=T1_measured_founding  step=320  global_step=320  loss=1.103  lr=0.0005985  wall_s=3302  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.606  real_bold_nll=6.011  bold_log_scale=5.46  bold_parcels_covered=400
+stage=T1_measured_founding  step=340  global_step=340  loss=1.003  lr=0.000598  wall_s=3508  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.459  real_bold_nll=5.049  bold_log_scale=5.721  bold_parcels_covered=397
+stage=T1_measured_founding  step=360  global_step=360  loss=1.097  lr=0.0005973  wall_s=3710  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.547  real_bold_nll=9.402  bold_log_scale=5.359  bold_parcels_covered=400
+stage=T1_measured_founding  step=380  global_step=380  loss=1.016  lr=0.0005966  wall_s=3920  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.574  real_bold_nll=8.595  bold_log_scale=5.482  bold_parcels_covered=400
+stage=T1_measured_founding  step=400  global_step=400  loss=1.063  lr=0.0005959  wall_s=4137  traj_s_per_s=0.4  gpu_reserved_gb=50.53  eegmmidb_real_eeg_nll=1.596  real_bold_nll=12.96  bold_log_scale=5.666  bold_parcels_covered=400
