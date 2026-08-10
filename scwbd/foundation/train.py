@@ -737,7 +737,13 @@ class FoundationTrainer:
     # ------------------------------------------------------------------
     # leakage barrier
     # ------------------------------------------------------------------
-    def _audit_real_split(self, split: Mapping[str, Any], dataset: Any) -> dict[str, Any]:
+    def _audit_real_split(
+        self,
+        split: Mapping[str, Any],
+        dataset: Any,
+        *,
+        consumes: Sequence[str] = ("train", "val", "test"),
+    ) -> dict[str, Any]:
         """Refuse to train on measured data whose split has not been audited.
 
         Measured human recordings are the only source in this run that can
@@ -792,18 +798,47 @@ class FoundationTrainer:
         # run whose split cannot populate three folds is not a faster version of
         # the real split, it is a different one, and it is the roster that gets
         # fixed rather than the check that gets relaxed.
-        empty = [k for k in ("train", "val", "test") if not audit["n_windows_per_fold"].get(k)]
-        if empty:
+        # Refuse on an empty fold that is CONSUMED; declare one that is not.
+        #
+        # The two call sites consume different folds and the distinction is real,
+        # not a convenience. The eegmmidb path stores `real_train/real_val/
+        # real_test` and `real_eeg_holdout` scores the last of them. The `_add`
+        # path builds a loader over `split["train"]` ONLY and discards the other
+        # two index lists; `session_individualisation` re-splits by session from
+        # `eeg_datasets[...]` rather than reading them. So for an `_add` source an
+        # empty val fold has no consumer, while an empty TRAIN fold means the
+        # source is admitted, marked `leakage_audited`, and contributes nothing.
+        #
+        # Refusing on all three regardless would have blocked the run for a
+        # non-reason -- ds000117 has 2 of its 16 participants on disk, so its
+        # split is 1/0/1 and always has been. Saying "empty fold" where nothing
+        # reads that fold is the kind of loud-but-wrong guard that gets deleted
+        # by the next person, taking the true half with it.
+        consumed = tuple(consumes)
+        counts = audit["n_windows_per_fold"]
+        empty_consumed = [k for k in consumed if not counts.get(k)]
+        if empty_consumed:
             raise RuntimeError(
-                f"split for {audit.get('source', 'unknown')!r} has EMPTY fold(s) {empty} "
-                f"(windows per fold: {dict(audit['n_windows_per_fold'])}, participants: "
-                f"{dict(audit['n_subjects_per_fold'])} of {audit['n_subjects_total']}, "
-                f"policy={audit.get('split_policy')!r}). Refusing rather than warning: an "
-                "empty train fold means this source is admitted, reported as "
-                "leakage_audited, and contributes no gradient -- and an empty val/test "
-                "fold means any held-out number computed from it is vacuous. If this is "
-                "--quick, the quick ROSTER is too small for the split policy to populate "
-                "three folds; raise it rather than relaxing this check."
+                f"split for {audit.get('source', 'unknown')!r} has EMPTY fold(s) "
+                f"{empty_consumed} that this call site CONSUMES (windows per fold: "
+                f"{dict(counts)}, participants: {dict(audit['n_subjects_per_fold'])} of "
+                f"{audit['n_subjects_total']}, policy={audit.get('split_policy')!r}). "
+                "Refusing rather than warning: an empty train fold means this source is "
+                "admitted, reported as leakage_audited, and contributes no gradient; an "
+                "empty val/test fold that IS read makes every number from it vacuous. If "
+                "this is --quick, the quick ROSTER is too small for the split policy to "
+                "populate the folds; raise it rather than relaxing this check."
+            )
+        empty_unused = [k for k in ("train", "val", "test") if not counts.get(k) and k not in consumed]
+        if empty_unused:
+            print(
+                f"[leakage] NOTE {audit.get('source', 'unknown')}: fold(s) {empty_unused} "
+                f"are EMPTY and are NOT read by this call site (it consumes {list(consumed)}). "
+                f"windows per fold {dict(counts)}, participants "
+                f"{dict(audit['n_subjects_per_fold'])} of {audit['n_subjects_total']}. "
+                "No number is computed from them; the R10 audit over a fold this small "
+                "establishes correspondingly little.",
+                flush=True,
             )
 
         # The audit ran and passed -> the schema may now say so.  Only measured
@@ -1055,7 +1090,11 @@ class FoundationTrainer:
                 seed=d.seed,
                 policy=d.split_policy,
             )
-            self._audit_real_split(split, ds)
+            # This path builds a loader over the TRAIN fold only; the val and
+            # test index lists are computed by participant_split and then
+            # discarded, and session_individualisation re-splits by session
+            # rather than reading them.
+            self._audit_real_split(split, ds, consumes=("train",))
             self.eeg_datasets[source_id] = ds
             self.eeg_loaders[source_id] = _cycle(
                 torch.utils.data.DataLoader(

@@ -97,12 +97,39 @@ def test_the_audit_refuses_an_empty_fold_rather_than_warning() -> None:
         "`ok` True because an empty fold is not a leak, so nothing else stops it, and "
         "the run dies later in a RandomSampler that names neither source nor fold."
     )
-    # It must cover all three folds, not just train. An empty val or test fold
-    # makes every held-out number computed from it vacuous.
-    assert '("train", "val", "test")' in src, (
-        "the empty-fold refusal no longer covers all three folds. An empty train "
-        "fold silently drops a source's gradient; an empty val/test fold makes any "
-        "held-out number from it vacuous. Both are refusals."
+    assert "empty_consumed" in src and "empty_unused" in src, (
+        "the refusal no longer distinguishes a consumed fold from an unused one. "
+        "Both halves are load-bearing: refusing on a fold nothing reads would block "
+        "the run for a non-reason (ds000117 has 2 of 16 participants on disk, so its "
+        "split is 1/0/1 and always has been), and staying silent about it would hide "
+        "that the R10 audit over such a fold establishes almost nothing."
+    )
+    assert 'consumes: Sequence[str] = ("train", "val", "test")' in src, (
+        "the default no longer consumes all three folds. A new call site must opt "
+        "OUT explicitly; defaulting to train-only would silence the eegmmidb holdout "
+        "check, which is the one that matters."
+    )
+
+
+def test_the_add_path_declares_that_it_consumes_only_train() -> None:
+    """The auxiliary EEG sources build a train loader and discard val/test.
+
+    `_add` wraps `Subset(ds, split["train"])` and never stores the other two
+    index lists; `session_individualisation` re-splits by session from
+    `eeg_datasets[...]` rather than reading them. So this call site must say
+    ``consumes=("train",)`` -- and if that ever stops being true, the empty-fold
+    refusal must start covering val and test again.
+    """
+    src = inspect.getsource(FoundationTrainer._build_run3_sources)
+    assert 'consumes=("train",)' in src, (
+        "the _add path no longer declares which folds it consumes. Without it the "
+        "refusal falls back to all three and blocks the run on ds000117's empty val "
+        "fold, which nothing reads."
+    )
+    assert 'split["val"]' not in src and 'split["test"]' not in src, (
+        "the _add path now reads the val or test fold. The empty-fold refusal there "
+        "is scoped to `consumes=(\"train\",)` and would no longer cover what is being "
+        "read -- widen `consumes` in the same edit."
     )
 
 
