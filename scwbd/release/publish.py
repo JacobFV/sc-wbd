@@ -1855,12 +1855,78 @@ def plan_run3(
     return replace(plan, card=limitation + (plan.card or ""))
 
 
+def plan_run4(
+    *,
+    checkpoint_dir: str | Path,
+    evaluation: str | Path = "reports/training/evaluation_run4.json",
+    config: str | Path = "configs/run4/scwbd-004.yaml",
+    name: str = "scwbd-004",
+    repo_root: Path | None = None,
+) -> ArtifactPlan:
+    """Plan the SC-WBD-004 checkpoint.
+
+    Same code path as runs 1-3; only the paths change.
+
+    THE CARD MUST CARRY ISSUE-016 AND ISSUE-012, and for the same reason run 3's
+    had to carry ISSUE-008: the card is generated from the checkpoint, the
+    checkpoint truthfully lists `ds002336_real` among its contributing sources,
+    and a reader who is not told otherwise will reasonably conclude this model
+    has a working fMRI likelihood.
+
+    Run 4's is different from run 3's, and the difference is the finding. Run 3's
+    BOLD path never integrated the ODE, so the term was inert. Run 4's DOES
+    integrate it -- and the likelihood then degrades during training, because
+    `ds002336_real` is 4.13% of the mixture and is outvoted 23.2:1 by the
+    EEG-like sources. The fMRI claim is withdrawn either way; what changed is
+    that we now know why, and can say it.
+    """
+    plan = plan_run1_checkpoint(
+        checkpoint_dir=checkpoint_dir,
+        evaluation=evaluation,
+        config=config,
+        name=name,
+        repo_root=repo_root,
+    )
+
+    limitation = (
+        "> ## No fMRI claim may be read off this model, and this time we know why\n>\n"
+        "> The measured BOLD path in this run **does** integrate the "
+        "Balloon-Windkessel ODE -- that is what run 4 fixed (ISSUE-008). The "
+        "haemodynamic likelihood is real here in a way it was not in run 3.\n>\n"
+        "> **It degrades during training.** `real_bold_nll` rose from 1.99 to "
+        "12.96 over the first 400 steps of the first launch while `eeg_nll` "
+        "improved and the total loss stayed flat. Four diagnostic arms located "
+        "the cause: the **shared trunk moves out from under the BOLD head**. "
+        "`ds002336_real` is **4.13%** of the source mixture and is outvoted "
+        "**23.2 : 1** by the EEG-like sources, so the latent state converges on "
+        "what they want. Freezing the five Balloon parameters changes nothing; "
+        "freezing the trunk makes the BOLD likelihood *improve*.\n>\n"
+        "> `ds002336_real` appears in `contributed_sources` and that is accurate: "
+        "its BOLD channel contributed a **gradient**. It did not thereby acquire "
+        "**information**, and in this run the two move in opposite directions.\n>\n"
+        "> No fMRI, haemodynamic or neurovascular claim about this artifact is "
+        "supported. ISSUE-016 is open; the remedy is unshared capacity for the "
+        "slow modality, which is a later run's design, not a caveat on this "
+        "one.\n>\n"
+        "> **The amortised posterior's calibration is UNKNOWN.** ISSUE-012's "
+        "learning-rate defect is repaired and the posterior should be "
+        "informative (`log_G` R^2 0.674-0.766 across four seeds in a one-stage "
+        "retrain, against ~0 in run 3). Whether it stays CALIBRATED is decided "
+        "by this run's own `posterior_calibration`, which the sweep could not "
+        "measure comparably. Read that block before any inference claim.\n>\n"
+        "> The EEG lead field remains an **analytic sphere**, not a head model, "
+        "so no source-localisation claim is available.\n\n"
+    )
+    return replace(plan, card=limitation + (plan.card or ""))
+
+
 PLANNERS: Mapping[str, Any] = {
     "anatomy-prior": plan_anatomy_prior,
     "run1-checkpoint": plan_run1_checkpoint,
     "sim-corpus": plan_sim_corpus,
     "run2-pilot": plan_run2_pilot,
     "run3": plan_run3,
+    "run4": plan_run4,
 }
 
 
