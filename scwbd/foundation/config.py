@@ -347,6 +347,17 @@ class TrainConfig:
     #: which is the reason ``configs/run4`` inherits ``base:`` instead of copying.
     max_steps_per_stage: int | None = None
 
+    #: `bold.*`'s learning rate as a multiple of the stage LR. 1.0 = unchanged.
+    #:
+    #: ISSUE-016. The measured BOLD likelihood degrades during training not
+    #: because anything in the BOLD path is wrong but because the SHARED TRUNK
+    #: moves under it: `ds002336_real` is 4.13% of the mixture, outvoted 23.2:1
+    #: by the EEG-like sources. Measured, matched LR schedules, same seed:
+    #: everything training gave `real_bold_nll` 12.96 by step 400; freezing the
+    #: five Balloon ODE constants gave 3.70 at step 160 (no better); freezing the
+    #: TRUNK gave 1.92 at 160 and falling. The head fits -- it cannot keep up.
+    bold_lr_scale: float = 1.0
+
     resume: bool = True
     stages: list[StageConfig] = field(
         default_factory=lambda: [

@@ -1,0 +1,286 @@
+# DIAGNOSTIC PROBE, arm C. See reports/known_issues.md ISSUE-016.
+# A: bold.* trained      -> real_bold_nll 1.99 -> 12.96 by step 400
+# B: Balloon ODE frozen  -> 1.99 -> 5.60 by step 340 (REFUTES 'the ODE constants')
+# C: shared TRUNK frozen, observation heads live.
+#    BOLD is 4.13% of the mixture, outvoted 23.2:1 by the EEG-like sources.
+#    Flat here => the climb is the trunk drifting to what 96% of the gradient
+#    wants, and the BOLD head reading a latent regime that moved under it.
+#    Still climbing => the cause is inside the BOLD path after all.
+base: scwbd-004.yaml
+train:
+  run_name: scwbd-004-probe-trunkfrozen
+  out_dir: checkpoints/scwbd-004-probe-c
+  report_dir: reports/training/smoke-004-probe-c
+  resume: false
+  max_wall_seconds: 5400
+  stages:
+  - name: T1_measured_founding
+    steps: 4000
+    lr: 0.0006
+    warmup: 200
+    log_every: 20
+    ckpt_every: 500
+    lambda_obs: 1.0
+    lambda_forecast: 1.0
+    lambda_posterior: 0.0
+    lambda_anat: 0.0
+    lambda_perturb: 0.0
+    extra:
+      curriculum:
+        scope: regional + interface, measured only
+        admits:
+        - 1
+        tier_permissions:
+          1:
+          - observation.*
+          - eeg.*
+          - eeg_montages.*
+          - bold.*
+          - behaviour.*
+        objective:
+        - likelihood
+        - forecast
+        - port
+        rationale: 'As 003, with one difference that is not a curriculum change: `bold.*` now reaches
+          a Balloon-Windkessel integrator that actually runs, so log_kappa, log_gamma, log_tau, alpha
+          and neural_gain receive gradient from this stage instead of sitting bit-identical to their initialisation
+          for the whole run.'
+  - name: T2_calibration
+    steps: 600
+    lr: 0.0003
+    warmup: 60
+    log_every: 20
+    ckpt_every: 300
+    lambda_obs: 1.0
+    lambda_cal: 0.3
+    lambda_posterior: 0.0
+    lambda_anat: 0.0
+    extra:
+      curriculum:
+        scope: instrument nuisance
+        admits:
+        - 1
+        - 2
+        tier_permissions:
+          1:
+          - family_local.*
+          - family_residual.*
+          - coupling.*
+          - msg_readin.*
+          - assimilate.*
+          - context.*
+          - family_readout.*
+          - observation.*
+          - eeg.*
+          - eeg_montages.*
+          - bold.*
+          - behaviour.*
+          2:
+          - eeg.log_gain
+          - eeg.offset
+          - eeg.log_noise
+          - eeg.nuisance*
+          - eeg_montages.*.log_gain
+          - eeg_montages.*.offset
+          - eeg_montages.*.log_noise
+          - eeg_montages.*.nuisance*
+        objective:
+        - likelihood
+        - calibration
+        rationale: 'Per-channel gain, offset and noise floor across four montages. Admitted late and narrowly:
+          a calibration source has tiny measurement variance and would win a pure inverse-variance contest.'
+  - name: T3_population_prior
+    steps: 800
+    lr: 0.0003
+    warmup: 80
+    log_every: 20
+    ckpt_every: 400
+    lambda_anat: 0.05
+    lambda_posterior: 0.0
+    extra:
+      curriculum:
+        scope: anatomical prior
+        admits:
+        - 1
+        - 2
+        - 3
+        tier_permissions:
+          1:
+          - family_local.*
+          - family_residual.*
+          - coupling.*
+          - msg_readin.*
+          - assimilate.*
+          - context.*
+          - family_readout.*
+          - observation.*
+          - eeg.*
+          - eeg_montages.*
+          - bold.*
+          - behaviour.*
+          2:
+          - eeg.log_gain
+          - eeg.offset
+          - eeg.log_noise
+          - eeg.nuisance*
+          - eeg_montages.*.log_gain
+          - eeg_montages.*.offset
+          - eeg_montages.*.log_noise
+          - eeg_montages.*.nuisance*
+          3:
+          - coupling.gain_*
+          - coupling.global_scale
+        objective:
+        - likelihood
+        - forecast
+        - anatomy
+        rationale: The 9-family partition and the connectome scale enter after the measured sources have
+          fixed the representation they modulate.
+  - name: T4_simulator
+    steps: 5000
+    lr: 0.0002
+    warmup: 250
+    log_every: 20
+    ckpt_every: 500
+    lambda_posterior: 1.0
+    lambda_kl: 0.01
+    lambda_slice: 1.0
+    lambda_anat: 0.05
+    extra:
+      curriculum:
+        scope: simulator-conditioned inference
+        admits:
+        - 1
+        - 2
+        - 3
+        - 4
+        tier_permissions:
+          1:
+          - family_local.*
+          - family_residual.*
+          - coupling.*
+          - msg_readin.*
+          - assimilate.*
+          - context.*
+          - family_readout.*
+          - observation.*
+          - eeg.*
+          - eeg_montages.*
+          - bold.*
+          - behaviour.*
+          2:
+          - eeg.log_gain
+          - eeg.offset
+          - eeg.log_noise
+          - eeg.nuisance*
+          - eeg_montages.*.log_gain
+          - eeg_montages.*.offset
+          - eeg_montages.*.log_noise
+          - eeg_montages.*.nuisance*
+          3:
+          - coupling.gain_*
+          - coupling.global_scale
+          4:
+          - family_local.*
+          - family_residual.*
+          - coupling.*
+          - msg_readin.*
+          - assimilate.*
+          - context.*
+          - family_readout.*
+          - posterior.*
+        objective:
+        - likelihood
+        - forecast
+        - slice
+        - posterior
+        rationale: 'The amortised posterior is founded here and only here; no measured recording carries
+          a theta label. Tier 4 does NOT reach `eeg.*`, `eeg_montages.*`, `bold.*` or `behaviour.*`: a
+          simulator may not calibrate an instrument.'
+  - name: T5_measured_return
+    steps: 3000
+    lr: 0.00012
+    warmup: 150
+    log_every: 20
+    ckpt_every: 500
+    lambda_obs: 1.0
+    lambda_forecast: 1.0
+    lambda_perturb: 1.0
+    lambda_posterior: 0.2
+    lambda_anat: 0.02
+    extra:
+      curriculum:
+        scope: return to measured
+        admits:
+        - 1
+        - 2
+        tier_permissions:
+          1:
+          - family_local.*
+          - family_residual.*
+          - coupling.*
+          - msg_readin.*
+          - assimilate.*
+          - context.*
+          - family_readout.*
+          - observation.*
+          - eeg.*
+          - eeg_montages.*
+          - bold.*
+          - behaviour.*
+          - tms_drive.*
+          2:
+          - eeg.log_gain
+          - eeg.offset
+          - eeg.log_noise
+          - eeg.nuisance*
+          - eeg_montages.*.log_gain
+          - eeg_montages.*.offset
+          - eeg_montages.*.log_noise
+          - eeg_montages.*.nuisance*
+        objective:
+        - likelihood
+        - forecast
+        - perturbation
+        rationale: The 1 -> 4 -> 1 return, so the final population weights are conditioned on evidence
+          rather than on the generator. `tms_drive.*` is granted here and nowhere else.
+  - name: T6_individual
+    steps: 1200
+    lr: 0.0006
+    warmup: 60
+    log_every: 20
+    ckpt_every: 300
+    lambda_obs: 1.0
+    lambda_forecast: 1.0
+    lambda_perturb: 0.0
+    lambda_posterior: 0.0
+    lambda_anat: 0.0
+    extra:
+      curriculum:
+        scope: person and session effects, population weights frozen
+        admits:
+        - 1
+        individualize: true
+        tier_permissions:
+          1:
+          - individualizer.*
+          - eeg.log_gain
+          - eeg.offset
+          - eeg.log_noise
+          - eeg.nuisance*
+          - eeg_montages.*.log_gain
+          - eeg_montages.*.offset
+          - eeg_montages.*.log_noise
+          - eeg_montages.*.nuisance*
+        objective:
+        - likelihood
+        - forecast
+        rationale: '75 of sleep-edfx''s 78 participants were recorded on two consecutive nights, and it
+          is the only corpus here with a second session of the same person. The effect is fitted on the
+          training nights and scored on the held-out one by `session_individualisation`, per participant
+          with a cluster bootstrap over participants. A learning rate at the T1 level rather than a decayed
+          one, because these tensors start at zero and have 1,200 steps to leave it -- the population
+          weights they modulate are frozen, so there is nothing for a large step to destabilise. The falsifier
+          is stated in the evaluation and not softened here: if the between-participant spread of the
+          applied theta shift is at or near zero on a split built to let it be non-zero, the third capability
+          is unsupported and the site says so.'

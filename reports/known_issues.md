@@ -32,6 +32,7 @@ here and the entries below are the detail.
 | ISSUE-013 | closed 2026-08-09 for run 4 | the pooled `subject_specific_ar` row is dropped; the arm is measured on a within-participant temporal split. Run 3's published table still carries the duplicate row and is described as five comparators, not six |
 | ISSUE-014 | closed 2026-08-09 for run 4 | the split policy is versioned and declared per run; run 4 takes `stable_hash_v2` (0 of 108 move), runs 1-3 stay pinned to `shuffle_slice_v1` (28 move, 6 into test), and `--quick` refuses an order-dependent policy |
 | ISSUE-015 | closed 2026-08-09 | ~20 prose sites stated DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6×; rewritten, rebuilt and republished |
+| ISSUE-016 | **open — cause found, remedy pending arm D** | the measured BOLD likelihood degrades during training. `real_bold_nll` 1.99 → 12.96 over 400 steps of run 4's T1 while `eeg_nll` IMPROVED. Not a defect in the BOLD path: the SHARED TRUNK moves under the head, driven by the 96% of gradient that is not BOLD (`ds002336_real` is 4.13% of the mixture, outvoted 23.2:1). Run 4 stopped at step 400 |
 
 ---
 
@@ -1596,3 +1597,113 @@ Seven guards were added beside them, all green:
 is no longer a "known red" set to hide inside — which was the whole hazard
 RUN2.md §448 recorded: a known-failure row catalogued by its total rather than
 by its failure mode, growing a new member while the count stayed the same.
+
+---
+
+## ISSUE-016 — the measured BOLD likelihood degrades because the shared trunk moves under it
+
+**Status:** open. Cause established by three arms; the remedy is pending a fourth
+(arm D) whose decision rule is pre-registered in `reports/RUN4_LAUNCH_PLAN.md` §6.
+**Severity:** high for any fMRI claim. Run 4 was **stopped at step ~400** rather
+than run 38 hours on a diverging likelihood.
+**Found:** 2026-08-10, by watching the run. Not by a test — no test could have
+seen it, and the pre-launch smoke could not either: it runs 4 steps per stage and
+this divergence takes ~300.
+
+### What was measured
+
+Run 4 launched 09:44 and was stopped at step ~400 of T1:
+
+```
+step   lr         real_bold_nll   eeg_nll   loss
+ 100   3.14e-04       1.953        2.327    1.835
+ 200   6.00e-04       2.226        1.700    0.962
+ 300   5.99e-04       2.247        1.548    1.004
+ 400   5.96e-04      12.959        1.596    1.063
+```
+
+`eeg_nll` IMPROVED throughout and total `loss` stayed flat near 1.0. The LR
+plateaued at step 200, so the climb is not the warmup. `bold_log_scale` held at
+5.4–5.9, so the variance channel is not running away either.
+
+### Three arms, matched LR schedules, same seed
+
+| arm | intervention | `real_bold_nll` |
+| --- | --- | --- |
+| A | as launched | 3.21 @160, **12.96 @400** |
+| B | the five Balloon-Windkessel ODE constants frozen | 3.70 @160 — **no better than A** |
+| C | the shared TRUNK frozen, observation heads live | **1.92 @160, 1.86 @200, falling** |
+
+**B refutes the obvious hypothesis.** T1 grants `bold.*` at 6.0e-4 — a
+residual-stack rate applied to ODE rate constants — and that looked like the
+answer. It is not: freezing them changes nothing. Had the LR been "fixed" on that
+reasoning, the change would have done nothing while appearing to solve it.
+
+**C identifies the cause.** With the trunk held still the BOLD head fits the data
+and improves. The head is not broken; it cannot keep up with a latent state that
+is being reshaped underneath it.
+
+### Why the trunk moves away from BOLD
+
+`per_source_contribution` in `mixture_T1_measured_founding.json`:
+
+```
+eegmmidb_real       0.7021
+sleepedf_real       0.2154
+ds002336_real       0.0413   <- the only haemodynamic source
+ds004024_rest_real  0.0147
+ds000117_real       0.0147
+ds004024_perturb    0.0073
+ds000117_behaviour  0.0045
+```
+
+**BOLD is 4.13% of the mixture and is outvoted 23.2 : 1.** The trunk
+(`family_local`, `coupling`, `observation`) trains at 6.0e-4 under a gradient
+that is 96% not-BOLD, so it converges toward what the EEG-like sources want. The
+BOLD head reads that same latent state.
+
+### Run 3 could not have found this
+
+ISSUE-008 meant run 3's measured BOLD path never integrated the Balloon ODE, so
+the term was inert and its parameters frozen for 13,400 steps. **Fixing ISSUE-008
+is what made the fMRI likelihood real, and the first thing a real one revealed is
+that it loses 23:1.** This is a finding about the model, not a regression in it.
+
+### What must NOT be claimed while this is open
+
+1. That SC-WBD-004 has a working haemodynamic fMRI likelihood, unless the run it
+   is claimed from shows `real_bold_nll` stable or falling. Integrating the ODE
+   is necessary and is not sufficient.
+2. That `bold.*` receiving gradient discharges ISSUE-008's intent. It receives
+   gradient and gets worse.
+3. Any fusion claim that treats the seven sources as jointly fitted. One of them
+   is at 4.13% and is being overridden.
+
+### What discharges it
+
+Either a run in which `real_bold_nll` is stable or falling through T1 and T5,
+**or** a written negative result stating the imbalance with these numbers and
+withdrawing the fMRI claims accordingly. A negative result discharges it; a
+quiet reweighting to make the number look better does not.
+
+Two remedies are REJECTED in writing, before arm D's data exists, so neither can
+be adopted because a number disappointed:
+
+* **reweighting the mixture** — `ds002336` is 485 windows over 10 participants at
+  one site. Upweighting pulls the trunk toward a small single-site corpus and
+  away from the EEG holdout the headline rests on (1.986 nats vs 2.024/2.025 over
+  27 participants), and the weight would be indefensible.
+* **unshared BOLD capacity** — the right NEXT-run design, and the paper's own
+  thesis of heterogeneous state spaces. An architecture change, not a mid-run
+  patch.
+
+Arm D, running: `bold_lr_scale = 5.0`, a separate optimiser group so the head can
+TRACK a moving trunk. Default is 1.0, so the run is unchanged unless D earns it.
+
+### Guard
+
+None yet, and that is stated rather than implied. This is a *training dynamics*
+finding: no unit test observes it, and the pre-launch smoke cannot — it runs 4
+steps per stage and the divergence takes ~300. The instrument that caught it was
+`make health-run4` plus a monitor watching `real_bold_nll` per step, which is
+what ISSUE-008's post-mortem asked for and is now armed by default.

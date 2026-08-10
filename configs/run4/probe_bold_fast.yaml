@@ -1,0 +1,22 @@
+# DIAGNOSTIC PROBE, arm D. See reports/RUN4_LAUNCH_PLAN.md §6 for the rule,
+# which was written BEFORE this ran.
+#
+# Arm A (as launched):        real_bold_nll 1.99 -> 12.96 by step 400
+# Arm B (Balloon ODE frozen): 3.70 @160 -- refutes "the ODE constants"
+# Arm C (shared TRUNK frozen): 1.92 @160 and FALLING -- the trunk is the cause
+#
+# D is A plus a separate optimiser group for `bold.*` at 5x the stage LR, and
+# nothing else. Arm C showed the head fits when the trunk holds still; this asks
+# whether it can TRACK a trunk that is moving.
+#
+# RULE: below 2.5 at step 340 -> adopt and relaunch run 4 with it.
+#       otherwise -> relaunch as configured and report the degradation as a
+#       measured negative about fusion under a 23.2:1 source imbalance.
+base: scwbd-004.yaml
+train:
+  run_name: scwbd-004-probe-boldfast
+  out_dir: checkpoints/scwbd-004-probe-d
+  report_dir: reports/training/smoke-004-probe-d
+  resume: false
+  max_wall_seconds: 5400
+  bold_lr_scale: 5.0

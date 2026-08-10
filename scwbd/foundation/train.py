@@ -182,6 +182,18 @@ class FoundationTrainer:
     QUICK_MIN_SUBJECTS: int = 12
 
     @property
+    def bold_lr_scale(self) -> float:
+        """`bold.*`'s LR as a multiple of the stage LR. 1.0 leaves it in the main group.
+
+        ISSUE-016. The BOLD head reads the same latent state the EEG sources are
+        reshaping, and it is 4.13% of the mixture. Arm C froze the trunk and
+        `real_bold_nll` went 1.99 -> 1.92; arm A left it moving and the same
+        quantity reached 12.96 by step 400. Raising this lets the head track a
+        moving trunk rather than be dragged by it.
+        """
+        return float(getattr(self.cfg.train, "bold_lr_scale", 1.0))
+
+    @property
     def posterior_lr_scale(self) -> float:
         """The configured posterior LR fraction; :attr:`POSTERIOR_LR_SCALE` is the default."""
         return float(getattr(self.cfg.posterior, "lr_scale", self.POSTERIOR_LR_SCALE))
@@ -2272,9 +2284,21 @@ class FoundationTrainer:
         # A separate group at POSTERIOR_LR_SCALE keeps one schedule shape while
         # letting the two parts move at their own rates.
         post_ids = {id(q) for q in self.posterior.parameters()}
-        model_params = [q for q in params if id(q) not in post_ids]
+        # A THIRD group for `bold.*`, at `train.bold_lr_scale` (default 1.0, i.e.
+        # no change). ISSUE-016: the measured BOLD likelihood degrades because the
+        # SHARED TRUNK moves under it -- ds002336_real is 4.13% of the mixture and
+        # is outvoted 23.2:1, and arm C showed the BOLD head fits fine when the
+        # trunk is frozen (1.99 -> 1.92) while arm A climbed to 12.96. The head is
+        # not broken; it cannot keep up. This lets it track.
+        bold_ids = {id(q) for n, q in self.model.named_parameters() if n.startswith("bold.")}
+        model_params = [q for q in params if id(q) not in post_ids and id(q) not in bold_ids]
         post_params = [q for q in params if id(q) in post_ids]
+        bold_params = [q for q in params if id(q) in bold_ids]
         groups = [{"params": model_params, "lr": stage.lr}]
+        if bold_params and self.bold_lr_scale != 1.0:
+            groups.append({"params": bold_params, "lr": stage.lr * self.bold_lr_scale})
+        elif bold_params:
+            groups[0]["params"] = model_params + bold_params
         if post_params:
             groups.append(
                 {
