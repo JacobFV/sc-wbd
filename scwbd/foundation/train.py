@@ -166,6 +166,21 @@ class FoundationTrainer:
     #: statement about the brain rather than about optimisation.
     POSTERIOR_WEIGHT_DECAY: float = 1e-2
 
+    #: Participants a `--quick` run gives each measured EEG corpus.
+    #:
+    #: The split is participant-disjoint over three folds, so a roster below 3
+    #: CANNOT populate them and a roster of exactly 3 only does so if the policy
+    #: happens to put one in each. `--quick` gave sleep-edfx **2**, both of which
+    #: `stable_hash_v2` hashed outside train; the pre-launch smoke then died in a
+    #: RandomSampler with `num_samples=0`, naming neither the source nor the fold.
+    #:
+    #: 12 rather than the minimum that happens to work today: the assignment is a
+    #: hash of the participant id, so the margin has to survive a changed roster,
+    #: a changed seed and a changed `test_fraction` without anyone re-deriving
+    #: it. `_audit_real_split` refuses an empty fold outright, so if this is ever
+    #: too small again it fails by name instead of by RandomSampler.
+    QUICK_MIN_SUBJECTS: int = 12
+
     @property
     def posterior_lr_scale(self) -> float:
         """The configured posterior LR fraction; :attr:`POSTERIOR_LR_SCALE` is the default."""
@@ -757,6 +772,40 @@ class FoundationTrainer:
                 f"reason={audit.get('split_fallback_reason', '')!r}"
             )
 
+        # An EMPTY FOLD is a refusal, not a warning.
+        #
+        # `leakage_check` appends "fold 'train' is empty" to `warnings` and
+        # leaves `ok` True, because an empty fold is not a *leak*.  This function
+        # then printed it and carried on -- and its own docstring says it "raises
+        # rather than warning".  What actually happened, found by the pre-launch
+        # smoke: `sleepedf_real` produced an empty train fold, the warning
+        # scrolled past, and forty lines later torch raised
+        # `num_samples should be a positive integer value, but got num_samples=0`
+        # from a RandomSampler, which names neither the source nor the fold.
+        #
+        # The failure it hides is worse than the crash. A source admitted with an
+        # empty TRAIN fold contributes no gradient while every report still lists
+        # it as admitted and `leakage_audited`. That is run 2's defect wearing a
+        # different hat: declared, and silently absent.
+        #
+        # Refused for every fold, not just train, and in `--quick` too. A quick
+        # run whose split cannot populate three folds is not a faster version of
+        # the real split, it is a different one, and it is the roster that gets
+        # fixed rather than the check that gets relaxed.
+        empty = [k for k in ("train", "val", "test") if not audit["n_windows_per_fold"].get(k)]
+        if empty:
+            raise RuntimeError(
+                f"split for {audit.get('source', 'unknown')!r} has EMPTY fold(s) {empty} "
+                f"(windows per fold: {dict(audit['n_windows_per_fold'])}, participants: "
+                f"{dict(audit['n_subjects_per_fold'])} of {audit['n_subjects_total']}, "
+                f"policy={audit.get('split_policy')!r}). Refusing rather than warning: an "
+                "empty train fold means this source is admitted, reported as "
+                "leakage_audited, and contributes no gradient -- and an empty val/test "
+                "fold means any held-out number computed from it is vacuous. If this is "
+                "--quick, the quick ROSTER is too small for the split policy to populate "
+                "three folds; raise it rather than relaxing this check."
+            )
+
         # The audit ran and passed -> the schema may now say so.  Only measured
         # sources are covered: a simulated source has no participants, and
         # asserting a leakage check over one would be the same empty claim in a
@@ -845,7 +894,11 @@ class FoundationTrainer:
             rc = RealEEGConfig(
                 window_s=win / d.fs_hz,
                 fs_target=d.fs_hz,
-                max_subjects=None if not self.quick else 6,
+                # 6 -> QUICK_MIN_SUBJECTS. Six was also too few: the same smoke
+                # that found sleep-edfx's empty TRAIN fold reported an empty TEST
+                # fold here, one source earlier in the same log. Both were
+                # warnings that scrolled past.
+                max_subjects=None if not self.quick else self.QUICK_MIN_SUBJECTS,
                 max_runs_per_subject=None if not self.quick else 2,
                 seed=d.seed,
             )
@@ -975,7 +1028,12 @@ class FoundationTrainer:
             ds004024_root=Path(d.ds004024_root),
             window_s=win / d.fs_hz,
             fs_target=d.fs_hz,
-            max_subjects=None if not self.quick else 2,
+            # 2 -> QUICK_MIN_SUBJECTS. Two participants cannot populate three
+            # participant-disjoint folds: under `stable_hash_v2` both hashed
+            # outside train, the smoke got an empty train fold, and the run died
+            # in a RandomSampler naming neither the source nor the fold. The
+            # roster is what was wrong, not the split -- see QUICK_MIN_SUBJECTS.
+            max_subjects=None if not self.quick else self.QUICK_MIN_SUBJECTS,
             max_runs_per_subject=None if not self.quick else 1,
             seed=d.seed,
         )
