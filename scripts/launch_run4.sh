@@ -171,11 +171,29 @@ fi
 
 # 6. Launch ---------------------------------------------------------------------
 step "6/6  launch"
+# Every figure here is READ FROM THE CONFIG, not written down.
+#
+# It said "cuda_reserve_gb (56.0)" for one dry run after the config had moved to
+# 80.0 -- a launch banner stating the wrong ceiling, which is the stale-report
+# class this repo has been bitten by before (a health field showing a frozen
+# value; a model card describing a run that never happened). A summary that can
+# disagree with what it summarises is worse than no summary.
+SUMMARY=$($PY - "$CONFIG" <<'PYEOF'
+import sys
+from scwbd.foundation.config import load_config
+c = load_config(sys.argv[1])
+steps = sum(s.steps for s in c.train.stages)
+rate = 9.30  # s/step, measured for T1's loss set; see the config's cost block
+print(f"  steps     : {steps:,} over {len(c.train.stages)} stages   "
+      f"(~{steps * rate / 3600:.0f} h at the measured {rate} s/step, T1's rate)")
+print(f"  max_wall  : {c.train.max_wall_seconds:,.0f} s = {c.train.max_wall_seconds / 3600:.0f} h")
+print(f"  cuda cap  : {c.train.cuda_reserve_gb} GB reserved, measured peak 59.95 GB at T5")
+PYEOF
+)
 echo "  config    : $CONFIG"
 echo "  log       : $LOG"
-echo "  steps     : 14,600 over 6 stages   (~38 h at the measured 9.30 s/step)"
-echo "  max_wall  : 165,600 s = 46 h"
-echo "  NOTE: cuda_reserve_gb (56.0) is the only real cap on this box."
+echo "$SUMMARY"
+echo "  NOTE: cuda_reserve_gb is the only real cap on this box."
 echo "        systemd MemoryMax does NOT bound CUDA -- the ~121 GB pool is unified."
 
 if [ "$LAUNCH" != "yes" ]; then
