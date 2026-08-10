@@ -16,11 +16,99 @@ empty rather than estimated until then.
 | person effect | never constructed | fitted in `T6_individual` |
 | individualisation split | participant-disjoint | session split on sleep-edfx's two nights |
 
-## PENDING — the run
+## The first launch, and why it was stopped at step 400
 
-The run has not been launched. What follows is the cost measurement that sizes
-it, and nothing else. No training number appears in this file until there is a
-checkpoint to read it from.
+Run 4 launched at 09:44 on 2026-08-10 and was **stopped by hand at step ~400 of
+T1**, 1.2 hours in. `real_bold_nll` — the measured fMRI likelihood, integrating
+the Balloon-Windkessel ODE for the first time — climbed while everything else
+improved:
+
+```
+step   lr         real_bold_nll   eeg_nll   loss
+ 100   3.14e-04       1.953        2.327    1.835
+ 200   6.00e-04       2.226        1.700    0.962
+ 300   5.99e-04       2.247        1.548    1.004
+ 400   5.96e-04      12.959        1.596    1.063
+```
+
+The LR plateaued at step 200, so this is not the warm-up. `bold_log_scale` held
+at 5.4–5.9, so the variance channel is not running away. `eeg_nll` improved
+throughout and the total loss stayed flat near 1.0 — **only the fMRI term
+degraded.**
+
+That is ISSUE-008's signature, which cost 46% of a 25-hour run the last time it
+went unread. It was caught here at 1.2 hours by a monitor watching the quantity
+per step, which is what that post-mortem asked for.
+
+## Why it degraded: the trunk moves and BOLD is outvoted 23 to 1
+
+Four arms, matched LR schedules, same seed. Full detail in ISSUE-016.
+
+| arm | intervention | `real_bold_nll` |
+| --- | --- | --- |
+| A | as launched | 3.21 @160, **12.96 @400** |
+| B | the five Balloon-Windkessel ODE constants frozen | 3.70 @160 — **no better** |
+| C | the shared trunk frozen, observation heads live | **1.92 @160, 1.86 @200, falling** |
+| D | `bold.*` in its own group at 5× the stage LR | median 2.11, **max 14.24** — oscillates |
+
+**B refutes the obvious explanation.** T1 grants `bold.*` at 6.0e-4 — a
+residual-stack rate applied to ODE rate constants — and that looked like the
+answer. Freezing them changes nothing. A "fix" on that reasoning would have done
+nothing while appearing to work.
+
+**C identifies the cause.** Hold the shared trunk still and the BOLD head fits
+the data and improves. The head is not broken; it cannot keep up with a latent
+state being reshaped underneath it.
+
+**Why the trunk moves away from it** — `per_source_contribution`, T1:
+
+```
+eegmmidb_real       0.7021
+sleepedf_real       0.2154
+ds002336_real       0.0413   <- the only haemodynamic source
+ds004024_rest_real  0.0147
+ds000117_real       0.0147
+ds004024_perturb    0.0073
+ds000117_behaviour  0.0045
+```
+
+**BOLD is 4.13% of the mixture, outvoted 23.2 : 1.** The trunk trains under a
+gradient that is 96% not-BOLD and converges on what the EEG-like sources want.
+
+**D shows the head can track, but not stably.** At 5× the head follows a moving
+trunk better on the median (2.11 against arm A's 2.80 over the same steps) and
+periodically diverges to 14.24. Better average tracking with blow-ups is a rate
+above the stable region. No further multiplier was tried: the finding is not a
+learning rate, and tuning one treats the symptom.
+
+## Run 3 could not have found this
+
+ISSUE-008 meant run 3's measured BOLD path never integrated the ODE. The term was
+inert and its five parameters sat frozen for 13,400 steps — which is exactly what
+`test_balloon_parameters_receive_gradient.py` pinned, deliberately, as a green
+test asserting a live defect.
+
+**Fixing ISSUE-008 is what made the fMRI likelihood real, and the first thing a
+real one revealed is that it loses 23:1.** This is a result about the model, not
+a regression in it. It is the kind of thing a broken likelihood hides: run 3
+could report `bold.*` as admitted, audited and frozen, and nothing in that
+description was false.
+
+## What run 4 therefore claims about fMRI: nothing, and why that is worth having
+
+Run 4 is relaunched **as configured** — `bold_lr_scale` stays 1.0 — and the
+degradation is reported rather than tuned away. Two remedies were rejected in
+writing before the deciding data existed (`reports/RUN4_LAUNCH_PLAN.md` §6):
+reweighting the mixture, which would pull the trunk toward 485 windows from 10
+participants at one site and away from the EEG holdout the headline rests on; and
+unshared BOLD capacity, which is the right next-run design and not a mid-run
+patch.
+
+So the fMRI claims are withdrawn for this run, and the reason is stated
+positively: **a haemodynamic likelihood that is 4% of a mixture does not survive
+the other 96%.** That is a measured statement about multimodal fusion under
+source imbalance, and it is the first time this project could make it — because
+until ISSUE-008 was fixed there was no fMRI likelihood to lose.
 
 ## The posterior learning rate, chosen by measurement before launch
 
