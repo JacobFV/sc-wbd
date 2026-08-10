@@ -341,3 +341,47 @@ the paper's thesis of heterogeneous state spaces held simultaneously, and it is
 an architecture change needing new permissions, re-measured memory and step time,
 and the four gates re-pointed. It is not a thing to add at midday to a run that
 is already stopped.
+
+### 6a. AMENDMENT — arm D FAILS on stability, and the rule's statistic was wrong
+
+The §2 supersession line, applied to §6: the rule's INPUT turned out to have a
+failure mode the rule did not anticipate. Same shape as §3a.
+
+Arm D (`bold_lr_scale = 5.0`) does not climb like arm A. It **oscillates**:
+
+    step  180    200     220     240     260
+    D    2.050  13.780  2.122  14.242  2.008
+
+From step 100: min 1.86, max **14.24**, mean 4.75, median 2.11.
+Arm A over 100–260: min 1.95, max 3.33, mean 2.80.
+
+Read honestly, that is two facts at once. The 5× rate **does** help the head
+track — median 2.11 against arm A's 2.80 over the same steps, so the direction of
+§6's hypothesis is right. And it **periodically diverges** to 14, which arm A
+never did in that range. That is a learning rate above the stable region: better
+average tracking, occasional blow-ups.
+
+**The rule as written cannot decide this.** "Below 2.5 at step 340" assumed a
+monotone trajectory; against a period-2 oscillation between ~2 and ~14 it is
+decided by which phase step 340 happens to land on. Roughly a coin flip wearing a
+threshold's clothes. I am not going to read it and act on whichever answer it
+gives.
+
+**Verdict: arm D FAILS**, and not on the threshold — on stability. A term that
+spikes to 14 every other logging interval is not a term to run for 38 hours,
+whatever a single step says. The pre-registered fallback therefore applies:
+**relaunch run 4 exactly as configured (`bold_lr_scale` stays 1.0)** and report
+the BOLD degradation as a measured negative result.
+
+**No arm E.** The obvious next probe is 2.0 — between 1.0 (drags) and 5.0
+(oscillates) — and it is exactly the spiral §1 exists to stop. The finding that
+matters is already measured and is not a learning rate: BOLD is 4.13% of the
+mixture and is outvoted 23.2:1, and arm C showed the head fits perfectly well
+when the trunk holds still. Tuning a multiplier is treating the symptom. The
+remedy is unshared capacity, and that is the NEXT run's design, decided in §6 and
+not revisited here.
+
+What arm D adds to ISSUE-016, and it is worth having: the BOLD head *can* track a
+moving trunk — it does so better at 5× than at 1× on the median — but not stably
+at any rate tried. That is evidence for the architecture change rather than
+against it.
