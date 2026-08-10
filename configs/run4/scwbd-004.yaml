@@ -132,11 +132,36 @@ posterior:
   #     as being handed the same vector every time.
   cond_norm: dataset_std_v2
 
-  # (b) The posterior LR. Set by the sweep in reports/run4_posterior/, not
-  #     inherited: 0.02 x T4's 2.0e-4 is 4.0e-6, and it was chosen to stop a
-  #     DIVERGENCE whose two other causes -- the point mass and the conditioning
-  #     -- are fixed above. See scripts/sweep_posterior.py.
-  lr_scale: 0.02
+  # (b) The posterior LR. MEASURED, not inherited. 0.02 x T4's 2.0e-4 is 4.0e-6,
+  #     and that rate was chosen to stop a DIVERGENCE whose two other causes --
+  #     the point mass and the conditioning -- are fixed above.
+  #
+  #     Chosen by the rule pre-registered in reports/RUN4_LAUNCH_PLAN.md §3,
+  #     written before the data was seen: held-out `-log q` must not exceed the
+  #     4.0e-6 control's (the control returns the prior, so its density is the
+  #     honest-width baseline; a cell that recovers the mean while paying MORE
+  #     than that is overconfident), and among cells passing, maximise log_G R^2.
+  #
+  #     1500 steps/cell, held-out trajectories spanning shards:
+  #
+  #       cond_norm         lr       log_G R^2   -log q    passes?
+  #       layer_v1        4.0e-6      -0.001      7.866    control
+  #       layer_v1        1.0e-3      +0.644      8.445    no  (overconfident)
+  #       layer_v1        3.0e-3      +0.665      8.549    no  (overconfident)
+  #       dataset_std_v2  4.0e-6      +0.020      7.932    control
+  #       dataset_std_v2  1.0e-3      +0.674      7.075    YES <- best on both
+  #       dataset_std_v2  3.0e-3      +0.464      7.212    yes
+  #
+  #     1.0e-3 / 2.0e-4 = 5.0. Note 3.0e-3 DEGRADES, so this is an optimum and
+  #     not the edge of the grid. Note also that v2's advantage is what makes the
+  #     high rate usable: at 1.0e-3 it pays 7.075 nats where the per-sample
+  #     LayerNorm pays 8.445.
+  #
+  #     This does NOT discharge ISSUE-012. `sbc_ks_pvalue_min` is 0.000 in every
+  #     informative cell, and the sweep's SBC is not comparable to production's
+  #     (its val set is shuffled, not backend-stratified). Run 4 launches with
+  #     calibration UNKNOWN and that is stated in the model card.
+  lr_scale: 5.0
 
 model:
   # ISSUE-008's fix, and the two fields that bound its cost.
