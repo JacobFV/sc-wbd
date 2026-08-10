@@ -281,3 +281,63 @@ position at launch is: **the posterior becomes informative in the mean (R² 0.67
 against a 0.4 floor and a 0.439 ridge probe), it is not overconfident by the one
 density statistic we can compare, and whether it is calibrated is unknown.** That
 sentence is the model card's, and it does not need to change.
+
+---
+
+## 6. The BOLD divergence, and the rule that decides run 4's shape
+
+Run 4 was launched 09:44 on 2026-08-10 and STOPPED at step ~400 with
+`real_bold_nll` climbing 1.99 -> 12.96 while `eeg_nll` improved to 1.60 and total
+`loss` stayed flat near 1.0. Full detail in ISSUE-016.
+
+Three arms, matched LR schedules, same seed:
+
+| arm | intervention | `real_bold_nll` |
+| --- | --- | --- |
+| A | as launched | 3.21 @160, **12.96 @400** |
+| B | five Balloon ODE constants frozen | 3.70 @160 — no better |
+| C | shared trunk frozen, observation heads live | **1.92 @160, falling** |
+
+**The cause is the shared trunk moving under the BOLD head**, driven by the 96%
+of gradient that is not BOLD. `ds002336_real` is **4.13%** of the mixture,
+outvoted **23.2 : 1**. Nothing in the BOLD path is broken — arm B rules out the
+ODE constants, arm C shows the head fits fine when the trunk holds still.
+
+Run 3 could not have found this: ISSUE-008 meant its BOLD likelihood never
+integrated the ODE, so it was inert. Fixing ISSUE-008 is what made the fMRI
+likelihood real, and the first thing a real one showed is that it loses 23:1.
+
+### Arm D, and the decision rule — written before the data
+
+Arm C says the head can fit a still trunk. So the cheapest candidate fix is to
+let the head TRACK a moving one: a separate optimiser group for `bold.*` at a
+higher rate, the `POSTERIOR_LR_SCALE` pattern inverted. Arm D is arm A plus
+`bold_lr_scale = 5.0`, nothing else changed.
+
+**The rule:**
+
+* if arm D's `real_bold_nll` at step 340 is **below 2.5** — near its 1.99 start
+  rather than arm B's 5.60 — adopt it and relaunch run 4 with it;
+* otherwise **relaunch run 4 exactly as configured** and report the degradation
+  as a measured negative result about fusion under source imbalance. No knob is
+  turned to make a number look better.
+
+**"Accept it" is not the neutral option and must not be treated as one.** A
+diverging term keeps feeding the trunk: at step 400 the BOLD loss was 8x the EEG
+loss and growing. If arm D fails, the relaunch is accepted WITH that risk stated,
+and the run is watched for `eeg_nll` degradation as well — the negative result is
+about fusion, not a licence to let one term wreck the others.
+
+**Reweighting the mixture is rejected outright**, and before seeing arm D so this
+cannot be revisited when a number disappoints. `ds002336` is 485 windows over 10
+participants at one site. Upweighting it pulls the trunk toward a small
+single-site corpus and away from the EEG holdout the paper's headline rests on
+(1.986 nats vs 2.024/2.025 over 27 participants). Trading a measured published
+result for a rescued claim is the wrong direction, and the weight itself would be
+a number nobody could defend.
+
+**Unshared BOLD capacity is the NEXT run's design, not this one's.** It matches
+the paper's thesis of heterogeneous state spaces held simultaneously, and it is
+an architecture change needing new permissions, re-measured memory and step time,
+and the four gates re-pointed. It is not a thing to add at midday to a run that
+is already stopped.
