@@ -134,3 +134,39 @@ def test_the_run_config_never_caps_steps(run: Path, smoke: Path) -> None:
         "EVERY stage and exists only so a smoke can reach all of them. In a run it "
         "truncates training silently."
     )
+
+
+# ======================================================================
+# the REPORT directory, not just the log key
+# ======================================================================
+@pytest.mark.parametrize("run,smoke", _pairs(), ids=lambda p: f"{p.parent.name}/{p.name}")
+def test_the_smoke_writes_reports_somewhere_else_entirely(run: Path, smoke: Path) -> None:
+    """`report_dir` must differ, or the smoke overwrites the run's reports.
+
+    A distinct `run_name` moves the JSONL and a distinct `out_dir` moves the
+    checkpoints -- and neither moves the mixture reports. `run_stage` writes each
+    one TWICE: run-scoped under `report_dir/<run_name>/`, and to a legacy FLAT
+    `report_dir/mixture_<stage>.json` that every run with matching stage names
+    overwrites by design.
+
+    Run 4 reuses run 3's stage names, so its smoke replaced 22,113 lines of
+    `mixture_T1_measured_founding.json` with 81 lines of smoke output, plus four
+    siblings. They are tracked, so git restored them -- but run 3's run-scoped
+    directory holds only `T4`, because that write landed mid-run, so for
+    T1/T2/T3/T5 the flat files are run 3's ONLY record.
+
+    Redirecting the DIRECTORY is the fix rather than enumerating the outputs.
+    ISSUE-010 needed five attempts because each one redirected one more output
+    and something was still writing to a production path every time.
+    """
+    r = load_config(str(run)).train
+    s = load_config(str(smoke)).train
+    assert s.report_dir != r.report_dir, (
+        f"{smoke.relative_to(REPO)} shares report_dir {s.report_dir!r} with "
+        f"{run.relative_to(REPO)}. run_name moves the log and out_dir moves the "
+        "checkpoints; NEITHER moves the mixture reports, and the flat "
+        "`mixture_<stage>.json` is overwritten by any run sharing a stage name."
+    )
+    assert not str(s.report_dir).rstrip("/") == str(r.report_dir).rstrip("/"), (
+        "report_dir differs only by a trailing slash"
+    )

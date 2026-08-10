@@ -17,6 +17,25 @@ base: scwbd-004.yaml
 train:
   run_name: scwbd-004-smoke
   out_dir: checkpoints/scwbd-004-smoke
+
+  # The REPORT directory too, not just the log key and the checkpoint dir.
+  #
+  # `run_stage` writes each mixture report TWICE: run-scoped under
+  # `report_dir/<run_name>/`, and to a legacy FLAT `report_dir/mixture_<stage>.json`
+  # that every run overwrites by design. Run 4 reuses run 3's stage names, so the
+  # smoke overwrote `mixture_T1_measured_founding.json` and four siblings --
+  # 22,113 lines of run 3's T1 report replaced by 81 lines of smoke. They are
+  # tracked, so `git checkout` restored them; run 3's run-scoped directory holds
+  # only T4, because the run-scoped write landed mid-run, so for T1/T2/T3/T5 the
+  # FLAT files are run 3's only record.
+  #
+  # Redirecting the DIRECTORY is the fix, not enumerating the outputs. ISSUE-010
+  # took five attempts precisely because each one redirected one more output --
+  # ckpt_every, then log_every, then the logger, then out_dir -- and something
+  # was still writing to a production path each time. One directory covers the
+  # jsonl, the summary, the run-scoped reports and the flat ones together.
+  report_dir: reports/training/smoke-004
+
   resume: false
   # Long enough to reach every loss path once. The smoke's job is to make each
   # term raise if it is going to, not to produce a number.

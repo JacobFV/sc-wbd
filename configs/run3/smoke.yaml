@@ -17,5 +17,10 @@ train:
   # 3 published: this is the smoke config, not `scwbd-003.yaml`, and no number in
   # any report came from it.
   max_steps_per_stage: 4
+  # Same redirect as run 4's, and for the same reason: `run_stage` also writes a
+  # legacy FLAT `report_dir/mixture_<stage>.json` that any run with matching
+  # stage names overwrites. Added 2026-08-10 after run 4's smoke destroyed five
+  # of run 3's flat mixture reports (restored from git).
+  report_dir: reports/training/smoke-003
 data:
   batch: 8
