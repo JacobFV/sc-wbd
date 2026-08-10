@@ -1700,10 +1700,41 @@ be adopted because a number disappointed:
 Arm D, running: `bold_lr_scale = 5.0`, a separate optimiser group so the head can
 TRACK a moving trunk. Default is 1.0, so the run is unchanged unless D earns it.
 
+### The remedy, in enough detail to be argued with
+
+Arm C is the design input: **the BOLD head fits this data when the trunk holds
+still** (1.99 → 1.86 over 200 steps). It does not need more capacity to model
+BOLD. It needs a representation that does not move underneath it while 96% of the
+gradient reshapes the shared one.
+
+Arm D rules out the cheap version. Letting the head chase the trunk faster
+(`bold_lr_scale` 5.0) improves the median (2.11 vs 2.80) and oscillates to 14.24.
+Chasing works and is not stable, which is what "the head is downstream of
+something that is moving too fast for it" looks like.
+
+So the shape of the fix is **an adapter between the shared latent state and the
+BOLD head that only BOLD's gradient touches** — not a second trunk, and not more
+BOLD parameters. Concretely, for a later run to design properly:
+
+* a small per-parcel map applied to the state before `BOLDHead` reads it,
+  trained only by the haemodynamic term, so EEG gradients cannot reshape it;
+* it must be in `moved_since_init` and reachable by exactly one card's
+  `gradient_permission`, or it repeats run 2's defect in a new module;
+* the falsifier is arm A's own number: if `real_bold_nll` still climbs with the
+  adapter in place, the adapter is not the answer and the imbalance is deeper
+  than the interface.
+
+Two things this must NOT become. It is not a licence to reweight the mixture —
+that trade was rejected in `reports/RUN4_LAUNCH_PLAN.md` §6 before the deciding
+data existed, and the reasons have not changed. And it is not a claim that the
+architecture is fixed: it is one hypothesis with a stated falsifier, at the same
+epistemic level as "the ODE constants are diverging" was before arm B refuted it.
+
 ### Guard
 
 None yet, and that is stated rather than implied. This is a *training dynamics*
 finding: no unit test observes it, and the pre-launch smoke cannot — it runs 4
 steps per stage and the divergence takes ~300. The instrument that caught it was
 `make health-run4` plus a monitor watching `real_bold_nll` per step, which is
-what ISSUE-008's post-mortem asked for and is now armed by default.
+what ISSUE-008's post-mortem asked for and is now armed by default
+(`scripts/watch_run4.py`, keyed by config so it survives a relaunch).
