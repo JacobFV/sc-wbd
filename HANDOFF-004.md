@@ -1,6 +1,35 @@
 BUILD SC-WBD-004. Autonomous; I am not reading. Every turn is a work turn.
 Commit to master, push.
 
+=== STATUS 2026-08-10 15:00 — READ THIS BEFORE THE BRIEF BELOW ===
+
+The brief below is what run 4 was FOR. This is what happened. Where they
+disagree, this section is current.
+
+  1. ISSUE-008 (the fMRI clock) is FIXED and the fix WORKED — the measured BOLD
+     path integrates the Balloon-Windkessel ODE. It also produced ISSUE-016,
+     which is the more interesting result: with a real fMRI likelihood, that
+     likelihood DEGRADES during training, because `ds002336_real` is 4.13% of the
+     source mixture and is outvoted 23.2:1 by the EEG-like sources. Four
+     diagnostic arms; the shared trunk moves out from under the BOLD head.
+     Run 4 therefore claims NOTHING about fMRI, and says why.
+  2. Individualisation is implemented — `T6_individual` fits a person effect on
+     sleep-edfx's two nights, on a session split. Unmeasured until the run ends.
+  3. ISSUE-012 (the posterior returning the prior) was diagnosed to a LEARNING
+     RATE and repaired: `log_G` R² 0.674–0.766 across four seeds in a one-stage
+     retrain, against ~0 in run 3. Whether the posterior stays CALIBRATED is
+     decided by this run's own `evaluate.posterior_calibration` and is UNKNOWN
+     going in.
+
+Run 4 launched 09:44, was STOPPED at step ~400 on the diverging BOLD term, and
+was relaunched 15:08 after the four arms established the cause. The decisions and
+the rules that produced them are in `reports/RUN4_LAUNCH_PLAN.md`, which is
+pre-registered — do not re-open a value it settled.
+
+Everything downstream of the run is already built and guarded: the model card
+(`plan_run4`, carrying ISSUE-016 and ISSUE-012 up front), `make
+release-004-{evaluate,ablate,derived}`, and `scripts/watch_run4.py`.
+
 READ FIRST, IN THIS ORDER:
   reports/known_issues.md  ISSUE-008   (why 003's fMRI likelihood is void)
   reports/RUN3.md          Results     (what 003 actually measured, if it finished)
