@@ -186,6 +186,39 @@ datasets backend-stratified where the sweep's are merely shuffled. So the
 posterior's calibration is **unknown** going in, and the model card says so
 rather than the run discovering it afterwards.
 
+## Will it finish inside the wall clock? Projected at step 380
+
+The config's "~38 h" is **T1's rate applied to every stage**, and it says so.
+T1 is not representative — the smoke's `traj_s_per_s` puts T1 and T4 at 0.3 and
+T2/T3/T5 at 0.5, with T6 at 1.2 — so the naive extrapolation is pessimistic for
+four stages of six and correct for one.
+
+Live T1 rate over steps 100–380, excluding start-up: **9.91 s/step**. Scaling by
+the smoke's per-stage throughput:
+
+| stage | steps | s/step | hours |
+| --- | ---: | ---: | ---: |
+| `T1_measured_founding` | 4000 | 9.91 | 11.01 |
+| `T2_calibration` | 600 | 5.95 | 0.99 |
+| `T3_population_prior` | 800 | 5.95 | 1.32 |
+| `T4_simulator` | 5000 | 9.91 | 13.77 |
+| `T5_measured_return` | 3000 | 5.95 | 4.96 |
+| `T6_individual` | 1200 | 2.48 | 0.83 |
+| **TOTAL** | **14600** | | **32.9 h** |
+
+Against `max_wall_seconds` = 46 h that is **13.1 h of margin (29%)**, so the run
+is not expected to be cut off mid-stage.
+
+Two things this projection is NOT. The ratios come from the smoke's step-1 rows,
+which include per-stage warm-up — T4 allocates the simulator's graph on its first
+step — so T2/T3/T5/T6 are probably *faster* than shown and T4's figure is the
+least trustworthy of the six. And a wall-clock cut is not the only way to lose a
+stage: `max_wall_seconds` stops the run wherever it is, so the margin protects
+the LAST stage, T6, which is the one carrying the individualisation claim.
+
+Recorded at step 380 rather than at hour 40, because "will it fit" is a question
+worth answering while there is still time to act on the answer.
+
 ## Peak memory, ALL SIX STAGES — measured, and it moved the cap
 
 The cost block below measures **T1's loss set**, and says so: *"T4 admits the
