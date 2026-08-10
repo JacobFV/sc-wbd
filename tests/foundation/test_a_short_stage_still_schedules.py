@@ -19,6 +19,8 @@ resolved is by skipping the precondition.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 import torch
 
@@ -107,12 +109,31 @@ def test_run_stage_uses_the_helper() -> None:
     from scwbd.foundation.train import FoundationTrainer
 
     src = inspect.getsource(FoundationTrainer.run_stage)
-    assert "_one_cycle_pct_start(stage.warmup, stage.steps)" in src, (
+    assert "_one_cycle_pct_start(" in src, (
         "`run_stage` computes `pct_start` itself again. A short bounded stage "
         "then raises ZeroDivisionError from inside OneCycleLR before the first "
         "batch, and the pre-launch smoke this repo requires cannot be run."
     )
-    assert "total_steps=max(stage.steps, ONE_CYCLE_MIN_STEPS)" in src, (
-        "`run_stage` allows fewer total steps than OneCycleLR has any valid "
-        "`pct_start` for"
+
+    # The COUNT, not a literal. This asserted
+    # `_one_cycle_pct_start(stage.warmup, stage.steps)` verbatim and went red the
+    # moment `train.max_steps_per_stage` landed -- a cap that lets a smoke reach
+    # every stage, so `run_stage` now runs `n_steps` rather than `stage.steps`.
+    #
+    # The invariant was never the spelling. It is that `pct_start` and
+    # `total_steps` are derived from the SAME count. Building `pct_start` from
+    # `stage.steps` (1,200) while `total_steps` is the capped 4 is exactly the
+    # mismatch this file exists to prevent -- 60/1200 = 0.05, and 0.05 * 4 - 1 is
+    # negative, which is the ZeroDivisionError in the module docstring. So the
+    # cap made this assertion's literal wrong and its purpose more load-bearing.
+    tot = re.search(r"total_steps=max\(\s*([A-Za-z_][A-Za-z0-9_.]*)\s*,\s*ONE_CYCLE_MIN_STEPS", src)
+    pct = re.search(r"_one_cycle_pct_start\(\s*stage\.warmup\s*,\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\)", src)
+    assert tot, "`total_steps=max(<count>, ONE_CYCLE_MIN_STEPS)` is gone from run_stage"
+    assert pct, "`_one_cycle_pct_start(stage.warmup, <count>)` is gone from run_stage"
+    assert tot.group(1) == pct.group(1), (
+        f"`total_steps` is built from {tot.group(1)!r} and `pct_start` from "
+        f"{pct.group(1)!r}. They must be the SAME count. With "
+        "`max_steps_per_stage` capping a stage, deriving one from the configured "
+        "steps and the other from the steps actually run puts OneCycle's phase "
+        "boundary at a negative index -- the ZeroDivisionError this file is about."
     )
