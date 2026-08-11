@@ -59,6 +59,10 @@ GPU_CAP_GB = 80.0
 GPU_WARN_GB = 72.0
 MEM_FLOOR_GB = 12.0
 MEM_WARN_GB = 16.0
+
+#: Consecutive samples below the floor before CRITICAL. At a 60 s loop that is
+#: three minutes of sustained pressure, which a graph allocation is not.
+MEM_PERSIST = 3
 GRACE_S = 900             # the trainer builds anatomy and datasets before step 1
 
 
@@ -116,6 +120,7 @@ def main() -> int:
     started = time.time()
     seen_stage: str | None = None
     warned = {"mem": False, "bold": False, "eeg": False, "gpu": False}
+    mem_hist: list[float] = []
     n_rows = 0
     ever_alive = False
 
@@ -135,15 +140,34 @@ def main() -> int:
             )
             return 0
 
+        # MemAvailable must stay low to count. A single low sample is a TROUGH,
+        # not a trend: T4 allocates the simulator's graph on entry and
+        # MemAvailable dipped to 8.8 GB, then recovered to 25.6 over the next 80
+        # seconds. The first version declared CRITICAL on that one reading --
+        # third time this file has had a statistic that could not tell a
+        # transient from a trend, after the trend MEAN and the 20-row window.
+        #
+        # A false CRITICAL here is expensive in a specific way: the action it
+        # invites is killing something to free memory, and the things worth
+        # killing belong to the user.
         m = mem_gb()
-        if m < MEM_FLOOR_GB:
+        mem_hist.append(m)
+        del mem_hist[:-MEM_PERSIST]
+        sustained = len(mem_hist) == MEM_PERSIST and max(mem_hist) < MEM_FLOOR_GB
+        if sustained:
             print(
-                f"RUN4 MEMORY CRITICAL: MemAvailable {m:.1f} GB on a 121.6 GB UNIFIED "
-                "pool. This box has OOM'd before.",
+                f"RUN4 MEMORY CRITICAL: MemAvailable below {MEM_FLOOR_GB} GB for "
+                f"{MEM_PERSIST} consecutive samples ({['%.1f' % x for x in mem_hist]}) "
+                "on a 121.6 GB UNIFIED pool. This box has OOM'd before. Stage "
+                "checkpoints exist, so an OOM costs the current stage, not the run.",
                 flush=True,
             )
         elif m < MEM_WARN_GB and not warned["mem"]:
-            print(f"RUN4 memory warning: MemAvailable {m:.1f} GB", flush=True)
+            print(
+                f"RUN4 memory warning: MemAvailable {m:.1f} GB (single sample; "
+                "CRITICAL needs it sustained)",
+                flush=True,
+            )
             warned["mem"] = True
 
         r = rows()
