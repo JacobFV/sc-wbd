@@ -24,10 +24,13 @@ from __future__ import annotations
 import ast
 import inspect
 import textwrap
+from pathlib import Path
 
 import pytest
 
 from scwbd.release import publish
+
+REPO = Path(__file__).resolve().parents[2]
 
 
 def _card_text() -> str:
@@ -163,3 +166,39 @@ def test_the_card_does_not_claim_issue_016_is_fixed() -> None:
             "promising it."
         )
     assert "ISSUE-016 is open" in CARD_SRC
+
+
+def test_the_planner_actually_builds_a_plan() -> None:
+    """EXECUTE plan_run4, do not merely read its source.
+
+    Every other test in this file inspects the `limitation` string. That proves
+    the words are right and nothing about whether the function runs — and the
+    first time it is run for real will be the moment run 4 finishes, which is the
+    worst moment to discover that `plan_run1_checkpoint` no longer accepts these
+    arguments.
+
+    Exercised against RUN 3's checkpoint because run 4 has none yet. The card is
+    run-4's either way; what is under test is that the plan assembles.
+    """
+    ck = REPO / "checkpoints/scwbd-003"
+    ev = REPO / "reports/training/evaluation_run3.json"
+    if not (ck.is_dir() and ev.is_file()):
+        pytest.skip("run-3 checkpoint or evaluation absent; nothing to build a plan from")
+
+    plan = publish.plan_run4(
+        checkpoint_dir=str(ck),
+        evaluation=str(ev),
+        config=str(REPO / "configs/run3/scwbd-003.yaml"),
+        name="scwbd-004-DRYRUN",
+    )
+    assert plan.repo_type == "model", f"unexpected repo_type {plan.repo_type!r}"
+    assert plan.files, "the plan carries no files, so a publish would upload nothing"
+
+    card = plan.card or ""
+    assert card.startswith("> ## No fMRI claim"), (
+        "the caveat is no longer the FIRST thing in the card. It is prepended so a "
+        "reader meets it before the metrics table, not after."
+    )
+    # The caveat must survive being joined to the generated body.
+    for probe in ("ISSUE-016", "ISSUE-012", "4.13", "23.2"):
+        assert probe in card, f"{probe} did not survive into the assembled card"
