@@ -86,6 +86,53 @@ for:
 * **The four launch gates must cover it** before it trains, which they will,
   because they are parameterised over the run under test.
 
+## The cheaper option: fit the BOLD head AFTER pre-training
+
+Proposed by the user 2026-08-10 while run 4 was training, and it is better
+evidenced than the adapter above — because **arm C already tested it**.
+
+Arm C froze the shared trunk, left the observation heads live, and
+`real_bold_nll` went 1.99 → 1.86 over 200 steps and was still falling. That *is*
+post-hoc fitting, run for 200 steps by accident. The design is simply to do it on
+purpose: pre-train on the mixture as now, then a final stage that freezes
+everything except `bold.*` and fits the haemodynamic head to a settled latent
+state.
+
+**What it costs: nothing structural.** No new parameters, no new card
+permissions, no re-measured memory or step time, no gates to re-point. It is a
+seventh stage in the curriculum with a narrow `tier_permissions` block —
+mechanically the same shape as `T6_individual`, which already freezes the
+population and fits one thing.
+
+**What it changes is the CLAIM, and that is the real decision.**
+
+| | joint (adapter) | post-hoc fit |
+| --- | --- | --- |
+| what it demonstrates | fusion — fMRI shapes the shared state | a usable fMRI read-out from an EEG-shaped state |
+| paper's thesis (§0.2, joint multirate inference) | tests it | does not test it |
+| risk | may not work; the imbalance may be deeper than the interface | very likely works — arm C is the evidence |
+| cost | architecture change | one stage |
+
+They answer different questions and neither is a substitute. A post-hoc head
+gives the project a **working fMRI likelihood**, which it does not currently
+have, and it honestly cannot be described as fusion: the haemodynamic data would
+have had no influence on the latent state it reads from. The adapter attempts the
+thing the paper is actually about and may fail.
+
+**Doing both, in order, is probably right**: the post-hoc fit first, because it
+is cheap and gives a usable head plus a much better baseline; then the adapter,
+scored against that baseline. "Does joint training beat fitting the head
+afterwards?" is a sharper question than "does the adapter help?", and the
+post-hoc number is exactly the control that makes it answerable.
+
+**One correction to the framing.** The user called this an ML-talent limitation
+rather than a permanent constraint. On the evidence it is neither: the 23.2 : 1
+imbalance is a property of the CORPUS — 485 BOLD windows from 10 participants at
+one site, against ~100k EEG windows from 109 + 78 — and no amount of skill makes
+4% of a gradient behave like 50%. More fMRI data would move it; a better
+optimiser would not. That is worth being precise about, because "we were not good
+enough at this" and "the data is 23:1" imply completely different next actions.
+
 ## The falsifier, stated before anything is built
 
 **If `real_bold_nll` still climbs with the adapter in place, the adapter is not
