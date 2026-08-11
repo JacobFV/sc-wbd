@@ -254,10 +254,56 @@ worth answering while there is still time to act on the answer.
 ## If the wall clock runs out: what happens, and what it costs
 
 The projection above narrowed as measured rates replaced estimates — 32.9 h at
-step 380, 40.8 h at 6,040, **42.2 h at 8,100** against a 46 h limit. T4 is the
-reason: 13.14 s/step against T1's 10.04, where the planning number assumed
-parity. The margin protecting the LAST stage is now under four hours, so the
+step 380, 40.8 h at 6,040, 42.2 h at 8,100 against a 46 h limit. T4 is the
+reason: 13.15 s/step against T1's 10.04, where the planning number assumed
+parity. The margin protecting the LAST stage is under four hours, so the
 behaviour on exhaustion is worth knowing before it is needed rather than after.
+
+**One correction to how that was projected, because it changes the answer.**
+Re-derived at step 8,180 the number came out at 48.44 h — 2.44 h *over* — and
+the whole difference was the rate charged to the two unstarted stages. Charging
+them T4's 13.15 s/step is wrong: T4 is the only stage that admits the simulator
+and carries `lambda_posterior` and `lambda_slice`. `T5_measured_return` returns
+to measured sources with neither term.
+
+Run 3 measured the ratio directly, on the same six-stage curriculum:
+
+| stage | run 3 s/step | ÷ T1 |
+| --- | --- | --- |
+| T1_measured_founding | 7.16 | 1.000 |
+| T2_calibration | 7.02 | 0.981 |
+| T3_population_prior | 7.07 | 0.988 |
+| T4_simulator | 8.83 | 1.233 |
+| T5_measured_return | 7.19 | **1.004** |
+| T6_individual | — | did not exist |
+
+Run 3 completed 13,400 / 13,400 steps over **five** stages; `T6_individual` is
+new in run 4 (`configs/run3/scwbd-003.yaml` defines T1..T5 and no more). So the
+T6 row of the projection below is the one number with no measured precedent
+anywhere in the project — an extrapolation from T1's loss set, not a transferred
+measurement. That is an argument for the withholding rule, not against it.
+
+Applying run 3's ratios to run 4's own measured T1 of 10.04 s/step:
+
+| unstarted stages priced at | projected | margin | T6 gets |
+| --- | --- | --- | --- |
+| T1's rate (run 3's measured shape) | 44.84 h | **+1.16 h** | 1200/1200 |
+| T1's rate, T6 20% over | 45.51 h | +0.49 h | 1200/1200 |
+| T4's rate (the wrong denominator) | 48.44 h | −2.44 h | 532/1200 |
+
+So the run finishes complete on the evidence, with about an hour to spare, and
+truncates only under an assumption run 3 refutes for T5. That is a thin margin
+resting on a transferred ratio, not a comfortable one.
+
+**The pre-registered check, so this is not re-litigated later.** T4 ends at
+≈33.1 h elapsed and T5's rate is measurable 20 steps after that. At **T5 step
+100**, compute s/step from `wall_s` and read off the T6 budget:
+
+* **≤ 10.5 s/step** — T6 completes. Nothing to decide.
+* **10.5–12.0** — T6 is tight; record the projection in the model card *before*
+  T6 starts, so the step count is not discovered after the fact.
+* **> 12.0 s/step** — T6 will truncate. The withholding rule below applies and
+  is invoked as written, not renegotiated against how the number looks.
 
 **It degrades, it does not crash.** Two checks, at different granularities:
 
