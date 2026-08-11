@@ -251,6 +251,39 @@ the LAST stage, T6, which is the one carrying the individualisation claim.
 Recorded at step 380 rather than at hour 40, because "will it fit" is a question
 worth answering while there is still time to act on the answer.
 
+## If the wall clock runs out: what happens, and what it costs
+
+The projection above narrowed as measured rates replaced estimates — 32.9 h at
+step 380, 40.8 h at 6,040, **42.2 h at 8,100** against a 46 h limit. T4 is the
+reason: 13.14 s/step against T1's 10.04, where the planning number assumed
+parity. The margin protecting the LAST stage is now under four hours, so the
+behaviour on exhaustion is worth knowing before it is needed rather than after.
+
+**It degrades, it does not crash.** Two checks, at different granularities:
+
+* per step, inside `run_stage` — on the deadline it prints
+  `wall-clock deadline reached at step N` and `break`s out of the loop. The code
+  after the loop still runs, so **`stage_<name>.pt` is still written**
+  (`train.py:2527`). A truncated stage saves.
+* per stage, in `train` — before starting a stage it prints
+  `global wall-clock budget exhausted` and stops. A stage that has not begun is
+  simply not begun.
+
+**So the worst case is a short T6, not a lost run.** `T6_individual` fits the
+person effect over frozen population weights; truncated, the individualiser is
+present but under-trained, and `session_individualisation` would score a partly
+fitted effect.
+
+**That number must not be reported as a null result if it happens.** "The person
+effect did not generalise" and "the person effect had 400 of its 1,200 steps"
+are different claims, and only the log can tell them apart. If T6 is truncated,
+the step count goes in the model card beside the individualisation number, and
+the claim is withheld rather than reported weak.
+
+Nothing can be done about it mid-run: `max_wall_seconds` is read once, at
+`train()` entry, so the deadline is fixed for the life of the process. Recorded
+here so that if it fires, the interpretation is already decided.
+
 ## Peak memory, ALL SIX STAGES — measured, and it moved the cap
 
 The cost block below measures **T1's loss set**, and says so: *"T4 admits the
