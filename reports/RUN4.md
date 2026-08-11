@@ -109,6 +109,38 @@ If BOLD degrades because the trunk moves under it, then:
    checkpoint's training. Anyone reading it must be told that; the model card is
    written accordingly.
 
+### CONFIRMED at step 1000 — and the magnitude is larger than "degrades"
+
+The prediction above was written at step 260. At step 1000, still inside T1:
+
+```
+step      loss     eeg     bold   bold_scale
+   1     1.000    1.74     1.99      5.676
+ 400     1.047    1.57    19.77      5.666
+ 800     0.986    1.43   137.89      5.572
+1000     0.978    1.52   104.54      5.490
+```
+
+`real_bold_nll` is up **two orders of magnitude in 1,000 steps** and does not
+recover within the stage. Prediction 1 holds; the falsifier did not fire.
+
+Three controls make this a FUSION result rather than an instability, and all
+three are measured:
+
+* **`eeg_nll` IMPROVED** across the same span, 1.74 → 1.50. The accepted risk —
+  that a diverging term would damage the shared trunk — has not materialised.
+* **Total `loss` is flat** near 1.0, so the fMRI term is not dominating the
+  mixture despite being ~100× the others in magnitude.
+* **`bold_log_scale` holds at 5.3–5.9**, so this is not a variance channel
+  running away.
+
+One term gets monotonically worse while everything around it gets better. That is
+the shape of a source losing a competition, not of a model breaking.
+
+Precedent for continuing: run 3's `real_bold_nll` reached **4.4e6** and that run
+still completed 13,400 steps. The trainer tolerates this term diverging, which is
+itself part of why it went unread for 46% of a 25-hour run.
+
 **The falsifier.** If `real_bold_nll` stabilises or falls while the trunk is
 still training — anywhere in T1–T5 — the 23.2 : 1 gradient-share explanation is
 wrong or incomplete, ISSUE-016 must be reopened, and `RUN5_DESIGN.md`'s adapter

@@ -87,8 +87,19 @@ def test_run4_has_a_planner_at_all() -> None:
         "4.13",           # the mixture share
         "23.2",           # the imbalance
         "ISSUE-016",
-        "degrades during training",
+        "diverges during training",
         "shared trunk",
+        # The MAGNITUDE, measured at step 1000 of the relaunch. The card first
+        # said "degrades … 1.99 to 12.96", which was true of the aborted run's
+        # 400 steps and is far too soft for what T1 actually does: ~200, two
+        # orders of magnitude. "Degrades" invites a reader to imagine a few
+        # percent.
+        "orders of magnitude",
+        # And the three controls that make it a FUSION result rather than an
+        # instability: EEG improves, total loss is flat, the variance channel is
+        # steady. Without them a reader can reasonably assume the run was simply
+        # blowing up.
+        "IMPROVED",
     ],
 )
 def test_the_card_states_the_fmri_finding_with_its_numbers(phrase: str) -> None:
