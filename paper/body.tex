@@ -2530,6 +2530,72 @@ seven-source mixture, because the other six sources hold 78, 10, 4, 2, 2 and 2
 participants and five of them cannot support a held-out-participant claim at all.
 What the six other sources changed is the model being scored, not the test set.
 
+\subsection{11.10 Fifth-Gate: What a Working fMRI Likelihood Revealed}
+
+\textbf{PENDING --- this subsection is filled from SC-WBD-004's completed run.
+The finding below is measured; the run's held-out scores are not yet in and no
+number from them appears here.}
+
+The fourth gate's model carried a defect its own report disclosed: the measured
+BOLD path never integrated the Balloon--Windkessel ODE, so the five haemodynamic
+parameters were bit-identical to their initialisation across all five stages and
+the fMRI likelihood was inert. The fifth gate repairs the clock. The measured
+path now rolls the neural state for the duration a BOLD frame covers---250 steps
+per frame at \(TR = 2\)\,s and \(\Delta t = 8\)\,ms, against the fourth gate's
+eight steps for an entire window.
+
+\textbf{The repair worked, and the first thing a working fMRI likelihood revealed
+is that it loses.} Across the founding stage \texttt{real\_bold\_nll} rises by two
+orders of magnitude---\(1.99\) at step 1 to \(\approx\!200\) by step 1{,}000---while
+the electrical likelihood \emph{improves} over the same span (\(1.74 \to 1.50\)),
+the total objective stays flat near \(1.0\), and the haemodynamic variance channel
+holds at \(5.3\)--\(5.9\). One term degrades monotonically while everything around
+it improves, which is the signature of a source losing a competition rather than
+of an optimiser failing.
+
+Four interventions locate the cause, each run on a matched learning-rate schedule
+from the same seed. Freezing the five Balloon parameters changes nothing
+(\(3.70\) against the unmodified \(3.21\) at step 160), which refutes the obvious
+reading that an ODE rate constant is being stepped at a residual-stack rate.
+Freezing the \emph{shared trunk} instead---the regional operators, the coupling
+and the message read-in---makes the haemodynamic likelihood \emph{improve}
+(\(1.99 \to 1.86\), still falling at step 200). Giving the haemodynamic head its
+own optimiser group at five times the stage rate improves its median and
+destabilises it (median \(2.11\), maximum \(14.24\)). The head models the data;
+it cannot track a latent state being reshaped underneath it.
+
+\textbf{The mechanism is a gradient-share imbalance, and it is measured rather
+than inferred.} The mixture's per-source contributions in the founding stage put
+the sole haemodynamic corpus at \(0.0413\) against \(0.9587\) for the six
+electrical and behavioural sources---\(23.2\!:\!1\). The trunk converges on what
+the electrical sources require, and the haemodynamic head reads that same state.
+
+This corroborates the first gate's identifiability result by an independent
+route. There, an analytic Fisher calculation in a linear-Gaussian surrogate that
+imports nothing from the training code put the haemodynamic channel at \(0.1\%\)
+to \(1.0\%\) of the electrical channel's information about the coupling gains.
+Here, an empirical training run puts it at \(4\%\) of the gradient and watches it
+lose. Neither figure was derived from the other, and the two disagree only in the
+direction one would expect from a corpus that is \(485\) haemodynamic windows
+against roughly \(10^5\) electrical ones.
+
+\textbf{No fMRI, haemodynamic or neurovascular claim is available from this
+artifact}, and the model card says so at the top rather than leaving a reader to
+infer it from a contributing-source list that truthfully includes the
+haemodynamic corpus. That corpus contributed a gradient; it did not thereby
+contribute information, and in this run the two move in opposite directions.
+
+The remedy is not a learning rate, and the negative result is not a licence to
+reweight the mixture---upweighting \(485\) windows from ten participants at one
+site would pull the shared state away from the held-out corpus every published
+score rests on. What the fourth arm's evidence supports is either an adapter
+between the shared state and the haemodynamic head that only that head's gradient
+touches, or fitting the head after pre-training against a settled state. The
+second is cheaper and already half-demonstrated by the frozen-trunk arm; it
+yields a usable read-out and, honestly described, is not fusion. The first tests
+the thesis of Section 0.2 and may fail. Their difference is a claim, not a
+hyperparameter.
+
 \section{12. Confidence-Calibrated Development Horizons}
 
 \subsection{12.1 Near-Term: Executable Multimodal Subsystems}
