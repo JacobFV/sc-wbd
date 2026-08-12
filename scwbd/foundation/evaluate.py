@@ -90,6 +90,7 @@ def _scwbd_scores(
     *,
     n_theta_samples: int = 32,
     n_mean_samples: int = 256,
+    source_id: str = "eegmmidb_real",
 ) -> dict[str, Any]:
     """Per-window sensor-space NLL and MSE of the foundation model.
 
@@ -111,6 +112,16 @@ def _scwbd_scores(
     """
     model, cfg = trainer.model, trainer.cfg
     model.eval()
+    # Both the projector and the observation head are per-MONTAGE. Hardcoding
+    # `trainer.sensor_to_parcel` and `model.eeg` pinned this function to the
+    # 64-channel founding montage, so calling it on sleep-EDFx's 2 channels
+    # raised `einsum(): subscript c has size 2 ... does not broadcast with
+    # previously seen size 64`. That is `train.eeg_projector`'s docstring
+    # verbatim: sharing the 64-channel projector with a 2-channel source is a
+    # shape error, and sharing it with a DIFFERENT 64-channel montage is worse,
+    # because it projects through the wrong geometry and raises nothing.
+    projector = trainer.eeg_projector(source_id)
+    eeg_head = model.eeg_head_for(source_id)
     c = cfg.data.context
     nlls: list[np.ndarray] = []
     nlls_norm: list[np.ndarray] = []
@@ -127,7 +138,7 @@ def _scwbd_scores(
         with torch.autocast("cuda", dtype=torch.bfloat16, enabled=cfg.model.use_bf16):
             _bind_mechanistic(model, th)
             roll = model.rollout(y_context=src, theta=th, n_steps=y.shape[1], enforce_r05=False)
-            mu, lv = model.eeg(roll.state)
+            mu, lv = eeg_head(roll.state)
         m_k = mu.float()
         v_k = lv.float().clamp(-14, 14)
         # RAW data units, matching baselines._gaussian_nll. Rescaling by the
@@ -139,7 +150,7 @@ def _scwbd_scores(
     for batch in loader:
         eeg = batch["eeg"].to(trainer.device)
         ctx_e, tgt_e = eeg[:, :c], eeg[:, c:]
-        src = trainer.sensor_to_parcel(ctx_e)
+        src = projector(ctx_e)
         src = src / src.std(dim=(1, 2), keepdim=True).clamp_min(1e-6)
         y = tgt_e.float()
         n_elem = float(y.shape[1] * y.shape[2])
@@ -1631,7 +1642,7 @@ def session_individualisation(
     loader = torch.utils.data.DataLoader(
         torch.utils.data.Subset(ds, test_idx), batch_size=bs, shuffle=False, num_workers=2
     )
-    scores = _scwbd_scores(trainer, loader, n_mean_samples=64)
+    scores = _scwbd_scores(trainer, loader, n_mean_samples=64, source_id=source_id)
     nll = np.asarray(scores["nll_per_window"], dtype=float)
     scored_subjects = list(scores["subjects"])
 

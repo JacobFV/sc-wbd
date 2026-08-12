@@ -103,6 +103,70 @@ def test_the_entry_point_is_the_last_top_level_statement():
     )
 
 
+def test_the_scorer_is_montage_aware():
+    """`_scwbd_scores` must route through the SOURCE's projector and head.
+
+    Hardcoding `trainer.sensor_to_parcel` and `model.eeg` pinned the scorer to
+    the founding 64-channel montage. `session_individualisation` scores
+    sleep-EDFx, which has 2 channels, so the call raised
+
+        einsum(): subscript c has size 2 for operand 1 which does not
+        broadcast with previously seen size 64
+
+    The shape error is the benign case. `train.eeg_projector`'s own docstring
+    names the malign one: another 64-channel source on DIFFERENT electrodes
+    raises nothing and projects through the wrong geometry.
+    """
+    src = EVALUATE.read_text()
+    tree = ast.parse(src)
+    fn = next(
+        (n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "_scwbd_scores"),
+        None,
+    )
+    assert fn is not None, "_scwbd_scores not found"
+    body = ast.get_source_segment(src, fn) or ""
+
+    assert "source_id" in {a.arg for a in fn.args.kwonlyargs}, (
+        "_scwbd_scores takes no source_id, so every caller scores through the "
+        "founding montage whatever source it passed a loader for"
+    )
+    assert "eeg_projector(source_id)" in body, (
+        "_scwbd_scores does not ask trainer.eeg_projector for the source's projector"
+    )
+    assert "eeg_head_for(source_id)" in body, (
+        "_scwbd_scores does not ask the model for the source's observation head"
+    )
+    assert "trainer.sensor_to_parcel(" not in body, (
+        "_scwbd_scores still calls trainer.sensor_to_parcel directly -- that is the "
+        "founding montage's projector regardless of which source it was handed"
+    )
+    assert "model.eeg(" not in body, (
+        "_scwbd_scores still calls model.eeg directly -- that is the founding "
+        "montage's observation head regardless of source"
+    )
+
+
+def test_session_individualisation_passes_its_source_through():
+    """It scores sleep-EDFx; scoring it through eegmmidb's operator is the bug above."""
+    src = EVALUATE.read_text()
+    tree = ast.parse(src)
+    fn = next(
+        (
+            n
+            for n in ast.walk(tree)
+            if isinstance(n, ast.FunctionDef) and n.name == "session_individualisation"
+        ),
+        None,
+    )
+    assert fn is not None, "session_individualisation not found"
+    body = ast.get_source_segment(src, fn) or ""
+    assert "_scwbd_scores(" in body, "session_individualisation does not score the model at all"
+    assert "source_id=source_id" in body, (
+        "session_individualisation calls _scwbd_scores without forwarding source_id, "
+        "so its sleep-EDFx windows are scored through the 64-channel montage"
+    )
+
+
 EVALUATIONS = sorted((ROOT / "reports/training").glob("evaluation_run*.json"))
 
 
