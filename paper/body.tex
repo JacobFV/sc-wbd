@@ -2532,9 +2532,9 @@ What the six other sources changed is the model being scored, not the test set.
 
 \subsection{11.10 Fifth-Gate: What a Working fMRI Likelihood Revealed}
 
-\textbf{PENDING --- this subsection is filled from SC-WBD-004's completed run.
-The finding below is measured; the run's held-out scores are not yet in and no
-number from them appears here.}
+\textbf{SC-WBD-004 completed all 14{,}600 steps on 2026-08-12. The haemodynamic
+finding below is measured over the full curriculum. The run's held-out scores are
+a separate matter and no number from them appears in this subsection.}
 
 The fourth gate's model carried a defect its own report disclosed: the measured
 BOLD path never integrated the Balloon--Windkessel ODE, so the five haemodynamic
@@ -2545,13 +2545,24 @@ per frame at \(TR = 2\)\,s and \(\Delta t = 8\)\,ms, against the fourth gate's
 eight steps for an entire window.
 
 \textbf{The repair worked, and the first thing a working fMRI likelihood revealed
-is that it loses.} Across the founding stage \texttt{real\_bold\_nll} rises by two
-orders of magnitude---\(1.99\) at step 1 to \(\approx\!200\) by step 1{,}000---while
-the electrical likelihood \emph{improves} over the same span (\(1.74 \to 1.50\)),
-the total objective stays flat near \(1.0\), and the haemodynamic variance channel
-holds at \(5.3\)--\(5.9\). One term degrades monotonically while everything around
-it improves, which is the signature of a source losing a competition rather than
-of an optimiser failing.
+is that it loses.} Over the full run \texttt{real\_bold\_nll} rises from \(1.99\)
+at step 1 to \(36{,}472\) at step 14{,}600---a factor of roughly \(1.8 \times
+10^{4}\)---while the electrical likelihood \emph{improves} over the same span, the
+total objective stays flat near \(1.0\), and the haemodynamic variance channel
+holds at \(5.3\)--\(5.9\). One term degrades while everything around it improves,
+which is the signature of a source losing a competition rather than of an
+optimiser failing.
+
+Two properties are visible only at full length. The divergence does not
+\emph{plateau}: within the simulator stage alone the term spans \(1.53 \times
+10^{3}\) to \(6.51 \times 10^{5}\), four orders of magnitude inside one stage, so
+this is not a likelihood that has settled on a poor constant but one being moved
+by a latent state optimising for something else. And the \emph{return to measured
+sources does not repair it}: the fifth stage grants the haemodynamic parameters
+again and is the stage most likely to pull the head back onto its data, and it
+ends at \(36{,}472\)---four orders of magnitude above where the founding stage
+began. Parcel coverage held at its full value throughout, so the ODE integrated
+on every parcel for the whole run and the likelihood it produced is unusable.
 
 Four interventions locate the cause, each run on a matched learning-rate schedule
 from the same seed. Freezing the five Balloon parameters changes nothing
