@@ -685,7 +685,9 @@ two should be discharged together, and the duplication decided first.
 
 ## ISSUE-010 — the source ablation overwrote the checkpoint it was evaluating
 
-**Status:** repaired. The destroyed artifacts were recovered; one is permanently lost.
+**Status:** repaired, and **verified under a live ablation on 2026-08-12** — see
+"Verification" at the end of this entry. The destroyed artifacts were recovered; one is
+permanently lost.
 **Severity:** destroyed 25 hours of compute's primary artifact at its published path. Recovered
 from a sibling checkpoint written in the same instant.
 
@@ -787,6 +789,34 @@ has to stay empty to keep the refusal honest.
 
 
 ---
+
+### Verification — 2026-08-12, while an ablation was actually running
+
+This entry was marked repaired on the strength of the redirect. `make
+release-004-ablate` gave the first chance to check it against a live run rather
+than against the code, so it was checked mid-flight, with eleven retraining arms
+in progress:
+
+| artifact | expected | observed |
+|---|---|---|
+| `checkpoints/scwbd-004/last.pt` | mtime unchanged from training end | 09:29:26, unchanged |
+| `reports/training/scwbd-004/mixture_*.json` | untouched | untouched |
+| `reports/training/scwbd-004_train.jsonl` | last row `global_step 14600` | `14600`, stage `T6_individual` |
+| `git status` over all three | clean | clean |
+
+Run 3's equivalent check would have failed on every row: an arm had replaced
+`last.pt` with 200 steps of training, appended a `global_step=1` row to the
+completed log, and overwritten the published T4 mixture with a nine-source
+version missing the family that arm had dropped.
+
+**Why this is recorded rather than assumed.** This defect was declared fixed four
+times — `ckpt_every`, then `log_every`, then a logger redirect, then `out_dir` —
+and each partial fix left something still writing to a production path. A fifth
+declaration on the strength of reading the code would have been the same move
+again. The redirect is a directory-level one, so artifacts added later follow
+automatically; that is the property being relied on, and it now has one live
+observation behind it rather than an argument.
+
 
 ## ISSUE-011 — SC-WBD-003 cannot be released: four of its sources cannot be attributed
 
