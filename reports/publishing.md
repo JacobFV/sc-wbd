@@ -372,3 +372,40 @@ this is not", the two run-1 diagnoses — is written by me and traceable to
 
 Each card carries a "How this card was produced" footer listing its sources, so
 a reader can audit any figure back to a file.
+
+## 2026-08-12 — run 4: the published card went stale inside one session
+
+`scwbd-004` was pushed, and then the card changed underneath it.
+
+The sequence: the model was published with a card whose fMRI paragraph I had
+rewritten. A guard then failed and showed the rewrite had dropped three phrases —
+`IMPROVED`, `bold_log_scale`, and "variance explosion" — which are the controls
+that make the finding a *fusion* result rather than an instability. Without them
+a reader can reasonably conclude the run was blowing up. I restored them in
+`plan_run4`.
+
+At that point the generator and the artifact disagreed, and nothing in the push
+path would have noticed: the weights were unchanged, so a re-push would have
+reported "no files modified" and skipped.
+
+**Checked rather than assumed.** Downloaded the published `README.md` and
+compared it against a freshly built `plan_run4` card:
+
+```
+published 19,493 bytes   fresh 19,628 bytes
+  IMPROVED            published=N  fresh=Y
+  bold_log_scale      published=N  fresh=Y
+  variance explosion  published=N  fresh=Y
+```
+
+Re-pushed with `--allow-existing` and re-fetched with `force_download=True` —
+the local cache would otherwise have returned the stale copy and confirmed the
+wrong thing. Now 19,628 bytes with all three present.
+
+**The rule this adds to the one already in this file:** the near-miss recorded
+above was a stale artifact from a *previous* run. This one went stale in the
+same session, in under an hour, because the card was corrected after it shipped.
+Publishing is not the end of the check. If the generator changes after a push,
+diff the published bytes against a fresh build before assuming the push is still
+good — and force the download when you do, or you are diffing against your own
+cache.
