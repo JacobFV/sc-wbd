@@ -28,7 +28,7 @@ here and the entries below are the detail.
 | ISSUE-009 | closed | `check_r12` could not read a config object; R12 had two enforcers |
 | ISSUE-010 | repaired | the ablation overwrote the checkpoint it was evaluating |
 | ISSUE-011 | closed | four sources unattributable; SC-WBD-003 could not be released |
-| ISSUE-012 | **open — cause found, discharge pending run 4** | the amortised posterior is calibrated and carries no information. The one-stage retrain ran 2026-08-10: the LEARNING RATE was the defect (`log_G` R² −0.001 at run 3's 4.0e-6, **+0.674** at 1.0e-3, control reproducing run 3 to 0.01), and the across-dataset conditioning is what keeps the high rate from being overconfident. Not discharged: `sbc_ks_pvalue_min` from the sweep is not comparable to production's, so calibration is unknown until a run measures it |
+| ISSUE-012 | **open — run 4 measured it; NOT discharged, new failure mode** | run 3's posterior returned the prior and was calibrated by construction. The learning-rate repair worked and overshot: run 4's `log_G` is 8× narrower than the prior with R² **0.284** (the one-stage sweep predicted 0.674–0.766) and **z-sd 59.25**, `sbc_ks_pvalue_min` **1.0e-147**, `coverage_mae` **0.203**. Four of six parameters still explain no variance. Uninformative-but-honest became partly-informative-and-overconfident; neither supports inference. The claim now publishes `unsupported` where run 3's published `partial` |
 | ISSUE-013 | closed 2026-08-09 for run 4 | the pooled `subject_specific_ar` row is dropped; the arm is measured on a within-participant temporal split. Run 3's published table still carries the duplicate row and is described as five comparators, not six |
 | ISSUE-014 | closed 2026-08-09 for run 4 | the split policy is versioned and declared per run; run 4 takes `stable_hash_v2` (0 of 108 move), runs 1-3 stay pinned to `shuffle_slice_v1` (28 move, 6 into test), and `--quick` refuses an order-dependent policy |
 | ISSUE-015 | closed 2026-08-09 | ~20 prose sites stated DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6×; rewritten, rebuilt and republished |
@@ -1286,8 +1286,10 @@ published DK's number as SC-WBD's — which is the defect this entry records.
 
 ## ISSUE-012 — the amortised posterior returns the prior, and the calibration block certifies it
 
-**Status:** open. The defect that fed it is fixed in code; the posterior itself is untrained and
-cannot be repaired without a run.
+**Status:** open. Run 4 has now measured it and did NOT discharge it — the repair worked and
+overshot, replacing an uninformative posterior with an overconfident one. **The section below
+describes RUN 3 and is kept as the diagnosis that led to the fix; for the current state read
+"ISSUE-012, run 4" further down this file.**
 **Severity:** high for any inference claim, zero for the forecast claims. It voids
 `amortized_posterior_self_consistency` as evidence of inference and everything downstream of it.
 **Diagnosed:** 2026-08-09, from `checkpoints/scwbd-003/last.pt` and the run's own logs. No training
@@ -1597,6 +1599,66 @@ Seven guards were added beside them, all green:
 is no longer a "known red" set to hide inside — which was the whole hazard
 RUN2.md §448 recorded: a known-failure row catalogued by its total rather than
 by its failure mode, growing a new member while the count stayed the same.
+
+---
+
+## ISSUE-012, run 4: the repair worked and overshot. Still open, new failure mode
+
+**Measured 2026-08-12** from `checkpoints/scwbd-004/last.pt`, 512 held-out simulated datasets,
+`reports/training/evaluation_run4.json` → `posterior_calibration`. Run 4 is the run that was
+supposed to discharge this. It did not. It replaced one failure mode with its opposite.
+
+| parameter | run 3 R² | run 4 R² | sd/prior sd | sd of mean/prior sd | z-sd | SBC KS p |
+|---|---:|---:|---:|---:|---:|---:|
+| `log_G` | −0.001 | **0.284** | 0.122 | 1.100 | **59.25** | 1.0e-147 |
+| `log_velocity` | −0.031 | −0.065 | 0.942 | 0.300 | 1.01 | 0.050 |
+| `ei_global` | −0.022 | −0.072 | 0.655 | 0.427 | 1.77 | 4.4e-14 |
+| `ei_gradient` | −0.035 | −0.184 | 0.734 | 0.530 | 15.06 | 1.3e-20 |
+| `log_sigma` | −0.012 | **0.102** | 0.126 | 0.679 | 20.66 | 2.0e-70 |
+| `drive` | −0.035 | −0.026 | 0.938 | 0.276 | 1.06 | 5.8e-4 |
+
+`coverage_mae` 0.203 against run 3's 0.021. `sbc_ks_pvalue_min` 1.0e-147 against run 3's 0.098.
+
+**The learning-rate diagnosis was right.** Run 3's posterior ignored its conditioning: every sd
+ratio within 3% of the prior's, the mean moving 9% of a prior sd. Run 4's `log_G` posterior is
+**8× narrower than the prior** and its mean now moves by 1.10 prior sd as the data change. The flow
+reads its conditioning. That is the thing three runs could not achieve and it is not a small result.
+
+**And it is not usable, because it is confidently wrong.** A z-sd of 59.25 means the posterior mean
+sits about 59 of its own standard deviations from the truth, on average. It narrowed by 8× and
+earned about a quarter of that narrowing. Run 3 was uninformative and honest; run 4 is partly
+informative and overconfident, and the SBC p-values are not marginal failures — 1.0e-147 is a
+histogram piled entirely in its end bins.
+
+Neither state supports an inference claim, and the two are not on a path from worse to better. They
+are two different ways to be unusable.
+
+**Four of six parameters still explain no variance** — `log_velocity`, `ei_global`, `ei_gradient`,
+`drive`, all R² ≤ 0, all with sd ratios near the prior's. The repair reached `log_G` and `log_sigma`
+and left the other four exactly where run 3 had them.
+
+### The sweep predicted 0.674–0.766 and production returned 0.284
+
+The four-seed one-stage retrain that diagnosed the learning rate measured `log_G` R² 0.674–0.766.
+Production, same learning rate, returned **0.284** — under half. The sweep was not wrong about the
+direction and it was wrong about the magnitude by a factor of two and a half.
+
+The difference between the two settings is that the sweep retrained **one stage** and production
+runs six. T4 founds the posterior with `lambda_posterior: 1.0`; T5 and T6 follow it with 0.2 and
+0.0, and neither admits the simulator. **Hypothesis, not measurement:** whatever T4 builds is
+partly given back over the 4,200 measured-return steps that follow it. What would settle it is
+`stage_T4_simulator.pt` scored through the same block as `last.pt` — both checkpoints are on disk,
+it costs one evaluation, and it has not been run. Do not repeat the sweep's number as a prediction
+for a full curriculum until it has.
+
+**Discharge condition, unchanged in kind:** `sbc_ks_pvalue_min` > 0.01, `coverage_mae` < 0.12, and
+`posterior_r2` above 0.05 on more than one parameter, measured by a production run's own
+`evaluate.posterior_calibration`. Run 4 fails the first two decisively and the third partially.
+
+The claim gate computed this correctly without intervention: `calibrated = worst > 0.01 and mae <
+0.12` is False, so `amortized_posterior_self_consistency` publishes as **`unsupported`**. Run 3's
+identical claim published as `partial`. That is the machinery working — the block that certified an
+uninformative posterior in run 3 now refuses an overconfident one.
 
 ---
 
