@@ -409,3 +409,30 @@ Publishing is not the end of the check. If the generator changes after a push,
 diff the published bytes against a fresh build before assuming the push is still
 good — and force the download when you do, or you are diffing against your own
 cache.
+
+### Verifying a phrase is in a built PDF: strip the operators first
+
+`make paper` exiting 0 does not tell you a new section rendered, so these
+sections have been verified by decompressing the PDF's content streams and
+searching them. That check is **kerning-fragile** and produced one false alarm:
+
+```
+build 1:  "Three Measurements, Three Negatives"  -> 1 stream
+build 2:  "Three Measurements"                   -> 0 streams
+```
+
+The section was in both. Between builds the line breaking changed and the title
+split across PDF text-showing operators, so the contiguous substring stopped
+existing while every word of it was still there. A shorter probe is *more*
+fragile, not less.
+
+Search a flattened form instead — strip everything that is not alphanumeric or
+space from the decompressed streams, then count individual distinctive words:
+
+```python
+flat = re.sub(rb"[^A-Za-z0-9 ]", b"", text)
+flat.count(b"Negatives")   # 1
+flat.count(b"unmeasurable")  # 1
+```
+
+`pdftotext` is not installed on this box, which is why this is done by hand.
