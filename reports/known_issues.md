@@ -1915,7 +1915,27 @@ a decoupled trunk — belongs to run 5 and is specified in `reports/RUN5_DESIGN.
 personalized neurotechnology"), zero for the forecast claims. It makes
 `session_individualisation` unsupported and nothing else.
 **Found:** by running the block for the first time. Three defects had to be
-fixed before it could produce a number at all — see the entry below.
+fixed before it could produce a number at all, and they are the reason this was
+never measured rather than measured and ignored:
+
+1. `session_individualisation` was never CALLED by `evaluate_model`. Two other
+   blocks look like they cover individualisation and neither does —
+   `real_eeg_holdout` is participant-disjoint so every scored person sits at
+   `z_person` exactly zero, and `within_participant_holdout` scores the SC-WBD
+   arm with no person effect fitted while its AR arm *is* fitted on that
+   participant's past.
+2. It could not have been called. The `if __name__ == "__main__"` guard sat 44
+   lines ABOVE that function's `def`, so `python -m scwbd.foundation.evaluate`
+   ran `main()` before it existed. Wiring in the call produced `NameError`, not
+   a number. The same defect was then found in `release/publish.py` and
+   `foundation/release.py`; `tests/release/test_entry_points_are_last.py` now
+   sweeps the whole package.
+3. `_scwbd_scores` hardcoded the founding 64-channel projector and observation
+   head. Sleep-EDFx has 2 channels, so the call raised on shape. It takes a
+   `source_id` now.
+
+All three are fixed and mutation-tested. The full account is in `RUN4.md`,
+"Individualisation: measured for the first time, and unsupported".
 
 ### What was measured
 
