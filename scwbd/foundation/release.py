@@ -412,8 +412,6 @@ def main(argv: Sequence[str] | None = None) -> None:  # pragma: no cover
     print(m.to_markdown())
 
 
-if __name__ == "__main__":  # pragma: no cover
-    main()
 
 
 #: Per-source diagnostic key -> source id. The trainer writes one of these for
@@ -469,3 +467,9 @@ def contributed_sources_union(checkpoint_extra, train_log) -> tuple[list[str], l
                     seen.add(sid)
     union = sorted(set(recorded) | seen)
     return union, sorted(seen - set(recorded))
+
+
+# Entry point LAST: anything below it is dead when run as __main__.
+# Guarded by tests/release/test_entry_points_are_last.py.
+if __name__ == "__main__":  # pragma: no cover
+    main()

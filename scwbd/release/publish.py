@@ -1896,8 +1896,9 @@ def plan_run4(
     # card that quotes a pre-run sweep as though it were the run's own result is
     # exactly what `reports/publishing.md` records as the near-miss -- so the
     # numbers now come off the artifact and cannot go stale again.
-    posterior_note = _run4_posterior_note(root / evaluation)
-    individualisation_note = _run4_individualisation_note(root / evaluation)
+    _root = repo_root or REPO_ROOT
+    posterior_note = _run4_posterior_note(_root / evaluation)
+    individualisation_note = _run4_individualisation_note(_root / evaluation)
 
     limitation = (
         "> ## No fMRI claim may be read off this model, and this time we know why\n>\n"
@@ -2290,7 +2291,7 @@ def _main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI
     kwargs: dict[str, Any] = {}
     if args.artifact == "anatomy-prior":
         kwargs["include_maps"] = args.include_maps
-    elif args.artifact in ("run1-checkpoint", "run2-pilot", "run3"):
+    elif args.artifact in ("run1-checkpoint", "run2-pilot", "run3", "run4"):
         if not args.checkpoint_dir:
             raise SystemExit(
                 "--checkpoint-dir is required: the weights are not in this "
@@ -2349,8 +2350,6 @@ def _main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI
     return 0
 
 
-if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(_main())
 
 
 def _run4_individualisation_note(eval_path: Path) -> str:
@@ -2460,3 +2459,12 @@ def _run4_individualisation_note(eval_path: Path) -> str:
             "per-person behaviour.\n>\n"
         )
     return head + body
+
+
+# The entry point is LAST on purpose: anything defined below it is dead when
+# the module runs as __main__. Appending helpers after this block is how
+# `_run4_individualisation_note` raised NameError from `plan_run4` -- the same
+# defect `evaluate.py` had. Guarded by
+# tests/release/test_entry_points_are_last.py.
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(_main())
