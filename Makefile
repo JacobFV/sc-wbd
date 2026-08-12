@@ -424,6 +424,44 @@ release-002: ## Publish SC-WBD-002 to the Hub (requires an evaluation on disk)
 	env -u HF_TOKEN PYTHONPATH=. $(PY) -m scwbd.release.publish run2-pilot \
 	  --namespace $(HF_NAMESPACE) --checkpoint-dir $(CKPT_002) --push --public
 
+.PHONY: release-004
+release-004: ## Publish SC-WBD-004 to the Hub (requires an evaluation on disk)
+	@# Run 4 was first published with this command typed by hand, which is not a
+	@# procedure. The refusals below are the ones that would have caught the two
+	@# things that went wrong when it was: a card built from a stale evaluation,
+	@# and a card corrected AFTER the push so the published bytes and the
+	@# generator disagreed.
+	@test -f reports/training/evaluation_run4.json || { \
+	  echo "refusing: reports/training/evaluation_run4.json is missing."; \
+	  echo "The card reads every score from it -- the fMRI, posterior and"; \
+	  echo "individualisation paragraphs are DERIVED, not written -- so without"; \
+	  echo "it the card would publish refusals with no numbers behind them."; \
+	  echo "Run: make release-004-evaluate"; exit 1; }
+	@# The card is regenerated on every push, so a generator change since the
+	@# last one lands automatically. What does NOT land automatically is a
+	@# generator change made after a push and never re-pushed; see
+	@# reports/publishing.md, "run 4: the published card went stale inside one
+	@# session".
+	env -u HF_TOKEN PYTHONPATH=. $(PY) -m scwbd.release.publish run4 \
+	  --namespace $(HF_NAMESPACE) --checkpoint-dir $(CKPT_004) --push --public --allow-existing
+
+.PHONY: release-004-card-diff
+release-004-card-diff: ## Is the PUBLISHED card still what plan_run4 generates?
+	@# The weights are unchanged between pushes, so a re-push reports "no files
+	@# modified" and skips -- a stale CARD is invisible to the push path. This
+	@# target is the check that catches it.
+	env -u HF_TOKEN PYTHONPATH=. $(PY) -c "\
+	from pathlib import Path; \
+	from huggingface_hub import hf_hub_download; \
+	from scwbd.release import publish; \
+	pub = open(hf_hub_download('$(HF_NAMESPACE)/scwbd-004', 'README.md', repo_type='model', force_download=True)).read(); \
+	fresh = publish.plan_run4(checkpoint_dir='$(CKPT_004)', evaluation='reports/training/evaluation_run4.json').card or ''; \
+	import sys; \
+	same = fresh.strip() and fresh.strip() in pub; \
+	print('published bytes:', len(pub)); \
+	print('CARD IS CURRENT' if same else 'CARD IS STALE -- run: make release-004'); \
+	sys.exit(0 if same else 1)"
+
 ##@ Attribution
 
 .PHONY: attribution
