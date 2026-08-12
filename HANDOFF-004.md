@@ -1,7 +1,79 @@
 BUILD SC-WBD-004. Autonomous; I am not reading. Every turn is a work turn.
 Commit to master, push.
 
-=== STATUS 2026-08-12 09:30 — TRAINING IS COMPLETE. THIS IS THE CURRENT BLOCK ===
+=== STATUS 2026-08-12 — RUN 4 IS RELEASED. THIS IS THE CURRENT BLOCK ===
+
+Training, evaluation, paper, site and model are DONE. Run 4 is published:
+
+  model    https://huggingface.co/jacob-valdez/scwbd-004  (public, 3 files, 126.7 MB)
+  site     https://sc-wbd.pages.dev                       (deployed)
+  paper    paper/output/sc_wbd_frontiers.pdf              (§11.10, §11.11)
+  reports  reports/RUN4.md, reports/training/evaluation_run4.json
+
+Only the leave-one-source-out ablation is outstanding
+(`make release-004-ablate` -> evaluation_run4_ablation.json).
+
+WHAT RUN 4 MEASURED. Three questions 003 could not ask, three negative answers.
+Each needed an instrument built before it could return anything, which is the
+run's actual contribution.
+
+  fMRI      ISSUE-016. The Balloon-Windkessel ODE integrates now and the
+            likelihood LOSES: real_bold_nll 1.99 -> 36,472 over 14,600 steps.
+            Never plateaus (T4 alone spans 1.5e3 to 6.5e5) and T5's measured
+            return does NOT repair it. Cause measured: ds002336_real is 4.13% of
+            the mixture, outvoted 23.2:1. No fMRI claim.
+  posterior ISSUE-012. The LR repair WORKED and OVERSHOT. log_G is 8x narrower
+            than the prior and its mean moves 1.10 prior sd -- the flow reads its
+            conditioning, which three runs could not achieve -- and z-sd is
+            59.25, SBC KS p_min 1.0e-147, coverage_mae 0.203. Four of six params
+            still explain no variance. Uninformative-but-honest became
+            partly-informative-and-overconfident. The claim publishes
+            `unsupported` where 003's identical claim published `partial`.
+            The sweep predicted R^2 0.674-0.766 and production returned 0.284;
+            WHY IS UNMEASURED. Scoring stage_T4_simulator.pt through
+            posterior_calibration would settle it in one evaluation. Both
+            checkpoints are on disk. Do not quote the sweep as a prediction for a
+            full curriculum again.
+  person    ISSUE-017, new. Individualisation is MEASURED for the first time and
+            UNSUPPORTED: the applied shift is 7.06e-4 against the model's own
+            prior scale of 0.1059 -- 0.67% -- and 30 of 75 scored participants
+            have an exactly-zero person effect. Earlier runs called this
+            UNMEASURABLE, which was a fact about the split. This is a
+            measurement.
+
+EEG headline: 004 does NOT reproduce 003's separation. Inconclusive against
+ar16 (-0.0100 [-0.0480, +0.0144]) and var4. No baseline beats it. ISSUE-014
+changed the split between runs (27 participants vs 25, protocol v1 vs v2), so
+this is a failure to reproduce on a DIFFERENT holdout, not a regression on the
+same one. Both readings are in reports/RUN4.md and on the site.
+
+FOUR DEFECTS FIXED IN THE RELEASE PATH, all mutation-tested. Read these before
+touching evaluation or publishing:
+
+  - session_individualisation was never CALLED by evaluate_model, so T6 was
+    measured zero times while two other blocks looked like they covered it.
+  - It could not have been called: the `if __name__` guard sat ABOVE its def, so
+    the CLI ran main() first. Same defect then recurred in release/publish.py and
+    was found a third time in foundation/release.py.
+    **tests/release/test_entry_points_are_last.py now sweeps the whole package.**
+  - _scwbd_scores hardcoded the 64-channel montage; sleep-EDFx has 2 channels.
+    It takes a source_id now.
+  - plan_run4 was unreachable from the CLI (no checkpoint_dir) and referenced
+    another function's local.
+
+A source-level guard that greps for a call PASSES on a module that cannot
+execute it. Two of the four got through a guard that way. Assert order and
+integration, not presence.
+
+DO NOT read individualisation off the training log. sleepedf_real_eeg_nll is
+per-batch with a spread of ~0.25; T5 last-half 1.633 +- 0.226 and T6 last-half
+1.683 +- 0.275 are indistinguishable, and two single batches look like a
+1.50 -> 1.82 degradation that is not there.
+
+RUN 5 is designed in reports/RUN5_DESIGN.md and now has a third target: ISSUE-017
+alongside ISSUE-016 and ISSUE-012. Do not start it before the ablation lands.
+
+=== SUPERSEDED 2026-08-12 09:30 — TRAINING COMPLETE ===
 
 Run 4 finished 2026-08-12 09:29: **14,600 / 14,600 steps, all six stages**, in
 42.2 h against the 46 h limit (3.78 h margin). All six `stage_*.pt` and `last.pt`
