@@ -875,6 +875,29 @@ are the held-out session NLL and its interval. `theta_shift` is read off the
 checkpoint's weights and is unchanged by sampling, so **the 7.06e-4 and the
 0.67% — the numbers ISSUE-017 rests on — are reproducible from any HEAD.**
 
+### ISSUE-008 verified on the weights, not on the code
+
+`reports/scwbd-004_derived.json` reads parameter movement off the checkpoint
+rather than off a card. **All 8 `bold` tensors moved off their initialisation,
+0 frozen.** Run 3's were bit-identical to initialisation across all five stages,
+which is what made its fMRI likelihood inert.
+
+"The ODE integrates" is a claim about code and was already true when the run
+launched. "The haemodynamic parameters received a gradient" is a claim about
+weights and could only be checked afterwards. They are different claims and run 2
+shipped with cards asserting the second on the strength of the first.
+
+99.986% of parameters moved (27,405,696 of 27,409,526; 349 of 384 tensors). The
+3,830 frozen sit in `observation`, `eeg`, `eeg_montages` and one `individualizer`
+tensor — the fixed operators and buffers a curriculum is not supposed to move.
+`individualizer` moved 5 of its 6, which is consistent with ISSUE-017: the person
+effect trained, it just barely moved.
+
+`admitted_but_no_term` records that T6 admitted `ds000117_behaviour` and
+`ds002336_real` and gave neither a loss. That is the finding already written up
+under "T6 — measured, and it found a source running for nothing", now confirmed
+from the released artifact.
+
 ### The montage fix moved nothing, checked rather than assumed
 
 `_scwbd_scores` gained a `source_id` whose default routes to the founding
