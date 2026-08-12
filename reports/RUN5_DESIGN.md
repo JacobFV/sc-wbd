@@ -38,17 +38,19 @@ Three conclusions, each carrying its own refutation:
 The cause is a **gradient-share imbalance**. `per_source_contribution` in T1:
 
 ```
-eegmmidb_real       0.7021
-sleepedf_real       0.2154
-ds002336_real       0.0413   <- the only haemodynamic source
-ds004024_rest_real  0.0147
-ds000117_real       0.0147
-ds004024_perturb    0.0073
-ds000117_behaviour  0.0045
+eegmmidb_real       0.6913
+sleepedf_real       0.2117
+ds002336_real       0.0539   <- the only haemodynamic source
+ds004024_rest_real  0.0144
+ds000117_real       0.0143
+ds004024_perturb    0.0072
+ds000117_behaviour  0.0071
 ```
 
-**5.39% against 95.87% — 17.6 : 1.** The trunk converges on what the EEG-like
-sources want; the BOLD head reads that same state.
+**5.39% against 94.61% — 17.6 : 1.** The trunk converges on what the EEG-like
+sources want; the BOLD head reads that same state. (Corrected 2026-08-12: this
+table previously carried the pre-launch smoke's proportions, 4.13% and 23.2 : 1.
+See ISSUE-016, "Correction 2026-08-12".)
 
 ## The independent corroboration, which is the interesting part
 
