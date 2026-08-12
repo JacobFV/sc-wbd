@@ -1519,10 +1519,6 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
     return rep
 
 
-if __name__ == "__main__":  # pragma: no cover
-    main()
-
-
 # ======================================================================
 # individualisation: the claim the participant-disjoint split cannot measure
 # ======================================================================
@@ -1686,3 +1682,14 @@ def session_individualisation(
             "runs 1 and 2 got."
         ),
     }
+
+
+# The entry point is LAST on purpose. It used to sit above
+# `session_individualisation`, which meant `python -m scwbd.foundation.evaluate`
+# called `main()` before that `def` had executed -- so the function was
+# unreachable from the CLI no matter what referenced it, and wiring it into
+# `evaluate_model` produced a NameError rather than a number. Anything defined
+# below this block is dead to the command line.
+# Guarded by tests/foundation/test_individualisation_reaches_the_report.py.
+if __name__ == "__main__":  # pragma: no cover
+    main()

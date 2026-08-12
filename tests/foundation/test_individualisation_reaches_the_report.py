@@ -71,6 +71,38 @@ def test_the_report_carries_the_key_on_both_branches():
     )
 
 
+def test_the_entry_point_is_the_last_top_level_statement():
+    """Anything defined below `if __name__ == "__main__"` is dead to the CLI.
+
+    This is the defect that actually bit, and the source-level call check above
+    did NOT catch it: `session_individualisation` was defined 44 lines BELOW the
+    entry point, so `python -m scwbd.foundation.evaluate` ran `main()` before that
+    `def` executed. The call was present in `evaluate_model` and still raised
+    `NameError`. A test that greps for the call passes on a module that cannot
+    run it, which is why this one asserts module ORDER instead.
+    """
+    tree = ast.parse(EVALUATE.read_text())
+    guards = [
+        i
+        for i, node in enumerate(tree.body)
+        if isinstance(node, ast.If)
+        and isinstance(node.test, ast.Compare)
+        and isinstance(node.test.left, ast.Name)
+        and node.test.left.id == "__name__"
+    ]
+    assert guards, "no `if __name__ == \"__main__\"` block found in evaluate.py"
+    assert len(guards) == 1, f"expected exactly one entry-point guard, found {len(guards)}"
+
+    trailing = tree.body[guards[0] + 1 :]
+    assert not trailing, (
+        "definitions appear AFTER the `if __name__` guard: "
+        + ", ".join(getattr(n, "name", type(n).__name__) for n in trailing)
+        + ". They are unreachable when the module is run as __main__, so any "
+        "reference to them from evaluate_model raises NameError at CLI time "
+        "while importing the module in a test works fine."
+    )
+
+
 EVALUATIONS = sorted((ROOT / "reports/training").glob("evaluation_run*.json"))
 
 
