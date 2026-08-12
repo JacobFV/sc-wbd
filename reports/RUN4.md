@@ -677,8 +677,100 @@ It is reported as its own top-level block and carries `not_comparable_with`,
 because its baseline has seen the scored participant and every arm in the main
 table has not.
 
-## PENDING — results
+## Results — the run finished, and it is mostly a negative result
 
-Held-out night-2 individualisation, leave-one-source-out on the measured
-holdout, the within-participant arm and the standard baseline set are filled in
-after the run.
+Run 4 completed all 14,600 steps on 2026-08-12 in 42.2 h. Three of the four
+questions it was launched to answer now have answers, and two of those answers
+are no. Written in that order deliberately: the run's value is in what it
+settled, not in what it improved.
+
+### fMRI: ISSUE-016 confirmed over a full curriculum
+
+`real_bold_nll` ran **1.99 → 36,472**, a factor of about 18,000. The prediction
+recorded in this file at step 260 was that the divergence is a property of the
+configuration rather than of a trajectory. It is. Two things the aborted
+400-step launch could not show:
+
+* **It never plateaus.** T4 alone spans 1,530 to 650,815 — four orders of
+  magnitude inside one stage. This is not a likelihood that converged to a bad
+  constant; it is a term being thrown around by a latent state optimising for
+  something else.
+* **T5's measured return does not repair it.** T5 grants `bold.*` again and is
+  the stage most likely to pull the head back onto its data. It ends at 36,472 —
+  below T3 and T4, four orders of magnitude above where T1 began.
+
+`bold_parcels_covered` held at full value throughout. The ODE ran, on every
+parcel, for 46 hours, and the likelihood it produced is worthless. **Run 4
+claims nothing about fMRI**, which is what this file said before the run and is
+now a measurement rather than a precaution.
+
+### The posterior: the repair worked, overshot, and did not discharge ISSUE-012
+
+The learning-rate diagnosis was correct. Run 3's posterior ignored its
+conditioning; run 4's `log_G` posterior is **8× narrower than the prior** and its
+mean moves by 1.10 prior sd as the data change. The flow reads its conditioning,
+which three runs could not achieve.
+
+It is also not usable. `posterior_z_sd` for `log_G` is **59.25** — the posterior
+mean sits about 59 of its own standard deviations from the truth. It narrowed by
+8× and earned roughly a quarter of that narrowing. `sbc_ks_pvalue_min`
+**1.0e-147**, `coverage_mae` **0.203**, against run 3's 0.098 and 0.021.
+
+| | run 3 | run 4 |
+|---|---|---|
+| informative? | no — R² ≈ 0 on all six | partly — `log_G` 0.284, `log_sigma` 0.102, four still ≤ 0 |
+| calibrated? | yes, by construction | no — z-sd 59.25, KS p 1.0e-147 |
+| claim status | `partial` | **`unsupported`** |
+
+Uninformative-but-honest became partly-informative-and-overconfident. These are
+not two points on a path from worse to better; they are two ways to be unusable.
+The one-stage sweep predicted `log_G` R² 0.674–0.766 and production returned
+0.284 — under half. Why is **unmeasured**, and the obvious hypothesis (T5 and T6
+give part of it back at `lambda_posterior` 0.2 then 0.0) is written down in
+`known_issues.md` as a hypothesis with the one evaluation that would settle it.
+
+### The claim machinery worked without intervention
+
+`amortized_posterior_self_consistency` publishes `unsupported` on run 4 where
+run 3's identical claim published `partial`. Nobody adjusted a threshold. The
+block that certified an uninformative posterior in run 3 refused an
+overconfident one in run 4, on the gate `worst > 0.01 and mae < 0.12` that was
+written before either number existed. That is the only part of this run that
+went entirely to plan.
+
+### Individualisation, and three defects in the path that measures it
+
+`T6_individual` ran its full 1,200 steps. **The evaluation then measured it zero
+times**, for three stacked reasons, each of which hid the next:
+
+1. `session_individualisation` — the only block that reads a person effect — was
+   never called by `evaluate_model`.
+2. It could not have been. The `if __name__ == "__main__"` guard sat 44 lines
+   ABOVE that function's `def`, so `python -m scwbd.foundation.evaluate` ran
+   `main()` before it existed. Wiring in the call produced `NameError`, not a
+   number.
+3. Once reachable it crashed: `_scwbd_scores` hardcoded the founding 64-channel
+   projector and head, and sleep-EDFx has 2 channels.
+
+Neither other holdout covers it, which is why the absence looked like a result
+that had not been reached yet. `real_eeg_holdout` is participant-disjoint, so all
+25 scored participants sit at `z_person` exactly zero —
+`n_individualised_participants: 0`. `within_participant_holdout` scores the
+SC-WBD arm with no person effect fitted while its AR arm *is* fitted on that
+participant's past. Two individualisation-shaped blocks, zero measurements.
+
+**Do not read individualisation off the training log either.**
+`sleepedf_real_eeg_nll` ends T5 at 1.4957 and T6 at 1.8223, which reads as the
+individualisation stage degrading its own dataset. It is noise: the metric is
+per-batch with a spread near 0.25 and swings 1.26 to 2.57 inside T6. Last-half
+means are T5 **1.633 ± 0.226** and T6 **1.683 ± 0.275** — indistinguishable. No
+degradation, and no improvement.
+
+All three defects are fixed and mutation-tested
+(`tests/foundation/test_individualisation_reaches_the_report.py`). The
+individualisation number itself is the one result still outstanding.
+
+### What is still outstanding
+
+The held-out night-2 individualisation figure, and leave-one-source-out on the
+measured holdout. Both are one evaluation away and neither is blocked.
