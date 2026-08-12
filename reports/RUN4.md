@@ -884,6 +884,49 @@ are the held-out session NLL and its interval. `theta_shift` is read off the
 checkpoint's weights and is unchanged by sampling, so **the 7.06e-4 and the
 0.67% — the numbers ISSUE-017 rests on — are reproducible from any HEAD.**
 
+### The ablation: what run 3's returned, and why run 4's asks a different question
+
+Run 4's leave-one-source-out is still running (~5 h; run 3's eleven arms took
+284 min). The comparison it has to beat is recorded here first, so the arms are
+read against a stated expectation rather than interpreted after the fact.
+
+**Run 3's ablation, from `evaluation_run3_ablation.json`:** `with_all_sources`
+0.6793, 200 steps per arm, and **nine of ten families returned negative
+transfer** — removing them *improved* the score.
+
+| family | delta | |
+|---|---:|---|
+| `sim_wholebrain` | **+0.0445** | removing it hurt |
+| `ds002336_real` | −0.0097 | negative transfer |
+| `eegmmidb_real` | −0.0061 | negative transfer |
+| `ds000117_real` | −0.0053 | negative transfer |
+| `sleepedf_real` | −0.0050 | negative transfer |
+| `ds004024_perturb` | −0.0049 | negative transfer |
+| `ds000117_behaviour` | −0.0044 | negative transfer |
+| `montage_calibration` | −0.0020 | negative transfer |
+| `ds004024_rest_real` | −0.0013 | negative transfer |
+| `anatomical_prior` | −0.0006 | negative transfer |
+
+**That result was structurally guaranteed and is not evidence about the
+sources.** Every arm was scored on `_sim_val_nll` — the *simulated* validation
+set — so the question it asked was "does dropping this measured source help the
+model fit the simulator?", and during 200 retraining steps every measured
+gradient pulls parameters away from exactly that. The one positive delta is the
+simulator's own family. Nine of nine measured families falling the same way is
+the design, not a finding.
+
+**Run 4's arms are scored on the measured holdout as well**, which is what makes
+them an experiment. `real_eeg_holdout` is the same 25 participants the headline
+rests on, so "which sources carry the win" has a checkable answer for the first
+time. Both scores are kept and labelled; the simulated one is retained for
+comparability with run 3 and is not the result.
+
+ISSUE-016 gives it a candidate answer to check against: if the trunk really does
+converge on what the electrical sources want, `ds002336_real` should be close to
+free on the measured holdout — its 5.39% of the mixture bought a diverging
+likelihood. That is a prediction, and it is written down before the numbers are
+in so it can be wrong.
+
 ### ISSUE-008 verified on the weights, not on the code
 
 `reports/scwbd-004_derived.json` reads parameter movement off the checkpoint
