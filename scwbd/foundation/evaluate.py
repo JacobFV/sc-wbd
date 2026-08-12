@@ -1370,6 +1370,7 @@ def evaluate_model(
         }
         rep["real_eeg_holdout"] = _refusal
         rep["within_participant_holdout"] = dict(_refusal)
+        rep["session_individualisation"] = dict(_refusal)
     else:
         rep["real_eeg_holdout"] = real_eeg_holdout(trainer, seed=seed)
         # ISSUE-013's replacement for the dropped `subject_specific_ar` row. A
@@ -1377,6 +1378,19 @@ def evaluate_model(
         # different quantity: the baseline has seen the scored participant and
         # every arm in that table has not.
         rep["within_participant_holdout"] = within_participant_holdout(trainer, seed=seed)
+        # The ONLY block that measures the individualiser. Neither holdout above
+        # does: `real_eeg_holdout` is participant-disjoint, so every scored
+        # person's `z_person` row is exactly zero (its `individualization`
+        # sub-block reports `n_at_initialisation` == every participant), and
+        # `within_participant_holdout` scores the SC-WBD arm through
+        # `_scwbd_scores` with no person effect fitted, so its subject-specific
+        # AR row is the only arm there that has seen the participant.
+        #
+        # T6_individual trains a person effect and nothing in the report read it
+        # until this call was added. The function has existed and been tested
+        # since the split landed; it was never wired into the report, which is
+        # the whole of HANDOFF-004 step (c)'s "what remains".
+        rep["session_individualisation"] = session_individualisation(trainer, seed=seed)
     rep["sim_val_nll"] = _sim_val_nll(trainer, n_windows=128 if quick else 512)
     rep["wall_seconds"] = t.elapsed
     if out:
