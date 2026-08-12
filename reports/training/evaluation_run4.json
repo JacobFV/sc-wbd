@@ -1,0 +1,5880 @@
+{
+  "model_id": "scwbd-004",
+  "git_sha": "432b6e3bb6b9d132b7a977812d285a0b859d0173-dirty",
+  "evaluated_utc": "2026-08-12T18:52:26Z",
+  "config": {
+    "model": {
+      "n_regions": 414,
+      "local_core": "learned",
+      "family_state": true,
+      "family_cores": {},
+      "family_allow_derived_partition": false,
+      "d_key": 16,
+      "d_value": 16,
+      "d_grid": 12,
+      "d_context": 4,
+      "d_prediction": 8,
+      "state_dependent_variance": true,
+      "scale_prolongations": [],
+      "hidden": 1408,
+      "n_local_layers": 3,
+      "region_embed": 192,
+      "context_dim": 128,
+      "message_dim": 12,
+      "n_delay_bins": 8,
+      "n_spectral_modes": 8,
+      "n_adaptation": 2,
+      "n_uncertainty": 4,
+      "dt_model": 0.008,
+      "hemo_ratio": 25,
+      "bold_predict_frames": 1,
+      "bold_every": 1,
+      "residual_rho_max": 0.35,
+      "residual_init_scale": 0.05,
+      "encoder_channels": 192,
+      "encoder_layers": 3,
+      "dropout": 0.0,
+      "control_graph": "none",
+      "scalar_state_ablation": false,
+      "dense_coupling_ablation": false,
+      "n_eeg_channels": 64,
+      "n_behaviour": 2,
+      "montages": {
+        "sleepedf_real": {
+          "kind": "bipolar",
+          "channels": [
+            "EEG Fpz-Cz",
+            "EEG Pz-Oz"
+          ]
+        },
+        "ds000117_real": {
+          "kind": "digitised",
+          "positions_file": "configs/montages/ds000117_eeg.json",
+          "channels": [
+            "EEG001",
+            "EEG002",
+            "EEG003",
+            "EEG004",
+            "EEG005",
+            "EEG006",
+            "EEG007",
+            "EEG008",
+            "EEG009",
+            "EEG010",
+            "EEG011",
+            "EEG012",
+            "EEG013",
+            "EEG014",
+            "EEG015",
+            "EEG016",
+            "EEG017",
+            "EEG018",
+            "EEG019",
+            "EEG020",
+            "EEG021",
+            "EEG022",
+            "EEG023",
+            "EEG024",
+            "EEG025",
+            "EEG026",
+            "EEG027",
+            "EEG028",
+            "EEG029",
+            "EEG030",
+            "EEG031",
+            "EEG032",
+            "EEG033",
+            "EEG034",
+            "EEG035",
+            "EEG036",
+            "EEG037",
+            "EEG038",
+            "EEG039",
+            "EEG040",
+            "EEG041",
+            "EEG042",
+            "EEG043",
+            "EEG044",
+            "EEG045",
+            "EEG046",
+            "EEG047",
+            "EEG048",
+            "EEG049",
+            "EEG050",
+            "EEG051",
+            "EEG052",
+            "EEG053",
+            "EEG054",
+            "EEG055",
+            "EEG056",
+            "EEG057",
+            "EEG058",
+            "EEG059",
+            "EEG060",
+            "EEG065",
+            "EEG066",
+            "EEG067",
+            "EEG068",
+            "EEG069",
+            "EEG070",
+            "EEG071",
+            "EEG072",
+            "EEG073",
+            "EEG074"
+          ]
+        },
+        "ds004024_rest_real": {
+          "kind": "monopolar",
+          "channels": [
+            "Fp1",
+            "Fpz",
+            "Fp2",
+            "AF7",
+            "AF3",
+            "AFz",
+            "AF4",
+            "AF8",
+            "F7",
+            "F5",
+            "F3",
+            "F1",
+            "Fz",
+            "F2",
+            "F4",
+            "F6",
+            "F8",
+            "FT7",
+            "FC5",
+            "FC3",
+            "FC1",
+            "FCz",
+            "FC2",
+            "FC4",
+            "FC6",
+            "FT8",
+            "T7",
+            "C5",
+            "C3",
+            "C1",
+            "Cz",
+            "C2",
+            "C4",
+            "C6",
+            "T8",
+            "TP9",
+            "TP7",
+            "CP5",
+            "CP3",
+            "CP1",
+            "CPz",
+            "CP2",
+            "CP4",
+            "CP6",
+            "TP8",
+            "TP10",
+            "P7",
+            "P5",
+            "P3",
+            "P1",
+            "Pz",
+            "P2",
+            "P4",
+            "P6",
+            "P8",
+            "PO7",
+            "PO3",
+            "POz",
+            "PO4",
+            "PO8",
+            "O1",
+            "Oz",
+            "O2",
+            "Iz"
+          ]
+        }
+      },
+      "use_bf16": true,
+      "compile": false
+    },
+    "posterior": {
+      "summary_channels": 128,
+      "summary_layers": 4,
+      "flow_layers": 6,
+      "flow_hidden": 256,
+      "n_bands": 7,
+      "n_pcs": 16,
+      "dropout": 0.0,
+      "nuisance_dim": 0,
+      "cond_norm": "dataset_std_v2",
+      "lr_scale": 5.0
+    },
+    "data": {
+      "sim_index_fast": "data/sim_corpus_414/index_fast.json",
+      "sim_index_slow": "/data/scwbd/sim_corpus/index_slow.json",
+      "real_eeg_root": "data/eegmmidb/1.0.0",
+      "real_sleep_root": "data/sleep-edfx/1.0.0/sleep-cassette",
+      "ds000117_root": "data/ds000117/1.1.0",
+      "ds004024_root": "data/ds004024/1.0.0",
+      "ds000113_root": "data/ds000113",
+      "bold_roots": {},
+      "enable_perturbation": true,
+      "window": 64,
+      "context": 24,
+      "fs_hz": 125.0,
+      "batch": 8,
+      "num_workers": 4,
+      "pin_memory": false,
+      "val_fraction": 0.05,
+      "real_test_fraction": 0.25,
+      "split_policy": "stable_hash_v2",
+      "seed": 20260807
+    },
+    "train": {
+      "run_name": "scwbd-004",
+      "out_dir": "checkpoints/scwbd-004",
+      "report_dir": "reports/training",
+      "seed": 20260809,
+      "device": "cuda",
+      "anatomy_force_fallback": false,
+      "amp_dtype": "bfloat16",
+      "cuda_reserve_gb": 80.0,
+      "max_wall_seconds": 165600,
+      "max_steps_per_stage": null,
+      "bold_lr_scale": 1.0,
+      "resume": true,
+      "stages": [
+        {
+          "name": "T1_measured_founding",
+          "steps": 4000,
+          "lr": 0.0006,
+          "weight_decay": 0.01,
+          "warmup": 200,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 500,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.0,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "regional + interface, measured only",
+              "admits": [
+                1
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "port"
+              ],
+              "rationale": "As 003, with one difference that is not a curriculum change: `bold.*` now reaches a Balloon-Windkessel integrator that actually runs, so log_kappa, log_gamma, log_tau, alpha and neural_gain receive gradient from this stage instead of sitting bit-identical to their initialisation for the whole run."
+            }
+          }
+        },
+        {
+          "name": "T2_calibration",
+          "steps": 600,
+          "lr": 0.0003,
+          "weight_decay": 0.01,
+          "warmup": 60,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 300,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.0,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.3,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "instrument nuisance",
+              "admits": [
+                1,
+                2
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*",
+                  "eeg_montages.*.log_gain",
+                  "eeg_montages.*.offset",
+                  "eeg_montages.*.log_noise",
+                  "eeg_montages.*.nuisance*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "calibration"
+              ],
+              "rationale": "Per-channel gain, offset and noise floor across four montages. Admitted late and narrowly: a calibration source has tiny measurement variance and would win a pure inverse-variance contest."
+            }
+          }
+        },
+        {
+          "name": "T3_population_prior",
+          "steps": 800,
+          "lr": 0.0003,
+          "weight_decay": 0.01,
+          "warmup": 80,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 400,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.05,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "anatomical prior",
+              "admits": [
+                1,
+                2,
+                3
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*",
+                  "eeg_montages.*.log_gain",
+                  "eeg_montages.*.offset",
+                  "eeg_montages.*.log_noise",
+                  "eeg_montages.*.nuisance*"
+                ],
+                "3": [
+                  "coupling.gain_*",
+                  "coupling.global_scale"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "anatomy"
+              ],
+              "rationale": "The 9-family partition and the connectome scale enter after the measured sources have fixed the representation they modulate."
+            }
+          }
+        },
+        {
+          "name": "T4_simulator",
+          "steps": 5000,
+          "lr": 0.0002,
+          "weight_decay": 0.01,
+          "warmup": 250,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 500,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.05,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 1.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "simulator-conditioned inference",
+              "admits": [
+                1,
+                2,
+                3,
+                4
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*",
+                  "eeg_montages.*.log_gain",
+                  "eeg_montages.*.offset",
+                  "eeg_montages.*.log_noise",
+                  "eeg_montages.*.nuisance*"
+                ],
+                "3": [
+                  "coupling.gain_*",
+                  "coupling.global_scale"
+                ],
+                "4": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "posterior.*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "slice",
+                "posterior"
+              ],
+              "rationale": "The amortised posterior is founded here and only here; no measured recording carries a theta label. Tier 4 does NOT reach `eeg.*`, `eeg_montages.*`, `bold.*` or `behaviour.*`: a simulator may not calibrate an instrument."
+            }
+          }
+        },
+        {
+          "name": "T5_measured_return",
+          "steps": 3000,
+          "lr": 0.00012,
+          "weight_decay": 0.01,
+          "warmup": 150,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 500,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 1.0,
+          "lambda_anat": 0.02,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.2,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "return to measured",
+              "admits": [
+                1,
+                2
+              ],
+              "tier_permissions": {
+                "1": [
+                  "family_local.*",
+                  "family_residual.*",
+                  "coupling.*",
+                  "msg_readin.*",
+                  "assimilate.*",
+                  "context.*",
+                  "family_readout.*",
+                  "observation.*",
+                  "eeg.*",
+                  "eeg_montages.*",
+                  "bold.*",
+                  "behaviour.*",
+                  "tms_drive.*"
+                ],
+                "2": [
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*",
+                  "eeg_montages.*.log_gain",
+                  "eeg_montages.*.offset",
+                  "eeg_montages.*.log_noise",
+                  "eeg_montages.*.nuisance*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast",
+                "perturbation"
+              ],
+              "rationale": "The 1 -> 4 -> 1 return, so the final population weights are conditioned on evidence rather than on the generator. `tms_drive.*` is granted here and nowhere else."
+            }
+          }
+        },
+        {
+          "name": "T6_individual",
+          "steps": 1200,
+          "lr": 0.0006,
+          "weight_decay": 0.01,
+          "warmup": 60,
+          "grad_clip": 1.0,
+          "batch": null,
+          "log_every": 20,
+          "ckpt_every": 300,
+          "enabled": true,
+          "lambda_slice": 1.0,
+          "lambda_obs": 1.0,
+          "lambda_forecast": 1.0,
+          "lambda_perturb": 0.0,
+          "lambda_anat": 0.0,
+          "lambda_scale": 0.05,
+          "lambda_homeo": 0.02,
+          "lambda_cal": 0.1,
+          "lambda_posterior": 0.0,
+          "lambda_kl": 0.01,
+          "lambda_residual": 0.02,
+          "lambda_port": 0.02,
+          "extra": {
+            "curriculum": {
+              "scope": "person and session effects, population weights frozen",
+              "admits": [
+                1
+              ],
+              "individualize": true,
+              "tier_permissions": {
+                "1": [
+                  "individualizer.*",
+                  "eeg.log_gain",
+                  "eeg.offset",
+                  "eeg.log_noise",
+                  "eeg.nuisance*",
+                  "eeg_montages.*.log_gain",
+                  "eeg_montages.*.offset",
+                  "eeg_montages.*.log_noise",
+                  "eeg_montages.*.nuisance*"
+                ]
+              },
+              "objective": [
+                "likelihood",
+                "forecast"
+              ],
+              "rationale": "75 of sleep-edfx's 78 participants were recorded on two consecutive nights, and it is the only corpus here with a second session of the same person. The effect is fitted on the training nights and scored on the held-out one by `session_individualisation`, per participant with a cluster bootstrap over participants. A learning rate at the T1 level rather than a decayed one, because these tensors start at zero and have 1,200 steps to leave it -- the population weights they modulate are frozen, so there is nothing for a large step to destabilise. The falsifier is stated in the evaluation and not softened here: if the between-participant spread of the applied theta shift is at or near zero on a split built to let it be non-zero, the third capability is unsupported and the site says so."
+            }
+          }
+        }
+      ]
+    },
+    "arm": {
+      "role": "treatment",
+      "controls_for": "",
+      "justification": "Heterogeneous region-indexed state with per-family operators (`family_state: true`), as 003. 004 changes the BOLD likelihood and adds a fitted person effect; neither touches the arm."
+    },
+    "mixture_cards": "configs/curriculum/source_cards",
+    "notes": "SC-WBD-004. Two structural changes on 003: the measured fMRI likelihood integrates the Balloon-Windkessel ODE across the interval a BOLD frame covers rather than indexing 8 neural steps against 8 TRs, and a person/session effect is fitted in a sixth stage on sleep-edfx's two-night structure. The BOLD horizon is REDUCED to `bold_predict_frames` of 8 target frames to pay for the first; that reduction belongs on the model card next to any fMRI number."
+  },
+  "n_parameters": {
+    "coupling": 3,
+    "msg_readin": 9152,
+    "context": 17792,
+    "family_local": 18693938,
+    "family_residual": 5969331,
+    "family_readout": 131666,
+    "assimilate": 1356030,
+    "observation": 2073,
+    "eeg": 27697,
+    "eeg_montages": 59291,
+    "bold": 3312,
+    "behaviour": 34372,
+    "TOTAL": 26304657
+  },
+  "eval_seed": 0,
+  "anatomy": {
+    "n_regions": 414,
+    "n_cortex": 400,
+    "n_subcortex": 14,
+    "n_cerebellum": 0,
+    "density": 0.0718,
+    "mean_tract_length_mm": 38.76,
+    "edges_by_class": {
+      "hard": 1618,
+      "soft": 7386,
+      "proposed": 3270
+    },
+    "frame": "fsLR_32k_surface_RAS [conte69_32k]",
+    "n_gradient_covered": 400,
+    "gradient_uncovered_are_zero": true,
+    "provenance": "{'atlas': 'Schaefer400x7', 'space': 'fsLR', 'density': '32k', 'length': 'euclidean', 'sources': {'schaefer2018': {'name': 'Schaefer 2018 local-global parcellation', 'url': 'https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal', 'license': 'MIT (CBIG); underlying GSP data under its own terms', 'citation': 'Schaefer A. et al. (2018) Cereb Cortex 28:3095-3114.'}, 'enigma_hcp_sc': {'name': 'ENIGMA/HCP group-average structural connectome', 'url': 'https://enigma-toolbox.readthedocs.io/en/latest/pages/05.HCP/index.html', 'license': 'BSD-3-Clause code; HCP open-access data-use terms for the underlying scans', 'citation': 'Lariviere S. et al. (2021) Nat Methods 18:698-700; Van Essen D.C. et al. (2013) NeuroImage 80:62-79 (HCP).'}, 'neuromaps': {'name': 'neuromaps annotation collection', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'BSD-3-Clause (toolbox); per-annotation source terms', 'citation': 'Markello R.D. et al. (2022) Nat Methods 19:1472-1479.'}, 'tian2020': {'name': 'Tian subcortical parcellation S1-S4', 'url': 'https://github.com/yetianmed/subcortex', 'license': 'Melbourne Subcortex Atlas License: permission to use the atlas without restriction, including the rights to use, copy, modify, merge, publish and distribute, subject to the single condition that any publication using the atlas cites Tian Y. et al. (2020) Nat Neurosci 23:1421-1432. Attribution required.', 'citation': 'Tian Y. et al. (2020) Nat Neurosci 23:1421-1432.'}, 'hansen_receptors': {'name': 'Hansen neurotransmitter receptor/transporter PET atlas', 'url': 'https://github.com/netneurolab/hansen_receptors', 'license': 'CC-BY-NC-SA-4.0', 'citation': 'Hansen J.Y. et al. (2022) Nat Neurosci 25:1569-1581, plus the primary PET study for each tracer (see Table S3 of that paper).'}, 'hcps1200_maps': {'name': 'HCP S1200 group myelin (T1w/T2w), thickness and MEG maps', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'HCP open-access data-use terms', 'citation': 'Glasser M.F., Van Essen D.C. (2011) J Neurosci 31:11597-11616; Shafiei G. et al. (2022) PLoS Biol 20:e3001735 (MEG).'}, 'hill2010': {'name': 'Evolutionary and developmental cortical expansion', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Hill J. et al. (2010) PNAS 107:13135-13140.'}, 'margulies2016': {'name': 'Principal functional connectivity gradient', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Margulies D.S. et al. (2016) PNAS 113:12574-12579.'}, 'raichle_metabolism': {'name': 'Cerebral blood flow / volume / oxygen and glucose metabolism', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Vaishnavi S.N. et al. (2010) PNAS 107:17757-17762.'}, 'sydnor2021': {'name': 'Sensorimotor-association cortical axis', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Sydnor V.J. et al. (2021) Neuron 109:2820-2846.'}}, 'subcortical_atlas': {'name': 'Aseg14T', 'licence_key': 'tian2020', 'licence': 'Melbourne Subcortex Atlas License: permission to use the atlas without restriction, including the rights to use, copy, modify, merge, publish and distribute, subject to the single condition that any publication using the atlas cites Tian Y. et al. (2020) Nat Neurosci 23:1421-1432. Attribution required.', 'is_default': True, 'description': \"Melbourne Subcortex Atlas S1, merged by structure identity to the connectome's 14 aseg structures (anterior + posterior thalamus recombined). Licence grants use without restriction subject to citation; no non-commercial and no share-alike term.\"}, 'sources_note': \"This is what the assembled object CARRIES, which is a superset of what any one prior CONSUMES. load_maps builds every map present on disk, so hansen_receptors appears here whenever the PET volumes are installed -- including when no prior reads them. For the E/I prior specifically, read 'ei_ordering'.\", 'ei_ordering': {'ordering': 'hcp_hierarchy', 'is_default': True, 'description': 'Mean of three z-scored HCP S1200 group maps, oriented so the composite increases toward association cortex. Selected by the pre-committed criterion in reports/ei_ordering_substitution.md S1.', 'combine': 'zscore', 'maps_used': [{'map': 'myelin_t1t2', 'orientation': -1, 'source_key': 'hcps1200_maps', 'licence': 'HCP open-access data-use terms', 'n_covered': 400}, {'map': 'cortical_thickness', 'orientation': 1, 'source_key': 'hcps1200_maps', 'licence': 'HCP open-access data-use terms', 'n_covered': 400}, {'map': 'intrinsic_timescale_meg', 'orientation': 1, 'source_key': 'hcps1200_maps', 'licence': 'HCP open-access data-use terms', 'n_covered': 400}], 'licence_keys': ['hcps1200_maps'], 'declared_licence_keys': ['hcps1200_maps'], 'missing': {}, 'degenerate': None, 'degraded': False, 'available': True, 'n_covered': 400, 'n_parcels': 414, 'selection': 'reports/ei_ordering_substitution.md -- criterion committed at 97086e7 (branch master), measurement and implementation at cf37755. Two immutable SHAs, in that order; that ordering is the evidence that the criterion was not chosen to fit.'}}",
+    "is_biological": true,
+    "source_note": "adapted from scwbd.anatomy.BrainPrior (agent C)",
+    "families": {
+      "atlas": "Schaefer400x7",
+      "n_regions": 414,
+      "n_families": 9,
+      "provenance": "scwbd.anatomy.families.derive_families",
+      "is_biological": true,
+      "families": [
+        {
+          "family_id": "cortex_unimodal",
+          "division": "cortex",
+          "n_parcels": 138,
+          "evidence_tier": "measured_separation",
+          "training_status": "has_regional_data",
+          "membership_source": "schaefer2018",
+          "separating_evidence": [
+            "receptor_panel",
+            "myelin_thickness"
+          ],
+          "fields_established": [
+            "cytoarchitecture",
+            "receptor_profile",
+            "intrinsic_timescale_s",
+            "ei_prior"
+          ],
+          "nc_fields": [
+            "receptor_profile"
+          ]
+        },
+        {
+          "family_id": "cortex_association",
+          "division": "cortex",
+          "n_parcels": 262,
+          "evidence_tier": "measured_separation",
+          "training_status": "has_regional_data",
+          "membership_source": "schaefer2018",
+          "separating_evidence": [
+            "receptor_panel",
+            "myelin_thickness"
+          ],
+          "fields_established": [
+            "cytoarchitecture",
+            "receptor_profile",
+            "intrinsic_timescale_s",
+            "ei_prior"
+          ],
+          "nc_fields": [
+            "receptor_profile"
+          ]
+        },
+        {
+          "family_id": "subcortex_accumb",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_amyg",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_caud",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_hippo",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_pal",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_put",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        },
+        {
+          "family_id": "subcortex_thal",
+          "division": "subcortex",
+          "n_parcels": 2,
+          "evidence_tier": "atlas_separation",
+          "training_status": "prior_only_untrained",
+          "membership_source": "tian2020",
+          "separating_evidence": [],
+          "fields_established": [],
+          "nc_fields": []
+        }
+      ],
+      "declared_absent": [
+        "auditory",
+        "brainstem_hypothalamic_autonomic",
+        "cerebellum"
+      ],
+      "n_untrained": 7
+    },
+    "orientation": {
+      "n_covered": 400,
+      "coherence_median": 0.8511,
+      "coherence_min": 0.2751
+    }
+  },
+  "lead_field": {
+    "n_channels": 64,
+    "n_regions": 414,
+    "units": "V",
+    "frame": "fsLR_32k_surface_RAS [conte69_32k]",
+    "provenance": "analytic_sphere_fallback",
+    "physical_scale_volts_per_unit": 22.171859647225496,
+    "individual_head_model": false,
+    "condition_number": 193.81402587890625,
+    "note": "ANALYTIC SINGLE-SPHERE LEAD FIELD, NOT A HEAD MODEL. Radial dipoles in a homogeneous conducting sphere with electrodes at real 10-10 montage positions (MNE standard_1005). Supports no source-localisation or individual-anatomy claim."
+  },
+  "sensor_to_parcel": {
+    "kind": "minimum_norm_pseudoinverse",
+    "effective_rank": 64.0,
+    "mean_resolution_diagonal": 0.7368040084838867,
+    "note": "Assimilation input only. The likelihood is evaluated in sensor space; this projection supports no source-localisation claim."
+  },
+  "posterior_calibration": {
+    "param_names": [
+      "log_G",
+      "log_velocity",
+      "ei_global",
+      "ei_gradient",
+      "log_sigma",
+      "drive"
+    ],
+    "sbc_ranks": [
+      [
+        256,
+        135,
+        153,
+        2,
+        217,
+        26
+      ],
+      [
+        256,
+        102,
+        58,
+        243,
+        0,
+        192
+      ],
+      [
+        0,
+        112,
+        106,
+        238,
+        14,
+        178
+      ],
+      [
+        254,
+        114,
+        10,
+        54,
+        0,
+        92
+      ],
+      [
+        0,
+        92,
+        85,
+        202,
+        0,
+        224
+      ],
+      [
+        256,
+        112,
+        90,
+        112,
+        0,
+        242
+      ],
+      [
+        0,
+        111,
+        141,
+        69,
+        218,
+        138
+      ],
+      [
+        256,
+        150,
+        27,
+        175,
+        140,
+        130
+      ],
+      [
+        0,
+        5,
+        51,
+        43,
+        256,
+        221
+      ],
+      [
+        256,
+        2,
+        33,
+        198,
+        173,
+        142
+      ],
+      [
+        256,
+        2,
+        75,
+        183,
+        256,
+        119
+      ],
+      [
+        256,
+        180,
+        249,
+        14,
+        138,
+        66
+      ],
+      [
+        256,
+        122,
+        122,
+        221,
+        89,
+        114
+      ],
+      [
+        0,
+        173,
+        46,
+        2,
+        0,
+        247
+      ],
+      [
+        256,
+        193,
+        172,
+        78,
+        120,
+        99
+      ],
+      [
+        236,
+        124,
+        24,
+        198,
+        256,
+        58
+      ],
+      [
+        256,
+        149,
+        6,
+        74,
+        256,
+        8
+      ],
+      [
+        256,
+        89,
+        102,
+        73,
+        256,
+        166
+      ],
+      [
+        256,
+        97,
+        248,
+        100,
+        256,
+        182
+      ],
+      [
+        0,
+        64,
+        8,
+        120,
+        254,
+        205
+      ],
+      [
+        244,
+        99,
+        121,
+        90,
+        6,
+        225
+      ],
+      [
+        256,
+        118,
+        128,
+        76,
+        256,
+        191
+      ],
+      [
+        162,
+        99,
+        151,
+        91,
+        0,
+        188
+      ],
+      [
+        0,
+        104,
+        237,
+        195,
+        0,
+        226
+      ],
+      [
+        256,
+        120,
+        256,
+        28,
+        0,
+        119
+      ],
+      [
+        256,
+        116,
+        75,
+        171,
+        17,
+        85
+      ],
+      [
+        256,
+        30,
+        249,
+        44,
+        256,
+        103
+      ],
+      [
+        256,
+        14,
+        134,
+        171,
+        3,
+        164
+      ],
+      [
+        0,
+        248,
+        30,
+        8,
+        26,
+        201
+      ],
+      [
+        256,
+        219,
+        0,
+        245,
+        256,
+        148
+      ],
+      [
+        256,
+        245,
+        126,
+        205,
+        256,
+        182
+      ],
+      [
+        252,
+        212,
+        204,
+        139,
+        178,
+        38
+      ],
+      [
+        253,
+        73,
+        52,
+        85,
+        256,
+        154
+      ],
+      [
+        0,
+        73,
+        19,
+        28,
+        256,
+        116
+      ],
+      [
+        255,
+        77,
+        54,
+        253,
+        250,
+        191
+      ],
+      [
+        256,
+        245,
+        28,
+        193,
+        256,
+        97
+      ],
+      [
+        256,
+        201,
+        121,
+        177,
+        256,
+        152
+      ],
+      [
+        0,
+        243,
+        139,
+        117,
+        0,
+        223
+      ],
+      [
+        256,
+        227,
+        81,
+        103,
+        0,
+        188
+      ],
+      [
+        121,
+        213,
+        176,
+        141,
+        0,
+        191
+      ],
+      [
+        25,
+        124,
+        145,
+        29,
+        0,
+        219
+      ],
+      [
+        0,
+        120,
+        22,
+        84,
+        150,
+        117
+      ],
+      [
+        256,
+        130,
+        101,
+        189,
+        0,
+        94
+      ],
+      [
+        0,
+        172,
+        99,
+        63,
+        0,
+        210
+      ],
+      [
+        256,
+        24,
+        171,
+        123,
+        0,
+        95
+      ],
+      [
+        0,
+        22,
+        11,
+        43,
+        256,
+        77
+      ],
+      [
+        256,
+        38,
+        195,
+        80,
+        256,
+        13
+      ],
+      [
+        254,
+        141,
+        47,
+        7,
+        256,
+        188
+      ],
+      [
+        256,
+        157,
+        124,
+        9,
+        0,
+        202
+      ],
+      [
+        13,
+        114,
+        253,
+        139,
+        0,
+        215
+      ],
+      [
+        0,
+        105,
+        181,
+        254,
+        256,
+        198
+      ],
+      [
+        0,
+        125,
+        38,
+        190,
+        256,
+        37
+      ],
+      [
+        256,
+        118,
+        64,
+        198,
+        256,
+        24
+      ],
+      [
+        256,
+        119,
+        248,
+        255,
+        0,
+        30
+      ],
+      [
+        256,
+        222,
+        240,
+        0,
+        0,
+        85
+      ],
+      [
+        14,
+        162,
+        198,
+        13,
+        0,
+        7
+      ],
+      [
+        166,
+        176,
+        256,
+        3,
+        0,
+        247
+      ],
+      [
+        256,
+        235,
+        43,
+        136,
+        243,
+        61
+      ],
+      [
+        0,
+        190,
+        246,
+        64,
+        0,
+        202
+      ],
+      [
+        256,
+        118,
+        234,
+        32,
+        0,
+        220
+      ],
+      [
+        256,
+        115,
+        33,
+        149,
+        256,
+        77
+      ],
+      [
+        211,
+        124,
+        247,
+        55,
+        0,
+        36
+      ],
+      [
+        256,
+        103,
+        119,
+        7,
+        18,
+        81
+      ],
+      [
+        256,
+        62,
+        127,
+        108,
+        0,
+        145
+      ],
+      [
+        176,
+        82,
+        46,
+        110,
+        256,
+        239
+      ],
+      [
+        51,
+        80,
+        220,
+        188,
+        0,
+        206
+      ],
+      [
+        256,
+        65,
+        229,
+        100,
+        0,
+        75
+      ],
+      [
+        0,
+        178,
+        31,
+        87,
+        256,
+        90
+      ],
+      [
+        0,
+        170,
+        134,
+        241,
+        0,
+        212
+      ],
+      [
+        256,
+        175,
+        244,
+        199,
+        256,
+        231
+      ],
+      [
+        256,
+        212,
+        13,
+        243,
+        0,
+        136
+      ],
+      [
+        256,
+        230,
+        30,
+        77,
+        0,
+        149
+      ],
+      [
+        251,
+        85,
+        85,
+        3,
+        256,
+        126
+      ],
+      [
+        202,
+        71,
+        95,
+        239,
+        256,
+        89
+      ],
+      [
+        256,
+        97,
+        3,
+        119,
+        256,
+        90
+      ],
+      [
+        256,
+        68,
+        22,
+        209,
+        256,
+        50
+      ],
+      [
+        256,
+        248,
+        252,
+        21,
+        0,
+        103
+      ],
+      [
+        254,
+        238,
+        125,
+        23,
+        251,
+        36
+      ],
+      [
+        256,
+        231,
+        231,
+        30,
+        0,
+        128
+      ],
+      [
+        255,
+        236,
+        142,
+        256,
+        248,
+        179
+      ],
+      [
+        0,
+        214,
+        148,
+        193,
+        0,
+        248
+      ],
+      [
+        256,
+        226,
+        132,
+        90,
+        256,
+        27
+      ],
+      [
+        253,
+        194,
+        157,
+        119,
+        256,
+        169
+      ],
+      [
+        256,
+        213,
+        223,
+        146,
+        256,
+        82
+      ],
+      [
+        184,
+        59,
+        242,
+        136,
+        0,
+        120
+      ],
+      [
+        0,
+        43,
+        84,
+        25,
+        256,
+        245
+      ],
+      [
+        256,
+        256,
+        75,
+        252,
+        256,
+        129
+      ],
+      [
+        256,
+        235,
+        73,
+        14,
+        256,
+        253
+      ],
+      [
+        64,
+        238,
+        256,
+        131,
+        0,
+        109
+      ],
+      [
+        256,
+        16,
+        123,
+        129,
+        0,
+        254
+      ],
+      [
+        0,
+        7,
+        150,
+        94,
+        0,
+        220
+      ],
+      [
+        256,
+        13,
+        193,
+        82,
+        0,
+        89
+      ],
+      [
+        256,
+        127,
+        221,
+        168,
+        16,
+        0
+      ],
+      [
+        256,
+        105,
+        105,
+        70,
+        256,
+        197
+      ],
+      [
+        256,
+        110,
+        249,
+        2,
+        0,
+        137
+      ],
+      [
+        256,
+        132,
+        1,
+        83,
+        158,
+        27
+      ],
+      [
+        190,
+        117,
+        109,
+        110,
+        11,
+        245
+      ],
+      [
+        256,
+        30,
+        51,
+        157,
+        0,
+        64
+      ],
+      [
+        0,
+        46,
+        217,
+        70,
+        256,
+        39
+      ],
+      [
+        256,
+        49,
+        0,
+        217,
+        256,
+        89
+      ],
+      [
+        52,
+        33,
+        149,
+        219,
+        256,
+        209
+      ],
+      [
+        256,
+        63,
+        104,
+        247,
+        0,
+        196
+      ],
+      [
+        256,
+        55,
+        246,
+        135,
+        0,
+        181
+      ],
+      [
+        242,
+        60,
+        168,
+        112,
+        163,
+        36
+      ],
+      [
+        256,
+        57,
+        9,
+        230,
+        69,
+        256
+      ],
+      [
+        256,
+        176,
+        0,
+        4,
+        0,
+        237
+      ],
+      [
+        256,
+        104,
+        254,
+        119,
+        244,
+        153
+      ],
+      [
+        256,
+        42,
+        35,
+        166,
+        5,
+        59
+      ],
+      [
+        161,
+        36,
+        93,
+        161,
+        256,
+        81
+      ],
+      [
+        39,
+        49,
+        56,
+        182,
+        256,
+        122
+      ],
+      [
+        256,
+        78,
+        250,
+        0,
+        192,
+        190
+      ],
+      [
+        256,
+        209,
+        245,
+        235,
+        256,
+        144
+      ],
+      [
+        256,
+        156,
+        51,
+        6,
+        256,
+        17
+      ],
+      [
+        256,
+        156,
+        95,
+        230,
+        256,
+        78
+      ],
+      [
+        87,
+        97,
+        8,
+        3,
+        0,
+        63
+      ],
+      [
+        19,
+        118,
+        252,
+        50,
+        256,
+        224
+      ],
+      [
+        256,
+        46,
+        179,
+        134,
+        252,
+        6
+      ],
+      [
+        0,
+        37,
+        157,
+        224,
+        0,
+        146
+      ],
+      [
+        256,
+        33,
+        0,
+        31,
+        256,
+        78
+      ],
+      [
+        256,
+        157,
+        69,
+        142,
+        256,
+        254
+      ],
+      [
+        252,
+        47,
+        193,
+        185,
+        256,
+        112
+      ],
+      [
+        256,
+        112,
+        256,
+        86,
+        256,
+        104
+      ],
+      [
+        256,
+        206,
+        256,
+        11,
+        0,
+        164
+      ],
+      [
+        256,
+        231,
+        82,
+        71,
+        256,
+        218
+      ],
+      [
+        256,
+        227,
+        110,
+        208,
+        256,
+        17
+      ],
+      [
+        256,
+        198,
+        6,
+        33,
+        26,
+        141
+      ],
+      [
+        256,
+        177,
+        224,
+        169,
+        179,
+        203
+      ],
+      [
+        256,
+        173,
+        111,
+        198,
+        256,
+        218
+      ],
+      [
+        256,
+        247,
+        21,
+        196,
+        0,
+        233
+      ],
+      [
+        256,
+        249,
+        67,
+        154,
+        0,
+        244
+      ],
+      [
+        224,
+        209,
+        200,
+        88,
+        14,
+        251
+      ],
+      [
+        256,
+        225,
+        245,
+        169,
+        256,
+        233
+      ],
+      [
+        256,
+        223,
+        150,
+        206,
+        256,
+        148
+      ],
+      [
+        256,
+        114,
+        252,
+        69,
+        78,
+        219
+      ],
+      [
+        254,
+        93,
+        242,
+        3,
+        256,
+        211
+      ],
+      [
+        248,
+        28,
+        236,
+        0,
+        4,
+        218
+      ],
+      [
+        256,
+        47,
+        57,
+        160,
+        234,
+        207
+      ],
+      [
+        256,
+        183,
+        23,
+        79,
+        0,
+        211
+      ],
+      [
+        256,
+        201,
+        256,
+        0,
+        9,
+        112
+      ],
+      [
+        256,
+        164,
+        32,
+        111,
+        256,
+        152
+      ],
+      [
+        256,
+        64,
+        256,
+        134,
+        256,
+        60
+      ],
+      [
+        256,
+        191,
+        7,
+        256,
+        167,
+        174
+      ],
+      [
+        256,
+        151,
+        6,
+        0,
+        55,
+        139
+      ],
+      [
+        0,
+        142,
+        255,
+        0,
+        215,
+        213
+      ],
+      [
+        256,
+        136,
+        256,
+        0,
+        254,
+        67
+      ],
+      [
+        256,
+        0,
+        250,
+        51,
+        42,
+        152
+      ],
+      [
+        256,
+        41,
+        256,
+        215,
+        250,
+        150
+      ],
+      [
+        256,
+        40,
+        244,
+        0,
+        253,
+        94
+      ],
+      [
+        256,
+        232,
+        239,
+        0,
+        0,
+        107
+      ],
+      [
+        175,
+        224,
+        13,
+        0,
+        2,
+        100
+      ],
+      [
+        256,
+        225,
+        85,
+        30,
+        256,
+        145
+      ],
+      [
+        256,
+        219,
+        247,
+        118,
+        0,
+        161
+      ],
+      [
+        3,
+        232,
+        182,
+        0,
+        209,
+        73
+      ],
+      [
+        256,
+        230,
+        244,
+        96,
+        53,
+        158
+      ],
+      [
+        256,
+        143,
+        241,
+        172,
+        235,
+        19
+      ],
+      [
+        256,
+        145,
+        93,
+        0,
+        101,
+        134
+      ],
+      [
+        0,
+        136,
+        227,
+        255,
+        158,
+        176
+      ],
+      [
+        256,
+        107,
+        254,
+        0,
+        199,
+        256
+      ],
+      [
+        256,
+        116,
+        26,
+        256,
+        222,
+        32
+      ],
+      [
+        256,
+        71,
+        253,
+        186,
+        0,
+        8
+      ],
+      [
+        256,
+        101,
+        4,
+        49,
+        0,
+        91
+      ],
+      [
+        111,
+        139,
+        256,
+        0,
+        0,
+        9
+      ],
+      [
+        256,
+        177,
+        101,
+        0,
+        236,
+        101
+      ],
+      [
+        256,
+        20,
+        247,
+        256,
+        256,
+        45
+      ],
+      [
+        256,
+        127,
+        6,
+        106,
+        256,
+        84
+      ],
+      [
+        123,
+        244,
+        250,
+        0,
+        35,
+        183
+      ],
+      [
+        256,
+        242,
+        18,
+        225,
+        0,
+        4
+      ],
+      [
+        256,
+        237,
+        256,
+        0,
+        3,
+        217
+      ],
+      [
+        255,
+        242,
+        72,
+        0,
+        252,
+        108
+      ],
+      [
+        170,
+        246,
+        230,
+        0,
+        256,
+        41
+      ],
+      [
+        256,
+        247,
+        10,
+        47,
+        252,
+        70
+      ],
+      [
+        256,
+        239,
+        256,
+        0,
+        44,
+        222
+      ],
+      [
+        256,
+        176,
+        245,
+        0,
+        203,
+        225
+      ],
+      [
+        256,
+        160,
+        239,
+        216,
+        226,
+        254
+      ],
+      [
+        256,
+        215,
+        80,
+        0,
+        207,
+        165
+      ],
+      [
+        20,
+        184,
+        256,
+        5,
+        244,
+        100
+      ],
+      [
+        0,
+        128,
+        120,
+        0,
+        16,
+        245
+      ],
+      [
+        256,
+        173,
+        0,
+        1,
+        256,
+        78
+      ],
+      [
+        256,
+        209,
+        244,
+        256,
+        0,
+        216
+      ],
+      [
+        0,
+        194,
+        246,
+        0,
+        0,
+        152
+      ],
+      [
+        256,
+        213,
+        256,
+        0,
+        255,
+        235
+      ],
+      [
+        256,
+        201,
+        182,
+        0,
+        256,
+        22
+      ],
+      [
+        256,
+        189,
+        79,
+        245,
+        0,
+        254
+      ],
+      [
+        2,
+        202,
+        250,
+        0,
+        37,
+        66
+      ],
+      [
+        256,
+        198,
+        24,
+        4,
+        4,
+        97
+      ],
+      [
+        256,
+        167,
+        256,
+        4,
+        254,
+        50
+      ],
+      [
+        256,
+        199,
+        256,
+        0,
+        62,
+        241
+      ],
+      [
+        256,
+        141,
+        0,
+        0,
+        45,
+        151
+      ],
+      [
+        256,
+        142,
+        13,
+        168,
+        12,
+        239
+      ],
+      [
+        256,
+        180,
+        0,
+        52,
+        256,
+        225
+      ],
+      [
+        256,
+        210,
+        73,
+        3,
+        0,
+        225
+      ],
+      [
+        256,
+        215,
+        130,
+        103,
+        0,
+        166
+      ],
+      [
+        5,
+        130,
+        253,
+        154,
+        0,
+        52
+      ],
+      [
+        0,
+        129,
+        1,
+        51,
+        256,
+        38
+      ],
+      [
+        161,
+        95,
+        232,
+        105,
+        256,
+        119
+      ],
+      [
+        73,
+        87,
+        53,
+        252,
+        256,
+        232
+      ],
+      [
+        256,
+        124,
+        118,
+        81,
+        0,
+        143
+      ],
+      [
+        10,
+        169,
+        109,
+        173,
+        256,
+        119
+      ],
+      [
+        256,
+        207,
+        247,
+        249,
+        0,
+        80
+      ],
+      [
+        4,
+        151,
+        0,
+        253,
+        254,
+        94
+      ],
+      [
+        256,
+        203,
+        145,
+        255,
+        0,
+        256
+      ],
+      [
+        256,
+        169,
+        169,
+        38,
+        256,
+        161
+      ],
+      [
+        228,
+        151,
+        81,
+        211,
+        256,
+        206
+      ],
+      [
+        113,
+        136,
+        231,
+        7,
+        256,
+        204
+      ],
+      [
+        256,
+        185,
+        159,
+        1,
+        0,
+        195
+      ],
+      [
+        9,
+        179,
+        256,
+        118,
+        256,
+        108
+      ],
+      [
+        256,
+        171,
+        166,
+        163,
+        0,
+        110
+      ],
+      [
+        256,
+        18,
+        201,
+        61,
+        0,
+        168
+      ],
+      [
+        17,
+        4,
+        237,
+        99,
+        256,
+        253
+      ],
+      [
+        256,
+        107,
+        0,
+        0,
+        256,
+        256
+      ],
+      [
+        256,
+        115,
+        109,
+        20,
+        256,
+        226
+      ],
+      [
+        256,
+        162,
+        0,
+        41,
+        0,
+        187
+      ],
+      [
+        245,
+        113,
+        256,
+        0,
+        250,
+        23
+      ],
+      [
+        0,
+        116,
+        0,
+        16,
+        256,
+        95
+      ],
+      [
+        256,
+        132,
+        94,
+        1,
+        160,
+        37
+      ],
+      [
+        1,
+        112,
+        236,
+        61,
+        200,
+        40
+      ],
+      [
+        256,
+        130,
+        133,
+        250,
+        0,
+        254
+      ],
+      [
+        256,
+        229,
+        145,
+        0,
+        0,
+        89
+      ],
+      [
+        256,
+        229,
+        172,
+        12,
+        0,
+        113
+      ],
+      [
+        5,
+        226,
+        15,
+        1,
+        256,
+        238
+      ],
+      [
+        189,
+        228,
+        256,
+        61,
+        256,
+        212
+      ],
+      [
+        256,
+        232,
+        256,
+        13,
+        0,
+        206
+      ],
+      [
+        256,
+        115,
+        230,
+        234,
+        36,
+        139
+      ],
+      [
+        62,
+        96,
+        177,
+        33,
+        256,
+        240
+      ],
+      [
+        256,
+        126,
+        5,
+        0,
+        0,
+        181
+      ],
+      [
+        256,
+        224,
+        156,
+        113,
+        0,
+        156
+      ],
+      [
+        41,
+        209,
+        232,
+        27,
+        256,
+        177
+      ],
+      [
+        256,
+        214,
+        167,
+        150,
+        0,
+        68
+      ],
+      [
+        111,
+        198,
+        181,
+        154,
+        245,
+        191
+      ],
+      [
+        256,
+        13,
+        242,
+        11,
+        0,
+        95
+      ],
+      [
+        256,
+        28,
+        96,
+        87,
+        0,
+        143
+      ],
+      [
+        256,
+        90,
+        107,
+        106,
+        256,
+        63
+      ],
+      [
+        151,
+        78,
+        5,
+        94,
+        248,
+        152
+      ],
+      [
+        247,
+        91,
+        100,
+        189,
+        197,
+        227
+      ],
+      [
+        256,
+        96,
+        256,
+        235,
+        0,
+        251
+      ],
+      [
+        101,
+        150,
+        256,
+        0,
+        256,
+        41
+      ],
+      [
+        0,
+        144,
+        21,
+        6,
+        252,
+        171
+      ],
+      [
+        2,
+        141,
+        255,
+        92,
+        256,
+        165
+      ],
+      [
+        256,
+        160,
+        103,
+        0,
+        0,
+        222
+      ],
+      [
+        256,
+        158,
+        115,
+        115,
+        0,
+        57
+      ],
+      [
+        256,
+        191,
+        240,
+        237,
+        256,
+        256
+      ],
+      [
+        6,
+        194,
+        135,
+        256,
+        256,
+        142
+      ],
+      [
+        20,
+        211,
+        2,
+        4,
+        256,
+        13
+      ],
+      [
+        256,
+        203,
+        145,
+        8,
+        0,
+        231
+      ],
+      [
+        194,
+        163,
+        10,
+        94,
+        119,
+        123
+      ],
+      [
+        256,
+        203,
+        225,
+        52,
+        0,
+        235
+      ],
+      [
+        0,
+        170,
+        34,
+        14,
+        256,
+        50
+      ],
+      [
+        6,
+        178,
+        0,
+        23,
+        256,
+        179
+      ],
+      [
+        256,
+        178,
+        213,
+        0,
+        0,
+        193
+      ],
+      [
+        0,
+        60,
+        13,
+        141,
+        256,
+        158
+      ],
+      [
+        255,
+        84,
+        0,
+        208,
+        110,
+        225
+      ],
+      [
+        256,
+        123,
+        11,
+        29,
+        256,
+        88
+      ],
+      [
+        152,
+        86,
+        160,
+        21,
+        256,
+        21
+      ],
+      [
+        256,
+        224,
+        129,
+        205,
+        0,
+        115
+      ],
+      [
+        0,
+        219,
+        255,
+        46,
+        256,
+        126
+      ],
+      [
+        70,
+        61,
+        119,
+        30,
+        256,
+        76
+      ],
+      [
+        0,
+        64,
+        76,
+        23,
+        256,
+        83
+      ],
+      [
+        214,
+        147,
+        0,
+        188,
+        99,
+        181
+      ],
+      [
+        15,
+        143,
+        186,
+        247,
+        256,
+        1
+      ],
+      [
+        256,
+        151,
+        208,
+        116,
+        253,
+        125
+      ],
+      [
+        256,
+        153,
+        152,
+        101,
+        89,
+        156
+      ],
+      [
+        256,
+        147,
+        141,
+        157,
+        256,
+        153
+      ],
+      [
+        256,
+        141,
+        0,
+        58,
+        33,
+        84
+      ],
+      [
+        246,
+        142,
+        85,
+        177,
+        183,
+        246
+      ],
+      [
+        256,
+        180,
+        245,
+        148,
+        0,
+        91
+      ],
+      [
+        256,
+        150,
+        59,
+        50,
+        256,
+        147
+      ],
+      [
+        128,
+        149,
+        183,
+        174,
+        202,
+        12
+      ],
+      [
+        177,
+        150,
+        83,
+        124,
+        256,
+        44
+      ],
+      [
+        256,
+        182,
+        256,
+        197,
+        0,
+        24
+      ],
+      [
+        256,
+        188,
+        103,
+        4,
+        0,
+        74
+      ],
+      [
+        256,
+        178,
+        92,
+        94,
+        0,
+        27
+      ],
+      [
+        138,
+        138,
+        0,
+        198,
+        226,
+        50
+      ],
+      [
+        256,
+        143,
+        254,
+        140,
+        0,
+        46
+      ],
+      [
+        89,
+        132,
+        218,
+        94,
+        256,
+        34
+      ],
+      [
+        256,
+        167,
+        0,
+        82,
+        0,
+        172
+      ],
+      [
+        0,
+        50,
+        118,
+        37,
+        256,
+        208
+      ],
+      [
+        256,
+        65,
+        12,
+        180,
+        1,
+        94
+      ],
+      [
+        256,
+        61,
+        256,
+        49,
+        256,
+        16
+      ],
+      [
+        256,
+        224,
+        35,
+        0,
+        0,
+        175
+      ],
+      [
+        0,
+        228,
+        183,
+        33,
+        53,
+        223
+      ],
+      [
+        256,
+        221,
+        248,
+        2,
+        0,
+        193
+      ],
+      [
+        195,
+        13,
+        188,
+        4,
+        256,
+        89
+      ],
+      [
+        256,
+        13,
+        10,
+        0,
+        256,
+        119
+      ],
+      [
+        146,
+        40,
+        254,
+        133,
+        249,
+        242
+      ],
+      [
+        256,
+        83,
+        256,
+        0,
+        0,
+        54
+      ],
+      [
+        253,
+        42,
+        228,
+        247,
+        256,
+        60
+      ],
+      [
+        0,
+        244,
+        184,
+        132,
+        250,
+        256
+      ],
+      [
+        22,
+        247,
+        111,
+        0,
+        256,
+        7
+      ],
+      [
+        47,
+        243,
+        51,
+        178,
+        256,
+        134
+      ],
+      [
+        205,
+        42,
+        13,
+        42,
+        216,
+        185
+      ],
+      [
+        256,
+        104,
+        242,
+        153,
+        0,
+        237
+      ],
+      [
+        256,
+        43,
+        235,
+        23,
+        256,
+        31
+      ],
+      [
+        60,
+        36,
+        256,
+        70,
+        256,
+        73
+      ],
+      [
+        256,
+        45,
+        67,
+        150,
+        0,
+        231
+      ],
+      [
+        84,
+        33,
+        254,
+        33,
+        256,
+        114
+      ],
+      [
+        256,
+        184,
+        72,
+        6,
+        137,
+        185
+      ],
+      [
+        256,
+        107,
+        216,
+        0,
+        0,
+        218
+      ],
+      [
+        253,
+        32,
+        181,
+        6,
+        71,
+        19
+      ],
+      [
+        256,
+        244,
+        142,
+        62,
+        256,
+        170
+      ],
+      [
+        256,
+        240,
+        256,
+        3,
+        0,
+        230
+      ],
+      [
+        256,
+        241,
+        237,
+        21,
+        256,
+        183
+      ],
+      [
+        120,
+        237,
+        37,
+        37,
+        256,
+        12
+      ],
+      [
+        256,
+        96,
+        1,
+        135,
+        0,
+        235
+      ],
+      [
+        42,
+        256,
+        254,
+        66,
+        256,
+        156
+      ],
+      [
+        256,
+        255,
+        245,
+        100,
+        109,
+        204
+      ],
+      [
+        256,
+        256,
+        247,
+        8,
+        0,
+        197
+      ],
+      [
+        204,
+        255,
+        226,
+        207,
+        256,
+        253
+      ],
+      [
+        256,
+        255,
+        106,
+        255,
+        0,
+        169
+      ],
+      [
+        256,
+        81,
+        0,
+        62,
+        0,
+        217
+      ],
+      [
+        256,
+        157,
+        7,
+        17,
+        0,
+        13
+      ],
+      [
+        1,
+        57,
+        137,
+        41,
+        247,
+        98
+      ],
+      [
+        256,
+        34,
+        25,
+        21,
+        256,
+        196
+      ],
+      [
+        256,
+        35,
+        120,
+        58,
+        256,
+        179
+      ],
+      [
+        256,
+        104,
+        55,
+        0,
+        0,
+        17
+      ],
+      [
+        48,
+        35,
+        3,
+        230,
+        256,
+        110
+      ],
+      [
+        256,
+        30,
+        256,
+        13,
+        0,
+        201
+      ],
+      [
+        256,
+        162,
+        186,
+        1,
+        0,
+        207
+      ],
+      [
+        256,
+        125,
+        195,
+        6,
+        0,
+        101
+      ],
+      [
+        256,
+        68,
+        256,
+        62,
+        0,
+        66
+      ],
+      [
+        8,
+        47,
+        128,
+        135,
+        256,
+        53
+      ],
+      [
+        256,
+        91,
+        0,
+        0,
+        0,
+        66
+      ],
+      [
+        227,
+        52,
+        172,
+        194,
+        0,
+        202
+      ],
+      [
+        256,
+        59,
+        242,
+        214,
+        252,
+        36
+      ],
+      [
+        256,
+        60,
+        0,
+        186,
+        0,
+        129
+      ],
+      [
+        256,
+        245,
+        218,
+        221,
+        0,
+        237
+      ],
+      [
+        256,
+        242,
+        8,
+        18,
+        0,
+        218
+      ],
+      [
+        0,
+        237,
+        16,
+        242,
+        256,
+        80
+      ],
+      [
+        256,
+        244,
+        59,
+        92,
+        256,
+        252
+      ],
+      [
+        256,
+        247,
+        256,
+        80,
+        0,
+        30
+      ],
+      [
+        256,
+        7,
+        181,
+        76,
+        0,
+        100
+      ],
+      [
+        187,
+        3,
+        30,
+        5,
+        256,
+        160
+      ],
+      [
+        256,
+        24,
+        173,
+        2,
+        256,
+        252
+      ],
+      [
+        256,
+        4,
+        188,
+        5,
+        256,
+        145
+      ],
+      [
+        244,
+        99,
+        242,
+        98,
+        231,
+        222
+      ],
+      [
+        256,
+        100,
+        221,
+        92,
+        238,
+        182
+      ],
+      [
+        256,
+        118,
+        42,
+        8,
+        0,
+        246
+      ],
+      [
+        256,
+        138,
+        230,
+        48,
+        0,
+        23
+      ],
+      [
+        256,
+        209,
+        256,
+        54,
+        0,
+        173
+      ],
+      [
+        46,
+        193,
+        23,
+        21,
+        155,
+        143
+      ],
+      [
+        50,
+        193,
+        113,
+        2,
+        256,
+        7
+      ],
+      [
+        41,
+        132,
+        18,
+        173,
+        237,
+        176
+      ],
+      [
+        145,
+        128,
+        197,
+        10,
+        167,
+        235
+      ],
+      [
+        256,
+        132,
+        2,
+        109,
+        256,
+        54
+      ],
+      [
+        256,
+        124,
+        205,
+        5,
+        256,
+        255
+      ],
+      [
+        256,
+        125,
+        256,
+        89,
+        0,
+        42
+      ],
+      [
+        256,
+        112,
+        53,
+        0,
+        218,
+        202
+      ],
+      [
+        256,
+        36,
+        81,
+        8,
+        0,
+        175
+      ],
+      [
+        0,
+        28,
+        11,
+        148,
+        256,
+        239
+      ],
+      [
+        256,
+        47,
+        157,
+        25,
+        0,
+        184
+      ],
+      [
+        256,
+        79,
+        0,
+        50,
+        0,
+        151
+      ],
+      [
+        256,
+        93,
+        103,
+        32,
+        0,
+        65
+      ],
+      [
+        256,
+        86,
+        122,
+        1,
+        0,
+        252
+      ],
+      [
+        256,
+        61,
+        92,
+        36,
+        244,
+        124
+      ],
+      [
+        0,
+        69,
+        5,
+        186,
+        0,
+        115
+      ],
+      [
+        256,
+        83,
+        2,
+        80,
+        0,
+        42
+      ],
+      [
+        0,
+        80,
+        50,
+        140,
+        256,
+        155
+      ],
+      [
+        0,
+        76,
+        256,
+        93,
+        256,
+        236
+      ],
+      [
+        146,
+        71,
+        195,
+        206,
+        213,
+        234
+      ],
+      [
+        0,
+        211,
+        232,
+        21,
+        23,
+        32
+      ],
+      [
+        256,
+        207,
+        36,
+        15,
+        0,
+        254
+      ],
+      [
+        0,
+        213,
+        98,
+        26,
+        0,
+        136
+      ],
+      [
+        117,
+        181,
+        256,
+        19,
+        256,
+        93
+      ],
+      [
+        256,
+        179,
+        209,
+        4,
+        0,
+        195
+      ],
+      [
+        256,
+        183,
+        112,
+        232,
+        0,
+        245
+      ],
+      [
+        256,
+        100,
+        115,
+        53,
+        0,
+        92
+      ],
+      [
+        256,
+        80,
+        256,
+        76,
+        256,
+        213
+      ],
+      [
+        12,
+        96,
+        39,
+        30,
+        256,
+        141
+      ],
+      [
+        256,
+        125,
+        241,
+        107,
+        0,
+        106
+      ],
+      [
+        112,
+        82,
+        136,
+        244,
+        237,
+        45
+      ],
+      [
+        256,
+        253,
+        198,
+        84,
+        256,
+        254
+      ],
+      [
+        256,
+        256,
+        174,
+        4,
+        0,
+        113
+      ],
+      [
+        0,
+        242,
+        0,
+        150,
+        0,
+        233
+      ],
+      [
+        0,
+        184,
+        10,
+        45,
+        0,
+        84
+      ],
+      [
+        0,
+        179,
+        186,
+        60,
+        0,
+        150
+      ],
+      [
+        256,
+        88,
+        0,
+        10,
+        0,
+        23
+      ],
+      [
+        7,
+        71,
+        226,
+        164,
+        0,
+        70
+      ],
+      [
+        0,
+        83,
+        241,
+        101,
+        0,
+        15
+      ],
+      [
+        256,
+        70,
+        226,
+        84,
+        0,
+        208
+      ],
+      [
+        256,
+        192,
+        250,
+        21,
+        0,
+        91
+      ],
+      [
+        256,
+        191,
+        57,
+        137,
+        0,
+        146
+      ],
+      [
+        256,
+        87,
+        256,
+        3,
+        0,
+        186
+      ],
+      [
+        0,
+        59,
+        62,
+        71,
+        256,
+        80
+      ],
+      [
+        1,
+        53,
+        4,
+        156,
+        0,
+        179
+      ],
+      [
+        256,
+        185,
+        252,
+        3,
+        0,
+        222
+      ],
+      [
+        256,
+        178,
+        219,
+        68,
+        0,
+        145
+      ],
+      [
+        156,
+        174,
+        6,
+        213,
+        256,
+        240
+      ],
+      [
+        107,
+        192,
+        83,
+        189,
+        256,
+        245
+      ],
+      [
+        0,
+        255,
+        59,
+        82,
+        30,
+        124
+      ],
+      [
+        0,
+        253,
+        50,
+        55,
+        0,
+        203
+      ],
+      [
+        0,
+        253,
+        52,
+        141,
+        256,
+        96
+      ],
+      [
+        256,
+        255,
+        256,
+        96,
+        0,
+        242
+      ],
+      [
+        0,
+        255,
+        44,
+        147,
+        256,
+        158
+      ],
+      [
+        0,
+        255,
+        0,
+        38,
+        256,
+        162
+      ],
+      [
+        0,
+        255,
+        68,
+        21,
+        256,
+        100
+      ],
+      [
+        66,
+        28,
+        25,
+        120,
+        0,
+        155
+      ],
+      [
+        256,
+        39,
+        0,
+        168,
+        256,
+        40
+      ],
+      [
+        256,
+        34,
+        256,
+        46,
+        256,
+        52
+      ],
+      [
+        256,
+        35,
+        8,
+        132,
+        0,
+        137
+      ],
+      [
+        256,
+        39,
+        174,
+        69,
+        0,
+        17
+      ],
+      [
+        256,
+        29,
+        240,
+        7,
+        0,
+        256
+      ],
+      [
+        1,
+        227,
+        17,
+        211,
+        0,
+        47
+      ],
+      [
+        0,
+        229,
+        112,
+        181,
+        0,
+        99
+      ],
+      [
+        0,
+        235,
+        2,
+        0,
+        212,
+        78
+      ],
+      [
+        0,
+        73,
+        44,
+        80,
+        0,
+        1
+      ],
+      [
+        256,
+        54,
+        256,
+        30,
+        0,
+        4
+      ],
+      [
+        256,
+        44,
+        256,
+        4,
+        0,
+        94
+      ],
+      [
+        0,
+        61,
+        15,
+        1,
+        0,
+        239
+      ],
+      [
+        256,
+        63,
+        256,
+        48,
+        0,
+        254
+      ],
+      [
+        256,
+        53,
+        242,
+        126,
+        0,
+        151
+      ],
+      [
+        256,
+        72,
+        217,
+        80,
+        0,
+        256
+      ],
+      [
+        256,
+        73,
+        13,
+        45,
+        0,
+        216
+      ],
+      [
+        0,
+        76,
+        256,
+        57,
+        256,
+        62
+      ],
+      [
+        256,
+        137,
+        246,
+        2,
+        0,
+        226
+      ],
+      [
+        256,
+        141,
+        179,
+        188,
+        0,
+        256
+      ],
+      [
+        0,
+        142,
+        169,
+        57,
+        39,
+        27
+      ],
+      [
+        0,
+        169,
+        0,
+        151,
+        0,
+        218
+      ],
+      [
+        245,
+        158,
+        249,
+        52,
+        0,
+        58
+      ],
+      [
+        36,
+        151,
+        200,
+        38,
+        0,
+        229
+      ],
+      [
+        256,
+        149,
+        67,
+        32,
+        96,
+        239
+      ],
+      [
+        0,
+        242,
+        140,
+        251,
+        256,
+        61
+      ],
+      [
+        256,
+        250,
+        22,
+        158,
+        0,
+        239
+      ],
+      [
+        256,
+        240,
+        19,
+        57,
+        0,
+        236
+      ],
+      [
+        239,
+        236,
+        205,
+        210,
+        256,
+        64
+      ],
+      [
+        72,
+        181,
+        225,
+        14,
+        256,
+        81
+      ],
+      [
+        256,
+        183,
+        115,
+        256,
+        256,
+        236
+      ],
+      [
+        256,
+        187,
+        255,
+        0,
+        0,
+        10
+      ],
+      [
+        255,
+        194,
+        5,
+        61,
+        0,
+        159
+      ],
+      [
+        256,
+        134,
+        174,
+        15,
+        0,
+        50
+      ],
+      [
+        0,
+        159,
+        204,
+        51,
+        256,
+        227
+      ],
+      [
+        12,
+        151,
+        117,
+        91,
+        256,
+        96
+      ],
+      [
+        256,
+        162,
+        253,
+        93,
+        0,
+        22
+      ],
+      [
+        223,
+        159,
+        226,
+        13,
+        0,
+        223
+      ],
+      [
+        256,
+        198,
+        167,
+        47,
+        0,
+        152
+      ],
+      [
+        0,
+        134,
+        0,
+        38,
+        0,
+        111
+      ],
+      [
+        256,
+        148,
+        254,
+        89,
+        248,
+        202
+      ],
+      [
+        256,
+        137,
+        256,
+        43,
+        249,
+        205
+      ],
+      [
+        0,
+        136,
+        58,
+        165,
+        205,
+        118
+      ],
+      [
+        256,
+        134,
+        211,
+        107,
+        256,
+        14
+      ],
+      [
+        0,
+        154,
+        225,
+        187,
+        82,
+        221
+      ],
+      [
+        0,
+        118,
+        56,
+        243,
+        256,
+        140
+      ],
+      [
+        0,
+        186,
+        0,
+        83,
+        256,
+        240
+      ],
+      [
+        256,
+        200,
+        256,
+        230,
+        0,
+        138
+      ],
+      [
+        0,
+        186,
+        136,
+        256,
+        256,
+        32
+      ],
+      [
+        256,
+        206,
+        97,
+        100,
+        256,
+        175
+      ],
+      [
+        18,
+        56,
+        126,
+        148,
+        256,
+        73
+      ],
+      [
+        0,
+        69,
+        13,
+        62,
+        71,
+        225
+      ],
+      [
+        0,
+        61,
+        214,
+        140,
+        256,
+        129
+      ],
+      [
+        0,
+        75,
+        171,
+        118,
+        54,
+        200
+      ],
+      [
+        0,
+        88,
+        242,
+        0,
+        256,
+        111
+      ],
+      [
+        256,
+        112,
+        96,
+        7,
+        0,
+        184
+      ],
+      [
+        0,
+        94,
+        9,
+        66,
+        256,
+        250
+      ],
+      [
+        256,
+        102,
+        189,
+        0,
+        256,
+        255
+      ],
+      [
+        256,
+        35,
+        249,
+        39,
+        0,
+        236
+      ],
+      [
+        1,
+        56,
+        157,
+        144,
+        0,
+        94
+      ],
+      [
+        0,
+        62,
+        74,
+        5,
+        173,
+        147
+      ],
+      [
+        256,
+        53,
+        228,
+        253,
+        0,
+        256
+      ],
+      [
+        256,
+        72,
+        0,
+        1,
+        256,
+        178
+      ],
+      [
+        256,
+        63,
+        0,
+        93,
+        0,
+        11
+      ],
+      [
+        256,
+        73,
+        252,
+        148,
+        256,
+        227
+      ],
+      [
+        256,
+        174,
+        43,
+        231,
+        0,
+        156
+      ],
+      [
+        226,
+        158,
+        71,
+        87,
+        150,
+        48
+      ],
+      [
+        0,
+        151,
+        72,
+        247,
+        256,
+        25
+      ],
+      [
+        61,
+        142,
+        9,
+        100,
+        0,
+        168
+      ],
+      [
+        256,
+        14,
+        221,
+        5,
+        0,
+        88
+      ],
+      [
+        255,
+        47,
+        5,
+        0,
+        0,
+        107
+      ],
+      [
+        256,
+        46,
+        256,
+        4,
+        0,
+        253
+      ],
+      [
+        0,
+        30,
+        96,
+        251,
+        231,
+        120
+      ],
+      [
+        0,
+        172,
+        253,
+        174,
+        256,
+        3
+      ],
+      [
+        256,
+        196,
+        10,
+        0,
+        0,
+        87
+      ],
+      [
+        256,
+        178,
+        256,
+        170,
+        0,
+        130
+      ],
+      [
+        0,
+        82,
+        8,
+        116,
+        256,
+        221
+      ],
+      [
+        0,
+        80,
+        171,
+        54,
+        256,
+        187
+      ],
+      [
+        0,
+        241,
+        246,
+        0,
+        256,
+        61
+      ],
+      [
+        256,
+        236,
+        199,
+        41,
+        248,
+        166
+      ],
+      [
+        230,
+        247,
+        89,
+        75,
+        256,
+        37
+      ],
+      [
+        256,
+        191,
+        0,
+        235,
+        256,
+        237
+      ],
+      [
+        256,
+        196,
+        256,
+        198,
+        0,
+        239
+      ],
+      [
+        0,
+        197,
+        66,
+        39,
+        256,
+        234
+      ],
+      [
+        0,
+        202,
+        219,
+        2,
+        256,
+        22
+      ],
+      [
+        0,
+        0,
+        45,
+        116,
+        256,
+        136
+      ],
+      [
+        0,
+        0,
+        106,
+        143,
+        256,
+        224
+      ],
+      [
+        256,
+        1,
+        256,
+        6,
+        256,
+        147
+      ],
+      [
+        0,
+        0,
+        0,
+        195,
+        256,
+        161
+      ],
+      [
+        256,
+        55,
+        81,
+        6,
+        0,
+        205
+      ],
+      [
+        256,
+        69,
+        146,
+        63,
+        0,
+        113
+      ],
+      [
+        0,
+        98,
+        254,
+        72,
+        0,
+        229
+      ],
+      [
+        256,
+        89,
+        256,
+        51,
+        256,
+        135
+      ],
+      [
+        0,
+        81,
+        164,
+        176,
+        0,
+        202
+      ],
+      [
+        0,
+        119,
+        0,
+        60,
+        256,
+        155
+      ],
+      [
+        0,
+        127,
+        197,
+        116,
+        1,
+        62
+      ],
+      [
+        1,
+        138,
+        150,
+        77,
+        0,
+        169
+      ],
+      [
+        256,
+        136,
+        191,
+        53,
+        193,
+        236
+      ],
+      [
+        143,
+        116,
+        249,
+        6,
+        256,
+        36
+      ],
+      [
+        0,
+        136,
+        0,
+        0,
+        0,
+        239
+      ],
+      [
+        2,
+        95,
+        158,
+        167,
+        256,
+        252
+      ],
+      [
+        0,
+        94,
+        12,
+        236,
+        0,
+        193
+      ],
+      [
+        256,
+        112,
+        256,
+        6,
+        0,
+        247
+      ],
+      [
+        256,
+        78,
+        12,
+        116,
+        0,
+        214
+      ],
+      [
+        181,
+        61,
+        0,
+        69,
+        0,
+        165
+      ],
+      [
+        0,
+        60,
+        124,
+        137,
+        256,
+        60
+      ],
+      [
+        210,
+        52,
+        252,
+        1,
+        89,
+        159
+      ],
+      [
+        256,
+        61,
+        256,
+        6,
+        0,
+        115
+      ],
+      [
+        256,
+        85,
+        171,
+        23,
+        0,
+        152
+      ],
+      [
+        256,
+        95,
+        176,
+        134,
+        256,
+        242
+      ],
+      [
+        256,
+        222,
+        252,
+        1,
+        0,
+        158
+      ],
+      [
+        0,
+        213,
+        44,
+        0,
+        256,
+        46
+      ],
+      [
+        6,
+        218,
+        149,
+        37,
+        256,
+        13
+      ],
+      [
+        256,
+        210,
+        235,
+        119,
+        0,
+        154
+      ],
+      [
+        0,
+        1,
+        189,
+        0,
+        256,
+        70
+      ],
+      [
+        0,
+        4,
+        26,
+        7,
+        256,
+        94
+      ],
+      [
+        202,
+        1,
+        233,
+        49,
+        40,
+        104
+      ],
+      [
+        0,
+        3,
+        12,
+        228,
+        256,
+        108
+      ]
+    ],
+    "sbc_n_bins": 256,
+    "sbc_ks_pvalue": [
+      1.0337995250652278e-147,
+      0.05029835431833623,
+      4.362048954733376e-14,
+      1.2912253034846754e-20,
+      2.0156024300205004e-70,
+      0.0005763427505617857
+    ],
+    "sbc_ks_pvalue_min": 1.0337995250652278e-147,
+    "posterior_r2": [
+      0.2843639850616455,
+      -0.06484198570251465,
+      -0.07177317142486572,
+      -0.1843947172164917,
+      0.1015005111694336,
+      -0.026237130165100098
+    ],
+    "posterior_rmse": [
+      1.2469245195388794,
+      0.5708921551704407,
+      0.2949932813644409,
+      0.28117635846138,
+      1.194545865058899,
+      0.4674660265445709
+    ],
+    "posterior_z_sd": [
+      59.2514533996582,
+      1.0142052173614502,
+      1.7666599750518799,
+      15.058277130126953,
+      20.65923309326172,
+      1.064534306526184
+    ],
+    "posterior_informative": true,
+    "uninformative_parameters": [
+      "log_velocity",
+      "ei_global",
+      "ei_gradient",
+      "drive"
+    ],
+    "informative_r2_floor": 0.05,
+    "posterior_sd_over_prior_sd": [
+      0.12192492187023163,
+      0.9418526887893677,
+      0.6552330255508423,
+      0.7338201403617859,
+      0.12630541622638702,
+      0.9376834630966187
+    ],
+    "sd_of_posterior_mean_over_prior_sd": [
+      1.1004576683044434,
+      0.29974105954170227,
+      0.4270665943622589,
+      0.5297061204910278,
+      0.6791433691978455,
+      0.2762101888656616
+    ],
+    "informativeness_note": "posterior_r2 below 0.05 on 4 of 6 parameters (log_velocity, ei_global, ei_gradient, drive): the posterior explains no variance in them. Calibration does not qualify this -- an uninformative posterior that returns the prior is calibrated by construction. No parameter-recovery or inference claim may cite this block. See ISSUE-012 in reports/known_issues.md.",
+    "coverage_mae": 0.2033984214067459,
+    "coverage": {
+      "levels": [
+        0.10000000149011612,
+        0.20000000298023224,
+        0.30000001192092896,
+        0.4000000059604645,
+        0.5,
+        0.6000000238418579,
+        0.699999988079071,
+        0.800000011920929,
+        0.8999999761581421,
+        0.949999988079071
+      ],
+      "coverage_per_param": [
+        [
+          0.01953125,
+          0.12109375,
+          0.072265625,
+          0.068359375,
+          0.013671875,
+          0.078125
+        ],
+        [
+          0.03125,
+          0.228515625,
+          0.125,
+          0.150390625,
+          0.021484375,
+          0.17578125
+        ],
+        [
+          0.048828125,
+          0.322265625,
+          0.19140625,
+          0.220703125,
+          0.041015625,
+          0.28515625
+        ],
+        [
+          0.064453125,
+          0.4453125,
+          0.26953125,
+          0.2890625,
+          0.05078125,
+          0.3828125
+        ],
+        [
+          0.07421875,
+          0.541015625,
+          0.33203125,
+          0.3671875,
+          0.06640625,
+          0.478515625
+        ],
+        [
+          0.09375,
+          0.625,
+          0.37890625,
+          0.44921875,
+          0.083984375,
+          0.564453125
+        ],
+        [
+          0.11328125,
+          0.734375,
+          0.44140625,
+          0.55078125,
+          0.109375,
+          0.650390625
+        ],
+        [
+          0.130859375,
+          0.814453125,
+          0.51953125,
+          0.61328125,
+          0.138671875,
+          0.763671875
+        ],
+        [
+          0.16015625,
+          0.888671875,
+          0.62890625,
+          0.697265625,
+          0.171875,
+          0.884765625
+        ],
+        [
+          0.181640625,
+          0.927734375,
+          0.724609375,
+          0.763671875,
+          0.197265625,
+          0.91796875
+        ]
+      ],
+      "coverage_mean": [
+        0.0621744804084301,
+        0.1220703125,
+        0.1848958432674408,
+        0.2503255307674408,
+        0.3098958432674408,
+        0.3658854365348816,
+        0.4332682490348816,
+        0.4967448115348816,
+        0.5719401240348816,
+        0.6188151240348816
+      ],
+      "coverage_joint": [
+        0.0,
+        0.0,
+        0.00390625,
+        0.009765625,
+        0.01171875,
+        0.01953125,
+        0.0234375,
+        0.0390625,
+        0.044921875,
+        0.046875
+      ],
+      "coverage_mae": 0.2033984214067459,
+      "coverage_mae_joint": 0.5250781178474426,
+      "n_datasets": 512,
+      "n_posterior_samples": 256
+    },
+    "note": "Calibration measured against the SAME simulator that generated the training corpus. It certifies self-consistency of the amortized posterior under simulator-conditioned evidence only, and is NOT evidence of biological validity or of correct inference on real data.",
+    "available": true,
+    "n_datasets": 512,
+    "backend_counts": {
+      "jansen_rit": 105,
+      "linear_gaussian": 32,
+      "stuart_landau": 52,
+      "wilson_cowan": 157,
+      "wong_wang": 166
+    },
+    "sampling": "backend-stratified, fold-proportional with a floor per backend"
+  },
+  "backend_comparison": {
+    "per_backend_nll": {
+      "jansen_rit": 1.1270600868738256,
+      "linear_gaussian": -0.01039660640526563,
+      "stuart_landau": 1.3092954186722636,
+      "wilson_cowan": 0.8386497072060592,
+      "wong_wang": 0.42881375343131367
+    },
+    "per_backend_n": {
+      "jansen_rit": 64,
+      "linear_gaussian": 64,
+      "stuart_landau": 64,
+      "wilson_cowan": 64,
+      "wong_wang": 64
+    },
+    "sampling": "backend-stratified, equal windows per backend",
+    "windows_selected_per_backend": {
+      "jansen_rit": 64,
+      "linear_gaussian": 64,
+      "stuart_landau": 64,
+      "wilson_cowan": 64,
+      "wong_wang": 64
+    },
+    "note": "The learned operator is the equal-capacity control for every mechanistic claim (Appendix D). Matching a family's trajectories is not evidence that the family is neurally realized."
+  },
+  "real_eeg_holdout": {
+    "available": true,
+    "n_test_windows": 1000,
+    "n_test_participants": 25,
+    "n_train_windows": 2010,
+    "n_train_participants": 67,
+    "windows_per_test_participant": 40,
+    "windows_per_train_participant": 30,
+    "sampling": "participant-stratified, evenly spaced within participant; budget fixed by participants, not batches",
+    "baseline_protocol": "v2_no_pooled_subject_specific",
+    "dropped_baselines": {
+      "subject_specific_ar": "DROPPED from this table under baseline protocol v2 (ISSUE-013). Refusal R10 makes the fit and score participant sets disjoint, so 100% of scored windows routed to the pooled fallback and the row was bit-for-bit `ar16` -- a duplicate carrying the name of the hardest baseline the thesis names. Protocol v1 (runs 1-3) reported it; those numbers stand as `ar16`'s. The quantity it was supposed to measure is measured instead by `within_participant_holdout`, on a within-participant temporal split, and is NOT comparable with the rows here: it has seen the scored participant and every row here has not."
+    },
+    "real_split": {
+      "participants_per_fold": {
+        "train": [
+          "S001",
+          "S002",
+          "S003",
+          "S006",
+          "S007",
+          "S009",
+          "S010",
+          "S012",
+          "S016",
+          "S017",
+          "S020",
+          "S021",
+          "S022",
+          "S024",
+          "S025",
+          "S027",
+          "S028",
+          "S030",
+          "S031",
+          "S035",
+          "S036",
+          "S040",
+          "S041",
+          "S042",
+          "S044",
+          "S045",
+          "S046",
+          "S047",
+          "S048",
+          "S050",
+          "S055",
+          "S056",
+          "S057",
+          "S058",
+          "S059",
+          "S060",
+          "S061",
+          "S065",
+          "S067",
+          "S069",
+          "S073",
+          "S075",
+          "S077",
+          "S078",
+          "S079",
+          "S080",
+          "S084",
+          "S087",
+          "S088",
+          "S089",
+          "S090",
+          "S091",
+          "S092",
+          "S093",
+          "S094",
+          "S095",
+          "S096",
+          "S098",
+          "S099",
+          "S100",
+          "S101",
+          "S102",
+          "S103",
+          "S104",
+          "S106",
+          "S107",
+          "S108"
+        ],
+        "val": [
+          "S004",
+          "S005",
+          "S008",
+          "S032",
+          "S037",
+          "S039",
+          "S049",
+          "S051",
+          "S053",
+          "S062",
+          "S068",
+          "S070",
+          "S072",
+          "S074",
+          "S081",
+          "S085",
+          "S105"
+        ],
+        "test": [
+          "S011",
+          "S013",
+          "S014",
+          "S015",
+          "S018",
+          "S019",
+          "S023",
+          "S026",
+          "S029",
+          "S033",
+          "S034",
+          "S038",
+          "S043",
+          "S052",
+          "S054",
+          "S063",
+          "S064",
+          "S066",
+          "S071",
+          "S076",
+          "S082",
+          "S083",
+          "S086",
+          "S097",
+          "S109"
+        ]
+      },
+      "sha256": "9b2c1f8e6613f9f4ecba0322f81dc6df7db233f7204e160e96ae44173bf720ed",
+      "policy": "stable_hash_v2",
+      "verified": true,
+      "verification": "verified against the fingerprint recorded in the checkpoint (which predates the `policy` field, so the split POLICY is unverified; the participant ids are what matched)"
+    },
+    "individualization": {
+      "applied": true,
+      "n_participants_scored": 25,
+      "n_individualised_participants": 0,
+      "n_at_initialisation": 25,
+      "note": "n_at_initialisation counts scored participants whose person effect was never fitted. Their z_person row is exactly zero, so individualization contributes nothing for them and any G5-style claim over them is measuring the population model. A participant-disjoint holdout puts EVERY test participant in this column."
+    },
+    "metric": "gaussian NLL, nats per channel per sample, sensor space, participant-clustered 95% CI",
+    "estimator": "plug-in at posterior mean (matches the baselines' plug-in form)",
+    "results": {
+      "persistence": {
+        "nll_per_sample": 2.3273837745189665,
+        "nll_ci95": [
+          2.2545914482086897,
+          2.430456937882304
+        ],
+        "mse": 7.334079615831375,
+        "mse_ci95": [
+          6.154385169702209,
+          8.692094449459574
+        ],
+        "n_parameters": 4096,
+        "fit_seconds": 0.01,
+        "describe": {
+          "name": "persistence",
+          "n_parameters": 4096,
+          "fitted": true,
+          "assumptions": [
+            "the signal is locally constant on the prediction horizon",
+            "residual variance is stationary across participants and sessions"
+          ],
+          "falsifies_comparison_if": "If the foundation model does not beat persistence by a margin whose participant-clustered interval excludes zero, the predictive claim is explained by autocorrelation alone and must be withdrawn.",
+          "n_train_windows": 2010,
+          "n_train_subjects": 67,
+          "variance_calibration": "held_out_training_windows",
+          "seed": 0
+        }
+      },
+      "ar16": {
+        "nll_per_sample": 2.034477501630783,
+        "nll_ci95": [
+          1.9695987168610094,
+          2.1348703214526177
+        ],
+        "mse": 3.985614086454734,
+        "mse_ci95": [
+          3.4769930334780366,
+          4.556431086540222
+        ],
+        "n_parameters": 5184,
+        "fit_seconds": 0.35,
+        "describe": {
+          "name": "ar16",
+          "n_parameters": 5184,
+          "fitted": true,
+          "assumptions": [
+            "per-channel linear, stationary, Gaussian-innovation dynamics",
+            "one set of coefficients for the whole population (no subject fitting)",
+            "channels are conditionally independent given their own past",
+            "context is at least 16 samples long"
+          ],
+          "falsifies_comparison_if": "If a per-channel AR fitted on the same training windows matches the foundation model's held-out NLL, then the claimed benefit of connectome structure and per-region state reduces to per-channel spectral continuation and the structural claim is unsupported.",
+          "n_train_windows": 2010,
+          "n_train_subjects": 67,
+          "variance_calibration": "held_out_training_windows",
+          "seed": 0
+        }
+      },
+      "var4": {
+        "nll_per_sample": 2.0371236840486526,
+        "nll_ci95": [
+          1.968930655887723,
+          2.1438795873105527
+        ],
+        "mse": 3.9621522695980964,
+        "mse_ci95": [
+          3.453121533475071,
+          4.525902463704906
+        ],
+        "n_parameters": 20544,
+        "fit_seconds": 0.07,
+        "describe": {
+          "name": "var4",
+          "n_parameters": 20544,
+          "fitted": true,
+          "assumptions": [
+            "linear, stationary, dense lagged coupling between all channels",
+            "one coupling matrix for the whole population (no subject fitting)",
+            "ridge/rank regularisation is the right capacity control at this n",
+            "sensor-space coupling stands in for source-space coupling"
+          ],
+          "falsifies_comparison_if": "If a dense VAR fitted on the same windows matches the foundation model, then cross-channel structure did not have to be anatomical: an unconstrained linear coupling suffices, and the connectome-structured claim loses its evidential basis.",
+          "n_train_windows": 2010,
+          "n_train_subjects": 67,
+          "variance_calibration": "held_out_training_windows",
+          "seed": 0
+        }
+      },
+      "population_gaussian": {
+        "nll_per_sample": 2.0588858065605162,
+        "nll_ci95": [
+          1.99752828515172,
+          2.1525707827180622
+        ],
+        "mse": 4.150508878432214,
+        "mse_ci95": [
+          3.64076633873675,
+          4.724961690922454
+        ],
+        "n_parameters": 2208,
+        "fit_seconds": 0.01,
+        "describe": {
+          "name": "population_gaussian",
+          "n_parameters": 2208,
+          "fitted": true,
+          "assumptions": [
+            "one stationary Gaussian describes the whole population",
+            "temporal structure is exhausted by a per-channel lag-1 autocovariance",
+            "no participant identity, session, montage or anatomy is used"
+          ],
+          "falsifies_comparison_if": "If the foundation model does not beat the population Gaussian on a participant's held-out future, then including that participant's data was not personalization, and no individualization claim may be made.",
+          "n_train_windows": 2010,
+          "n_train_subjects": 67,
+          "variance_calibration": "held_out_training_windows",
+          "seed": 0
+        }
+      },
+      "dense_neural": {
+        "nll_per_sample": 3.4062384254932403,
+        "nll_ci95": [
+          3.222866138356924,
+          3.661526736485958
+        ],
+        "mse": 14.361002954959869,
+        "mse_ci95": [
+          12.340718457674981,
+          16.62895877883434
+        ],
+        "n_parameters": 26296869,
+        "fit_seconds": 74.42,
+        "describe": {
+          "name": "dense_gru_matched",
+          "n_parameters": 26296869,
+          "fitted": true,
+          "assumptions": [
+            "the optimiser found a solution worth comparing against (check loss_history before quoting this baseline)",
+            "parameter count is a fair capacity proxy at matched training steps and matched data",
+            "no connectome, adjacency or per-region state is used -- by construction",
+            "its variance head is fitted in-sample, which flatters it relative to the held-out-calibrated linear baselines"
+          ],
+          "falsifies_comparison_if": "If an unstructured network with the same parameter count, data and training budget matches the foundation model's held-out NLL, then the connectome and per-region state are decorative and the structural claim must be withdrawn.",
+          "n_train_windows": 2010,
+          "n_train_subjects": 67,
+          "variance_calibration": "heteroscedastic head trained in-sample on free-running rollouts (rollout_len=22)",
+          "seed": 0,
+          "target_parameters": 26304657,
+          "parameter_error": 0.00029606924735798684,
+          "hidden_size": 1691,
+          "num_layers": 2,
+          "train_steps": 400,
+          "rollout_len": 22,
+          "loss_history": [
+            2.773902177810669,
+            6.8563642501831055,
+            8.689908981323242,
+            7.258615016937256,
+            4.669614315032959,
+            4.621205806732178,
+            4.102481365203857,
+            3.5807383060455322,
+            3.7109017372131348,
+            4.060184478759766,
+            3.5202741622924805,
+            3.5834546089172363,
+            3.340383768081665,
+            3.266544818878174,
+            2.9026880264282227,
+            2.7324721813201904,
+            2.7151129245758057,
+            2.4919052124023438,
+            2.2535531520843506,
+            2.0724053382873535,
+            2.1080288887023926
+          ],
+          "capacity_matched": true
+        }
+      },
+      "scwbd-004": {
+        "nll_per_sample": 2.0244297981262207,
+        "nll_ci95": [
+          1.9749800671309232,
+          2.0903357436031103
+        ],
+        "mse": 3.9822452068328857,
+        "mse_ci95": [
+          3.498251338902861,
+          4.5170221476987
+        ],
+        "n_parameters": 26304657,
+        "describe": {
+          "name": "scwbd-004",
+          "structured_state": true,
+          "connectome_masked": true,
+          "variance_calibration": "state-dependent: sourced from X^uncertainty via the observation interface, plus a separately parameterised per-channel instrument floor",
+          "noise_floor": {
+            "parameter": "eeg.log_noise",
+            "role": "per-channel instrument floor (electrode impedance, amplifier noise)",
+            "mean": -0.7165085077285767,
+            "sd_across_channels": 3.105694532394409,
+            "at_initialisation": false,
+            "warning": null,
+            "state_dependent_variance": true
+          }
+        }
+      }
+    },
+    "ranking_best_first": [
+      [
+        "scwbd-004",
+        2.0244297981262207
+      ],
+      [
+        "ar16",
+        2.034477501630783
+      ],
+      [
+        "var4",
+        2.0371236840486526
+      ],
+      [
+        "population_gaussian",
+        2.0588858065605162
+      ],
+      [
+        "persistence",
+        2.3273837745189665
+      ],
+      [
+        "dense_neural",
+        3.4062384254932403
+      ]
+    ],
+    "paired_vs_scwbd": {
+      "persistence": {
+        "delta": -0.3029539226293564,
+        "ci_lo": -0.3426625685185194,
+        "ci_hi": -0.26912460902333263,
+        "excludes_zero": true
+      },
+      "ar16": {
+        "delta": -0.01004764974117279,
+        "ci_lo": -0.048016975927352906,
+        "ci_hi": 0.014425626793503758,
+        "excludes_zero": false
+      },
+      "var4": {
+        "delta": -0.012693832159042358,
+        "ci_lo": -0.056130849248170855,
+        "ci_hi": 0.014554555708169936,
+        "excludes_zero": false
+      },
+      "population_gaussian": {
+        "delta": -0.034455954670906064,
+        "ci_lo": -0.0653627730846405,
+        "ci_hi": -0.01325836546719076,
+        "excludes_zero": true
+      },
+      "dense_neural": {
+        "delta": -1.38180857360363,
+        "ci_lo": -1.5750234207868576,
+        "ci_hi": -1.2380015136271716,
+        "excludes_zero": true
+      }
+    },
+    "scwbd_beaten_by": [],
+    "inconclusive_vs_scwbd": [
+      "ar16",
+      "var4"
+    ],
+    "paired_mse_vs_scwbd": {
+      "persistence": {
+        "delta": -3.351834539808333,
+        "ci_lo": -4.215353033794835,
+        "ci_hi": -2.624056271923334,
+        "excludes_zero": true
+      },
+      "ar16": {
+        "delta": -0.003369010431692004,
+        "ci_lo": -0.09051846835762262,
+        "ci_hi": 0.07749093266278505,
+        "excludes_zero": false
+      },
+      "var4": {
+        "delta": 0.020092806424945594,
+        "ci_lo": -0.05720437828153372,
+        "ci_hi": 0.09886859287200495,
+        "excludes_zero": false
+      },
+      "population_gaussian": {
+        "delta": -0.16826380240917205,
+        "ci_lo": -0.26961012362204495,
+        "ci_hi": -0.07116373066306117,
+        "excludes_zero": true
+      },
+      "dense_neural": {
+        "delta": -10.378757878936828,
+        "ci_lo": -12.371877779747173,
+        "ci_hi": -8.710023706062696,
+        "excludes_zero": true
+      }
+    },
+    "scwbd_mse_beaten_by": [],
+    "scwbd_mse_better_than": [
+      "persistence",
+      "population_gaussian",
+      "dense_neural"
+    ],
+    "mse_interpretation": "Paired participant-clustered 95% interval of the per-window MSE difference (scwbd minus baseline; negative favours SC-WBD). This is the CONDITIONAL MEAN, scored separately from the NLL on purpose: the two can and do disagree. Run 1 reported only the NLL and therefore filed a model with the lowest MSE of all seven arms as beaten by five of six. The difference between the two verdicts is the predictive variance, and it is a defect in the variance channel rather than in the forecast.",
+    "verdict": "No baseline beats scwbd-004 on the paired participant-clustered 95% interval of the per-window NLL difference",
+    "interpretation": "The verdict is the PAIRED interval, not the ranking: two overlapping marginal intervals can still admit a decisive paired difference, and a lower point estimate is not a claim. Models listed in `inconclusive_vs_scwbd` are neither better nor worse at this sample size. Window-level generalisation is not individual generalisation."
+  },
+  "within_participant_holdout": {
+    "available": true,
+    "protocol": "within_participant_temporal_v1",
+    "split": "OUTER: the participant-disjoint holdout, unchanged -- the model trained on none of these people. INNER: within each held-out participant, the earliest 50% of their windows fit their own model, 8 windows are dropped as a gap, and their later windows are scored.",
+    "fit_fraction": 0.5,
+    "gap_windows": 8,
+    "n_participants_scored": 25,
+    "n_participants_skipped": 0,
+    "skipped_participants": [],
+    "n_fit_windows": 1500,
+    "n_score_windows": 1000,
+    "score_time_routing": {
+      "scored": true,
+      "n_windows": 1000,
+      "n_windows_via_subject_model": 1000,
+      "n_windows_via_pooled_fallback": 0,
+      "fraction_via_pooled_fallback": 0.0,
+      "n_subject_models_used": 25,
+      "subjects_without_a_fitted_model": [],
+      "covers": "the most recent predict()/score() call, not a running total"
+    },
+    "fraction_via_pooled_fallback": 0.0,
+    "identical_to_pooled_ar16": false,
+    "results": {
+      "subject_specific_ar_within": {
+        "nll_per_sample": 2.0565404840707777,
+        "nll_ci95": [
+          1.9953126832515,
+          2.117777994546294
+        ],
+        "mse": 4.283766338534654,
+        "n_parameters": 129600,
+        "describe": {
+          "name": "subject_specific_ar_within",
+          "n_parameters": 129600,
+          "fitted": true,
+          "assumptions": [
+            "each participant has enough training windows to fit their own model",
+            "the participant's training and held-out windows are exchangeable (same session-level nonstationarity would flatter this baseline)",
+            "participant identity is known at test time"
+          ],
+          "falsifies_comparison_if": "If a model fitted on a participant alone predicts that participant's held-out future as well as the population-pretrained foundation model, then cross-participant pretraining transferred nothing on this port and the foundation claim fails regardless of the aggregate score.",
+          "n_train_windows": 1500,
+          "n_train_subjects": 25,
+          "variance_calibration": "per-subject: held_out_training_windows",
+          "seed": 0,
+          "n_subject_models": 25,
+          "fallback_subjects": [],
+          "fallback_subjects_measured_at": "FIT time: participants with fewer than min_windows training windows. This says nothing about which participants were routed to the fallback when scoring -- see score_time_routing.",
+          "score_time_routing": {
+            "scored": true,
+            "n_windows": 1000,
+            "n_windows_via_subject_model": 1000,
+            "n_windows_via_pooled_fallback": 0,
+            "fraction_via_pooled_fallback": 0.0,
+            "n_subject_models_used": 25,
+            "subjects_without_a_fitted_model": [],
+            "covers": "the most recent predict()/score() call, not a running total"
+          },
+          "parameters_per_subject": 5184,
+          "note": "n_parameters is the SUM over participants: this baseline is not capacity-matched to a single shared model and must not be presented as if it were. It is reported so the asymmetry is visible."
+        }
+      },
+      "ar16_pooled": {
+        "nll_per_sample": 2.069392989993095,
+        "nll_ci95": [
+          1.9894450648397208,
+          2.1868248735815285
+        ],
+        "mse": 4.352624538168311,
+        "n_parameters": 5184,
+        "describe": {
+          "name": "ar16",
+          "n_parameters": 5184,
+          "fitted": true,
+          "assumptions": [
+            "per-channel linear, stationary, Gaussian-innovation dynamics",
+            "one set of coefficients for the whole population (no subject fitting)",
+            "channels are conditionally independent given their own past",
+            "context is at least 16 samples long"
+          ],
+          "falsifies_comparison_if": "If a per-channel AR fitted on the same training windows matches the foundation model's held-out NLL, then the claimed benefit of connectome structure and per-region state reduces to per-channel spectral continuation and the structural claim is unsupported.",
+          "n_train_windows": 2010,
+          "n_train_subjects": 67,
+          "variance_calibration": "held_out_training_windows",
+          "seed": 0
+        }
+      },
+      "scwbd-004": {
+        "nll_per_sample": 2.064011731982231,
+        "nll_ci95": [
+          1.9979685957223177,
+          2.147186217701435
+        ],
+        "mse": 4.3304948806762695,
+        "n_parameters": 26304657
+      }
+    },
+    "paired_vs_scwbd": {
+      "subject_specific_ar_within": {
+        "delta": 0.007471247911453247,
+        "ci_lo": -0.06009709271788597,
+        "ci_hi": 0.0916671068012714,
+        "excludes_zero": false
+      },
+      "ar16_pooled": {
+        "delta": -0.005381258010864258,
+        "ci_lo": -0.04505162990987301,
+        "ci_hi": 0.024186209008097644,
+        "excludes_zero": false
+      }
+    },
+    "subject_specific_minus_pooled": {
+      "delta": -0.012852505922317506,
+      "ci_lo": -0.1301555318444967,
+      "ci_hi": 0.06990298737287513,
+      "excludes_zero": false
+    },
+    "verdict": "scwbd-004 and a per-participant AR(16) fitted on that participant's own earlier windows are indistinguishable on this split (+0.0075 [-0.0601, +0.0917]). Cross-participant pretraining is not shown to transfer anything a person's own past does not already give.",
+    "not_comparable_with": "`real_eeg_holdout.results`. Every arm there is fitted on OTHER people and has never seen the scored participant; the subject-specific arm here has seen that participant's earlier windows. The two numbers answer different questions and a table containing both rows would invite exactly the comparison that is invalid."
+  },
+  "session_individualisation": {
+    "ok": true,
+    "claim": "individualisation",
+    "refuses": "generalisation",
+    "source": "sleepedf_real",
+    "split_audit": {
+      "ok": true,
+      "claim": "individualisation",
+      "refuses": "generalisation",
+      "source": "sleep_edfx",
+      "split_backend": "session",
+      "n_windows_total": 77827,
+      "n_windows_per_fold": {
+        "train": 39653,
+        "val": 0,
+        "test": 38174
+      },
+      "n_participants_total": 78,
+      "n_participants_individualisable": 75,
+      "n_sessions_per_fold": {
+        "train": 78,
+        "val": 0,
+        "test": 75
+      },
+      "n_subjects_per_fold": {
+        "train": 78,
+        "val": 0,
+        "test": 75
+      },
+      "violations": [],
+      "warnings": [
+        "no validation fold: it requires a participant with three or more sessions, and two-night corpora have none",
+        "3 of 78 participants have one session and are train-only; they are excluded from the individualisation denominator"
+      ],
+      "note": "Session-disjoint, participant-shared. A score on this split is an individualisation result and must not be reported as generalisation; `leakage_check` is expected to FAIL on it, and that failure is correct. Aggregate per participant before reporting an interval."
+    },
+    "n_participants_individualisable": 75,
+    "n_test_windows": 1500,
+    "held_out_session_nll_per_participant": {
+      "SC400": 2.0830076813697813,
+      "SC401": 2.0977173447608948,
+      "SC402": 1.9881437122821808,
+      "SC403": 2.282841348648071,
+      "SC404": 1.927766877412796,
+      "SC405": 2.1384521245956423,
+      "SC406": 2.164717364311218,
+      "SC407": 2.0423097968101502,
+      "SC408": 1.9486558198928834,
+      "SC409": 1.9909572899341583,
+      "SC410": 1.9051018059253693,
+      "SC411": 2.8559911072254183,
+      "SC412": 2.0400499761104585,
+      "SC414": 2.089067506790161,
+      "SC415": 2.1192052125930787,
+      "SC416": 1.8303755879402162,
+      "SC417": 1.9859521210193634,
+      "SC418": 2.126703071594238,
+      "SC419": 1.7671517729759216,
+      "SC420": 2.2819138050079344,
+      "SC421": 2.0280943512916565,
+      "SC422": 1.7668891847133636,
+      "SC423": 1.9720250844955445,
+      "SC424": 2.0390144169330595,
+      "SC425": 1.9804964125156403,
+      "SC426": 1.7271433413028716,
+      "SC427": 1.9529479026794434,
+      "SC428": 1.8516351640224458,
+      "SC429": 1.9144664108753204,
+      "SC430": 2.0757428288459776,
+      "SC431": 1.8783958494663238,
+      "SC432": 1.9247988164424896,
+      "SC433": 2.6960843920707704,
+      "SC434": 2.013921248912811,
+      "SC435": 2.0998293578624727,
+      "SC437": 2.41697678565979,
+      "SC438": 2.0702791273593903,
+      "SC440": 1.9949228048324585,
+      "SC441": 1.7929960906505584,
+      "SC442": 2.0226282835006715,
+      "SC443": 1.9516447901725769,
+      "SC444": 1.8857535421848297,
+      "SC445": 2.0486163854599,
+      "SC446": 2.2353218495845795,
+      "SC447": 1.7860293626785277,
+      "SC448": 2.3774315655231475,
+      "SC449": 1.9036104023456573,
+      "SC450": 1.9835324227809905,
+      "SC451": 1.9573735117912292,
+      "SC453": 2.0741707384586334,
+      "SC454": 1.994108998775482,
+      "SC455": 1.9796458303928375,
+      "SC456": 2.2722117483615873,
+      "SC457": 2.298694109916687,
+      "SC458": 1.8540010750293732,
+      "SC459": 2.0188736796379088,
+      "SC460": 2.024649608135223,
+      "SC461": 1.878266406059265,
+      "SC462": 2.344257742166519,
+      "SC463": 1.9383266031742097,
+      "SC464": 1.9741268277168273,
+      "SC465": 2.0226231098175047,
+      "SC466": 1.9917280435562135,
+      "SC467": 2.031240403652191,
+      "SC470": 1.9269936621189117,
+      "SC471": 2.2239765584468842,
+      "SC472": 1.9134800672531127,
+      "SC473": 2.2763689160346985,
+      "SC474": 1.9543062150478363,
+      "SC475": 1.9929121434688568,
+      "SC476": 2.185267949104309,
+      "SC477": 1.9234526216983796,
+      "SC480": 2.0704851031303404,
+      "SC481": 2.006921702623367,
+      "SC482": 2.085188853740692
+    },
+    "held_out_session_nll": 2.043612823088964,
+    "held_out_session_nll_ci95": [
+      2.0048775475998717,
+      2.0896230202674864
+    ],
+    "theta_shift": {
+      "available": true,
+      "n_participants": 1500,
+      "spread_pooled": 0.000705704209394753,
+      "spread_per_theta": [
+        0.0006914215045981109,
+        0.0006347342859953642,
+        0.000584512366913259,
+        0.0005422671092674136,
+        0.0007641196716576815,
+        0.0006479109870269895
+      ],
+      "n_rows_exactly_zero": 600,
+      "note": "spread_pooled == 0.0 exactly means the individualizer applied nothing to these participants. On a participant-disjoint split that is the expected value and the reason individualisation cannot be measured there at all."
+    },
+    "interval_note": "The interval is a cluster bootstrap over PARTICIPANTS on the per-participant mean, not over windows. Windows within a night are correlated and a window-level interval would be far too narrow.",
+    "what_would_falsify": "theta_shift.spread_pooled at or near zero means the individualizer applied nothing even on a split built to let it apply something, and the third capability is unsupported. Say so on the site in the terms runs 1 and 2 got."
+  },
+  "sim_val_nll": 0.7773363776504993,
+  "wall_seconds": 3548.5368921756744
+}

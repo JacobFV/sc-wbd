@@ -770,7 +770,72 @@ All three defects are fixed and mutation-tested
 (`tests/foundation/test_individualisation_reaches_the_report.py`). The
 individualisation number itself is the one result still outstanding.
 
-### What is still outstanding
+### Individualisation: measured for the first time, and unsupported
 
-The held-out night-2 individualisation figure, and leave-one-source-out on the
-measured holdout. Both are one evaluation away and neither is blocked.
+The evaluation ran with the three defects fixed. `session_individualisation`
+scored **75 participants, 1,500 held-out night-2 windows**: NLL **2.0436**
+[2.0049, 2.0896], cluster-bootstrapped over participants rather than windows.
+
+That number is not the finding. This is:
+
+| | measured |
+|---|---|
+| between-participant spread of the applied shift | **7.06e-4** |
+| the model's own prior scale for a person effect (`sd_person`) | **0.1059** |
+| ratio | **0.67%** |
+| scored participants whose person effect is exactly zero | **30 of 75** |
+
+The individualiser moved theta by **0.7% of the scale it allocated for the
+effect**, and 30 of the 75 people it scored have a person-effect row of exactly
+zero after 1,200 steps of T6.
+
+`session_individualisation`'s own pre-registered falsifier, written before the
+run: *"`theta_shift.spread_pooled` at or near zero means the individualizer
+applied nothing even on a split built to let it apply something, and the third
+capability is unsupported. Say so on the site in the terms runs 1 and 2 got."*
+
+**It is met. Individualisation is unsupported for SC-WBD-004**, and the site and
+card say so in those terms. This is a real measurement rather than the
+unmeasurability runs 1–3 reported: the split was built, the person effect was
+trained, the block was fixed until it ran, and the answer is that the effect is
+0.7% of its own scale.
+
+One thing this does **not** say. The 2.0436 held-out score is a real number and
+it is not evidence for or against individualisation, because the shift that
+distinguishes an individualised model from the population model is the 7e-4. The
+NLL is reported because withholding a measured number is its own distortion, and
+labelled because it answers a different question than it appears to.
+
+`_alpha_raw` is exactly zero in the checkpoint and that is arithmetic, not a
+stuck gate: it is the group effect, `n_groups` is 1, and `alpha = raw - w*raw`
+is identically zero for a single group.
+
+### The headline EEG result: weaker than run 3, on a different holdout
+
+| | run 3 | run 4 |
+|---|---|---|
+| SC-WBD NLL | 1.9863 | 2.0244 |
+| vs `ar16` | −0.0391 [−0.0696, −0.0152] | **−0.0100 [−0.0480, +0.0144]** |
+| vs `var4` | −0.0377 [−0.0669, −0.0169] | **−0.0127 [−0.0561, +0.0146]** |
+| baselines beating SC-WBD | none | none |
+| inconclusive | none | **`ar16`, `var4`** |
+
+Run 3 beat every baseline with intervals excluding zero. Run 4's margin over
+`ar16` is 4× smaller and its interval now includes zero. **No baseline beats
+SC-WBD-004, and it is no longer shown to beat the two autoregressive
+baselines.**
+
+The comparison is not like-for-like and must not be reported as a regression
+without that caveat: ISSUE-014 changed the split policy between runs, so run 3
+scored 27 participants under `shuffle_slice_v1` and run 4 scores 25 under
+`stable_hash_v2`, with baseline protocol v1 replaced by v2. These are different
+test sets. What can be said flatly is that run 4 does not reproduce run 3's
+separation from `ar16` on run 4's holdout.
+
+### The montage fix moved nothing, checked rather than assumed
+
+`_scwbd_scores` gained a `source_id` whose default routes to the founding
+montage. The argument that this is behaviour-preserving is short and was still
+worth checking: the regenerated `real_eeg_holdout` is **bit-identical** to the
+artifact produced before the change — every ranking entry and every paired delta
+to six decimals — as is `posterior_calibration`.
