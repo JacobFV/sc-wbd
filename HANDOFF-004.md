@@ -1,38 +1,31 @@
 BUILD SC-WBD-004. Autonomous; I am not reading. Every turn is a work turn.
 Commit to master, push.
 
-=== STATUS 2026-08-11 15:30 — THE RUN IS TRAINING. THIS IS THE CURRENT BLOCK ===
+=== STATUS 2026-08-12 09:30 — TRAINING IS COMPLETE. THIS IS THE CURRENT BLOCK ===
 
-Steps a–e of ORDER OF WORK are done. The run relaunched 2026-08-10 15:08 and is
-25 h in, healthy, at T4_simulator 2780/5000 (global 8180/14600, 56%).
-`npe_rejected` 0, `gpu_reserved_gb` 60.34 against the 80 GB cap.
-`real_bold_nll` is diverged and EXPECTED to be — that is ISSUE-016, it is
-pre-registered, and run 4 claims nothing about fMRI. Do not treat it as a fault
-and do not stop the run for it.
+Run 4 finished 2026-08-12 09:29: **14,600 / 14,600 steps, all six stages**, in
+42.2 h against the 46 h limit (3.78 h margin). All six `stage_*.pt` and `last.pt`
+are in `checkpoints/scwbd-004/`. Do not relaunch.
 
-What remains is f and g, and they are blocked only on the run finishing.
+The wall-clock rule pre-registered below fired in its first band — T5 measured
+9.43 s/step against a <=10.5 threshold — so T6 ran to its full 1,200 steps and
+the individualisation-withholding rule was NOT invoked. Per-stage rates and what
+the projection got right and wrong are in reports/RUN4.md, "If the wall clock
+runs out". Short version: transferring run 3's T5 ratio was sound (6% under),
+and the T6 extrapolation was wrong by 3x in the safe direction.
 
-WALL CLOCK. Projected 44.84 h against a 46 h limit, so it finishes complete with
-about an hour to spare — but that rests on pricing T5/T6 at T1's rate rather than
-T4's, which is right (T4 is the only stage admitting the simulator, and run 3
-measured T5 at 1.004 x T1) and is still a transferred ratio. T6_individual has no
-measured precedent anywhere in the project; it is new in run 4. Full derivation
-in reports/RUN4.md, "If the wall clock runs out".
+`real_bold_nll` ended diverged, as pre-registered. That is ISSUE-016, not a
+fault. Run 4 claims NOTHING about fMRI.
 
-  PRE-REGISTERED, at T5 step 100 — compute s/step from `wall_s`:
-    <= 10.5      T6 completes; nothing to decide.
-    10.5 - 12.0  T6 is tight; record the projection in the model card BEFORE T6
-                 starts, not after.
-    > 12.0       T6 truncates. Withhold the individualisation claim and put the
-                 step count beside the number. "The person effect did not
-                 generalise" and "the person effect had 400 of its 1200 steps"
-                 are different claims and only the log separates them.
+DO NOT read individualisation off the training log. `sleepedf_real_eeg_nll` is a
+per-batch value with a spread of ~0.25, and T5 last-half (1.633 +- 0.226) and T6
+last-half (1.683 +- 0.275) are indistinguishable. Two single batches from that
+metric look like a 1.50 -> 1.82 degradation and mean nothing. The person effect
+is measured on the held-out night 2 by `evaluate`, and nowhere else.
 
-  Nothing is actionable mid-run: max_wall_seconds is read once at train() entry
-  (train.py:2900). A truncated stage still writes stage_<name>.pt; an unstarted
-  stage is simply not started. It degrades, it does not crash.
+Steps a-e of ORDER OF WORK are done; f and g are what remain.
 
-WHEN THE RUN FINISHES, in this order:
+NOW DO, in this order:
 
   1. `make health-run4` — expect COMPLETE global_step=14600. If it says a smaller
      number, read WHICH stage ended and how, before anything else.
