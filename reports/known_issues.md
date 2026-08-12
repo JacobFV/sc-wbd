@@ -32,7 +32,7 @@ here and the entries below are the detail.
 | ISSUE-013 | closed 2026-08-09 for run 4 | the pooled `subject_specific_ar` row is dropped; the arm is measured on a within-participant temporal split. Run 3's published table still carries the duplicate row and is described as five comparators, not six |
 | ISSUE-014 | closed 2026-08-09 for run 4 | the split policy is versioned and declared per run; run 4 takes `stable_hash_v2` (0 of 108 move), runs 1-3 stay pinned to `shuffle_slice_v1` (28 move, 6 into test), and `--quick` refuses an order-dependent policy |
 | ISSUE-015 | closed 2026-08-09 | ~20 prose sites stated DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6×; rewritten, rebuilt and republished |
-| ISSUE-016 | **open — cause found, remedy pending arm D** | the measured BOLD likelihood degrades during training. `real_bold_nll` 1.99 → 12.96 over 400 steps of run 4's T1 while `eeg_nll` IMPROVED. Not a defect in the BOLD path: the SHARED TRUNK moves under the head, driven by the 96% of gradient that is not BOLD (`ds002336_real` is 4.13% of the mixture, outvoted 23.2:1). Run 4 stopped at step 400 |
+| ISSUE-016 | **open — measured over a full run; remedy deferred to run 5 by design** | the measured BOLD likelihood degrades during training. Not a defect in the BOLD path: the SHARED TRUNK moves under the head, driven by the 96% of gradient that is not BOLD (`ds002336_real` is 4.13% of the mixture, outvoted 23.2:1). Arm D's pre-registered rule relaunched as configured and run 4 completed 14,600 steps: `real_bold_nll` **1.99 → 36,472**, a factor of ~18,000, swinging four orders of magnitude within a stage and NOT repaired by T5's measured return. Run 4 claims nothing about fMRI; the remedy is in `reports/RUN5_DESIGN.md` |
 
 ---
 
@@ -1664,10 +1664,12 @@ uninformative posterior in run 3 now refuses an overconfident one.
 
 ## ISSUE-016 — the measured BOLD likelihood degrades because the shared trunk moves under it
 
-**Status:** open. Cause established by three arms; the remedy is pending a fourth
-(arm D) whose decision rule is pre-registered in `reports/RUN4_LAUNCH_PLAN.md` §6.
-**Severity:** high for any fMRI claim. Run 4 was **stopped at step ~400** rather
-than run 38 hours on a diverging likelihood.
+**Status:** open, and now measured over a full run. Arm D's pre-registered rule
+sent run 4 back **as configured**; it completed all 14,600 steps on 2026-08-12
+and the BOLD likelihood diverged by a factor of ~18,000. See "The full run" at
+the end of this entry. The remedy is deferred to run 5 by design, not by
+omission — `reports/RUN5_DESIGN.md` holds it.
+**Severity:** high for any fMRI claim. Run 4 claims nothing about fMRI.
 **Found:** 2026-08-10, by watching the run. Not by a test — no test could have
 seen it, and the pre-launch smoke could not either: it runs 4 steps per stage and
 this divergence takes ~300.
@@ -1822,3 +1824,43 @@ steps per stage and the divergence takes ~300. The instrument that caught it was
 `make health-run4` plus a monitor watching `real_bold_nll` per step, which is
 what ISSUE-008's post-mortem asked for and is now armed by default
 (`scripts/watch_run4.py`, keyed by config so it survives a relaunch).
+
+### The full run — measured 2026-08-12
+
+Arm D's rule in `RUN4_LAUNCH_PLAN.md` §6 was applied without re-litigation and
+returned "relaunch as configured". Run 4 then ran all 14,600 steps. This is what
+a 46-hour run on a 23:1 minority likelihood produces:
+
+| stage | first | min | median | max | last |
+|---|---:|---:|---:|---:|---:|
+| T1_measured_founding | **1.99** | 1.92 | 312 | 604,324 | 20,737 |
+| T2_calibration | 33,168 | 605 | 11,331 | 254,196 | 31,074 |
+| T3_population_prior | 19,595 | 2,657 | 122,106 | 654,638 | 161,054 |
+| T4_simulator | 234,422 | 1,530 | 91,149 | 650,815 | 94,710 |
+| T5_measured_return | 88,668 | 421 | 35,373 | 434,426 | 36,472 |
+
+**1.99 → 36,472, a factor of roughly 18,000.** The forecast in this entry — "it
+reached 12.96 by step 400 and was still climbing" — was right about the direction
+and understated the magnitude by three orders of magnitude.
+
+Two things the full run adds that the first 400 steps could not show.
+
+**It does not plateau and it does not settle.** The spread inside a single stage
+is four orders of magnitude — T4 ranges 1,530 to 650,815 — so this is not a
+likelihood that has converged to a bad constant. It is a term being thrown around
+by a latent state that is optimising for something else.
+
+**T5 does not repair it.** T5 returns to the measured sources with `bold.*`
+granted again, which is the stage most likely to pull the head back onto the
+data. It ends at 36,472. Lower than T3 and T4 and four orders of magnitude above
+where T1 started. The measured return is not a remedy for the mixture weight.
+
+`bold_parcels_covered` stayed at its full value throughout, so this is not a
+coverage collapse — the ODE ran, on every parcel, for the whole run, and the
+likelihood it produced is worthless.
+
+**What this discharges: nothing. What it establishes:** the 23:1 dilution is
+sufficient to destroy a haemodynamic likelihood over a full curriculum, not just
+over the 400 steps that first showed it. ISSUE-008's fix is real and this is what
+it revealed. The remedy — reweighting, a separate optimiser for the BOLD path, or
+a decoupled trunk — belongs to run 5 and is specified in `reports/RUN5_DESIGN.md`.
