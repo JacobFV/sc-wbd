@@ -307,3 +307,71 @@ def test_the_theta_shift_spread_is_the_named_falsifier() -> None:
         "per-dimension spread is what separates 'moved one parameter' from "
         "'moved everything', and they are different findings"
     )
+
+
+def test_a_missing_prior_scale_is_declared_not_omitted() -> None:
+    """The ratio's absence must be visible in the artifact.
+
+    `spread_over_prior_sd` is what makes `spread_pooled` interpretable: run 4's
+    7.06e-4 only means "the individualiser applied essentially nothing" beside
+    the 0.1059 the model allocated for the effect. An individualizer without
+    `log_sd_person` cannot form that ratio.
+
+    Omitting the field silently would leave a consumer unable to distinguish
+    "the ratio is small" from "the ratio could not be formed", and the model
+    card's individualisation branch keys off exactly that distinction. So the
+    absence is REPORTED. Found by mutation: returning `{}` from the helper broke
+    no test, which meant this behaviour had nothing holding it.
+    """
+    import torch
+
+    from scwbd.foundation.evaluate import _theta_shift_spread
+
+    class _Ind:
+        def __init__(self, delta, log_sd_person=None):
+            self.delta = delta
+            if log_sd_person is not None:
+                self.log_sd_person = log_sd_person
+
+    def _trainer(ind):
+        return type("T", (), {"individualizer": ind})()
+
+    bare = _theta_shift_spread(_trainer(_Ind(torch.zeros(5, 6))), [0, 1, 2])
+    assert "spread_pooled" in bare, "the spread was lost along with the ratio"
+    assert "spread_over_prior_sd" not in bare
+    assert "prior_sd_person_unavailable" in bare, (
+        "an individualizer with no log_sd_person produced no ratio AND no "
+        "statement that the ratio is unavailable -- a reader cannot tell that "
+        "from a small ratio"
+    )
+
+    full = _theta_shift_spread(
+        _trainer(_Ind(torch.randn(5, 6) * 1e-3, torch.full((6,), -2.2457))), [0, 1, 2, 3, 4]
+    )
+    assert "prior_sd_person" in full and "spread_over_prior_sd" in full
+    assert "prior_sd_person_unavailable" not in full
+
+
+def test_the_spread_is_over_people_not_windows() -> None:
+    """`participants` arrives one entry per scored WINDOW.
+
+    Run 4's block reported `n_participants: 1500` for 75 people because the list
+    repeats each person once per window. The std happens to be unchanged when
+    everyone contributes equally many windows, which is why the number was right
+    while the label was wrong -- and it is silently window-weighted when they do
+    not.
+    """
+    import torch
+
+    from scwbd.foundation.evaluate import _theta_shift_spread
+
+    class _Ind:
+        def __init__(self, delta):
+            self.delta = delta
+
+    delta = torch.randn(4, 6)
+    trainer = type("T", (), {"individualizer": _Ind(delta)})()
+    rep = _theta_shift_spread(trainer, [0, 0, 0, 1, 1, 1, 2, 2, 2])
+    assert rep["n_participants"] == 3, (
+        f"counted {rep['n_participants']} for 3 distinct people across 9 windows"
+    )

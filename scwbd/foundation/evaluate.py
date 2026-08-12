@@ -1572,6 +1572,30 @@ def main(argv: Sequence[str] | None = None) -> dict[str, Any]:  # pragma: no cov
 # ======================================================================
 # individualisation: the claim the participant-disjoint split cannot measure
 # ======================================================================
+def _prior_sd_person_fields(ind: Any, d: "torch.Tensor") -> dict[str, Any]:
+    """`prior_sd_person` and `spread_over_prior_sd`, or an explicit statement of why not.
+
+    Never raises and never omits silently: an absent denominator is reported as
+    `prior_sd_person_unavailable` so a reader can tell "the ratio is small" from
+    "the ratio could not be formed".
+    """
+    lsp = getattr(ind, "log_sd_person", None)
+    if lsp is None or not hasattr(lsp, "detach"):
+        return {
+            "prior_sd_person_unavailable": (
+                "this individualizer carries no `log_sd_person`, so the applied "
+                "shift cannot be put on the scale the model allocated for it. "
+                "`spread_pooled` is still measured; the RATIO is not available "
+                "and must not be inferred from the spread alone."
+            )
+        }
+    sd = lsp.detach().float().exp()
+    return {
+        "prior_sd_person": [float(v) for v in sd.flatten()],
+        "spread_over_prior_sd": float(d.std(unbiased=False) / sd.mean().clamp_min(1e-12)),
+    }
+
+
 @torch.no_grad()
 def _theta_shift_spread(trainer, participants: Sequence[int]) -> dict[str, Any]:
     """Between-participant spread of the applied theta shift.
@@ -1606,11 +1630,15 @@ def _theta_shift_spread(trainer, participants: Sequence[int]) -> dict[str, Any]:
         # The model's OWN prior scale for a person effect. Without it,
         # `spread_pooled` is a bare number and "near zero" is an eyeball
         # judgement; with it the ratio is checkable off the artifact.
-        "prior_sd_person": [float(v) for v in ind.log_sd_person.detach().float().exp().flatten()],
-        "spread_over_prior_sd": float(
-            d.std(unbiased=False)
-            / ind.log_sd_person.detach().float().exp().mean().clamp_min(1e-12)
-        ),
+        #
+        # Reported when the individualizer carries it and DECLARED ABSENT when it
+        # does not, rather than assumed present. An individualizer without
+        # `log_sd_person` is not a broken one -- it is a different or older
+        # module -- and crashing the falsifier over a missing denominator would
+        # lose the spread, which is the measurement that matters. The consumers
+        # treat a missing ratio as unmeasured rather than as small: see
+        # `_run4_individualisation_note`, which takes its strict branch.
+        **_prior_sd_person_fields(ind, d),
         "spread_per_theta": [float(v) for v in per_dim],
         "n_rows_exactly_zero": int((d.abs().sum(dim=1) == 0).sum()),
         "note": (
