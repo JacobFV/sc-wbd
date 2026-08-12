@@ -1195,7 +1195,10 @@ def _source_ablation_inner(trainer, *, steps: int, seed: int) -> dict[str, Any]:
     def _measured_nll() -> float | None:
         if measured_loader is None:
             return None
-        scores = _scwbd_scores(trainer, measured_loader, n_mean_samples=64)
+        # Same discarded-marginal waste as above: only `nll_per_window` is read.
+        scores = _scwbd_scores(
+            trainer, measured_loader, n_theta_samples=0, n_mean_samples=64
+        )
         arr = scores["nll_per_window"]
         return float(arr.mean()) if len(arr) else None
 
@@ -1550,7 +1553,12 @@ def _theta_shift_spread(trainer, participants: Sequence[int]) -> dict[str, Any]:
     if ind is None:
         return {"available": False, "reason": "no individualizer on the trainer"}
     delta = ind.delta.detach()
-    rows = [int(p) for p in participants if 0 <= int(p) < delta.shape[0]]
+    # DEDUPLICATED. `participants` arrives one entry per scored WINDOW, so the
+    # raw list repeats each person once per window and `len(rows)` reported 1500
+    # for 75 people under a field named `n_participants`. The std is unchanged
+    # when every person contributes equally many windows and is silently
+    # window-weighted when they do not, which is the case this guards.
+    rows = sorted({int(p) for p in participants if 0 <= int(p) < delta.shape[0]})
     if not rows:
         return {"available": False, "reason": "no scored participant has a person-effect row"}
     d = delta[rows].float()
@@ -1559,6 +1567,14 @@ def _theta_shift_spread(trainer, participants: Sequence[int]) -> dict[str, Any]:
         "available": True,
         "n_participants": len(rows),
         "spread_pooled": float(d.std(unbiased=False)),
+        # The model's OWN prior scale for a person effect. Without it,
+        # `spread_pooled` is a bare number and "near zero" is an eyeball
+        # judgement; with it the ratio is checkable off the artifact.
+        "prior_sd_person": [float(v) for v in ind.log_sd_person.detach().float().exp().flatten()],
+        "spread_over_prior_sd": float(
+            d.std(unbiased=False)
+            / ind.log_sd_person.detach().float().exp().mean().clamp_min(1e-12)
+        ),
         "spread_per_theta": [float(v) for v in per_dim],
         "n_rows_exactly_zero": int((d.abs().sum(dim=1) == 0).sum()),
         "note": (
@@ -1642,7 +1658,15 @@ def session_individualisation(
     loader = torch.utils.data.DataLoader(
         torch.utils.data.Subset(ds, test_idx), batch_size=bs, shuffle=False, num_workers=2
     )
-    scores = _scwbd_scores(trainer, loader, n_mean_samples=64, source_id=source_id)
+    # n_theta_samples=0: this block reads `nll_per_window` and `subjects` and
+    # nothing else. The default of 32 computes the SECONDARY marginal -- 32 extra
+    # full rollouts per batch -- and every one of them is discarded here. On the
+    # first run that reached this code it cost ~33x the rollouts the returned
+    # numbers needed. `within_participant_holdout` already passes 0 for the same
+    # reason.
+    scores = _scwbd_scores(
+        trainer, loader, n_theta_samples=0, n_mean_samples=64, source_id=source_id
+    )
     nll = np.asarray(scores["nll_per_window"], dtype=float)
     scored_subjects = list(scores["subjects"])
 
