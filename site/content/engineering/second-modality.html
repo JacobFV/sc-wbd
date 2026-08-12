@@ -3,7 +3,7 @@ description: A 513-line registration module, a volumetric atlas, the template, a
 nav: engineering
 heading: Getting fMRI into parcel space
 standfirst: Three measured datasets sat disabled behind blockers that read like missing components. Two of them were missing a caller, not a component — and the module that would have been the caller had been on the main branch the whole time.
-applies: <strong>SC-WBD-002-pilot</strong> (run 2) and the source-card registry, which is shared across runs.
+applies: <strong>SC-WBD-002-pilot</strong> (run 2) and the source-card registry, which is shared across runs. The two follow-up sections report <strong>SC-WBD-003</strong> and <strong>SC-WBD-004</strong>.
 ---
 <div class="prose">
 
@@ -246,5 +246,47 @@ licence.</p>
 <p>So the corpus is parcellated, cached and unusable, and the card says so in
 those terms. That is the third instance on this page of the same shape: the
 blocker everyone can name is rarely the one holding the door.</p>
+
+<h2>Follow-up: run 4 admitted fMRI properly, and it lost</h2>
+
+<p>The fourth instance is the largest. Everything above gets a haemodynamic
+corpus into parcel space; none of it makes the likelihood <em>work</em>.
+SC-WBD-003's measured BOLD path never integrated the Balloon&ndash;Windkessel
+ODE, so its five haemodynamic parameters were bit-identical to their
+initialisation across all five stages. The term was inert and the run reported
+it. SC-WBD-004 fixed the clock: the measured path now rolls the neural state for
+the duration a BOLD frame covers, 250 steps per frame at
+<em>TR</em>&nbsp;=&nbsp;2&nbsp;s.</p>
+
+<p><strong>The repair worked, and the likelihood then degraded through
+training.</strong> <code>real_bold_nll</code> ran <strong>1.99 to
+36,472</strong> over 14,600 steps while the electrical likelihood improved, the
+total objective stayed flat near 1.0, and the haemodynamic variance channel held
+steady &mdash; so this is one term losing a competition rather than an optimiser
+failing. Four arms located the cause: freezing the five Balloon parameters
+changes nothing, and freezing the <em>shared trunk</em> makes the haemodynamic
+likelihood improve. The head models the data; it cannot track a latent state
+being reshaped underneath it.</p>
+
+<p>The mechanism is a gradient-share imbalance and it is measured. The sole
+haemodynamic corpus is <strong>5.39%</strong> of the source mixture and is
+outvoted <strong>17.6&nbsp;:&nbsp;1</strong> by the electrical and behavioural
+sources.[[note: This page first carried 4.13% and 23.2&nbsp;:&nbsp;1. Those came
+from the pre-launch smoke &mdash; four steps per stage, where the source sampler
+has not converged to the configured proportions &mdash; and were quoted as the
+trained run's before the trained run existed to contradict them. The completed
+run measured 5.39%, and holds between 4.64% and 5.53% across all five measured
+stages. The correction is not in the argument's favour: a larger BOLD share
+makes divergence-by-dilution slightly harder to argue, not easier.]] The trunk
+converges on what the electrical sources require, and the haemodynamic head
+reads that same state.</p>
+
+<p>So the shape holds a fourth time, one level deeper. The blocker was never the
+registration module, and it was never the clock either. <strong>Getting a
+modality in is not the same as giving it a vote</strong>, and only a working
+likelihood could show the difference &mdash; run 3's inert term could not have
+produced this result, and its silence read as absence rather than as ignorance.
+No fMRI, haemodynamic or neurovascular claim is available from SC-WBD-004, and
+the model card says so at the top.</p>
 
 </div>
