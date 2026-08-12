@@ -156,3 +156,63 @@ wrong in public.
   be solved with 2.0. The finding is not a learning rate.
 * **Dropping fMRI.** The likelihood works — arm C is the proof. What fails is
   fusion under imbalance, and that is the thing worth fixing.
+
+---
+
+## Two more targets, added 2026-08-12 when run 4 measured them
+
+This file was written from run 4's four BOLD arms, before the run finished. The
+completed run added two findings that run 5 has to carry, or it will repeat
+them. Both are open issues with measured numbers, not suspicions.
+
+### ISSUE-012 — the posterior overshot, and the sweep did not predict production
+
+Run 4's learning-rate repair worked: `log_G`'s posterior is 8× narrower than the
+prior and its mean moves 1.10 prior sd with the data, where run 3's ignored its
+conditioning entirely. It also overshot to `posterior_z_sd` **59.25**, SBC KS
+p_min **1.0e-147**, `coverage_mae` **0.203**. The claim publishes `unsupported`.
+
+**Run 5 must not re-tune this from the same sweep.** The one-stage retrain
+predicted `log_G` R² 0.674–0.766 and the full curriculum returned **0.284** —
+under half — and *why is unmeasured*. Sweeping again at a lower rate would be
+choosing a number from an instrument already shown to mispredict production by a
+factor of two and a half.
+
+**Do this first, it costs one evaluation.** Score `stage_T4_simulator.pt`
+through `posterior_calibration` and compare to `last.pt`. T4 founds the
+posterior at `lambda_posterior` 1.0; T5 and T6 follow at 0.2 and 0.0. If T4's R²
+is near the sweep's and `last.pt`'s is not, the measured-return stages are giving
+it back and the fix is a schedule question. If T4 is already at 0.284, the sweep
+does not transfer and the fix is elsewhere. Both checkpoints are on disk. **This
+experiment has not been run and run 5's posterior design should not be chosen
+before it is.**
+
+### ISSUE-017 — the individualiser applies essentially nothing
+
+`T6_individual` ran its full 1,200 steps and moved theta by **0.67%** of the
+scale the model allocated for the person effect (spread 7.06e-4 against
+`sd_person` 0.1059). Thirty of the 75 scored participants have an exactly-zero
+effect. This is the first *measurement* of individualisation in the project —
+runs 1–3 reported it as unmeasurable, which was a fact about a
+participant-disjoint split.
+
+Candidate causes, **none measured**, listed so run 5 picks one deliberately
+rather than reaching for the first:
+
+* T6's learning rate against `sd_person`'s scale — the same shape as ISSUE-012's
+  diagnosis, and ISSUE-012 is the reason to distrust the obvious answer here.
+* 1,200 steps being too few to move 75 person rows, given 30 never moved at all.
+  The 30 are the cheap diagnostic: if they are the participants T6 sampled least,
+  this is a budget problem and nothing more.
+* The person effect modulating a trunk that T6 freezes, so there is little for it
+  to change.
+
+**Start with the 30 zero rows**, because that check is nearly free and separates
+the third hypothesis from the first two.
+
+### What these two share with the BOLD finding
+
+All three are cases where the instrument had to exist before the answer could be
+negative, and in all three the fourth gate's silence read as absence rather than
+ignorance. Run 5's value will be judged the same way: the adapter above is worth
+building even if it fails, provided the failure is measurable when it does.
