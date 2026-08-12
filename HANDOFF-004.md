@@ -20,8 +20,8 @@ run's actual contribution.
   fMRI      ISSUE-016. The Balloon-Windkessel ODE integrates now and the
             likelihood LOSES: real_bold_nll 1.99 -> 36,472 over 14,600 steps.
             Never plateaus (T4 alone spans 1.5e3 to 6.5e5) and T5's measured
-            return does NOT repair it. Cause measured: ds002336_real is 4.13% of
-            the mixture, outvoted 23.2:1. No fMRI claim.
+            return does NOT repair it. Cause measured: ds002336_real is 5.39% of
+            the mixture, outvoted 17.6:1. No fMRI claim.
   posterior ISSUE-012. The LR repair WORKED and OVERSHOT. log_G is 8x narrower
             than the prior and its mean moves 1.10 prior sd -- the flow reads its
             conditioning, which three runs could not achieve -- and z-sd is
@@ -126,8 +126,8 @@ disagree, this section is current.
   1. ISSUE-008 (the fMRI clock) is FIXED and the fix WORKED — the measured BOLD
      path integrates the Balloon-Windkessel ODE. It also produced ISSUE-016,
      which is the more interesting result: with a real fMRI likelihood, that
-     likelihood DEGRADES during training, because `ds002336_real` is 4.13% of the
-     source mixture and is outvoted 23.2:1 by the EEG-like sources. Four
+     likelihood DEGRADES during training, because `ds002336_real` is 5.39% of the
+     source mixture and is outvoted 17.6:1 by the EEG-like sources. Four
      diagnostic arms; the shared trunk moves out from under the BOLD head.
      Run 4 therefore claims NOTHING about fMRI, and says why.
   2. Individualisation is implemented — `T6_individual` fits a person effect on

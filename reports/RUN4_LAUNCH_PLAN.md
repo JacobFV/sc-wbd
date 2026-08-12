@@ -385,3 +385,26 @@ What arm D adds to ISSUE-016, and it is worth having: the BOLD head *can* track 
 moving trunk — it does so better at 5× than at 1× on the median — but not stably
 at any rate tried. That is evidence for the architecture change rather than
 against it.
+
+---
+
+## Correction 2026-08-12 — the mixture share in §6 was the smoke run's
+
+This document is a pre-registration and its decisions are not reopened. One
+factual input to them was wrong and is corrected here rather than edited above,
+so the record of what was decided, and on what, stays intact.
+
+§6 and the arm-D reasoning quote `ds002336_real` at **4.13%** of the mixture,
+outvoted **23.2 : 1**. Those come from
+`reports/training/smoke-004/mixture_T1_measured_founding.json` —
+`run_name: scwbd-004-smoke`, four steps per stage. The completed run measured
+**5.39%** and **17.6 : 1** (`reports/training/scwbd-004/`, all five measured
+stages between 0.0464 and 0.0553).
+
+**The decision §6 records is unaffected.** It turned on the imbalance being large
+and on arms B and C locating the cause in the trunk rather than in the BOLD
+path; both hold at 17.6 : 1. Nothing here licenses re-opening the relaunch rule,
+which was applied as written.
+
+See ISSUE-016, "Correction 2026-08-12", for the full table and for what let a
+four-step report be read as a measurement.

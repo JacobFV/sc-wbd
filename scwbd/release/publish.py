@@ -1876,7 +1876,7 @@ def plan_run4(
     Run 4's is different from run 3's, and the difference is the finding. Run 3's
     BOLD path never integrated the ODE, so the term was inert. Run 4's DOES
     integrate it -- and the likelihood then degrades during training, because
-    `ds002336_real` is 4.13% of the mixture and is outvoted 23.2:1 by the
+    `ds002336_real` is 5.39% of the mixture and is outvoted 17.6:1 by the
     EEG-like sources. The fMRI claim is withdrawn either way; what changed is
     that we now know why, and can say it.
     """
@@ -1918,8 +1918,8 @@ def plan_run4(
         "every parcel for 46 hours and the likelihood it produced is "
         "worthless.\n>\n"
         "> Four diagnostic arms located the cause: the **shared trunk moves out "
-        "from under the BOLD head**. `ds002336_real` is **4.13%** of the source "
-        "mixture and is outvoted **23.2 : 1** by the EEG-like sources, so the "
+        "from under the BOLD head**. `ds002336_real` is **5.39%** of the source "
+        "mixture and is outvoted **17.6 : 1** by the EEG-like sources, so the "
         "latent state converges on what they want. Freezing the five Balloon "
         "parameters changes nothing; freezing the trunk makes the BOLD "
         "likelihood *improve*.\n>\n"

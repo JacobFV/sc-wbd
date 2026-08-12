@@ -186,7 +186,7 @@ class FoundationTrainer:
         """`bold.*`'s LR as a multiple of the stage LR. 1.0 leaves it in the main group.
 
         ISSUE-016. The BOLD head reads the same latent state the EEG sources are
-        reshaping, and it is 4.13% of the mixture. Arm C froze the trunk and
+        reshaping, and it is 5.39% of the mixture. Arm C froze the trunk and
         `real_bold_nll` went 1.99 -> 1.92; arm A left it moving and the same
         quantity reached 12.96 by step 400. Raising this lets the head track a
         moving trunk rather than be dragged by it.
@@ -2286,8 +2286,8 @@ class FoundationTrainer:
         post_ids = {id(q) for q in self.posterior.parameters()}
         # A THIRD group for `bold.*`, at `train.bold_lr_scale` (default 1.0, i.e.
         # no change). ISSUE-016: the measured BOLD likelihood degrades because the
-        # SHARED TRUNK moves under it -- ds002336_real is 4.13% of the mixture and
-        # is outvoted 23.2:1, and arm C showed the BOLD head fits fine when the
+        # SHARED TRUNK moves under it -- ds002336_real is 5.39% of the mixture and
+        # is outvoted 17.6:1, and arm C showed the BOLD head fits fine when the
         # trunk is frozen (1.99 -> 1.92) while arm A climbed to 12.96. The head is
         # not broken; it cannot keep up. This lets it track.
         bold_ids = {id(q) for n, q in self.model.named_parameters() if n.startswith("bold.")}

@@ -1,8 +1,8 @@
 """`bold_lr_scale` must not reach a run config by accident.
 
 ISSUE-016: the measured BOLD likelihood degrades during training because the
-SHARED TRUNK moves under it -- `ds002336_real` is 4.13% of the mixture and is
-outvoted 23.2:1 by the EEG-like sources. Measured on matched LR schedules with
+SHARED TRUNK moves under it -- `ds002336_real` is 5.39% of the mixture and is
+outvoted 17.6:1 by the EEG-like sources. Measured on matched LR schedules with
 the same seed:
 
     arm A  as launched                       real_bold_nll 3.21 @160, 12.96 @400

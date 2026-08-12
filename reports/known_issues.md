@@ -32,7 +32,7 @@ here and the entries below are the detail.
 | ISSUE-013 | closed 2026-08-09 for run 4 | the pooled `subject_specific_ar` row is dropped; the arm is measured on a within-participant temporal split. Run 3's published table still carries the duplicate row and is described as five comparators, not six |
 | ISSUE-014 | closed 2026-08-09 for run 4 | the split policy is versioned and declared per run; run 4 takes `stable_hash_v2` (0 of 108 move), runs 1-3 stay pinned to `shuffle_slice_v1` (28 move, 6 into test), and `--quick` refuses an order-dependent policy |
 | ISSUE-015 | closed 2026-08-09 | ~20 prose sites stated DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6×; rewritten, rebuilt and republished |
-| ISSUE-016 | **open — measured over a full run; remedy deferred to run 5 by design** | the measured BOLD likelihood degrades during training. Not a defect in the BOLD path: the SHARED TRUNK moves under the head, driven by the 96% of gradient that is not BOLD (`ds002336_real` is 4.13% of the mixture, outvoted 23.2:1). Arm D's pre-registered rule relaunched as configured and run 4 completed 14,600 steps: `real_bold_nll` **1.99 → 36,472**, a factor of ~18,000, swinging four orders of magnitude within a stage and NOT repaired by T5's measured return. Run 4 claims nothing about fMRI; the remedy is in `reports/RUN5_DESIGN.md` |
+| ISSUE-016 | **open — measured over a full run; remedy deferred to run 5 by design** | the measured BOLD likelihood degrades during training. Not a defect in the BOLD path: the SHARED TRUNK moves under the head, driven by the 96% of gradient that is not BOLD (`ds002336_real` is 5.39% of the mixture, outvoted 17.6:1 — corrected 2026-08-12 from a smoke-run figure of 4.13%/23.2:1). Arm D's pre-registered rule relaunched as configured and run 4 completed 14,600 steps: `real_bold_nll` **1.99 → 36,472**, a factor of ~18,000, swinging four orders of magnitude within a stage and NOT repaired by T5's measured return. Run 4 claims nothing about fMRI; the remedy is in `reports/RUN5_DESIGN.md` |
 | ISSUE-017 | **open — measured 2026-08-12, run 4** | the individualiser applies essentially nothing on a split built to let it apply something. `T6_individual` ran its full 1,200 steps; the applied person effect has between-participant spread **7.06e-4** against the model's own prior scale of **0.1059** — **0.67%** — and 30 of 75 scored participants have a person-effect row of exactly zero. `session_individualisation`'s pre-registered falsifier is met, so **individualisation is UNSUPPORTED for SC-WBD-004**. This is a measurement, not the unmeasurability runs 1–3 reported |
 
 ---
@@ -1713,16 +1713,16 @@ is being reshaped underneath it.
 `per_source_contribution` in `mixture_T1_measured_founding.json`:
 
 ```
-eegmmidb_real       0.7021
-sleepedf_real       0.2154
-ds002336_real       0.0413   <- the only haemodynamic source
-ds004024_rest_real  0.0147
-ds000117_real       0.0147
-ds004024_perturb    0.0073
-ds000117_behaviour  0.0045
+eegmmidb_real       0.6913
+sleepedf_real       0.2117
+ds002336_real       0.0539   <- the only haemodynamic source
+ds004024_rest_real  0.0144
+ds000117_real       0.0143
+ds004024_perturb    0.0072
+ds000117_behaviour  0.0071
 ```
 
-**BOLD is 4.13% of the mixture and is outvoted 23.2 : 1.** The trunk
+**BOLD is 5.39% of the mixture and is outvoted 17.6 : 1.** The trunk
 (`family_local`, `coupling`, `observation`) trains at 6.0e-4 under a gradient
 that is 96% not-BOLD, so it converges toward what the EEG-like sources want. The
 BOLD head reads that same latent state.
@@ -1764,7 +1764,7 @@ that it loses 23:1.** This is a finding about the model, not a regression in it.
 2. That `bold.*` receiving gradient discharges ISSUE-008's intent. It receives
    gradient and gets worse.
 3. Any fusion claim that treats the seven sources as jointly fitted. One of them
-   is at 4.13% and is being overridden.
+   is at 5.39% and is being overridden.
 
 ### What discharges it
 
@@ -1825,6 +1825,45 @@ steps per stage and the divergence takes ~300. The instrument that caught it was
 `make health-run4` plus a monitor watching `real_bold_nll` per step, which is
 what ISSUE-008's post-mortem asked for and is now armed by default
 (`scripts/watch_run4.py`, keyed by config so it survives a relaunch).
+
+### Correction 2026-08-12: the mixture share quoted here was the SMOKE run's
+
+The figures **4.13%** and **23.2 : 1** were wrong, and were published — in this
+entry, `RUN4.md`, `RUN5_DESIGN.md`, the paper, the site and the model card —
+before anyone read them against the trained run.
+
+They came from `reports/training/smoke-004/mixture_T1_measured_founding.json`,
+whose `run_name` is **`scwbd-004-smoke`**: the pre-launch smoke, four steps per
+stage. Over four steps the source sampler has not converged to the configured
+proportions, so its mixture is not the run's mixture. The measurement was quoted
+while the only file that could have contradicted it did not exist yet, and
+nothing rechecked it when it did.
+
+| source | smoke (4 steps) | **run 4 (4,000 steps)** |
+|---|---:|---:|
+| `eegmmidb_real` | 0.7021 | 0.6913 |
+| `sleepedf_real` | 0.2154 | 0.2117 |
+| **`ds002336_real`** | **0.0413** | **0.0539** |
+| `ds004024_rest_real` | 0.0147 | 0.0144 |
+| `ds000117_real` | 0.0147 | 0.0143 |
+| `ds004024_perturb` | 0.0073 | 0.0072 |
+| `ds000117_behaviour` | 0.0045 | 0.0071 |
+| **imbalance** | **23.2 : 1** | **17.6 : 1** |
+
+**The finding is unchanged and the correction is not in its favour.** 17.6 : 1 is
+still a large imbalance, arms B and C are untouched by this — they are about
+which parameters move, not about the mixture — and the BOLD share is *larger*
+than was published, which makes the divergence slightly harder to explain by
+dilution alone, not easier. Every affected file now carries 5.39% and 17.6 : 1.
+
+The share holds across stages on the real run: 0.0539, 0.0553, 0.0536, 0.0464,
+0.0547 for T1–T5. It is not a T1 artefact.
+
+**What let it through.** The smoke was run to check that all six stages execute,
+which it did. Its *reports* were then read as measurements. A four-step run
+produces a complete, well-formed, entirely unrepresentative mixture report, and
+nothing about the file says which it is except the `run_name` field — which is
+exactly why `run_name` is now the first thing to read off any of these files.
 
 ### The full run — measured 2026-08-12
 

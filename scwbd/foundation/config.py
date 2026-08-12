@@ -351,7 +351,7 @@ class TrainConfig:
     #:
     #: ISSUE-016. The measured BOLD likelihood degrades during training not
     #: because anything in the BOLD path is wrong but because the SHARED TRUNK
-    #: moves under it: `ds002336_real` is 4.13% of the mixture, outvoted 23.2:1
+    #: moves under it: `ds002336_real` is 5.39% of the mixture, outvoted 17.6:1
     #: by the EEG-like sources. Measured, matched LR schedules, same seed:
     #: everything training gave `real_bold_nll` 12.96 by step 400; freezing the
     #: five Balloon ODE constants gave 3.70 at step 160 (no better); freezing the

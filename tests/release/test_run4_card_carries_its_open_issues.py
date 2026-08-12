@@ -8,7 +8,7 @@ and the difference between them is the finding.
 
 Run 3's BOLD path never integrated the Balloon-Windkessel ODE, so the term was
 inert. **Run 4's does** — and the likelihood then degrades during training,
-because `ds002336_real` is 4.13% of the mixture and is outvoted 23.2 : 1. Four
+because `ds002336_real` is 5.39% of the mixture and is outvoted 17.6 : 1. Four
 arms located it: freezing the five Balloon parameters changes nothing, freezing
 the trunk makes the BOLD likelihood improve.
 
@@ -41,7 +41,7 @@ def _card_text() -> str:
     wrong in its own way.
 
     The first read `inspect.getsource(plan_run4)`, which includes the DOCSTRING.
-    Deleting "23.2 : 1" from the card left the same number in the docstring and
+    Deleting the imbalance from the card left the same number in the docstring and
     every assertion still passed — the guard checked that I had written ABOUT the
     finding, not that the card states it.
 
@@ -98,8 +98,13 @@ def test_run4_has_a_planner_at_all() -> None:
 @pytest.mark.parametrize(
     "phrase",
     [
-        "4.13",           # the mixture share
-        "23.2",           # the imbalance
+        # MEASURED ON THE COMPLETED RUN, not on the pre-launch smoke. The
+        # card first carried 4.13% / 23.2:1, which is
+        # reports/training/smoke-004/ -- four steps per stage, where the
+        # source sampler has not converged to the configured proportions.
+        # The trained run measured 5.39% and 17.6:1.
+        "5.39",           # the mixture share
+        "17.6",           # the imbalance
         "ISSUE-016",
         "diverges during training",
         "shared trunk",
@@ -232,5 +237,5 @@ def test_the_planner_actually_builds_a_plan() -> None:
         "reader meets it before the metrics table, not after."
     )
     # The caveat must survive being joined to the generated body.
-    for probe in ("ISSUE-016", "ISSUE-012", "4.13", "23.2"):
+    for probe in ("ISSUE-016", "ISSUE-012", "5.39", "17.6"):
         assert probe in card, f"{probe} did not survive into the assembled card"

@@ -47,7 +47,7 @@ ds004024_perturb    0.0073
 ds000117_behaviour  0.0045
 ```
 
-**4.13% against 95.87% — 23.2 : 1.** The trunk converges on what the EEG-like
+**5.39% against 95.87% — 17.6 : 1.** The trunk converges on what the EEG-like
 sources want; the BOLD head reads that same state.
 
 ## The independent corroboration, which is the interesting part
@@ -126,7 +126,7 @@ afterwards?" is a sharper question than "does the adapter help?", and the
 post-hoc number is exactly the control that makes it answerable.
 
 **One correction to the framing.** The user called this an ML-talent limitation
-rather than a permanent constraint. On the evidence it is neither: the 23.2 : 1
+rather than a permanent constraint. On the evidence it is neither: the 17.6 : 1
 imbalance is a property of the CORPUS — 485 BOLD windows from 10 participants at
 one site, against ~100k EEG windows from 109 + 78 — and no amount of skill makes
 4% of a gradient behave like 50%. More fMRI data would move it; a better

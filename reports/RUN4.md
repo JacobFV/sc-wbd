@@ -63,16 +63,16 @@ state being reshaped underneath it.
 **Why the trunk moves away from it** — `per_source_contribution`, T1:
 
 ```
-eegmmidb_real       0.7021
-sleepedf_real       0.2154
-ds002336_real       0.0413   <- the only haemodynamic source
-ds004024_rest_real  0.0147
-ds000117_real       0.0147
-ds004024_perturb    0.0073
-ds000117_behaviour  0.0045
+eegmmidb_real       0.6913
+sleepedf_real       0.2117
+ds002336_real       0.0539   <- the only haemodynamic source
+ds004024_rest_real  0.0144
+ds000117_real       0.0143
+ds004024_perturb    0.0072
+ds000117_behaviour  0.0071
 ```
 
-**BOLD is 4.13% of the mixture, outvoted 23.2 : 1.** The trunk trains under a
+**BOLD is 5.39% of the mixture, outvoted 17.6 : 1.** The trunk trains under a
 gradient that is 96% not-BOLD and converges on what the EEG-like sources want.
 
 **D shows the head can track, but not stably.** At 5× the head follows a moving
@@ -142,7 +142,7 @@ still completed 13,400 steps. The trainer tolerates this term diverging, which i
 itself part of why it went unread for 46% of a 25-hour run.
 
 **The falsifier.** If `real_bold_nll` stabilises or falls while the trunk is
-still training — anywhere in T1–T5 — the 23.2 : 1 gradient-share explanation is
+still training — anywhere in T1–T5 — the 17.6 : 1 gradient-share explanation is
 wrong or incomplete, ISSUE-016 must be reopened, and `RUN5_DESIGN.md`'s adapter
 proposal loses its evidence. That would be the more interesting outcome and it is
 written here so it cannot be quietly absorbed.
