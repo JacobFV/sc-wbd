@@ -1,0 +1,51 @@
+env PYTHONPATH=. /home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/bin/python /home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/scripts/publish_003.py --checkpoint checkpoints/scwbd-004/last.pt
+=== scwbd-004, read from checkpoints/scwbd-004/last.pt ===
+step               14600
+stage              T6_individual
+completed stages   ['T1_measured_founding', 'T2_calibration', 'T3_population_prior', 'T4_simulator', 'T5_measured_return', 'T6_individual']
+parameters         26304657
+
+-- contributed gradient (derived, not asserted) --
+   anatomical_prior
+   ds000117_behaviour
+   ds000117_real
+   ds002336_real
+   ds004024_perturb
+   ds004024_rest_real
+   eegmmidb_real
+   sim_wholebrain
+   sleepedf_real
+
+-- ADMITTED BUT PRODUCED NO TERM --
+   T6_individual: ['ds000117_behaviour', 'ds002336_real']
+
+-- moved since initialisation: 349/384 (90.9%) --
+   assimilate         moved   11 /   11
+   behaviour          moved    5 /    5
+   bold               moved    8 /    8
+   context            moved    4 /    4
+   coupling           moved    3 /    3
+   eeg                moved    7 /   11
+   eeg_montages       moved   21 /   33
+   family_local       moved  137 /  137
+   family_readout     moved   36 /   36
+   family_residual    moved   32 /   32
+   individualizer     moved    5 /    6
+   msg_readin         moved    2 /    2
+   observation        moved   18 /   36
+   posterior          moved   56 /   56
+   tms_drive          moved    4 /    4
+
+-- the learned TMS drive --
+   computed from an E-field: False
+   left  gain 0.9219  peak parcel 37 (weight 0.025) over 37 parcels
+   right gain 0.9275  peak parcel 238 (weight 0.024) over 40 parcels
+
+-- attachment kinds --
+   Not every attachment kind the schema declares was exercised: context reached no loss.
+   observation      declared= 8 feeding_a_loss= 7 reached=True
+   stimulus         declared= 2 feeding_a_loss= 1 reached=True
+   boundary_output  declared= 8 feeding_a_loss= 2 reached=True
+   context          declared= 0 feeding_a_loss= 0 reached=False
+
+wrote reports/scwbd-004_derived.json, reports/attachment_kinds.json, reports/attachment_kinds.md

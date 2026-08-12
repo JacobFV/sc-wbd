@@ -1,0 +1,1543 @@
+{
+  "mixture_weights": {
+    "weights": {
+      "ds000117_behaviour": 0.007206952293703772,
+      "ds000117_real": 0.014413904587407544,
+      "ds002336_real": 0.055111988128322964,
+      "ds004024_perturb": 0.007206952293703772,
+      "ds004024_rest_real": 0.014413904587407544,
+      "eegmmidb_real": 0.6902063890586954,
+      "sleepedf_real": 0.21143990905075907
+    },
+    "raw_reliability": {
+      "ds000117_behaviour": 0.01359820733051053,
+      "ds000117_real": 0.02719641466102106,
+      "ds002336_real": 0.10398629135096286,
+      "ds004024_perturb": 0.01359820733051053,
+      "ds004024_rest_real": 0.02719641466102106,
+      "eegmmidb_real": 1.3022938402773516,
+      "sleepedf_real": 0.39894862683195265
+    },
+    "inputs": {
+      "ds000117_behaviour": {
+        "role": "likelihood",
+        "n_eff": 2.0,
+        "n_rows": 127.0,
+        "measurement_variance": null,
+        "bias_halfwidth": null,
+        "model_discrepancy": null,
+        "validity_overlap": 0.5
+      },
+      "ds000117_real": {
+        "role": "likelihood",
+        "n_eff": 2.0,
+        "n_rows": 12.0,
+        "measurement_variance": null,
+        "bias_halfwidth": null,
+        "model_discrepancy": null,
+        "validity_overlap": 1.0
+      },
+      "ds002336_real": {
+        "role": "likelihood",
+        "n_eff": 10.0,
+        "n_rows": 55.0,
+        "measurement_variance": null,
+        "bias_halfwidth": null,
+        "model_discrepancy": null,
+        "validity_overlap": 1.0
+      },
+      "ds004024_perturb": {
+        "role": "likelihood",
+        "n_eff": 2.0,
+        "n_rows": 128.0,
+        "measurement_variance": null,
+        "bias_halfwidth": null,
+        "model_discrepancy": null,
+        "validity_overlap": 0.5
+      },
+      "ds004024_rest_real": {
+        "role": "likelihood",
+        "n_eff": 2.0,
+        "n_rows": 2.0,
+        "measurement_variance": null,
+        "bias_halfwidth": null,
+        "model_discrepancy": null,
+        "validity_overlap": 1.0
+      },
+      "eegmmidb_real": {
+        "role": "likelihood",
+        "n_eff": 109.0,
+        "n_rows": 1526.0,
+        "measurement_variance": 0.35,
+        "bias_halfwidth": 0.2,
+        "model_discrepancy": 0.0,
+        "validity_overlap": 1.0
+      },
+      "sleepedf_real": {
+        "role": "likelihood",
+        "n_eff": 78.0,
+        "n_rows": 197.0,
+        "measurement_variance": 0.5,
+        "bias_halfwidth": 0.4,
+        "model_discrepancy": null,
+        "validity_overlap": 0.5
+      }
+    },
+    "note": "w_e is a reliability term; row count is recorded for audit and never enters it."
+  },
+  "per_source_contribution": {
+    "ds000117_real": 0.015386688615313542,
+    "ds004024_perturb": 0.0076580863198099074,
+    "ds004024_rest_real": 0.015386908160152334,
+    "eegmmidb_real": 0.7367749153707799,
+    "sleepedf_real": 0.22479340153394442
+  },
+  "gradient_permission_audit": {
+    "ds000117_behaviour": {
+      "n_permitted": 0,
+      "n_blocked": 384,
+      "patterns": [],
+      "frozen": [
+        "eeg.*",
+        "eeg_montages.*",
+        "bold.*",
+        "coupling.*",
+        "tms_drive.*",
+        "individualizer.*"
+      ],
+      "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias",
+        "family_local.ports.out_proj.cortex_association.weight",
+        "family_local.ports.out_proj.cortex_association.bias",
+        "family_local.ports.out_proj.cortex_unimodal.weight"
+      ]
+    },
+    "ds000117_real": {
+      "n_permitted": 6,
+      "n_blocked": 378,
+      "patterns": [
+        "eeg_montages.ds000117_real.log_gain",
+        "eeg_montages.ds000117_real.offset",
+        "eeg_montages.ds000117_real.log_noise",
+        "eeg_montages.ds000117_real.nuisance*"
+      ],
+      "frozen": [
+        "bold.*",
+        "eeg.*",
+        "behaviour.*",
+        "tms_drive.*",
+        "individualizer.*"
+      ],
+      "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias",
+        "family_local.ports.out_proj.cortex_association.weight",
+        "family_local.ports.out_proj.cortex_association.bias",
+        "family_local.ports.out_proj.cortex_unimodal.weight"
+      ]
+    },
+    "ds002336_real": {
+      "n_permitted": 0,
+      "n_blocked": 384,
+      "patterns": [],
+      "frozen": [
+        "eeg.*",
+        "individualizer.*"
+      ],
+      "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias",
+        "family_local.ports.out_proj.cortex_association.weight",
+        "family_local.ports.out_proj.cortex_association.bias",
+        "family_local.ports.out_proj.cortex_unimodal.weight"
+      ]
+    },
+    "ds004024_perturb": {
+      "n_permitted": 0,
+      "n_blocked": 384,
+      "patterns": [
+        "eeg_montages.ds004024_rest_real.log_gain",
+        "eeg_montages.ds004024_rest_real.offset",
+        "eeg_montages.ds004024_rest_real.log_noise",
+        "eeg_montages.ds004024_rest_real.nuisance*"
+      ],
+      "frozen": [
+        "eeg.*",
+        "individualizer.*",
+        "behaviour.*",
+        "eeg_montages.*",
+        "bold.*"
+      ],
+      "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias",
+        "family_local.ports.out_proj.cortex_association.weight",
+        "family_local.ports.out_proj.cortex_association.bias",
+        "family_local.ports.out_proj.cortex_unimodal.weight"
+      ]
+    },
+    "ds004024_rest_real": {
+      "n_permitted": 6,
+      "n_blocked": 378,
+      "patterns": [
+        "eeg_montages.ds004024_rest_real.log_gain",
+        "eeg_montages.ds004024_rest_real.offset",
+        "eeg_montages.ds004024_rest_real.log_noise",
+        "eeg_montages.ds004024_rest_real.nuisance*"
+      ],
+      "frozen": [
+        "eeg.*",
+        "bold.*",
+        "behaviour.*",
+        "tms_drive.*",
+        "individualizer.*"
+      ],
+      "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias",
+        "family_local.ports.out_proj.cortex_association.weight",
+        "family_local.ports.out_proj.cortex_association.bias",
+        "family_local.ports.out_proj.cortex_unimodal.weight"
+      ]
+    },
+    "eegmmidb_real": {
+      "n_permitted": 12,
+      "n_blocked": 372,
+      "patterns": [
+        "eeg.log_gain",
+        "eeg.offset",
+        "eeg.log_noise",
+        "eeg.nuisance*",
+        "individualizer.*"
+      ],
+      "frozen": [
+        "bold.*"
+      ],
+      "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias",
+        "family_local.ports.out_proj.cortex_association.weight",
+        "family_local.ports.out_proj.cortex_association.bias",
+        "family_local.ports.out_proj.cortex_unimodal.weight"
+      ]
+    },
+    "sleepedf_real": {
+      "n_permitted": 12,
+      "n_blocked": 372,
+      "patterns": [
+        "eeg_montages.sleepedf_real.log_gain",
+        "eeg_montages.sleepedf_real.offset",
+        "eeg_montages.sleepedf_real.log_noise",
+        "eeg_montages.sleepedf_real.nuisance*",
+        "individualizer.*"
+      ],
+      "frozen": [
+        "eeg.*",
+        "bold.*",
+        "coupling.*",
+        "behaviour.*",
+        "tms_drive.*"
+      ],
+      "blocked_sample": [
+        "coupling.gain_soft",
+        "coupling.gain_proposed",
+        "coupling.global_scale",
+        "msg_readin.0.weight",
+        "msg_readin.0.bias",
+        "context.0.weight",
+        "context.0.bias",
+        "context.2.weight",
+        "context.2.bias",
+        "family_local.ports.out_proj.cortex_association.weight",
+        "family_local.ports.out_proj.cortex_association.bias",
+        "family_local.ports.out_proj.cortex_unimodal.weight"
+      ]
+    }
+  },
+  "gradient_conflict": {
+    "steps": 120,
+    "pairs": [
+      {
+        "source_a": "ds004024_perturb",
+        "source_b": "ds004024_rest_real",
+        "module": "eeg_montages",
+        "mean_cosine": -0.1992124573073604,
+        "min_cosine": -0.5415947437286377,
+        "frac_negative": 0.8181818181818182,
+        "n": 22
+      },
+      {
+        "source_a": "eegmmidb_real",
+        "source_b": "sleepedf_real",
+        "module": "individualizer",
+        "mean_cosine": 0.10901775181293488,
+        "min_cosine": -0.9092284440994263,
+        "frac_negative": 0.5,
+        "n": 50
+      }
+    ]
+  },
+  "conflict_decisions": [
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "adapter",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.2010189551860094,
+      "n": 20,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "partial_pool",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.2016547347108523,
+      "n": 21,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "freeze",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    },
+    {
+      "pair": [
+        "ds004024_perturb",
+        "ds004024_rest_real"
+      ],
+      "module": "eeg_montages",
+      "action": "reject",
+      "yielding_source": "ds004024_perturb",
+      "mean_cosine": -0.1992124573073604,
+      "n": 22,
+      "rationale": "incompatible gradients on a shared operator; escalating per Appendix D (source-specific adapter / partial pooling / freezing / rejection) rather than averaging the disagreement away"
+    }
+  ],
+  "adapters_enabled": [
+    "ds004024_perturb:eeg_montages"
+  ],
+  "skipped_nonfinite_steps": {},
+  "stage": "T6_individual",
+  "run_name": "scwbd-004"
+}

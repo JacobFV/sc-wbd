@@ -1,0 +1,68 @@
+env PYTHONPATH=. /home/brandonin/Documents/integrated-whole-brain-modeling-across-modalities-scales-and-dynamics/.venv/bin/python -m scwbd.foundation.evaluate \
+  --config configs/run4/scwbd-004.yaml \
+  --checkpoint checkpoints/scwbd-004/last.pt \
+  --out reports/training/evaluation_run4.json
+[mem] CUDA reserve capped at 80.0 GB (fraction=0.658 of 121.6 GB unified pool)
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=67/17/25 of 109
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+real EEG: 235647 windows, train/val/test = 145202/36500/53945
+measured BOLD: 485 windows over 10 participants, 55/55 runs cached, 0 dropped for coverage
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=46/7/25 of 78
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+sleepedf_real: 77827 windows over 78 participants, 2 channels
+[leakage] NOTE ds000117_eeg: fold(s) ['val'] are EMPTY and are NOT read by this call site (it consumes ['train']). windows per fold {'train': 2833, 'val': 0, 'test': 2989}, participants {'train': 1, 'val': 0, 'test': 1} of 2. No number is computed from them; the R10 audit over a fold this small establishes correspondingly little.
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=1/0/1 of 2
+[leakage] warning: fold 'val' is empty
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+ds000117_real: 5822 windows over 2 participants, 70 channels
+[leakage] NOTE ds004024_rest: fold(s) ['val', 'test'] are EMPTY and are NOT read by this call site (it consumes ['train']). windows per fold {'train': 502, 'val': 0, 'test': 0}, participants {'train': 2, 'val': 0, 'test': 0} of 2. No number is computed from them; the R10 audit over a fold this small establishes correspondingly little.
+[leakage] R10 audit PASSED  backend=grouped_splitter  participants train/val/test=2/0/0 of 2
+[leakage] warning: fold 'val' is empty
+[leakage] warning: fold 'test' is empty
+[leakage] GroupedSplitter cross-check ok=True
+[leakage] cross-check warning: all records come from one site: this split cannot falsify a site/device shortcut (Appendix D 'Site/device shortcuts')
+ds004024_rest_real: 502 windows over 2 participants, 64 channels
+ds000117_behaviour: 1408 stimulus-locked episodes over 2 participants -- the first boundary_output in the mixture
+ds004024_perturb: 704 TMS-evoked epochs over 2 participants, {'left': 384, 'right': 320}, 48 scored steps each
+  skipped: [{'run': 'sub-CON006/run-06', 'reason': "the lateralised MEP did not decide the stimulated hemisphere above the stated effect-size floor; the drive's spatial support cannot be placed and this run is skipped rather than assigned the sign of a noisy mean"}]
+[individualizer] 191 participants, 266 sessions, theta_dim=6
+loaded checkpoints/scwbd-004/last.pt (332 model tensors, no key mismatch)
+{
+  "model_id": "scwbd-004",
+  "git_sha": "432b6e3bb6b9d132b7a977812d285a0b859d0173-dirty",
+  "evaluated_utc": "2026-08-12T18:52:26Z",
+  "n_parameters": {
+    "coupling": 3,
+    "msg_readin": 9152,
+    "context": 17792,
+    "family_local": 18693938,
+    "family_residual": 5969331,
+    "family_readout": 131666,
+    "assimilate": 1356030,
+    "observation": 2073,
+    "eeg": 27697,
+    "eeg_montages": 59291,
+    "bold": 3312,
+    "behaviour": 34372,
+    "TOTAL": 26304657
+  },
+  "eval_seed": 0,
+  "anatomy": {
+    "n_regions": 414,
+    "n_cortex": 400,
+    "n_subcortex": 14,
+    "n_cerebellum": 0,
+    "density": 0.0718,
+    "mean_tract_length_mm": 38.76,
+    "edges_by_class": {
+      "hard": 1618,
+      "soft": 7386,
+      "proposed": 3270
+    },
+    "frame": "fsLR_32k_surface_RAS [conte69_32k]",
+    "n_gradient_covered": 400,
+    "gradient_uncovered_are_zero": true,
+    "provenance": "{'atlas': 'Schaefer400x7', 'space': 'fsLR', 'density': '32k', 'length': 'euclidean', 'sources': {'schaefer2018': {'name': 'Schaefer 2018 local-global parcellation', 'url': 'https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal', 'license': 'MIT (CBIG); underlying GSP data under its own terms', 'citation': 'Schaefer A. et al. (2018) Cereb Cortex 28:3095-3114.'}, 'enigma_hcp_sc': {'name': 'ENIGMA/HCP group-average structural connectome', 'url': 'https://enigma-toolbox.readthedocs.io/en/latest/pages/05.HCP/index.html', 'license': 'BSD-3-Clause code; HCP open-access data-use terms for the underlying scans', 'citation': 'Lariviere S. et al. (2021) Nat Methods 18:698-700; Van Essen D.C. et al. (2013) NeuroImage 80:62-79 (HCP).'}, 'neuromaps': {'name': 'neuromaps annotation collection', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'BSD-3-Clause (toolbox); per-annotation source terms', 'citation': 'Markello R.D. et al. (2022) Nat Methods 19:1472-1479.'}, 'tian2020': {'name': 'Tian subcortical parcellation S1-S4', 'url': 'https://github.com/yetianmed/subcortex', 'license': 'Melbourne Subcortex Atlas License: permission to use the atlas without restriction, including the rights to use, copy, modify, merge, publish and distribute, subject to the single condition that any publication using the atlas cites Tian Y. et al. (2020) Nat Neurosci 23:1421-1432. Attribution required.', 'citation': 'Tian Y. et al. (2020) Nat Neurosci 23:1421-1432.'}, 'hansen_receptors': {'name': 'Hansen neurotransmitter receptor/transporter PET atlas', 'url': 'https://github.com/netneurolab/hansen_receptors', 'license': 'CC-BY-NC-SA-4.0', 'citation': 'Hansen J.Y. et al. (2022) Nat Neurosci 25:1569-1581, plus the primary PET study for each tracer (see Table S3 of that paper).'}, 'hcps1200_maps': {'name': 'HCP S1200 group myelin (T1w/T2w), thickness and MEG maps', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'HCP open-access data-use terms', 'citation': 'Glasser M.F., Van Essen D.C. (2011) J Neurosci 31:11597-11616; Shafiei G. et al. (2022) PLoS Biol 20:e3001735 (MEG).'}, 'hill2010': {'name': 'Evolutionary and developmental cortical expansion', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Hill J. et al. (2010) PNAS 107:13135-13140.'}, 'margulies2016': {'name': 'Principal functional connectivity gradient', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Margulies D.S. et al. (2016) PNAS 113:12574-12579.'}, 'raichle_metabolism': {'name': 'Cerebral blood flow / volume / oxygen and glucose metabolism', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Vaishnavi S.N. et al. (2010) PNAS 107:17757-17762.'}, 'sydnor2021': {'name': 'Sensorimotor-association cortical axis', 'url': 'https://netneurolab.github.io/neuromaps/', 'license': 'As distributed via neuromaps', 'citation': 'Sydnor V.J. et al. (2021) Neuron 109:2820-2846.'}}, 'subcort
