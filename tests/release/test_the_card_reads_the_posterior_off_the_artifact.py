@@ -94,3 +94,78 @@ def test_a_calibrated_but_uninformative_posterior_is_not_called_overconfident():
         "overconfident -- that is the other failure mode entirely"
     )
     assert "No inference or parameter-recovery claim" in note
+
+
+# ----------------------------------------------------------------------
+# individualisation: the same rule, for the capability run 4 measured first
+# ----------------------------------------------------------------------
+from scwbd.release.publish import _run4_individualisation_note  # noqa: E402
+
+
+def test_a_missing_individualisation_block_refuses():
+    note = _run4_individualisation_note(ROOT / "reports/training/no_such_file.json")
+    assert "No individualisation or personalisation claim" in note
+    assert "NOT thereby supported" in note
+
+
+@pytest.mark.skipif(not RUN4.is_file(), reason="run 4 evaluation absent")
+def test_run4s_individualiser_is_reported_unsupported():
+    """0.7% of its own prior scale is the falsifier being met, not a soft caveat."""
+    note = _run4_individualisation_note(RUN4)
+    assert "No individualisation or personalisation claim" in note
+    assert "That score is not the finding" in note
+    assert "0.000706" in note
+
+
+def test_an_unestablishable_ratio_takes_the_STRICT_branch(tmp_path):
+    """A shift that cannot be put on a scale is unmeasured, not small.
+
+    This is the bug this test exists for: `spread_over_prior_sd` postdates the
+    first artifact the function was pointed at, so `ratio` came back None and the
+    permissive "read the numbers before claiming it" branch won -- publishing a
+    soft caveat for a capability that is unsupported.
+    """
+    art = tmp_path / "e.json"
+    art.write_text(
+        json.dumps(
+            {
+                "session_individualisation": {
+                    "ok": True,
+                    "n_participants_individualisable": 10,
+                    "n_test_windows": 100,
+                    "held_out_session_nll": 2.0,
+                    "held_out_session_nll_ci95": [1.9, 2.1],
+                    # no spread_over_prior_sd and no prior_sd_person
+                    "theta_shift": {"spread_pooled": 0.5},
+                }
+            }
+        )
+    )
+    note = _run4_individualisation_note(art)
+    assert "No individualisation or personalisation claim" in note, (
+        "a shift with no scale to compare against produced the PERMISSIVE caveat"
+    )
+
+
+def test_the_ratio_is_derived_when_only_the_prior_scale_is_present(tmp_path):
+    art = tmp_path / "e.json"
+    art.write_text(
+        json.dumps(
+            {
+                "session_individualisation": {
+                    "ok": True,
+                    "n_participants_individualisable": 10,
+                    "n_test_windows": 100,
+                    "held_out_session_nll": 2.0,
+                    "held_out_session_nll_ci95": [1.9, 2.1],
+                    "theta_shift": {
+                        "spread_pooled": 7.06e-4,
+                        "prior_sd_person": [0.1059] * 6,
+                    },
+                }
+            }
+        )
+    )
+    note = _run4_individualisation_note(art)
+    assert "0.67%" in note, "the ratio was not derived from prior_sd_person"
+    assert "No individualisation or personalisation claim" in note

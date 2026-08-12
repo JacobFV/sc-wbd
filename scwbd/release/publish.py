@@ -1897,6 +1897,7 @@ def plan_run4(
     # exactly what `reports/publishing.md` records as the near-miss -- so the
     # numbers now come off the artifact and cannot go stale again.
     posterior_note = _run4_posterior_note(root / evaluation)
+    individualisation_note = _run4_individualisation_note(root / evaluation)
 
     limitation = (
         "> ## No fMRI claim may be read off this model, and this time we know why\n>\n"
@@ -1927,6 +1928,7 @@ def plan_run4(
         "slow modality, which is a later run's design, not a caveat on this "
         "one.\n>\n"
         f"{posterior_note}"
+        f"{individualisation_note}"
         "> The EEG lead field remains an **analytic sphere**, not a head model, "
         "so no source-localisation claim is available.\n\n"
     )
@@ -2349,3 +2351,112 @@ def _main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI
 
 if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(_main())
+
+
+def _run4_individualisation_note(eval_path: Path) -> str:
+    """The individualisation caveat, read off the evaluation.
+
+    Run 4 is the first artifact in this project with a MEASURED individualisation
+    result rather than an unmeasurable one, and the measurement is negative. The
+    numbers come off `session_individualisation`; a missing block is an explicit
+    refusal, never silence.
+    """
+    import json as _json
+
+    unread = (
+        "> **No individualisation or personalisation claim may be read off this "
+        "model.** The evaluation carries no `session_individualisation` block, so "
+        "the person effect was not measured. It is NOT thereby supported.\n>\n"
+    )
+    if not Path(eval_path).is_file():
+        return unread
+    rep = _json.loads(Path(eval_path).read_text())
+    si = rep.get("session_individualisation") or {}
+    if not si.get("ok"):
+        reason = str(si.get("reason") or "the block is absent or refused").strip()
+        return (
+            "> **No individualisation or personalisation claim may be read off "
+            f"this model.** The person effect was not measured: {reason} It is "
+            "NOT thereby supported.\n>\n"
+        )
+
+    shift = si.get("theta_shift") or {}
+    spread = shift.get("spread_pooled")
+    ratio = shift.get("spread_over_prior_sd")
+    nll = si.get("held_out_session_nll")
+    ci = si.get("held_out_session_nll_ci95") or []
+    n_p = si.get("n_participants_individualisable")
+    n_w = si.get("n_test_windows")
+    zero_rows = shift.get("n_rows_exactly_zero")
+
+    # The ratio is what makes `spread_pooled` interpretable. Artifacts written
+    # before `spread_over_prior_sd` was added carry `prior_sd_person` or neither,
+    # so derive it where possible rather than falling through.
+    if not isinstance(ratio, (int, float)):
+        prior = shift.get("prior_sd_person")
+        if isinstance(spread, (int, float)) and isinstance(prior, list) and prior:
+            ratio = float(spread) / (sum(float(v) for v in prior) / len(prior))
+
+    ratio_txt = ""
+    if isinstance(ratio, (int, float)):
+        ratio_txt = (
+            f" -- **{100 * float(ratio):.2f}%** of the scale the model allocated "
+            "for that effect"
+        )
+
+    # `at or near zero` is the falsifier the evaluation itself declares. 1% of
+    # the effect's own prior sd is the threshold for "near": below it the
+    # individualiser has moved theta by less than a hundredth of what it was
+    # built to move it by.
+    #
+    # A ratio that cannot be established takes the STRICT branch. An unmeasurable
+    # shift is not a small one, and defaulting the other way would publish the
+    # permissive caveat for a capability nobody has checked -- which is what this
+    # function did on its first run, because `spread_over_prior_sd` postdates the
+    # artifact it was first pointed at.
+    applied_nothing = not isinstance(ratio, (int, float)) or float(ratio) < 0.01
+
+    head = (
+        "> **No individualisation or personalisation claim may be read off this "
+        "model, and this run MEASURED that rather than inheriting it.**\n>\n"
+        if applied_nothing
+        else "> **Individualisation: read the numbers before claiming it.**\n>\n"
+    )
+
+    body = (
+        f"> `session_individualisation` scored **{n_p} participants** over "
+        f"**{n_w} held-out second-night windows** -- the same people on both "
+        "sides of a SESSION split, which is the only arrangement on which a "
+        "person effect is measurable at all. Held-out session NLL "
+        f"**{float(nll):.4f}**"
+        + (f" [{float(ci[0]):.4f}, {float(ci[1]):.4f}]" if len(ci) == 2 else "")
+        + ", bootstrapped over participants rather than windows.\n>\n"
+    )
+
+    if applied_nothing:
+        body += (
+            "> **That score is not the finding.** The between-participant spread "
+            f"of the applied theta shift is **{float(spread):.3g}**{ratio_txt}. "
+            + (
+                f"{zero_rows} of the scored person-effect rows are exactly zero. "
+                if isinstance(zero_rows, int) and zero_rows
+                else ""
+            )
+            + "The individualiser applied essentially nothing on a split built "
+            "specifically to let it apply something, which is the falsifier this "
+            "evaluation declares for the capability. Earlier runs reported "
+            "individualisation as *unmeasurable* on a participant-disjoint "
+            "split; this one built the split, trained the effect and measured "
+            "it, and the effect is a fraction of a percent of its own scale.\n>\n"
+            "> The held-out NLL is reported because withholding a measured number "
+            "is its own distortion. It answers a different question than it "
+            "appears to: what separates an individualised model from the "
+            "population model here is the shift, not the score.\n>\n"
+        )
+    else:
+        body += (
+            f"> Applied theta shift: spread **{float(spread):.3g}**{ratio_txt}. "
+            "Read `session_individualisation.theta_shift` before relying on any "
+            "per-person behaviour.\n>\n"
+        )
+    return head + body
