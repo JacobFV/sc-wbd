@@ -832,6 +832,25 @@ scored 27 participants under `shuffle_slice_v1` and run 4 scores 25 under
 test sets. What can be said flatly is that run 4 does not reproduce run 3's
 separation from `ar16` on run 4's holdout.
 
+### Reproducing `session_individualisation` from HEAD will not match this artifact
+
+`evaluation_run4.json` records `git_sha 432b6e3…-dirty` and its individualisation
+numbers were produced by that code. Re-running from a later HEAD gives slightly
+different ones, and the reason is deliberate rather than a defect.
+
+`session_individualisation` was calling `_scwbd_scores` with the default
+`n_theta_samples=32`, computing 32 extra rollouts per batch and discarding every
+one — 35 of the evaluation's 59 minutes. Setting it to 0 is not
+behaviour-preserving: `AmortizedPosterior.sample` calls `torch.randn` with no
+generator, so it draws from the **global** RNG, and removing 32 draws per batch
+shifts the stream for every subsequent batch and moves `th_bar`.
+
+The fix was therefore held uncommitted until after the artifact was written, so
+the `git_sha` on it names code that actually produced it. The affected numbers
+are the held-out session NLL and its interval. `theta_shift` is read off the
+checkpoint's weights and is unchanged by sampling, so **the 7.06e-4 and the
+0.67% — the numbers ISSUE-017 rests on — are reproducible from any HEAD.**
+
 ### The montage fix moved nothing, checked rather than assumed
 
 `_scwbd_scores` gained a `source_id` whose default routes to the founding
