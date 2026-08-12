@@ -40,6 +40,7 @@
     <li><a href="#cause-three-one-learning-rate-for-two-different-" data-rail="cause-three-one-learning-rate-for-two-different-"><span class="rail-label">Cause three</span></a></li>
     <li><a href="#a-fourth-claim-withdrawn" data-rail="a-fourth-claim-withdrawn"><span class="rail-label">A fourth claim, withdrawn</span></a></li>
     <li><a href="#what-generalises" data-rail="what-generalises"><span class="rail-label">What generalises</span></a></li>
+    <li><a href="#follow-up-run-4-repaired-the-rate-and-overshot" data-rail="follow-up-run-4-repaired-the-rate-and-overshot"><span class="rail-label">Follow-up</span></a></li>
   </ol>
 </nav>
 
@@ -170,6 +171,49 @@ fixed.</p>
 
 <p>Three sequential failures, each masking the next — and a rate, rather than a
 boolean, is what made them separable at all.</p>
+</section>
+<section class="chapter" id="follow-up-run-4-repaired-the-rate-and-overshot">
+<h2>Follow-up: run 4 repaired the rate, and overshot</h2>
+
+
+<p>The learning rate above was the last of the three, and SC-WBD-004 is the run
+that carried the fix into production. A four-seed sweep chose the rate before
+launch, and on that sweep the coupling-gain posterior recovered
+<em>R</em>²&nbsp;0.674&ndash;0.766 against roughly zero in run 3.</p>
+
+<p><strong>The repair worked.</strong> Run 3's posterior ignored its conditioning
+entirely: every posterior standard deviation sat within 3% of the prior's and its
+mean moved by 9% of a prior standard deviation as the data changed. Run 4's
+coupling-gain posterior is <strong>eight times narrower than the prior</strong>
+and its mean now moves by 1.10 prior standard deviations with the data. The flow
+reads its conditioning, which three runs could not achieve.</p>
+
+<p><strong>And it is not usable, because it is confidently wrong.</strong> The
+standardised residual has a spread of <strong>59.25</strong> where a calibrated
+posterior sits near 1.0. Simulation-based calibration returns a
+Kolmogorov&ndash;Smirnov <em>p</em> of <strong>1.0&nbsp;&times;&nbsp;10<sup>&minus;147</sup></strong>;
+expected-coverage error is <strong>0.203</strong> against run 3's 0.021. It
+narrowed by eight times and earned about a quarter of that. Four of the six
+parameters still explain no variance.</p>
+
+<p>So the failure mode inverted rather than resolving. Run 3's posterior was
+uninformative and honest &mdash; a distribution that returns the prior is
+perfectly calibrated by construction, which is why the calibration block
+certified it. Run 4's is partly informative and overconfident. <strong>Neither
+supports inference</strong>, and they are not two points on a path from worse to
+better; they are two ways to be unusable. The claim publishes as
+<em>unsupported</em>, where run 3's identical claim published as
+<em>partial</em>.</p>
+
+<p>One number is worth stating because it constrains what to do next: the
+one-stage sweep predicted 0.674&ndash;0.766 and the full six-stage curriculum
+returned <strong>0.284</strong>, under half. <em>Why is unmeasured.</em> The
+natural reading is that the two measured-return stages, which follow the founding
+stage at reduced and then zero posterior weight, give part of it back &mdash; but
+that is a hypothesis, and the experiment that would settle it (scoring the
+founding stage's own checkpoint through the same calibration block) has not been
+run. The lesson the page above already carries applies to its own sequel: a fix
+validated on one stage is not thereby validated on six.</p>
 </section>
 </div>
 
