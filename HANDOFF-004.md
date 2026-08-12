@@ -10,8 +10,34 @@ Training, evaluation, paper, site and model are DONE. Run 4 is published:
   paper    paper/output/sc_wbd_frontiers.pdf              (§11.10, §11.11)
   reports  reports/RUN4.md, reports/training/evaluation_run4.json
 
-Only the leave-one-source-out ablation is outstanding
-(`make release-004-ablate` -> evaluation_run4_ablation.json).
+TWO THINGS ARE OUTSTANDING, in this order:
+
+  1. `make release-004-ablate` -> evaluation_run4_ablation.json. Running as of
+     this writing; it retrains 11 arms and takes over an hour. ISSUE-010 was
+     verified live against it (the checkpoint, the training log and the mixture
+     reports are all untouched mid-run), so it is safe to leave alone.
+
+  2. **Re-run `make release-004-evaluate`, then `make release-004` and
+     `make release-004-card-diff`.** The published card's headline currently
+     reads "No baseline beats scwbd-004" and stops there. That string is
+     generated, the generator is fixed, and the fix is NOT in the artifact:
+
+       - `real_eeg_holdout.verdict` had two branches and the "nobody beats us"
+         one is also true when we beat nobody. It now names the inconclusive
+         arms and counts them: "No baseline beats scwbd-004, and scwbd-004 is
+         not shown to beat ar16, var4 (3 of 5 comparators separated)".
+       - `theta_shift` gained `prior_sd_person` and `spread_over_prior_sd`, so
+         ISSUE-017's 0.67% becomes checkable off the artifact instead of
+         requiring the checkpoint be loaded by hand.
+       - `theta_shift.n_participants` counted windows (1500) rather than people
+         (75).
+
+     Do NOT start it while the ablation is running. Both reserve up to 80 GB on a
+     121.6 GB UNIFIED pool, and running two is how this box was OOM'd.
+
+     The site, the paper and `RUN4.md` already state both halves of the EEG
+     result. It is only the machine-generated verdict, and therefore only the
+     card, that is one-sided.
 
 WHAT RUN 4 MEASURED. Three questions 003 could not ask, three negative answers.
 Each needed an instrument built before it could return anything, which is the
