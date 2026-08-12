@@ -376,7 +376,20 @@ release-004-evaluate: ## Score the 004 checkpoint on the real-EEG holdout
 	  --out reports/training/evaluation_run4.json
 
 .PHONY: release-004-ablate
-release-004-ablate: ## Leave-one-source-out, scored on the MEASURED holdout as well
+release-004-ablate: ## Leave-one-source-out, scored on the MEASURED holdout as well (~5 HOURS)
+	@# RUNTIME: run 3's eleven arms took 284 minutes -- 4.7 hours -- and nothing
+	@# said so anywhere, so it reads as hung. It retrains one arm per source
+	@# family at 200 steps each on the live trainer. Measured from
+	@# reports/training/scwbd-003_ablation_train.jsonl, whose eleven leaked rows
+	@# span 1786275183 to 1786292237.
+	@#
+	@# It emits NO progress output between the checkpoint load and the final
+	@# write, and it writes the plain evaluate_model report FIRST -- so an output
+	@# file appearing does not mean the arms are done. Check for the
+	@# `source_ablation` key, not for the file.
+	@#
+	@# Do not run an evaluation beside it. Both cap CUDA at 80 GB on a 121.6 GB
+	@# UNIFIED pool.
 	@# Unlike 003's, this scores each arm on the measured holdout too, not only on
 	@# `_sim_val_nll` -- HANDOFF-004 step f calls that "the difference between an
 	@# experiment and a tautology", because every measured gradient pulls away from
