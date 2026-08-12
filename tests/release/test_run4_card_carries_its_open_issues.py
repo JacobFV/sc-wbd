@@ -21,9 +21,6 @@ be the calibration-certifies-the-prior error in a new place.
 
 from __future__ import annotations
 
-import ast
-import inspect
-import textwrap
 from pathlib import Path
 
 import pytest
@@ -33,33 +30,47 @@ from scwbd.release import publish
 REPO = Path(__file__).resolve().parents[2]
 
 
+CKPT = REPO / "checkpoints/scwbd-004"
+EVAL = REPO / "reports/training/evaluation_run4.json"
+
+
 def _card_text() -> str:
-    """The `limitation` string plan_run4 PREPENDS, not the function's source.
+    """The card plan_run4 actually PRODUCES, by running it.
 
-    The first version of this file read `inspect.getsource(plan_run4)`, which
-    includes the DOCSTRING. Mutation-testing it by deleting "23.2 : 1" from the
-    card left the same number in the docstring and every assertion still passed —
-    the guard was checking that I had written ABOUT the finding, not that the
-    card states it. A reader gets the card; nobody ships a docstring.
+    Two earlier versions of this helper read the source instead, and each was
+    wrong in its own way.
 
-    Extracted by AST so reformatting and implicit concatenation cannot break it.
+    The first read `inspect.getsource(plan_run4)`, which includes the DOCSTRING.
+    Deleting "23.2 : 1" from the card left the same number in the docstring and
+    every assertion still passed — the guard checked that I had written ABOUT the
+    finding, not that the card states it.
+
+    The second extracted the `limitation` assignment by AST and `literal_eval`.
+    That broke the moment the caveat stopped being a constant: the posterior and
+    individualisation paragraphs are now DERIVED from the evaluation artifact, so
+    the assignment contains f-strings and `literal_eval` raises on the JoinedStr.
+    Worse than breaking, it was checking the wrong object — a card assembled from
+    an artifact cannot be verified by reading the template it is assembled from.
+
+    So this runs the planner. That also gives every assertion in this file
+    integration coverage for free, which matters: `plan_run4` once referenced
+    `root`, a name belonging to a different function, and shipped a NameError
+    that no source-reading test could see.
     """
-    tree = ast.parse(textwrap.dedent(inspect.getsource(publish.plan_run4)))
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assign) and any(
-            getattr(tgt, "id", None) == "limitation" for tgt in node.targets
-        ):
-            return ast.literal_eval(node.value)
-    raise AssertionError(
-        "plan_run4 no longer assigns a `limitation` string. The caveat block is "
-        "what this file exists to check; if it moved, point this helper at it."
-    )
+    if not (CKPT.is_dir() and EVAL.is_file()):
+        pytest.skip("run-4 checkpoint or evaluation absent; nothing to build a card from")
+    plan = publish.plan_run4(checkpoint_dir=str(CKPT), evaluation=str(EVAL))
+    card = plan.card or ""
+    assert card, "plan_run4 produced an EMPTY card"
+    return card
 
 
-CARD_SRC = _card_text()
+@pytest.fixture(scope="module")
+def CARD_SRC() -> str:
+    return _card_text()
 
 
-def test_the_card_text_is_what_is_checked_not_the_docstring() -> None:
+def test_the_card_text_is_what_is_checked_not_the_docstring(CARD_SRC: str) -> None:
     """Guards this file's own instrument.
 
     `_card_text()` must return the prepended block and NOT the function source.
@@ -105,7 +116,7 @@ def test_run4_has_a_planner_at_all() -> None:
         "IMPROVED",
     ],
 )
-def test_the_card_states_the_fmri_finding_with_its_numbers(phrase: str) -> None:
+def test_the_card_states_the_fmri_finding_with_its_numbers(phrase: str, CARD_SRC: str) -> None:
     """Not "there are limitations" — the numbers that make it checkable.
 
     "No fMRI claim is supported" alone invites the reader to assume the usual
@@ -119,7 +130,7 @@ def test_the_card_states_the_fmri_finding_with_its_numbers(phrase: str) -> None:
     )
 
 
-def test_the_card_distinguishes_gradient_from_information() -> None:
+def test_the_card_distinguishes_gradient_from_information(CARD_SRC: str) -> None:
     """`contributed_sources` is accurate and misleading at the same time.
 
     Run 3's card made this distinction and it is the sentence that stops a reader
@@ -136,23 +147,47 @@ def test_the_card_distinguishes_gradient_from_information() -> None:
     )
 
 
-def test_the_card_says_the_posteriors_calibration_is_unknown() -> None:
-    """ISSUE-012 is an open UNKNOWN, not a repaired defect, and must read as one.
+def test_the_card_states_the_posteriors_MEASURED_calibration(CARD_SRC: str) -> None:
+    """ISSUE-012 was an open unknown. Run 4 measured it, and the card must say so.
 
-    Reporting `log_G` R² without it would repeat the error ISSUE-012 is about in
-    a new place: run 3's posterior was well calibrated AND uninformative, and the
-    calibration block certified it.
+    This test previously asserted the card contains "UNKNOWN", which was correct
+    until the run finished. Leaving it that way would have pinned the card to a
+    pre-run framing and made the measured failure unpublishable — the guard
+    itself becoming the reason a stale claim survives.
+
+    What must hold now is that the card reports the measurement rather than the
+    sweep that preceded it. Run 3's posterior was calibrated AND uninformative
+    and the calibration block certified it; run 4's is the opposite failure and
+    the card has to distinguish them.
     """
-    assert "UNKNOWN" in CARD_SRC and "ISSUE-012" in CARD_SRC, (
-        "the card no longer declares the posterior's calibration unknown."
+    assert "ISSUE-012" in CARD_SRC
+    assert "No inference or parameter-recovery claim" in CARD_SRC, (
+        "the card no longer refuses inference claims. ISSUE-012 is open."
     )
-    assert "posterior_calibration" in CARD_SRC, (
-        "the card no longer points at the block that decides it, so a reader has "
-        "no way to check the claim it is being asked to withhold."
+    for stale in ("0.674", "0.766"):
+        assert stale not in CARD_SRC, (
+            f"the card quotes the pre-run sweep figure {stale!r}. Production measured "
+            "0.284 and the card must state what the run measured."
+        )
+    assert "confidently wrong" in CARD_SRC or "overconfident" in CARD_SRC, (
+        "the card does not say HOW the posterior fails. 'Not calibrated' alone "
+        "reads as run 3's failure, which was the opposite one."
     )
 
 
-def test_the_card_does_not_claim_issue_016_is_fixed() -> None:
+def test_the_card_refuses_the_individualisation_claim(CARD_SRC: str) -> None:
+    """ISSUE-017: measured for the first time in run 4, and unsupported."""
+    assert "No individualisation or personalisation claim" in CARD_SRC, (
+        "the card makes no individualisation refusal. T6_individual trained a "
+        "person effect and a reader who is told nothing will assume it works."
+    )
+    assert "That score is not the finding" in CARD_SRC, (
+        "the card reports the held-out session NLL without saying it is not the "
+        "evidence. A model with a zero person effect scores about the same."
+    )
+
+
+def test_the_card_does_not_claim_issue_016_is_fixed(CARD_SRC: str) -> None:
     """The remedy is a later run's design. Saying otherwise would be a promise.
 
     "TODO next run" is the phrasing this repo's CLAUDE.md forbids; a model card
@@ -177,18 +212,15 @@ def test_the_planner_actually_builds_a_plan() -> None:
     worst moment to discover that `plan_run1_checkpoint` no longer accepts these
     arguments.
 
-    Exercised against RUN 3's checkpoint because run 4 has none yet. The card is
-    run-4's either way; what is under test is that the plan assembles.
+    This used to borrow RUN 3's checkpoint because run 4 had none. Run 4 has one
+    now, so the plan is assembled from the artifact that is actually published.
     """
-    ck = REPO / "checkpoints/scwbd-003"
-    ev = REPO / "reports/training/evaluation_run3.json"
-    if not (ck.is_dir() and ev.is_file()):
-        pytest.skip("run-3 checkpoint or evaluation absent; nothing to build a plan from")
+    if not (CKPT.is_dir() and EVAL.is_file()):
+        pytest.skip("run-4 checkpoint or evaluation absent; nothing to build a plan from")
 
     plan = publish.plan_run4(
-        checkpoint_dir=str(ck),
-        evaluation=str(ev),
-        config=str(REPO / "configs/run3/scwbd-003.yaml"),
+        checkpoint_dir=str(CKPT),
+        evaluation=str(EVAL),
         name="scwbd-004-DRYRUN",
     )
     assert plan.repo_type == "model", f"unexpected repo_type {plan.repo_type!r}"
