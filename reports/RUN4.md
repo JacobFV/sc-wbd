@@ -399,6 +399,30 @@ Caveat carried forward: these are step-1 figures from a 4-step-per-stage smoke.
 Reserve can drift upward across thousands of steps, which is what the 33% is
 for; run 3's full 29-hour run peaked at 46.13 GB against a 56 GB cap.
 
+### The caveat, discharged by the completed run
+
+| stage | smoke, step 1 | run 4 peak | drift |
+| --- | ---: | ---: | ---: |
+| `T1_measured_founding` | 47.41 | 50.55 | +3.14 |
+| `T2_calibration` | 49.17 | 50.55 | +1.38 |
+| `T3_population_prior` | 49.17 | 50.55 | +1.38 |
+| `T4_simulator` | 57.98 | 60.34 | +2.36 |
+| `T5_measured_return` | 59.95 | 60.34 | +0.39 |
+| `T6_individual` | 59.95 | 60.34 | +0.39 |
+
+**Run peak 60.34 GB against the 80 GB cap — 75.4% used, 19.66 GB spare.** The
+drift the 33% headroom was bought for is real and small: at most +3.14 GB, and
+the smoke's ordering was right in the respect that mattered — the peak is reached
+by T4 and held, not set by T1.
+
+The smoke under-read every stage, so sizing a cap from it without headroom would
+have failed. It was still the right instrument for the decision it was used for,
+because it was labelled as a 4-step smoke at the point of use and given 33%.
+Compare ISSUE-016's "Correction 2026-08-12", where the same smoke's *mixture*
+report was quoted as the run's measurement with no such label and had to be
+retracted from the paper, the site and the model card. The difference is not the
+instrument. It is whether the provenance was written down beside the number.
+
 ## Cost of the new BOLD path — MEASURED
 
 ISSUE-008's fix rolls the neural clock for the duration a BOLD frame actually
