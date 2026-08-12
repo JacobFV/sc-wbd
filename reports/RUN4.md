@@ -4,8 +4,17 @@ Run 4 does two things run 3 could not: it integrates the haemodynamic ODE on the
 measured fMRI path, and it fits a person effect.
 
 This file is the run's record. Numbers here are measured and each says where
-from; sections marked **PENDING** are filled after the run completes and are
-empty rather than estimated until then.
+from. **The run completed on 2026-08-12** — 14,600 / 14,600 steps in 42.2 h — and
+no section is PENDING any longer.
+
+Two things are deliberately not in this file. The **leave-one-source-out
+ablation** is still running and its arms will be added when it lands. And the
+**published evaluation artifact predates two fixes to the evaluation itself**:
+`real_eeg_holdout.verdict` now names the inconclusive comparators instead of
+stopping at "no baseline beats it", and `theta_shift` now carries the prior scale
+that makes ISSUE-017's 0.67% checkable without loading the checkpoint. Both land
+on the next `make release-004-evaluate`; `HANDOFF-004.md` carries the sequence
+and the reason it must not run beside the ablation.
 
 ## The two structural changes
 
