@@ -1888,23 +1888,37 @@ def plan_run4(
         repo_root=repo_root,
     )
 
+    # The posterior paragraph is DERIVED, not written. Its first version was
+    # composed before the run and said calibration "is UNKNOWN" and that the
+    # posterior "should be informative (log_G R^2 0.674-0.766 across four
+    # seeds)". Both were true when written and false by the time the card would
+    # have been generated: production measured 0.284 and a KS p of 1.0e-147. A
+    # card that quotes a pre-run sweep as though it were the run's own result is
+    # exactly what `reports/publishing.md` records as the near-miss -- so the
+    # numbers now come off the artifact and cannot go stale again.
+    posterior_note = _run4_posterior_note(root / evaluation)
+
     limitation = (
         "> ## No fMRI claim may be read off this model, and this time we know why\n>\n"
         "> The measured BOLD path in this run **does** integrate the "
         "Balloon-Windkessel ODE -- that is what run 4 fixed (ISSUE-008). The "
         "haemodynamic likelihood is real here in a way it was not in run 3.\n>\n"
-        "> **It diverges during training.** `real_bold_nll` rose from 1.99 to "
-        "**~200 within T1 alone** -- two orders of magnitude in 1,000 steps -- "
-        "while `eeg_nll` IMPROVED (1.74 to 1.50), the total loss stayed flat near "
-        "1.0, and `bold_log_scale` held at 5.3-5.9. So this is not a variance "
-        "explosion and the fMRI term is not dominating the mixture: it is the one "
-        "term getting worse while everything around it gets better. Four "
-        "diagnostic arms located "
-        "the cause: the **shared trunk moves out from under the BOLD head**. "
-        "`ds002336_real` is **4.13%** of the source mixture and is outvoted "
-        "**23.2 : 1** by the EEG-like sources, so the latent state converges on "
-        "what they want. Freezing the five Balloon parameters changes nothing; "
-        "freezing the trunk makes the BOLD likelihood *improve*.\n>\n"
+        "> **It diverges during training, and the full run settled how far.** "
+        "`real_bold_nll` ran **1.99 to 36,472** over 14,600 steps -- a factor of "
+        "about 18,000 -- while `eeg_nll` improved and the total loss stayed flat "
+        "near 1.0. It is the one term getting worse while everything around it "
+        "gets better. It never plateaus: T4 alone spans 1,530 to 650,815, four "
+        "orders of magnitude inside one stage. And **T5's measured return does "
+        "not repair it** -- that stage grants `bold.*` again and ends at 36,472. "
+        "`bold_parcels_covered` held at full value throughout, so the ODE ran on "
+        "every parcel for 46 hours and the likelihood it produced is "
+        "worthless.\n>\n"
+        "> Four diagnostic arms located the cause: the **shared trunk moves out "
+        "from under the BOLD head**. `ds002336_real` is **4.13%** of the source "
+        "mixture and is outvoted **23.2 : 1** by the EEG-like sources, so the "
+        "latent state converges on what they want. Freezing the five Balloon "
+        "parameters changes nothing; freezing the trunk makes the BOLD "
+        "likelihood *improve*.\n>\n"
         "> `ds002336_real` appears in `contributed_sources` and that is accurate: "
         "its BOLD channel contributed a **gradient**. It did not thereby acquire "
         "**information**, and in this run the two move in opposite directions.\n>\n"
@@ -1912,16 +1926,94 @@ def plan_run4(
         "supported. ISSUE-016 is open; the remedy is unshared capacity for the "
         "slow modality, which is a later run's design, not a caveat on this "
         "one.\n>\n"
-        "> **The amortised posterior's calibration is UNKNOWN.** ISSUE-012's "
-        "learning-rate defect is repaired and the posterior should be "
-        "informative (`log_G` R^2 0.674-0.766 across four seeds in a one-stage "
-        "retrain, against ~0 in run 3). Whether it stays CALIBRATED is decided "
-        "by this run's own `posterior_calibration`, which the sweep could not "
-        "measure comparably. Read that block before any inference claim.\n>\n"
+        f"{posterior_note}"
         "> The EEG lead field remains an **analytic sphere**, not a head model, "
         "so no source-localisation claim is available.\n\n"
     )
     return replace(plan, card=limitation + (plan.card or ""))
+
+
+def _run4_posterior_note(eval_path: Path) -> str:
+    """ISSUE-012's paragraph, read off the evaluation rather than remembered.
+
+    Returns a `> `-quoted block ending in a blank quoted line, or a refusal if
+    the evaluation is absent or carries no calibration -- never a silent empty
+    string, because an omitted caveat reads as an absent problem.
+    """
+    import json as _json
+
+    if not Path(eval_path).is_file():
+        return (
+            "> **The amortised posterior's calibration is UNREAD.** No evaluation "
+            f"artifact at `{eval_path}`, so ISSUE-012's status cannot be stated. "
+            "No inference claim may be read off this model.\n>\n"
+        )
+    cal = (_json.loads(Path(eval_path).read_text()).get("posterior_calibration") or {})
+    if not cal.get("available"):
+        return (
+            "> **The amortised posterior's calibration is UNREAD.** The evaluation "
+            "carries no `posterior_calibration` block. No inference claim may be "
+            "read off this model.\n>\n"
+        )
+
+    names = list(cal.get("param_names") or [])
+    r2 = [float(v) for v in (cal.get("posterior_r2") or [])]
+    zsd = [float(v) for v in (cal.get("posterior_z_sd") or [])]
+    worst = min(cal.get("sbc_ks_pvalue") or [1.0])
+    mae = float(cal.get("coverage_mae", 1.0))
+    dead = list(cal.get("uninformative_parameters") or [])
+    calibrated = worst > 0.01 and mae < 0.12
+
+    best_i = max(range(len(r2)), key=lambda i: r2[i]) if r2 else None
+    best = f"`{names[best_i]}` R^2 {r2[best_i]:.3f}" if best_i is not None else "unavailable"
+    worst_z = f"{max(zsd):.1f}" if zsd else "unavailable"
+
+    # THREE states, not two. Collapsing the middle one is how the first draft of
+    # this function described run 3's posterior -- calibrated, z-sd 1.0, and
+    # explaining no variance in anything -- as "confidently wrong", which is the
+    # opposite failure. Exercising it against run 3's artifact is what caught it.
+    if calibrated and not dead:
+        return (
+            f"> **The amortised posterior is calibrated and informative** on this "
+            f"run's own `posterior_calibration`: SBC KS p_min {worst:.3g}, "
+            f"coverage MAE {mae:.3f}, best {best}. ISSUE-012's discharge condition "
+            "is met; read the block before relying on the interval widths.\n>\n"
+        )
+    if calibrated:
+        # Calibrated AND uninformative: the posterior returns the prior, which
+        # satisfies SBC and coverage by construction. This is run 3's state and
+        # the reason the calibration block alone cannot support a claim.
+        return (
+            "> **No inference or parameter-recovery claim may be read off this "
+            "model.** ISSUE-012 is open. The posterior is well calibrated -- SBC "
+            f"KS p_min {worst:.3g}, coverage MAE {mae:.3f}, worst "
+            f"`posterior_z_sd` {worst_z} -- and that certifies nothing, because "
+            f"{len(dead)} of {len(names)} parameters explain no variance "
+            f"({', '.join(f'`{d}`' for d in dead)}). **A posterior that ignores "
+            "its conditioning and returns the prior is calibrated by "
+            "construction**: its ranks are uniform because the truth is a draw "
+            "from the distribution it reported. Calibration does not qualify the "
+            f"R^2. Best {best}.\n>\n"
+        )
+    return (
+        "> **No inference or parameter-recovery claim may be read off this "
+        "model.** ISSUE-012 is open and this run MEASURED it rather than "
+        f"inheriting it. The learning-rate repair worked -- best {best}, against "
+        "~0 on every parameter in run 3, so the flow now reads its conditioning "
+        "-- and it overshot: worst `posterior_z_sd` "
+        f"**{worst_z}** where a calibrated posterior sits near 1.0, SBC KS p_min "
+        f"**{worst:.3g}**, coverage MAE **{mae:.3f}**. The posterior narrowed far "
+        "more than its accuracy earned, so it is confidently wrong rather than "
+        "uninformative. "
+        + (
+            f"{len(dead)} of {len(names)} parameters still explain no variance "
+            f"({', '.join(f'`{d}`' for d in dead)}). "
+            if dead
+            else ""
+        )
+        + "Run 3's posterior was uninformative and honest; this one is partly "
+        "informative and overconfident. Neither supports inference.\n>\n"
+    )
 
 
 PLANNERS: Mapping[str, Any] = {
