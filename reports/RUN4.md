@@ -305,6 +305,34 @@ resting on a transferred ratio, not a comfortable one.
 * **> 12.0 s/step** — T6 will truncate. The withholding rule below applies and
   is invoked as written, not renegotiated against how the number looks.
 
+### Outcome — measured, all six stages
+
+The check fired in the first band and the run completed all 14,600 steps. No
+stage was truncated and the withholding rule below was not invoked.
+
+| stage | predicted s/step | measured | stage h |
+| --- | --- | --- | --- |
+| T1_measured_founding | — | 10.04 | 11.16 |
+| T2_calibration | — | 9.44 | 1.57 |
+| T3_population_prior | — | 9.50 | 2.11 |
+| T4_simulator | — | 13.24 | 18.39 |
+| T5_measured_return | 10.08 (run 3's 1.004 × T1) | **9.43** | 7.86 |
+| T6_individual | 10.04 (T1's rate) | **3.38** | 1.02 |
+
+**Total 42.2 h against the 46 h limit — 3.78 h of margin.**
+
+T5 landed 6% under its prediction, so transferring run 3's stage-shape ratio was
+sound and pricing it at T4's rate would have been an error of 3.6 h.
+
+T6 is the one that was extrapolated with no precedent, and the extrapolation was
+wrong by 3× — 3.38 s/step against 10.04 predicted. The direction was safe but the
+reasoning was thin: T6 freezes the population weights and runs with
+`lambda_perturb: 0` and `lambda_posterior: 0`, so it backpropagates into the
+person effect alone. Charging it T1's full loss set ignored its own config, which
+was readable in advance. **The margin was never as thin as this file said.** It
+is recorded that way because a projection that only ever gets corrected in the
+direction of relief teaches nothing the next time one is tight.
+
 **It degrades, it does not crash.** Two checks, at different granularities:
 
 * per step, inside `run_stage` — on the deadline it prints
