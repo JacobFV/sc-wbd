@@ -342,6 +342,40 @@ def split_fingerprint(ds, split: Mapping[str, Sequence[int]]) -> dict[str, Any]:
     }
 
 
+def _headline_verdict(
+    arm: str,
+    beaten_by: Sequence[str],
+    inconclusive: Sequence[str],
+    ranking: Sequence[tuple[str, float]],
+) -> str:
+    """The one-line result, stating what was NOT shown as well as what was.
+
+    Three cases, and the middle one is the one that used to be reported as the
+    first: a model can be beaten by nobody and beat nobody. Run 3 beat every
+    baseline with every interval excluding zero; run 4 is separated from none of
+    the two autoregressive arms. Both produced "No baseline beats <arm>" from the
+    old branch, which is the flattering half of the second.
+    """
+    if beaten_by:
+        return (
+            f"{arm} is beaten by " + ", ".join(sorted(beaten_by)) + " on the paired "
+            "participant-clustered 95% interval of the per-window NLL difference"
+        )
+    others = [n for n, _ in ranking if n != arm]
+    separated = [n for n in others if n not in set(inconclusive)]
+    if inconclusive:
+        return (
+            f"No baseline beats {arm}, and {arm} is not shown to beat "
+            + ", ".join(sorted(inconclusive))
+            + f" ({len(separated)} of {len(others)} comparators separated) on the paired "
+            "participant-clustered 95% interval of the per-window NLL difference"
+        )
+    return (
+        f"{arm} beats every comparator ({len(others)} of {len(others)}) on the paired "
+        "participant-clustered 95% interval of the per-window NLL difference"
+    )
+
+
 def real_eeg_holdout(
     trainer,
     *,
@@ -646,13 +680,15 @@ def real_eeg_holdout(
         # branches -- and `verdict` is the single most quoted string on the
         # public model card, so a run-2 evaluation would have announced its
         # result under the run-1 name in the most visible place available.
-        "verdict": (
-            f"{_designation(trainer.cfg)} is beaten by "
-            + ", ".join(beaten_by)
-            + " on the paired participant-clustered 95% interval of the per-window NLL difference"
-            if beaten_by
-            else f"No baseline beats {_designation(trainer.cfg)} on the paired "
-            "participant-clustered 95% interval of the per-window NLL difference"
+        # Derived, and it must state BOTH halves. "No baseline beats X" is true
+        # whenever `beaten_by` is empty -- including when X beats nothing either,
+        # which is run 4's case against `ar16` and `var4`. This string is the most
+        # quoted line on the public model card, and on its own it reads as a win
+        # while the table two rows below says `excludes zero: False`. Naming the
+        # inconclusive arms in the verdict itself is the difference between a
+        # reader having to check and a reader being told.
+        "verdict": _headline_verdict(
+            _designation(trainer.cfg), beaten_by, inconclusive, ranking
         ),
         "interpretation": (
             "The verdict is the PAIRED interval, not the ranking: two overlapping marginal "
