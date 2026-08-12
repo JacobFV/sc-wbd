@@ -33,6 +33,7 @@ here and the entries below are the detail.
 | ISSUE-014 | closed 2026-08-09 for run 4 | the split policy is versioned and declared per run; run 4 takes `stable_hash_v2` (0 of 108 move), runs 1-3 stay pinned to `shuffle_slice_v1` (28 move, 6 into test), and `--quick` refuses an order-dependent policy |
 | ISSUE-015 | closed 2026-08-09 | ~20 prose sites stated DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6×; rewritten, rebuilt and republished |
 | ISSUE-016 | **open — measured over a full run; remedy deferred to run 5 by design** | the measured BOLD likelihood degrades during training. Not a defect in the BOLD path: the SHARED TRUNK moves under the head, driven by the 96% of gradient that is not BOLD (`ds002336_real` is 4.13% of the mixture, outvoted 23.2:1). Arm D's pre-registered rule relaunched as configured and run 4 completed 14,600 steps: `real_bold_nll` **1.99 → 36,472**, a factor of ~18,000, swinging four orders of magnitude within a stage and NOT repaired by T5's measured return. Run 4 claims nothing about fMRI; the remedy is in `reports/RUN5_DESIGN.md` |
+| ISSUE-017 | **open — measured 2026-08-12, run 4** | the individualiser applies essentially nothing on a split built to let it apply something. `T6_individual` ran its full 1,200 steps; the applied person effect has between-participant spread **7.06e-4** against the model's own prior scale of **0.1059** — **0.67%** — and 30 of 75 scored participants have a person-effect row of exactly zero. `session_individualisation`'s pre-registered falsifier is met, so **individualisation is UNSUPPORTED for SC-WBD-004**. This is a measurement, not the unmeasurability runs 1–3 reported |
 
 ---
 
@@ -1864,3 +1865,80 @@ sufficient to destroy a haemodynamic likelihood over a full curriculum, not just
 over the 400 steps that first showed it. ISSUE-008's fix is real and this is what
 it revealed. The remedy — reweighting, a separate optimiser for the BOLD path, or
 a decoupled trunk — belongs to run 5 and is specified in `reports/RUN5_DESIGN.md`.
+
+---
+
+## ISSUE-017 — the individualiser applies essentially nothing, measured on a split built for it
+
+**Status:** open. Measured 2026-08-12 from `checkpoints/scwbd-004/last.pt` and
+`reports/training/evaluation_run4.json` → `session_individualisation`.
+**Severity:** high for the third landing-page capability ("fine-tuneable for
+personalized neurotechnology"), zero for the forecast claims. It makes
+`session_individualisation` unsupported and nothing else.
+**Found:** by running the block for the first time. Three defects had to be
+fixed before it could produce a number at all — see the entry below.
+
+### What was measured
+
+`T6_individual` ran its full 1,200 steps. Sleep-EDFx's session split puts the
+same 75 people on both sides, so a person effect is measurable here and nowhere
+else in this project.
+
+| quantity | value |
+|---|---|
+| held-out second-night NLL | 2.0436 [2.0049, 2.0896] |
+| participants / windows | 75 / 1,500 |
+| between-participant spread of the applied theta shift | **7.06e-4** |
+| the model's own prior scale for that effect (`sd_person`) | **0.1059** |
+| ratio | **0.67%** |
+| scored participants with an exactly-zero person effect | **30 of 75** |
+
+**The individualiser moved theta by 0.7% of the scale it allocated for the
+effect.** `session_individualisation`'s own falsifier, written before the run:
+*"`theta_shift.spread_pooled` at or near zero means the individualizer applied
+nothing even on a split built to let it apply something, and the third
+capability is unsupported."* It is met and is applied as written.
+
+### This is not what runs 1–3 reported
+
+Runs 1–3 said individualisation was **unmeasurable**, because a
+participant-disjoint holdout gives every scored person a `z_person` row of
+exactly zero. That is a statement about the split. Run 4 built the session
+split, trained the effect, repaired the evaluation until it ran, and got a
+number. **The capability is now measured and unsupported**, which is a stronger
+and more useful claim than "we cannot tell".
+
+### The held-out NLL is not evidence either way
+
+2.0436 is a real held-out score and it does not bear on this issue. What
+separates an individualised model from the population model here is the 7e-4
+shift, not the NLL — a model with a zero person effect would produce
+approximately the same number. It is reported because withholding a measured
+value is its own distortion, and labelled so it is not read as support.
+
+### What is NOT the cause
+
+`_alpha_raw` is exactly zero in the checkpoint. That is arithmetic, not a stuck
+gate: it is the **group** effect, `n_groups` is 1, and
+`alpha = raw - (w * raw).sum(0)` is identically zero for a single group.
+Checked before reporting.
+
+### What would discharge it
+
+`theta_shift.spread_over_prior_sd` above 0.01 on a run whose
+`session_individualisation` block is `ok`, with the held-out session NLL
+reported beside it. The candidate causes are untested and are stated as
+candidates: T6's learning rate against `sd_person`'s scale, 1,200 steps being
+too few to move 75 person rows, or the person effect entering a trunk that T6
+freezes and therefore having little to modulate. **None of these has been
+measured.** ISSUE-012's shape is a warning here — the obvious cause was the
+learning rate and the obvious fix overshot.
+
+### Guard
+
+`tests/foundation/test_individualisation_reaches_the_report.py` pins that the
+block is reached at all, and
+`tests/release/test_the_card_reads_the_posterior_off_the_artifact.py` pins that
+the card reports it as unsupported and refuses when the shift cannot be put on a
+scale. Neither guards the *finding*; a training-dynamics result of this kind has
+no unit test, which is the same position ISSUE-016 is in.
