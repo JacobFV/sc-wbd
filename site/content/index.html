@@ -1,5 +1,5 @@
 title: SC-WBD — Integrated whole-brain modelling across modalities, scales and dynamics
-description: A foundation model for one brain's dynamics across EEG, MEG, fMRI and stimulation — 414 parcels, structured per-region state, multiple clocks, individualized head model. One trained model now beats its statistical baselines on a held-out log score, narrowly; this site says exactly how narrowly.
+description: A foundation model for one brain's dynamics across EEG, MEG, fMRI and stimulation — 414 parcels, structured per-region state, multiple clocks, individualized head model. One trained model beat its statistical baselines on a held-out log score, narrowly; its successor does not reproduce that separation, and measured three capabilities it could not previously test. This site says exactly what each run did and did not show.
 nav: index
 heading: SC-WBD: an integrated whole-brain foundation model across modalities, scales and dynamics
 standfirst:
@@ -369,8 +369,48 @@ or download.</p>
   half of it.</td>
 </tr>
 <tr>
+  <td><strong>scwbd-004</strong></td>
+  <td><span class="chip fail">no fMRI claim</span>
+      <span class="chip fail">posterior overconfident</span>
+      <span class="chip fail">individualisation unsupported</span></td>
+  <td>The same architecture and corpus as 003, with two structural repairs and a
+  new stage. It completed all <strong>14,600 steps</strong> in 42.2 hours, and
+  its value is three measurements that 003 could not make — each of which needed
+  an instrument built before it could return an answer, and each of which came
+  back negative.
+  <strong>The fMRI likelihood works and loses.</strong> 003's measured BOLD path
+  never integrated the Balloon–Windkessel ODE, so its haemodynamic parameters
+  were inert. 004's integrates it, and the likelihood then <em>degrades</em>
+  through training: <code>real_bold_nll</code> runs <strong>1.99 → 36,472</strong>.
+  The cause is measured, not guessed: the sole haemodynamic corpus is
+  <strong>4.13%</strong> of the source mixture and is outvoted
+  <strong>23.2 : 1</strong>, so the shared trunk converges on what the electrical
+  sources want and the BOLD head reads that same state. Freezing the five Balloon
+  parameters changes nothing; freezing the trunk makes the likelihood improve.
+  <strong>The posterior now reads its conditioning, and is not calibrated.</strong>
+  003's returned the prior. A learning-rate repair fixed that — the coupling-gain
+  posterior is eight times narrower than the prior — and overshot: its
+  standardised residual spread is <strong>59.25</strong> where calibrated is near
+  1.0. Uninformative-but-honest became partly-informative-and-overconfident.
+  Neither supports inference, and the claim publishes as <em>unsupported</em>
+  where 003's identical claim published as <em>partial</em>.
+  <strong>Individualisation is measured for the first time, and unsupported.</strong>
+  Every earlier run called it <em>unmeasurable</em>, which is a fact about a
+  participant-disjoint split rather than about the model. 004 adds a session
+  split over the 75 sleep-corpus participants recorded twice, holds the people
+  fixed and scores the second night. The fitted person effect moves theta by
+  <strong>0.67%</strong> of the scale the model allocated for it, and 30 of the
+  75 scored participants carry an effect of exactly zero.[[note: The held-out
+  second-night score is 2.0436 [2.0049, 2.0896] over 1,500 windows. It is
+  reported because withholding a measured number is its own distortion, and it is
+  not evidence either way: a model with no person effect would score about the
+  same. What separates an individualised model from the population model here is
+  the shift, not the score.]]</td>
+</tr>
+<tr>
   <td><strong>A model that beats its baselines</strong></td>
-  <td><span class="chip pass">one, narrowly</span></td>
+  <td><span class="chip pass">one, narrowly</span>
+      <span class="chip fail">not reproduced by its successor</span></td>
   <td>This row read <em>does not exist</em> until 2026-08-09, and scwbd-003
   changed it: on 27 held-out participants it beats all five distinct comparators
   on the held-out log score, every paired interval excluding zero. The margin is
@@ -380,7 +420,18 @@ or download.</p>
   improves it under leave-one-out, its haemodynamic parameters never received a
   gradient, and its amortised posterior explains no variance in the parameters it
   infers. A better log score on 27 people is not a validated model of anyone's
-  brain, and nothing here should be read as a claim that we have one.</td>
+  brain, and nothing here should be read as a claim that we have one.
+  <strong>scwbd-004 does not reproduce the separation.</strong> On its own
+  holdout of 25 participants no baseline beats it and it beats neither the
+  16th-order AR (<code>-0.0100 [-0.0480, +0.0144]</code>) nor the VAR(4)
+  (<code>-0.0127 [-0.0561, +0.0146]</code>) — both intervals contain zero.[[note:
+  The two runs are not scored on the same people. ISSUE-014 replaced the split
+  policy between them, so 003 scored 27 participants under
+  <code>shuffle_slice_v1</code> and 004 scores 25 under
+  <code>stable_hash_v2</code>, with the baseline protocol revised as well. That
+  makes this a failure to reproduce on a different holdout, not a measured
+  regression on the same one. Both readings are worse than the flattering one,
+  and neither is available from a single number.]]</td>
 </tr>
 </tbody>
 </table>
