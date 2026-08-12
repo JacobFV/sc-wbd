@@ -2534,7 +2534,7 @@ What the six other sources changed is the model being scored, not the test set.
 
 \textbf{SC-WBD-004 completed all 14{,}600 steps on 2026-08-12. The haemodynamic
 finding below is measured over the full curriculum. The run's held-out scores are
-a separate matter and no number from them appears in this subsection.}
+reported in Section 11.11 and no number from them appears in this subsection.}
 
 The fourth gate's model carried a defect its own report disclosed: the measured
 BOLD path never integrated the Balloon--Windkessel ODE, so the five haemodynamic
@@ -2606,6 +2606,72 @@ second is cheaper and already half-demonstrated by the frozen-trunk arm; it
 yields a usable read-out and, honestly described, is not fusion. The first tests
 the thesis of Section 0.2 and may fail. Their difference is a claim, not a
 hyperparameter.
+
+\subsection{11.11 Fifth-Gate Results: Three Measurements, Three Negatives}
+
+The fifth gate completed all 14{,}600 steps of its curriculum in 42.2 hours. Its
+held-out scores answer three questions the fourth gate could not, and all three
+answers are negative. They are reported here in full because a gate that
+withholds its negative results is not a gate.
+
+\textbf{The electrical forecast no longer separates from its autoregressive
+baselines.} On 1{,}000 held-out windows from 25 participants the model scores
+\(2.0244\) nats per channel per sample against \(2.0345\) for a pooled AR(16) and
+\(2.0371\) for a VAR(4). No baseline beats it. The paired participant-clustered
+intervals against those two include zero---\(-0.0100\ [-0.0480, +0.0144]\) and
+\(-0.0127\ [-0.0561, +0.0146]\)---so on this holdout the model is neither better
+nor worse than a linear autoregression. The fourth gate separated from both
+(\(-0.0391\ [-0.0696,-0.0152]\) and \(-0.0377\ [-0.0669,-0.0169]\)). The two
+figures are \emph{not} directly comparable: the split policy changed between
+gates, so the fourth scored 27 participants under one policy and the fifth scores
+25 under another, with the baseline protocol also revised. What can be stated
+without qualification is that the fifth gate does not reproduce the fourth's
+separation on the fifth gate's own holdout.
+
+\textbf{The amortised posterior reads its conditioning and is not calibrated.}
+The fourth gate's posterior ignored its conditioning entirely: every posterior
+standard deviation sat within 3\% of the prior's and its mean moved by 9\% of a
+prior standard deviation as the data changed. A learning-rate repair, chosen by a
+four-seed sweep before launch, was expected to fix that. It did: the fifth gate's
+coupling-gain posterior is eight times narrower than the prior and its mean now
+moves by \(1.10\) prior standard deviations with the data. It also overshot. The
+standardised residual has a spread of \(59.25\) where a calibrated posterior sits
+near \(1.0\); simulation-based calibration returns a Kolmogorov--Smirnov
+\(p\)-value of \(1.0 \times 10^{-147}\); expected-coverage error is \(0.203\)
+against the fourth gate's \(0.021\). Four of six parameters still explain no
+variance. \textbf{Uninformative-but-honest has become
+partly-informative-and-overconfident, and neither state supports inference.} The
+one-stage sweep predicted a coupling-gain \(R^2\) of \(0.674\)--\(0.766\) and the
+full curriculum returned \(0.284\); why is unmeasured, and the natural hypothesis
+---that the two measured-return stages give part of it back---is recorded as a
+hypothesis with the single experiment that would settle it.
+
+\textbf{Individualisation is measured for the first time, and unsupported.} Every
+previous gate reported the person effect as \emph{unmeasurable}, which is a fact
+about a participant-disjoint split rather than about the model: on such a split
+no held-out person has a fitted effect and the quantity is identically zero by
+construction. The fifth gate adds a session split over the 75 sleep-corpus
+participants recorded on two nights, holds the people fixed, and scores the
+second night. Held-out session likelihood is \(2.0436\ [2.0049, 2.0896]\) over
+1{,}500 windows. That number is not the finding. The applied per-person shift has
+a between-participant spread of \(7.06\times10^{-4}\) against the model's own
+prior scale for that effect of \(0.1059\)---\(0.67\%\)---and 30 of the 75 scored
+participants carry a person effect of exactly zero after 1{,}200 steps of the
+individualising stage. The evaluation's own pre-registered falsifier is that a
+shift at or near zero means the individualiser applied nothing on a split built
+to let it apply something. It is met. The held-out likelihood is reported
+alongside because withholding a measured number is its own distortion, and
+labelled because a model with no person effect would score approximately the
+same.
+
+\textbf{What the three have in common} is that each required an instrument to
+exist before it could return a negative. The haemodynamic result needed a clock
+that integrates; the calibration result needed a posterior that reads its
+conditioning; the individualisation result needed a split that admits a person
+effect and an evaluation that reaches it. The fourth gate could not have produced
+any of them, and its silence on all three read as absence rather than as
+ignorance. That is the argument for building the instrument before claiming the
+capability, and it is the fifth gate's contribution.
 
 \section{12. Confidence-Calibrated Development Horizons}
 
