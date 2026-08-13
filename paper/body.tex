@@ -2664,7 +2664,28 @@ alongside because withholding a measured number is its own distortion, and
 labelled because a model with no person effect would score approximately the
 same.
 
-\textbf{What the three have in common} is that each required an instrument to
+\textbf{A fourth measurement attributes the forecast result, and contradicts a
+registered prediction.} Eleven leave-one-source-out arms, each retrained without
+one source family and scored on the same held-out participants as the headline,
+put \textbf{two of ten families} on the contributing side. The 64-channel EEG
+corpus accounts for \(+0.0144\) nats---fourteen times the next contributor, and
+larger than the entire \(0.0100\) margin by which the model fails to separate
+from a 16th-order autoregression. \textbf{The forecast result rests on the
+majority corpus rather than on fusion.} The haemodynamic corpus came back at
+\(+0.0010\), on the contributing side, against a prediction registered before the
+arms ran that it would be close to free: its own likelihood diverges by a factor
+of \(1.8\times10^{4}\) while its gradient measurably helps the shared state
+forecast electrical data. A source can carry information into a representation
+and fail to be predicted by it, and those two facts were previously conflated
+under one caveat. The simulator family reverses sign between scorings---\(+0.0366\)
+against simulated data, \(-0.0034\) against measured---so simulator pretraining is
+the largest single contributor to fitting the simulator and a mild liability for
+predicting real recordings, a distinction the fourth gate's ablation could not
+draw because it scored only the first. One arm per family and no seed
+replication: the signs and the ordering are the result, the deltas are not effect
+sizes.
+
+\textbf{What the four have in common} is that each required an instrument to
 exist before it could return a negative. The haemodynamic result needed a clock
 that integrates; the calibration result needed a posterior that reads its
 conditioning; the individualisation result needed a split that admits a person

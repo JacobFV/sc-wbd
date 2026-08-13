@@ -74,7 +74,16 @@ def test_the_004_row_answers_it_once_the_arms_exist(path: Path):
             "carries source_ablation.measured"
         )
     html = _flat(path.read_text())
-    i = html.find("scwbd-004")
+    # Anchor on the ROW CELL, not on the first mention. `scwbd-004` appears four
+    # times in this page and the first is the "Latest model on Hugging Face" link
+    # ~23,000 characters above the results table, so a window from there never
+    # reaches the row. This test failed against a page that already answered the
+    # question, which is the more dangerous direction of wrong: a guard that
+    # cries wolf gets disabled.
+    cell = '<td><strong><a href="https://huggingface.co/jacob-valdez/scwbd-004">scwbd-004</a></strong></td>'
+    i = html.find(cell)
+    if i < 0:  # the row may not be a link in every rendering
+        i = html.rfind("scwbd-004")
     assert i >= 0, f"{path.name} carries no scwbd-004 row at all"
     row = html[i : i + 12000]
     assert any(k in row for k in ("leave-one-source", "leave-one-out", "ablation")), (

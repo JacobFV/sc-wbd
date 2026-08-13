@@ -409,7 +409,30 @@ or download.</p>
   reported because withholding a measured number is its own distortion, and it is
   not evidence either way: a model with no person effect would score about the
   same. What separates an individualised model from the population model here is
-  the shift, not the score.]]</td>
+  the shift, not the score.]]
+  <strong>And the leave-one-out finally asks the right question.</strong> The row
+  above says testing whether measured data helps <em>measured</em> prediction was
+  the next run's job. It is done: eleven arms, each retrained without one source
+  family and scored on the same held-out participants the headline rests on.
+  <strong>Two of ten families earn their place</strong> &mdash; the 64-channel EEG
+  corpus at <strong>+0.0144</strong>, and, unexpectedly, the fMRI corpus at
+  +0.0010. The rest show negative transfer, the largest being whole-night
+  polysomnography at &minus;0.0079 on a holdout made of 64-channel EEG.
+  <strong>The forecast result is the majority source's.</strong> At +0.0144 that
+  one corpus is fourteen times the next contributor and larger than the whole
+  0.0100 margin by which this model fails to separate from a 16th-order AR, so
+  what the headline measures is one corpus rather than fusion.[[note: The fMRI arm
+  is the surprise and it cuts against a prediction written down before the run:
+  its own likelihood diverged by a factor of 18,000 while its gradient was helping
+  the shared state forecast measured EEG. A source can carry information into a
+  representation and still fail to be predicted by it. The simulator arm reverses
+  sign between the two scorings &mdash; +0.0366 on simulated data, &minus;0.0034 on
+  measured &mdash; so simulator pretraining is the largest single contributor to
+  fitting the simulator and a mild liability for predicting real brains. Run 3's
+  ablation, scored only against the simulator, reported the first half and could
+  not have seen the second. One arm per family and no seed replication, so the
+  signs and the ordering are the result; the deltas are not effect sizes and
+  should not be quoted as any.]]</td>
 </tr>
 <tr>
   <td><strong>A model that beats its baselines</strong></td>
