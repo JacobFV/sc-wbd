@@ -26,6 +26,25 @@ TWO THINGS ARE OUTSTANDING, in this order:
      ablation paragraph up automatically (`_run4_ablation_note`, derived); the
      site row and paper §11.11 do not.
 
+  ORDER MATTERS, and the obvious order is the slow one. `release-004-evaluate`
+  is 30-60 min on the GPU; the RUN4.md, site and paper write-ups are CPU-only
+  and independent of it. Start the evaluation FIRST, write while it runs, and
+  publish once at the end:
+
+      1. ablation lands -> read the arms
+      2. START `make release-004-evaluate` in the background (GPU, long)
+      3. WHILE IT RUNS: RUN4.md ablation section; site scwbd-004 row +
+         `make site` + `site-stage` + `site-deploy`; paper 11.11 sentence +
+         `make paper`. None of these touch the GPU.
+      4. evaluation lands -> `make release-004` (the card picks up BOTH the
+         regenerated verdict AND the ablation paragraph in one push)
+      5. `make release-004-card-diff` -> expect CARD IS CURRENT
+      6. `make test`
+
+  Doing 3 after 4 serialises about 45 minutes for no reason. Doing 2 before the
+  ablation exits is the one thing that is forbidden -- both cap CUDA at 80 GB on
+  a 121.6 GB unified pool.
+
   2. **Re-run `make release-004-evaluate`, then `make release-004` and
      `make release-004-card-diff`.** The published card's headline currently
      reads "No baseline beats scwbd-004" and stops there. That string is
