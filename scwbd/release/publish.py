@@ -1899,6 +1899,12 @@ def plan_run4(
     _root = repo_root or REPO_ROOT
     posterior_note = _run4_posterior_note(_root / evaluation)
     individualisation_note = _run4_individualisation_note(_root / evaluation)
+    # The ablation lives in its OWN artifact -- `make release-004-ablate` writes
+    # evaluation_run4_ablation.json, not the file above -- so it is looked up
+    # beside the evaluation rather than inside it.
+    ablation_note = _run4_ablation_note(
+        (_root / evaluation).with_name("evaluation_run4_ablation.json")
+    )
 
     limitation = (
         "> ## No fMRI claim may be read off this model, and this time we know why\n>\n"
@@ -1932,6 +1938,7 @@ def plan_run4(
         "one.\n>\n"
         f"{posterior_note}"
         f"{individualisation_note}"
+        f"{ablation_note}"
         "> The EEG lead field remains an **analytic sphere**, not a head model, "
         "so no source-localisation claim is available.\n\n"
     )
@@ -2461,6 +2468,86 @@ def _run4_individualisation_note(eval_path: Path) -> str:
             "per-person behaviour.\n>\n"
         )
     return head + body
+
+
+def _run4_ablation_note(eval_path: Path) -> str:
+    """Leave-one-source-out, read off the artifact.
+
+    Reports the MEASURED-holdout arm as the result and the simulated arm as a
+    comparability figure, in that order, because they answer different questions
+    and run 3 published only the second. Scored on `_sim_val_nll` alone the
+    ablation asks "does dropping this measured source help the model fit the
+    simulator?", and 200 steps of retraining answer yes by construction: run 3
+    returned negative transfer on nine of ten families and the direction was
+    predictable before it ran.
+
+    A missing block is an explicit refusal. An ablation that was not run is not
+    an ablation that found nothing.
+    """
+    import json as _json
+
+    if not Path(eval_path).is_file():
+        return (
+            "> **No leave-one-source-out result is available.** The ablation "
+            f"artifact `{Path(eval_path).name}` is absent, so no claim about which "
+            "sources carry this model's performance may be read off it.\n>\n"
+        )
+    sa = (_json.loads(Path(eval_path).read_text()).get("source_ablation") or {})
+    if not sa:
+        return (
+            "> **No leave-one-source-out result is available.** The evaluation "
+            "carries no `source_ablation` block. Which sources earn their place "
+            "in this model is UNMEASURED, not measured-and-neutral.\n>\n"
+        )
+
+    measured = sa.get("measured") or {}
+    steps = sa.get("steps_per_arm")
+    sim_neg = list(sa.get("negative_transfer") or [])
+    n_fam = len(list(sa.get("families") or []))
+
+    if not measured:
+        return (
+            "> **The leave-one-source-out result here is not evidence about the "
+            "sources.** Every arm was scored on the SIMULATED validation set, so "
+            "the question asked was whether dropping a measured source helps the "
+            "model fit the simulator -- and during the "
+            f"{steps or 'retraining'} steps each arm retrains, every measured "
+            "gradient pulls parameters away from exactly that. "
+            f"{len(sim_neg)} of {n_fam} families duly came back as negative "
+            "transfer. That is the design, not a finding. No attribution claim "
+            "may be read off it.\n>\n"
+        )
+
+    contributed = list(measured.get("contributed") or [])
+    neg = list(measured.get("negative_transfer") or [])
+    deltas = {
+        k[len("delta_") :]: v for k, v in measured.items() if k.startswith("delta_")
+    }
+    ranked = sorted(deltas.items(), key=lambda kv: -float(kv[1]))
+    top = ", ".join(f"`{k}` {float(v):+.4f}" for k, v in ranked[:3])
+
+    head = (
+        "> ## Which sources earn their place: leave-one-source-out on the "
+        "MEASURED holdout\n>\n"
+        "> Each arm drops one source family, retrains "
+        f"{steps or 'briefly'} steps, and is scored on the same held-out "
+        "participants the headline rests on. Positive delta means removing the "
+        "family made measured prediction WORSE, i.e. the family contributed.\n>\n"
+    )
+    body = (
+        f"> **{len(contributed)} of {len(deltas)} families contributed** on the "
+        f"measured holdout; {len(neg)} showed negative transfer"
+        + (f" ({', '.join('`' + n + '`' for n in neg)})" if neg else "")
+        + f". Largest positive deltas: {top}.\n>\n"
+    )
+    caveat = (
+        "> The simulated-holdout arm of the same run is retained for "
+        f"comparability with earlier runs and is NOT the result: {len(sim_neg)} of "
+        f"{n_fam} families come back as negative transfer there, which is what "
+        "scoring a measured source against the simulator produces by "
+        "construction.\n>\n"
+    )
+    return head + body + caveat
 
 
 # The entry point is LAST on purpose: anything defined below it is dead when

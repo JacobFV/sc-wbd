@@ -169,3 +169,60 @@ def test_the_ratio_is_derived_when_only_the_prior_scale_is_present(tmp_path):
     note = _run4_individualisation_note(art)
     assert "0.67%" in note, "the ratio was not derived from prior_sd_person"
     assert "No individualisation or personalisation claim" in note
+
+
+# ----------------------------------------------------------------------
+# leave-one-source-out: the measured arm is the result, the simulated one is not
+# ----------------------------------------------------------------------
+from scwbd.release.publish import _run4_ablation_note  # noqa: E402
+
+RUN3_ABL = ROOT / "reports/training/evaluation_run3_ablation.json"
+
+
+def test_a_missing_ablation_says_unmeasured_not_neutral():
+    note = _run4_ablation_note(ROOT / "reports/training/no_such_ablation.json")
+    assert "No leave-one-source-out result is available" in note
+    assert "may be read off it" in note
+
+
+@pytest.mark.skipif(not RUN3_ABL.is_file(), reason="run 3 ablation absent")
+def test_a_simulated_only_ablation_is_refused_as_evidence():
+    """Run 3's shape: every arm scored on the simulator.
+
+    Nine of ten families came back as negative transfer, and that is what
+    scoring a measured source against the simulator produces during 200 steps of
+    retraining. The card must not present it as an attribution result.
+    """
+    note = _run4_ablation_note(RUN3_ABL)
+    assert "not evidence about the sources" in note
+    assert "That is the design, not a finding" in note
+    assert "No attribution claim" in note
+
+
+def test_a_measured_ablation_reports_contributors_and_negative_transfer(tmp_path):
+    art = tmp_path / "abl.json"
+    art.write_text(
+        json.dumps(
+            {
+                "source_ablation": {
+                    "steps_per_arm": 200,
+                    "families": ["a", "b", "c"],
+                    "negative_transfer": ["a", "b", "c"],
+                    "measured": {
+                        "delta_a": 0.0210,
+                        "delta_b": -0.0030,
+                        "delta_c": 0.0008,
+                        "contributed": ["a", "c"],
+                        "negative_transfer": ["b"],
+                    },
+                }
+            }
+        )
+    )
+    note = _run4_ablation_note(art)
+    assert "MEASURED holdout" in note
+    assert "2 of 3 families contributed" in note
+    assert "`b`" in note, "the negative-transfer family is not named"
+    assert "+0.0210" in note, "the largest contributor's delta is not quoted"
+    assert "3 of 3" in note, "the simulated arm's count is not carried as the caveat"
+    assert "is NOT the result" in note
