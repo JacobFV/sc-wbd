@@ -376,12 +376,24 @@ release-004-evaluate: ## Score the 004 checkpoint on the real-EEG holdout
 	  --out reports/training/evaluation_run4.json
 
 .PHONY: release-004-ablate
-release-004-ablate: ## Leave-one-source-out, scored on the MEASURED holdout as well (~5 HOURS)
-	@# RUNTIME: run 3's eleven arms took 284 minutes -- 4.7 hours -- and nothing
-	@# said so anywhere, so it reads as hung. It retrains one arm per source
-	@# family at 200 steps each on the live trainer. Measured from
-	@# reports/training/scwbd-003_ablation_train.jsonl, whose eleven leaked rows
-	@# span 1786275183 to 1786292237.
+release-004-ablate: ## Leave-one-source-out, scored on the MEASURED holdout as well (~7 HOURS)
+	@# RUNTIME: run 3's eleven arms took 284 minutes, and quoting that number for
+	@# run 4 is WRONG BY 40%. It retrains one arm per source family at 200 steps
+	@# each on the live trainer, so it scales with the run's own step time --
+	@# and run 4's T1 is 10.04 s/step against run 3's 7.16 because the BOLD path
+	@# now rolls 250 neural steps per frame instead of 8.
+	@#
+	@#     estimate = <that run's ablation minutes> x (this run's s/step / that run's)
+	@#     284 x (10.04 / 7.16) = 398 min, plus ~16 for the measured-holdout
+	@#     scoring run 3 did not do = ~7 HOURS.
+	@#
+	@# I quoted the bare 284 twice and was wrong twice. It is the same error the
+	@# run-4 wall-clock projection made and reports/RUN4.md corrects: a rate
+	@# transferred from another run without adjusting for what changed between
+	@# them. Scale it.
+	@#
+	@# Run 3's figure is from reports/training/scwbd-003_ablation_train.jsonl,
+	@# whose eleven leaked rows span 1786275183 to 1786292237.
 	@#
 	@# It emits NO progress output between the checkpoint load and the final
 	@# write, and it writes the plain evaluate_model report FIRST -- so an output
