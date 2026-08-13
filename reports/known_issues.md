@@ -1895,6 +1895,41 @@ produces a complete, well-formed, entirely unrepresentative mixture report, and
 nothing about the file says which it is except the `run_name` field — which is
 exactly why `run_name` is now the first thing to read off any of these files.
 
+### The ablation contradicts half of this entry's framing — 2026-08-13
+
+This entry and the model card both say `ds002336_real` "contributed a
+**gradient**. It did not thereby acquire **information**, and in this run the two
+move in opposite directions." The leave-one-source-out arm measured that
+directly, and it is **wrong in one direction**.
+
+Removing `ds002336_real` and retraining made **measured EEG prediction worse** by
+**+0.0010** nats. It is one of only two families out of ten on the contributing
+side. Its gradient was carrying information *into the shared trunk*, and helping
+the model forecast real electrical data, during the same run in which its own
+likelihood diverged by a factor of 18,000.
+
+**So the two facts are compatible and were being stated as one.** A source can
+carry information into a representation and simultaneously fail to be predicted
+back out through its own observation head. What ISSUE-016 measures is the second;
+"it did not acquire information" claims the first, and the ablation says
+otherwise.
+
+**What does not change.** No fMRI claim is available from this model: a
+likelihood that runs 1.99 → 36,472 cannot support one, and +0.0010 on an EEG
+holdout is not an fMRI result. The imbalance account is untouched — arms B and C
+locate the cause in the trunk, and the trunk is precisely where the ablation says
+the information went.
+
+**What this weakens.** The rhetorical framing, not the finding. "Contributed a
+gradient, not information" was a clean sentence and it is measurably too strong.
+The honest version: *its gradient contributed information to the shared state and
+that state does not give it back through the BOLD head.*
+
+`+0.0010` is the second-smallest absolute delta in the table, there are no error
+bars — one arm per family, no seed replication — and the sign is the claim, not
+the magnitude. It is the weakest reading in the ablation and it is recorded
+because it points the wrong way for this entry rather than the right way.
+
 ### The full run — measured 2026-08-12
 
 Arm D's rule in `RUN4_LAUNCH_PLAN.md` §6 was applied without re-litigation and

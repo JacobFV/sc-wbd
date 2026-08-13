@@ -139,16 +139,36 @@ def test_the_card_distinguishes_gradient_from_information(CARD_SRC: str) -> None
     """`contributed_sources` is accurate and misleading at the same time.
 
     Run 3's card made this distinction and it is the sentence that stops a reader
-    inferring an fMRI capability from a source list. Run 4 needs it MORE, because
-    here the gradient and the information move in opposite directions.
+    inferring an fMRI capability from a source list.
+
+    This test used to require the card say the gradient and the information "move
+    in opposite directions". Run 4's leave-one-source-out MEASURED that and it is
+    false: removing ds002336_real made measured EEG prediction WORSE (+0.0010),
+    so the gradient did carry information -- into the shared state, not back out
+    through the BOLD head. Requiring the old phrasing would have pinned the card
+    to a claim its own ablation refutes, which is what the ISSUE-012 "UNKNOWN"
+    assertion in this file did before the run measured that too.
+
+    What must still hold is that a reader cannot infer an fMRI capability from
+    the source list.
     """
     assert "gradient" in CARD_SRC and "information" in CARD_SRC, (
-        "the card no longer separates 'contributed a gradient' from 'contributed "
-        "information'. ds002336_real did the first and not the second."
+        "the card no longer separates 'contributed a gradient' from whether that "
+        "gradient carried information. The source list alone invites the wrong "
+        "inference."
     )
-    assert "opposite directions" in CARD_SRC, (
-        "the card no longer says the two move in OPPOSITE directions in this run. "
-        "That is the part that is new in run 4 and it is the whole finding."
+    assert "opposite directions" not in CARD_SRC, (
+        "the card claims the gradient and the information move in opposite "
+        "directions. The ablation measured +0.0010 on the measured holdout, so "
+        "they do not."
+    )
+    assert "does not come back out through the BOLD head" in CARD_SRC, (
+        "the card no longer states WHERE the information went. 'It contributed a "
+        "gradient' without that is the pre-ablation framing."
+    )
+    assert "neither licenses an fMRI claim" in CARD_SRC, (
+        "the card no longer says that a contributing gradient still supports no "
+        "fMRI claim -- which is the point the measured +0.0010 makes easy to lose"
     )
 
 
