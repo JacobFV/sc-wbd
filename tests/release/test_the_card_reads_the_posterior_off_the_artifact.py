@@ -226,3 +226,54 @@ def test_a_measured_ablation_reports_contributors_and_negative_transfer(tmp_path
     assert "+0.0210" in note, "the largest contributor's delta is not quoted"
     assert "3 of 3" in note, "the simulated arm's count is not carried as the caveat"
     assert "is NOT the result" in note
+
+
+def test_largest_positive_deltas_lists_only_positives(tmp_path):
+    """Padding the list to three fills it with negatives and mislabels them.
+
+    Run 4 has two contributors. Taking `ranked[:3]` unconditionally put
+    `ds000117_behaviour -0.0031` under the heading "largest positive deltas",
+    which is a label contradicting its own number. Caught by rendering against
+    the real artifact rather than the synthetic fixture, which had three.
+    """
+    art = tmp_path / "abl.json"
+    art.write_text(
+        json.dumps(
+            {
+                "source_ablation": {
+                    "steps_per_arm": 200,
+                    "families": ["a", "b", "c", "d"],
+                    "negative_transfer": ["b"],
+                    "measured": {
+                        "delta_a": 0.0144,
+                        "delta_b": -0.0031,
+                        "delta_c": -0.0079,
+                        "delta_d": -0.0050,
+                        "contributed": ["a"],
+                        "negative_transfer": ["b", "c", "d"],
+                    },
+                }
+            }
+        )
+    )
+    note = _run4_ablation_note(art)
+    head, _, _ = note.partition("The simulated-holdout arm")
+    assert "+0.0144" in head
+    for neg in ("-0.0031", "-0.0079", "-0.0050"):
+        assert neg not in head.split("Largest positive deltas:")[-1], (
+            f"{neg} appears under 'largest positive deltas'"
+        )
+
+
+def test_the_simulated_caveat_does_not_overclaim(tmp_path):
+    """Run 3's simulated arm was 9/10 negative; run 4's is 5/10.
+
+    An earlier draft asserted the simulated metric produces negative transfer
+    "by construction". That is rhetoric run 4's own number does not support, and
+    a caveat that overstates its case is the kind a reader learns to discount.
+    """
+    note = _run4_ablation_note(ROOT / "reports/training/evaluation_run4_ablation.json")
+    if "simulated-holdout arm" not in note:
+        pytest.skip("no measured arm in the run-4 ablation artifact")
+    assert "by construction" not in note
+    assert "is not evidence about the source" in note

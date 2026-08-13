@@ -2523,8 +2523,14 @@ def _run4_ablation_note(eval_path: Path) -> str:
     deltas = {
         k[len("delta_") :]: v for k, v in measured.items() if k.startswith("delta_")
     }
-    ranked = sorted(deltas.items(), key=lambda kv: -float(kv[1]))
-    top = ", ".join(f"`{k}` {float(v):+.4f}" for k, v in ranked[:3])
+    # POSITIVE deltas only. Taking the top 3 unconditionally pads the list with
+    # negatives when fewer than three families contributed, and then labels them
+    # "largest positive deltas" -- run 4 has two contributors and the third slot
+    # was filled with -0.0031.
+    ranked = sorted(
+        ((k, float(v)) for k, v in deltas.items() if float(v) > 0), key=lambda kv: -kv[1]
+    )
+    top = ", ".join(f"`{k}` {v:+.4f}" for k, v in ranked[:3]) or "none"
 
     head = (
         "> ## Which sources earn their place: leave-one-source-out on the "
@@ -2540,12 +2546,17 @@ def _run4_ablation_note(eval_path: Path) -> str:
         + (f" ({', '.join('`' + n + '`' for n in neg)})" if neg else "")
         + f". Largest positive deltas: {top}.\n>\n"
     )
+    # State the simulated count; do NOT assert what it "must" be. Run 3 returned
+    # 9 of 10 negative there and the direction was structural. Run 4 returns 5 of
+    # 10, so a blanket "this is what the simulated metric produces by
+    # construction" would be rhetoric the number does not support.
     caveat = (
         "> The simulated-holdout arm of the same run is retained for "
         f"comparability with earlier runs and is NOT the result: {len(sim_neg)} of "
-        f"{n_fam} families come back as negative transfer there, which is what "
-        "scoring a measured source against the simulator produces by "
-        "construction.\n>\n"
+        f"{n_fam} families come back as negative transfer there. Scoring a "
+        "measured source against the simulator asks whether dropping it helps "
+        "the model fit the simulator, which is a different question from the one "
+        "above and is not evidence about the source.\n>\n"
     )
     return head + body + caveat
 
