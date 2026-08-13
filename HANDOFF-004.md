@@ -17,6 +17,15 @@ TWO THINGS ARE OUTSTANDING, in this order:
      verified live against it (the checkpoint, the training log and the mixture
      reports are all untouched mid-run), so it is safe to leave alone.
 
+  1b. **The SITE has a standing promise to discharge.** `site/content/index.html`,
+     in the scwbd-003 row, says of run 3's ablation: *"It does not test whether
+     measured data helps MEASURED prediction, which is the question worth asking
+     and the next run's job."* Run 4 is that run and its arms score the measured
+     holdout. When they land, the scwbd-004 row gets the answer — otherwise a
+     public page asks a question and never answers it. The model card picks its
+     ablation paragraph up automatically (`_run4_ablation_note`, derived); the
+     site row and paper §11.11 do not.
+
   2. **Re-run `make release-004-evaluate`, then `make release-004` and
      `make release-004-card-diff`.** The published card's headline currently
      reads "No baseline beats scwbd-004" and stops there. That string is
