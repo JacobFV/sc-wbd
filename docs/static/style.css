@@ -1263,3 +1263,66 @@ body.flat-notes .note-ref { border-bottom: 1px dotted var(--rule-strong); }
   max-height: 52vh;
 }
 @media (max-width: 46rem) { .arch-canvas { aspect-ratio: 5 / 4; } }
+
+/* ------------------------------------------------------------------ phones
+ *
+ * Nothing here should have to be dragged sideways to be read. Three things
+ * did, measured at a 390px viewport: the schematics (a 46rem floor, 736px of
+ * drawing in a 342px column), the wide tables (696px, set by `nowrap`
+ * headers), and the code blocks (569px, set by not wrapping at all).
+ *
+ * The page itself never scrolled — `body { overflow-x: hidden }` saw to that —
+ * which is why this went unnoticed: the scrolling was INSIDE three kinds of
+ * element, and each one hid its own right-hand side rather than the page's. */
+@media (max-width: 46rem) {
+  /* The floor above buys legibility with a sideways drag. On a phone that is
+   * the worse half of the trade: a diagram you must scroll is one you cannot
+   * see at once, and the argument of these drawings is the whole layout. So
+   * it fits, and the labels are enlarged IN VIEWBOX UNITS to claw back what
+   * the scaling takes -- 14px in an 880-unit box is 6px at this width, and
+   * 18px brings it back to about 8. */
+  .schematic { overflow-x: visible; }
+  .schematic svg { min-width: 0; }
+  .schematic .s-title { font-size: 20px; }
+  .schematic .s-kind { font-size: 15px; letter-spacing: 0.06em; }
+  /* 17px put "through a declared forward operator" 13px past the right edge:
+   * the SVG is `overflow: visible`, so a label wider than its slot leaves the
+   * drawing rather than being clipped by it. Measured back down until the
+   * widest label sits inside. */
+  .schematic .s-note { font-size: 15px; }
+
+  /* An uppercase `nowrap` header sets the minimum width of the column under
+   * it, so three of them set the width of the table. */
+  thead th { white-space: normal; }
+  .srcs td:nth-child(2) { white-space: normal; }
+  table { font-size: 0.76rem; }
+  th, td { padding-right: 0.5rem; }
+  td.num, th.num { font-size: 0.72rem; }
+
+  /* A block that scrolls hides its own right-hand side, and a log line's
+   * right-hand side is usually the number. Wrapping is the lesser evil. */
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* A provenance chip is a file path, and `nowrap` made the longest one the
+   * minimum width of the column it sat in -- which is what still made the
+   * component table 657px wide after the headers were freed to wrap. It
+   * breaks on a phone; the path is still readable across two lines. */
+  .src { white-space: normal; overflow-wrap: anywhere; }
+
+  /* The last two things holding the component table open, both measured
+   * rather than guessed at: a status chip whose `nowrap` carried a
+   * three-word phrase, and one inline `code` sample -- an fnmatch pattern
+   * against a parameter path -- 392px wide on its own. Both may break here.
+   * `.srcs` is left alone: its first column is a dataset identifier, and
+   * breaking `ds000113` into fragments is the defect that rule exists to
+   * prevent. */
+  .chip { white-space: normal; }
+  .tablewrap code { overflow-wrap: anywhere; }
+  /* With the three nowrap sources freed the table came down from 696px to
+   * 368px against 342px of column -- close enough that one long word in one
+   * cell decides it. `anywhere` lets the browser break a word when a column
+   * cannot hold it, which is the difference between a table that always fits
+   * and one that fits this content today. */
+  .tablewrap td, .tablewrap th { overflow-wrap: anywhere; }
+  .tablewrap th, .tablewrap td { padding-right: 0.4rem; }
+}

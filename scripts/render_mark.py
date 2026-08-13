@@ -48,7 +48,11 @@ COL = np.array([
 YAW, PITCH = -0.5, -0.18       # brain.js initial view
 N_EDGES = 900                  # "the strongest 900 edges", as the site says
 
-MARK = "SC-WBD-003"
+# The current released checkpoint, drawn at the centre of the cover figure. The
+# site's `arch.js` carries the same string for the same drawing on the page, and
+# tests/release/test_site_names_the_current_checkpoint.py holds the two together
+# -- they disagreed for the whole of run 4's release.
+MARK = "SC-WBD-004"
 
 # What the model is for: two columns flanking the brain, each a few
 # constellations rather than one list. The grouping is the argument -- reading

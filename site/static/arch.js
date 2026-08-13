@@ -64,7 +64,10 @@
    * stacks of 6px type either side of a thumbnail are a texture, not a list.
    * A canvas that narrow is given a portrait frame by the stylesheet, and the
    * clusters go above and below the brain instead. */
-  var MARK = "SC-WBD-003";
+  /* The designation at the centre of the brain. It names the CURRENT released
+     checkpoint, so it changes on every release -- it read SC-WBD-003 for the
+     whole of run 4's release and was the largest type on the page saying so. */
+  var MARK = "SC-WBD-004";
   var USES_MIN_W = 620;                 // CSS px of canvas width
   var LEFT = [
     ["neural state estimation",
@@ -480,6 +483,28 @@
       var half = H / 2 - pad - Math.max(spanA, spanB) - fs * 0.9;
       var blockHalf = (widest + px(6)) / 2;
       if (W / dpr < 300 || half < fs * 2.6 || blockHalf * 2 > W * 0.86) return null;
+      /* Slide each block toward its own gutter -- the top block right, the
+       * bottom block left -- instead of centring both.
+       *
+       * Centred, the two blocks put their gutters within a couple of label
+       * widths of each other and both bundles leave the stack near the middle
+       * of the canvas, so on a phone the six curves crossed the same strip of
+       * space and read as a tangle. Offsetting them makes the top bundle
+       * descend on the right and the bottom bundle climb on the left, which is
+       * also the arrangement the wide layout has.
+       *
+       * `room` is what is actually free beside a centred block, so the shift
+       * shrinks to nothing rather than pushing type off a narrow canvas; the
+       * margin covers the control point, which sits a little outside the
+       * block. */
+      var room = W * 0.5 - blockHalf - px(14);
+      /* AWAY from its own gutter, not toward it. Each block's bundle leaves
+       * from the edge nearest the brain's landing point -- the top block's to
+       * the right, the bottom block's to the left -- so the space on THAT side
+       * is the corridor the curves travel down. Sliding a block toward its
+       * gutter narrows that corridor and the curves bend back over their own
+       * labels; sliding it away widens it, and the three bundles separate. */
+      var shift = Math.max(0, room) * 0.85;
       var sc = Math.min(half / ZMAX, W * 0.46 / RMAX);
       var out = [];
       // Above the brain the labels line up on their right edge and every
@@ -489,7 +514,7 @@
        [1, -1, RIGHT, oy + half + pad + spanB / 2]].forEach(function (spec) {
         var dir = spec[0], side = spec[1], groups = spec[2], mid = spec[3];
         var rows = columnRows(groups, pitch), at = 0;
-        var ax = ox + side * blockHalf;
+        var ax = ox + side * blockHalf - side * shift;
         for (var gi = 0; gi < groups.length; gi++) {
           var xs = [], ys = [], edge = null;
           for (var li = 0; li < groups[gi].length; li++) {
@@ -503,8 +528,12 @@
           // near one nearly straight, so three bundles from one block arrive
           // at three places instead of piling into one.
           var off = 1.15 - 0.75 * (groups.length > 1 ? gi / (groups.length - 1) : 0);
+          // Stagger the gutter per cluster as well as the angle: three bundles
+          // that leave from one x share a corridor and cross inside it, which
+          // is what the fan of angles alone could not fix.
+          var gutter = px(14) + px(13) * gi;
           out.push(cluster(groups[gi], xs, ys, side > 0 ? "right" : "left",
-                           ax + side * px(18), edge - dir * pitch * 1.2,
+                           ax + side * gutter, edge - dir * pitch * 1.2,
                            side * Math.sin(off), dir * Math.cos(off)));
         }
       });

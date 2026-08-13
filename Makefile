@@ -136,11 +136,18 @@ health-run4: ## Report on the SC-WBD-004 training job
 
 .PHONY: test
 test: ## Run the fast suite (`slow` deselected by pyproject.toml)
-	cd $(ROOT) && PYTHONPATH=$(ROOT) $(PYTEST) -q
+	@# NO `-q` HERE. pyproject.toml's addopts already carries one, and a second
+	@# makes it `-qq`, which suppresses pytest's final summary line entirely --
+	@# no pass count, no "N deselected". This target ran that way and the whole
+	@# evidence of a run was a wall of dots and an exit code, which is precisely
+	@# the state the addopts comment says it exists to prevent. A run that
+	@# collected nothing looks identical to a run that passed everything.
+	@# Guarded by tests/release/test_make_test_reports_its_counts.py.
+	cd $(ROOT) && PYTHONPATH=$(ROOT) $(PYTEST)
 
 .PHONY: test-failfast
 test-failfast: ## Run the fast suite, stopping at the first failure
-	cd $(ROOT) && PYTHONPATH=$(ROOT) $(PYTEST) -x -q
+	cd $(ROOT) && PYTHONPATH=$(ROOT) $(PYTEST) -x
 
 .PHONY: test-slow
 test-slow: ## Run the tests `make test` deselects (SLOW: hours, not minutes)
@@ -167,7 +174,7 @@ test-slow: ## Run the tests `make test` deselects (SLOW: hours, not minutes)
 	@# Lowering replicates also changes what the tests can detect, so do it
 	@# deliberately and say so -- never to make a run finish.
 	@echo "Running the slow set. Expect hours. reports/RUN2.md §5b records the state."
-	cd $(ROOT) && PYTHONPATH=$(ROOT) $(PYTEST) -q -m slow
+	cd $(ROOT) && PYTHONPATH=$(ROOT) $(PYTEST) -m slow
 
 ##@ Site
 
