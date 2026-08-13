@@ -927,6 +927,64 @@ free on the measured holdout — its 5.39% of the mixture bought a diverging
 likelihood. That is a prediction, and it is written down before the numbers are
 in so it can be wrong.
 
+### The arms — measured 2026-08-13, and the prediction above was wrong
+
+The ablation completed in **6 h 12 m**, 200 steps per arm, eleven arms.
+
+**`ds002336_real` came back at +0.0010 — on the CONTRIBUTING side.** Removing the
+haemodynamic corpus made measured EEG prediction *worse*. It is one of only two
+families that earned its place, and I predicted it would be close to free. The
+magnitude is nearly free — second-smallest of the ten — but the sign is the
+opposite of "this source bought nothing".
+
+**That is the interesting result of the whole run.** `ds002336_real`'s own
+likelihood diverged by a factor of 18,000 (ISSUE-016) while its gradient was
+*helping* the shared trunk forecast measured EEG. A source can contribute
+information to the representation and simultaneously fail to be predicted by it.
+Run 4's model card says `ds002336_real` "contributed a **gradient**, not
+**information**". On the measured holdout that sentence is now too strong in one
+direction: the gradient did carry information, into the trunk, just not back out
+through the BOLD head.
+
+| family | measured Δ | simulated Δ | |
+|---|---:|---:|---|
+| `eegmmidb_real` | **+0.0144** | −0.0049 | the only substantial contributor |
+| `ds002336_real` | **+0.0010** | −0.0024 | contributes, marginally |
+| `ds000117_behaviour` | −0.0031 | +0.0065 | |
+| `ds004024_rest_real` | −0.0031 | −0.0159 | |
+| `sim_wholebrain` | −0.0034 | **+0.0366** | helps the simulator, hurts measurement |
+| `ds004024_perturb` | −0.0034 | +0.0148 | |
+| `anatomical_prior` | −0.0047 | −0.0120 | |
+| `ds000117_real` | −0.0051 | +0.0177 | |
+| `montage_calibration` | −0.0065 | +0.0191 | |
+| `sleepedf_real` | **−0.0079** | −0.0065 | the largest negative on measurement |
+
+**Two of ten families earn their place on the measured holdout.** Positive delta
+means removing the family made measured prediction worse.
+
+Three things follow, and the second is the one worth arguing about.
+
+**The win is `eegmmidb_real`'s.** At +0.0144 it is fourteen times the next
+contributor and larger than the entire 0.0100 margin by which SC-WBD-004 fails to
+separate from `ar16`. The headline forecast result rests on the majority source,
+not on fusion.
+
+**`sim_wholebrain` helps the simulator and hurts measurement** — +0.0366
+simulated against −0.0034 measured, the largest sign reversal in the table.
+Simulator pretraining is the single largest contributor to fitting the simulator
+and a mild liability for predicting real EEG. Run 3's ablation could not have
+seen this: scored only on `_sim_val_nll` it reported the +0.0366 half.
+
+**`sleepedf_real` is the largest negative at −0.0079.** It is 21% of the mixture
+and the holdout is eegmmidb; whole-night polysomnography is a different regime,
+and on this holdout it costs. That is a statement about this holdout, not about
+the source.
+
+**No error bars.** One arm per family, no seed replication, exactly as in run 3.
+The individual deltas are not effect sizes and must not be quoted as any. The
+signs and the ordering are what is readable, and `ds002336_real` at +0.0010 is
+close enough to zero that its sign is the weakest claim in the table.
+
 ### ISSUE-008 verified on the weights, not on the code
 
 `reports/scwbd-004_derived.json` reads parameter movement off the checkpoint
