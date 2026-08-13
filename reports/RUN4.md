@@ -929,7 +929,7 @@ in so it can be wrong.
 
 ### The arms — measured 2026-08-13, and the prediction above was wrong
 
-The ablation completed in **6 h 12 m**, 200 steps per arm, eleven arms.
+The ablation completed in **6 h 11 m** (371 min), 200 steps per arm, eleven arms.
 
 **`ds002336_real` came back at +0.0010 — on the CONTRIBUTING side.** Removing the
 haemodynamic corpus made measured EEG prediction *worse*. It is one of only two

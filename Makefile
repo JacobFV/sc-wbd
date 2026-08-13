@@ -385,12 +385,20 @@ release-004-ablate: ## Leave-one-source-out, scored on the MEASURED holdout as w
 	@#
 	@#     estimate = <that run's ablation minutes> x (this run's s/step / that run's)
 	@#     284 x (10.04 / 7.16) = 398 min, plus ~16 for the measured-holdout
-	@#     scoring run 3 did not do = ~7 HOURS.
+	@#     scoring run 3 did not do = 414 min.
 	@#
-	@# I quoted the bare 284 twice and was wrong twice. It is the same error the
-	@# run-4 wall-clock projection made and reports/RUN4.md corrects: a rate
-	@# transferred from another run without adjusting for what changed between
-	@# them. Scale it.
+	@# RUN 4 ACTUALLY TOOK 371 MINUTES (6 h 11 m, 2026-08-12). So:
+	@#   bare 284      -> 31% under.  Wrong, and I quoted it twice.
+	@#   scaled 414    -> 12% over.   Better, still not a measurement.
+	@# The true ratio to run 3 was 1.308, against the 1.402 that T1's step time
+	@# predicts -- the arms are not a replay of any single stage, so no one
+	@# stage's rate transfers exactly. Use the scaled figure as an upper bound
+	@# and 371 as run 4's datum.
+	@#
+	@# The bare-number error is the same one the run-4 wall-clock projection made
+	@# and reports/RUN4.md corrects: a rate transferred from another run without
+	@# adjusting for what changed between them. Scale it, and expect the scaling
+	@# to be approximate.
 	@#
 	@# Run 3's figure is from reports/training/scwbd-003_ablation_train.jsonl,
 	@# whose eleven leaked rows span 1786275183 to 1786292237.
