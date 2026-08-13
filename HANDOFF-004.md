@@ -10,62 +10,33 @@ Training, evaluation, paper, site and model are DONE. Run 4 is published:
   paper    paper/output/sc_wbd_frontiers.pdf              (§11.10, §11.11)
   reports  reports/RUN4.md, reports/training/evaluation_run4.json
 
-TWO THINGS ARE OUTSTANDING, in this order:
+NOTHING IS OUTSTANDING. The two items this block carried are both discharged,
+and the finishing sequence ran in the order it prescribes:
 
-  1. `make release-004-ablate` -> evaluation_run4_ablation.json. Running as of
-     this writing; it retrains 11 arms and takes over an hour. ISSUE-010 was
-     verified live against it (the checkpoint, the training log and the mixture
-     reports are all untouched mid-run), so it is safe to leave alone.
+  1. `make release-004-ablate` -> `reports/training/evaluation_run4_ablation.json`,
+     eleven arms, 6 h 11 m measured (371 min: derived report 15:17:39, artifact
+     21:28:26). Two of ten source families earn their place on the MEASURED
+     holdout — `eegmmidb_real` +0.0144 and `ds002336_real` +0.0010 — and the rest
+     show negative transfer, `sleepedf_real` largest at -0.0079. Written up in
+     `reports/RUN4.md` under "The arms — measured 2026-08-13". The prediction
+     registered before launch was wrong; that is recorded there too.
 
-  1b. **The SITE has a standing promise to discharge.** `site/content/index.html`,
-     in the scwbd-003 row, says of run 3's ablation: *"It does not test whether
-     measured data helps MEASURED prediction, which is the question worth asking
-     and the next run's job."* Run 4 is that run and its arms score the measured
-     holdout. When they land, the scwbd-004 row gets the answer — otherwise a
-     public page asks a question and never answers it. The model card picks its
-     ablation paragraph up automatically (`_run4_ablation_note`, derived); the
-     site row and paper §11.11 do not.
+  1b. The SITE's standing promise is discharged. The scwbd-003 row asked whether
+     measured data helps MEASURED prediction and called it the next run's job;
+     the scwbd-004 row now answers it, and paper §11.11 carries the same arms.
+     Deployed — every page under `docs/` is byte-identical to what
+     https://sc-wbd.pages.dev serves.
 
-  ORDER MATTERS, and the obvious order is the slow one. `release-004-evaluate`
-  is 30-60 min on the GPU; the RUN4.md, site and paper write-ups are CPU-only
-  and independent of it. Start the evaluation FIRST, write while it runs, and
-  publish once at the end:
+  2. `make release-004-evaluate` re-ran and `reports/training/evaluation_run4.json`
+     carries all three fixes: the two-clause `real_eeg_holdout.verdict`,
+     `theta_shift.spread_over_prior_sd` = 0.00667, and `n_participants` = 75
+     (it had been counting the 1500 windows). Re-pushed with `make release-004`;
+     `make release-004-card-diff` reports **CARD IS CURRENT** against 21,022
+     published bytes.
 
-      1. ablation lands -> read the arms
-      2. START `make release-004-evaluate` in the background (GPU, long)
-      3. WHILE IT RUNS: RUN4.md ablation section; site scwbd-004 row +
-         `make site` + `site-stage` + `site-deploy`; paper 11.11 sentence +
-         `make paper`. None of these touch the GPU.
-      4. evaluation lands -> `make release-004` (the card picks up BOTH the
-         regenerated verdict AND the ablation paragraph in one push)
-      5. `make release-004-card-diff` -> expect CARD IS CURRENT
-      6. `make test`
-
-  Doing 3 after 4 serialises about 45 minutes for no reason. Doing 2 before the
-  ablation exits is the one thing that is forbidden -- both cap CUDA at 80 GB on
-  a 121.6 GB unified pool.
-
-  2. **Re-run `make release-004-evaluate`, then `make release-004` and
-     `make release-004-card-diff`.** The published card's headline currently
-     reads "No baseline beats scwbd-004" and stops there. That string is
-     generated, the generator is fixed, and the fix is NOT in the artifact:
-
-       - `real_eeg_holdout.verdict` had two branches and the "nobody beats us"
-         one is also true when we beat nobody. It now names the inconclusive
-         arms and counts them: "No baseline beats scwbd-004, and scwbd-004 is
-         not shown to beat ar16, var4 (3 of 5 comparators separated)".
-       - `theta_shift` gained `prior_sd_person` and `spread_over_prior_sd`, so
-         ISSUE-017's 0.67% becomes checkable off the artifact instead of
-         requiring the checkpoint be loaded by hand.
-       - `theta_shift.n_participants` counted windows (1500) rather than people
-         (75).
-
-     Do NOT start it while the ablation is running. Both reserve up to 80 GB on a
-     121.6 GB UNIFIED pool, and running two is how this box was OOM'd.
-
-     The site, the paper and `RUN4.md` already state both halves of the EEG
-     result. It is only the machine-generated verdict, and therefore only the
-     card, that is one-sided.
+  The one thing that was forbidden — starting the evaluation beside the ablation,
+  both capping CUDA at 80 GB on a 121.6 GB UNIFIED pool — did not happen. Keep
+  that rule for run 5.
 
 WHAT RUN 4 MEASURED. Three questions 003 could not ask, three negative answers.
 Each needed an instrument built before it could return anything, which is the

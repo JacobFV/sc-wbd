@@ -7,14 +7,15 @@ This file is the run's record. Numbers here are measured and each says where
 from. **The run completed on 2026-08-12** — 14,600 / 14,600 steps in 42.2 h — and
 no section is PENDING any longer.
 
-Two things are deliberately not in this file. The **leave-one-source-out
-ablation** is still running and its arms will be added when it lands. And the
-**published evaluation artifact predates two fixes to the evaluation itself**:
-`real_eeg_holdout.verdict` now names the inconclusive comparators instead of
-stopping at "no baseline beats it", and `theta_shift` now carries the prior scale
-that makes ISSUE-017's 0.67% checkable without loading the checkpoint. Both land
-on the next `make release-004-evaluate`; `HANDOFF-004.md` carries the sequence
-and the reason it must not run beside the ablation.
+The two things this file was missing on 2026-08-12 have both landed. The
+**leave-one-source-out ablation** ran 6 h 11 m and its eleven arms are below
+under "The arms — measured 2026-08-13". And the **evaluation artifact was
+regenerated** with the two fixes that postdated it: `real_eeg_holdout.verdict`
+now names the inconclusive comparators instead of stopping at "no baseline beats
+it", and `theta_shift` carries the prior scale that makes ISSUE-017's 0.67%
+checkable without loading the checkpoint (`n_participants` also read 1500, which
+counted windows, and is now 75). The card was re-pushed from the regenerated
+artifact and `make release-004-card-diff` reports CARD IS CURRENT.
 
 ## The two structural changes
 
