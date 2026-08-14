@@ -10,11 +10,12 @@ Read this after `scratch/<TASK>.md` and before starting: it is the two-minute an
 
 <!-- BEGIN GENERATED -->
 
-**15 notes** · 0 blocked · 5 live decisions · 7 standing findings · 3 open questions
+**18 notes** · 0 blocked · 6 live decisions · 8 standing findings · 4 open questions
 
 ### Live decisions
 
 - [Chose notes/ + scratch/ beside reports/, rather than folding them together](decisions/2026-08-14-notes-beside-reports-and-scratch-not-instead-of-them.md) — `active` · `CLAIM_GATES`
+- [G4 is re-specified to test pose discrimination, which is what SC-WBD does](decisions/2026-08-14-g4-tests-pose-discrimination-not-causal-identifiability.md) — `active` · `CLAIM_GATES`
 - [Decided what a wall-clock exhaustion would mean before the run reached it, not at hour 45](decisions/2026-08-11-decide-a-wall-clock-exhaustion-before-hour-45.md) — `active`
 - [lr_scale 5.0 was fixed by a rule written before the sweep was read](decisions/2026-08-10-lr-scale-chosen-by-a-rule-written-before-the-data.md) — `active`
 - [Dropped the pooled subject_specific_ar row rather than publish a duplicate under the hardest baseline's name](decisions/2026-08-09-drop-the-duplicate-baseline-row-rather-than-keep-its-name.md) — `active`
@@ -25,6 +26,7 @@ Read this after `scratch/<TASK>.md` and before starting: it is the two-minute an
 - [The gate reports are not stale: the runner supplies no inputs, so re-running cannot change them](findings/2026-08-14-the-gate-reports-are-not-stale-nothing-supplies-inputs.md) — `measured` · `CLAIM_GATES`
 - [Every claim-gate adapter resolves; the machinery is not what is missing](findings/2026-08-14-the-gate-adapters-all-resolve.md) — `measured` · `CLAIM_GATES`
 - [G4's TypeError is the gate refusing to invent the system under test](findings/2026-08-14-the-fisher-typeerror-is-a-refusal-not-a-bug.md) — `measured` · `CLAIM_GATES`
+- [Run 4 ATTENUATES the pose contrast: 0.48x its own untrained initialisation, against a pre-registered 0.5x threshold](findings/2026-08-14-run-4-attenuates-the-pose-contrast.md) — `measured` · `CLAIM_GATES`
 - [G2's adjacency and all three graph controls compute today; no training involved](findings/2026-08-14-g2s-graph-controls-need-no-training.md) — `measured` · `CLAIM_GATES`
 - [All five gates are blocked on baseline models nobody trained, and one on data nobody holds](findings/2026-08-14-every-gate-is-blocked-on-untrained-baselines.md) — `measured` · `CLAIM_GATES`
 - [ISSUE-010 recurred five times because each of the first four fixes was a fallback](findings/2026-08-12-issue-010-recurred-five-times-because-each-fix-was-a-fallback.md) — `measured`
@@ -33,6 +35,7 @@ Read this after `scratch/<TASK>.md` and before starting: it is the two-minute an
 ### Open questions and ideas
 
 - [Why did the one-stage sweep predict R^2 0.674-0.766 and the full curriculum return 0.284?](questions/2026-08-14-why-the-one-stage-sweep-overpredicted.md) — `open`
+- [The pose-contrast pilot does not finish in 50 minutes on run 4's checkpoint — cost unknown](questions/2026-08-14-what-does-the-pose-pilot-cost-on-run-4.md) — `open` · `CLAIM_GATES`
 - [2026-08-14-should-the-hero-brain-have-eyes-too](questions/2026-08-14-should-the-hero-brain-have-eyes-too.md) — `idea`
 - [Can any gate baseline be satisfied by an ablation arm that already ran?](questions/2026-08-14-can-a-gate-baseline-reuse-an-ablation-arm.md) — `open` · `CLAIM_GATES`
 

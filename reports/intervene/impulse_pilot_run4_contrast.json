@@ -1,0 +1,52 @@
+{
+  "status": "ran",
+  "crr": {
+    "trained": 0.67595964660326,
+    "untrained": 1.398846692521277,
+    "ratio_trained_over_untrained": 0.4832263965859707
+  },
+  "reading": "attenuated",
+  "shuffled_normal_null": {
+    "skipped": true
+  },
+  "control": {
+    "same_pose_crr": 0.0,
+    "must_be_zero": true,
+    "ok": true,
+    "note": "if this is non-zero the statistic is measuring nondeterminism and no other number here means anything"
+  },
+  "provenance": {
+    "checkpoint": {
+      "found": true,
+      "path": "checkpoints/scwbd-004/last.pt",
+      "step": 14600,
+      "stage": "T6_individual",
+      "saved_utc": "2026-08-12T16:29:26Z",
+      "git_sha": "b20f36818a2551260c4d5f3c24913da2aefb6130-dirty",
+      "strict_load": true,
+      "load_report": {},
+      "tensors_changed_by_load": 319,
+      "tensors_total": 332
+    },
+    "coil_a": [
+      0.0,
+      0.0,
+      0.1
+    ],
+    "coil_b": [
+      0.0,
+      0.1,
+      0.0
+    ],
+    "n_steps": 64,
+    "gain": 50.0,
+    "batch": 4,
+    "n_regions": 414,
+    "trained_on_perturbation_data": false,
+    "response_mapping_validated": false,
+    "claim": "a prediction about this model's dynamics under a computed field; the model has seen resting dynamics and no TMS-evoked response, so a surviving contrast means focal input propagates pose-dependently, not correctly"
+  },
+  "preregistration": "reports/intervene/impulse_pilot_preregistration.md",
+  "preregistration_sha": "007bee2",
+  "notice": "PREDICTED RESPONSE FROM AN UNVALIDATED MODEL. The field is computed by a gated solver (N3/N4/N6/N8), but the mapping from that field to a neural response has never been fitted to perturbational data -- no checkpoint in this repository has seen a TMS-evoked response. The trajectory below is what this model implies, not what a brain would do. It is not a dose, not a protocol, and not a recommendation for any person."
+}

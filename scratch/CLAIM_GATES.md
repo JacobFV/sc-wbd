@@ -69,11 +69,42 @@ Each is checked off only when the stated evidence exists. `[ ]` not started · `
       → `notes/findings/2026-08-14-the-gate-reports-are-not-stale-nothing-supplies-inputs.md`
       *Consequence:* A4 is the critical path, not a nicety. The seam
       (`run_everything(config={"gates": {...}})`) exists and nobody uses it.
-- [ ] **A2. Bind the Fisher map for G4.** `fisher_design_map(u, cfg, proto)` exists; G4 needs it
-      bound to a named system and protocol. **This is a scientific commitment, not a repair** —
-      record it as a `notes/decisions/` note naming the system, before wiring it.
-      *Done when:* G4's `fisher_information` and `input_energy_matched` sub-checks report something
-      other than `COULD_NOT_RUN`, and the decision note exists.
+- [~] **A2. Re-specify G4, then bind its Fisher map.** *Decision taken 2026-08-14:*
+      `notes/decisions/2026-08-14-g4-tests-pose-discrimination-not-causal-identifiability.md`.
+
+      G4 as written tests a property of an experimental DESIGN and can only be discharged by a
+      prospective TMS study. SC-WBD is an ML effort and will not run one, so the gate was measuring
+      the wrong object. **G4′** tests what the model does: *two coil poses produce measurably
+      different predicted responses, and the difference is carried by orientation rather than field
+      magnitude.*
+
+      It stands on evidence already held: four PASSING field-physics gates (`N3_em_solver`,
+      `N4_acoustic_solver`, `N6_induced_efield`, `N8_induced_efield_contact`) and a pre-registered
+      pose contrast at **p = 0.005** against a 200-permutation null, criterion committed while the
+      checkpoint directory was still empty.
+
+      **Deleting `prospective_recovery` was considered and rejected** — it would move the site's
+      headline from 0 validated claims to 1 with nothing new measured. Removing a falsifier does not
+      validate a claim.
+
+      **Measured 2026-08-14, and G4′ FAILS.** Run 4's trained CRR is **0.6760** against its own
+      untrained initialisation's **1.3988** — ratio **0.4832**, below the pre-registered 0.5x
+      threshold, reading `attenuated`. Full-curriculum training roughly halved the model's
+      pose-dependent propagation. → `notes/findings/2026-08-14-run-4-attenuates-the-pose-contrast.md`
+
+      **Do not respecify G4′ again in response to this.** A claim was written down, a pre-registered
+      criterion applied, the answer came back no. That is the gate working. It would be the
+      scoreboard's first FAIL against 6 PASS and 30 COULD_NOT_RUN, and a measured failure is worth
+      more than another blank.
+
+      Caveats to carry into the write-up: the margin is **3.4%** below threshold, not a collapse
+      (`collapsed` is CRR < 0.1); and the K = 200 orientation null has **not** run on run 4, so
+      whether orientation still carries the attenuated contrast is unmeasured.
+
+      *Done when:* G4′'s claim text, falsifier and thresholds are in `CLAIMS`, its sub-checks read
+      the pose contrast, a negative control proves it can FAIL (the `test_gates_can_fail.py`
+      pattern), and the FAIL is published rather than held. ISSUE-018 remains the record of what the
+      ORIGINAL G4 would need, for the day prospective data exists.
 - [x] **A3. Declare what would supply each gate input.** Done 2026-08-14, as a registry rather
       than as config files: `INPUT_SUPPLY` in `scwbd/bench/run_inputs.py` maps every declared input
       to a status and a one-line "what would supply it".
@@ -187,3 +218,9 @@ Newest last. One line per session, with what changed and what the next reader sh
   **Next: A2** — the last open item, and it is blocked on a DECISION, not on code. Someone must
   name the system and protocol G4's Fisher map is bound to, and write that as a `notes/decisions/`
   note before wiring it. Also outstanding: the model-card sentence for ISSUE-018.
+- **2026-08-14 (A2, measured)** — Re-ran the pre-registered pose pilot against run 4. The full run
+  TIMED OUT at 3000 s on CPU (no GPU on this box; K=200 rollouts dominate) — recorded as
+  **unmeasured**, and K was NOT reduced to make it fit, because K is part of the preregistration.
+  `--no-permutations` gives the number G4′ turns on, and it is a **negative result**: trained CRR
+  0.6760 vs untrained 1.3988, ratio 0.4832, reading `attenuated`. G4′ as specified FAILS.
+  **Next:** wire G4′ and publish the FAIL. Still unmeasured: the orientation null on run 4.
