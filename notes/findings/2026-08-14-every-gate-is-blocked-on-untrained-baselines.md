@@ -37,8 +37,18 @@ for the gate baselines, which are different configs rather than a re-run of that
 ## Where G5 stands, because it is closest
 
 Run 4 already holds the individualised candidate and the new-session holdout the claim is about —
-`session_individualisation`, 75 participants recorded twice, scored on night 2. It is short exactly
-three baseline arms.
+`session_individualisation`, 75 participants recorded twice, scored on night 2.
+
+**Correction, 2026-08-14 (later):** it is short FOUR things, not three. Reading `run_g5`'s signature
+rather than its blocker list shows a mandatory `unseen_task` holdout — an unseen task or
+intervention for the same people — and **no such holdout exists for any run**. The session split
+provides a new *night*, which is a different question. So G5 needs three trained baselines *and* a
+holdout nobody has collected.
+
+That does not change which gate is closest; it changes what "closest" costs. It also creates the
+most tempting shortcut in this whole task, because `new_session` and `unseen_task` are both
+`Dataset` objects and passing one for the other type-checks and runs. Refused by name in
+`scwbd.bench.run_inputs._refuse_aliases`.
 
 ## What would refute this
 

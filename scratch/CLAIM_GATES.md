@@ -47,10 +47,12 @@ would flip a gate without a new measurement behind it, the change is wrong.
 | G2 | anatomical topology improves inference | `model_for_graph(adjacency)` factory; retrain on dense / randomized / distance-matched controls | **models to train** (controls exist in code) |
 | G3 | multiresolution state adds information | multiresolution candidate; coarse-only baseline; restriction map R | **models to train** |
 | G4 | perturbation reduces non-identifiability | bound Fisher map (code); **prospective perturbation dataset (does not exist)**; per-design model evidence | **part code, part unobtainable** |
-| G5 | individualization improves future prediction | `population`, `anatomy_only`, `session_adapted` baselines | **models to train** — closest to reachable |
+| G5 | individualization improves future prediction | 3 baselines (`population`, `anatomy_only`, `session_adapted`) **and an `unseen_task` holdout that does not exist** | **models to train + one dataset nobody holds** — still closest |
 
 G5 is closest: run 4 already holds the individualised candidate and the new-session holdout
-(`session_individualisation`, 75 participants recorded twice). It needs three baseline arms.
+(`session_individualisation`, 75 participants recorded twice). **Corrected 2026-08-14: it needs
+three baseline arms AND an unseen-task holdout that no run has.** Read off `run_g5`'s signature,
+which lists inputs the blocker list summarises. Closest still, but not one training sweep away.
 
 ## Work items
 
@@ -76,7 +78,8 @@ Each is checked off only when the stated evidence exists. `[ ]` not started · `
       (`naive_resampling`, `single_modality_*`, `population`, `anatomy_only`, `session_adapted`,
       coarse-only, the three graph controls) so that running them is `make`, not authorship.
       *Done when:* each named baseline in the table above has a config, and a dry-run resolves it.
-- [~] **A4. A gate-input adapter for run-4 artifacts. THE CRITICAL PATH.** Build what constructs
+- [~] **A4. A gate-input adapter for run-4 artifacts. THE CRITICAL PATH.** *Seam and refusals
+      landed 2026-08-14 (`scwbd/bench/run_inputs.py`); the arms are not built.* Build what constructs
       `config["gates"]["G5"] = {train, new_session, unseen_task, candidate, baselines}` from real
       artifacts. **Must refuse a partial input set** rather than run on what happens to be present.
       *Done when:* the adapter exists, and a test proves it refuses when a mandatory input is absent.
@@ -117,3 +120,18 @@ Newest last. One line per session, with what changed and what the next reader sh
   re-running cannot change them because nothing is ever passed in. The gates have always been
   reporting on an empty input set, correctly. **Next: A4 for G5**, which is now the whole task —
   everything else is downstream of having a seam that carries real artifacts.
+- **2026-08-14 (later still)** — A4's seam landed: `scwbd/bench/run_inputs.py` + 8 tests, with the
+  load-bearing one proving the seam **cannot change any gate's verdict** (it runs the gates with and
+  without the config and demands they agree). Alias refusal mutation-tested two ways at
+  04:12:33–04:12:35Z: neuter the check and the unit test fails; make the adapter actually alias
+  `unseen_task=new_session` and it raises at build time. 537 passed / 3 skipped across
+  `tests/bench` + `tests/release`, no competing pytest at start.
+
+  **Corrected a claim I had made twice:** G5 is short FOUR inputs, not three. `run_g5`'s signature
+  carries a mandatory `unseen_task` holdout — an unseen task or intervention for the same people —
+  and no run has one. The blocker list summarised it; the signature spells it out. Read signatures,
+  not blocker summaries, before costing the rest.
+
+  **Next: A3**, declare the baseline arms as configs — it is the last piece that is authorship
+  rather than compute, and B1's cost estimate depends on it. A2 needs a decision note first
+  (which system and protocol G4 is bound to) and that is a scientific call, not a wiring one.
