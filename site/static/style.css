@@ -1402,3 +1402,90 @@ body.flat-notes .note-ref { border-bottom: 1px dotted var(--rule-strong); }
    * one-character stack in the first place. */
   .tablewrap code, .tablewrap .src { overflow-wrap: anywhere; }
 }
+
+/* ==========================================================================
+ * SIGNAL SHAPES
+ *
+ * A glyph per attachment kind, saying what the data IS rather than what it is
+ * called: a stack of channels, a graph, two scalars. Each is broken in the
+ * middle -- the break means "this continues", so the drawing never implies
+ * that six rows is the count. The count is written beside it as a number,
+ * because that is a fact and a picture is not a good place to keep facts.
+ *
+ * Colour is NOT overloaded. Hue still means attachment kind, exactly as in the
+ * schematic above -- warm crosses the body's boundary, cool measures the state
+ * -- and intensity is carried by OPACITY within that hue. A warm glyph stays
+ * warm whatever its values.
+ *
+ * Four independent SVGs in a grid rather than one wide drawing, so the phone
+ * layout is the same drawing reflowed rather than a second drawing to keep in
+ * sync with the first.
+ * ========================================================================== */
+.shapes { margin: 1.8rem 0 2rem; max-width: calc(var(--measure) + var(--margin-col) + 1.6rem); }
+.shapes-lede {
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin: 0 0 1rem;
+}
+.shapegrid {
+  display: grid;
+  /* 9rem, so four cells fit the content column in one row rather than 3 + a
+   * widowed fourth. Below that they fall to two, then one. */
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1.5rem 1.4rem;
+}
+.shapecell svg { width: 100%; height: auto; display: block; }
+.shapecap {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0.5rem 0 0;
+}
+/* The kind names the cell, so it sits ABOVE the picture. Below it, it read as
+ * a second caption competing with the glyph's own foot label. */
+.shapekind {
+  font-family: var(--sans);
+  font-size: 0.66rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  margin: 0 0 0.4rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* The glyphs themselves. Fills for solids, strokes for traces and edges. */
+.shapecell .g-warm rect { fill: #c8874a; }
+.shapecell .g-cool path { fill: none; stroke: #5b7fa6; stroke-width: 1.4; }
+.shapecell .g-graph path { fill: none; stroke: var(--ink-3); stroke-width: 1.1; }
+.shapecell .g-graph circle { fill: var(--ink-2); }
+/* The break: a hairline where the stack is cut, not a drawn row. */
+.shapecell .g-break {
+  stroke: var(--rule-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+/* An edge that leaves for a node not drawn. */
+.shapecell .g-trail {
+  stroke: var(--ink-3);
+  stroke-width: 1.1;
+  stroke-dasharray: 3 3;
+  opacity: 0.75;
+  fill: none;
+}
+.shapecell .g-ellipsis { font-family: var(--sans); font-size: 15px; fill: var(--ink-3); }
+.shapecell .g-count {
+  font-family: var(--mono);
+  font-size: 12px;
+  fill: var(--ink-2);
+}
+.shapecell .g-count.g-sub { font-size: 10px; fill: var(--ink-3); }
+.shapecell .g-what {
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  fill: var(--ink-3);
+}

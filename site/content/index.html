@@ -168,6 +168,93 @@ can actually speak to.</p>
 </svg>
 </figure>
 
+<figure class="shapes">
+<figcaption class="shapes-lede">And each of those is a different <em>shape</em> of
+data. The break in each stack means it keeps going; the number beside it is the
+real count.</figcaption>
+
+<div class="shapegrid">
+
+  <div class="shapecell">
+    <p class="shapekind s-kind s-warm">GOING IN</p>
+    <svg viewBox="0 0 150 104" role="img"
+         aria-label="Going in: a field over regions, drawn as a column of blocks at varying intensity, broken in the middle, times 414.">
+      <g class="g-warm">
+        <rect x="8" y="8"  width="52" height="9" opacity="0.95"/>
+        <rect x="8" y="21" width="52" height="9" opacity="0.42"/>
+        <rect x="8" y="34" width="52" height="9" opacity="0.70"/>
+        <rect x="8" y="47" width="52" height="9" opacity="0.22"/>
+        <path class="g-break" d="M4 63 H64"/>
+        <rect x="8" y="70" width="52" height="9" opacity="0.55"/>
+        <rect x="8" y="83" width="52" height="9" opacity="0.30"/>
+      </g>
+      <text class="g-count" x="72" y="52">&#215;414</text>
+      <text class="g-what" x="8" y="101">one value per region</text>
+    </svg>
+    <p class="shapecap">a field over the 414 regions, at the clock the stimulus
+    is delivered on.</p>
+  </div>
+
+  <div class="shapecell">
+    <p class="shapekind s-kind s-cool">READING</p>
+    <svg viewBox="0 0 150 104" role="img"
+         aria-label="Reading the brain with EEG: 64 channels by time, drawn as stacked traces broken in the middle, times 64 channels at 1 millisecond.">
+      <g class="g-cool">
+        <path d="M8 12 q7 -6 14 0 t14 0 t14 0 t14 0"/>
+        <path d="M8 26 q7 5 14 0 t14 -4 t14 4 t14 0"/>
+        <path d="M8 40 q7 -7 14 2 t14 -2 t14 3 t14 -1"/>
+        <path class="g-break" d="M4 54 H64"/>
+        <path d="M8 68 q7 4 14 -3 t14 2 t14 0 t14 -2"/>
+        <path d="M8 82 q7 -3 14 1 t14 2 t14 -3 t14 1"/>
+      </g>
+      <text class="g-count" x="72" y="46">&#215;64</text>
+      <text class="g-count g-sub" x="72" y="62">every 1&#8239;ms</text>
+      <text class="g-what" x="8" y="101">channels &#215; time</text>
+    </svg>
+    <p class="shapecap">EEG is channels against a fast clock; fMRI is the same
+    brain at one frame every two seconds.</p>
+  </div>
+
+  <div class="shapecell">
+    <p class="shapekind s-kind s-warm">COMING OUT</p>
+    <svg viewBox="0 0 150 104" role="img"
+         aria-label="Coming out: a few scalars, drawn as two small blocks, times 2.">
+      <g class="g-warm">
+        <rect x="8" y="30" width="22" height="22" opacity="0.85"/>
+        <rect x="38" y="30" width="22" height="22" opacity="0.45"/>
+        <path class="g-break g-break-v" d="M70 26 V56"/>
+      </g>
+      <text class="g-count" x="80" y="46">&#215;2</text>
+      <text class="g-what" x="8" y="101">a number, and when</text>
+    </svg>
+    <p class="shapecap">a button press is one value and a time. No head model is
+    involved.</p>
+  </div>
+
+  <div class="shapecell">
+    <p class="shapekind s-kind">THE PRIOR</p>
+    <svg viewBox="0 0 150 104" role="img"
+         aria-label="The prior: a graph, drawn as five nodes with edges between them, two edges trailing off to an ellipsis, times 12,274 tracts.">
+      <g class="g-graph">
+        <path d="M26 30 L58 20 M26 30 L40 58 M58 20 L74 46 M40 58 L74 46 M58 20 L40 58"/>
+        <path class="g-trail" d="M74 46 L96 58 M58 20 L92 16"/>
+        <circle cx="26" cy="30" r="4.5" opacity="0.9"/>
+        <circle cx="58" cy="20" r="4.5" opacity="0.55"/>
+        <circle cx="40" cy="58" r="4.5" opacity="0.75"/>
+        <circle cx="74" cy="46" r="4.5" opacity="0.35"/>
+        <circle cx="46" cy="40" r="4.5" opacity="0.6"/>
+      </g>
+      <text class="g-ellipsis" x="100" y="62">&#8230;</text>
+      <text class="g-count" x="96" y="26">&#215;12,274</text>
+      <text class="g-what" x="8" y="101">regions and tracts</text>
+    </svg>
+    <p class="shapecap">a graph over the same regions, carrying 33 maps per
+    node.</p>
+  </div>
+
+</div>
+</figure>
+
 <p>Each way of reading the brain gets its own forward model, because each one
 measures a different physical quantity. Electrical recording is a
 <strong>lead field</strong> computed from a boundary-element head model, which

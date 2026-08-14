@@ -22,6 +22,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import re
+
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -80,9 +82,20 @@ def test_the_004_row_answers_it_once_the_arms_exist(path: Path):
     # reaches the row. This test failed against a page that already answered the
     # question, which is the more dangerous direction of wrong: a guard that
     # cries wolf gets disabled.
-    cell = '<td><strong><a href="https://huggingface.co/jacob-valdez/scwbd-004">scwbd-004</a></strong></td>'
-    i = html.find(cell)
-    if i < 0:  # the row may not be a link in every rendering
+    # Matched as a PATTERN, not a literal. The anchor was the exact cell markup
+    # and broke the moment site/build.py started stamping `data-label` onto every
+    # `<td>` for the phone layout: `find` missed, the fallback `rfind` landed on
+    # a mention 4,000 characters PAST the row, and the guard failed against a
+    # page that answers the question perfectly well. It failed only for `docs`,
+    # because `site/content` is the un-built source -- which is what said the
+    # cause was the build step and not the prose.
+    cell = re.compile(
+        r"<td[^>]*>\s*<strong>\s*<a href=\"https://huggingface\.co/jacob-valdez/scwbd-004\">"
+    )
+    m = cell.search(html)
+    if m is not None:
+        i = m.start()
+    else:  # the row may not be a link in every rendering
         i = html.rfind("scwbd-004")
     assert i >= 0, f"{path.name} carries no scwbd-004 row at all"
     row = html[i : i + 12000]
