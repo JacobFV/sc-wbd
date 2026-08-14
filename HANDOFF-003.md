@@ -1,3 +1,12 @@
+> **This file is the run-3 handoff, and the mechanism it belongs to is superseded.**
+> It stays here, unmoved, because ten files reference it by path — including
+> `scwbd/foundation/train.py`, `scripts/launch_run4.sh` and two tests — and it remains the record
+> of what run 3 handed over.
+>
+> **For NEW work do not create `HANDOFF-<n>.md`.** Live task state goes in `scratch/<TASK>.md`;
+> durable knowledge goes in `notes/` (see `notes/README.md` and `notes/INDEX.md`). Why the split,
+> and what was rejected: `notes/decisions/2026-08-14-notes-beside-reports-and-scratch-not-instead-of-them.md`.
+
 BUILD SC-WBD-003. Autonomous; I am not reading. Every turn is a work turn.
 Commit to master, push.
 

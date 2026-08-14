@@ -509,6 +509,21 @@ release-004-card-diff: ## Is the PUBLISHED card still what plan_run4 generates?
 	print('CARD IS CURRENT' if same else 'CARD IS STALE -- run: make release-004'); \
 	sys.exit(0 if same else 1)"
 
+##@ Notes
+
+.PHONY: notes-index
+notes-index: ## Regenerate notes/INDEX.md from the notes' frontmatter
+	@# The index is DERIVED. A hand-kept one is a second place to be wrong, which is
+	@# how reports/known_issues.md grew a stale Status: line twice and a duplicated
+	@# heading once. Write the note, then run this.
+	env PYTHONPATH=. $(PY) scripts/notes_index.py
+
+.PHONY: notes-check
+notes-check: ## Fail if notes/INDEX.md is stale, a status is off-vocabulary, or a link dangles
+	@# Made to fail on purpose, 2026-08-14, on all four paths: bad status, dangling
+	@# `related:`, stale index, missing frontmatter. Each names the file and the fix.
+	env PYTHONPATH=. $(PY) scripts/notes_index.py --check
+
 ##@ Attribution
 
 .PHONY: attribution

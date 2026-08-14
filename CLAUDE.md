@@ -31,6 +31,37 @@ genuinely cannot be fixed now, it gets a named ISSUE with what would discharge
 it, a guard that fails loudly, and a line in the model card — and you say plainly
 in the turn that you did not fix it and why. Silence is the failure mode.
 
+## Where things are written down
+
+Four places, split by **lifetime**, not by topic. Put a thing in the wrong one and the next agent
+will not find it.
+
+| you have | it goes in | write rule |
+|---|---|---|
+| live state of the task you are on | `scratch/<TASK>.md` | rewritten continuously; delete when the task ends |
+| something you measured, decided, or wondered | `notes/{findings,questions,decisions}/` | **one file per note, never append to a shared one** |
+| a curated result, issue or run record | `reports/` | edited deliberately; expected to stay true |
+| a standing instruction for every agent | this file | only when it generalises past one run |
+
+**Start a session by reading `scratch/<TASK>.md`, then `notes/INDEX.md`.** The first tells you where
+the work is; the second tells you what is already known, decided, or stuck. `make notes-index`
+regenerates the index from the notes' own frontmatter; `make notes-check` fails if it is stale, a
+status is off-vocabulary, or a cross-link dangles. See `notes/README.md` for the bar each directory
+holds you to.
+
+Two rules that are not style preferences:
+
+- **Never append to a shared file from concurrent work.** Several agents share one tree. Two agents
+  appending to one log conflict on every merge; two agents creating two files merge correctly. This
+  is the same reason `git add -A` is forbidden here, and append-only edits to
+  `reports/known_issues.md` have already produced a stale `Status:` line twice and a duplicated
+  heading once.
+- **A decision is written when the fork is taken, before the work.** Written afterwards it is a
+  justification and reads like one.
+
+`HANDOFF-<n>.md` is the superseded mechanism. The existing ones stay — ten files reference them by
+path — but do not create another.
+
 ## Mistakes made repeatedly in this repo
 
 Each of these cost real time or real data. They are listed because they recur,
