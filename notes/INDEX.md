@@ -10,7 +10,7 @@ Read this after `scratch/<TASK>.md` and before starting: it is the two-minute an
 
 <!-- BEGIN GENERATED -->
 
-**13 notes** · 0 blocked · 5 live decisions · 5 standing findings · 3 open questions
+**14 notes** · 0 blocked · 5 live decisions · 6 standing findings · 3 open questions
 
 ### Live decisions
 
@@ -22,6 +22,7 @@ Read this after `scratch/<TASK>.md` and before starting: it is the two-minute an
 
 ### Standing findings
 
+- [The gate reports are not stale: the runner supplies no inputs, so re-running cannot change them](findings/2026-08-14-the-gate-reports-are-not-stale-nothing-supplies-inputs.md) — `measured` · `CLAIM_GATES`
 - [Every claim-gate adapter resolves; the machinery is not what is missing](findings/2026-08-14-the-gate-adapters-all-resolve.md) — `measured` · `CLAIM_GATES`
 - [G4's TypeError is the gate refusing to invent the system under test](findings/2026-08-14-the-fisher-typeerror-is-a-refusal-not-a-bug.md) — `measured` · `CLAIM_GATES`
 - [All five gates are blocked on baseline models nobody trained, and one on data nobody holds](findings/2026-08-14-every-gate-is-blocked-on-untrained-baselines.md) — `measured` · `CLAIM_GATES`

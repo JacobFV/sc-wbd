@@ -101,7 +101,36 @@ def collect() -> tuple[dict[str, list[dict]], list[str]]:
                     problems.append(
                         f"notes/{d}/{meta['_slug']}.md: related: {rel} does not exist"
                     )
+    problems += _dangling_prose_links()
     return notes, problems
+
+
+#: A `notes/<dir>/<slug>.md` path written into prose. The frontmatter `related:` field is checked
+#: above; this catches the other half -- paths written into CLAUDE.md, scratch/<TASK>.md and the
+#: bodies of notes themselves. Found by hand once (scratch/CLAIM_GATES.md pointed at
+#: `...-the-fisher-typeerror-is-a-refusal.md`, which is not the filename), which is the argument for
+#: checking it here instead.
+PROSE_LINK = re.compile(r"notes/(decisions|findings|questions)/(\d{4}-\d{2}-\d{2}-[a-z0-9-]+)\.md")
+
+#: Where prose is allowed to reference a note. Anything outside these is not scanned.
+PROSE_SOURCES = ("notes", "scratch")
+
+
+def _dangling_prose_links() -> list[str]:
+    out: list[str] = []
+    files = [ROOT / "CLAUDE.md"]
+    for d in PROSE_SOURCES:
+        files += sorted((ROOT / d).rglob("*.md"))
+    for f in files:
+        if not f.is_file():
+            continue
+        for m in PROSE_LINK.finditer(f.read_text()):
+            target = ROOT / "notes" / m.group(1) / f"{m.group(2)}.md"
+            if not target.exists():
+                out.append(
+                    f"{f.relative_to(ROOT)}: links to {m.group(0)}, which does not exist"
+                )
+    return out
 
 
 def render(notes: dict[str, list[dict]]) -> str:

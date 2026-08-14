@@ -27,13 +27,17 @@ would flip a gate without a new measurement behind it, the change is wrong.
   not missing. → `notes/findings/2026-08-14-the-gate-adapters-all-resolve.md`
 - **G4's `TypeError` is a refusal, not a bug.** `expected_fisher` needs the system and protocol
   under test; the gate will not invent them ("a gate that computes the quantity it audits is not an
-  audit", `scwbd/bench/gates.py`). → `notes/findings/2026-08-14-the-fisher-typeerror-is-a-refusal.md`
+  audit", `scwbd/bench/gates.py`). → `notes/findings/2026-08-14-the-fisher-typeerror-is-a-refusal-not-a-bug.md`
 - **Every gate is blocked on baseline MODELS that were never trained**, not on code.
 - **G4 cannot pass at all**: `prospective_recovery` is mandatory and needs a prospective
   perturbation dataset nobody holds.
-- The gate reports on disk are from **SC-WBD-001-beta, git `1a35a9a`, 2026-08-06** — run 1. Run 4
-  now holds things run 1 did not (a new-session holdout, versioned splits), so the gap is smaller
-  than the reports say. **The reports have not been regenerated since run 1.**
+- **The reports are NOT stale, and nothing is ever passed to a gate.** They are stamped
+  SC-WBD-001-beta / `1a35a9a` / 2026-08-06, which reads as out of date. Re-running on 2026-08-14
+  reproduces them exactly — same counts, byte-identical blocking reasons — because
+  `python -m scwbd.bench` passes no config, so every gate is built with no candidate, no datasets
+  and no baselines. The blockers describe *what was handed in*, which has always been nothing.
+  → `notes/findings/2026-08-14-the-gate-reports-are-not-stale-nothing-supplies-inputs.md`
+  *(This corrects the original framing in this file, which assumed the reports had gone stale.)*
 
 ## Per gate: what blocks it, and what class of thing it is
 
@@ -55,10 +59,14 @@ Each is checked off only when the stated evidence exists. `[ ]` not started · `
 
 ### A. Make the code side complete
 
-- [ ] **A1. Regenerate the gate reports against run 4.** The current ones describe run 1. Until
-      this runs, every blocker list below is a claim about a nine-day-old tree.
-      *Done when:* `reports/gates/G*.json` carry a run-4 provenance stamp and the blocker lists are
-      re-derived.
+- [x] **A1. Regenerate the gate reports against run 4.** **Done 2026-08-14 — and the premise was
+      wrong.** Re-running gives `6 PASS, 0 FAIL, 30 COULD_NOT_RUN`, identical to run 1, and the
+      G1-G5 blocking reasons are byte-identical to the stored JSON. The reports are not stale and
+      re-running cannot change them: `python -m scwbd.bench` passes **no config**, so every gate is
+      constructed with no candidate, no datasets and no baselines and correctly says so.
+      → `notes/findings/2026-08-14-the-gate-reports-are-not-stale-nothing-supplies-inputs.md`
+      *Consequence:* A4 is the critical path, not a nicety. The seam
+      (`run_everything(config={"gates": {...}})`) exists and nobody uses it.
 - [ ] **A2. Bind the Fisher map for G4.** `fisher_design_map(u, cfg, proto)` exists; G4 needs it
       bound to a named system and protocol. **This is a scientific commitment, not a repair** —
       record it as a `notes/decisions/` note naming the system, before wiring it.
@@ -68,10 +76,20 @@ Each is checked off only when the stated evidence exists. `[ ]` not started · `
       (`naive_resampling`, `single_modality_*`, `population`, `anatomy_only`, `session_adapted`,
       coarse-only, the three graph controls) so that running them is `make`, not authorship.
       *Done when:* each named baseline in the table above has a config, and a dry-run resolves it.
-- [ ] **A4. A gate-input adapter for run-4 artifacts.** The seam that hands a trained checkpoint,
-      a split and a set of baseline scores to a gate. **Must refuse a partial input set** rather
-      than run on what happens to be present.
+- [~] **A4. A gate-input adapter for run-4 artifacts. THE CRITICAL PATH.** Build what constructs
+      `config["gates"]["G5"] = {train, new_session, unseen_task, candidate, baselines}` from real
+      artifacts. **Must refuse a partial input set** rather than run on what happens to be present.
       *Done when:* the adapter exists, and a test proves it refuses when a mandatory input is absent.
+
+      G5 first, because run 4 already holds `new_session` (night 2 of the 75 twice-recorded
+      sleep-EDFx participants) and the individualised `candidate`. It is short exactly the three
+      baselines.
+
+      **The trap, from G5's own docstring:** *"Including the person's scan is not personalization"*.
+      `anatomy_only` is mandatory and is GIVEN the person's anatomy; the candidate must beat it on
+      future data or the supported claim is "anatomy is informative", which is weaker and different.
+      An adapter that omits `anatomy_only` because it is awkward to build would produce a gate whose
+      pass means something other than its name.
 
 ### B. Name what only compute can discharge
 
@@ -95,3 +113,7 @@ Newest last. One line per session, with what changed and what the next reader sh
 - **2026-08-14** — Investigated all five gates; established the four facts above. Built `notes/` and
   this file. No gate touched yet. **Next: A1**, because every other item is reasoning about a
   nine-day-old report.
+- **2026-08-14 (later)** — A1 done, and it refuted its own premise: the reports are not stale, and
+  re-running cannot change them because nothing is ever passed in. The gates have always been
+  reporting on an empty input set, correctly. **Next: A4 for G5**, which is now the whole task —
+  everything else is downstream of having a seam that carries real artifacts.

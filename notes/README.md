@@ -17,8 +17,9 @@ mutation reusing stale bytecode. Every one of those was learned more than once.
 
 Because agents work in **one shared tree**, and a single shared file is the thing that cannot
 survive that. Two agents appending to a log conflict on every merge; two agents *creating*
-`notes/findings/2026-08-14-the-gate-refuses-rather-than-guesses.md` and
-`notes/findings/2026-08-14-fisher-needs-a-bound-map.md` merge silently and correctly.
+`notes/findings/2026-08-14-the-gate-adapters-all-resolve.md` and
+`notes/findings/2026-08-14-the-fisher-typeerror-is-a-refusal-not-a-bug.md` merge silently and
+correctly — as those two in fact did.
 
 So: **never append to a shared file from concurrent work. Create a new one.** The filename carries
 the date and a slug, which makes collisions essentially impossible and the listing chronological.
