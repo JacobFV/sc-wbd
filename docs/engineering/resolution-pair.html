@@ -142,10 +142,10 @@ pushing the fine state through directly.</p>
 <table>
 <thead><tr><th>Condition</th><th class="num">Rel. error (whitened)</th><th class="num">Residual sd/ch</th><th class="num">Signal sd/ch</th><th>Verdict</th></tr></thead>
 <tbody>
-<tr><td>Left auditory</td><td class="num">0.765</td><td class="num">1.46</td><td class="num">1.90</td><td><span class="chip fail">fail</span></td></tr>
-<tr><td>Right auditory</td><td class="num">0.771</td><td class="num">1.48</td><td class="num">1.92</td><td><span class="chip fail">fail</span></td></tr>
-<tr><td>Left visual</td><td class="num">0.762</td><td class="num">1.50</td><td class="num">1.97</td><td><span class="chip fail">fail</span></td></tr>
-<tr><td>Right visual</td><td class="num">0.766</td><td class="num">1.47</td><td class="num">1.92</td><td><span class="chip fail">fail</span></td></tr>
+<tr><td data-label="Condition">Left auditory</td><td class="num" data-label="Rel. error (whitened)">0.765</td><td class="num" data-label="Residual sd/ch">1.46</td><td class="num" data-label="Signal sd/ch">1.90</td><td data-label="Verdict"><span class="chip fail">fail</span></td></tr>
+<tr><td data-label="Condition">Right auditory</td><td class="num" data-label="Rel. error (whitened)">0.771</td><td class="num" data-label="Residual sd/ch">1.48</td><td class="num" data-label="Signal sd/ch">1.92</td><td data-label="Verdict"><span class="chip fail">fail</span></td></tr>
+<tr><td data-label="Condition">Left visual</td><td class="num" data-label="Rel. error (whitened)">0.762</td><td class="num" data-label="Residual sd/ch">1.50</td><td class="num" data-label="Signal sd/ch">1.97</td><td data-label="Verdict"><span class="chip fail">fail</span></td></tr>
+<tr><td data-label="Condition">Right visual</td><td class="num" data-label="Rel. error (whitened)">0.766</td><td class="num" data-label="Residual sd/ch">1.47</td><td class="num" data-label="Signal sd/ch">1.92</td><td data-label="Verdict"><span class="chip fail">fail</span></td></tr>
 </tbody>
 </table>
 </div>
@@ -195,15 +195,15 @@ invocations.</p>
 <table>
 <thead><tr><th>Restriction</th><th class="num">dof</th><th class="num">Observable retained</th></tr></thead>
 <tbody>
-<tr><td>Desikan-Killiany scalar parcel mean</td><td class="num">68</td><td class="num">5.6%</td></tr>
-<tr><td>Destrieux scalar parcel mean</td><td class="num">150</td><td class="num">10.8%</td></tr>
-<tr><td><strong>Declared: Schaefer400x7 scalar parcel mean</strong></td><td class="num">400</td><td class="num">32.1%</td></tr>
-<tr><td>Same, membership scrambled (spatial null)</td><td class="num">400</td><td class="num">5.2%</td></tr>
-<tr><td>Parcels subdivided ×2</td><td class="num">800</td><td class="num">41.5%</td></tr>
-<tr><td>Parcels subdivided ×4</td><td class="num">1595</td><td class="num">53.3%</td></tr>
-<tr><td>Parcels subdivided ×8</td><td class="num">3154</td><td class="num">70.8%</td></tr>
-<tr><td><strong>Parcel net dipole moment (3 per parcel)</strong></td><td class="num">1200</td><td class="num">83.4%</td></tr>
-<tr><td>Best possible restriction of size 400</td><td class="num">400</td><td class="num">100.0%</td></tr>
+<tr><td data-label="Restriction">Desikan-Killiany scalar parcel mean</td><td class="num" data-label="dof">68</td><td class="num" data-label="Observable retained">5.6%</td></tr>
+<tr><td data-label="Restriction">Destrieux scalar parcel mean</td><td class="num" data-label="dof">150</td><td class="num" data-label="Observable retained">10.8%</td></tr>
+<tr><td data-label="Restriction"><strong>Declared: Schaefer400x7 scalar parcel mean</strong></td><td class="num" data-label="dof">400</td><td class="num" data-label="Observable retained">32.1%</td></tr>
+<tr><td data-label="Restriction">Same, membership scrambled (spatial null)</td><td class="num" data-label="dof">400</td><td class="num" data-label="Observable retained">5.2%</td></tr>
+<tr><td data-label="Restriction">Parcels subdivided ×2</td><td class="num" data-label="dof">800</td><td class="num" data-label="Observable retained">41.5%</td></tr>
+<tr><td data-label="Restriction">Parcels subdivided ×4</td><td class="num" data-label="dof">1595</td><td class="num" data-label="Observable retained">53.3%</td></tr>
+<tr><td data-label="Restriction">Parcels subdivided ×8</td><td class="num" data-label="dof">3154</td><td class="num" data-label="Observable retained">70.8%</td></tr>
+<tr><td data-label="Restriction"><strong>Parcel net dipole moment (3 per parcel)</strong></td><td class="num" data-label="dof">1200</td><td class="num" data-label="Observable retained">83.4%</td></tr>
+<tr><td data-label="Restriction">Best possible restriction of size 400</td><td class="num" data-label="dof">400</td><td class="num" data-label="Observable retained">100.0%</td></tr>
 </tbody>
 </table>
 </div>
@@ -263,8 +263,8 @@ and the same contraction there gives:</p>
 <table>
 <thead><tr><th>support</th><th>dof</th><th>η</th></tr></thead>
 <tbody>
-<tr><td>scalar per parcel</td><td class="num">414</td><td class="num">0.3795</td></tr>
-<tr><td>3-vector per parcel</td><td class="num">1242</td><td class="num">1.0000</td></tr>
+<tr><td data-label="support">scalar per parcel</td><td class="num" data-label="dof">414</td><td class="num" data-label="η">0.3795</td></tr>
+<tr><td data-label="support">3-vector per parcel</td><td class="num" data-label="dof">1242</td><td class="num" data-label="η">1.0000</td></tr>
 </tbody>
 </table>
 </div>

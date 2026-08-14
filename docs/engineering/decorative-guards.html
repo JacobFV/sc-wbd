@@ -70,15 +70,15 @@ the question it was asked.</p>
 <table>
 <thead><tr><th>Instrument</th><th>Read the same under…</th></tr></thead>
 <tbody>
-<tr><td>Parameter-binding glob match</td><td>CPU and CUDA<span class="note"><input type="checkbox" id="engineering-decorative-guards-n1" class="note-toggle"><label for="engineering-decorative-guards-n1" class="note-ref">1</label><span class="note-body"><span class="note-n">1</span>The compiler renames parameters when it optimises the model. Exact names matched nothing on GPU; prefix globs still matched, so the permission system reported success. Every CPU test passed.</span></span></td></tr>
-<tr><td>Container memory accounting</td><td>capped and uncapped<span class="note"><input type="checkbox" id="engineering-decorative-guards-n2" class="note-toggle"><label for="engineering-decorative-guards-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>It charges host pages; the allocation was on the device. Reported 8.17&nbsp;GB while the process held 97.9&nbsp;GB.</span></span></td></tr>
-<tr><td>“Allocated by PyTorch” in an OOM message</td><td>batch 64 and batch 192<span class="note"><input type="checkbox" id="engineering-decorative-guards-n3" class="note-toggle"><label for="engineering-decorative-guards-n3" class="note-ref">3</label><span class="note-body"><span class="note-n">3</span>At out-of-memory it always equals the cap, by construction — 38.93&nbsp;GB at batch 192 and 39.70&nbsp;GB at batch 128, against a 40&nbsp;GB cap. It produced two wrong batch-size estimates in a row, in opposite directions.</span></span></td></tr>
-<tr><td>The <code>-dirty</code> suffix on a provenance hash</td><td>clean source and modified source</td></tr>
-<tr><td>A backend's 0% clamp rate</td><td>the prior fit the support, and the prior never arrived</td></tr>
-<tr><td>A <code>git diff</code> against <code>HEAD</code></td><td>the worktree it was written in, and any other</td></tr>
-<tr><td>Composite training loss</td><td>a real change in forecast quality, and a reweighting of unrelated terms</td></tr>
-<tr><td>A stop-trigger at “10× the running floor”</td><td>an unstable learning rate, and a reproducible hard batch</td></tr>
-<tr><td>Window z-standard-deviation</td><td>a normaliser that bounds the tail, and one that defines the metric to 1</td></tr>
+<tr><td data-label="Instrument">Parameter-binding glob match</td><td data-label="Read the same under…">CPU and CUDA<span class="note"><input type="checkbox" id="engineering-decorative-guards-n1" class="note-toggle"><label for="engineering-decorative-guards-n1" class="note-ref">1</label><span class="note-body"><span class="note-n">1</span>The compiler renames parameters when it optimises the model. Exact names matched nothing on GPU; prefix globs still matched, so the permission system reported success. Every CPU test passed.</span></span></td></tr>
+<tr><td data-label="Instrument">Container memory accounting</td><td data-label="Read the same under…">capped and uncapped<span class="note"><input type="checkbox" id="engineering-decorative-guards-n2" class="note-toggle"><label for="engineering-decorative-guards-n2" class="note-ref">2</label><span class="note-body"><span class="note-n">2</span>It charges host pages; the allocation was on the device. Reported 8.17&nbsp;GB while the process held 97.9&nbsp;GB.</span></span></td></tr>
+<tr><td data-label="Instrument">“Allocated by PyTorch” in an OOM message</td><td data-label="Read the same under…">batch 64 and batch 192<span class="note"><input type="checkbox" id="engineering-decorative-guards-n3" class="note-toggle"><label for="engineering-decorative-guards-n3" class="note-ref">3</label><span class="note-body"><span class="note-n">3</span>At out-of-memory it always equals the cap, by construction — 38.93&nbsp;GB at batch 192 and 39.70&nbsp;GB at batch 128, against a 40&nbsp;GB cap. It produced two wrong batch-size estimates in a row, in opposite directions.</span></span></td></tr>
+<tr><td data-label="Instrument">The <code>-dirty</code> suffix on a provenance hash</td><td data-label="Read the same under…">clean source and modified source</td></tr>
+<tr><td data-label="Instrument">A backend's 0% clamp rate</td><td data-label="Read the same under…">the prior fit the support, and the prior never arrived</td></tr>
+<tr><td data-label="Instrument">A <code>git diff</code> against <code>HEAD</code></td><td data-label="Read the same under…">the worktree it was written in, and any other</td></tr>
+<tr><td data-label="Instrument">Composite training loss</td><td data-label="Read the same under…">a real change in forecast quality, and a reweighting of unrelated terms</td></tr>
+<tr><td data-label="Instrument">A stop-trigger at “10× the running floor”</td><td data-label="Read the same under…">an unstable learning rate, and a reproducible hard batch</td></tr>
+<tr><td data-label="Instrument">Window z-standard-deviation</td><td data-label="Read the same under…">a normaliser that bounds the tail, and one that defines the metric to 1</td></tr>
 </tbody>
 </table>
 </div>
@@ -274,8 +274,8 @@ metric's scale changed by two orders of magnitude:</p>
 <table>
 <thead><tr><th></th><th class="num">Before fix</th><th class="num">After fix</th></tr></thead>
 <tbody>
-<tr><td>Metric at step 1</td><td class="num">184.338</td><td class="num">1.692</td></tr>
-<tr><td>What “below 1.0” demands</td><td class="num">a 99.5% descent</td><td class="num">roughly 41%</td></tr>
+<tr><td>Metric at step 1</td><td class="num" data-label="Before fix">184.338</td><td class="num" data-label="After fix">1.692</td></tr>
+<tr><td>What “below 1.0” demands</td><td class="num" data-label="Before fix">a 99.5% descent</td><td class="num" data-label="After fix">roughly 41%</td></tr>
 </tbody>
 </table>
 </div>

@@ -69,11 +69,11 @@ information matrix for the pre-registered parameters, evaluated in every regime.
 <table>
 <thead><tr><th>Criterion</th><th>Rule</th></tr></thead>
 <tbody>
-<tr><td><code>C1_fusion_information</code></td><td>joint-native &ge; 1.05 &times; max(EEG-only, fMRI-only), in every regime</td></tr>
-<tr><td><code>C2_native_beats_resampled</code></td><td>joint-native &gt; the naive-resampling estimator</td></tr>
-<tr><td><code>C3_intervention_information</code></td><td>impulse-matched &ge; 1.05 &times; joint-native</td></tr>
-<tr><td><code>C4_calibrated_recovery</code></td><td>nominal 95% inside the Wilson interval of empirical coverage</td></tr>
-<tr><td><code>C5_recovery_improvement</code></td><td>delay and &theta; RMSE &le; the better single modality</td></tr>
+<tr><td data-label="Criterion"><code>C1_fusion_information</code></td><td data-label="Rule">joint-native &ge; 1.05 &times; max(EEG-only, fMRI-only), in every regime</td></tr>
+<tr><td data-label="Criterion"><code>C2_native_beats_resampled</code></td><td data-label="Rule">joint-native &gt; the naive-resampling estimator</td></tr>
+<tr><td data-label="Criterion"><code>C3_intervention_information</code></td><td data-label="Rule">impulse-matched &ge; 1.05 &times; joint-native</td></tr>
+<tr><td data-label="Criterion"><code>C4_calibrated_recovery</code></td><td data-label="Rule">nominal 95% inside the Wilson interval of empirical coverage</td></tr>
+<tr><td data-label="Criterion"><code>C5_recovery_improvement</code></td><td data-label="Rule">delay and &theta; RMSE &le; the better single modality</td></tr>
 </tbody>
 </table>
 </div>
@@ -94,9 +94,9 @@ C5_recovery_improvement      NOT EVALUATED</code></pre>
 <table>
 <thead><tr><th>regime</th><th>C1</th><th>C2</th><th>C3</th></tr></thead>
 <tbody>
-<tr><td><code>reference</code></td><td>fail</td><td>fail</td><td>fail</td></tr>
-<tr><td><code>low_snr_short_delay</code></td><td>fail</td><td><strong>pass</strong></td><td><strong>pass</strong></td></tr>
-<tr><td><code>weak_coupling_long_delay</code></td><td>fail</td><td><strong>pass</strong></td><td>fail</td></tr>
+<tr><td data-label="regime"><code>reference</code></td><td data-label="C1">fail</td><td data-label="C2">fail</td><td data-label="C3">fail</td></tr>
+<tr><td data-label="regime"><code>low_snr_short_delay</code></td><td data-label="C1">fail</td><td data-label="C2"><strong>pass</strong></td><td data-label="C3"><strong>pass</strong></td></tr>
+<tr><td data-label="regime"><code>weak_coupling_long_delay</code></td><td data-label="C1">fail</td><td data-label="C2"><strong>pass</strong></td><td data-label="C3">fail</td></tr>
 </tbody>
 </table>
 </div>

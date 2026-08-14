@@ -86,13 +86,13 @@ everything else raises an error naming the missing declaration:</p>
 <table>
 <thead><tr><th>situation</th><th>outcome</th></tr></thead>
 <tbody>
-<tr><td>different frames</td><td>refuse — supply a registration</td></tr>
-<tr><td>different units</td><td>refuse — convert first</td></tr>
-<tr><td>vector components in different frames</td><td>refuse — rotate first</td></tr>
-<tr><td>two named clocks, no declared relation</td><td>refuse — supply a synchronisation record</td></tr>
-<tr><td>scalar ↔ vector, no orientation field</td><td>refuse — see below</td></tr>
-<tr><td>same frame, finer → coarser</td><td>restriction, marked <em>lossy</em></td></tr>
-<tr><td>same frame, coarser → finer</td><td>prolongation, marked <em>invents</em></td></tr>
+<tr><td data-label="situation">different frames</td><td data-label="outcome">refuse — supply a registration</td></tr>
+<tr><td data-label="situation">different units</td><td data-label="outcome">refuse — convert first</td></tr>
+<tr><td data-label="situation">vector components in different frames</td><td data-label="outcome">refuse — rotate first</td></tr>
+<tr><td data-label="situation">two named clocks, no declared relation</td><td data-label="outcome">refuse — supply a synchronisation record</td></tr>
+<tr><td data-label="situation">scalar ↔ vector, no orientation field</td><td data-label="outcome">refuse — see below</td></tr>
+<tr><td data-label="situation">same frame, finer → coarser</td><td data-label="outcome">restriction, marked <em>lossy</em></td></tr>
+<tr><td data-label="situation">same frame, coarser → finer</td><td data-label="outcome">prolongation, marked <em>invents</em></td></tr>
 </tbody>
 </table>
 </section>
@@ -170,9 +170,9 @@ counting the current model says why:</p>
 <table>
 <thead><tr><th>what</th><th>how many</th></tr></thead>
 <tbody>
-<tr><td>source cards declared on disk</td><td class="num">9</td></tr>
-<tr><td>of those, involving EEG</td><td class="num">9</td></tr>
-<tr><td>EEG views the model can hold</td><td class="num">1</td></tr>
+<tr><td data-label="what">source cards declared on disk</td><td class="num" data-label="how many">9</td></tr>
+<tr><td data-label="what">of those, involving EEG</td><td class="num" data-label="how many">9</td></tr>
+<tr><td data-label="what">EEG views the model can hold</td><td class="num" data-label="how many">1</td></tr>
 </tbody>
 </table>
 
@@ -212,10 +212,10 @@ already sitting on disk:</p>
 <table>
 <thead><tr><th>source</th><th>what it is</th><th>blocked by</th><th>needs</th></tr></thead>
 <tbody>
-<tr><td><code>eegmmidb</code></td><td>64-channel EEG</td><td><span class="chip pass">enabled</span></td><td>—</td></tr>
-<tr><td><code>ds002336</code></td><td>EEG <em>and</em> fMRI, CC0</td><td>BOLD is in scanner space; model state is parcels</td><td>a registration</td></tr>
-<tr><td><code>ds000113</code></td><td>7 T fMRI</td><td>a 116 mm slab — parcels outside it are unmeasured in every subject</td><td>a coverage mask</td></tr>
-<tr><td><code>sleepedf</code></td><td>2 EEG derivations</td><td>2 channels cannot constrain a 64-channel head</td><td>a montage adapter</td></tr>
+<tr><td data-label="source"><code>eegmmidb</code></td><td data-label="what it is">64-channel EEG</td><td data-label="blocked by"><span class="chip pass">enabled</span></td><td data-label="needs">—</td></tr>
+<tr><td data-label="source"><code>ds002336</code></td><td data-label="what it is">EEG <em>and</em> fMRI, CC0</td><td data-label="blocked by">BOLD is in scanner space; model state is parcels</td><td data-label="needs">a registration</td></tr>
+<tr><td data-label="source"><code>ds000113</code></td><td data-label="what it is">7 T fMRI</td><td data-label="blocked by">a 116 mm slab — parcels outside it are unmeasured in every subject</td><td data-label="needs">a coverage mask</td></tr>
+<tr><td data-label="source"><code>sleepedf</code></td><td data-label="what it is">2 EEG derivations</td><td data-label="blocked by">2 channels cannot constrain a 64-channel head</td><td data-label="needs">a montage adapter</td></tr>
 </tbody>
 </table>
 </div>

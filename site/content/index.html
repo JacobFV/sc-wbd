@@ -61,45 +61,154 @@ SC-WBD keeps one shared model and lets each kind of signal constrain the part it
 can actually speak to.</p>
 
 <figure class="schematic">
-<svg viewBox="0 0 880 400" role="img"
-     aria-label="Schematic: four kinds of signal. Going in — the world acting on the person — reaches the brain. Reading the brain measures it through a declared forward operator. Coming out is what the person does, measured outside the head. Background is the slow conditions enclosing all of it.">
+<svg class="s-land" viewBox="0 0 904 470" role="img"
+     aria-label="Schematic: what goes into the model and what comes out. The prior it starts from — 414 regions, 12,274 tracts between them, and 33 maps per region covering receptors, myelin, intrinsic timescale and blood flow. Going in: the world acting on the person. In the middle, one person's brain as one shared state. Reading the brain measures that state through a named forward operator — EEG and MEG through a lead field from a head model, fMRI through Balloon-Windkessel haemodynamics, fNIRS through a photon-path model — and an observation with no declared operator is refused. Coming out is what the person does, measured outside the head. Background is the slow conditions enclosing all of it.">
   <!-- context: the slow conditions everything else happens inside -->
-  <rect class="s-dash" x="6" y="6" width="868" height="388"/>
-  <text class="s-kind s-faint" x="26" y="358">BACKGROUND</text>
-  <text class="s-note" x="26" y="378">slow conditions that shape everything else &#183; time of day, session, medication</text>
+  <rect class="s-dash" x="6" y="6" width="892" height="458"/>
+  <text class="s-kind s-faint" x="26" y="424">BACKGROUND</text>
+  <text class="s-note" x="26" y="444">slow conditions that shape everything else &#183; time of day, session, medication</text>
 
-  <!-- the object being modelled -->
-  <rect class="s-box s-strong" x="356" y="96" width="176" height="88"/>
-  <text class="s-title" x="444" y="132" text-anchor="middle">ONE PERSON&#8217;S BRAIN</text>
-  <text class="s-note" x="444" y="154" text-anchor="middle">414 regions, one shared state</text>
+  <!-- The brain sits left of centre. It was centred, and the right column then
+       had 210 units for lines like "Balloon-Windkessel haemodynamics", which
+       left the drawing through the right edge -- the SVG is overflow:visible,
+       so the text was not clipped by the viewBox, it was clipped by the page. -->
+  <rect class="s-box s-strong" x="300" y="96" width="176" height="88"/>
+  <text class="s-title" x="388" y="132" text-anchor="middle">ONE PERSON&#8217;S BRAIN</text>
+  <text class="s-note" x="388" y="154" text-anchor="middle">414 regions, one shared state</text>
 
   <!-- stimulus -->
   <text class="s-kind s-warm" x="26" y="112">GOING IN</text>
   <text class="s-note" x="26" y="132">the world acting on the person</text>
   <text class="s-note" x="26" y="152">video, audio, speech,</text>
   <text class="s-note" x="26" y="170">a magnetic pulse, ultrasound</text>
-  <path class="s-arrow s-warm" d="M232 140 H348"/>
-  <path class="s-head s-warm" d="M348 140 l-9 -4.5 v9 z"/>
+  <path class="s-arrow s-warm" d="M236 140 H292"/>
+  <path class="s-head s-warm" d="M292 140 l-9 -4.5 v9 z"/>
 
-  <!-- observation -->
-  <path class="s-arrow s-cool" d="M540 140 H656"/>
-  <path class="s-head s-cool" d="M656 140 l-9 -4.5 v9 z"/>
-  <text class="s-kind s-cool" x="664" y="112">READING THE BRAIN</text>
-  <text class="s-note" x="664" y="132">an instrument measuring</text>
-  <text class="s-note" x="664" y="150">the brain itself</text>
-  <text class="s-note" x="664" y="172">EEG, MEG, fMRI</text>
-  <text class="s-note s-cool" x="664" y="196">through a declared forward operator</text>
+  <!-- the prior: the conditioning that is there before any signal arrives -->
+  <text class="s-kind" x="26" y="292">THE PRIOR IT STARTS FROM</text>
+  <text class="s-note" x="26" y="312">414 regions and the</text>
+  <text class="s-note" x="26" y="330">12,274 tracts between them</text>
+  <text class="s-note" x="26" y="348">33 maps per region: receptors,</text>
+  <text class="s-note" x="26" y="366">myelin, timescale, blood flow</text>
+  <path class="s-arrow" d="M250 330 H344 V196"/>
+  <path class="s-head" d="M344 188 l-4.5 9 h9 z"/>
+
+  <!-- observation, through named operators -->
+  <path class="s-arrow s-cool" d="M484 140 H552"/>
+  <path class="s-head s-cool" d="M552 140 l-9 -4.5 v9 z"/>
+  <text class="s-kind s-cool" x="560" y="104">READING THE BRAIN</text>
+  <text class="s-note" x="560" y="124">an instrument measuring the state itself,</text>
+  <text class="s-note" x="560" y="142">each through its own physics:</text>
+  <text class="s-note" x="560" y="166">EEG and MEG &#8212; a lead field</text>
+  <text class="s-note" x="560" y="184">fMRI &#8212; Balloon&#8211;Windkessel haemodynamics</text>
+  <text class="s-note" x="560" y="202">fNIRS &#8212; a photon-path model</text>
+  <text class="s-note s-cool" x="560" y="226">no declared operator &#8594; the read is refused</text>
 
   <!-- boundary output -->
-  <path class="s-arrow s-warm" d="M444 192 V252 H656"/>
-  <path class="s-head s-warm" d="M656 252 l-9 -4.5 v9 z"/>
-  <text class="s-kind s-warm" x="664" y="240">COMING OUT</text>
-  <text class="s-note" x="664" y="260">what the person does,</text>
-  <text class="s-note" x="664" y="278">measured outside the head</text>
-  <text class="s-note" x="664" y="300">eye movements, typing, speech,</text>
-  <text class="s-note" x="664" y="318">heart rate, test answers</text>
+  <path class="s-arrow s-warm" d="M420 192 V330 H552"/>
+  <path class="s-head s-warm" d="M552 330 l-9 -4.5 v9 z"/>
+  <text class="s-kind s-warm" x="560" y="318">COMING OUT</text>
+  <text class="s-note" x="560" y="338">what the person does,</text>
+  <text class="s-note" x="560" y="356">measured outside the head</text>
+  <text class="s-note" x="560" y="374">eye movements, typing, speech,</text>
+  <text class="s-note" x="560" y="392">heart rate, test answers</text>
+</svg>
+<svg class="s-port" viewBox="0 0 420 980" role="img" aria-hidden="true">
+  <rect class="s-dash" x="6" y="6" width="408" height="968"/>
+
+  <!-- the prior, first: it is there before any signal arrives, and it gets
+       its own arrow. Without one it reads as a caption rather than an input,
+       which is exactly the thing this drawing was underselling. -->
+  <text class="s-kind" x="26" y="56">THE PRIOR IT STARTS FROM</text>
+  <text class="s-note" x="26" y="80">414 regions and the</text>
+  <text class="s-note" x="26" y="102">12,274 tracts between them</text>
+  <text class="s-note" x="26" y="124">33 maps per region:</text>
+  <text class="s-note" x="26" y="146">receptors, myelin,</text>
+  <text class="s-note" x="26" y="168">timescale, blood flow</text>
+  <path class="s-arrow" d="M300 180 H340 V346"/>
+  <path class="s-head" d="M340 354 l-4.5 -9 h9 z"/>
+
+  <!-- stimulus -->
+  <text class="s-kind s-warm" x="26" y="226">GOING IN</text>
+  <text class="s-note" x="26" y="250">the world acting on the person</text>
+  <text class="s-note" x="26" y="272">video, audio, speech,</text>
+  <text class="s-note" x="26" y="294">a magnetic pulse, ultrasound</text>
+
+  <path class="s-arrow s-warm" d="M210 316 V346"/>
+  <path class="s-head s-warm" d="M210 354 l-4.5 -9 h9 z"/>
+
+  <!-- the object being modelled -->
+  <rect class="s-box s-strong" x="60" y="362" width="300" height="96"/>
+  <text class="s-title" x="210" y="402" text-anchor="middle">ONE PERSON&#8217;S BRAIN</text>
+  <text class="s-note" x="210" y="428" text-anchor="middle">414 regions, one shared state</text>
+
+  <!-- both outputs leave the brain: a short fork, then two blocks -->
+  <path class="s-arrow s-cool" d="M150 458 V516"/>
+  <path class="s-head s-cool" d="M150 524 l-4.5 -9 h9 z"/>
+  <path class="s-arrow s-warm" d="M300 458 V736"/>
+  <path class="s-head s-warm" d="M300 744 l-4.5 -9 h9 z"/>
+
+  <text class="s-kind s-cool" x="26" y="556">READING THE BRAIN</text>
+  <text class="s-note" x="26" y="580">an instrument measuring the</text>
+  <text class="s-note" x="26" y="602">state itself, each through</text>
+  <text class="s-note" x="26" y="624">its own physics:</text>
+  <text class="s-note" x="26" y="652">EEG and MEG &#8212; a lead field</text>
+  <text class="s-note" x="26" y="674">fMRI &#8212; Balloon&#8211;Windkessel</text>
+  <text class="s-note" x="26" y="696">fNIRS &#8212; a photon-path model</text>
+
+  <text class="s-kind s-warm" x="26" y="776">COMING OUT</text>
+  <text class="s-note" x="26" y="800">what the person does,</text>
+  <text class="s-note" x="26" y="822">measured outside the head</text>
+  <text class="s-note" x="26" y="844">eye movements, typing, speech,</text>
+  <text class="s-note" x="26" y="866">heart rate, test answers</text>
+
+  <text class="s-kind s-faint" x="26" y="922">BACKGROUND</text>
+  <text class="s-note" x="26" y="946">slow conditions that shape all of it &#183;</text>
+  <text class="s-note" x="26" y="966">time of day, session, medication</text>
 </svg>
 </figure>
+
+<p>Each way of reading the brain gets its own forward model, because each one
+measures a different physical quantity. Electrical recording is a
+<strong>lead field</strong> computed from a boundary-element head model, which
+carries regional current to each scalp electrode. fMRI is the
+<strong>Balloon&#8211;Windkessel</strong> haemodynamic differential equation,
+integrated forward so blood-flow signal is <em>predicted</em> from neural state
+rather than assumed proportional to it. fNIRS is a photon-path model through
+scalp, skull and cortex. What the person does is read at the boundary of the
+body and needs no head model at all.[[note: In the package these are
+<code>EEGObservationOperator</code>, <code>BOLDObservationOperator</code>,
+<code>FNIRSObservationOperator</code> and
+<code>BehaviorObservationOperator</code>. Each implements the same interface —
+a prediction plus a bias-and-variance ledger — on its own spatial support and
+its own clock, and each returns what it does not know rather than a point
+estimate that hides it.]]</p>
+
+<p>They also run on <strong>different clocks, and are not resampled onto a
+common one</strong>. The electrical head reads the latent trajectory every
+millisecond; the haemodynamic head reads the same trajectory once a second or
+two, through an equation whose own time constants are seconds long. Nothing is
+interpolated into fictitious equivalence between them — the shared state is
+what they have in common, and the operators are where they differ. That is what
+the word <em>integrated</em> is doing in this project's name, and it is also
+where run 4's fMRI result went wrong: the equation integrates now, and the
+likelihood it produces still degrades over training.[[src:
+scwbd/observe/__init__.py]]</p>
+
+<p>None of that starts from nothing. Before any signal arrives the model is
+conditioned on a measured prior over the same 414 regions:
+<strong>12,274 tracts</strong> between them &mdash; 1,618 taken as hard
+structure, 7,386 soft, 3,270 proposed &mdash; at a mean length of 38.8&nbsp;mm,
+and <strong>33 maps per region</strong>, among them a 19-tracer PET panel of
+receptor and transporter densities, T1w/T2w myelin, cortical thickness, MEG
+intrinsic timescale, the principal functional gradients, the
+sensorimotor&ndash;association axis, and cerebral blood flow and glucose
+metabolism. Every region the model has an opinion about therefore arrives
+already carrying what is known about its chemistry, its myelination, its
+timescale and its wiring, and the posterior is conditioned on all of it rather
+than on the recordings alone.[[src: reports/anatomy_prior.md]] The prior is
+also published on its own, and each map carries its own licence and
+citation.</p>
 
 <p>Sorting signals this way is what makes partial data usable.[[note: In the
 schema these are <code>stimulus</code>, <code>observation</code>,

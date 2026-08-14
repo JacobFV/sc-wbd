@@ -306,6 +306,59 @@ def expand_src(body: str) -> str:
     return SRC_RE.sub(repl, body)
 
 
+# ------------------------------------------------------------ table labels
+#
+# A table is a grid, and a phone has no grid to put it in.  The first attempt
+# at making these fit was to let cells break words wherever they liked, which
+# does make the table fit and destroys it on the way: the Artifacts table came
+# out as a column of hyphen-less fragments stacked one character wide.
+#
+# What a narrow screen can show is one ROW at a time, as a small labelled
+# block.  That needs each cell to carry its column's name, because the header
+# row is far away by then -- so it is stamped on here, at build time, from the
+# table's own `<thead>`.  Authors keep writing plain tables; the stylesheet
+# reads `data-label` and does the rest under `max-width: 46rem`.
+
+THEAD_RE = re.compile(r"<thead>(.*?)</thead>", re.S)
+TH_RE = re.compile(r"<th\b[^>]*>(.*?)</th>", re.S)
+TABLE_RE = re.compile(r"<table\b[^>]*>.*?</table>", re.S)
+ROW_RE = re.compile(r"<tr\b[^>]*>.*?</tr>", re.S)
+CELL_RE = re.compile(r"<td(\s[^>]*)?>", re.S)
+
+
+def label_table_cells(body: str) -> str:
+    """Stamp every `<td>` with its column heading as `data-label`."""
+
+    def per_table(m: re.Match[str]) -> str:
+        table = m.group(0)
+        head = THEAD_RE.search(table)
+        if not head:
+            return table
+        headings = [text_of(h) for h in TH_RE.findall(head.group(1))]
+        if not headings:
+            return table
+
+        def per_row(rm: re.Match[str]) -> str:
+            row = rm.group(0)
+            # `<thead>`'s own row has no `<td>`, so it falls through untouched.
+            i = 0
+
+            def per_cell(cm: re.Match[str]) -> str:
+                nonlocal i
+                attrs = cm.group(1) or ""
+                label = headings[i] if i < len(headings) else ""
+                i += 1
+                if not label or "data-label" in attrs:
+                    return cm.group(0)
+                return f'<td{attrs} data-label="{html.escape(label, quote=True)}">'
+
+            return CELL_RE.sub(per_cell, row)
+
+        return ROW_RE.sub(per_row, table)
+
+    return TABLE_RE.sub(per_table, body)
+
+
 # ------------------------------------------------------------- sectioning
 #
 # The pages are authored as a flat run of headings and prose, which is the
@@ -458,6 +511,7 @@ def build(out_dir: Path) -> int:
 
         body = expand_notes(body, page_id)
         body = expand_src(body)
+        body = label_table_cells(body)
         body, sections = sectionize(body, page_id)
 
         up = "../" * depth

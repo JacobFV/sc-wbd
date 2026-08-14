@@ -133,11 +133,11 @@ it was <strong>wrong</strong>.</p>
 <table>
 <thead><tr><th>Component of the excess</th><th class="num">Nats</th><th class="num">Share</th></tr></thead>
 <tbody>
-<tr><td><strong>Scale</strong> — one global rescale</td><td class="num">0.4467</td><td class="num">100%</td></tr>
-<tr><td>Channel — per-channel fitting</td><td class="num">0.1113</td><td class="num">—</td></tr>
-<tr><td><strong>Horizon</strong> — the hypothesis</td><td class="num">0.0096</td><td class="num">2.1%</td></tr>
-<tr><td>State — per-window, beyond flat</td><td class="num">0.1896</td><td class="num">—</td></tr>
-<tr><td>State — per-window per-channel</td><td class="num">0.2587</td><td class="num">—</td></tr>
+<tr><td data-label="Component of the excess"><strong>Scale</strong> — one global rescale</td><td class="num" data-label="Nats">0.4467</td><td class="num" data-label="Share">100%</td></tr>
+<tr><td data-label="Component of the excess">Channel — per-channel fitting</td><td class="num" data-label="Nats">0.1113</td><td class="num" data-label="Share">—</td></tr>
+<tr><td data-label="Component of the excess"><strong>Horizon</strong> — the hypothesis</td><td class="num" data-label="Nats">0.0096</td><td class="num" data-label="Share">2.1%</td></tr>
+<tr><td data-label="Component of the excess">State — per-window, beyond flat</td><td class="num" data-label="Nats">0.1896</td><td class="num" data-label="Share">—</td></tr>
+<tr><td data-label="Component of the excess">State — per-window per-channel</td><td class="num" data-label="Nats">0.2587</td><td class="num" data-label="Share">—</td></tr>
 </tbody>
 </table>
 </div>
@@ -201,10 +201,10 @@ does not reproduce, and SC-WBD goes from beaten-by-five to beaten-by-none.</p>
 <table>
 <thead><tr><th>MSE difference vs.</th><th class="num">Estimate</th><th class="num">95% interval</th></tr></thead>
 <tbody>
-<tr><td>persistence</td><td class="num">−3.1962</td><td class="num">[−3.9428, −2.5099]</td></tr>
-<tr><td>population gaussian</td><td class="num">−0.3906</td><td class="num">[−0.5731, −0.2477]</td></tr>
-<tr><td>ar16 / subject AR</td><td class="num">−0.1665</td><td class="num">[−0.3099, −0.0574]</td></tr>
-<tr><td>var4</td><td class="num">−0.1030</td><td class="num">[−0.2142, −0.0034]</td></tr>
+<tr><td data-label="MSE difference vs.">persistence</td><td class="num" data-label="Estimate">−3.1962</td><td class="num" data-label="95% interval">[−3.9428, −2.5099]</td></tr>
+<tr><td data-label="MSE difference vs.">population gaussian</td><td class="num" data-label="Estimate">−0.3906</td><td class="num" data-label="95% interval">[−0.5731, −0.2477]</td></tr>
+<tr><td data-label="MSE difference vs.">ar16 / subject AR</td><td class="num" data-label="Estimate">−0.1665</td><td class="num" data-label="95% interval">[−0.3099, −0.0574]</td></tr>
+<tr><td data-label="MSE difference vs.">var4</td><td class="num" data-label="Estimate">−0.1030</td><td class="num" data-label="95% interval">[−0.2142, −0.0034]</td></tr>
 </tbody>
 </table>
 </div>
@@ -314,10 +314,10 @@ nobody was looking because it is not “the model”.</em></p>
 <table>
 <thead><tr><th>Stage of the state→scalar path</th><th>Defect</th></tr></thead>
 <tbody>
-<tr><td>Observation interface</td><td>treatment arm's mean path narrowed to 2 exported dimensions against the control's 18</td></tr>
-<tr><td>Head parameterisation</td><td><code>log_noise</code> with no path from state</td></tr>
-<tr><td>Score</td><td>five baselines held-out calibrated; the candidate not calibrated at all</td></tr>
-<tr><td>Split</td><td>the subject-specific baseline silently reduced to a shared one</td></tr>
+<tr><td data-label="Stage of the state→scalar path">Observation interface</td><td data-label="Defect">treatment arm's mean path narrowed to 2 exported dimensions against the control's 18</td></tr>
+<tr><td data-label="Stage of the state→scalar path">Head parameterisation</td><td data-label="Defect"><code>log_noise</code> with no path from state</td></tr>
+<tr><td data-label="Stage of the state→scalar path">Score</td><td data-label="Defect">five baselines held-out calibrated; the candidate not calibrated at all</td></tr>
+<tr><td data-label="Stage of the state→scalar path">Split</td><td data-label="Defect">the subject-specific baseline silently reduced to a shared one</td></tr>
 </tbody>
 </table>
 </div>

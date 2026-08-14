@@ -188,6 +188,11 @@
     // by clicking. Pin wins; hover is the preview.
     var hoverIdx = -1, pinIdx = -1, rows = [];
 
+    // The last frame's projected brain: centre and every parcel's screen
+    // position. Written by draw(), read by the touch hit-test, which needs the
+    // silhouette as it currently stands rather than as it started.
+    var lastProj = null;
+
     // Terminal nodes: a cord below the brain, with sensory in and motor out.
     var CORD = [];
     for (var s = 0; s <= 7; s++) CORD.push([0, -0.06, -1.05 - s * 0.20]);
@@ -507,19 +512,42 @@
       var shift = Math.max(0, room) * 0.85;
       var sc = Math.min(half / ZMAX, W * 0.46 / RMAX);
       var out = [];
-      // Above the brain the labels line up on their right edge and every
-      // bundle leaves rightwards; below, they line up on their left and leave
-      // leftwards. One aligned stack per block, one gutter per block.
+      /* Above the brain every bundle leaves rightwards; below, leftwards.
+       *
+       * The rows are NOT flush with each other. A flush edge gives every line
+       * in a block the same starting x, and twelve lines that start on one
+       * vertical and end at three points on a small brain run together --
+       * they leave as a single grey band and you cannot tell which label owns
+       * which line. So the edge is raked: each row steps a little further
+       * toward the gutter than the row before it, the near rows furthest.
+       * Every line now starts at its own x AND its own y, which is what
+       * separates them; the raked edge is a consequence, and reads as one
+       * deliberate diagonal rather than twelve accidents. */
+      var stagger = Math.min(px(9), Math.max(0, room - shift) + px(9));
       [[-1, 1, LEFT, oy - half - pad - spanA / 2],
        [1, -1, RIGHT, oy + half + pad + spanB / 2]].forEach(function (spec) {
         var dir = spec[0], side = spec[1], groups = spec[2], mid = spec[3];
         var rows = columnRows(groups, pitch), at = 0;
         var ax = ox + side * blockHalf - side * shift;
+        var nRows = 0;
+        for (var g2 = 0; g2 < groups.length; g2++) nRows += groups[g2].length;
         for (var gi = 0; gi < groups.length; gi++) {
           var xs = [], ys = [], edge = null;
           for (var li = 0; li < groups[gi].length; li++) {
-            var y = mid + rows.ys[at]; at++;
-            xs.push(ax); ys.push(y);
+            var y = mid + rows.ys[at];
+            /* Rake by distance from the BRAIN: the farthest row reaches
+             * furthest into the gutter, the nearest row least.
+             *
+             * This direction is forced, and the other one was tried first. A
+             * line from the far row has to travel past every row between it
+             * and the brain. Rake the near rows out furthest and it passes
+             * over their text -- five labels with a line drawn through them.
+             * Rake the far rows out furthest and each line leaves outside
+             * everything it must cross, so the block's text is never touched. */
+            var rank = dir < 0 ? (nRows - 1 - at) : at;
+            xs.push(ax + side * stagger * rank);
+            at++;
+            ys.push(y);
             // The row of this cluster nearest the brain: the bundle bends past
             // it, not through the middle of the block.
             if (edge === null || (dir < 0 ? y > edge : y < edge)) edge = y;
@@ -532,8 +560,9 @@
           // that leave from one x share a corridor and cross inside it, which
           // is what the fan of angles alone could not fix.
           var gutter = px(14) + px(13) * gi;
+          var lead = side > 0 ? Math.max.apply(null, xs) : Math.min.apply(null, xs);
           out.push(cluster(groups[gi], xs, ys, side > 0 ? "right" : "left",
-                           ax + side * gutter, edge - dir * pitch * 1.2,
+                           lead + side * gutter, edge - dir * pitch * 1.2,
                            side * Math.sin(off), dir * Math.cos(off)));
         }
       });
@@ -634,6 +663,11 @@
         xs[j] = pr[0]; ys[j] = pr[1]; dep[j] = pr[2]; order.push(j);
       }
       order.sort(function (a, b) { return dep[a] - dep[b]; });
+
+      // Keep the frame's projected geometry for hit-testing. A touch has to
+      // know whether it landed ON the brain, and the only honest answer is the
+      // silhouette actually drawn -- which changes every frame as it turns.
+      lastProj = { ox: ox, oy: oy, xs: xs, ys: ys };
 
       // Which parcels this use case touches at all.
       var srcs = {};
@@ -836,8 +870,44 @@
 
     var downAt = null;
 
+    /* Did this press land on the brain?
+     *
+     * The canvas is most of a phone screen and it used to capture every drag
+     * that started anywhere inside it, so a thumb put down on the label
+     * columns -- the majority of the canvas in portrait -- orbited the brain
+     * instead of scrolling the page. Scrolling past the hero meant finding a
+     * gap beside it.
+     *
+     * The test is the drawn silhouette, not a bounding box: the distance from
+     * the centre along the ray to the touch, against `reach()` in that same
+     * direction, which is the function the annotation lines already use to
+     * find where the brain ends. Plus a small margin, because a fingertip is
+     * bigger than a parcel.
+     */
+    function onBrain(clientX, clientY) {
+      if (!lastProj) return false;               // nothing drawn yet
+      var r = canvas.getBoundingClientRect();
+      var px_ = (clientX - r.left) * (canvas.width / r.width);
+      var py_ = (clientY - r.top) * (canvas.height / r.height);
+      var dx = px_ - lastProj.ox, dy = py_ - lastProj.oy;
+      var d = Math.hypot(dx, dy);
+      if (d < 1) return true;                    // dead centre
+      var out = reach(lastProj.ox, lastProj.oy, dx / d, dy / d,
+                      lastProj.xs, lastProj.ys);
+      return d <= out + 18 * dpr;
+    }
+
     function down(e) {
       var q = e.touches ? e.touches[0] : e;
+      // A touch outside the brain belongs to the page: leave `dragging` false
+      // and do not preventDefault, so the browser scrolls as it normally
+      // would. A mouse keeps the whole canvas -- a cursor is precise, there is
+      // no scroll to steal, and drag-anywhere is the nicer pointer behaviour.
+      if (e.touches && !onBrain(q.clientX, q.clientY)) {
+        downAt = null;
+        dragging = false;
+        return;
+      }
       downAt = [q.clientX, q.clientY];
       dragging = true; idle = false; idleTimer = 0;
       lx = q.clientX; ly = q.clientY;

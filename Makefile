@@ -258,7 +258,14 @@ deploy-gh-pages: site ## Push site/_build to the gh-pages branch (needs a git re
 .PHONY: paper
 paper: $(PAPER_PDF) ## Build the paper PDF from paper/*.tex
 
-$(PAPER_PDF): $(wildcard $(ROOT)/paper/*.tex) $(ROOT)/paper/references.bib
+# The FIGURES are dependencies too. They were not, and the consequence shipped:
+# `scripts/render_mark.py` was corrected to say SC-WBD-004, the figure was
+# regenerated, and `make paper` answered "Nothing to be done" -- so the
+# published PDF kept a cover drawing reading SC-WBD-003 through an entire
+# release, while every source file that mentions the checkpoint was right.
+# A rule that cannot see half its inputs reports success by doing nothing.
+$(PAPER_PDF): $(wildcard $(ROOT)/paper/*.tex) $(ROOT)/paper/references.bib \
+              $(wildcard $(ROOT)/paper/figures/*)
 	@command -v tectonic >/dev/null || { \
 	  echo "error: tectonic not found."; \
 	  echo "  There is no pdflatex/latexmk on this machine either. Install tectonic:"; \

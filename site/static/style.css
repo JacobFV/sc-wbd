@@ -367,12 +367,25 @@ figcaption .note-toggle:checked + .note-ref + .note-body { display: block; }
  * claimed and the notes overflowed. 78rem is measure + margin-col + gutters with
  * room to spare.
  *
- * They are DISPLAYED, not hidden behind the toggle. A note worth writing is
- * worth reading without a click; the toggle stays for the table case below,
- * where an expanded note would blow out a row. */
+ * They COLLAPSE behind the reference and open on a click -- the treatment the
+ * landing page has always had via `flat-notes`, now the behaviour everywhere
+ * there is no margin to put a margin note in.
+ *
+ * This reverses what stood here, and the old reasoning is worth keeping
+ * because it is not wrong, it is just wrong about phones: "a note worth
+ * writing is worth reading without a click". True of a margin note, which
+ * sits BESIDE the prose and costs the reader nothing to ignore. Below the
+ * rail there is no beside -- the note lands in the column, and on a phone the
+ * engineering pages were breaking every second paragraph with a grey block of
+ * aside. The argument stops being readable as an argument.
+ *
+ * Nothing is deleted or truncated; every note is one tap away, and the
+ * reference is underlined so it reads as something to open. Above 78rem the
+ * essays still get real margin notes, always open, which is where that
+ * reasoning does hold. */
 @media (max-width: 78rem) {
   .note-body {
-    display: block;
+    display: none;
     float: none;
     width: auto;
     margin: 0.7rem 0;
@@ -381,8 +394,10 @@ figcaption .note-toggle:checked + .note-ref + .note-body { display: block; }
     border-left: 2px solid var(--rule-strong);
     font-size: 0.82rem;
   }
+  .note-toggle:checked + .note-ref + .note-body { display: block; }
   .note-ref {
     border-bottom: 1px dotted var(--rule-strong);
+    cursor: pointer;
   }
 }
 
@@ -756,7 +771,9 @@ figcaption {
   max-width: 30rem;
   aspect-ratio: 4 / 3;
   margin: 1.2rem auto 0.4rem;
-  touch-action: none;            /* the canvas owns drag; do not scroll the page */
+  /* Same reasoning as `.arch-canvas`: the page keeps vertical scrolling and
+   * the canvas takes the gesture only for a drag it is entitled to. */
+  touch-action: pan-y;
 }
 .brainmark-cap {
   text-align: center;
@@ -1200,11 +1217,24 @@ body.flat-notes .note-ref { border-bottom: 1px dotted var(--rule-strong); }
  * way a wide table does. */
 .schematic svg {
   width: 100%;
-  min-width: 46rem;
+  /* No min-width floor.
+   *
+   * It was 46rem, to stop the drawing shrinking to illegibility on a narrow
+   * screen. But 46rem is 736px and the content column is ~694px, so the floor
+   * did not only bite on phones -- it made the figure wider than its own
+   * column on a DESKTOP, where it sat clipped at the right edge behind a
+   * scrollbar nobody looks for. The phone case is handled properly now, by a
+   * portrait drawing rather than a smaller landscape one, so the floor has
+   * nothing left to defend and its cost was hiding a third of the labels. */
   height: auto;
   display: block;
   overflow: visible;
 }
+/* Two drawings of the same four things: one laid out across, one down. The
+ * portrait one is not the landscape one scaled -- scaling is what makes a
+ * diagram unreadable on a phone -- it is the same content re-laid as a
+ * column, and only one of them is ever in the document's flow. */
+.schematic .s-port { display: none; }
 
 .schematic .s-box,
 .schematic .s-dash {
@@ -1250,7 +1280,16 @@ body.flat-notes .note-ref { border-bottom: 1px dotted var(--rule-strong); }
   /* 16:9, not 21:9. These sit in the ~43rem content column now, and a three
    * stage pipeline with type at page size does not fit in 21:9 of it. */
   aspect-ratio: 16 / 9;
-  touch-action: none;
+  /* `pan-y`, not `none`.
+   *
+   * `none` tells the browser the canvas owns every gesture, so a touch
+   * anywhere on it -- and in portrait the canvas is most of the screen, most
+   * of it label columns rather than brain -- could not scroll the page. You
+   * had to find a gap beside the hero to get past it. With `pan-y` the
+   * browser keeps vertical scrolling by default, and arch.js takes the
+   * gesture back with preventDefault only when the finger came down inside
+   * the brain's drawn silhouette (see `onBrain`). */
+  touch-action: pan-y;
   margin: 0.8rem 0 0.3rem;
 }
 /* The hero draws the anatomy alone (see `data-panels="scene"` in arch.js), so
@@ -1275,29 +1314,67 @@ body.flat-notes .note-ref { border-bottom: 1px dotted var(--rule-strong); }
  * which is why this went unnoticed: the scrolling was INSIDE three kinds of
  * element, and each one hid its own right-hand side rather than the page's. */
 @media (max-width: 46rem) {
-  /* The floor above buys legibility with a sideways drag. On a phone that is
-   * the worse half of the trade: a diagram you must scroll is one you cannot
-   * see at once, and the argument of these drawings is the whole layout. So
-   * it fits, and the labels are enlarged IN VIEWBOX UNITS to claw back what
-   * the scaling takes -- 14px in an 880-unit box is 6px at this width, and
-   * 18px brings it back to about 8. */
+  /* The phone gets the PORTRAIT drawing, not a smaller copy of the wide one.
+   *
+   * Two earlier attempts are worth recording because both are worse. The
+   * original scrolled sideways, so the layout -- which is the argument -- was
+   * never visible at once. Scaling the wide drawing to fit put its labels at
+   * 6px, and bumping the type inside an 880-unit viewBox only pushed labels
+   * out of their slots and off the edge, because the SLOTS do not scale. A
+   * column of blocks at full type is the only version of this that a phone
+   * can actually read. */
   .schematic { overflow-x: visible; }
-  .schematic svg { min-width: 0; }
-  .schematic .s-title { font-size: 20px; }
-  .schematic .s-kind { font-size: 15px; letter-spacing: 0.06em; }
-  /* 17px put "through a declared forward operator" 13px past the right edge:
-   * the SVG is `overflow: visible`, so a label wider than its slot leaves the
-   * drawing rather than being clipped by it. Measured back down until the
-   * widest label sits inside. */
-  .schematic .s-note { font-size: 15px; }
+  .schematic .s-land { display: none; }
+  .schematic .s-port { display: block; min-width: 0; }
 
-  /* An uppercase `nowrap` header sets the minimum width of the column under
-   * it, so three of them set the width of the table. */
-  thead th { white-space: normal; }
+  /* A table becomes one labelled block per ROW.
+   *
+   * The first attempt shrank the type and let words break anywhere, which fit
+   * the grid on screen and wrecked it: the Artifacts table came out as a
+   * column of one-character fragments. A phone cannot show a grid, so it does
+   * not get one -- it gets the rows, each cell under its own column name,
+   * carried here as `data-label` by site/build.py.
+   *
+   * The type goes back UP, not down: this is body copy now, not a table. */
+  .tablewrap table,
+  .tablewrap tbody,
+  .tablewrap tr,
+  .tablewrap td { display: block; width: auto; }
+  .tablewrap thead { display: none; }
+  .tablewrap { overflow-x: visible; }
+  .tablewrap table { font-size: 0.92rem; }
+
+  .tablewrap tr {
+    border-bottom: 1px solid var(--rule);
+    padding: 0.85rem 0 0.95rem;
+  }
+  .tablewrap tbody tr:last-child { border-bottom: 0; }
+
+  .tablewrap td {
+    border: 0;
+    padding: 0.1rem 0;
+    text-align: left;
+  }
+  /* The column name, once, above its value. Uppercase and small: it is an
+   * index into the table the reader can no longer see, not a heading. */
+  .tablewrap td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-family: var(--sans);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0.5rem 0 0.15rem;
+  }
+  /* The first cell is the row's subject and reads as its title, so it takes
+   * the label's place rather than sitting under one. */
+  .tablewrap td:first-child::before { content: none; }
+  .tablewrap td:first-child { font-size: 1.02em; margin-bottom: 0.1rem; }
+  .tablewrap td.num, .tablewrap th.num { text-align: left; }
+
   .srcs td:nth-child(2) { white-space: normal; }
-  table { font-size: 0.76rem; }
-  th, td { padding-right: 0.5rem; }
-  td.num, th.num { font-size: 0.72rem; }
 
   /* A block that scrolls hides its own right-hand side, and a log line's
    * right-hand side is usually the number. Wrapping is the lesser evil. */
@@ -1318,11 +1395,10 @@ body.flat-notes .note-ref { border-bottom: 1px dotted var(--rule-strong); }
    * prevent. */
   .chip { white-space: normal; }
   .tablewrap code { overflow-wrap: anywhere; }
-  /* With the three nowrap sources freed the table came down from 696px to
-   * 368px against 342px of column -- close enough that one long word in one
-   * cell decides it. `anywhere` lets the browser break a word when a column
-   * cannot hold it, which is the difference between a table that always fits
-   * and one that fits this content today. */
-  .tablewrap td, .tablewrap th { overflow-wrap: anywhere; }
-  .tablewrap th, .tablewrap td { padding-right: 0.4rem; }
+  /* Only the things that genuinely cannot break -- a file path in a chip, an
+   * fnmatch pattern -- may break mid-token. Prose never does: stacking the
+   * rows gave every cell the full column width, so there is nothing left for
+   * word-breaking to solve, and it was the word-breaking that produced the
+   * one-character stack in the first place. */
+  .tablewrap code, .tablewrap .src { overflow-wrap: anywhere; }
 }

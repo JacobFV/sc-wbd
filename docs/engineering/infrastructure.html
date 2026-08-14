@@ -189,9 +189,9 @@ finding the process it is checking for.</p>
 <table>
 <thead><tr><th>#</th><th>Consequence</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>A launch guard aborted its own relaunch with “ALREADY RUNNING”.</td></tr>
-<tr><td>2</td><td>The same guard, written into a brief <em>for someone else</em>, aborted their relaunch too.</td></tr>
-<tr><td>3</td><td>“A live process while the log shows a traceback” — sent someone hunting a zombie that never existed, mid-crash.</td></tr>
+<tr><td data-label="#">1</td><td data-label="Consequence">A launch guard aborted its own relaunch with “ALREADY RUNNING”.</td></tr>
+<tr><td data-label="#">2</td><td data-label="Consequence">The same guard, written into a brief <em>for someone else</em>, aborted their relaunch too.</td></tr>
+<tr><td data-label="#">3</td><td data-label="Consequence">“A live process while the log shows a traceback” — sent someone hunting a zombie that never existed, mid-crash.</td></tr>
 </tbody>
 </table>
 </div>
@@ -220,9 +220,9 @@ does not take, so it passed while production failed.</strong></p>
 <table>
 <thead><tr><th>The check</th><th>What production did</th><th>Outcome</th></tr></thead>
 <tbody>
-<tr><td>Import a config module, confirm the knob exists</td><td>Bare attribute access after a plain import</td><td>Check passed; production raised <code>AttributeError</code></td></tr>
-<tr><td>Full test suite green</td><td>The real-data branch may never execute</td><td>Had to verify the fixture actually loads its windows</td></tr>
-<tr><td>A leakage check exists and raises</td><td>Never called by the trainer</td><td>An audit that existed and could not fire</td></tr>
+<tr><td data-label="The check">Import a config module, confirm the knob exists</td><td data-label="What production did">Bare attribute access after a plain import</td><td data-label="Outcome">Check passed; production raised <code>AttributeError</code></td></tr>
+<tr><td data-label="The check">Full test suite green</td><td data-label="What production did">The real-data branch may never execute</td><td data-label="Outcome">Had to verify the fixture actually loads its windows</td></tr>
+<tr><td data-label="The check">A leakage check exists and raises</td><td data-label="What production did">Never called by the trainer</td><td data-label="Outcome">An audit that existed and could not fire</td></tr>
 </tbody>
 </table>
 </div>
