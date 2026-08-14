@@ -61,12 +61,12 @@ SC-WBD keeps one shared model and lets each kind of signal constrain the part it
 can actually speak to.</p>
 
 <figure class="schematic">
-<svg class="s-land" viewBox="0 0 904 470" role="img"
+<svg class="s-land" viewBox="0 0 904 502" role="img"
      aria-label="Schematic: what goes into the model and what comes out. The prior it starts from — 414 regions, 12,274 tracts between them, and 33 maps per region covering receptors, myelin, intrinsic timescale and blood flow. Going in: the world acting on the person. In the middle, one person's brain as one shared state. Reading the brain measures that state through a named forward operator — EEG and MEG through a lead field from a head model, fMRI through Balloon-Windkessel haemodynamics, fNIRS through a photon-path model — and an observation with no declared operator is refused. Coming out is what the person does, measured outside the head. Background is the slow conditions enclosing all of it.">
   <!-- context: the slow conditions everything else happens inside -->
-  <rect class="s-dash" x="6" y="6" width="892" height="458"/>
-  <text class="s-kind s-faint" x="26" y="424">BACKGROUND</text>
-  <text class="s-note" x="26" y="444">slow conditions that shape everything else &#183; time of day, session, medication</text>
+  <rect class="s-dash" x="6" y="6" width="892" height="490"/>
+  <text class="s-kind s-faint" x="26" y="456">BACKGROUND</text>
+  <text class="s-note" x="26" y="476">slow conditions that shape everything else &#183; time of day, session, medication</text>
 
   <!-- The brain sits left of centre. It was centred, and the right column then
        had 210 units for lines like "Balloon-Windkessel haemodynamics", which
@@ -83,6 +83,14 @@ can actually speak to.</p>
   <text class="s-note" x="26" y="170">a magnetic pulse, ultrasound</text>
   <path class="s-arrow s-warm" d="M236 140 H292"/>
   <path class="s-head s-warm" d="M292 140 l-9 -4.5 v9 z"/>
+  <g class="s-glyph s-glyph-warm">
+    <rect x="26" y="184" width="42" height="6" opacity="0.95"/>
+    <rect x="26" y="193" width="42" height="6" opacity="0.45"/>
+    <rect x="26" y="202" width="42" height="6" opacity="0.72"/>
+    <path class="s-glyph-break" d="M22 213 H72"/>
+    <rect x="26" y="218" width="42" height="6" opacity="0.34"/>
+  </g>
+  <text class="s-glyph-n" x="80" y="207">&#215;414</text>
 
   <!-- the prior: the conditioning that is there before any signal arrives -->
   <text class="s-kind" x="26" y="292">THE PRIOR IT STARTS FROM</text>
@@ -92,6 +100,15 @@ can actually speak to.</p>
   <text class="s-note" x="26" y="366">myelin, timescale, blood flow</text>
   <path class="s-arrow" d="M250 330 H344 V196"/>
   <path class="s-head" d="M344 188 l-4.5 9 h9 z"/>
+  <g class="s-glyph s-glyph-graph">
+    <path d="M32 392 L58 383 M32 392 L45 406 M58 383 L72 396 M45 406 L72 396 M58 383 L45 406"/>
+    <path class="s-glyph-trail" d="M72 396 L94 404 M58 383 L90 379"/>
+    <circle cx="32" cy="392" r="3.4" opacity="0.9"/>
+    <circle cx="58" cy="383" r="3.4" opacity="0.55"/>
+    <circle cx="45" cy="406" r="3.4" opacity="0.78"/>
+    <circle cx="72" cy="396" r="3.4" opacity="0.38"/>
+  </g>
+  <text class="s-glyph-e" x="98" y="408">&#8230;</text>
 
   <!-- observation, through named operators -->
   <path class="s-arrow s-cool" d="M484 140 H552"/>
@@ -103,6 +120,13 @@ can actually speak to.</p>
   <text class="s-note" x="560" y="184">fMRI &#8212; Balloon&#8211;Windkessel haemodynamics</text>
   <text class="s-note" x="560" y="202">fNIRS &#8212; a photon-path model</text>
   <text class="s-note s-cool" x="560" y="226">no declared operator &#8594; the read is refused</text>
+  <g class="s-glyph s-glyph-cool">
+    <path d="M560 244 q7 -6 14 0 t14 0 t14 0"/>
+    <path d="M560 256 q7 5 14 0 t14 -4 t14 4"/>
+    <path class="s-glyph-break" d="M556 266 H610"/>
+    <path d="M560 276 q7 -4 14 2 t14 -2 t14 1"/>
+  </g>
+  <text class="s-glyph-n" x="618" y="262">&#215;64 &#183; every 1&#8239;ms</text>
 
   <!-- boundary output -->
   <path class="s-arrow s-warm" d="M420 192 V330 H552"/>
@@ -112,9 +136,13 @@ can actually speak to.</p>
   <text class="s-note" x="560" y="356">measured outside the head</text>
   <text class="s-note" x="560" y="374">eye movements, typing, speech,</text>
   <text class="s-note" x="560" y="392">heart rate, test answers</text>
+  <g class="s-glyph s-glyph-warm">
+    <rect x="560" y="404" width="17" height="17" opacity="0.85"/>
+    <rect x="581" y="404" width="17" height="17" opacity="0.42"/>
+  </g>
 </svg>
-<svg class="s-port" viewBox="0 0 420 980" role="img" aria-hidden="true">
-  <rect class="s-dash" x="6" y="6" width="408" height="968"/>
+<svg class="s-port" viewBox="0 0 420 1120" role="img" aria-hidden="true">
+  <rect class="s-dash" x="6" y="6" width="408" height="1108"/>
 
   <!-- the prior, first: it is there before any signal arrives, and it gets
        its own arrow. Without one it reads as a caption rather than an input,
@@ -125,134 +153,74 @@ can actually speak to.</p>
   <text class="s-note" x="26" y="124">33 maps per region:</text>
   <text class="s-note" x="26" y="146">receptors, myelin,</text>
   <text class="s-note" x="26" y="168">timescale, blood flow</text>
-  <path class="s-arrow" d="M300 180 H340 V346"/>
-  <path class="s-head" d="M340 354 l-4.5 -9 h9 z"/>
+  <g class="s-glyph s-glyph-graph">
+    <path d="M32 196 L60 186 M32 196 L46 212 M60 186 L76 200 M46 212 L76 200 M60 186 L46 212"/>
+    <path class="s-glyph-trail" d="M76 200 L100 209 M60 186 L96 182"/>
+    <circle cx="32" cy="196" r="3.6" opacity="0.9"/>
+    <circle cx="60" cy="186" r="3.6" opacity="0.55"/>
+    <circle cx="46" cy="212" r="3.6" opacity="0.78"/>
+    <circle cx="76" cy="200" r="3.6" opacity="0.38"/>
+  </g>
+  <text class="s-glyph-e" x="104" y="212">&#8230;</text>
+  <path class="s-arrow" d="M300 200 H344 V424"/>
+  <path class="s-head" d="M344 432 l-4.5 -9 h9 z"/>
 
   <!-- stimulus -->
-  <text class="s-kind s-warm" x="26" y="226">GOING IN</text>
-  <text class="s-note" x="26" y="250">the world acting on the person</text>
-  <text class="s-note" x="26" y="272">video, audio, speech,</text>
-  <text class="s-note" x="26" y="294">a magnetic pulse, ultrasound</text>
-
-  <path class="s-arrow s-warm" d="M210 316 V346"/>
-  <path class="s-head s-warm" d="M210 354 l-4.5 -9 h9 z"/>
+  <text class="s-kind s-warm" x="26" y="266">GOING IN</text>
+  <text class="s-note" x="26" y="290">the world acting on the person</text>
+  <text class="s-note" x="26" y="312">video, audio, speech,</text>
+  <text class="s-note" x="26" y="334">a magnetic pulse, ultrasound</text>
+  <g class="s-glyph s-glyph-warm">
+    <rect x="26" y="350" width="44" height="7" opacity="0.95"/>
+    <rect x="26" y="360" width="44" height="7" opacity="0.45"/>
+    <rect x="26" y="370" width="44" height="7" opacity="0.72"/>
+    <path class="s-glyph-break" d="M22 382 H74"/>
+    <rect x="26" y="388" width="44" height="7" opacity="0.34"/>
+  </g>
+  <text class="s-glyph-n" x="82" y="376">&#215;414</text>
+  <path class="s-arrow s-warm" d="M210 404 V424"/>
+  <path class="s-head s-warm" d="M210 432 l-4.5 -9 h9 z"/>
 
   <!-- the object being modelled -->
-  <rect class="s-box s-strong" x="60" y="362" width="300" height="96"/>
-  <text class="s-title" x="210" y="402" text-anchor="middle">ONE PERSON&#8217;S BRAIN</text>
-  <text class="s-note" x="210" y="428" text-anchor="middle">414 regions, one shared state</text>
+  <rect class="s-box s-strong" x="60" y="440" width="300" height="96"/>
+  <text class="s-title" x="210" y="480" text-anchor="middle">ONE PERSON&#8217;S BRAIN</text>
+  <text class="s-note" x="210" y="506" text-anchor="middle">414 regions, one shared state</text>
 
   <!-- both outputs leave the brain: a short fork, then two blocks -->
-  <path class="s-arrow s-cool" d="M150 458 V516"/>
-  <path class="s-head s-cool" d="M150 524 l-4.5 -9 h9 z"/>
-  <path class="s-arrow s-warm" d="M300 458 V736"/>
-  <path class="s-head s-warm" d="M300 744 l-4.5 -9 h9 z"/>
+  <path class="s-arrow s-cool" d="M150 536 V596"/>
+  <path class="s-head s-cool" d="M150 604 l-4.5 -9 h9 z"/>
+  <path class="s-arrow s-warm" d="M300 536 V844"/>
+  <path class="s-head s-warm" d="M300 852 l-4.5 -9 h9 z"/>
 
-  <text class="s-kind s-cool" x="26" y="556">READING THE BRAIN</text>
-  <text class="s-note" x="26" y="580">an instrument measuring the</text>
-  <text class="s-note" x="26" y="602">state itself, each through</text>
-  <text class="s-note" x="26" y="624">its own physics:</text>
-  <text class="s-note" x="26" y="652">EEG and MEG &#8212; a lead field</text>
-  <text class="s-note" x="26" y="674">fMRI &#8212; Balloon&#8211;Windkessel</text>
-  <text class="s-note" x="26" y="696">fNIRS &#8212; a photon-path model</text>
+  <text class="s-kind s-cool" x="26" y="636">READING THE BRAIN</text>
+  <text class="s-note" x="26" y="660">an instrument measuring the</text>
+  <text class="s-note" x="26" y="682">state itself, each through</text>
+  <text class="s-note" x="26" y="704">its own physics:</text>
+  <text class="s-note" x="26" y="732">EEG and MEG &#8212; a lead field</text>
+  <text class="s-note" x="26" y="754">fMRI &#8212; Balloon&#8211;Windkessel</text>
+  <text class="s-note" x="26" y="776">fNIRS &#8212; a photon-path model</text>
+  <g class="s-glyph s-glyph-cool">
+    <path d="M26 796 q8 -6 16 0 t16 0 t16 0"/>
+    <path d="M26 810 q8 5 16 0 t16 -4 t16 4"/>
+    <path class="s-glyph-break" d="M22 822 H84"/>
+    <path d="M26 834 q8 -4 16 2 t16 -2 t16 1"/>
+  </g>
+  <text class="s-glyph-n" x="94" y="818">&#215;64 &#183; every 1&#8239;ms</text>
 
-  <text class="s-kind s-warm" x="26" y="776">COMING OUT</text>
-  <text class="s-note" x="26" y="800">what the person does,</text>
-  <text class="s-note" x="26" y="822">measured outside the head</text>
-  <text class="s-note" x="26" y="844">eye movements, typing, speech,</text>
-  <text class="s-note" x="26" y="866">heart rate, test answers</text>
+  <text class="s-kind s-warm" x="26" y="884">COMING OUT</text>
+  <text class="s-note" x="26" y="908">what the person does,</text>
+  <text class="s-note" x="26" y="930">measured outside the head</text>
+  <text class="s-note" x="26" y="952">eye movements, typing, speech,</text>
+  <text class="s-note" x="26" y="974">heart rate, test answers</text>
+  <g class="s-glyph s-glyph-warm">
+    <rect x="26" y="992" width="19" height="19" opacity="0.85"/>
+    <rect x="50" y="992" width="19" height="19" opacity="0.42"/>
+  </g>
 
-  <text class="s-kind s-faint" x="26" y="922">BACKGROUND</text>
-  <text class="s-note" x="26" y="946">slow conditions that shape all of it &#183;</text>
-  <text class="s-note" x="26" y="966">time of day, session, medication</text>
+  <text class="s-kind s-faint" x="26" y="1054">BACKGROUND</text>
+  <text class="s-note" x="26" y="1078">slow conditions that shape all of it &#183;</text>
+  <text class="s-note" x="26" y="1098">time of day, session, medication</text>
 </svg>
-</figure>
-
-<figure class="shapes">
-<figcaption class="shapes-lede">And each of those is a different <em>shape</em> of
-data. The break in each stack means it keeps going; the number beside it is the
-real count.</figcaption>
-
-<div class="shapegrid">
-
-  <div class="shapecell">
-    <p class="shapekind s-kind s-warm">GOING IN</p>
-    <svg viewBox="0 0 150 104" role="img"
-         aria-label="Going in: a field over regions, drawn as a column of blocks at varying intensity, broken in the middle, times 414.">
-      <g class="g-warm">
-        <rect x="8" y="8"  width="52" height="9" opacity="0.95"/>
-        <rect x="8" y="21" width="52" height="9" opacity="0.42"/>
-        <rect x="8" y="34" width="52" height="9" opacity="0.70"/>
-        <rect x="8" y="47" width="52" height="9" opacity="0.22"/>
-        <path class="g-break" d="M4 63 H64"/>
-        <rect x="8" y="70" width="52" height="9" opacity="0.55"/>
-        <rect x="8" y="83" width="52" height="9" opacity="0.30"/>
-      </g>
-      <text class="g-count" x="72" y="52">&#215;414</text>
-      <text class="g-what" x="8" y="101">one value per region</text>
-    </svg>
-    <p class="shapecap">a field over the 414 regions, at the clock the stimulus
-    is delivered on.</p>
-  </div>
-
-  <div class="shapecell">
-    <p class="shapekind s-kind s-cool">READING</p>
-    <svg viewBox="0 0 150 104" role="img"
-         aria-label="Reading the brain with EEG: 64 channels by time, drawn as stacked traces broken in the middle, times 64 channels at 1 millisecond.">
-      <g class="g-cool">
-        <path d="M8 12 q7 -6 14 0 t14 0 t14 0 t14 0"/>
-        <path d="M8 26 q7 5 14 0 t14 -4 t14 4 t14 0"/>
-        <path d="M8 40 q7 -7 14 2 t14 -2 t14 3 t14 -1"/>
-        <path class="g-break" d="M4 54 H64"/>
-        <path d="M8 68 q7 4 14 -3 t14 2 t14 0 t14 -2"/>
-        <path d="M8 82 q7 -3 14 1 t14 2 t14 -3 t14 1"/>
-      </g>
-      <text class="g-count" x="72" y="46">&#215;64</text>
-      <text class="g-count g-sub" x="72" y="62">every 1&#8239;ms</text>
-      <text class="g-what" x="8" y="101">channels &#215; time</text>
-    </svg>
-    <p class="shapecap">EEG is channels against a fast clock; fMRI is the same
-    brain at one frame every two seconds.</p>
-  </div>
-
-  <div class="shapecell">
-    <p class="shapekind s-kind s-warm">COMING OUT</p>
-    <svg viewBox="0 0 150 104" role="img"
-         aria-label="Coming out: a few scalars, drawn as two small blocks, times 2.">
-      <g class="g-warm">
-        <rect x="8" y="30" width="22" height="22" opacity="0.85"/>
-        <rect x="38" y="30" width="22" height="22" opacity="0.45"/>
-        <path class="g-break g-break-v" d="M70 26 V56"/>
-      </g>
-      <text class="g-count" x="80" y="46">&#215;2</text>
-      <text class="g-what" x="8" y="101">a number, and when</text>
-    </svg>
-    <p class="shapecap">a button press is one value and a time. No head model is
-    involved.</p>
-  </div>
-
-  <div class="shapecell">
-    <p class="shapekind s-kind">THE PRIOR</p>
-    <svg viewBox="0 0 150 104" role="img"
-         aria-label="The prior: a graph, drawn as five nodes with edges between them, two edges trailing off to an ellipsis, times 12,274 tracts.">
-      <g class="g-graph">
-        <path d="M26 30 L58 20 M26 30 L40 58 M58 20 L74 46 M40 58 L74 46 M58 20 L40 58"/>
-        <path class="g-trail" d="M74 46 L96 58 M58 20 L92 16"/>
-        <circle cx="26" cy="30" r="4.5" opacity="0.9"/>
-        <circle cx="58" cy="20" r="4.5" opacity="0.55"/>
-        <circle cx="40" cy="58" r="4.5" opacity="0.75"/>
-        <circle cx="74" cy="46" r="4.5" opacity="0.35"/>
-        <circle cx="46" cy="40" r="4.5" opacity="0.6"/>
-      </g>
-      <text class="g-ellipsis" x="100" y="62">&#8230;</text>
-      <text class="g-count" x="96" y="26">&#215;12,274</text>
-      <text class="g-what" x="8" y="101">regions and tracts</text>
-    </svg>
-    <p class="shapecap">a graph over the same regions, carrying 33 maps per
-    node.</p>
-  </div>
-
-</div>
 </figure>
 
 <p>Each way of reading the brain gets its own forward model, because each one

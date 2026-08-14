@@ -552,14 +552,24 @@
             // it, not through the middle of the block.
             if (edge === null || (dir < 0 ? y > edge : y < edge)) edge = y;
           }
-          // How far off vertical this cluster comes in: the far one wide, the
-          // near one nearly straight, so three bundles from one block arrive
-          // at three places instead of piling into one.
-          var off = 1.15 - 0.75 * (groups.length > 1 ? gi / (groups.length - 1) : 0);
+          /* How far off vertical this cluster comes in: the far one wide, the
+           * near one nearly straight, so three bundles from one block arrive
+           * at three places instead of piling into one.
+           *
+           * Ranked by distance FROM THE BRAIN, not by index. `gi` counts down
+           * the block, which for the block ABOVE the brain runs far-to-near
+           * and for the block BELOW it runs near-to-far -- so using `gi`
+           * directly gave the lower stack the upper stack's ordering, mirrored
+           * the wrong way: its nearest cluster came in widest and its farthest
+           * came in straightest, and the long lines cut across the short ones
+           * on their way to the outline. */
+          var gk = dir < 0 ? gi : (groups.length - 1 - gi);
+          var off = 1.15 - 0.75 * (groups.length > 1 ? gk / (groups.length - 1) : 0);
           // Stagger the gutter per cluster as well as the angle: three bundles
           // that leave from one x share a corridor and cross inside it, which
           // is what the fan of angles alone could not fix.
-          var gutter = px(14) + px(13) * gi;
+          // Same ranking for the gutter: the farthest cluster leaves widest.
+          var gutter = px(14) + px(13) * gk;
           var lead = side > 0 ? Math.max.apply(null, xs) : Math.min.apply(null, xs);
           out.push(cluster(groups[gi], xs, ys, side > 0 ? "right" : "left",
                            lead + side * gutter, edge - dir * pitch * 1.2,
