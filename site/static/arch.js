@@ -157,9 +157,9 @@
       label: "Reading what someone responds to",
       right: "semantic",
       cats: [
-        { k: "stimulus", t: "What they watched", note: "video, audio, text", src: "sensory" },
+        { k: "stimulus", t: "What they watched", note: "video, audio, text", src: "eye" },
         { k: "observation", t: "Blood-flow response", note: "whole brain", src: "all" },
-        { k: "boundary_output", t: "Where they looked", note: "eye tracking", src: "sensory" },
+        { k: "boundary_output", t: "Where they looked", note: "eye tracking", src: "eye" },
         { k: "boundary_output", t: "What they chose", note: "rating or answer", src: "motor" }
       ]
     }
@@ -203,6 +203,36 @@
     for (var s = 0; s <= 3; s++) CORD.push([0, -0.06, -1.05 - s * 0.16]);
     var SENSORY = [[-0.30, 0.08, -1.60], [-0.40, -0.04, -1.50], [-0.24, 0.16, -1.70]];
     var MOTOR = [[0.30, -0.08, -1.60], [0.40, 0.04, -1.50], [0.24, -0.16, -1.70]];
+
+    /* The eyes, and the visual pathway to the back of the brain.
+     *
+     * Vision was attaching to the cord terminals below the brain, which is the
+     * spinal route -- wrong for sight by a whole cranial nerve. Light lands on
+     * the retina at the FRONT of the head and the signal travels BACKWARDS to
+     * primary visual cortex at the occipital pole. A diagram that runs gaze
+     * down the spine is not a simplification, it is a different anatomy.
+     *
+     * Every coordinate below is a real MNI landmark carried through the same
+     * transform as the parcels (`site = mni * 0.011618 + offset`, fitted
+     * against parcellation.centroids_mni at r = 1.000 on all three axes), so
+     * the eyes sit where eyes sit relative to the 414 regions rather than
+     * where they looked right:
+     *
+     *   eyeball   (+/-30, +68, -32)   in front of and below the frontal pole
+     *   chiasm    (  0,   +2, -20)    midline, under the hypothalamus
+     *   LGN       (+/-23, -26,  -5)   thalamic relay
+     *   V1        (+/-10, -95,   0)   occipital pole
+     *
+     * The path is drawn eye -> chiasm -> LGN -> V1 on each side, so the
+     * crossing at the chiasm is visible: that decussation is the one feature
+     * of this pathway everybody recognises. */
+    var EYE_R = 0.139;                    // 12 mm radius, same scale
+    var EYES = [[-0.358, 1.035, -0.615], [0.339, 1.035, -0.615]];
+    var CHIASM = [-0.009, 0.268, -0.475];
+    var OPTIC = [
+      [EYES[0], CHIASM, [-0.276, -0.057, -0.301], [-0.125, -0.859, -0.243]],
+      [EYES[1], CHIASM, [0.258, -0.057, -0.301], [0.107, -0.859, -0.243]]
+    ];
 
     // `data-panels="scene"` draws the anatomy alone -- no category fan, no
     // pipeline. The hero wants the object, not the annotated diagram.
@@ -753,6 +783,20 @@
         ctx.stroke();
       }
 
+      // ---- scene: eyes and the optic pathway ----
+      // Part of the anatomy, like the cord, so it is drawn whether or not a
+      // category is pointing at it. Behind the parcels in depth order: the
+      // pathway runs through the middle of the head and should read as passing
+      // BEHIND the near hemisphere rather than across it.
+      if (!sceneOnly) {
+        EYES.forEach(function (v) {
+          var q = project(v, sc, ox, oy);
+          ctx.beginPath();
+          ctx.arc(q[0], q[1], Math.max(2.4 * dpr, EYE_R * sc), 0, 6.2832);
+          ctx.strokeStyle = LINE; hairline(0.9); ctx.stroke();
+        });
+      }
+
       // ---- scene: parcels ----
       var xs = new Float32Array(N), ys = new Float32Array(N), dep = new Float32Array(N);
       var order = [];
@@ -827,6 +871,28 @@
       // Everything past this point is annotation. The hero has none of it.
       if (sceneOnly) return;
 
+      // ---- scene: the optic pathway ----
+      // Drawn AFTER the parcels, deliberately. Behind them it was invisible:
+      // a hairline at 0.55 among 900 connectome edges of the same weight is
+      // just more texture, and the whole point of drawing it is that a reader
+      // can follow sight from the eye to the back of the head. Over the top it
+      // costs a small depth lie -- the tract crosses the near hemisphere --
+      // which is the trade every anatomical illustration of this pathway
+      // makes, and it is drawn thinner and paler than the cord so it does not
+      // read as a structure the connectome contains.
+      if (!sceneOnly) {
+        ctx.strokeStyle = INK2; hairline(0.8); ctx.globalAlpha = 0.42;
+        OPTIC.forEach(function (path) {
+          ctx.beginPath();
+          for (var i = 0; i < path.length; i++) {
+            var q = project(path[i], sc, ox, oy);
+            if (i === 0) ctx.moveTo(q[0], q[1]); else ctx.lineTo(q[0], q[1]);
+          }
+          ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+      }
+
       // ---- scene: terminals ----
       function terminals(list, on, hot) {
         var pts = [];
@@ -842,6 +908,7 @@
         ctx.globalAlpha = 1;
         return pts;
       }
+      var eyeTerm = terminals(EYES, !!srcs.eye, act && act.src === "eye");
       var sensPts = terminals(SENSORY, !!srcs.sensory, act && act.src === "sensory");
       var motPts = terminals(MOTOR, !!srcs.motor, act && act.src === "motor");
 
@@ -857,6 +924,7 @@
       function targets(src) {
         if (src === "all") return parcelSample(function () { return true; }, 7);
         if (src === "cortex") return parcelSample(function (q) { return !isSub[q]; }, 6);
+        if (src === "eye") return eyeTerm.map(function (q) { return [q[0], q[1]]; });
         if (src === "sensory") return sensPts.map(function (q) { return [q[0], q[1]]; });
         if (src === "motor") return motPts.map(function (q) { return [q[0], q[1]]; });
         return [];        // context attaches to no anatomy -- correctly nothing
@@ -864,9 +932,12 @@
 
       // ---- middle: categories, with annotation lines from the scene ----
       var n = c.cats.length;
-      var top = narrow ? H * 0.32 : H * 0.24;
+      var top = narrow ? H * 0.30 : H * 0.24;
       var gap = narrow
-        ? Math.min(H * 0.062, (H * 0.19) / n)
+        // The four-signal case is the tight one: at (H*0.19)/n a row pair
+        // (title, then note 18px under it) had about 7px of clearance from the
+        // next title, which reads as one run-on block rather than four rows.
+        ? Math.min(H * 0.062, (H * 0.22) / n)
         : Math.min(H * 0.16, (H * 0.58) / n);
       var colW = narrow ? W - midX - 10 * dpr : rightX - midX - 30 * dpr;
       ctx.textBaseline = "middle";
@@ -916,7 +987,7 @@
       });
 
       // ---- right: what is done with the signals ----
-      pipeline(c.right, rightX, narrow ? H * 0.51 : H * 0.16, rightW);
+      pipeline(c.right, rightX, narrow ? H * 0.53 : H * 0.16, rightW);
     }
 
     var raf = 0, running = false;
