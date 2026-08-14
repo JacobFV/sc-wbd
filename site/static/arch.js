@@ -194,10 +194,15 @@
     var lastProj = null;
 
     // Terminal nodes: a cord below the brain, with sensory in and motor out.
+    /* The cord hangs BELOW the brain, so its length is the drawing's height
+     * budget: eight nodes reaching z = -2.45 made the figure two-thirds
+     * empty space, and in the portrait frame the tail simply ran out of
+     * canvas and was cut. Four nodes to -1.53, with the terminals just under
+     * them. It reads as a stem now rather than a dangling wire. */
     var CORD = [];
-    for (var s = 0; s <= 7; s++) CORD.push([0, -0.06, -1.05 - s * 0.20]);
-    var SENSORY = [[-0.45, 0.10, -2.55], [-0.58, -0.05, -2.42], [-0.36, 0.22, -2.68]];
-    var MOTOR = [[0.45, -0.10, -2.55], [0.58, 0.05, -2.42], [0.36, -0.22, -2.68]];
+    for (var s = 0; s <= 3; s++) CORD.push([0, -0.06, -1.05 - s * 0.16]);
+    var SENSORY = [[-0.30, 0.08, -1.60], [-0.40, -0.04, -1.50], [-0.24, 0.16, -1.70]];
+    var MOTOR = [[0.30, -0.08, -1.60], [0.40, 0.04, -1.50], [0.24, -0.16, -1.70]];
 
     // `data-panels="scene"` draws the anatomy alone -- no category fan, no
     // pipeline. The hero wants the object, not the annotated diagram.
@@ -327,7 +332,10 @@
           ["ACT", "brain state to cursor, keypress"],
           ["INTERFACE", "the thing being controlled"]
         ],
-        expr: "max  I(a_t ; s_t+k)",
+        expr: [
+          ["max", "rm"], [" ", "sp"], ["I", "va"], ["(", "rm"], ["a", "va"],
+          ["t", "sb"], [" ; ", "rm"], ["s", "va"], ["t+k", "sb"], [")", "rm"]
+        ],
         gloss: "the most control the signal can support"
       },
       tms: {
@@ -336,7 +344,11 @@
           ["PREDICT", "network response to the pulse"],
           ["COMPARE POSES", "choose one, bound the dose"]
         ],
-        expr: "argmax d(target)  s.t. dose <= limit",
+        expr: [
+          ["arg max", "rm"], [" ", "sp"], ["d", "va"], ["(", "rm"],
+          ["target", "rm"], [")", "rm"], ["  ", "sp"], ["s.t.", "it"],
+          [" ", "sp"], ["dose", "rm"], [" \u2264 ", "rm"], ["limit", "rm"]
+        ],
         gloss: "engagement maximised, exposure bounded"
       },
       semantic: {
@@ -345,10 +357,67 @@
           ["COMPARE", "predicted against measured"],
           ["FIT THE PERSON", "on the residual between them"]
         ],
-        expr: "theta -= grad || y - y_hat ||",
+        expr: [
+          ["\u03b8", "va"], [" \u2190 ", "rm"], ["\u03b8", "va"],
+          [" \u2212 ", "rm"], ["\u03b7", "va"], ["\u2207", "rm"],
+          ["\u03b8", "sb"], ["\u2016", "rm"], ["y", "va"],
+          [" \u2212 ", "rm"], ["\u0177", "va"], ["\u2016", "rm"]
+        ],
         gloss: "the gap between them is what individualises"
       }
     };
+
+    /* Setting the objective as mathematics rather than as ASCII.
+     *
+     * These read `theta -= grad || y - y_hat ||` and `argmax d(target) s.t.
+     * dose <= limit` in a monospace face -- which is code, not an equation.
+     * An expression is now a list of runs, each tagged with what it IS, and
+     * the tag chooses the face: variables italic serif, operators and function
+     * names upright, subscripts smaller and dropped. That is the whole
+     * convention of mathematical setting, and it is what makes an equation
+     * legible at a glance -- you can see which letters are quantities.
+     *
+     * Done by hand because the site carries no MathJax and no KaTeX: it has no
+     * CDN dependency and no npm dependency for its own HTML, and one canvas
+     * expression is not worth breaking that for. Real Unicode throughout --
+     * U+2190 arrow, U+2212 minus (not a hyphen), U+2207 nabla, U+2016 double
+     * bar, U+0177 y-with-circumflex, U+2264 less-or-equal.
+     *
+     *   va  variable        italic serif
+     *   rm  operator/name   upright serif
+     *   it  abbreviation    italic serif, upright spacing ("s.t.")
+     *   sb  subscript       0.72 size, dropped a quarter of an em
+     *   sp  space           measured, never drawn
+     */
+    var MATH_SERIF = '"Iowan Old Style", "Charter", Georgia, "Times New Roman", serif';
+
+    function mathFont(kind, size) {
+      if (kind === "va") return "italic " + size + "px " + MATH_SERIF;
+      if (kind === "it") return "italic " + size + "px " + MATH_SERIF;
+      if (kind === "sb") return "italic " + (size * 0.72) + "px " + MATH_SERIF;
+      return size + "px " + MATH_SERIF;
+    }
+
+    function mathWidth(runs, size) {
+      var total = 0;
+      for (var i = 0; i < runs.length; i++) {
+        ctx.font = mathFont(runs[i][1], size);
+        total += ctx.measureText(runs[i][0]).width;
+      }
+      return total;
+    }
+
+    function drawMath(runs, x, y, size) {
+      var at = x;
+      for (var i = 0; i < runs.length; i++) {
+        var text = runs[i][0], kind = runs[i][1];
+        ctx.font = mathFont(kind, size);
+        if (kind !== "sp") {
+          ctx.fillText(text, at, kind === "sb" ? y + size * 0.24 : y);
+        }
+        at += ctx.measureText(text).width;
+      }
+    }
 
     function pipeline(kind, x, y, w) {
       var spec = PIPELINES[kind] || PIPELINES.bci;
@@ -360,13 +429,12 @@
 
       ctx.textBaseline = "middle";
       ctx.fillStyle = INK;
-      var size = px(13);
+      var size = px(14);
       for (var g = 0; g < 14; g++) {
-        ctx.font = size + "px ui-monospace, SFMono-Regular, Menlo, monospace";
-        if (size <= px(9) || ctx.measureText(spec.expr).width <= w) break;
+        if (size <= px(9) || mathWidth(spec.expr, size) <= w) break;
         size *= 0.94;
       }
-      ctx.fillText(spec.expr, x, b + px(26));
+      drawMath(spec.expr, x, b + px(26), size);
       ctx.fillStyle = LINE;
       fitFont(spec.gloss, w, px(12));
       ctx.fillText(spec.gloss, x, b + px(44));
