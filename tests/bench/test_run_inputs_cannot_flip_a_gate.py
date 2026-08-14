@@ -114,3 +114,53 @@ def test_discover_does_not_invent_paths():
     assert art.checkpoint_dir is None
     assert art.evaluation is None
     assert not art.has_checkpoint
+
+
+# --------------------------------------------------------------------- registry
+#
+# INPUT_SUPPLY answers "what is actually left?" in one checkable place. Its failure mode is drift:
+# a gate gains a mandatory baseline, nobody adds it here, and the shortfall silently under-reports.
+
+
+def test_every_mandatory_baseline_appears_in_the_supply_registry():
+    """A gate's mandatory baselines and the registry must not disagree.
+
+    If this fails after a gate changed, add the entry -- do not delete the requirement.
+    """
+    for gate, required in ri.MANDATORY_BASELINES.items():
+        supply = ri.INPUT_SUPPLY.get(gate)
+        if supply is None:
+            continue  # not yet mapped; test_unmapped_gates_are_declared covers this
+        for name in required:
+            assert f"baseline:{name}" in supply, (
+                f"{gate} declares {name!r} mandatory but INPUT_SUPPLY does not say what would "
+                f"supply it, so 'what is left' now under-reports by one arm"
+            )
+
+
+def test_every_supply_status_is_from_the_vocabulary():
+    """A typo becomes a new status with one member, which is how a status stops meaning anything."""
+    allowed = {"available", "needs_code", "needs_train", "needs_data"}
+    for gate, entries in ri.INPUT_SUPPLY.items():
+        for key, (status, why) in entries.items():
+            assert status in allowed, f"{gate}.{key}: {status!r} not in {sorted(allowed)}"
+            assert why.strip(), f"{gate}.{key}: status with no explanation is not usable"
+
+
+def test_the_unobtainable_inputs_are_still_marked_unobtainable():
+    """G4's prospective recovery and G5's unseen-task holdout need data nobody holds.
+
+    If either is ever downgraded from `needs_data`, that must be because the data was COLLECTED.
+    Downgrading it to make a plan look shorter is the failure this whole task is guarding against.
+    """
+    assert ri.INPUT_SUPPLY["G4"]["prospective_recovery"][0] == ri.UNOBTAINABLE
+    assert ri.INPUT_SUPPLY["G5"]["unseen_task"][0] == ri.UNOBTAINABLE
+
+
+def test_g2_controls_are_marked_available_because_they_were_computed():
+    """Measured, not read off a signature: all three compute today from the installed anatomy."""
+    for name in ("dense", "randomized", "distance_matched"):
+        status, _ = ri.INPUT_SUPPLY["G2"][f"baseline:{name}"]
+        assert status == "available", (
+            f"{name} was verified computable on 2026-08-14; downgrading it needs a reason"
+        )

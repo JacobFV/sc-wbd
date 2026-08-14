@@ -74,6 +74,62 @@ MANDATORY_BASELINES: Mapping[str, tuple[str, ...]] = {
 }
 
 
+#: What each gate's declared inputs would actually take to supply, by CLASS of work. This exists so
+#: that "what is left?" has one answer that is checkable rather than four answers in four commit
+#: messages. Statuses, narrowest to widest:
+#:
+#:   available    computable today from code already in the package, no training and no new data
+#:   needs_code   the pieces exist but nothing composes them into the interface a gate consumes
+#:   needs_train  a model has to be trained; GPU hours, and the unit is 11 arms in 6 h 11 m
+#:   needs_data   a dataset nobody holds. No amount of compute discharges it.
+#:
+#: Verified 2026-08-14 where it says `available`: `anatomy_adjacency()` returns (414, 414) and
+#: `graph_controls(names=("dense","randomized","distance_matched"))` returns all three, with
+#: `randomized` and `distance_matched` carrying 12,274 edges -- the real connectome's count -- at
+#: matched total weight 73803.4. Those are measurements, not readings of the signature.
+INPUT_SUPPLY: Mapping[str, Mapping[str, tuple[str, str]]] = {
+    "G2": {
+        "adjacency": ("available", "scwbd.anatomy.anatomy_adjacency() -> (414, 414)"),
+        "baseline:dense": ("available", "scwbd.anatomy.controls.graph_controls()['dense']"),
+        "baseline:randomized": ("available", "graph_controls()['randomized'], 12,274 edges"),
+        "baseline:distance_matched": (
+            "available", "graph_controls()['distance_matched'], 12,274 edges, weight-matched"),
+        "model_for_graph": (
+            "needs_code",
+            "a factory taking an adjacency and returning a fitted arm; the controls are ready and "
+            "nothing consumes them"),
+        "train/test": ("needs_code", "bench Datasets are not exported from the run splits"),
+    },
+    "G5": {
+        "candidate": ("needs_code", "checkpoint exists; no predict(Dataset) -> Prediction wrapper"),
+        "train": ("needs_code", "session_split exists; not exported as a bench Dataset"),
+        "new_session": ("needs_code", "measured by run 4; not exported as a bench Dataset"),
+        "unseen_task": (
+            "needs_data",
+            "an unseen task or intervention for the SAME people. No run has one; the session "
+            "split gives a new night, which is a different question"),
+        "baseline:population": ("needs_train", "one arm"),
+        "baseline:anatomy_only": (
+            "needs_train",
+            "one arm, GIVEN the person's anatomy -- the load-bearing baseline, see run_g5"),
+        "baseline:session_adapted": ("needs_train", "one arm"),
+    },
+    "G4": {
+        "fisher_map": (
+            "needs_code",
+            "fisher_design_map(u, cfg, proto) exists; binding it names the system under test, "
+            "which is a scientific commitment and wants a decision note first"),
+        "prospective_recovery": (
+            "needs_data",
+            "prospective perturbation dataset recovering direction, delay, gain, dose and "
+            "state-dependence. Mandatory, and nobody holds it: G4 CANNOT PASS"),
+    },
+}
+
+#: The one status that no amount of compute or engineering discharges.
+UNOBTAINABLE = "needs_data"
+
+
 class AliasRefusal(Exception):
     """Raised when two distinct gate inputs would be given the same object.
 

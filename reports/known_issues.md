@@ -34,6 +34,7 @@ here and the entries below are the detail.
 | ISSUE-015 | closed 2026-08-09 | ~20 prose sites stated DK-68's 5.6%/9× as facts about SC-WBD, which runs 32.1%/2.6×; rewritten, rebuilt and republished |
 | ISSUE-016 | **open — measured over a full run; remedy deferred to run 5 by design** | the measured BOLD likelihood degrades during training. Not a defect in the BOLD path: the SHARED TRUNK moves under the head, driven by the 96% of gradient that is not BOLD (`ds002336_real` is 5.39% of the mixture, outvoted 17.6:1 — corrected 2026-08-12 from a smoke-run figure of 4.13%/23.2:1). Arm D's pre-registered rule relaunched as configured and run 4 completed 14,600 steps: `real_bold_nll` **1.99 → 36,472**, a factor of ~18,000, swinging four orders of magnitude within a stage and NOT repaired by T5's measured return. Run 4 claims nothing about fMRI; the remedy is in `reports/RUN5_DESIGN.md` |
 | ISSUE-017 | **open — measured 2026-08-12, run 4** | the individualiser applies essentially nothing on a split built to let it apply something. `T6_individual` ran its full 1,200 steps; the applied person effect has between-participant spread **7.06e-4** against the model's own prior scale of **0.1059** — **0.67%** — and 30 of 75 scored participants have a person-effect row of exactly zero. `session_individualisation`'s pre-registered falsifier is met, so **individualisation is UNSUPPORTED for SC-WBD-004**. This is a measurement, not the unmeasurability runs 1–3 reported |
+| ISSUE-018 | **open — standing refusal; not dischargeable by compute** | G4 ("perturbation reduces non-identifiability") has a mandatory `prospective_recovery` sub-check requiring recovery of direction, delay, gain, dose and state-dependence from a **prospective** perturbation dataset. No such dataset is held, so **G4 cannot report a verdict at any budget** — this is a data-collection blocker, not a scheduling one |
 
 ---
 
@@ -1320,7 +1321,7 @@ published DK's number as SC-WBD's — which is the defect this entry records.
 **Status:** open. Run 4 has now measured it and did NOT discharge it — the repair worked and
 overshot, replacing an uninformative posterior with an overconfident one. **The section below
 describes RUN 3 and is kept as the diagnosis that led to the fix; for the current state read
-"ISSUE-012, run 4" further down this file.**
+"Run 4 update to ISSUE-012" further down this file.**
 **Severity:** high for any inference claim, zero for the forecast claims. It voids
 `amortized_posterior_self_consistency` as evidence of inference and everything downstream of it.
 **Diagnosed:** 2026-08-09, from `checkpoints/scwbd-003/last.pt` and the run's own logs. No training
@@ -1633,7 +1634,7 @@ by its failure mode, growing a new member while the count stayed the same.
 
 ---
 
-## ISSUE-012, run 4: the repair worked and overshot. Still open, new failure mode
+## Run 4 update to ISSUE-012 — the repair worked and overshot. Still open, new failure mode
 
 **Measured 2026-08-12** from `checkpoints/scwbd-004/last.pt`, 512 held-out simulated datasets,
 `reports/training/evaluation_run4.json` → `posterior_calibration`. Run 4 is the run that was
@@ -2066,3 +2067,54 @@ block is reached at all, and
 the card reports it as unsupported and refuses when the shift cannot be put on a
 scale. Neither guards the *finding*; a training-dynamics result of this kind has
 no unit test, which is the same position ISSUE-016 is in.
+
+## ISSUE-018 — G4 cannot pass at any budget: `prospective_recovery` needs data nobody holds
+
+**Status:** open. A **standing refusal**, not a backlog item: no amount of GPU time or engineering
+discharges it.
+**Raised:** 2026-08-14, while costing the claim-gate work (`scratch/CLAIM_GATES.md`).
+**Severity:** it bounds what SC-WBD can claim, permanently, until someone collects data.
+
+### The defect, which is not a defect in the code
+
+G4 carries four mandatory sub-checks. Two (`fisher_information`, `input_energy_matched`) are blocked
+on binding a Fisher map to a named system, which is a scientific commitment and is tractable. The
+third, `model_discrimination`, needs per-design model evidence. The fourth is different in kind:
+
+> `prospective_recovery: could not run — recovery results missing for ['direction', 'delay', 'gain',
+> 'dose', 'state_dependence'] (have []); this claim's support column names all five, and a
+> prospective perturbation dataset is required, and none is held, so this is expected to remain
+> COULD_NOT_RUN in SC-WBD-001-beta`
+
+The blocker names its own permanence. It has been true since 2026-08-06 and re-running the gates on
+2026-08-14 reproduced it byte-identically.
+
+### Why it earns an issue rather than a row in a scoreboard
+
+A `COULD_NOT_RUN` row reads, to almost every reader, as *not yet*. Four of this gate's five blockers
+are "not yet". This one is "not without new data", and the difference matters because it is the
+difference between a plan and a wish. Costing the other work (`B1`: 9 arms, 5.1 h as probes, 380 h
+as trained baselines) produces a number that looks like a schedule — and a schedule with an
+uncollectable item inside it is how "we will validate this next quarter" gets said out loud.
+
+The gate is right to refuse, and the refusal is the finding: **perturbation data that SC-WBD has
+never held is the binding constraint on its perturbation claim.**
+
+### What would discharge it
+
+A prospective perturbation dataset — a study designed and run for this purpose, in which the
+intervention is chosen in advance and the five parameters are recoverable. `ds004024_perturb` is
+retrospective single-pulse TMS-EEG over one target site at one intensity in two participants, and
+run 3 already records that this supports no perturbation-decision claim (`test_leakage.py::
+test_tms_decision_claim_is_a_standing_refusal`). Reusing it here would be the same refusal
+re-broken.
+
+Nothing about G4's other three sub-checks is blocked by this entry; they should be pursued on their
+own merits, and G4 will still report `COULD_NOT_RUN` until the data exists.
+
+### Where it is said out loud
+
+- `scratch/CLAIM_GATES.md` §B2
+- `scwbd/bench/run_inputs.py` — `INPUT_SUPPLY["G4"]["prospective_recovery"] = ("needs_data", ...)`,
+  with `tests/bench/test_run_inputs_cannot_flip_a_gate.py` failing if it is ever downgraded to make
+  a plan look shorter
