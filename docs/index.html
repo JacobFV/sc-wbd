@@ -314,9 +314,9 @@ thing.</p>
 
 <div class="keyfig">
   <div><span class="n">414</span><span class="l">regions modelled at once<br>400 on the surface + 14 deep inside</span></div>
-  <div><span class="n">4</span><span class="l">kinds of signal it learns from<br>each constraining only what it observes</span></div>
+  <div><span class="n">12,274</span><span class="l">tracts wired between them<br>plus 33 measured maps per region</span></div>
   <div><span class="n">26.3M</span><span class="l">parameters in the current model<br>weights, data and code all public</span></div>
-  <div><span class="n fail">0</span><span class="l">validated claims about brains<br>all five claim gates <span class="chip unknown">could_not_run</span></span></div>
+  <div><span class="n pass">4</span><span class="l">field solvers validated<br>against closed-form solutions, to <strong>1.3%</strong> or better</span></div>
 </div>
 </section>
 <section class="chapter tinted" id="modelling-brain-activity">
@@ -433,6 +433,16 @@ reachable, in the order it becomes reachable.</p>
 <p>Stated at the granularity someone could check, with the public artifacts in
 the same table as the parts they are made of. Every row is a thing you could run
 or download.</p>
+
+<p>The validated results above are <strong>computations</strong>: four field solvers checked
+against closed-form solutions, a compiler checked for internal consistency, and an audit
+confirming every guard has an input under which it reads differently &mdash; so a green
+reading is evidence rather than decoration. What is <em>not</em> validated is any claim
+about brains. <strong>All five claim gates report <span class="chip unknown">could_not_run</span></strong>,
+because the baselines each one names &mdash; naive resampling, single-modality, population,
+anatomy-only, session-adapted &mdash; were never trained, and one gate needs perturbation data
+nobody holds. A gate that could not run is not a gate that passed, and nothing on this page
+rests on one.<a class="src" href="https://github.com/JacobFV/sc-wbd/blob/master/reports/gates/SUMMARY.md">reports/gates/SUMMARY.md</a></p>
 
 <div class="tablewrap">
 <table>
