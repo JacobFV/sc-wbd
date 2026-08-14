@@ -1301,7 +1301,18 @@ body.flat-notes .note-ref { border-bottom: 1px dotted var(--rule-strong); }
   aspect-ratio: 2 / 1;
   max-height: 52vh;
 }
-@media (max-width: 46rem) { .arch-canvas { aspect-ratio: 5 / 4; } }
+/* A narrow canvas stacks its three panels (see `narrow` in arch.js), so it
+ * needs a frame to stack them IN. 5/4 was the across-layout's shape and left
+ * the three of them fighting over 110px each. The hero keeps its own ratio --
+ * it draws the scene alone and has no panels to stack. */
+@media (max-width: 46rem) {
+  .arch-canvas { aspect-ratio: 5 / 4; }
+  /* Sized to what the stack actually needs, measured rather than guessed:
+   * ~300px for the pipeline (three boxes, two arrows, the objective and its
+   * gloss) under a scene band and four category rows. 3/4 cut the last box
+   * off; 1/2 cleared it and left a quarter of the frame empty underneath. */
+  .arch-canvas:not(.archhero) { aspect-ratio: 14 / 25; }
+}
 
 /* ------------------------------------------------------------------ phones
  *

@@ -704,9 +704,25 @@
       // Scene-only drops the cord and the terminals, so the brain is sized to
       // fill the frame rather than to leave 2.7 units of room underneath it
       // for a body that is no longer drawn.
-      var sceneW = sceneOnly ? W : W * 0.30;
-      var midX = W * 0.335, rightX = W * 0.645;
-      var rightW = W - rightX - 8 * dpr;
+      /* THREE PANELS ACROSS, OR THREE DOWN.
+       *
+       * The across layout gives each panel a fixed fraction of the width --
+       * 0.30 for the scene, then 0.335 and 0.645 -- which on a phone is about
+       * 110px each. `fitFont` shrinks type to a 10.5px floor and then simply
+       * overflows, so the category notes ran underneath the pipeline boxes and
+       * the pipeline's own right edge was cut off. None of that is visible to
+       * a layout check: it is inside a canvas, and the canvas element is
+       * exactly the size it claims to be.
+       *
+       * Below 520 CSS px the same three panels stack instead, which is the
+       * arrangement the schematic and the hero's label columns already use at
+       * that width. The stylesheet gives a narrow canvas a taller frame to put
+       * them in. */
+      var narrow = !sceneOnly && (W / dpr) < 520;
+      var sceneW = sceneOnly || narrow ? W : W * 0.30;
+      var midX = narrow ? W * 0.17 : W * 0.335;
+      var rightX = narrow ? W * 0.06 : W * 0.645;
+      var rightW = narrow ? W * 0.88 : W - rightX - 8 * dpr;
       var uses = annotated ? usesGeom(W, H) : null;
       var sc = uses
         // The brain takes the room the labels leave; usesGeom worked out how
@@ -718,9 +734,13 @@
         // across and the cord takes the scene down to -2.7, so 3.6 units of
         // height. The old 0.19-of-the-smaller-side left the brain at a third
         // of the room its column had.
+        : narrow
+        // Stacked: the scene gets the top band, and is sized to it rather than
+        // to the whole height, or it would run into the categories below.
+        ? Math.min(H * 0.22 / 2.7, W / 2.5)
         : Math.min(H / 3.6, sceneW / 1.35);
-      var ox = sceneOnly ? W * 0.5 : sceneW * 0.54;
-      var oy = sceneOnly ? H * 0.5 : H * 0.40;
+      var ox = sceneOnly || narrow ? W * 0.5 : sceneW * 0.54;
+      var oy = sceneOnly ? H * 0.5 : narrow ? H * 0.13 : H * 0.40;
 
       // ---- scene: cord ----
       if (!sceneOnly) {
@@ -844,8 +864,11 @@
 
       // ---- middle: categories, with annotation lines from the scene ----
       var n = c.cats.length;
-      var top = H * 0.24, gap = Math.min(H * 0.16, (H * 0.58) / n);
-      var colW = rightX - midX - 30 * dpr;
+      var top = narrow ? H * 0.32 : H * 0.24;
+      var gap = narrow
+        ? Math.min(H * 0.062, (H * 0.19) / n)
+        : Math.min(H * 0.16, (H * 0.58) / n);
+      var colW = narrow ? W - midX - 10 * dpr : rightX - midX - 30 * dpr;
       ctx.textBaseline = "middle";
       rows = [];
 
@@ -893,7 +916,7 @@
       });
 
       // ---- right: what is done with the signals ----
-      pipeline(c.right, rightX, H * 0.16, rightW);
+      pipeline(c.right, rightX, narrow ? H * 0.51 : H * 0.16, rightW);
     }
 
     var raf = 0, running = false;
