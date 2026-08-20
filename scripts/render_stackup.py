@@ -1,0 +1,263 @@
+"""Render the five WBD checkpoints side by side, sized by log parameter count.
+
+An audience figure, not a paper figure: it puts the run history in one frame so
+a reader who has never opened `reports/` can see what got bigger and what each
+model did against its baselines.
+
+The brain is the hero canvas's drawing -- 414 parcel positions in fsLR_32k
+surface RAS, coloured by the 9-family partition, over the strongest 900 edges
+of the measured connectome, at the canvas's default view (yaw -0.5, pitch
+-0.18). Five copies of it, scaled and captioned.
+
+**Geometry is read from `site/static/{brain,edges}.json`, not from
+`AnatomyPrior`.** `scripts/render_mark.py` derives it from the prior on
+purpose, so the paper's cover and the page agree by computation rather than by
+copying. This script cannot: `assets/` is a symlink to `/data/scwbd/assets`,
+that directory is empty, and `load_anatomy` refuses rather than substituting a
+synthetic prior. Reading the site's own committed numbers is the honest second
+source -- this figure is a deck asset that should match the hero exactly -- but
+it is a copy, and if the prior changes this figure will not notice.
+
+**The size axis is log, and it is offset.** Radius is proportional to
+``log10(parameters) - 5``, not to ``log10(parameters)``: on a bare log the
+whole history spans 6.25 to 8.16 and every disc lands within 31% of every
+other, which draws as five identical circles. The offset is stated on the
+figure so nobody reads the areas as parameter ratios.
+
+SC-WBD-005 is not trained. It is drawn hollow, in grey, inside a dashed ring
+and with no score, so its treatment cannot be mistaken for a measured result.
+
+    .venv/bin/python scripts/render_stackup.py
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+
+import matplotlib
+import matplotlib.collections
+import matplotlib.patches
+import matplotlib.patheffects
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Identical to COL in site/static/brain.js and scripts/render_mark.py: two
+# cortical families in the house blues, subcortex warm.
+COL = np.array([
+    [96, 165, 232], [52, 110, 190],
+    [232, 156, 74], [225, 133, 92], [214, 160, 58],
+    [236, 176, 102], [204, 122, 70], [244, 194, 122], [214, 145, 48],
+]) / 255.0
+
+YAW, PITCH = -0.5, -0.18       # brain.js initial view
+
+INK, INK2, INK3 = "#17181a", "#55575c", "#7d8085"
+RULE = "#e3e3df"
+
+# parameters: run 1 reports/training/evaluation.json, run 2 evaluation_run2.json,
+#   runs 3-4 reports/scwbd-00{3,4}_derived.json ("TOTAL").
+# nll: real_eeg_holdout, the model's own row, nats per channel per sample.
+#   Runs 1-2 scored SC-WBD on `target/s` and the baselines on the raw target,
+#   so those two read ~0.6 nats LOW; the verdicts are unaffected and the
+#   figure's footer says so.  Run 5 is a design target, not a measurement.
+MODELS = [
+    dict(mark="SC-WBD-001", params=1_757_613,   nll="2.555",
+         note="beaten by 5 of 6", trained=True),
+    dict(mark="SC-WBD-002", params=2_516_530,   nll="3.179",
+         note="beaten by 5 of 6", trained=True),
+    dict(mark="SC-WBD-003", params=26_304_729,  nll="1.986",
+         note="beats all six", trained=True),
+    dict(mark="SC-WBD-004", params=26_304_657,  nll="2.024",
+         note="ties the best", trained=True),
+    dict(mark="SC-WBD-005", params=146_000_000, nll="—",
+         note="in design", trained=False),
+]
+
+FLOOR = 5.0                    # the log10 the radius axis is measured from
+R_MAX = 1.00                   # HALF-HEIGHT of the largest brain, in data units
+GUTTER = 0.34                  # clear space between neighbouring silhouettes
+MIN_PITCH = 2.30               # centre to centre, so the captions never collide
+CAP_GAP = 0.30                 # ground line to the first caption row
+STATIC = pathlib.Path("site/static")
+
+
+def load_geometry():
+    """The hero's parcels and tracts: (x, y, depth, family, is_sub, ia, ib, w)."""
+    brain = json.loads((STATIC / "brain.json").read_text())
+    edges = json.loads((STATIC / "edges.json").read_text())
+
+    P = np.asarray(brain["p"], dtype=float).reshape(brain["n"], 3)
+    P = P - P.mean(0)
+    P = P / np.abs(P).max()
+    fam = np.asarray(brain["f"], dtype=int)
+    # `div` is per FAMILY (9 entries), not per parcel -- indexing it by parcel
+    # would silently read the wrong nine values and size 405 dots wrongly.
+    sub_family = np.array([d == "sub" for d in brain["div"]])
+    is_sub = sub_family[fam]
+
+    cy, sy = np.cos(YAW), np.sin(YAW)
+    cp, sp = np.cos(PITCH), np.sin(PITCH)
+    X, Y, Z = P[:, 0], P[:, 1], P[:, 2]
+    x1 = X * cy + Y * sy
+    y1 = -X * sy + Y * cy
+    y2 = y1 * cp - Z * sp
+    z2 = y1 * sp + Z * cp
+
+    # Normalise on the projected BOUNDING BOX, not on max hypot: the head in
+    # this view is wider than it is tall, so a hypot fit leaves the silhouette
+    # floating inside its nominal circle and the five brains do not sit on the
+    # ground line they are drawn against. Half-height becomes exactly 1, so a
+    # radius in data units is a half-height and bottoms align by construction.
+    x1 = x1 - (x1.min() + x1.max()) / 2.0
+    z2 = z2 - (z2.min() + z2.max()) / 2.0
+    k = 2.0 / max(float(np.ptp(z2)), 1e-9)
+    x1, z2 = x1 * k, z2 * k
+    aspect = float(np.ptp(x1)) / 2.0                     # half-width, in units
+
+    t = (y2 - y2.min()) / max(float(np.ptp(y2)), 1e-9)   # 0 far .. 1 near
+
+    pairs = np.asarray(edges["e"], dtype=int).reshape(-1, 2)
+    w = np.asarray(edges["w"], dtype=float)
+    if len(w) != len(pairs):
+        raise SystemExit(f"edges.json: {len(pairs)} pairs but {len(w)} weights")
+    return (x1, z2, t, fam, is_sub, pairs[:, 0], pairs[:, 1],
+            w / max(w.max(), 1e-12), aspect)
+
+
+def draw_brain(ax, g, cx, cy, r, *, live: bool) -> None:
+    """One copy of the mark, centred on (cx, cy) with radius r."""
+    x, y, t, fam, is_sub, ia, ib, ew, _ = g
+    px, py = cx + x * r, cy + y * r
+    dim = 1.0 if live else 0.50
+
+    # Tracts under the parcels, receding with the midpoint's depth.
+    depth = (t[ia] + t[ib]) / 2.0
+    segs = np.stack([np.column_stack([px[ia], py[ia]]),
+                     np.column_stack([px[ib], py[ib]])], axis=1)
+    rgba_e = np.zeros((len(ia), 4))
+    rgba_e[:, :3] = 0.42
+    rgba_e[:, 3] = (0.06 + 0.34 * ew * depth) * dim
+    ax.add_collection(matplotlib.collections.LineCollection(
+        segs, colors=rgba_e, linewidths=0.30 * (0.45 + r / R_MAX), zorder=2))
+
+    order = np.argsort(t)                       # painter's algorithm, far first
+    face = COL[fam] if live else np.tile([0.60, 0.61, 0.64], (len(fam), 1))
+    rgba = np.zeros((len(fam), 4))
+    rgba[:, :3] = face[order]
+    rgba[:, 3] = (0.32 + 0.60 * t[order]) * (1.0 if live else 0.62)
+    ax.scatter(px[order], py[order],
+               s=np.where(is_sub, 30.0, 13.0)[order]
+                 * (0.55 + 0.7 * t[order]) * (r / R_MAX) ** 2,
+               c=rgba, linewidths=0, edgecolors="none", zorder=3)
+
+
+def main() -> int:
+    g = load_geometry()
+
+    aspect = g[-1]
+    logs = np.array([np.log10(m["params"]) - FLOOR for m in MODELS])
+    radii = R_MAX * logs / logs.max()            # half-heights
+    half_w = radii * aspect                      # half-widths, for spacing
+
+    # Left to right on one ground line, so the eye reads the tops as the
+    # series. Centres are spaced by the two half-widths they separate plus a
+    # gutter -- but never closer than MIN_PITCH, because the caption column
+    # under the smallest brain is wider than the brain is.
+    xs, cursor = [], 0.0
+    for i, hw in enumerate(half_w):
+        if i:
+            cursor += max(half_w[i - 1] + GUTTER + hw, MIN_PITCH)
+        else:
+            cursor += hw
+        xs.append(cursor)
+    xs = np.array(xs)
+    ground = 0.0
+    left = min(xs - half_w) - 0.0
+    right = max(xs + half_w)
+    # The caption block, not the silhouette, sets the outer margin on the ends.
+    left = min(left, xs[0] - MIN_PITCH / 2.0)
+    right = max(right, xs[-1] + MIN_PITCH / 2.0)
+
+    fig, ax = plt.subplots(figsize=(15.0, 6.6), dpi=260)
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
+
+    for m, cx, r in zip(MODELS, xs, radii):
+        cy = ground + r
+        live = m["trained"]
+
+        if not live:                      # a ring that says "not measured"
+            pad = 1.06
+            ax.add_patch(matplotlib.patches.Ellipse(
+                (cx, cy + r * (pad - 1.0)), 2 * r * aspect * pad, 2 * r * pad,
+                fill=False, edgecolor=INK3, linewidth=1.2,
+                linestyle=(0, (5, 4)), alpha=0.85, zorder=1))
+
+        draw_brain(ax, g, cx, cy, r, live=live)
+
+        ax.text(cx, cy, m["mark"], ha="center", va="center", zorder=5,
+                fontsize=6.5 + 11.5 * (r / R_MAX), fontweight="bold",
+                color=INK if live else INK3, family="sans-serif",
+                path_effects=[matplotlib.patheffects.withStroke(
+                    linewidth=4.2, foreground="white")])
+
+        p = m["params"]
+        ptxt = f"{p / 1e6:.2f} M" if p < 1e8 else f"{p / 1e6:.0f} M"
+        rows = [
+            (0.00, ptxt, 15.5, "bold", INK if live else INK3, "normal"),
+            (0.22, "parameters", 8.5, "normal", INK3, "normal"),
+            (0.46, m["nll"], 15.5, "bold", INK if live else INK3, "normal"),
+            (0.68, "held-out NLL" if live else "not yet trained",
+             8.5, "normal", INK3, "normal"),
+            (0.92, m["note"], 9.8, "normal", INK2 if live else INK3, "italic"),
+        ]
+        for dy, s, fs, fw, c, st in rows:
+            ax.text(cx, ground - CAP_GAP - dy, s, ha="center", va="top",
+                    fontsize=fs, fontweight=fw, color=c, style=st,
+                    family="sans-serif")
+
+    ax.plot([left, right], [ground - 0.11, ground - 0.11],
+            color=RULE, linewidth=1.0, zorder=0)
+
+    top = ground + 2 * radii.max()
+    ax.text(left, top + 0.44,
+            "SC-WBD — four trained whole-brain models, and the next one",
+            ha="left", va="bottom", fontsize=20, fontweight="bold",
+            color=INK, family="sans-serif")
+    ax.text(left, top + 0.17,
+            "Every brain is the same drawing: 414 parcels of one person's brain "
+            "at their real coordinates, over the strongest 900 white-matter tracts.",
+            ha="left", va="bottom", fontsize=10.5, color=INK2,
+            family="sans-serif")
+
+    foot = ground - CAP_GAP - 1.28
+    for dy, s in (
+        (0.00, "Height ∝ log₁₀(parameters) − 5, offset so the "
+               "series is legible; areas are not parameter ratios.  Held-out NLL "
+               "is nats per channel per sample on participant-disjoint EEG, "
+               "lower is better."),
+        (0.18, "001 and 002 were scored in different units from their baselines "
+               "and read ~0.6 nats low; correcting moves both further behind, so "
+               "the verdicts stand.  003 and 004 used different split policies."),
+    ):
+        ax.text(left, foot - dy, s, ha="left", va="top", fontsize=8.3,
+                color=INK3, family="sans-serif")
+
+    ax.set_aspect("equal")
+    ax.axis("off")
+    ax.set_xlim(left - 0.40, right + 0.40)
+    ax.set_ylim(foot - 0.62, top + 1.00)
+    fig.tight_layout(pad=0.2)
+
+    out = pathlib.Path("paper/figures")
+    out.mkdir(parents=True, exist_ok=True)
+    for ext in ("png", "pdf"):
+        pth = out / f"scwbd_stackup.{ext}"
+        fig.savefig(pth, facecolor="white", bbox_inches="tight", pad_inches=0.24)
+        print(f"  wrote {pth} ({pth.stat().st_size:,} bytes)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
