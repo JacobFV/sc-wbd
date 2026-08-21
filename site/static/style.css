@@ -713,6 +713,151 @@ hr {
 
 figure { margin: 2rem 0; max-width: calc(var(--measure) + var(--margin-col) + 1.6rem); }
 figure svg { max-width: 100%; height: auto; display: block; }
+figure img, figure picture { max-width: 100%; height: auto; display: block; }
+
+/* ---- the run stack-up ----
+ *
+ * Five independent components rather than one wide picture. A baked strip
+ * cannot wrap, so on any column narrower than it the whole series shrinks
+ * together until the 1.76 M brain is forty pixels of dots and its label is
+ * unreadable; and its captions scale with the image instead of with the page.
+ * Here every brain is its own canvas, every word is live text at page size,
+ * and the row reflows.
+ *
+ * `--w` is the run's size on the log axis, normalised so the largest is 1.0,
+ * and it drives BOTH the canvas width and the designation's type size. The
+ * component itself has a floor, because the widest thing under the smallest
+ * brain is its own caption and not the brain. */
+.runstack {
+  --brain: 10.5rem;              /* the largest brain's canvas, edge to edge */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.5rem 1.5rem;
+  margin: 1.8rem 0 1.1rem;
+  max-width: calc(var(--measure) + var(--margin-col) + 1.6rem);
+}
+
+.runstack .run {
+  flex: 0 0 auto;
+  margin: 0;
+  width: max(calc(var(--w) * var(--brain)), 4.7rem);
+  text-align: center;
+}
+
+/* All five brain boxes are the height of the tallest, and each brain sits at
+ * the bottom of its own box, so the silhouettes share a ground line and the
+ * caption rows line up across the row however the flex wraps. */
+.runstack .runbrain {
+  position: relative;
+  display: block;
+  height: calc(var(--brain) * 0.74);
+}
+
+/* The canvas is SQUARE and the crop is not.
+ *
+ * brain.js scales from the point cloud's bounding sphere so the drawing never
+ * clips and never breathes as it is dragged. The cost is that a sagittal
+ * silhouette fills 90% of a square canvas across and only 64% of it down, so a
+ * canvas sized to the drawing carries a third of its height as empty space and
+ * every row here would be a third too tall. The crop takes that band back and
+ * bounds the pointer target to what is drawn; a hard pitch can now push the
+ * frontal pole out of frame, which is the right trade for a thumbnail. */
+.runstack .runcrop {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: calc(var(--w) * var(--brain));
+  height: calc(var(--w) * var(--brain) * 0.74);
+  transform: translateX(-50%);
+  overflow: hidden;
+}
+
+.runstack canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-top: calc(var(--w) * var(--brain) * -0.13);   /* centre in the crop */
+  touch-action: pan-y;                 /* the page still scrolls past it */
+}
+.runstack canvas:focus-visible {
+  outline: 2px solid var(--ink-3);
+  outline-offset: 2px;
+}
+
+/* The designation is live text over the canvas, not pixels inside it: it stays
+ * at a readable size on the 1.76 M brain, themes itself, and can be selected.
+ * The halo is the page colour rather than a filled box, which would print as a
+ * rectangle laid over the connectome. Anchored to the crop's mid-height rather
+ * than the box's, because the small brains sit at the bottom of a tall box. */
+.runstack .runmark {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--w) * var(--brain) * 0.37);
+  transform: translate(-50%, 50%);
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(0.56rem, calc(var(--w) * 0.92rem), 0.94rem);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--ink);
+  text-shadow:
+    0 0 3px var(--bg), 0 0 3px var(--bg),
+    0 0 6px var(--bg), 0 0 6px var(--bg);
+  pointer-events: none;                /* the drag belongs to the canvas */
+}
+
+.runstack .runnums {
+  margin: 0.55rem 0 0;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.runstack .runparams,
+.runstack .runscore {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+.runstack .runparams { font-weight: 700; color: var(--ink); }
+.runstack .runscore { color: var(--ink-2); }
+.runstack .runscore abbr { border: 0; text-decoration: none; font-size: 0.86em; }
+
+/* Not trained: grey, and ringed so the treatment cannot be mistaken for a
+ * measurement. CSS rather than pixels, so it themes itself. The ellipse is the
+ * crop, which is the default sagittal silhouette; drag that brain and the ring
+ * stays put, because it marks the model's status and not its outline. */
+.runstack .pending .runbrain::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--w) * var(--brain) * 0.37);
+  width: calc(var(--w) * var(--brain) * 1.02);
+  height: calc(var(--w) * var(--brain) * 0.80);
+  transform: translate(-50%, 50%);
+  border: 1px dashed var(--ink-3);
+  border-radius: 50%;
+  opacity: 0.7;
+  pointer-events: none;
+}
+.runstack .pending .runmark { color: var(--ink-3); }
+.runstack .runnone { font-style: italic; color: var(--ink-3); }
+
+.runlegend {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--ink-3);
+  max-width: calc(var(--measure) + var(--margin-col) + 1.6rem);
+  margin: 0 0 1.6rem;
+}
+
+/* On a phone the largest brain alone is most of the width, so the series wants
+ * to be smaller before it wants to be one per row. */
+@media (max-width: 34rem) {
+  .runstack { --brain: 8.2rem; gap: 1.1rem 1rem; }
+}
+}
 figcaption {
   font-family: var(--sans);
   font-size: 0.78rem;
@@ -870,10 +1015,25 @@ figcaption {
     grid-template-columns: 13rem minmax(0, 1fr);
     column-gap: 2.6rem;
   }
-  body.release .chapter:not(.chapter-intro) > * { grid-column: 2; }
+  /* `align-self: start`, or a row that is taller than its content stretches
+   * the content to fill it -- which is invisible on a paragraph of text and
+   * very visible on anything that aligns to its own bottom edge. */
+  body.release .chapter:not(.chapter-intro) > * {
+    grid-column: 2;
+    align-self: start;
+  }
   body.release .chapter:not(.chapter-intro) > h2 {
     grid-column: 1;
-    grid-row: 1 / -1;          /* span every row, or sticky has nothing to move in */
+    /* `span 200`, not `1 / -1`.
+     *
+     * There is no `grid-template-rows` here -- every row is implicit -- and
+     * against an implicit grid `-1` resolves to the end of the EXPLICIT grid,
+     * which is row line 1. So `1 / -1` put this in row 1 alone, and the
+     * spanning this comment asks for never happened: sticky had nothing to
+     * move in, and the tall `.paper-release` below (which carried the same
+     * declaration) forced row 1 to its own height and stretched the section's
+     * first paragraph to 386px of box around three lines of text. */
+    grid-row: 1 / span 200;
     align-self: start;
     position: sticky;
     top: 4.6rem;
@@ -905,7 +1065,7 @@ figcaption {
    * clear of the heading above it. */
   body.release .chapter > .paper-release {
     grid-column: 1;
-    grid-row: 1 / -1;
+    grid-row: 1 / span 200;    /* see the note on h2: `1 / -1` spans nothing here */
     align-self: start;
     position: sticky;
     top: 11.5rem;

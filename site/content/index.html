@@ -35,7 +35,7 @@ reads the <strong>same shared state</strong>, through its own physics, on its ow
 <canvas class="arch-canvas archhero" data-case="bci" data-panels="scene"
         data-uses="on"
         data-src="static/brain.json" data-edges="static/edges.json"
-        aria-label="SC-WBD-004, at the centre of the 414 regions of one person's brain at their real coordinates, with the strongest white-matter tracts between them. Drag to orbit. Around it, what the model is for: neural state estimation, whole-brain forecasting, cross-modal prediction, EEG source inference, EEG computer control, neural error detection, motor-intent decoding, language decoding, cognitive-state decoding, individualized brain mapping, functional network mapping, connectivity inference, perturbation forecasting, TMS target selection, TMS response prediction, tFUS target selection, tFUS response prediction, closed-loop neuromodulation, neurofeedback control, cognitive intervention design, longitudinal brain modeling, personalized digital twins, and behavioral forecasting."></canvas>
+        aria-label="SC-WBD-004, at the centre of the 414 regions of one person's brain at their real coordinates, with the strongest white-matter tracts between them. Drag to orbit. Around it, what the model is for: neural state estimation, whole-brain forecasting, cross-modal prediction, EEG source inference, EEG computer control, neural error detection, motor-intent decoding, language decoding, cognitive-state decoding, individualized brain mapping, functional network mapping, connectivity inference, perturbation forecasting, TMS target selection, TMS response prediction, tFUS target selection, tFUS response prediction, closed-loop neuromodulation, neurofeedback control, cognitive intervention design, longitudinal brain modeling, personalized digital twins, and behavioral forecasting."></canvas></span>
 
 </div>
 </div>
@@ -290,7 +290,7 @@ are, so activity in one region moves the regions it is actually connected to.</p
 
 <canvas class="arch-canvas" data-case="semantic"
         data-src="static/brain.json" data-edges="static/edges.json"
-        aria-label="Diagram: parcels and tracts annotated to the signal categories a naturalistic viewing study uses."></canvas>
+        aria-label="Diagram: parcels and tracts annotated to the signal categories a naturalistic viewing study uses."></canvas></span>
 <p class="arch-cap">Show someone a film and you know exactly what they saw, where
 they looked, and what they said about it — alongside what their brain did. Four
 different kinds of evidence about one response, all landing on one model.</p>
@@ -331,7 +331,7 @@ against their own recording.</p>
 
 <canvas class="arch-canvas" data-case="tms"
         data-src="static/brain.json" data-edges="static/edges.json"
-        aria-label="Diagram: parcels and tracts annotated to the signal categories TMS target selection uses."></canvas>
+        aria-label="Diagram: parcels and tracts annotated to the signal categories TMS target selection uses."></canvas></span>
 <p class="arch-cap">A magnetic pulse goes in; the electrical response, the
 blood-flow response and the muscle twitch all come back out. The field is computed
 through that person's own head, not an average one.</p>
@@ -371,7 +371,7 @@ rest is left marginalised rather than filled in with someone else's anatomy.</p>
 
 <canvas class="arch-canvas" data-case="bci"
         data-src="static/brain.json" data-edges="static/edges.json"
-        aria-label="Diagram: parcels and tracts annotated to the signal categories a cursor-control task uses."></canvas>
+        aria-label="Diagram: parcels and tracts annotated to the signal categories a cursor-control task uses."></canvas></span>
 <p class="arch-cap">Reading intent from the scalp to move a cursor. What makes
 this hard is not decoding once; it is decoding the same way tomorrow, which is a
 problem about modelling a person rather than a population.</p>
@@ -382,7 +382,156 @@ hypotheses is visible in advance rather than after.
 <a href="possibilities/index.html">Possibilities</a> sets out what this makes
 reachable, in the order it becomes reachable.</p>
 
-<h2>Artifacts</h2>
+<h2>Results</h2>
+
+<p>Four models are trained and public. Each is larger than the one before it and
+each is scored on participants held out of its own training, against the same
+bench of statistical baselines.</p>
+
+<div class="runstack">
+  <figure class="run" style="--w: 0.3934">
+    <span class="runbrain">
+      <span class="runcrop"><canvas data-brain tabindex="0" role="img"
+              data-src="static/brain.json" data-edges="static/edges.json"
+              aria-label="SC-WBD-001, 1.76 M parameters, held-out NLL 2.555. Drag or use the arrow keys to turn it."></canvas></span>
+      <span class="runmark">SC-WBD-001</span>
+    </span>
+    <figcaption class="runnums">
+      <span class="runparams">1.76 M</span>
+      <span class="runscore">2.555 <abbr title="nats per channel per sample">nats</abbr></span>
+    </figcaption>
+  </figure>
+  <figure class="run" style="--w: 0.4427">
+    <span class="runbrain">
+      <span class="runcrop"><canvas data-brain tabindex="0" role="img"
+              data-src="static/brain.json" data-edges="static/edges.json"
+              aria-label="SC-WBD-002, 2.52 M parameters, held-out NLL 3.179. Drag or use the arrow keys to turn it."></canvas></span>
+      <span class="runmark">SC-WBD-002</span>
+    </span>
+    <figcaption class="runnums">
+      <span class="runparams">2.52 M</span>
+      <span class="runscore">3.179 <abbr title="nats per channel per sample">nats</abbr></span>
+    </figcaption>
+  </figure>
+  <figure class="run" style="--w: 0.7648">
+    <span class="runbrain">
+      <span class="runcrop"><canvas data-brain tabindex="0" role="img"
+              data-src="static/brain.json" data-edges="static/edges.json"
+              aria-label="SC-WBD-003, 26.30 M parameters, held-out NLL 1.986. Drag or use the arrow keys to turn it."></canvas></span>
+      <span class="runmark">SC-WBD-003</span>
+    </span>
+    <figcaption class="runnums">
+      <span class="runparams">26.30 M</span>
+      <span class="runscore">1.986 <abbr title="nats per channel per sample">nats</abbr></span>
+    </figcaption>
+  </figure>
+  <figure class="run" style="--w: 0.7648">
+    <span class="runbrain">
+      <span class="runcrop"><canvas data-brain tabindex="0" role="img"
+              data-src="static/brain.json" data-edges="static/edges.json"
+              aria-label="SC-WBD-004, 26.30 M parameters, held-out NLL 2.024. Drag or use the arrow keys to turn it."></canvas></span>
+      <span class="runmark">SC-WBD-004</span>
+    </span>
+    <figcaption class="runnums">
+      <span class="runparams">26.30 M</span>
+      <span class="runscore">2.024 <abbr title="nats per channel per sample">nats</abbr></span>
+    </figcaption>
+  </figure>
+  <figure class="run pending" style="--w: 1.0000">
+    <span class="runbrain">
+      <span class="runcrop"><canvas data-brain tabindex="0" role="img"
+              data-src="static/brain.json" data-edges="static/edges.json"
+              aria-label="SC-WBD-005, a design target of 146 M parameters, not trained and carrying no score. Drag or use the arrow keys to turn it."></canvas></span>
+      <span class="runmark">SC-WBD-005</span>
+    </span>
+    <figcaption class="runnums">
+      <span class="runparams">146 M</span>
+      <span class="runscore runnone">not trained</span>
+    </figcaption>
+  </figure>
+</div>
+
+<p class="runlegend">Parameter count and held-out forecast score for every run,
+and the one being designed. Each brain is the same drawing &mdash; 414 parcels of
+one person&rsquo;s brain at their real coordinates over the strongest 900
+white-matter tracts &mdash; sized by the log of its parameter count, and each one
+turns: drag it, or tab to it and use the arrow keys. The score is a Gaussian
+negative log-likelihood in nats per channel per sample on participant-disjoint
+EEG, so lower is better, and the whole bench of baselines spans about 0.3 nats
+&mdash; these are small differences. 001 and 002 were scored in different units
+from their baselines and read roughly 0.6 nats low; correcting that moves both
+further behind, not closer.[[src: reports/training/eval_metric_incomparability.md]]</p>
+
+<p><strong>Scale moved by a factor of ten between 002 and 003, and the score moved
+with it.</strong> 003 is the first model here to beat every baseline it was
+measured against, by ~0.04 nats. 004 is the same size, adds a stage, and
+<strong>does not reproduce that separation</strong> &mdash; on a holdout built
+under a different split policy, so it is a failure to reproduce on other data
+rather than a regression on the same data, which is the weakest of the available
+defences.[[note: ISSUE-014 versioned the split policy between the two runs: 003
+scored 27 participants under <code>shuffle_slice_v1</code>, 004 scores 25 under
+<code>stable_hash_v2</code>. Re-scoring both under one policy is possible and has
+not been done. Until it is, the honest reading is that the programme has one
+positive held-out result and one failure to reproduce it.]] Parameter count is
+the axis that grew monotonically here; the forecast score is not, and no arrangement
+of these four numbers makes it so.</p>
+
+<p><strong>What did grow every run is how much of the model can be measured at
+all.</strong> 002 could be scored on one thing. 004 is scored on five, and it is
+the first run able to say anything about fMRI, about whether its own posterior is
+calibrated, or about whether fitting to an individual helps &mdash; because each
+of those needed an instrument built before it could return an answer. Three of the
+five came back negative, and that is the trade this programme keeps making:
+a measurement that can fail is worth more than a capability nobody checked.</p>
+
+<h3>Where this is heading</h3>
+
+<p>005 is designed from 004&rsquo;s evidence rather than from its disappointments,
+and the design is written down before the run.[[src: reports/RUN5_DESIGN.md]] Three
+things are already decided:</p>
+
+<ul>
+<li><strong>The fMRI head gets fitted to a settled state instead of fighting for
+one.</strong> 004&rsquo;s haemodynamic likelihood degrades through training because
+the only haemodynamic corpus is 5.39% of the gradient and is outvoted 17.6&nbsp;:&nbsp;1.
+Four diagnostic arms located the cause: freezing the five Balloon&ndash;Windkessel
+constants changes nothing, and freezing the shared trunk sends the likelihood
+<strong>1.99 &rarr; 1.86 and still falling</strong>. The head models this data
+perfectly well; it is the state underneath it that will not hold still.[[note:
+The imbalance is a property of the corpus, not of the tuning: 485 BOLD windows
+from 10 participants at one site against roughly 100,000 EEG windows from 187.
+More fMRI data moves it and a better optimiser does not, which is why reweighting
+the mixture and re-tuning the BOLD learning rate are both explicitly ruled out.
+An independent analytic route agrees &mdash; a linear&ndash;Gaussian surrogate
+that imports nothing from the trained model puts the haemodynamic channel at
+0.1&ndash;1.0% of the electrical channel&rsquo;s information about the coupling
+gains.]]</li>
+<li><strong>The posterior is not re-tuned until one cheap experiment has run.</strong>
+004&rsquo;s learning-rate repair worked and overshot. The sweep that chose it
+predicted a coupling-gain R&sup2; of 0.674&ndash;0.766 and the full curriculum
+returned 0.284, and why is unmeasured. Scoring an intermediate checkpoint that is
+already on disk separates a schedule problem from a sweep that does not transfer,
+and it costs one evaluation.</li>
+<li><strong>Individualisation starts from the 30.</strong> Of 75 participants
+scored on a second night, 30 carry a person effect of exactly zero. Whether those
+are the participants the stage sampled least is nearly free to check and rules out
+two of the three candidate causes.</li>
+</ul>
+
+<p>The distance to a validated claim about brains is known and most of it is not
+compute. Five claim gates need <strong>nine baseline arms</strong> that were never
+trained &mdash; about <strong>380 hours</strong> of wall clock, one job at a time,
+to train them to a state a claim could rest on.[[note: Two independently measured
+figures agree to 3%: 004&rsquo;s ablation retrained 11 arms at 200 steps in 371
+minutes, and the full run did 14,600 steps in 42.2 hours. Cheap 200-step probes
+would take 5.1 hours and are not baselines a claim can rest on.]] One gate is not
+reachable at any budget: it requires recovery of direction, delay, gain, dose and
+state-dependence from a <em>prospective</em> perturbation study, and three of those
+five are unobtainable in principle from the retrospective stimulation data that
+exists.[[src: reports/PROGRAMME_ASSESSMENT.md]] And the single most useful thing
+that could be done next costs one evaluation rather than a run: re-score 003 and
+004 under one split policy, and either reproduce the one positive result this
+programme has or retract it.</p>
 
 <p>Stated at the granularity someone could check, with the public artifacts in
 the same table as the parts they are made of. Every row is a thing you could run

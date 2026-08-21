@@ -67,8 +67,33 @@ COL = np.array([
 # Z -0.29, below and forward of the cortical centroid), not assumed.
 YAW, PITCH = np.pi / 2.0, 0.0
 
-INK, INK2, INK3 = "#17181a", "#55575c", "#7d8085"
-RULE = "#e3e3df"
+# The site sets its palette once under `prefers-color-scheme` and has no
+# toggle, so a light and a dark render cover every reader. Values are the
+# stylesheet's own --ink / --ink-2 / --ink-3 / --rule in each theme; the parcel
+# colours are NOT themed, because style.css keeps the signal hues constant
+# across themes and a brain that changes colour with the OS is a different
+# drawing.
+THEMES = {
+    "light": dict(bg="#ffffff", ink="#17181a", ink2="#55575c", ink3="#7d8085",
+                  rule="#e3e3df", dead=(0.60, 0.61, 0.64), tract=0.42),
+    "dark":  dict(bg="#101215", ink="#e5e7ea", ink2="#a6a9af", ink3="#7e8288",
+                  rule="#272b31", dead=(0.55, 0.57, 0.61), tract=0.72),
+}
+THEME = "light"                # overridable with --theme
+BG = INK = INK2 = INK3 = RULE = ""   # bound by apply_theme()
+DEAD: tuple[float, float, float] = (0, 0, 0)
+TRACT = 0.0
+DPI = 260                      # overridable with --dpi
+
+
+def apply_theme(name: str) -> None:
+    """Bind the palette globals. Called before anything draws."""
+    global BG, INK, INK2, INK3, RULE, DEAD, TRACT
+    if name not in THEMES:
+        raise SystemExit(f"--theme: {name!r} is not one of {sorted(THEMES)}")
+    t = THEMES[name]
+    BG, INK, INK2, INK3, RULE = t["bg"], t["ink"], t["ink2"], t["ink3"], t["rule"]
+    DEAD, TRACT = t["dead"], t["tract"]
 
 # parameters: run 1 reports/training/evaluation.json, run 2 evaluation_run2.json,
 #   runs 3-4 reports/scwbd-00{3,4}_derived.json ("TOTAL").
@@ -152,6 +177,7 @@ ROW_GAP = 0.30                 # first caption row to the second
 GUTTER_L = 2.25                # left margin the row labels are set in
 STATIC = pathlib.Path("site/static")
 OUT_STEM = "paper/figures/scwbd_stackup"
+FORMATS: tuple[str, ...] = ("png", "pdf")
 
 
 def load_geometry():
@@ -208,13 +234,13 @@ def draw_brain(ax, g, cx, cy, r, *, live: bool) -> None:
     segs = np.stack([np.column_stack([px[ia], py[ia]]),
                      np.column_stack([px[ib], py[ib]])], axis=1)
     rgba_e = np.zeros((len(ia), 4))
-    rgba_e[:, :3] = 0.42
+    rgba_e[:, :3] = TRACT
     rgba_e[:, 3] = (0.06 + 0.34 * ew * depth) * dim
     ax.add_collection(matplotlib.collections.LineCollection(
         segs, colors=rgba_e, linewidths=0.30 * (0.45 + r / R_MAX), zorder=2))
 
     order = np.argsort(t)                       # painter's algorithm, far first
-    face = COL[fam] if live else np.tile([0.60, 0.61, 0.64], (len(fam), 1))
+    face = COL[fam] if live else np.tile(DEAD, (len(fam), 1))
     rgba = np.zeros((len(fam), 4))
     rgba[:, :3] = face[order]
     rgba[:, 3] = (0.32 + 0.60 * t[order]) * (1.0 if live else 0.62)
@@ -225,6 +251,7 @@ def draw_brain(ax, g, cx, cy, r, *, live: bool) -> None:
 
 
 def main() -> int:
+    apply_theme(THEME)
     g = load_geometry()
 
     aspect = g[-1]
@@ -260,9 +287,9 @@ def main() -> int:
     # padded on one axis, which is a band of empty paper nothing is drawn in.
     fig_w = 15.0
     fig, ax = plt.subplots(
-        figsize=(fig_w, fig_w * (y1_ - y0) / (x1_ - x0)), dpi=260)
-    fig.patch.set_facecolor("white")
-    ax.set_facecolor("white")
+        figsize=(fig_w, fig_w * (y1_ - y0) / (x1_ - x0)), dpi=DPI)
+    fig.patch.set_facecolor(BG)
+    ax.set_facecolor(BG)
 
     scores = score_column()
     for m, cx, r, score in zip(models(), xs, radii, scores):
@@ -282,7 +309,7 @@ def main() -> int:
                 fontsize=6.5 + 11.5 * (r / R_MAX), fontweight="bold",
                 color=INK if live else INK3, family="sans-serif",
                 path_effects=[matplotlib.patheffects.withStroke(
-                    linewidth=4.2, foreground="white")])
+                    linewidth=4.2, foreground=BG)])
 
         # Two numbers. What they are is said once, in the left margin.
         p_ = m["params"]
@@ -317,9 +344,9 @@ def main() -> int:
 
     stem = pathlib.Path(OUT_STEM)
     stem.parent.mkdir(parents=True, exist_ok=True)
-    for ext in ("png", "pdf"):
+    for ext in FORMATS:
         pth = stem.with_suffix(f".{ext}")
-        fig.savefig(pth, facecolor="white", bbox_inches="tight", pad_inches=0.24)
+        fig.savefig(pth, facecolor=BG, bbox_inches="tight", pad_inches=0.24)
         print(f"  wrote {pth} ({pth.stat().st_size:,} bytes)")
     return 0
 
@@ -334,8 +361,15 @@ if __name__ == "__main__":
     ap.add_argument("--skip", default="", help="marks to omit, comma separated")
     ap.add_argument("--out", default="paper/figures/scwbd_stackup",
                     help="path stem; .png and .pdf are written")
+    ap.add_argument("--theme", default=THEME, choices=sorted(THEMES))
+    ap.add_argument("--dpi", type=int, default=DPI)
+    ap.add_argument("--formats", default="png,pdf",
+                    help="comma separated; the web build wants png alone")
     _a = ap.parse_args()
     SCORE_MODE = _a.score
     SKIP = {q.strip() for q in _a.skip.split(",") if q.strip()}
     OUT_STEM = _a.out
+    THEME = _a.theme
+    DPI = _a.dpi
+    FORMATS = tuple(q.strip() for q in _a.formats.split(",") if q.strip())
     raise SystemExit(main())
