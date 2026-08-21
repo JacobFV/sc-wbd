@@ -98,17 +98,12 @@ def score_column() -> list[str]:
     modes = ("measured", "best_to_date", "margin", "margin_best_to_date")
     if SCORE_MODE not in modes:
         raise SystemExit(f"SCORE_MODE: {SCORE_MODE!r} is not one of {modes}")
-    # The untrained model has no score. Its empty slot carries the only thing
-    # the figure otherwise cannot say: which direction is good. A bare 2.555
-    # beside a bare 1.986 does not tell a reader which one won.
-    legend = "higher is better" if SCORE_MODE.startswith("margin") \
-        else "lower is better"
     out: list[str] = []
     run_nll: float | None = None
     run_margin: float | None = None
     for m in models():
         if m["nll"] is None:
-            out.append(legend)
+            out.append("")            # not trained: the slot stays empty
             continue
         margin = m["best"] - m["nll"]          # + means SC-WBD is ahead
         run_nll = m["nll"] if run_nll is None else min(run_nll, m["nll"])
@@ -128,7 +123,19 @@ def models() -> list[dict]:
     """The lineup, minus anything named in SKIP."""
     return [m for m in MODELS if m["mark"] not in SKIP]
 
-SCORE_MODE = "best_to_date"    # see score_column(); overridable with --score
+
+def metric_label() -> tuple[str, str]:
+    """What the second row is, and which direction is good.
+
+    Named once in the left margin rather than once per column: five copies of
+    'held-out NLL' is a texture, and the direction is the part a reader
+    actually needs -- a bare 2.555 beside a bare 1.986 does not say which won.
+    """
+    if SCORE_MODE.startswith("margin"):
+        return "nats vs. best baseline", "higher is better"
+    return "held-out NLL", "lower is better"
+
+SCORE_MODE = "measured"        # see score_column(); overridable with --score
 SKIP: set[str] = set()         # marks to leave out entirely; --skip SC-WBD-002
 
 FLOOR = 5.0                    # the log10 the radius axis is measured from
@@ -136,6 +143,8 @@ R_MAX = 1.00                   # HALF-HEIGHT of the largest brain, in data units
 GUTTER = 0.34                  # clear space between neighbouring silhouettes
 MIN_PITCH = 2.30               # centre to centre, so the captions never collide
 CAP_GAP = 0.30                 # ground line to the first caption row
+ROW_GAP = 0.30                 # first caption row to the second
+GUTTER_L = 2.25                # left margin the row labels are set in
 STATIC = pathlib.Path("site/static")
 OUT_STEM = "paper/figures/scwbd_stackup"
 
@@ -237,7 +246,16 @@ def main() -> int:
     left = min(left, xs[0] - MIN_PITCH / 2.0)
     right = max(right, xs[-1] + MIN_PITCH / 2.0)
 
-    fig, ax = plt.subplots(figsize=(15.0, 5.6), dpi=260)
+    top = ground + 2 * radii.max()
+    foot = ground - CAP_GAP - ROW_GAP - 0.44
+    x0, x1_ = left - GUTTER_L, right + 0.40
+    y0, y1_ = foot - 0.10, top + 0.30
+
+    # Equal aspect: a figure whose shape does not match the data extents gets
+    # padded on one axis, which is a band of empty paper nothing is drawn in.
+    fig_w = 15.0
+    fig, ax = plt.subplots(
+        figsize=(fig_w, fig_w * (y1_ - y0) / (x1_ - x0)), dpi=260)
     fig.patch.set_facecolor("white")
     ax.set_facecolor("white")
 
@@ -261,27 +279,35 @@ def main() -> int:
                 path_effects=[matplotlib.patheffects.withStroke(
                     linewidth=4.2, foreground="white")])
 
-        # Two numbers, no labels. The units are the presenter's to give.
+        # Two numbers. What they are is said once, in the left margin.
         p_ = m["params"]
         ptxt = f"{p_ / 1e6:.2f} M" if p_ < 1e8 else f"{p_ / 1e6:.0f} M"
         ax.text(cx, ground - CAP_GAP, ptxt, ha="center", va="top",
-                fontsize=17, fontweight="bold",
+                fontsize=12.5, fontweight="bold",
                 color=INK if live else INK3, family="sans-serif")
-        ax.text(cx, ground - CAP_GAP - 0.30, score, ha="center", va="top",
-                fontsize=17 if live else 11, fontweight="bold" if live else "normal",
-                style="normal" if live else "italic",
-                color=INK if live else INK3, family="sans-serif")
+        if score:
+            ax.text(cx, ground - CAP_GAP - ROW_GAP, score, ha="center", va="top",
+                    fontsize=12.5, fontweight="bold",
+                    color=INK, family="sans-serif")
 
     ax.plot([left, right], [ground - 0.11, ground - 0.11],
             color=RULE, linewidth=1.0, zorder=0)
 
-    top = ground + 2 * radii.max()
-    foot = ground - CAP_GAP - 0.62
+    # ---- row labels, in the left margin ---------------------------------
+    metric, direction = metric_label()
+    lx = left - 0.28
+    ax.text(lx, ground - CAP_GAP - 0.02, "parameters", ha="right", va="top",
+            fontsize=11, color=INK2, family="sans-serif")
+    ax.text(lx, ground - CAP_GAP - ROW_GAP - 0.02, metric, ha="right", va="top",
+            fontsize=11, color=INK2, family="sans-serif")
+    ax.text(lx, ground - CAP_GAP - ROW_GAP - 0.22, direction,
+            ha="right", va="top", fontsize=9, style="italic",
+            color=INK3, family="sans-serif")
 
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim(left - 0.40, right + 0.40)
-    ax.set_ylim(foot - 0.10, top + 0.30)
+    ax.set_xlim(x0, x1_)
+    ax.set_ylim(y0, y1_)
     fig.tight_layout(pad=0.2)
 
     stem = pathlib.Path(OUT_STEM)
