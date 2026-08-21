@@ -60,7 +60,12 @@ COL = np.array([
     [236, 176, 102], [204, 122, 70], [244, 194, 122], [214, 145, 48],
 ]) / 255.0
 
-YAW, PITCH = -0.5, -0.18       # brain.js initial view
+# A right-lateral sagittal view, not the hero's 3/4: yaw = pi/2 sends screen-x
+# to +Y and pitch = 0 sends screen-y to +Z, so anterior points RIGHT and
+# superior points up. +Y is anterior in these coordinates -- read off the file
+# (Y spans -0.880..+1.000, and the 14 subcortical parcels sit at Y +0.20,
+# Z -0.29, below and forward of the cortical centroid), not assumed.
+YAW, PITCH = np.pi / 2.0, 0.0
 
 INK, INK2, INK3 = "#17181a", "#55575c", "#7d8085"
 RULE = "#e3e3df"
@@ -283,11 +288,11 @@ def main() -> int:
         p_ = m["params"]
         ptxt = f"{p_ / 1e6:.2f} M" if p_ < 1e8 else f"{p_ / 1e6:.0f} M"
         ax.text(cx, ground - CAP_GAP, ptxt, ha="center", va="top",
-                fontsize=12.5, fontweight="bold",
+                fontsize=10.5, fontweight="bold",
                 color=INK if live else INK3, family="sans-serif")
         if score:
             ax.text(cx, ground - CAP_GAP - ROW_GAP, score, ha="center", va="top",
-                    fontsize=12.5, fontweight="bold",
+                    fontsize=10.5, fontweight="bold",
                     color=INK, family="sans-serif")
 
     ax.plot([left, right], [ground - 0.11, ground - 0.11],
@@ -296,12 +301,12 @@ def main() -> int:
     # ---- row labels, in the left margin ---------------------------------
     metric, direction = metric_label()
     lx = left - 0.28
-    ax.text(lx, ground - CAP_GAP - 0.02, "parameters", ha="right", va="top",
-            fontsize=11, color=INK2, family="sans-serif")
-    ax.text(lx, ground - CAP_GAP - ROW_GAP - 0.02, metric, ha="right", va="top",
-            fontsize=11, color=INK2, family="sans-serif")
-    ax.text(lx, ground - CAP_GAP - ROW_GAP - 0.22, direction,
-            ha="right", va="top", fontsize=9, style="italic",
+    ax.text(lx, ground - CAP_GAP - 0.01, "params", ha="right", va="top",
+            fontsize=9.5, color=INK2, family="sans-serif")
+    ax.text(lx, ground - CAP_GAP - ROW_GAP - 0.01, metric, ha="right", va="top",
+            fontsize=9.5, color=INK2, family="sans-serif")
+    ax.text(lx, ground - CAP_GAP - ROW_GAP - 0.19, direction,
+            ha="right", va="top", fontsize=8, style="italic",
             color=INK3, family="sans-serif")
 
     ax.set_aspect("equal")
