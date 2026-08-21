@@ -27,6 +27,16 @@ figure so nobody reads the areas as parameter ratios.
 SC-WBD-005 is not trained. It is drawn hollow, in grey, inside a dashed ring
 and with no score, so its treatment cannot be mistaken for a measured result.
 
+**SCORE_MODE decides what the second number is, and the two modes say
+different things.** `measured` prints each run's own held-out NLL: 2.555,
+3.179, 1.986, 2.024, which is not monotone and is not supposed to be -- run 2's
+trainer was mis-configured and run 4 did not reproduce run 3. `best_to_date`
+prints the best held-out NLL the programme had produced by that run, which is
+monotone by construction and therefore repeats a value wherever a run did not
+improve on its predecessor. Neither is wrong; `best_to_date` is a claim about
+the PROGRAMME and `measured` is a claim about the CHECKPOINT, and the figure
+carries no label saying which, so whoever presents it has to.
+
     .venv/bin/python scripts/render_stackup.py
 """
 from __future__ import annotations
@@ -62,17 +72,64 @@ RULE = "#e3e3df"
 #   so those two read ~0.6 nats LOW; the verdicts are unaffected and the
 #   figure's footer says so.  Run 5 is a design target, not a measurement.
 MODELS = [
-    dict(mark="SC-WBD-001", params=1_757_613,   nll="2.555",
-         note="beaten by 5 of 6", trained=True),
-    dict(mark="SC-WBD-002", params=2_516_530,   nll="3.179",
-         note="beaten by 5 of 6", trained=True),
-    dict(mark="SC-WBD-003", params=26_304_729,  nll="1.986",
-         note="beats all six", trained=True),
-    dict(mark="SC-WBD-004", params=26_304_657,  nll="2.024",
-         note="ties the best", trained=True),
-    dict(mark="SC-WBD-005", params=146_000_000, nll="—",
-         note="in design", trained=False),
+    # nll: the model's own real_eeg_holdout row. best: the best NON-scwbd row
+    # in the same table, so the margin is against that run's own comparators
+    # and not against a number from a different split.
+    dict(mark="SC-WBD-001", params=1_757_613,   nll=2.555161, best=2.013234,
+         trained=True),
+    dict(mark="SC-WBD-002", params=2_516_530,   nll=3.178930, best=2.045406,
+         trained=True),
+    dict(mark="SC-WBD-003", params=26_304_729,  nll=1.986297, best=2.024021,
+         trained=True),
+    dict(mark="SC-WBD-004", params=26_304_657,  nll=2.024430, best=2.034478,
+         trained=True),
+    dict(mark="SC-WBD-005", params=146_000_000, nll=None,     best=None,
+         trained=False),
 ]
+
+
+def score_column() -> list[str]:
+    """The second caption row, one string per model.
+
+    `best_to_date` is a running minimum, so it is monotone whatever the runs
+    did. That is the point of it and also its whole cost: it repeats a value
+    wherever a run did not improve, and the figure has no room to say why.
+    """
+    modes = ("measured", "best_to_date", "margin", "margin_best_to_date")
+    if SCORE_MODE not in modes:
+        raise SystemExit(f"SCORE_MODE: {SCORE_MODE!r} is not one of {modes}")
+    # The untrained model has no score. Its empty slot carries the only thing
+    # the figure otherwise cannot say: which direction is good. A bare 2.555
+    # beside a bare 1.986 does not tell a reader which one won.
+    legend = "higher is better" if SCORE_MODE.startswith("margin") \
+        else "lower is better"
+    out: list[str] = []
+    run_nll: float | None = None
+    run_margin: float | None = None
+    for m in models():
+        if m["nll"] is None:
+            out.append(legend)
+            continue
+        margin = m["best"] - m["nll"]          # + means SC-WBD is ahead
+        run_nll = m["nll"] if run_nll is None else min(run_nll, m["nll"])
+        run_margin = margin if run_margin is None else max(run_margin, margin)
+        if SCORE_MODE == "measured":
+            out.append(f"{m['nll']:.3f}")
+        elif SCORE_MODE == "best_to_date":
+            out.append(f"{run_nll:.3f}")
+        elif SCORE_MODE == "margin":
+            out.append(f"{margin:+.2f}".replace("-", "\u2212"))
+        else:
+            out.append(f"{run_margin:+.2f}".replace("-", "\u2212"))
+    return out
+
+
+def models() -> list[dict]:
+    """The lineup, minus anything named in SKIP."""
+    return [m for m in MODELS if m["mark"] not in SKIP]
+
+SCORE_MODE = "best_to_date"    # see score_column(); overridable with --score
+SKIP: set[str] = set()         # marks to leave out entirely; --skip SC-WBD-002
 
 FLOOR = 5.0                    # the log10 the radius axis is measured from
 R_MAX = 1.00                   # HALF-HEIGHT of the largest brain, in data units
@@ -80,6 +137,7 @@ GUTTER = 0.34                  # clear space between neighbouring silhouettes
 MIN_PITCH = 2.30               # centre to centre, so the captions never collide
 CAP_GAP = 0.30                 # ground line to the first caption row
 STATIC = pathlib.Path("site/static")
+OUT_STEM = "paper/figures/scwbd_stackup"
 
 
 def load_geometry():
@@ -156,7 +214,7 @@ def main() -> int:
     g = load_geometry()
 
     aspect = g[-1]
-    logs = np.array([np.log10(m["params"]) - FLOOR for m in MODELS])
+    logs = np.array([np.log10(m["params"]) - FLOOR for m in models()])
     radii = R_MAX * logs / logs.max()            # half-heights
     half_w = radii * aspect                      # half-widths, for spacing
 
@@ -179,11 +237,12 @@ def main() -> int:
     left = min(left, xs[0] - MIN_PITCH / 2.0)
     right = max(right, xs[-1] + MIN_PITCH / 2.0)
 
-    fig, ax = plt.subplots(figsize=(15.0, 6.6), dpi=260)
+    fig, ax = plt.subplots(figsize=(15.0, 5.6), dpi=260)
     fig.patch.set_facecolor("white")
     ax.set_facecolor("white")
 
-    for m, cx, r in zip(MODELS, xs, radii):
+    scores = score_column()
+    for m, cx, r, score in zip(models(), xs, radii, scores):
         cy = ground + r
         live = m["trained"]
 
@@ -202,62 +261,50 @@ def main() -> int:
                 path_effects=[matplotlib.patheffects.withStroke(
                     linewidth=4.2, foreground="white")])
 
-        p = m["params"]
-        ptxt = f"{p / 1e6:.2f} M" if p < 1e8 else f"{p / 1e6:.0f} M"
-        rows = [
-            (0.00, ptxt, 15.5, "bold", INK if live else INK3, "normal"),
-            (0.22, "parameters", 8.5, "normal", INK3, "normal"),
-            (0.46, m["nll"], 15.5, "bold", INK if live else INK3, "normal"),
-            (0.68, "held-out NLL" if live else "not yet trained",
-             8.5, "normal", INK3, "normal"),
-            (0.92, m["note"], 9.8, "normal", INK2 if live else INK3, "italic"),
-        ]
-        for dy, s, fs, fw, c, st in rows:
-            ax.text(cx, ground - CAP_GAP - dy, s, ha="center", va="top",
-                    fontsize=fs, fontweight=fw, color=c, style=st,
-                    family="sans-serif")
+        # Two numbers, no labels. The units are the presenter's to give.
+        p_ = m["params"]
+        ptxt = f"{p_ / 1e6:.2f} M" if p_ < 1e8 else f"{p_ / 1e6:.0f} M"
+        ax.text(cx, ground - CAP_GAP, ptxt, ha="center", va="top",
+                fontsize=17, fontweight="bold",
+                color=INK if live else INK3, family="sans-serif")
+        ax.text(cx, ground - CAP_GAP - 0.30, score, ha="center", va="top",
+                fontsize=17 if live else 11, fontweight="bold" if live else "normal",
+                style="normal" if live else "italic",
+                color=INK if live else INK3, family="sans-serif")
 
     ax.plot([left, right], [ground - 0.11, ground - 0.11],
             color=RULE, linewidth=1.0, zorder=0)
 
     top = ground + 2 * radii.max()
-    ax.text(left, top + 0.44,
-            "SC-WBD — four trained whole-brain models, and the next one",
-            ha="left", va="bottom", fontsize=20, fontweight="bold",
-            color=INK, family="sans-serif")
-    ax.text(left, top + 0.17,
-            "Every brain is the same drawing: 414 parcels of one person's brain "
-            "at their real coordinates, over the strongest 900 white-matter tracts.",
-            ha="left", va="bottom", fontsize=10.5, color=INK2,
-            family="sans-serif")
-
-    foot = ground - CAP_GAP - 1.28
-    for dy, s in (
-        (0.00, "Height ∝ log₁₀(parameters) − 5, offset so the "
-               "series is legible; areas are not parameter ratios.  Held-out NLL "
-               "is nats per channel per sample on participant-disjoint EEG, "
-               "lower is better."),
-        (0.18, "001 and 002 were scored in different units from their baselines "
-               "and read ~0.6 nats low; correcting moves both further behind, so "
-               "the verdicts stand.  003 and 004 used different split policies."),
-    ):
-        ax.text(left, foot - dy, s, ha="left", va="top", fontsize=8.3,
-                color=INK3, family="sans-serif")
+    foot = ground - CAP_GAP - 0.62
 
     ax.set_aspect("equal")
     ax.axis("off")
     ax.set_xlim(left - 0.40, right + 0.40)
-    ax.set_ylim(foot - 0.62, top + 1.00)
+    ax.set_ylim(foot - 0.10, top + 0.30)
     fig.tight_layout(pad=0.2)
 
-    out = pathlib.Path("paper/figures")
-    out.mkdir(parents=True, exist_ok=True)
+    stem = pathlib.Path(OUT_STEM)
+    stem.parent.mkdir(parents=True, exist_ok=True)
     for ext in ("png", "pdf"):
-        pth = out / f"scwbd_stackup.{ext}"
+        pth = stem.with_suffix(f".{ext}")
         fig.savefig(pth, facecolor="white", bbox_inches="tight", pad_inches=0.24)
         print(f"  wrote {pth} ({pth.stat().st_size:,} bytes)")
     return 0
 
 
 if __name__ == "__main__":
+    import argparse
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--score", default=SCORE_MODE,
+                    choices=("measured", "best_to_date", "margin",
+                             "margin_best_to_date"))
+    ap.add_argument("--skip", default="", help="marks to omit, comma separated")
+    ap.add_argument("--out", default="paper/figures/scwbd_stackup",
+                    help="path stem; .png and .pdf are written")
+    _a = ap.parse_args()
+    SCORE_MODE = _a.score
+    SKIP = {q.strip() for q in _a.skip.split(",") if q.strip()}
+    OUT_STEM = _a.out
     raise SystemExit(main())
